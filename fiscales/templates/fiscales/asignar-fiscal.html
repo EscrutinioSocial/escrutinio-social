@@ -1,0 +1,20 @@
+{% extends "fiscales/mis-datos-update.html" %}
+{% load i18n material_form material_frontend %}
+
+{% block breadcrumbs_items %}
+    <a href="{{ asignable.get_absolute_url }}">{{ asignable }}</a>
+    <a class="active">{% if object %}{{ object }}{%else %}Cargar fiscal{% endif %} </a>
+{% endblock %}
+
+{% block page_title %}Asignar fiscal{% endblock %}
+
+{% block card-action %}
+<div class="card-action">
+    <div class="right-align">
+        <button type="submit" class="waves-effect waves-light btn white-text">Guardar</button>
+    </div>
+    <p>¿La persona que busca no está en la lista? <br>
+        Puede <a class="btn" href="{{ url_crear_fiscal }}">cargar un fiscal</a>
+    </p>
+</div>
+{% endblock card-action %}

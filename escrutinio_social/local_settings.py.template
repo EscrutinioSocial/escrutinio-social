@@ -1,0 +1,17 @@
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'carreros',
+        'USER': 'carreros',
+        'PASSWORD': '**********',
+        'HOST': 'localhost', # the missing piece of the puzzle
+        'PORT': '', #
+    }
+}
+
+
+IMAP_HOST = 'imap.gmail.com'
+IMAP_USERNAME = 'foo@bar.com'
+IMAP_PASSWORD = '***'
+IMAP_MAILBOX = 'INBOX'

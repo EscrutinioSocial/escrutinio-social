@@ -1,0 +1,10 @@
+{% extends "fiscales/mis-datos-update.html" %}
+{% load i18n material_form material_frontend %}
+
+{% block breadcrumbs_items %}
+<a href="{{ object.get_absolute_url }}">{{ object }}</a>
+<a class="active">Cargar foto del Acta</a>
+{% endblock %}
+
+{% block page_title %}Cargar foto del Acta{% endblock %}
+{% block button_text %}Enviar{% endblock button_text %}

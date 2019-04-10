@@ -1,0 +1,21 @@
+{% extends "fiscales/base.html" %}
+
+{% block page_title %}Subir Adjuntos{% endblock %}
+
+{% block left-panel %}
+      <div class="card">
+
+        <div class="card-content">
+
+            <div class="card-title">{% block card-title %}
+                Subir Adjuntos
+            {% endblock card-title %}</div>
+
+        <form action="{% url 'agregar-adjuntos' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form }}
+            <input type="submit" value="Submit">
+        </form>
+        </div>
+        </div>
+{% endblock %}

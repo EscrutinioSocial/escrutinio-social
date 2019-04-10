@@ -1,0 +1,46 @@
+{% extends "adjuntos/asignar-mesa.html" %}
+{% load i18n material_form material_frontend staticfiles %}
+
+{% block breadcrumbs_items %}
+<a href="{{ mesa.get_absolute_url }}">{{ mesa }}</a>
+<a class="active">Problema</a>
+{% endblock %}
+
+
+{% block page_title %}Reportar un problema{% endblock %}
+
+{% block left-panel %}
+
+    <div class="card">
+       <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card-content">
+
+            <div class="card-title"> Reportar un problema con la mesa Nº {{ mesa.numero }}</div>
+
+          {% block card-content %}
+
+                  {% form %}
+                  {% endform %}
+            </div>
+          {% endblock card-content %}
+
+
+        <div class="card-action">
+            {% block card-action %}
+            <div class="right-align">
+
+               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="{{ button_tabindex }}">
+                  Enviar
+               </button>
+            </div>
+            {% endblock card-action %}
+        </div>
+
+       </form>
+
+    </div>
+{% endblock left-panel %}
+
+{% block right-panel %}
+{% endblock right-panel %}

@@ -1,0 +1,34 @@
+{% extends 'material/frontend/base.html' %}
+{% load i18n material_form static %}
+
+{% block extrahead %}
+{{ wizard.form.media }}
+{% endblock %}
+
+{% block sidenav_items %}
+   <div class="card">
+        <div class="card-content">
+            <div class="card-title"><i class="material-icons">mail</i> Contacto</div>
+
+
+            <p>Cualquier duda o inquietud, contactanos por email a<br>
+            <a href="mailto:elecciones_neuquen@cba3.com.ar">
+            elecciones_neuquen@cba3.com.ar</a></p>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block title %}Inscribite como fiscal del Escrutinio Provisorio - Córdoba 2019{% endblock %}
+{% block page_title %}Quiero ser fiscal del Escrutinio Provisorio - Córdoba 2019{% endblock %}
+{%block bodyclass %}{% endblock %}
+
+{% block topbar_links %}{% endblock %}
+
+{% block content %}
+<div class="left-panel">
+{% block left-panel %}
+{% endblock left-panel %}
+</div>
+{% block right-panel %}{% endblock right-panel %}
+{% endblock %}

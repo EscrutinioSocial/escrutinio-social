@@ -1,0 +1,49 @@
+{% load leaflet_tags %}
+<html>
+  <head>
+<script data-require="jquery@3.1.1" data-semver="3.1.1" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    {% leaflet_js %}
+    {% leaflet_css %}
+    <style>
+      .leaflet-container { height: 100%; }
+    </style>
+    <script type="text/javascript">
+      var dataurl = '{{ geojson_url }}';
+      window.addEventListener("map:init", function (event) {
+        var map = event.detail.map;
+        // Download GeoJSON data with Ajax
+        fetch(dataurl)
+          .then(function(resp) {
+            return resp.json();
+          })
+          .then(function(data) {
+            L.geoJson(data, {
+               pointToLayer: function(feature, latlng) {
+
+                 var starIcon = L.AwesomeMarkers.icon({
+                    markerColor: feature.properties.color,
+                    spin: true
+                 });
+                 return L.marker(latlng, {icon: starIcon})
+              },
+              onEachFeature: function onEachFeature(feature, layer) {
+                function onSpotClick(ev) {
+                    var popup = ev.target.getPopup();
+                    var props = feature.properties;
+                    $.get(`/elecciones/escuelas/${props.id}`, function(data){
+                          popup.setContent( data );
+                          popup.update();
+                    });
+                };
+                layer.bindPopup();
+                layer.on('click', onSpotClick);
+              }
+            }).addTo(map);
+          });
+      });
+    </script>
+  </head>
+  <body>
+    {% leaflet_map "main" %}
+  </body>
+</html>

@@ -1,0 +1,49 @@
+{% extends 'formtools/wizard/wizard_base.html' %}
+{% load i18n material_form %}
+
+{% block left-panel %}
+
+    <div class="card">
+            <form action="" method="post">{% csrf_token %}
+                <div class="card-content">
+
+
+
+                    <span class="card-title grey-text text-darken-2">Paso {{ wizard.steps.step1 }} de {{ wizard.steps.count }}</span>
+                    {{ wizard.management_form }}
+
+                    {% if wizard.form.forms %}
+                        {{ wizard.form.management_form }}
+                        {% for form in wizard.form.forms %}
+                            {% form %}{% endform %}
+                        {% endfor %}
+                    {% else %}
+                        {% form form=wizard.form %}{% endform %}
+                    {% endif %}
+
+
+                    {% comment %}
+
+                     <p>La inscripción de fiscales ha concluído. Gracias por tu interés y esperamos tu apoyo el domingo!</p>
+                     {% endcomment %}
+
+                </div>
+
+                <div class="card-action right-align">
+                    {% if wizard.steps.prev %}
+                    <button class="btn" name="wizard_goto_step" type="submit" value="{{ wizard.steps.prev }}">
+                        <i class="material-icons">arrow_back</i>
+                        Anterior
+                    </button>
+                    {% endif %}
+
+                    <button class="btn" type="submit">
+
+                        {% if wizard.steps.step1 < 4 %}Siguiente <i class="material-icons">arrow_forward</i>{% else %}Confirmar{% endif %}
+
+                    </button>
+                </div>
+            </form>
+        </div>
+
+{% endblock left-panel %}

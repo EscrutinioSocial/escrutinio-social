@@ -1,0 +1,20 @@
+{% extends "fiscales/base.html" %}
+
+{% block page_title %}Clasificar actas{% endblock %}
+
+{% block left-panel %}
+      <div class="card">
+
+        <div class="card-content">
+
+            <div class="card-title">{% block card-title %}
+                No hay actas para clasificar por el momento
+            {% endblock card-title %}</div>
+
+            <p>Por favor, refresca esta página en unos instantes. </p>
+
+            <a href="." class="btn waves-effect waves-light btn white-text">Refrescar</a>
+
+        </div>
+        </div>
+{% endblock %}

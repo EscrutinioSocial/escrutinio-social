@@ -1,0 +1,101 @@
+{% extends "material/frontend/base_site.html" %}
+
+{% block page_title %}Fiscal de Escrutinio Provisorio - Córdoba 2019{% endblock %}
+
+
+        {% block sidenav_items %}
+
+        {% comment %}
+        <li class="active">
+            <ul class="collapsible collapsible-accordion">
+                <li>
+                    <a href="{{ module.index_url }}" class="collapsible-header active">{{ module.verbose_name }}{{ module.icon|safe }}</a>
+                    <div class="collapsible-body" style="display:block">
+                        {% include module.menu %}
+                    </div>
+                </li>
+            </ul>
+        </li>
+
+        {% endcomment %}
+
+        {% if request.user.is_superuser %}
+            <li>
+                <a href="{% url "admin:index" %}" class="collapsible-header" data-turbolinks="false">Admin<i class="material-icons">dashboard</i></a>
+            </li>
+
+            <li>
+                <a href="{% url "mapa" %}" class="collapsible-header" data-turbolinks="false">Mapa<i class="material-icons">map</i></a>
+            </li>
+
+            <li>
+                <a href="{% url "agregar-adjuntos" %}" class="collapsible-header" data-turbolinks="false">Subir actas<i class="material-icons">cloud_upload</i></a>
+            </li>
+
+
+            <li></li>
+
+        {% endif  %}
+
+        {% if request.user.is_staff %}
+            {% url 'elegir-adjunto' as url %}
+            <li {% if url in request.path %} class="active"{% endif %}>
+                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Clasificar actas<i class="material-icons">picture_in_picture</i><span class="badge">{{ adjuntos_count }}</span></a>
+            </li>
+
+
+            {% url 'elegir-acta-a-cargar' as url %}
+            <li {% if url in request.path %} class="active"{% endif %}>
+                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Cargar resultados<i class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
+            </li>
+
+
+            {% url 'chequear-resultado' as url %}
+            <li {% if url in request.path %} class="active"{% endif %}>
+                <a href={% if mesas_a_confirmar_count == 0 %}"#"{% else %}"{{ url }}"{% endif %} class="collapsible-header" data-turbolinks="false">Chequear una mesa<i class="material-icons">
+check_box</i><span class="badge">{{ mesas_a_confirmar_count }}</span></a>
+            </li>
+
+
+
+            <li></li>
+        {% endif %}
+
+
+        <li>
+            <a href="{% if request.user.is_staff %} {% url "resultados-eleccion" %}{% else %}#{% endif %}" class="collapsible-header" data-turbolinks="false">Resultados<i class="material-icons">pie_chart</i></a>
+        </li>
+
+        {% if request.user.is_superuser %}
+        <li>
+            <a href="{% url "resultados-eleccion" %}?proyectado=✓" class="collapsible-header" data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
+        </li>
+        <li>
+            <a href="{% url "resultados-pk-eleccion" %}?proyectado=✓" class="collapsible-header" data-turbolinks="false">Proyección PK<i class="material-icons">pie_chart</i></a>
+        </li>
+        {% endif %}
+
+
+        <li>
+            <a href="https://docs.google.com/document/d/1NpIIwJIoqli--0ZihaEo4a126GMRVgHrWLJ-qVO9QYc/edit#heading=h.nobg9kju7uol" target="_blank" class="collapsible-header" data-turbolinks="false">Ayuda<i class="material-icons">help_outline</i></a>
+        </li>
+
+
+
+        <li>
+            <a href="{% url 'logout' %}" class="collapsible-header"  data-turbolinks="false">Cerrar sesión<i class="material-icons">exit_to_app</i></a>
+        </li>
+
+        {% endblock sidenav_items %}
+
+
+
+{% block content %}
+<div class="left-panel">
+{% block left-panel %}
+{% endblock left-panel %}
+</div>
+<div class="right-panel">
+{% block right-panel %}{% endblock right-panel %}
+</div>
+{% endblock %}

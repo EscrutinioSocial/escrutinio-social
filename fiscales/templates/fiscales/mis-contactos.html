@@ -1,0 +1,65 @@
+{% extends "fiscales/base.html" %}
+
+{% block page_title %}Mis Contactos{% endblock %}
+
+{% block left-panel %}
+
+
+
+{% for circuito in object.circuitos %}
+
+  {% for fiscal in circuito.referentes.all %}
+    {% if fiscal != request.user.fiscal %}
+
+    <div {% if forloop.first %}id="referentes"{% endif %} class="card">
+        <div class="card-content">
+
+              <div class="card-title">
+                  Referente de {{ circuito }}
+              </div>
+
+          {% include "fiscales/tabla_contacto.html" %}
+
+        </div>
+      </div>
+    {% endif %}
+ {% endfor %}
+{% endfor %}
+
+  {% for fiscal in object.referentes_de_orga.all %}
+
+    <div {% if forloop.first %}id="referentes"{% endif %} class="card">
+        <div class="card-content">
+
+              <div class="card-title">
+                  Referente de {{ object.organizacion }}
+              </div>
+
+          {% include "fiscales/tabla_contacto.html" %}
+
+        </div>
+      </div>
+ {% endfor %}
+
+  {% for fiscal in object.fiscales_colegas %}
+   {% if fiscal not in object.referentes_de_circuito.all %}
+    <div class="card">
+        <div class="card-content">
+              <div class="card-title">
+              {% if fiscal.es_general %}
+                  Fiscal general
+                {% else %}
+                  Fiscal de mesa Nº {{ fiscal.mesas_desde_hasta }}
+              {% endif %}
+              </div>
+
+              {% include "fiscales/tabla_contacto.html" %}
+
+
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+
+
+{% endblock left-panel %}

@@ -1,0 +1,13 @@
+{% for partido, votos in  tabla.items %}
+    <tr {% if partido.color %}style="background-color: {{ partido.color}};"{% endif %}>
+        <td>{{ partido }}</td>
+        {% if incluir_votos %}
+            <td id="votos_{{ partido.id|default:partido|lower }}"> {{ votos.votos }}</td>
+        {% endif %}
+        <td> {{ votos.porcentajeTotal }}%</td>
+        {% if resultados.proyectado %}
+        	<td>  - -</td>
+        {% endif %}
+
+    </tr>
+{% endfor %}

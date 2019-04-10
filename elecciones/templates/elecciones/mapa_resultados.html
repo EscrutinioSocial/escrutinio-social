@@ -1,0 +1,156 @@
+{% load leaflet_tags static %}
+<html>
+  <head>
+<script data-require="jquery@3.1.1" data-semver="3.1.1" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+    {% leaflet_js %}
+
+    {% leaflet_css %}
+
+ {% block favicon %}<link href="{% static 'material/imgs/favicon.png' %}" rel="shortcut icon">{% endblock %}
+        {% include 'material/frontend/includes/material_css.html' %}
+        {% include 'material/frontend/includes/material_js.html' %}
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.rawgit.com/nickpeihl/sidebar-v2/master/css/leaflet-sidebar.min.css">
+
+{% comment %}
+
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+{% endcomment %}
+
+    <style>
+
+      .leaflet-popup-content {
+        width: 500px !important;
+      }
+      .leaflet-container { height: 100%; }
+      .fcc {
+        background-color: lightblue;
+      }
+      .upc {
+        background-color: #B19CD9;
+      }
+      .pro {
+        background-color: #FFF44C;
+      }
+
+    </style>
+
+    <script type="text/javascript" src="https://cdn.rawgit.com/nickpeihl/sidebar-v2/master/js/leaflet-sidebar.min.js"></script>
+    <script type="text/javascript">
+      var dataurl = '{{ geojson_url }}';
+      window.addEventListener("map:init", function (event) {
+        var map = event.detail.map;
+        // Download GeoJSON data with Ajax
+        fetch(dataurl)
+          .then(function(resp) {
+            return resp.json();
+          })
+          .then(function(data) {
+            L.geoJson(data, {
+               pointToLayer: function(feature, latlng) {
+
+                 var starIcon = L.AwesomeMarkers.icon({
+                    markerColor: 'blue',
+                    spin: true
+                 });
+                 return L.marker(latlng, {icon: starIcon})
+              },
+              onEachFeature: function onEachFeature(feature, layer) {
+                function onSpotClick(ev) {
+                    var popup = ev.target.getPopup();
+                    var props = feature.properties;
+                    $.get(`/elecciones/mapa/paso2017/${props.id}`, function(data){
+                          popup.setContent( data );
+                          popup.update();
+                    });
+                };
+                layer.bindPopup();
+                layer.on('click', onSpotClick);
+              }
+            }).addTo(map);
+          });
+
+          var sidebar = L.control.sidebar('sidebar').addTo(map);
+          sidebar.open('home');
+
+      });
+    </script>
+  </head>
+  <body>
+
+ <div id="sidebar" class="sidebar collapsed">
+        <!-- Nav tabs -->
+        <div class="sidebar-tabs">
+            <ul role="tablist">
+                <li><a id='resultados' href="#home" role="tab">
+                <i class="small material-icons">reorder</i></a></li>
+
+
+                <li><a href="#graficos" role="tab">
+                <i class="small material-icons">insert_chart</i></a></li>
+
+            </ul>
+
+            <ul role="tablist">
+                <li><a href="#settings" role="tab">
+                <i class="small material-icons">settings</i></a></li>
+            </ul>
+        </div>
+
+        <!-- Tab panes -->
+        <div class="sidebar-content">
+            <div class="sidebar-pane" id="home">
+                <h3 class="sidebar-header" title="{{ para }}">
+                    Resultados para {{ para }}
+                    <span class="sidebar-close"><i class="small material-icons">close</i></span>
+                </h3>
+
+                {% for eleccion, resultados in resultados.items %}
+
+
+                <h5> {{ eleccion }}</h5>
+              <table class="bordered" style="font-size: 0.7em">
+              <tr>
+                <th title="Electores"><i class="small material-icons">person_outline</i></th>
+                <th title="Escrutados"><i class="small material-icons">person</i></th>
+                <th title="Positivos"><i class="small material-icons">person_add</i></th>
+                <th title="Participación"><i class="small material-icons">timeline</i></th>
+              </tr>
+              <tr>
+                <td title="Electores">{{ resultados.electores}} </td>
+                <td title="Escrutados">{{ resultados.escrutados }} </td>
+                <td title="Positivos">{{ resultados.positivos}}</td>
+                <td title="Participación">{{ resultados.participacion}} %</td>
+              </tr>
+          </table>
+
+                  {% with resultados.tabla as resultados %}
+
+                    {% include "elecciones/tabla_resultados.html" with responsive=True incluir_votos=True%}
+
+                  {% endwith %}
+
+
+
+                {% endfor %}
+
+            </div>
+
+            <div class="sidebar-pane" id="profile">
+                <h1 class="sidebar-header">Profile<span class="sidebar-close"><i class="small material-icons">close</i></span></h1>
+            </div>
+
+            <div class="sidebar-pane" id="settings">
+                <h1 class="sidebar-header">Settings<span class="sidebar-close"><i class="small material-icons">close</i></span></h1>
+            </div>
+        </div>
+    </div>
+
+
+    {% leaflet_map "main" %}
+
+    </body>
+</html>

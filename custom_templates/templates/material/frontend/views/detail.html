@@ -1,0 +1,24 @@
+{% extends "material/frontend/views/detail.html" %}
+
+{% block card %}
+    {{ block.super }}
+
+    {% if object.datos_de_contacto.all %}
+        <br>
+        <div class="card-title">Datos de contacto</div>
+    <table class="table bordered">
+
+    {% for contacto in object.datos_de_contacto.all %}
+    <tr>
+        <th>{{ contacto.tipo }}</th>
+        <td>{{ contacto.valor }}</td>
+
+    </tr>
+    {% endfor %}
+
+    </table>
+    {% endif %}
+
+{% endblock %}
+
+

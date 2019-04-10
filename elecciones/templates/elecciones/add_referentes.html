@@ -1,0 +1,45 @@
+{% extends "admin/index.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block sidebar %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' 'elecciones' %}">Elecciones</a>
+&rsaquo; <a href="{% url 'admin:elecciones_circuito_changelist' %}">Circuitos electorales</a>
+&rsaquo; Asignar referentes de circuito
+</div>
+{% endblock %}
+{% block extrahead %}
+{{ form.media }}
+{% endblock %}
+
+
+{% block content %}
+<h1>Definir referentes de circuitos</h1>
+<ul>
+    {% for c in qs %}
+        <li>{{ c }}</li>
+    {% endfor %}
+
+</ul>
+
+
+<div id="content-main">
+
+<form method="post" action=".?ids={{ids}}" novalidate>
+{% csrf_token %}
+<div>
+
+    {{ form.as_p }}
+</div>
+
+<div class="submit-row">
+<input type="submit" value="Guardar" class="default" name="_save" />
+</div>
+
+
+</form>
+</div>
+{% endblock %}

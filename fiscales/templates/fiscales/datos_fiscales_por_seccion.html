@@ -1,0 +1,61 @@
+{% extends "fiscales/base.html" %}
+
+{% block left-panel %}
+
+
+
+
+    <div class="card" id='donde{{escuela.id}}'>
+        <div class="card-content">
+
+
+
+            <div class="card-title">Fiscales generales</div>
+
+            {% for seccion, fiscales in generales.items %}
+
+            <strong>{{ seccion}}</strong>
+            <table class="bordered">
+
+
+                {% for fiscal in fiscales %}
+                <tr><td>{{ fiscal }}</td><td>{{ fiscal.telefonos|safeseq|join:", " }}</td><td>{{ fiscal.emails|safeseq|join:", " }}</td></tr>
+                {% endfor %}
+
+            </table>
+            {% endfor %}
+
+
+
+        </div>
+    </div>
+
+
+    <div class="card" id='donde{{escuela.id}}'>
+        <div class="card-content">
+
+
+
+            <div class="card-title">Fiscales de mesa</div>
+
+            {% for seccion, fiscales in de_mesa.items %}
+
+            <strong>{{ seccion}}</strong>
+            <table class="bordered">
+
+
+                {% for fiscal in fiscales %}
+                <tr><td>{{ fiscal }}</td><td>{{ fiscal.telefonos|safeseq|join:", " }}</td><td>{{ fiscal.emails|safeseq|join:", " }}</td></tr>
+                {% endfor %}
+
+            </table>
+            {% endfor %}
+
+
+
+        </div>
+    </div>
+
+
+
+{% endblock left-panel %}

@@ -1,0 +1,70 @@
+{% extends "fiscales/base.html" %}
+
+{% block page_title %}Mis Datos{% endblock %}
+
+{% block left-panel %}
+    <div class="card">
+        {% block card-content %}
+        <div class="card-content">
+
+            <div class="card-title">{{ object }}</div>
+
+
+            <table class="table bordered">
+              <tr>
+                  <th>Tipo de fiscal</th>
+                  <td>{% if object.es_referente %}Referente de Seccional
+                  {% else %}
+                    {{ object.get_tipo_display }}
+                  {% endif %} </td>
+              </tr>
+
+
+              <tr>
+                  <th>Dirección</th>
+                  <td>{{ object.direccion_completa }}</td>
+              </tr>
+
+              {% if object.organizacion %}
+              <tr>
+                  <th>Organización</th>
+                  <td>{{ object.organizacion }}</td>
+              </tr>
+              {% endif %}
+
+              <tr>
+                  <th>Documento de Indentidad</th>
+                  <td>{{ object.tipo_dni }} {{ object.dni}}</td>
+              </tr>
+
+
+             {% for contacto in object.datos_de_contacto.all %}
+                <tr>
+                    <th>{{ contacto.tipo|title }}</th>
+                    <td>{{ contacto.valor }}</td>
+
+                </tr>
+                {% endfor %}
+
+
+            </table>
+
+        </div>
+        {% endblock card-content %}
+
+        {% block card-action %}
+
+        <div class="card-action">
+
+            <div class="right-align">
+
+              <a class="waves-light btn white-text" href="{% url 'cambiar-password' %}">Cambiar contraseña</a>
+              <a class="waves-effect waves-light btn white-text" href="{% url 'mis-datos-update' %}">Editar mis datos</a>
+            </div>
+
+        </div>
+        {% endblock card-action %}
+    </div>
+
+
+{% endblock left-panel %}

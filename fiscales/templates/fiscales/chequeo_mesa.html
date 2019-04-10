@@ -1,0 +1,63 @@
+{% extends "fiscales/carga.html" %}
+{% load i18n material_form material_frontend %}
+
+{% block js %}
+{{ block.super }}
+<script type="text/javascript">
+$(document).ready(function(){
+    $('ul.tabs').tabs();
+  });
+</script>
+{% endblock js %}
+
+
+
+{% block breadcrumbs_items %}
+<a href="{{ object.get_absolute_url }}">{{ object }}</a>
+<a class="active">Acta</a>
+{% endblock %}
+
+
+{% block page_title %}Chequear Mesa {% endblock %}
+
+
+{% block card-content %}
+    <div class="card-title"> Mesa {{ object.numero }}</div>
+
+
+<table class="highlight bordered {% if responsive %}responsive-table{% endif %}">
+    {% for r in reportados %}
+        <tr>
+            <th>{{ r.opcion }}</th>
+            <td> {{ r.votos }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+
+{% endblock card-content %}
+
+{% block card-action %}
+
+
+        <div class="row">
+
+            <div class="col s12">
+                <div class="right-align">
+                    <form>
+                        {% csrf_token %}
+                        <button name="confirmar" class="btn waves-effect waves-light btn white-text" type="submit" tabindex="30">
+                        Confirmar
+                        </button>
+                    </form>
+
+                    <a href="{% url 'reportar-problema'  object.numero %}" class="btn waves-effect waves-light btn white-text">
+                      Reportar problema
+                   </a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+{% endblock card-action %}

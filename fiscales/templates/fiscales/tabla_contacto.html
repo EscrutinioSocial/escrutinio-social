@@ -1,0 +1,58 @@
+
+
+              <table class="table bordered">
+
+
+              <tr>
+                  <th>Nombre </th>
+                  <td>{{ fiscal }}</td>
+              </tr>
+
+              <tr>
+                  <th>Establecimiento{{ fiscal.escuelas.all|pluralize }} </th>
+                  <td>
+                     {% for escuela in fiscal.escuelas.all %}
+                      {{ escuela.nombre }}
+                    {% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                  </td>
+              </tr>
+
+              <tr>
+                  <th>Mesas </th>
+
+                  <td>{% if fiscal.mesas_desde_hasta %}
+                    {{ fiscal.mesas_desde_hasta }}
+                    {% else %}
+                    <strong>No asignado</strong>
+                  {% endif %} </td>
+              </tr>
+
+              <tr>
+                  <th>Teléfono</th>
+                  <td>
+                    {% for tel in fiscal.telefonos %}
+                      <a href="tel:{{ tel }}">{{ tel }}</a>
+                    {% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                  </td>
+              </tr>
+              {% if fiscal.emails %}
+              <tr>
+                  <th>Email</th>
+                  <td>
+                  {% for email in fiscal.emails %}
+                      <a href="mailto:{{ email }}">{{ email }}</a>
+                      {% if not forloop.last %}<br>{% endif %}
+                  {% endfor %}
+                  </td>
+              </tr>
+              {% endif %}
+              {% if fiscal.notas %}
+              <tr>
+                  <th>Notas</th>
+                  <td>{{ fiscal.notas }}</td>
+              </tr>
+              {% endif %}
+
+              </table>

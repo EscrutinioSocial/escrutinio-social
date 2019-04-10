@@ -1,0 +1,13 @@
+{% for partido, fila in  tabla.items %}
+    <tr {% if partido.color %}style="background-color: {{ partido.color}};"{% endif %}>
+        <td>{{ partido }}</td>
+        {% if incluir_votos %}
+            <td id="votos_{{ partido.id|default:partido|lower }}"> {{ fila.votos }}</td>
+        {% endif %}
+        <td> {{ fila.porcentajePositivos }}%</td>
+
+        {% if resultados.proyectado %}
+        <td>{{ fila.proyeccion }}%</td>
+        {% endif %}
+    </tr>
+{% endfor %}

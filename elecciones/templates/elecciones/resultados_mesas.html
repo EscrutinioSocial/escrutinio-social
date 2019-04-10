@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultados {{ mesa }}</title>
+
+
+    <link href="/static/elecciones/lib/nv.d3.css" rel="stylesheet" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js" charset="utf-8"></script>
+    <script src="/static/elecciones/lib/nv.d3.js"></script>
+    <script src="/static/elecciones/lib/stream_layers.js"></script>
+
+    <link href="/static/elecciones/carreros.css" rel="stylesheet" type="text/css">
+    <script src="/static/elecciones/pie_chart.js"></script>
+</head>
+<body>
+    <h1>{{ mesas.count }} mesas</h1>
+    <h3>
+        {% for m in mesas %}
+        {{ m }}
+        {% endfor %}
+    </h3>
+    <table>
+        <tr>
+            <td>
+                <h2 class="ẗableTitle">Reporte de Fiscal</h2>
+                {% if reporte %}
+                <div class="ẗable" title="Reporte de Fiscal">
+                    <div class="row header">
+                        <div class="cell">Opción</div>
+                        <div class="cell">Votos</div>
+                        <div class="cell">Porc.</div>
+                    </div>
+                    {% for op in reporte %}
+                    {% if op.opcion__nombre != 'Otros' %}
+
+                    <div class="row">
+                        <div class="cell">{{ op.opcion__nombre}} {% if op.opcion__partido__nombre_corto %}({{op.opcion__partido__nombre_corto}}) {% endif %}</div>
+                        <div class="cell">{{ op.votos }}</div>
+                        <div class="cell">{{ op.porcentaje }}</div>
+                    </div>
+
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="chart"><svg id="svg_reporte"></svg></div>
+                {% else %}
+                <h4>Sin datos aún</h4>
+                {% endif %}
+            </td>
+            <td>
+                |
+            </td>
+            <td>
+                <h2 class="ẗableTitle">Parte de Mesa</h2>
+                {% if parte_de_mesa %}
+                <div class="ẗable" title="Reporte de Fiscal">
+                    <div class="row header">
+                        <div class="cell">Opción</div>
+                        <div class="cell">Votos</div>
+                    </div>
+                    {% for op in parte_de_mesa %}
+                    <div class="row">
+                        <div class="cell">{{ op.opcion.nombre}} {% if op.opcion.partido %}({{op.opcion.partido.nombre_corto}}) {% endif %}</div>
+                        <div class="cell">{{op.votos }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="chart"><svg id="svg_reporte"></svg></div>
+                {% else %}
+                <h4>Sin datos aún</h4>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+<script>
+    var rep_data = {{ rep_chart|safe }}
+    var par_data = {{ par_chart|safe }}
+</script>
+</body>
+</html>

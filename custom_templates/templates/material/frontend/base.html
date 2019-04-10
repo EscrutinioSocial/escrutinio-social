@@ -1,0 +1,17 @@
+{% extends 'material/frontend/base.html' %}
+{# https://github.com/viewflow/django-material/blob/master/material/frontend/templates/material/frontend/base.html #}
+
+{% load staticfiles %}
+{% block favicon %}<link href="{% static 'img/favicon.png' %}" rel="shortcut icon">{% endblock %}
+{% load i18n static %}
+
+        {% block sidenav_header %}
+        <li>
+
+
+            <div class="card-image">
+              <img src="{% static 'img/left-top.png' %}" alt="" class="responsive-img"/>
+
+            </div>
+        </li>
+        {% endblock %}

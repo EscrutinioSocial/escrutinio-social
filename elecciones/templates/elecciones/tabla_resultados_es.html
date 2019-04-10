@@ -1,0 +1,19 @@
+{% for partido, votos in  resultados.items %}
+    <tr {% if partido.color %}style="background-color: {{ partido.color}};"{% endif %}>
+        <td>{{ partido }}</td>
+        {% if incluir_votos %}
+            <td id="votos_{{ partido.id|default:partido|lower }}"> {{ votos.0 }}</td>
+        {% endif %}
+        <td> {{ votos.2 }}%</td>
+
+{% comment %}
+        <td>{% if partido != 'Blancos, impugnados, etc' %}
+         {{ votos.2 }}%
+        {% else %}
+            -
+        {% endif %}
+
+     </td>
+{% endcomment %}
+    </tr>
+{% endfor %}

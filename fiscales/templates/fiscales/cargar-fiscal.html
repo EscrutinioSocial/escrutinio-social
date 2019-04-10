@@ -1,0 +1,9 @@
+{% extends "fiscales/mis-datos-update.html" %}
+{% load i18n material_form material_frontend %}
+
+{% block breadcrumbs_items %}
+<a href="{{ asignable.get_absolute_url }}">{{ asignable }}</a>
+<a class="active">{% if object %}{{ object }}{%else %}Cargar fiscal{% endif %} </a>
+{% endblock %}
+
+{% block page_title %}Cargar datos de fiscal{% endblock %}

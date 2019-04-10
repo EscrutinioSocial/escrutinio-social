@@ -1,0 +1,29 @@
+{% extends "fiscales/base.html" %}
+
+{% block page_title %}Mis Voluntarios{% endblock %}
+
+{% block left-panel %}
+
+
+  {% for fiscal in object_list %}
+
+    <div {% if forloop.first %}id="referentes"{% endif %} class="card">
+
+
+        <div class="card-content">
+
+            {% ifchanged fiscal.escuela_donde_vota %}
+              <div class="card-title">
+                  Voluntarios de {{ fiscal.escuela_donde_vota }}
+              </div>
+            {% endifchanged %}
+
+          {% include "fiscales/tabla_contacto.html" with asignacion=True %}
+
+        </div>
+      </div>
+  {% empty %}
+    <p>No hay fiscales para tus escuelas aun</p>
+
+ {% endfor %}
+{% endblock %}

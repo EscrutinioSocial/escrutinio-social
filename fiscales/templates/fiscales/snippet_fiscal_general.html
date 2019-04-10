@@ -1,0 +1,35 @@
+
+              <tr>
+                <th>
+                   Fiscal general asignado
+                </th>
+                <td>
+                 {% for asignacion in escuela.asignaciones %}
+
+
+
+                    {{ asignacion.fiscal }}
+
+                    <a href="{% url 'escuela-editar-fiscal' eleccion.id escuela.id asignacion.id %}"  class="waves-effect waves-light btn white-text">
+                    Editar datos</a>
+
+
+
+                    <a title="Eliminar la asignación" class="right-align btn-floating btn waves-effect waves-light red modal-trigger" href="{% url 'escuela-eliminar-asignacion' eleccion.id escuela.id asignacion.id %}" onclick="return confirm('¿Estás seguro?', 'Esta acción no se puede deshacer')"><i class="material-icons tiny">delete</i></a>
+
+                     {% if not forloop.last %}
+                      <br>
+                     {% endif %}
+
+                {% empty %}
+
+                    No Registrado
+
+                    <a href="{% url 'escuela-asignar-fiscal' eleccion.id escuela.id %}"  class="waves-effect waves-light btn white-text">
+                    Asignar Fiscal General
+                  </a>
+
+                {% endfor %}
+
+                </td>
+              </tr>

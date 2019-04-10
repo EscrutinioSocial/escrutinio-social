@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <script data-require="jquery@3.1.1" data-semver="3.1.1" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    {% include 'material/frontend/includes/material_css.html' %}
+    {% include 'material/frontend/includes/material_js.html' %}
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+    {% comment %}
+        <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
+    {% endcomment %}
+  </head>
+  <body>
+
+      <div class="results-pane" id="home">
+          <h5 class="results-header" title="{{ para }}"> Resultados para {{ para }} </h5>
+
+          {% for eleccion, resultados in resultados.items %}
+              <h3> {{ eleccion }}</h3>
+              <table class="bordered" style="font-size: 0.7em">
+                  <tr>
+                      <th title="Electores"><i class="small material-icons">person_outline</i></th>
+                      <th title="Escrutados"><i class="small material-icons">person</i></th>
+                      <th title="Positivos"><i class="small material-icons">person_add</i></th>
+                      <th title="Participación"><i class="small material-icons">timeline</i></th>
+                  </tr>
+                  <tr>
+                      <td title="Electores">{{ resultados.electores}} </td>
+                      <td title="Escrutados">{{ resultados.escrutados }} </td>
+                      <td title="Positivos">{{ resultados.positivos}}</td>
+                      <td title="Participación">{{ resultados.participacion}} %</td>
+                  </tr>
+              </table>
+
+              {% with resultados.tabla as resultados %}
+                  {% include "elecciones/tabla_resultados.html" with responsive=True incluir_votos=True%}
+              {% endwith %}
+          {% endfor %}
+      </div>
+  </body>
+</html>
