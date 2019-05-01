@@ -29,3 +29,12 @@ DATABASES = {
     }
 }
 ```
+
+## Datos
+
+Definir la eleccion y sus opciones
+
+### Importar guía electoral
+
+ - Preparar la lista de lugares de votacion con las mesas asignadas a cada uno. 
+ - Generar un importador que traiga los datos al sistema
