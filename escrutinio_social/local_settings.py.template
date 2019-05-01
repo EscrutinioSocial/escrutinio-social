@@ -1,3 +1,4 @@
+ALLOWED_HOSTS = ['tusitio.com']
 
 DATABASES = {
     'default': {

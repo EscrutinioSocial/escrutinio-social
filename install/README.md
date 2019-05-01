@@ -1,5 +1,12 @@
 # Instalar
 
+## Paqueteria
+
+```
+sudo apt update
+sudo apt install -y git python3-venv nginx postgresql postgresql-contrib gdal-bin postgis
+# asegurate que sea al menos python 3.6
+```
 
 ## Crear una base de datos
 Dar de alta la base con postgis
@@ -15,6 +22,21 @@ CREATE EXTENSION postgis;
 
 CREATE DATABASE escrutinio_db OWNER escrutinio_user;
 ```
+
+## El código
+
+```
+git clone https://github.com/OpenDataCordoba/escrutinio-social.git
+cd escrutinio-social/
+mkdir ~/envs
+python3 -m venv ~/envs/escrutinio
+source ~/envs/escrutinio/bin/activate
+pip install -r requirements.txt 
+./manage.py migrate
+./manage.py collectstatic
+```
+
+Definir tu escrutinio_social/local_settings.py teniendo en cuenta la nueva base
 
 ``` py
 # Requiere una base de datos postgres con postgis activado
