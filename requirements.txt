@@ -1,4 +1,4 @@
-django==1.11.3
+django==1.11.20
 django-model-utils==3.0.0
 git+https://github.com/mgaitan/django-admin-row-actions#egg=django-admin-row-actions
 git+https://github.com/mgaitan/django-sneak.git@#egg=django-sneak
