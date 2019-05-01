@@ -203,8 +203,11 @@ ANYMAIL = {
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"  # or sendgrid.EmailBackend, or...
-DEFAULT_FROM_EMAIL = "elecciones_neuquen@cba3.com.ar"         # if you don't already have this in settings
+DEFAULT_FROM_EMAIL = "algo@email.com"         # if you don't already have this in settings
+DEFAULT_CEL_CALL = '+54 9 351 XXXXXX'
+DEFAULT_CEL_LOCAL = '0351 15 XXXXX'
 
+FULL_SITE_URL = 'https://this-site.com'
 
 CACHES = {
     'default': {
@@ -215,7 +218,7 @@ CACHES = {
 }
 
 # config para el comando importar_actas
-IMAP_ACCOUNT = 'neuquen@cba3.com.ar'
+IMAP_ACCOUNT = 'eml@algo.com'
 IMAP_HOST = 'imap.gmail.com'
 IMAP_USERNAME = 'foo@bar.com'
 IMAP_PASSWORD = '***'

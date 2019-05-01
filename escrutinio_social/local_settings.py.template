@@ -11,6 +11,11 @@ DATABASES = {
     }
 }
 
+DEFAULT_FROM_EMAIL = "algo@email.com"         # if you don't already have this in settings
+DEFAULT_CEL_CALL = '+54 9 351 XXXXXX'
+DEFAULT_CEL_LOCAL = '0351 15 XXXXX'
+
+FULL_SITE_URL = 'https://this-site.com'
 
 IMAP_HOST = 'imap.gmail.com'
 IMAP_USERNAME = 'foo@bar.com'
