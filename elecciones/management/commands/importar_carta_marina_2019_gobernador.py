@@ -3,8 +3,8 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
 from csv import DictReader
-from elecciones.models import Seccion, Circuito, LugarVotacion, Mesa
-
+from elecciones.models import Seccion, Circuito, LugarVotacion, Mesa, Eleccion
+import datetime
 
 CSV = Path(settings.BASE_DIR) / 'elecciones/data/escuelas-elecciones-2019-cordoba-gobernador.csv'
 
@@ -36,6 +36,9 @@ class Command(escrutinio_socialBaseCommand):
     def handle(self, *args, **options):
         reader = DictReader(CSV.open())
 
+        fecha = datetime.datetime(2019, 5, 12, 8, 0) 
+        eleccion, created = Eleccion.objects.get_or_create(slug='gobernador-cordoba-2019', nombre='Gobernador Córdoba 2019', fecha=fecha)
+
         for row in reader:
             seccion, created = Seccion.objects.get_or_create(nombre=row['Nombre Seccion'], numero=row['Seccion'])
             self.log(seccion, created)
@@ -62,6 +65,9 @@ class Command(escrutinio_socialBaseCommand):
             self.log(escuela, created)
             if created:
                 for mesa_nro in range(int(row['Mesa desde']), int(row['Mesa Hasta']) + 1):
-                    mesa, created = Mesa.objects.get_or_create(numero=mesa_nro, lugar_votacion=escuela, circuito=circuito)
+                    mesa, created = Mesa.objects.get_or_create(eleccion=eleccion, 
+                                                                numero=mesa_nro,
+                                                                lugar_votacion=escuela,
+                                                                circuito=circuito)
                     self.log(mesa, created)
 
