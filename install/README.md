@@ -52,6 +52,11 @@ DATABASES = {
 }
 ```
 
+## Web
+
+Instalar supervisor y gunicorn.  
+Usar letsencrypt para https segun tu servidor.  
+
 ## Datos
 
 Definir la eleccion y sus opciones
