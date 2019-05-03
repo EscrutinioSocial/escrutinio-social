@@ -46,6 +46,8 @@ from .forms import (
 from contacto.views import ConContactosMixin
 from adjuntos.models import Attachment
 from adjuntos.forms import SubirAttachmentModelForm
+from django.conf import settings
+
 
 # tiempo maximo en minutos que se mantiene la asignacion de un acta hasta ser reasignada
 # es para que alguien no se "cuelgue" y quede un acta sin cargar.
@@ -184,25 +186,36 @@ class QuieroSerFiscal(SessionWizardView):
         fiscal.user.set_password(data['new_password1'])
         fiscal.user.save()
 
-        body_html = render_to_string('fiscales/email.html', {'fiscal': fiscal,})
+        body_html = render_to_string('fiscales/email.html', 
+                                        {'fiscal': fiscal,
+                                        'email': settings.DEFAULT_FROM_EMAIL,
+                                        'cell_call': settings.DEFAULT_CEL_CALL,
+                                        'cell_local': settings.DEFAULT_CEL_LOCAL,
+                                        'site_url': settings.FULL_SITE_URL})
         body_text = html2text(body_html)
 
         send_mail(
             '[NOREPLY] Recibimos tu inscripción como fiscal digital',
             body_text,
-            'elecciones_neuquen@cba3.com.ar',
+            settings.DEFAULT_FROM_EMAIL,
             [email],
             fail_silently=False,
             html_message=body_html
         )
 
         return render(self.request, 'formtools/wizard/wizard_done.html', {
-            'fiscal': fiscal,
+            'fiscal': fiscal, 'email': settings.DEFAULT_FROM_EMAIL,
+            'cell_call': settings.DEFAULT_CEL_CALL, 'cell_local': settings.DEFAULT_CEL_LOCAL,
+            'site_url': settings.FULL_SITE_URL
         })
 
 
 def email(request):
-    return render(request, 'fiscales/email.html', {'fiscal': request.user.fiscal})
+    return render(request, 'fiscales/email.html', {'fiscal': request.user.fiscal,
+                                                    'email': settings.DEFAULT_FROM_EMAIL,
+                                                    'cell_call': settings.DEFAULT_CEL_CALL,
+                                                    'cell_local': settings.DEFAULT_CEL_LOCAL,
+                                                    'site_url': settings.FULL_SITE_URL})
 
 
 def confirmar_email(request, uuid):
@@ -212,8 +225,8 @@ def confirmar_email(request, uuid):
                           'Por favor copiá y pegá el link que te enviamos'
                           ' por email en la barra de direcciones'
                           'Si seguís con problemas, env '
-                          '<a href="mailto:elecciones_neuquen@cba3.com.ar">'
-                          'elecciones_neuquen@cba3.com.ar</a>')
+                          '<a href="mailto:{email}">'
+                          '{email}</a>'.format(email=settings.DEFAULT_FROM_EMAIL))
 
     elif fiscal.email_confirmado:
         texto = 'Tu email ya estaba confirmado. Gracias.'
@@ -224,7 +237,11 @@ def confirmar_email(request, uuid):
 
     return render(
         request, 'fiscales/confirmar_email.html',
-        {'texto': texto, 'fiscal': fiscal}
+        {'texto': texto, 'fiscal': fiscal,
+            'email': settings.DEFAULT_FROM_EMAIL,
+            'cell_call': settings.DEFAULT_CEL_CALL,
+            'cell_local': settings.DEFAULT_CEL_LOCAL,
+            'site_url': settings.FULL_SITE_URL}
     )
 
 

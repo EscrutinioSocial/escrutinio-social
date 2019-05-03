@@ -171,8 +171,8 @@
                 {% else %}
                     <a href="{% url 'mesa-acta' 1 object.numero %}"  class="waves-effect waves-light btn white-text">Subir</a>
                     <p>
-                        O enviar foto a <code  class="language-markup"><a href="mailto:neuquen@cba3.com.ar">neuquen@cba3.com.ar</a></code>
-                        o por whatsapp/telegram a los números <a href="tel:+54 9 351 2326513">351 2326513</a>.
+                        O enviar foto a <code  class="language-markup"><a href="mailto:{{ email }}">{{ email }}</a></code>
+                        o por whatsapp/telegram a los números <a href="tel:{{ cell_call }}">{{ cell_local }}</a>.
                     </p>
                 {% endif %}
             </td>

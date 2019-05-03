@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+static/
 backups/*
 media/*
 
@@ -63,6 +64,7 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
+local_settings_prod.py
 
 # Flask stuff:
 instance/
@@ -108,3 +110,6 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+.vscode
+.~lock*
