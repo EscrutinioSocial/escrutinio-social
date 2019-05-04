@@ -231,13 +231,13 @@ class Mesa(models.Model):
 
 
     @classmethod
-    def con_carga_pendiente(cls, wait=2):
+    def con_carga_pendiente(cls, elecciones=[1], wait=2):
         desde = timezone.now() - timedelta(minutes=wait)
 
         return cls.objects.filter(
             votomesareportado__isnull=True,
             attachments__isnull=False,
-            eleccion__id=1,    # que fierooo
+            eleccion__id__in=elecciones,    # que fierooo
             orden_de_carga__gte=1,
         ).filter(
             # esto esta'mal. puede tener problema resuelto y otro problema no resuelto
