@@ -41,7 +41,7 @@ $(document).ready(function(){
 
 
 {% block card-content %}
-    <div class="card-title"> Mesa {{ object.numero }}
+    <div class="card-title"> Mesa {{ object.numero }} {{ eleccion}}
 
 
     <a class="waves-effect waves-light btn-flat right-align" href="{% url "reportar-problema" object.numero %}" >¿Problemas?</a></div>

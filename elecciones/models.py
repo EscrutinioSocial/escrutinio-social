@@ -215,11 +215,9 @@ class Mesa(models.Model):
     ESTADOS_ = ('EN ESPERA', 'ABIERTA', 'CERRADA', 'ESCRUTADA')
     ESTADOS = Choices(*ESTADOS_)
     estado = StatusField(choices_name='ESTADOS', default='EN ESPERA')
-    hora_abierta = MonitorField(monitor='estado', when=['ABIERTA'])
-    hora_cerrada = MonitorField(monitor='estado', when=['CERRADA'])
     hora_escrutada = MonitorField(monitor='estado', when=['ESCRUTADA'])
 
-    eleccion = models.ForeignKey('Eleccion')
+    eleccion = models.ManyToManyField('Eleccion')
     numero = models.PositiveIntegerField()
     es_testigo = models.BooleanField(default=False)
     circuito = models.ForeignKey(Circuito)  #
@@ -239,14 +237,14 @@ class Mesa(models.Model):
         return cls.objects.filter(
             votomesareportado__isnull=True,
             attachments__isnull=False,
-            eleccion__id=1,
+            eleccion__id=1,    # que fierooo
             orden_de_carga__gte=1,
         ).filter(
             # esto esta'mal. puede tener problema resuelto y otro problema no resuelto
             Q(problemas__isnull=True) # | Q(problemas__estado='resuelto')      # sin problemas en curso
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
-        )
+        ).distinct()
 
 
     @classmethod
@@ -259,7 +257,7 @@ class Mesa(models.Model):
 
 
     def get_absolute_url(self):
-        return reverse('detalle-mesa', args=(self.eleccion.id, self.numero,))
+        return reverse('detalle-mesa', args=(self.eleccion.first().id, self.numero,))
 
     @property
     def asignacion_actual(self):
@@ -350,14 +348,10 @@ class Eleccion(models.Model):
     opciones = models.ManyToManyField(Opcion, related_name='elecciones')
 
     def get_absolute_url(self):
-        return reverse('resultados-eleccion')   # , args=[self.slug])
+        return reverse('resultados-eleccion', args=[self.id])
 
-    @classmethod
-    def opciones_actuales(cls):
-        e = cls.objects.filter(id=1)
-        if e.exists():
-            return e.first().opciones.order_by('orden')
-        return Opcion.objects.none()
+    def opciones_actuales(self):
+        return self.opciones.all().order_by('orden')
 
     @classmethod
     def actual(cls):
@@ -377,6 +371,7 @@ class Eleccion(models.Model):
 
 class VotoMesaReportado(TimeStampedModel):
     mesa = models.ForeignKey(Mesa)
+    eleccion = models.ForeignKey(Eleccion)
     opcion = models.ForeignKey(Opcion)
     votos = models.PositiveIntegerField(null=True)
     fiscal = models.ForeignKey('fiscales.Fiscal', null=True)
@@ -385,7 +380,7 @@ class VotoMesaReportado(TimeStampedModel):
     class Meta:
         # unique_together = ('mesa', 'opcion', 'fiscal')
         # sólo vamos a permitir una carga por mesa.
-        unique_together = ('mesa', 'opcion')
+        unique_together = ('mesa', 'eleccion', 'opcion')
 
 
     def __str__(self):

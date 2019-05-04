@@ -12,7 +12,7 @@
 
 {% block sidenav_items %}
 
-      <li><a href="{{ request.path }}">Provincia</a></li>
+      <li><a href="{% url "resultados-eleccion" 1 %}">Provincia</a></li>
 
       {% for seccion in secciones %}
 
@@ -39,11 +39,11 @@
 
 
 {% block left-panel %}
-
     <ul class="tabs">
+
         {% for eleccion in elecciones %}
         <li class="tab col s3" >
-            <a target="_self" href="{{eleccion.get_absolute_url}}" {% if eleccion.id == object.id %}class="active"{% endif %}>{{ eleccion.nombre }}</a>
+            <a target="_self" href="{{eleccion.get_absolute_url}}?{{ request.GET.urlencode }}" {% if eleccion.id == object.id %}class="active"{% endif %}>{{ eleccion.nombre }}</a>
         </li>
         {% endfor %}
     </ul>
@@ -52,7 +52,7 @@
         <div class="card" id="{{eleccion.slug}}" data-id="{{ eleccion.id }}">
             <div class="card-content" id="frame{{eleccion.id}}">
 
-              {% if resultados.tabla_positivos %}
+              {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
 
               <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas </h4>
 
@@ -86,7 +86,7 @@
                   </thead>
 
                   {% with resultados.tabla_no_positivos as tabla %}
-                      {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True incluir_votos=True%}
+                      {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True incluir_votos=True %}
                   {% endwith %}
               </table>
 

@@ -1,3 +1,4 @@
+from functools import partial
 from django import forms
 from django.forms.models import modelform_factory
 from django.forms import modelformset_factory, BaseModelFormSet
@@ -12,6 +13,7 @@ from django.core.validators import ValidationError
 from contacto.forms import validar_telefono
 import phonenumbers
 from elecciones.views import POSITIVOS, TOTAL
+
 
 
 
@@ -204,10 +206,6 @@ class VotoMesaModelForm(forms.ModelForm):
         self.fields['votos'].label = ''
         self.fields['votos'].required = False
 
-        # self.fields['opcion'].widget.attrs['disabled'] = 'disabled'
-
-    # layout = Layout(Row('opcion', 'votos'))
-
     class Meta:
         model = VotoMesaReportado
         fields = ('opcion', 'votos')
@@ -225,6 +223,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         suma = 0
         positivos = 0
         total = 0
+        form_opcion_total = None
         for form in self.forms:
             opcion = form.cleaned_data['opcion']
 
@@ -242,22 +241,20 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         #         f'Positivos deberia ser igual o mayor a {suma}')
 
         errors = []
+        if form_opcion_total:
+            if suma > self.mesa.electores:
+                errors.append(f'Total no puede ser mayor a la cantidad de electores de la mesa: {self.mesa.electores}')
 
-        if suma > self.mesa.electores:
-            errors.append(f'Total no puede ser mayor a la cantidad de electores de la mesa: {self.mesa.electores}')
+            elif suma != total:
+                errors.append(f'Total deberia ser igual a la suma: {suma}')
 
-        elif suma != total:
-            errors.append(f'Total deberia ser igual a la suma: {suma}')
-
-        if errors:
-            form_opcion_total.add_error('votos', ValidationError(errors)                )
+            if errors :
+                form_opcion_total.add_error('votos', ValidationError(errors))
 
 
-
-VotoMesaReportadoFormset = modelformset_factory(
+votomeesareportadoformset_factory = partial(modelformset_factory,
     VotoMesaReportado, form=VotoMesaModelForm,
-    formset=BaseVotoMesaReportadoFormSet,
-    min_num=opciones_actuales(), extra=0, can_delete=False
+    formset=BaseVotoMesaReportadoFormSet, extra=0, can_delete=False
 )
 
 

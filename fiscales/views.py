@@ -35,7 +35,7 @@ from sentry_sdk import capture_exception
 from .forms import (
     MisDatosForm,
     FiscalFormSimple,
-    VotoMesaReportadoFormset,
+    votomeesareportadoformset_factory,
     QuieroSerFiscal1,
     QuieroSerFiscal2,
     QuieroSerFiscal3,
@@ -81,7 +81,7 @@ class BaseFiscal(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['eleccion'] = Eleccion.actual()
+        context['eleccion'] = Eleccion.objects.first()
         return context
 
     def get_object(self, *args, **kwargs):
@@ -186,7 +186,7 @@ class QuieroSerFiscal(SessionWizardView):
         fiscal.user.set_password(data['new_password1'])
         fiscal.user.save()
 
-        body_html = render_to_string('fiscales/email.html', 
+        body_html = render_to_string('fiscales/email.html',
                                         {'fiscal': fiscal,
                                         'email': settings.DEFAULT_FROM_EMAIL,
                                         'cell_call': settings.DEFAULT_CEL_CALL,
@@ -269,7 +269,7 @@ class MisVoluntarios(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['eleccion'] = Eleccion.actual()
+        context['eleccion'] = Eleccion.objects.first()
         return context
 
     def get_queryset(self):
@@ -616,12 +616,9 @@ def elegir_acta_a_cargar(request):
 
     if mesas.exists():
         mesa = mesas[0]
-        # se marca el adjunto
-        mesa.taken = timezone.now()
-        mesa.save(update_fields=['taken'])
         return redirect(
             'mesa-cargar-resultados',
-            eleccion_id=mesa.eleccion.id,
+            eleccion_id=mesa.eleccion.first().id,
             mesa_numero=mesa.numero
         )
 
@@ -632,13 +629,18 @@ def elegir_acta_a_cargar(request):
 @staff_member_required
 def cargar_resultados(request, eleccion_id, mesa_numero):
     fiscal = get_object_or_404(Fiscal, user=request.user)
+    eleccion = get_object_or_404(Eleccion, id=eleccion_id)
+    mesa = get_object_or_404(Mesa, eleccion=eleccion, numero=mesa_numero)
+    VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=eleccion.opciones.count())
+    # se marca que se inicia una carga
+    mesa.taken = timezone.now()
+    mesa.save(update_fields=['taken'])
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila
         # se podria hacer "disabled" pero ese caso quita el valor del
         # cleaned_data y luego lo exige por ser requerido.
-        for i, (opcion, form) in enumerate(
-            zip(Eleccion.opciones_actuales(), formset), 1):
+        for i, (opcion, form) in enumerate(zip(eleccion.opciones_actuales(), formset), 1):
             form.fields['opcion'].choices = [(opcion.id, str(opcion))]
 
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
@@ -648,11 +650,10 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
                 form.fields['votos'].required = True
             if i == 1:
                 form.fields['votos'].widget.attrs['autofocus'] = True
-
-    mesa = get_object_or_404(Mesa, eleccion__id=eleccion_id, numero=mesa_numero)
     data = request.POST if request.method == 'POST' else None
-    qs = VotoMesaReportado.objects.filter(mesa=mesa)        # , fiscal=fiscal)
-    initial = [{'opcion': o} for o in Eleccion.opciones_actuales()]
+
+    qs = VotoMesaReportado.objects.filter(mesa=mesa, eleccion=eleccion)
+    initial = [{'opcion': o} for o in eleccion.opciones_actuales()]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
 
     fix_opciones(formset)
@@ -671,22 +672,35 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
                 for form in formset:
                     vmr = form.save(commit=False)
                     vmr.mesa = mesa
+                    vmr.eleccion = eleccion
                     vmr.fiscal = fiscal
                     # vmr.eleccion = eleccion
                     vmr.save()
-            messages.success(request, 'Guardados los resultados de la mesa ')
+            messages.success(request, f'Guardada categoria {eleccion} para {mesa}')
         except IntegrityError as e:
             # hubo otra carga previa.
             capture_exception(e)
             messages.error(request, 'Alguien cargó esta mesa con anterioridad')
 
+        # hay que cargar otra eleccion (categoria) de la misma mesa?
+        # si es asi, se redirige a esa carga
+        elecciones_mesa = list(mesa.eleccion.values_list('id', flat=True))
+        if eleccion.id != elecciones_mesa[-1]:   # si no es la ultima
+
+            index_actual = elecciones_mesa.index(eleccion.id)
+            siguiente = elecciones_mesa[index_actual + 1]
+            return redirect(
+                'mesa-cargar-resultados',
+                eleccion_id=siguiente,
+                mesa_numero=mesa.numero
+            )
 
         return redirect('elegir-acta-a-cargar')
 
 
     return render(
         request, "fiscales/carga.html",
-        {'formset': formset, 'object': mesa, 'is_valid': is_valid or request.method == 'GET'}
+        {'formset': formset, 'eleccion': eleccion, 'object': mesa, 'is_valid': is_valid or request.method == 'GET'}
     )
 
 
