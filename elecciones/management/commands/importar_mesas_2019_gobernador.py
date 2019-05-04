@@ -57,14 +57,21 @@ class Command(escrutinio_socialBaseCommand):
                 errores.append(err)
                 continue
             
-            if electores > 360:
+            if electores > 405:
                 err = f'La mesa {mesa_nro} tiene {electores} electores'
                 self.error(err)
                 errores.append(err)
                 continue
 
             # YA DEBEN ESTAR CARGADAS LAS MESAS CON EL OTRO IMPORTADOR
-            mesa = Mesa.objects.get(numero=mesa_nro)
+            try:
+                mesa = Mesa.objects.get(numero=mesa_nro)
+            except Mesa.DoesNotExist:
+                err = f'La mesa {mesa_nro} NO EXISTE'
+                self.error(err)
+                errores.append(err)
+                continue
+                
             mesa.electores = electores
             mesa.save()
 
