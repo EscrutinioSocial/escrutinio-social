@@ -90,11 +90,11 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         otras_opciones = {}
 
         for id in Partido.objects.filter(opciones__elecciones__id=eleccion.id).distinct().values_list('id', flat=True):
-            sum_por_partido[str(id)] = Sum(Case(When(opcion__partido__id=id, then=F('votos')),
+            sum_por_partido[str(id)] = Sum(Case(When(opcion__partido__id=id, eleccion=eleccion, then=F('votos')),
                                                 output_field=IntegerField()))
 
         for nombre, id in Opcion.objects.filter(elecciones__id=eleccion.id, partido__isnull=True).values_list('nombre', 'id'):
-            otras_opciones[nombre] = Sum(Case(When(opcion__id=id, eleccion__id=eleccion.id, then=F('votos')),
+            otras_opciones[nombre] = Sum(Case(When(opcion__id=id, eleccion=eleccion, then=F('votos')),
                                               output_field=IntegerField()))
         return sum_por_partido, otras_opciones
 
@@ -118,8 +118,6 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             return LugarVotacion.objects.filter(id__in=self.request.GET.getlist('lugarvotacion'))
         elif 'mesa' in self.request.GET:
             return Mesa.objects.filter(id__in=self.request.GET.getlist('mesa'))
-        elif 'agrupacionpk' in self.request.GET:
-            return AgrupacionPK.objects.filter(id__in=self.request.GET.getlist('agrupacionpk'))
 
     @lru_cache(128)
     def mesas(self, eleccion):
@@ -137,9 +135,6 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
 
             elif 'mesa' in self.request.GET:
                 lookups = Q(id__in=self.filtros)
-
-            elif 'agrupacionpk' in self.request.GET:
-                lookups = Q(lugar_votacion__circuito__seccion_de_ponderacion__in=self.filtros)
 
         return Mesa.objects.filter(eleccion=eleccion).filter(lookups).distinct()
 
@@ -204,11 +199,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         sum_por_partido, otras_opciones = ResultadosEleccion.agregaciones_por_partido(eleccion)
 
         if self.filtros:
-            if 'agrupacionpk' in self.request.GET:
-                lookups = Q(mesa__lugar_votacion__circuito__seccion_de_ponderacion__in=self.filtros)
-                lookups2 = Q(lugar_votacion__circuito__seccion_de_ponderacion__in=self.filtros)
-
-            elif 'seccion' in self.request.GET:
+            if 'seccion' in self.request.GET:
                 lookups = Q(mesa__lugar_votacion__circuito__seccion__in=self.filtros)
                 lookups2 = Q(lugar_votacion__circuito__seccion__in=self.filtros)
 
@@ -350,7 +341,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.filtros:
-            context['para'] = get_text_list([o.nombre for o in self.filtros], " y ")
+            context['para'] = get_text_list([getattr(o, 'nombre', o) for o in self.filtros], " y ")
         else:
             context['para'] = 'Córdoba'
         eleccion = get_object_or_404(Eleccion, id=self.kwargs.get('pk', 1))
@@ -374,28 +365,5 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             # context['elecciones'] = reduce(lambda x, y: x & y, (m.eleccion.all() for m in self.mesas(eleccion)))
 
         context['secciones'] = Seccion.objects.all()
-        context['agrupacionpk'] = AgrupacionPK.objects.all()
 
         return context
-
-
-
-@user_passes_test(lambda u: u.is_superuser)
-def dashboard(request):
-    """
-    un panel con stats utiles
-    """
-
-    desde = timezone.now() - timedelta(minutes=5)
-
-    # usuarios que se acaban de loguear o han guardado un acta en los ultimos 5 minutos
-    # TODO considerar los que sólo clasifican actas
-    fiscales_online = Fiscal.objects.filter(Q(user__last_login__gte=desde) | Q(votomesareportado__created__gte=desde)).distinct()
-
-    data = {'dataentries online': fiscales_online.count()}
-    data['tiempo_de_carga'] = {str(f): f.tiempo_de_carga() for f in fiscales_online}
-
-    data['tiempo_de_carga_promedio'] = sum(data['tiempo_de_carga'].values()) / data['dataentries online'] if data['dataentries online'] else '-'
-
-    return JsonResponse(data)
-

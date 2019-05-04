@@ -1,7 +1,6 @@
 from django.db import models
 from django.urls import reverse
 from model_utils import Choices
-from taggit.managers import TaggableManager
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType

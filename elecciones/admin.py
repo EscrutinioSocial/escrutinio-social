@@ -51,30 +51,6 @@ class TieneResultados(admin.SimpleListFilter):
         return queryset
 
 
-class TieneFiscal(admin.SimpleListFilter):
-    title = 'Tiene fiscal'
-    parameter_name = 'fiscal'
-    lookup = 'asignacion__isnull'
-
-    def lookups(self, request, model_admin):
-        return (
-            ('sí', 'sí'),
-            ('no', 'no'),
-        )
-
-    def queryset(self, request, queryset):
-        value = self.value()
-        if value:
-            isnull = value == 'no'
-            queryset = queryset.filter(**{self.lookup: isnull})
-        return queryset
-
-
-class TieneFiscalGeneral(TieneFiscal):
-    title = 'Tiene fiscal general'
-    lookup = 'asignacion__isnull'
-
-
 def mostrar_en_mapa(modeladmin, request, queryset):
     selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
     ids = ",".join(selected)
@@ -124,7 +100,7 @@ class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
 
     list_display = ('nombre', 'direccion', 'ciudad', 'circuito', sección, 'mesas_desde_hasta', 'electores')
     list_display_links = ('nombre',)
-    list_filter = (HasLatLongListFilter, TieneFiscalGeneral, 'circuito__seccion', 'circuito')
+    list_filter = (HasLatLongListFilter, 'circuito__seccion', 'circuito')
     search_fields = (
         'nombre', 'direccion', 'ciudad', 'barrio', 'mesas__numero'
     )
@@ -139,27 +115,6 @@ class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
                 'enabled': True,
             }
         ]
-        if obj.asignacion_actual:
-            url = reverse('admin:fiscales_asignacionfiscalgeneral_change', args=(obj.asignacion_actual.id,))
-            label_asignacion = 'Editar asignación'
-
-        else:
-            url = reverse('admin:fiscales_asignacionfiscalgeneral_add') + f'?lugar_votacion={obj.id}'
-            label_asignacion = 'Asignar fiscal general'
-
-        row_actions.append({
-            'label': f'{label_asignacion}',
-            'url': url,
-            'enabled': True
-        })
-
-        if obj.asignacion_actual and obj.asignacion_actual.fiscal:
-            row_actions.append({
-                'label': 'Fiscal',
-                'url': reverse('admin:fiscales_fiscal_changelist') + f'?id={obj.asignacion_actual.fiscal.id}',
-                'enabled': True
-            })
-
         row_actions += super().get_row_actions(obj)
         return row_actions
 
@@ -191,23 +146,10 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
             },
             {
                 'label': 'Resultados Reportados',
-                'url': reverse('resultados-eleccion') + f'?mesa={obj.id}',
+                'url': reverse('resultados-eleccion', args=(obj.eleccion.first().id,)) + f'?mesa={obj.id}',
                 'enabled': obj.tiene_reporte,
             },
         ]
-        if obj.asignacion_actual:
-            url = reverse('admin:fiscales_asignacionfiscaldemesa_change', args=(obj.asignacion_actual.id,))
-            label_asignacion = 'Editar asignación'
-
-        else:
-            url = reverse('admin:fiscales_asignacionfiscaldemesa_add') + f'?mesa={obj.id}'
-            label_asignacion = 'Asignar fiscal'
-
-        row_actions.append({
-            'label': f'{label_asignacion}',
-            'url': url,
-            'enabled': True
-        })
         row_actions += super().get_row_actions(obj)
         return row_actions
 
@@ -222,7 +164,6 @@ class CircuitoAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'seccion')
     list_display_links = list_display
     list_filter = ('seccion',)
-    filter_horizontal = ('referentes',)
     search_fields = (
         'nombre', 'numero',
     )

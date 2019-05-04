@@ -18,13 +18,6 @@ from model_utils.models import TimeStampedModel
 from model_utils import Choices
 from adjuntos.models import Attachment
 
-def desde_hasta(qs):
-    qs = qs.values_list('numero', flat=True).order_by('numero')
-    inicio, fin = qs.first(), qs.last()
-    if inicio == fin:
-        return inicio
-    return f'{inicio} - {fin}'
-
 
 class Seccion(models.Model):
     # O departamento
@@ -76,10 +69,7 @@ class Circuito(models.Model):
 
     numero = models.CharField(max_length=10)
     nombre = models.CharField(max_length=100)
-    referentes = models.ManyToManyField('fiscales.Fiscal',
-        related_name='es_referente_de_circuito',
-        blank=True
-    )
+
 
     class Meta:
         verbose_name = 'Circuito electoral'
@@ -161,15 +151,12 @@ class LugarVotacion(models.Model):
 
     @property
     def mesas_desde_hasta(self):
-        return desde_hasta(self.mesas)
-
-    @property
-    def asignaciones(self):
-        return self.asignacion.exclude(fiscal__es_referente_de_circuito__isnull=False)
-
-    @property
-    def asignacion_actual(self):
-        return self.asignacion.exclude(fiscal__es_referente_de_circuito__isnull=False).order_by('-ingreso', '-id').last()
+        qs = self.mesas
+        qs = qs.values_list('numero', flat=True).order_by('numero')
+        inicio, fin = qs.first(), qs.last()
+        if inicio == fin:
+            return inicio
+        return f'{inicio} - {fin}'
 
     @property
     def mesas_actuales(self):
@@ -184,17 +171,6 @@ class LugarVotacion(models.Model):
     @property
     def seccion(self):
         return str(self.circuito.seccion)
-
-    @property
-    def mesa_testigo(self):
-        return self.mesas.filter(eleccion__id=1, es_testigo=True).first()
-
-
-    @property
-    def resultados_oficiales(self):
-        return VotoMesaOficial.objects.filter(mesa__lugar_votacion=self, opcion__id__in=Opcion.MOSTRABLES).aggregate(
-            **Opcion.AGREGACIONES
-        )
 
 
     def __str__(self):
@@ -342,6 +318,7 @@ class Opcion(models.Model):
 
 
 class Eleccion(models.Model):
+    """este modelo representa una categoria electiva: gobernador, intendente de loma del orto, etc)"""
     slug = models.SlugField(max_length=50, unique=True)
     nombre = models.CharField(max_length=50)
     fecha = models.DateTimeField(blank=True, null=True)
@@ -382,27 +359,5 @@ class VotoMesaReportado(TimeStampedModel):
         # sólo vamos a permitir una carga por mesa.
         unique_together = ('mesa', 'eleccion', 'opcion')
 
-
     def __str__(self):
         return f"{self.mesa} - {self.opcion}: {self.votos}"
-
-
-
-@receiver(m2m_changed, sender=Circuito.referentes.through)
-def referentes_cambiaron(sender, instance, action, reverse,
-                         model, pk_set, using, **kwargs):
-    """cuando se asigna a un circuito, se crean las asignaciones
-    a todas las escuelas del circuito"""
-
-    from fiscales.models import AsignacionFiscalGeneral, Fiscal   # avoid circular import
-    eleccion = Eleccion.actual()
-    if action == 'post_remove':
-        # quitar a estos fiscales cualquier asignacion a escuelas del circuito
-        AsignacionFiscalGeneral.objects.filter(eleccion=eleccion,
-            lugar_votacion__circuito=instance, fiscal__id__in=pk_set).delete()
-    elif action == 'post_add':
-        fiscales = Fiscal.objects.filter(id__in=pk_set)
-        escuelas = LugarVotacion.objects.filter(circuito=instance)
-        for fiscal in fiscales:
-            for escuela in escuelas:
-                AsignacionFiscalGeneral.objects.create(eleccion=eleccion, lugar_votacion=escuela, fiscal=fiscal)

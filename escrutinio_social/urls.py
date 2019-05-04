@@ -6,7 +6,6 @@ from material.frontend import urls as frontend_urls
 from elecciones import urls as elecciones_urls
 from fiscales import urls as fiscales_urls
 from fiscales.views import choice_home, QuieroSerFiscal, confirmar_email
-from elecciones import views as views_elecciones
 from fiscales.forms import AuthenticationFormCustomError
 from django.contrib.auth import views as auth_views
 from problemas.views import ProblemaCreate
@@ -30,7 +29,6 @@ urlpatterns = [
     url(r'^fiscales/', include(fiscales_urls)),
 
     url(r'^elecciones/', include(elecciones_urls)),
-    url(r'^dashboard/', views_elecciones.dashboard),
     url(r'^clasificar-actas/', include('adjuntos.urls')),
     url('^reportar-problema/(?P<mesa_numero>\d+)$', ProblemaCreate.as_view(), name='reportar-problema'),
 ]

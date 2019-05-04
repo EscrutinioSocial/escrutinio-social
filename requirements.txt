@@ -13,12 +13,10 @@ git+https://github.com/mgaitan/django-material#egg=django-fmaterial
 django-extensions==1.8.1
 django-formtools==2.0
 html2text==2016.9.19
-django-taggit==0.22.1
 django-geojson==2.10.0
 git+https://github.com/mgaitan/django-hijack.git#egg=django-hijack
 django-leaflet==0.22.0
 django-localflavor==1.5.2
-djangorestframework==3.6.3
 jsonfield==2.0.2
 nameparser==0.5.3
 phonenumbers==8.6.0

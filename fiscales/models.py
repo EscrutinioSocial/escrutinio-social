@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_delete
-from elecciones.models import desde_hasta, Mesa, LugarVotacion, Eleccion
+from elecciones.models import Mesa, LugarVotacion, Eleccion
 from django.contrib.contenttypes.models import ContentType
 from contacto.models import DatoDeContacto
 from model_utils.fields import StatusField
@@ -56,12 +56,6 @@ class Fiscal(models.Model):
     @property
     def emails(self):
         return self.datos_de_contacto.filter(tipo='email').values_list('valor', flat=True)
-
-    def tiempo_de_carga(self):
-        result = self.votomesareportado_set.filter(opcion__nombre=TOTAL).order_by('-created')[:2]
-        if result.count() == 2:
-            return (result[0].created - result[1].created).total_seconds()
-        return None
 
     def __str__(self):
         return f'{self.nombres} {self.apellido}'
