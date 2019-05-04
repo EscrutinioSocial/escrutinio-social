@@ -342,8 +342,8 @@ class Opcion(models.Model):
 
 
 class Eleccion(models.Model):
-    slug = models.SlugField(max_length=50, unique=True)
-    nombre = models.CharField(max_length=50)
+    slug = models.SlugField(max_length=100, unique=True)
+    nombre = models.CharField(max_length=100)
     fecha = models.DateTimeField(blank=True, null=True)
     opciones = models.ManyToManyField(Opcion, related_name='elecciones')
 
