@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Q, F, Sum
+from django.db.models import Q, F, Sum, Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -95,9 +95,8 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
                                                 output_field=IntegerField()))
 
         for nombre, id in Opcion.objects.filter(elecciones__id=eleccion.id, partido__isnull=True).values_list('nombre', 'id'):
-            otras_opciones[nombre] = Sum(Case(When(opcion__id=id, then=F('votos')),
+            otras_opciones[nombre] = Sum(Case(When(opcion__id=id, eleccion__id=eleccion.id, then=F('votos')),
                                               output_field=IntegerField()))
-
         return sum_por_partido, otras_opciones
 
     @property
@@ -124,8 +123,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             return AgrupacionPK.objects.filter(id__in=self.request.GET.getlist('agrupacionpk'))
 
     @lru_cache(128)
-    def electores(self, eleccion):
-
+    def mesas(self, eleccion):
         lookups = Q()
         meta = {}
         if self.filtros:
@@ -144,7 +142,11 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             elif 'agrupacionpk' in self.request.GET:
                 lookups = Q(lugar_votacion__circuito__seccion_de_ponderacion__in=self.filtros)
 
-        mesas = Mesa.objects.filter(eleccion=eleccion).filter(lookups).distinct()
+        return Mesa.objects.filter(eleccion=eleccion).filter(lookups).distinct()
+
+    @lru_cache(128)
+    def electores(self, eleccion):
+        mesas = self.mesas(eleccion)
         electores = mesas.aggregate(v=Sum('electores'))['v']
         return electores or 0
 
@@ -158,7 +160,6 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         reportados = VotoMesaReportado.objects.filter(
             mesa__lugar_votacion__circuito__seccion_de_ponderacion=agrupacion
         )
-
 
         result = reportados.aggregate(
             **sum_por_partido
@@ -182,7 +183,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             total = positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(nombre=k, es_contable=False).exists())
             result.update(result_opc)
         else:
-            result['Otros partidos'] = positivos - sum(result.values())
+            result['Otros partidos'] = positivos - sum(result.values())     # infiere los datos no cargados (no requeridos)
             result['Blancos, impugnados, etc'] = total - positivos
 
         datos_ponderacion = {
@@ -192,8 +193,6 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             "total": total,
             "positivos": positivos
         }
-
-
         return datos_ponderacion
 
 
@@ -231,9 +230,8 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         # primero para partidos
 
         reportados = VotoMesaReportado.objects.filter(
-            Q(mesa__eleccion=eleccion) & lookups
+            Q(eleccion=eleccion) & lookups
         )
-
 
         todas_mesas_escrutadas = Mesa.objects.filter(votomesareportado__in=reportados).distinct()
         escrutados = todas_mesas_escrutadas.aggregate(v=Sum('electores'))['v']
@@ -241,7 +239,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             escrutados = 0
 
         mesas_escrutadas = todas_mesas_escrutadas.count()
-        total_mesas = Mesa.objects.filter(lookups2, eleccion__id=1).count()
+        total_mesas = Mesa.objects.filter(lookups2, eleccion=eleccion).count()
         porcentaje_mesas_escrutadas = f'{mesas_escrutadas*100/total_mesas:.2f}'
 
 
@@ -253,7 +251,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
 
         # no positivos
         result_opc = VotoMesaReportado.objects.filter(
-            Q(mesa__eleccion=eleccion) & lookups
+            Q(eleccion=eleccion) & lookups
         ).aggregate(
             **otras_opciones
         )
@@ -309,14 +307,10 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
                         acumulador_total += data["electores"]*data["votos"][k]/data["total"]
                         acumulador_positivos += data["electores"]*data["votos"][k]/data["positivos"]
 
-
                 expanded_result[k]["proyeccionTotal"] = f'{acumulador_total *100/electores_pond:.2f}'
                 expanded_result[k]["proyeccion"] = f'{acumulador_positivos *100/electores_pond:.2f}'
 
-
-
         result = expanded_result
-
 
         # TODO revisar si opciones contables no asociadas a partido.
         tabla_positivos = OrderedDict(
@@ -359,8 +353,8 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         if self.filtros:
             context['para'] = get_text_list([o.nombre for o in self.filtros], " y ")
         else:
-            context['para'] = 'Neuquén'
-        eleccion = get_object_or_404(Eleccion, id=1)
+            context['para'] = 'Córdoba'
+        eleccion = get_object_or_404(Eleccion, id=self.kwargs.get('pk', 1))
         context['object'] = eleccion
         context['eleccion_id'] = eleccion.id
         context['resultados'] = self.get_resultados(eleccion)
@@ -370,7 +364,16 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         context['chart_keys'] = [v['key'] for v in chart]
         context['chart_colors'] = [v['color'] for v in chart]
 
-        context['elecciones'] = [Eleccion.objects.get(id=1)]        # categorias
+        if not self.filtros:
+            context['elecciones'] = [Eleccion.objects.first()]
+        else:
+            # solo las elecciones comunes a todas las mesas
+            mesas = self.mesas(eleccion)
+            elecciones = Eleccion.objects.filter(mesa__in=mesas).annotate(num_mesas=Count('mesa')).filter(num_mesas=mesas.count())
+            context['elecciones'] = elecciones.order_by('id')
+
+            # context['elecciones'] = reduce(lambda x, y: x & y, (m.eleccion.all() for m in self.mesas(eleccion)))
+
         context['secciones'] = Seccion.objects.all()
         context['agrupacionpk'] = AgrupacionPK.objects.all()
 

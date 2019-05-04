@@ -348,7 +348,7 @@ class Eleccion(models.Model):
     opciones = models.ManyToManyField(Opcion, related_name='elecciones')
 
     def get_absolute_url(self):
-        return reverse('resultados-eleccion')   # , args=[self.slug])
+        return reverse('resultados-eleccion', args=[self.id])
 
     def opciones_actuales(self):
         return self.opciones.all().order_by('orden')

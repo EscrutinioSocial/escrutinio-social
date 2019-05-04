@@ -33,8 +33,6 @@ urlpatterns = [
     url(r'^dashboard/', views_elecciones.dashboard),
     url(r'^clasificar-actas/', include('adjuntos.urls')),
     url('^reportar-problema/(?P<mesa_numero>\d+)$', ProblemaCreate.as_view(), name='reportar-problema'),
-
-    url('^resultados/(?P<slug>\w+)/$', cached(views_elecciones.ResultadosEleccion.as_view()), name='resultados-eleccion'),
 ]
 
 if settings.DEBUG:
