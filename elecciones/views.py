@@ -21,7 +21,6 @@ from django.http import HttpResponse
 from django.views import View
 from django.contrib.auth.models import User
 from fiscales.models import Fiscal
-from .forms import ReferentesForm, LoggueConMesaForm
 from .models import *
 from .models import LugarVotacion, Circuito, AgrupacionPK
 
@@ -379,40 +378,6 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
 
         return context
 
-
-
-
-@user_passes_test(lambda u: u.is_superuser)
-def asignar_referentes(request):
-    ids = request.GET.get('ids')
-    if not ids:
-        return redirect('admin:elecciones_circuito_changelist')
-
-    qs = Circuito.objects.filter(id__in=ids.split(','))
-    initial = Circuito.objects.get(id=ids[0]).referentes.all()
-
-    form = ReferentesForm(request.POST if request.method == 'POST' else None,
-                          initial={'referentes': initial})
-    if form.is_valid():
-        for circuito in qs:
-            circuito.referentes.set(form.cleaned_data['referentes'])
-        return redirect('admin:elecciones_circuito_changelist')
-
-    return render(request, 'elecciones/add_referentes.html', {'form':form, 'ids': ids, 'qs': qs})
-
-
-@user_passes_test(lambda u: u.is_superuser)
-def fiscal_mesa(request):
-    form = LoggueConMesaForm(request.POST if request.method == 'POST' else None)
-
-    if form.is_valid():
-        f = Fiscal.objects.filter(asignacion_escuela__lugar_votacion__mesas__numero=form.cleaned_data['mesa']).first()
-        if f:
-            return redirect(f'/hijack/{f.user.id}/',)
-        else:
-            messages.warning(request, "mesa no existe o no sin fiscal")
-
-    return render(request, 'elecciones/add_referentes.html', {'form':form})
 
 
 @user_passes_test(lambda u: u.is_superuser)

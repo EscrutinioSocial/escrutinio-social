@@ -257,7 +257,7 @@ class Mesa(models.Model):
 
 
     def get_absolute_url(self):
-        return reverse('detalle-mesa', args=(self.eleccion.first().id, self.numero,))
+        return '#' # reverse('detalle-mesa', args=(self.eleccion.first().id, self.numero,))
 
     @property
     def asignacion_actual(self):

@@ -57,10 +57,7 @@ class MisDatosForm(FiscalForm):
         model = Fiscal
         fields = [
             'nombres', 'apellido',
-            'direccion', 'localidad',
-            'barrio',
             'tipo_dni', 'dni',
-            'organizacion'
         ]
 
 
