@@ -12,7 +12,7 @@
 
 {% block sidenav_items %}
 
-      <li><a href="{{ request.path }}">Provincia</a></li>
+      <li><a href="{% url "resultados-eleccion" 1 %}">Provincia</a></li>
 
       {% for seccion in secciones %}
 
