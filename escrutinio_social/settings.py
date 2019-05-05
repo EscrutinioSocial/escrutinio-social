@@ -39,8 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'rest_framework',
-    'admincommand',
     'anymail',
     'localflavor',
     'django_extensions',
@@ -56,7 +54,6 @@ INSTALLED_APPS = [
     'django_admin_row_actions',
     'hijack',
     'compat',
-    'taggit',
     # 'attachments',
     'djgeojson',
     'leaflet',
