@@ -21,3 +21,11 @@ IMAP_HOST = 'imap.gmail.com'
 IMAP_USERNAME = 'foo@bar.com'
 IMAP_PASSWORD = '***'
 IMAP_MAILBOX = 'INBOX'
+
+#FABFILE
+HOSTS=['IP.DEL.SERVI.DOR']
+HOST_USER='user'
+VENV="/home/user/envs/escrutinio/"
+PROJECT_PATH="/home/user/escrutinio-social"
+PROJECT_USER='web'
+ROLE_DEFS={'web': ['IP.DEL.SERVI.DOR'],'db': ['IP.DEL.SERVI.DOR']}
