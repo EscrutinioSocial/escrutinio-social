@@ -315,8 +315,6 @@ class Opcion(models.Model):
         return self.nombre
 
 
-
-
 class Eleccion(models.Model):
     """este modelo representa una categoria electiva: gobernador, intendente de loma del orto, etc)"""
     slug = models.SlugField(max_length=100, unique=True)
