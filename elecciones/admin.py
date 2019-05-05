@@ -138,6 +138,10 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     )
 
     def get_row_actions(self, obj):
+        if obj.eleccion is None:
+            url = 'NO HAY ELECCION DEFINIDA PARA ESTA MESA'
+        else:
+            url = reverse('resultados-eleccion', args=(obj.eleccion.first().id,)) + f'?mesa={obj.id}',
         row_actions = [
             {
                 'label': 'Escuela',
@@ -146,7 +150,7 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
             },
             {
                 'label': 'Resultados Reportados',
-                'url': reverse('resultados-eleccion', args=(obj.eleccion.first().id,)) + f'?mesa={obj.id}',
+                'url': url,
                 'enabled': obj.tiene_reporte,
             },
         ]
