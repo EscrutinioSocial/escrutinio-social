@@ -362,26 +362,6 @@ class VotoMesaReportado(TimeStampedModel):
         return f"{self.mesa} - {self.opcion}: {self.votos}"
 
 
-@receiver(m2m_changed, sender=Circuito.referentes.through)
-def referentes_cambiaron(sender, instance, action, reverse,
-                         model, pk_set, using, **kwargs):
-    """cuando se asigna a un circuito, se crean las asignaciones
-    a todas las escuelas del circuito"""
-
-    from fiscales.models import AsignacionFiscalGeneral, Fiscal   # avoid circular import
-    eleccion = Eleccion.actual()
-    if action == 'post_remove':
-        # quitar a estos fiscales cualquier asignacion a escuelas del circuito
-        AsignacionFiscalGeneral.objects.filter(eleccion=eleccion,
-            lugar_votacion__circuito=instance, fiscal__id__in=pk_set).delete()
-    elif action == 'post_add':
-        fiscales = Fiscal.objects.filter(id__in=pk_set)
-        escuelas = LugarVotacion.objects.filter(circuito=instance)
-        for fiscal in fiscales:
-            for escuela in escuelas:
-                AsignacionFiscalGeneral.objects.create(eleccion=eleccion, lugar_votacion=escuela, fiscal=fiscal)
-
-
 """
 por si queremos mejorar lo que se muestra con nombres que entendemos
 
