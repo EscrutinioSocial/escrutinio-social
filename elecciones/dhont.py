@@ -3,9 +3,15 @@
 def calcular_dhont(bancas=10, valores=[]):
     ''' Calcula vía D'Hont las "n" bancas segun una lista de calores
     Parameters:
-    bancas (int): Cantidad de bancas a elegir
-    valores (list of dicts): Lista de diccionarios con el nombre del partido y sus votos. Ej {'nombre': 'Partido 1', 'valor': 1500}
+        bancas (int): Cantidad de bancas a elegir
+        valores (list of dicts): Lista de diccionarios con el nombre del partido y sus votos. Ej {'nombre': 'Partido 1', 'valor': 1500}
+    
+    Returns:
+        tupla (resultado_detalles, resultado_final)
+            resultado_detalles: una lista de diccionarios con cada una de las bancas
+            resultado_final: diccionario con el partido como key y la cantidad de bancas como valor
     '''
+    
     total_votos = 0
     coeficientes = []
     for elemento in valores:
