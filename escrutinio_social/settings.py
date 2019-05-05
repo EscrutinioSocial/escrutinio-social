@@ -171,7 +171,7 @@ HIJACK_LOGOUT_REDIRECT_URL = 'admin:fiscales_fiscal_changelist'
 
 
 LEAFLET_CONFIG = {
-    'DEFAULT_CENTER': (-38.5, -69.9),
+    'DEFAULT_CENTER': (-31.418293, -64.179238),
     'DEFAULT_ZOOM': 8,
     'MIN_ZOOM': 4,
     'MAX_ZOOM': 18,

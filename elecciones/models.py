@@ -118,6 +118,7 @@ class LugarVotacion(models.Model):
     calidad = models.CharField(max_length=20, help_text='calidad de la geolocalizacion', editable=False, blank=True)
     electores = models.PositiveIntegerField(null=True, blank=True)
     geom = PointField(null=True)
+    estado_geolocalizacion = models.PositiveIntegerField(default=0, help_text='Indicador (0-10) de que confianza hay en la geolozalización')
 
     # denormalizacion para hacer queries más simples
     latitud = models.FloatField(null=True, editable=False)
@@ -196,7 +197,7 @@ class Mesa(models.Model):
     eleccion = models.ManyToManyField('Eleccion')
     numero = models.PositiveIntegerField()
     es_testigo = models.BooleanField(default=False)
-    circuito = models.ForeignKey(Circuito)  #
+    circuito = models.ForeignKey(Circuito, null=True)
     lugar_votacion = models.ForeignKey(LugarVotacion, verbose_name='Lugar de votacion', null=True, related_name='mesas')
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
@@ -270,6 +271,7 @@ class Mesa(models.Model):
 class Partido(models.Model):
     orden = models.PositiveIntegerField(help_text='Orden opcion')
     numero = models.PositiveIntegerField(null=True, blank=True)
+    codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True)
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=30, default='')
     color = models.CharField(max_length=30, default='', blank=True)
@@ -359,3 +361,23 @@ class VotoMesaReportado(TimeStampedModel):
 
     def __str__(self):
         return f"{self.mesa} - {self.opcion}: {self.votos}"
+
+
+"""
+por si queremos mejorar lo que se muestra con nombres que entendemos
+
+class Candidato(models.Model):
+    nombre = models.CharField(max_length=140)
+
+    def __str__(self):
+        return self.nombre
+
+class CandidatoEnEleccion(models.Model):
+    eleccion = models.ForeignKey(Eleccion)
+    partido = models.ForeignKey(Partido)
+    candidato = models.ForeignKey(Candidato)
+    orden = models.PositiveIntegerFields(default=0, help_text='Si corresponde, el orden (ej legisladores)')
+
+    class Meta:
+        unique_together = ('eleccion', 'partido', 'candidato')
+"""

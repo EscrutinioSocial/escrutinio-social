@@ -98,7 +98,7 @@ class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
     def sección(o):
         return o.circuito.seccion.numero
 
-    list_display = ('nombre', 'direccion', 'ciudad', 'circuito', sección, 'mesas_desde_hasta', 'electores')
+    list_display = ('nombre', 'direccion', 'ciudad', 'circuito', sección, 'mesas_desde_hasta', 'electores', 'estado_geolocalizacion')
     list_display_links = ('nombre',)
     list_filter = (HasLatLongListFilter, 'circuito__seccion', 'circuito')
     search_fields = (
@@ -138,6 +138,14 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     )
 
     def get_row_actions(self, obj):
+
+        if obj.eleccion.count() == 0:
+            url = 'NO HAY ELECCION DEFINIDA PARA ESTA MESA'
+            extra_label = 'No hay eleccion definida'
+        else:
+            url = reverse('resultados-eleccion', args=(obj.eleccion.first().id,)) + f'?mesa={obj.id}',
+            extra_label = ''
+
         row_actions = [
             {
                 'label': 'Escuela',
@@ -145,8 +153,8 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
                 'enabled': True,
             },
             {
-                'label': 'Resultados Reportados',
-                'url': reverse('resultados-eleccion', args=(obj.eleccion.first().id,)) + f'?mesa={obj.id}',
+                'label': f'Resultados Reportados {extra_label}',
+                'url': url,
                 'enabled': obj.tiene_reporte,
             },
         ]

@@ -1,11 +1,13 @@
 from fabric.api import run, env, cd, prefix
 from fabric.decorators import roles
 from fabric.contrib.files import append
-from escrutinio_social.local_settings import HOSTS, HOST_USER, VENV, PROJECT_PATH, PROJECT_USER
+from escrutinio_social.local_settings import (HOSTS, HOST_USER, VENV,
+                                                PROJECT_PATH, PROJECT_USER,
+                                                ROLE_DEFS)
 
 env.hosts = HOSTS
 env.user = HOST_USER
-
+env.roledefs.update(ROLE_DEFS)
 
 @roles(PROJECT_USER)
 def manage(command):
@@ -52,15 +54,15 @@ def importar_actas():
 def deploy():
     with cd(PROJECT_PATH):
         run("git pull")
-    run("supervisorctl restart neuquen")
+    run("sudo supervisorctl restart escrutinio")
 
 
 def full_deploy():
     with cd(PROJECT_PATH):
         run("git pull")
-        run("git checkout cba")
+        run("git checkout master")
         run(f"{VENV}bin/pip install -r requirements.txt")
     manage("migrate")
-    manage("loaddata fixtures/neuquen.json")
+    # NO CREO QUE LO NECESITEMOS manage("loaddata fixtures/neuquen.json")
     manage("collectstatic --noinput")
-    run("supervisorctl restart neuquen")
+    run("sudo supervisorctl restart escrutinio")
