@@ -11,7 +11,7 @@ def calcular_dhont(bancas=10, valores=[]):
             resultado_detalles: una lista de diccionarios con cada una de las bancas
             resultado_final: diccionario con el partido como key y la cantidad de bancas como valor
     '''
-    
+
     total_votos = 0
     coeficientes = []
     for elemento in valores:
@@ -36,6 +36,7 @@ def calcular_dhont(bancas=10, valores=[]):
 
     return resultado_detalles, resultado_final
 
+
 """ PRUEBA
 valores_de_prueba = [
         {'nombre': 'Partido 1', 'valor': 1500},
@@ -48,7 +49,7 @@ valores_de_prueba = [
         {'nombre': 'Partido 8', 'valor': 50},
         ]
 
-res, final = calcular_dhont(bancas=44, valores=valores_de_prueba)
+res, final = calcular_dhont(bancas=10, valores=valores_de_prueba)
 c = 1
 for r in res:
     nombre = r['nombre']
@@ -58,4 +59,19 @@ for r in res:
 
 print('################')
 print(final)
+"""
+
+""" RESPUESTA:
+Banca 1: Partido: Partido 3 Coeficiente: 3500.0
+Banca 2: Partido: Partido 2 Coeficiente: 2500.0
+Banca 3: Partido: Partido 3 Coeficiente: 1750.0
+Banca 4: Partido: Partido 1 Coeficiente: 1500.0
+Banca 5: Partido: Partido 2 Coeficiente: 1250.0
+Banca 6: Partido: Partido 3 Coeficiente: 1166.67
+Banca 7: Partido: Partido 3 Coeficiente: 875.0
+Banca 8: Partido: Partido 2 Coeficiente: 833.33
+Banca 9: Partido: Partido 5 Coeficiente: 800.0
+Banca 10: Partido: Partido 1 Coeficiente: 750.0
+################
+{'Partido 3': 4, 'Partido 2': 3, 'Partido 1': 2, 'Partido 5': 1}
 """
