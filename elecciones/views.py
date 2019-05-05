@@ -230,6 +230,8 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
 
         mesas_escrutadas = todas_mesas_escrutadas.count()
         total_mesas = Mesa.objects.filter(lookups2, eleccion=eleccion).count()
+        if total_mesas == 0:
+            total_mesas = 1
         porcentaje_mesas_escrutadas = f'{mesas_escrutadas*100/total_mesas:.2f}'
 
 
