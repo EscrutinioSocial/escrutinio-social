@@ -324,6 +324,11 @@ class Eleccion(models.Model):
     fecha = models.DateTimeField(blank=True, null=True)
     opciones = models.ManyToManyField(Opcion, related_name='elecciones')
 
+    # opciones de d'hont
+    mostrar_dhont = models.BooleanField(default=False, help_text="Mostrar distribucion de D'hont en resultados")
+    bancas_dhont = models.PositiveIntegerField(default=44, help_text='Cantidad de bancas a repartir')
+    bancas_al_primero = models.PositiveIntegerField(default=0, help_text="En algunos casos (concejales) se hace un D'Hont pero se garantizan N bancas al primero")
+
     def get_absolute_url(self):
         return reverse('resultados-eleccion', args=[self.id])
 
