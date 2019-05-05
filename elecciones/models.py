@@ -294,6 +294,7 @@ class Mesa(models.Model):
 class Partido(models.Model):
     orden = models.PositiveIntegerField(help_text='Orden opcion')
     numero = models.PositiveIntegerField(null=True, blank=True)
+    codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True)
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=30, default='')
     color = models.CharField(max_length=30, default='', blank=True)
@@ -406,3 +407,23 @@ def referentes_cambiaron(sender, instance, action, reverse,
         for fiscal in fiscales:
             for escuela in escuelas:
                 AsignacionFiscalGeneral.objects.create(eleccion=eleccion, lugar_votacion=escuela, fiscal=fiscal)
+
+
+"""
+por si queremos mejorar lo que se muestra con nombres que entendemos
+
+class Candidato(models.Model):
+    nombre = models.CharField(max_length=140)
+
+    def __str__(self):
+        return self.nombre
+
+class CandidatoEnEleccion(models.Model):
+    eleccion = models.ForeignKey(Eleccion)
+    partido = models.ForeignKey(Partido)
+    candidato = models.ForeignKey(Candidato)
+    orden = models.PositiveIntegerFields(default=0, help_text='Si corresponde, el orden (ej legisladores)')
+
+    class Meta:
+        unique_together = ('eleccion', 'partido', 'candidato')
+"""
