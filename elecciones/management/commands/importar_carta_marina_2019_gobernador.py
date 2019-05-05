@@ -70,18 +70,28 @@ class Command(escrutinio_socialBaseCommand):
             coordenadas = [to_float(row['Longitud']), to_float(row['Latitud'])]
             if coordenadas[0] and coordenadas[1]:
                 geom = {'type': 'Point', 'coordinates': coordenadas}
+                if row['Estado Geolocalizacion'] == 'Match':
+                    estado_geolocalizacion = 9
+                elif row['Estado Geolocalizacion'] == 'Partial Match':
+                    estado_geolocalizacion = 5
             else:
                 geom = None
+                estado_geolocalizacion = 0
+
+            
 
             escuela, created = LugarVotacion.objects.get_or_create(
                 circuito=circuito,
                 nombre=row['Establecimiento'],
                 direccion=row['Direccion'],
                 ciudad=row['Ciudad'] or '',
-                barrio=row['Barrio'] or '',
-                geom=geom,
-                electores=int(row['electores'])
-            )
+                barrio=row['Barrio'] or ''
+                )
+            escuela.electores = int(row['electores'])
+            escuela.geom = geom
+            escuela.estado_geolocalizacion = estado_geolocalizacion
+            escuela.save()
+
             self.log(escuela, created)
             
             for mesa_nro in range(int(row['Mesa desde']), int(row['Mesa Hasta']) + 1):

@@ -118,6 +118,7 @@ class LugarVotacion(models.Model):
     calidad = models.CharField(max_length=20, help_text='calidad de la geolocalizacion', editable=False, blank=True)
     electores = models.PositiveIntegerField(null=True, blank=True)
     geom = PointField(null=True)
+    estado_geolocalizacion = models.PositiveIntegerField(default=0, help_text='Indicador (0-10) de que confianza hay en la geolozalización')
 
     # denormalizacion para hacer queries más simples
     latitud = models.FloatField(null=True, editable=False)
