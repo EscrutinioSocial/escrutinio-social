@@ -11,6 +11,9 @@ CSV = Path(settings.BASE_DIR) / 'elecciones/data/partidos-cba-2019.csv'
 class Command(BaseCommand):
     help = "Importar lista de partidos"
 
+    # info acá: https://www.fiscaldemesa.com.ar/2019/04/08/cordoba-candidatos-provinciales-2019/
+    # y en las BUS: https://github.com/OpenDataCordoba/BUS-Boleta-Unica-de-Sufragio-elecciones-Cordoba-2019
+
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS('Leyendo CSV'))
 
