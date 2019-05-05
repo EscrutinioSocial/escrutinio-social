@@ -30,7 +30,7 @@ def calcular_dhont(bancas=10, valores=[]):
 
     return resultado_detalles, resultado_final
 
-
+""" PRUEBA
 valores_de_prueba = [
         {'nombre': 'Partido 1', 'valor': 1500},
         {'nombre': 'Partido 2', 'valor': 2500},
@@ -52,4 +52,4 @@ for r in res:
 
 print('################')
 print(final)
-
+"""
