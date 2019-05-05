@@ -268,6 +268,13 @@ def elegir_acta_a_cargar(request):
 
     if mesas.exists():
         mesa = mesas[0]
+        # se marca que se inicia una carga
+        mesa.taken = timezone.now()
+        mesa.save(update_fields=['taken'])
+
+        # FIX ME: qué pasa si un dataentry cuelga cargando en una elección que no es la primera?
+        # se repartirá esa mesa de nuevo?
+
         return redirect(
             'mesa-cargar-resultados',
             eleccion_id=mesa.eleccion.first().id,
@@ -284,9 +291,6 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
     eleccion = get_object_or_404(Eleccion, id=eleccion_id)
     mesa = get_object_or_404(Mesa, eleccion=eleccion, numero=mesa_numero)
     VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=eleccion.opciones.count())
-    # se marca que se inicia una carga
-    mesa.taken = timezone.now()
-    mesa.save(update_fields=['taken'])
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila
@@ -316,7 +320,6 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
     if request.method == 'POST' or qs:
         is_valid = formset.is_valid()
 
-    # eleccion = Eleccion.objects.last()
     if is_valid:
 
         try:
@@ -341,6 +344,11 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
 
             index_actual = elecciones_mesa.index(eleccion.id)
             siguiente = elecciones_mesa[index_actual + 1]
+
+            # vuelvo a pedir un token
+            mesa.taken = timezone.now()
+            mesa.save(update_fields=['taken'])
+
             return redirect(
                 'mesa-cargar-resultados',
                 eleccion_id=siguiente,

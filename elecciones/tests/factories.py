@@ -2,7 +2,7 @@ import factory
 from django.contrib.auth.models import User
 from factory.django import DjangoModelFactory
 from faker import Faker
-from elecciones.views import TOTAL, POSITIVOS
+from elecciones.views import TOTAL
 fake = Faker('es_ES')
 
 
@@ -36,7 +36,7 @@ class EleccionFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Eleccion'
         django_get_or_create = ('id',)
-    id = factory.Sequence(lambda n: n + 3)
+    id = factory.Sequence(lambda n: n)
     nombre = factory.LazyAttribute(lambda obj: f"elecciones-{obj.id}")
     slug = factory.LazyAttribute(lambda obj: obj.nombre)
 
@@ -84,51 +84,39 @@ class LugarVotacionFactory(DjangoModelFactory):
 class MesaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Mesa'
-    eleccion = factory.SubFactory(EleccionFactory, id=1)
     numero = factory.Sequence(lambda n: n + 1)
     lugar_votacion = factory.SubFactory(LugarVotacionFactory)
     circuito = factory.LazyAttribute(lambda obj: obj.lugar_votacion.circuito)
     electores = 100
 
+    @factory.post_generation
+    def eleccion(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for eleccion in extracted:
+                self.eleccion.add(eleccion)
+        else:
+            self.eleccion.add(EleccionFactory(id=1))
 
-class FiscalGeneralFactory(DjangoModelFactory):
+
+class FiscalFactory(DjangoModelFactory):
     class Meta:
         model = 'fiscales.Fiscal'
-    user = factory.SubFactory('User')
+    user = factory.SubFactory(UserFactory)
     estado = 'CONFIRMADO'
-    apellido = fake.last_name_male()
-    nombres = fake.first_name_male()
+    apellido = fake.last_name()
+    nombres = fake.first_name()
     dni = factory.Sequence(lambda n: f'{n}00000{n}')
-    tipo = 'general'
-
-
-
-class FiscalDeMesaFactory(FiscalGeneralFactory):
-    tipo = 'de_mesa'
-
 
 
 class VotoMesaReportadoFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.VotoMesaReportado'
     mesa = factory.SubFactory(MesaFactory)
-    opcion = factory.SubFactory(OpcionFactory)
-    fiscal = factory.SubFactory(FiscalDeMesaFactory)
-
-
-class AsignacionFiscalGeneralFactory(DjangoModelFactory):
-    class Meta:
-        model = 'fiscales.AsignacionFiscalGeneral'
-    lugar_votacion = factory.SubFactory(LugarVotacionFactory)
     eleccion = factory.SubFactory(EleccionFactory, id=1)
-    fiscal = factory.SubFactory(FiscalGeneralFactory)
-
-
-class AsignacionFiscalDeMesaFactory(DjangoModelFactory):
-    class Meta:
-        model = 'fiscales.AsignacionFiscalDeMesa'
-    mesa = factory.SubFactory(MesaFactory)
-    fiscal = factory.SubFactory(FiscalDeMesaFactory)
+    opcion = factory.SubFactory(OpcionFactory)
+    fiscal = factory.SubFactory(FiscalFactory)
 
 
 class AttachmentFactory(DjangoModelFactory):
