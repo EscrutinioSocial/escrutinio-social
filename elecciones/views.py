@@ -347,6 +347,11 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         else:
             context['para'] = 'Córdoba'
         eleccion = get_object_or_404(Eleccion, id=self.kwargs.get('pk', 1))
+
+        #TODO calcular resultados para d'hont
+        if eleccion.mostrar_dhont:
+            bancas = eleccion.bancas_dhont
+
         context['object'] = eleccion
         context['eleccion_id'] = eleccion.id
         context['resultados'] = self.get_resultados(eleccion)
