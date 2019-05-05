@@ -17,17 +17,17 @@ def to_float(val):
 
 class escrutinio_socialBaseCommand(BaseCommand):
 
-    def success(self, msg):
-        self.stdout.write(self.style.SUCCESS(msg))
+    def success(self, msg, ending='\n'):
+        self.stdout.write(self.style.SUCCESS(msg), ending=ending)
 
-    def warning(self, msg):
-        self.stdout.write(self.style.WARNING(msg))
+    def warning(self, msg, ending='\n'):
+        self.stdout.write(self.style.WARNING(msg), ending=ending)
 
-    def log(self, object, created=True):
+    def log(self, object, created=True, ending='\n'):
         if created:
-            self.success(f'creado {object}')
+            self.success(f'creado {object}', ending=ending)
         else:
-            self.warning(f'{object} ya existe')
+            self.warning(f'{object} ya existe', ending=ending)
 
 
 class Command(escrutinio_socialBaseCommand):
@@ -42,7 +42,9 @@ class Command(escrutinio_socialBaseCommand):
         eleccion_legisladores_distrito_unico, created = Eleccion.objects.get_or_create(slug='legisladores-dist-unico-cordoba-2019', nombre='Legisladores Distrito Único Córdoba 2019', fecha=fecha)
         eleccion_tribunal_de_cuentas_provincial, created = Eleccion.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha)
 
+        c = 0
         for row in reader:
+            c += 1
             depto = row['Nombre Seccion']
             numero_de_seccion = row['Seccion']
             seccion, created = Seccion.objects.get_or_create(nombre=depto, numero=numero_de_seccion)
@@ -87,6 +89,7 @@ class Command(escrutinio_socialBaseCommand):
                 ciudad=row['Ciudad'] or '',
                 barrio=row['Barrio'] or ''
                 )
+
             escuela.electores = int(row['electores'])
             escuela.geom = geom
             escuela.estado_geolocalizacion = estado_geolocalizacion
@@ -95,9 +98,12 @@ class Command(escrutinio_socialBaseCommand):
             self.log(escuela, created)
             
             for mesa_nro in range(int(row['Mesa desde']), int(row['Mesa Hasta']) + 1):
-                mesa, created = Mesa.objects.get_or_create(numero=mesa_nro,
-                                                            lugar_votacion=escuela,
-                                                            circuito=circuito)
+                
+                mesa, created = Mesa.objects.get_or_create(numero=mesa_nro)  # EVITAR duplicados en limpiezas de escuelas y otros
+                mesa.lugar_votacion=escuela
+                mesa.circuito=circuito
+                mesa.save()
+
                 if eleccion_gobernador_cordoba not in mesa.eleccion.all():
                     mesa.eleccion.add(eleccion_gobernador_cordoba)
                     self.success('Se agregó la mesa a la eleccion a gobernador')

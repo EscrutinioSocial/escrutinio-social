@@ -98,7 +98,7 @@ class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
     def sección(o):
         return o.circuito.seccion.numero
 
-    list_display = ('nombre', 'direccion', 'ciudad', 'circuito', sección, 'mesas_desde_hasta', 'electores')
+    list_display = ('nombre', 'direccion', 'ciudad', 'circuito', sección, 'mesas_desde_hasta', 'electores', 'estado_geolocalizacion')
     list_display_links = ('nombre',)
     list_filter = (HasLatLongListFilter, 'circuito__seccion', 'circuito')
     search_fields = (
