@@ -63,7 +63,7 @@ check_box</i><span class="badge">{{ mesas_a_confirmar_count }}</span></a>
 
 
         <li>
-            <a href="{% if request.user.is_staff %} {% url "resultados-eleccion" %}{% else %}#{% endif %}" class="collapsible-header" data-turbolinks="false">Resultados<i class="material-icons">pie_chart</i></a>
+            <a href="{% if request.user.is_staff %} {% url "resultados-eleccion"  1 %}{% else %}#{% endif %}" class="collapsible-header" data-turbolinks="false">Resultados<i class="material-icons">pie_chart</i></a>
         </li>
 
         {% if request.user.is_superuser %}
