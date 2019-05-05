@@ -138,7 +138,7 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     )
 
     def get_row_actions(self, obj):
-        if obj.eleccion is None:
+        if obj.eleccion.count() == 0:
             url = 'NO HAY ELECCION DEFINIDA PARA ESTA MESA'
         else:
             url = reverse('resultados-eleccion', args=(obj.eleccion.first().id,)) + f'?mesa={obj.id}',
