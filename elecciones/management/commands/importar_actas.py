@@ -3,7 +3,7 @@ from django.conf import settings
 
 from adjuntos.models import Email, Attachment
 from django.core.files.base import ContentFile
-from elecciones.management.commands.importar_carta_marina import escrutinio_socialBaseCommand
+from elecciones.management.commands.importar_carta_marina_2019_gobernador import escrutinio_socialBaseCommand
 
 
 
