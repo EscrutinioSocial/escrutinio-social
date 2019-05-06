@@ -336,15 +336,13 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
             # hubo otra carga previa.
             capture_exception(e)
             messages.error(request, 'Alguien cargó esta mesa con anterioridad')
+            return redirect('elegir-acta-a-cargar')
 
         # hay que cargar otra eleccion (categoria) de la misma mesa?
         # si es asi, se redirige a esa carga
-        elecciones_mesa = list(mesa.eleccion.values_list('id', flat=True))
-        if eleccion.id != elecciones_mesa[-1]:   # si no es la ultima
+        siguiente = mesa.siguiente_eleccion_sin_carga()
 
-            index_actual = elecciones_mesa.index(eleccion.id)
-            siguiente = elecciones_mesa[index_actual + 1]
-
+        if siguiente:
             # vuelvo a pedir un token
             mesa.taken = timezone.now()
             mesa.save(update_fields=['taken'])

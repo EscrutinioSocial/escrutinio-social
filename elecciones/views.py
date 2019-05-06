@@ -111,7 +111,6 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         elif 'seccion' in self.request.GET:
             return Seccion.objects.filter(id__in=self.request.GET.getlist('seccion'))
 
-
         elif 'circuito' in self.request.GET:
             return Circuito.objects.filter(id__in=self.request.GET.getlist('circuito'))
         elif 'lugarvotacion' in self.request.GET:

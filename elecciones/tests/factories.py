@@ -120,6 +120,16 @@ class VotoMesaReportadoFactory(DjangoModelFactory):
 
 
 class AttachmentFactory(DjangoModelFactory):
+    mesa = factory.SubFactory(MesaFactory)
     class Meta:
         model = 'adjuntos.Attachment'
 
+
+
+class ProblemaFactory(DjangoModelFactory):
+    reportado_por = factory.SubFactory(FiscalFactory)
+    mesa = factory.SubFactory(MesaFactory)
+    estado = 'pendiente'
+
+    class Meta:
+        model = 'problemas.Problema'

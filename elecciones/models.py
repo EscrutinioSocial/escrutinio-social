@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
-from django.db.models import Sum, IntegerField, Case, Value, When, F, Q
+from django.db.models import Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef, Subquery, Exists
 from django.conf import settings
 from djgeojson.fields import PointField
 from django.template.loader import render_to_string
@@ -17,6 +17,7 @@ from model_utils.fields import StatusField, MonitorField
 from model_utils.models import TimeStampedModel
 from model_utils import Choices
 from adjuntos.models import Attachment
+from problemas.models import Problema
 
 
 class Seccion(models.Model):
@@ -207,22 +208,59 @@ class Mesa(models.Model):
     carga_confirmada = models.BooleanField(default=False)
 
 
+    def siguiente_eleccion_sin_carga(self):
+        for eleccion in self.eleccion.all().order_by('id'):
+            if not VotoMesaReportado.objects.filter(mesa=self, eleccion=eleccion).exists():
+                return eleccion
+
     @classmethod
-    def con_carga_pendiente(cls, elecciones=[1], wait=2):
+    def con_carga_pendiente(cls, wait=2):
+        """
+        Una mesa cargable es aquella que
+           - no este tomada dentro de los ultimos `wait` minutos
+           - no este marcada con problemas o todos su problemas esten resueltos
+           - y tenga al menos una eleccion asociada que no tenga votosreportados para esa mesa
+        """
         desde = timezone.now() - timedelta(minutes=wait)
 
-        return cls.objects.filter(
-            votomesareportado__isnull=True,
+
+        qs = cls.objects.filter(
             attachments__isnull=False,
-            eleccion__id__in=elecciones,    # que fierooo
             orden_de_carga__gte=1,
         ).filter(
-            # esto esta'mal. puede tener problema resuelto y otro problema no resuelto
-            Q(problemas__isnull=True) # | Q(problemas__estado='resuelto')      # sin problemas en curso
-        ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
-        ).distinct()
+        ).annotate(
+            a_cargar = Count('eleccion')
+        ).annotate(
+            cargadas=Count(
+                Subquery(
+                    # cantidad de elecciones para las que hay votos reportados en la mesa
+                    VotoMesaReportado.objects.filter(
+                        mesa__id=OuterRef('id')
+                    ).values('eleccion').distinct()
 
+                    # Eleccion.objects.filter(
+                    #    mesa__id=OuterRef('id'),
+                    #    votomesareportado__isnull=False
+                    # ).distinct().values('id')
+                )
+            )
+        )
+        # qs.values('id', 'a_cargar', 'cargadas')
+        # import pdb; pdb.set_trace()
+        qs = qs.filter(
+            cargadas__lt=F('a_cargar')
+        ).annotate(
+            tiene_problemas=Exists(
+                Problema.objects.filter(
+                    Q(mesa__id=OuterRef('id')),
+                    ~Q(estado='resuelto')
+                )
+            )
+        ).filter(
+            tiene_problemas=False
+        ).distinct()
+        return qs
 
     @classmethod
     def con_carga_a_confirmar(cls):
