@@ -168,11 +168,25 @@ $(function() {
    var data = [{
       y: {{ chart_values|safe }},
       x: {{ chart_keys|safe }},
+      text: {{ chart_values|safe }},  // mosytrar los numeros en las barras
+      textposition: 'auto',
+      opacity: 0.6,
       type: 'bar',
-      marker: {colors: 'red'}
+      marker: {color: 'rgb(200,48,107)',
+                line: {
+                      color: 'rgb(8,48,107)',
+                      width: 1.5,
+                }
+              }
     }];
 
-    var layout = {height: 400, width: 900};
+    var layout = {height: 600,
+                    width: 1200,
+                    xaxis: {tickangle: 15,
+                            tickfont: {size: 9}
+                            }
+                    };
+
     Plotly.newPlot('columnchart-{{eleccion_id}}', data, layout);
 
 
