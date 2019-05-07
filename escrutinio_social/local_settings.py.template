@@ -17,10 +17,10 @@ DEFAULT_CEL_LOCAL = '0351 15 XXXXX'
 
 FULL_SITE_URL = 'https://this-site.com'
 
-IMAP_HOST = 'imap.gmail.com'
-IMAP_USERNAME = 'foo@bar.com'
-IMAP_PASSWORD = '***'
-IMAP_MAILBOX = 'INBOX'
+IMAPs = [
+    {'email': 'e1@gmail.com', 'host': 'imap.gmail.com', 'user': 'e1@gmail.com', 'pass': 'xxxx', 'mailbox': 'INBOX'},
+    {'email': 'eml@gmail.com', 'host': 'imap.gmail.com', 'user': 'e2@gmail.com', 'pass': 'xxxx', 'mailbox': 'INBOX'}
+]
 
 #FABFILE
 HOSTS=['IP.DEL.SERVI.DOR']
