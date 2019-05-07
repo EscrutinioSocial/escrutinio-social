@@ -8,7 +8,7 @@ from elecciones.management.commands.importar_carta_marina_2019_gobernador import
 
 
 class Command(escrutinio_socialBaseCommand):
-    help = "Importa adjunto del email {}".format(settings.IMAP_ACCOUNT)
+    help = "Importa adjunto de los emails configurados"
 
     def add_arguments(self, parser):
         parser.add_argument(
