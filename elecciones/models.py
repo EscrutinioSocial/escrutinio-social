@@ -331,7 +331,7 @@ class Opcion(models.Model):
                              output_field=IntegerField())) for id in MOSTRABLES}
 
     nombre = models.CharField(max_length=100)
-    nombre_corto = models.CharField(max_length=10, default='')
+    nombre_corto = models.CharField(max_length=20, default='')
     partido = models.ForeignKey(Partido, null=True, blank=True, related_name='opciones')   # blanco, / recurrido / etc
     orden = models.PositiveIntegerField(
         help_text='Orden en la boleta', null=True, blank=True)
@@ -355,7 +355,7 @@ class Opcion(models.Model):
 
     def __str__(self):
         if self.partido:
-            return f'{self.codigo_dne} - {self.nombre}' #  -- {self.partido.nombre_corto}
+            return f'{self.partido.codigo} - {self.nombre}' #  -- {self.partido.nombre_corto}
         return self.nombre
 
 
@@ -365,6 +365,8 @@ class Eleccion(models.Model):
     nombre = models.CharField(max_length=100)
     fecha = models.DateTimeField(blank=True, null=True)
     opciones = models.ManyToManyField(Opcion, related_name='elecciones')
+    color = models.CharField(max_length=10, default='black', help_text='Color para css (red o #FF0000)')
+    back_color = models.CharField(max_length=10, default='white', help_text='Color para css (red o #FF0000)')
 
     def get_absolute_url(self):
         return reverse('resultados-eleccion', args=[self.id])

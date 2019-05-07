@@ -40,7 +40,7 @@ class Command(escrutinio_socialBaseCommand):
         eleccion_gobernador_cordoba, created = Eleccion.objects.get_or_create(slug='gobernador-cordoba-2019', nombre='Gobernador Córdoba 2019', fecha=fecha)
         eleccion_intendente_cordoba, created = Eleccion.objects.get_or_create(slug='intendente-cordoba-2019', nombre='Intendente Córdoba 2019', fecha=fecha)
         eleccion_legisladores_distrito_unico, created = Eleccion.objects.get_or_create(slug='legisladores-dist-unico-cordoba-2019', nombre='Legisladores Distrito Único Córdoba 2019', fecha=fecha)
-        eleccion_tribunal_de_cuentas_provincial, created = Eleccion.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha)
+        # eleccion_tribunal_de_cuentas_provincial, created = Eleccion.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha)
 
         c = 0
         for row in reader:
@@ -110,9 +110,9 @@ class Command(escrutinio_socialBaseCommand):
                 if eleccion_legisladores_distrito_unico not in mesa.eleccion.all():
                     mesa.eleccion_add(eleccion_legisladores_distrito_unico)
                     self.success('Se agregó la mesa a la eleccion a legislador dist unico')
-                if eleccion_tribunal_de_cuentas_provincial not in mesa.eleccion.all():
-                    mesa.eleccion_add(eleccion_tribunal_de_cuentas_provincial)
-                    self.success('Se agregó la mesa a la eleccion a trib de cuentas provincial')
+                #if eleccion_tribunal_de_cuentas_provincial not in mesa.eleccion.all():
+                #    mesa.eleccion.add(eleccion_tribunal_de_cuentas_provincial)
+                #    self.success('Se agregó la mesa a la eleccion a trib de cuentas provincial')
 
                 # agregar la eleccion a legislador departamental
                 if eleccion_legislador_departamental not in mesa.eleccion.all():
