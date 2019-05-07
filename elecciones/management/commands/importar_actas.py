@@ -18,7 +18,9 @@ class Command(escrutinio_socialBaseCommand):
 
     def handle(self, *args, **options):
 
-        for imap in settings.IMAPS:
+
+        imaps = settings.IMAPS
+        for imap in imaps:
         
             imapper = easyimap.connect(imap['host'], imap['user'], imap['pass'], imap['mailbox'])
             self.success('Loggueado como {}'.format(imap['user']))
