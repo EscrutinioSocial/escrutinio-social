@@ -272,12 +272,9 @@ def elegir_acta_a_cargar(request):
         mesa.taken = timezone.now()
         mesa.save(update_fields=['taken'])
 
-        # FIX ME: qué pasa si un dataentry cuelga cargando en una elección que no es la primera?
-        # se repartirá esa mesa de nuevo?
-
         return redirect(
             'mesa-cargar-resultados',
-            eleccion_id=mesa.eleccion.first().id,
+            eleccion_id=mesa.siguiente_eleccion_sin_carga().id,
             mesa_numero=mesa.numero
         )
 
@@ -343,13 +340,13 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
         siguiente = mesa.siguiente_eleccion_sin_carga()
 
         if siguiente:
-            # vuelvo a pedir un token
+            # vuelvo a marcar un token
             mesa.taken = timezone.now()
             mesa.save(update_fields=['taken'])
 
             return redirect(
                 'mesa-cargar-resultados',
-                eleccion_id=siguiente,
+                eleccion_id=siguiente.id,
                 mesa_numero=mesa.numero
             )
 

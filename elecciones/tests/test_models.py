@@ -21,6 +21,12 @@ def test_mesa_siguiente_eleccion(db):
     assert m1.siguiente_eleccion_sin_carga() is None
 
 
+def test_con_carga_pendiente_excluye_sin_foto(db):
+    m1 = MesaFactory()
+    assert m1.attachments.count() == 0
+    Mesa.con_carga_pendiente().count() == 0
+
+
 def test_con_carga_pendiente_excluye_taken(db):
     m1 = AttachmentFactory().mesa
     m2 = AttachmentFactory().mesa

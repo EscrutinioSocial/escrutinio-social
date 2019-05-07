@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
-from django.db.models import Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef, Subquery, Exists
+from django.db.models import Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef, Subquery, Exists, Max
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from djgeojson.fields import PointField
@@ -98,17 +98,11 @@ class Circuito(models.Model):
         #)
         return reverse('resultados-eleccion') + f'?circuito={self.id}'
 
-
-    @property
     def proximo_orden_de_carga(self):
-        ordenes = Mesa.objects.filter(
-            eleccion__id=1,
+        orden = Mesa.objects.filter(
             lugar_votacion__circuito=self
-        ).values_list(
-            'orden_de_carga',
-            flat=True
-        )
-        return max(ordenes) + 1
+        ).aggregate(v=Max('orden_de_carga'))['v'] or 0
+        return orden + 1
 
 
 class LugarVotacion(models.Model):

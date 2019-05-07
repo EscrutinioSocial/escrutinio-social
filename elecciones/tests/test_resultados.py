@@ -34,11 +34,8 @@ def carta_marina(db):
 
 
 @pytest.fixture()
-def fiscal_client(db, admin_user):
+def fiscal_client(db, admin_user, client):
     """A Django test client logged in as an admin user."""
-    from django.test.client import Client
-
-    client = Client()
     FiscalFactory(user=admin_user)
     client.login(username=admin_user.username, password='password')
     return client
@@ -179,6 +176,15 @@ def test_mesa_orden(carta_marina):
     assert m2.orden_de_carga == 0
     AttachmentFactory(mesa=m2)
     assert m2.orden_de_carga == 2
+
+
+def test_orden_para_circuito(db):
+    c1 = CircuitoFactory()  # sin mesas
+    assert c1.proximo_orden_de_carga() == 1
+    MesaFactory(lugar_votacion__circuito=c1)
+    MesaFactory(lugar_votacion__circuito=c1, orden_de_carga=3)
+    assert c1.proximo_orden_de_carga() == 4
+
 
 
 def test_elegir_acta(carta_marina, fiscal_client):

@@ -93,5 +93,5 @@ def asignar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     """
     if instance.mesa and not instance.mesa.votomesareportado_set.exists():
         mesa = instance.mesa
-        mesa.orden_de_carga = mesa.circuito.proximo_orden_de_carga
+        mesa.orden_de_carga = mesa.circuito.proximo_orden_de_carga()
         mesa.save(update_fields=['orden_de_carga'])
