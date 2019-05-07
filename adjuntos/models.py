@@ -1,3 +1,4 @@
+from functools import partial
 from datetime import timedelta
 from urllib.parse import quote_plus
 from django.utils import timezone
@@ -5,9 +6,16 @@ from django.db.models import Q
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import post_save
-
+import hashlib
 from model_utils import Choices
 from versatileimagefield.fields import VersatileImageField
+
+
+def hash_file(file, block_size=65536):
+    hasher = hashlib.blake2b()
+    for buf in iter(partial(file.read, block_size), b''):
+        hasher.update(buf)
+    return hasher.hexdigest()
 
 
 class Email(models.Model):
@@ -57,6 +65,7 @@ class Attachment(models.Model):
         width_field='width',
         height_field='height'
     )
+    foto_digest = models.CharField(max_length=128, unique=True)
 
     height = models.PositiveIntegerField(
         'Image Height',
@@ -68,10 +77,16 @@ class Attachment(models.Model):
         blank=True,
         null=True
     )
+
     mesa = models.ForeignKey('elecciones.Mesa', null=True, related_name='attachments')
     taken = models.DateTimeField(null=True)
     problema = models.CharField(max_length=100, null=True, blank=True, choices=PROBLEMAS)
 
+    def save(self, *args, **kwargs):
+        if self.foto:
+            self.foto.file.open()
+            self.foto_digest = hash_file(self.foto.file)
+        super().save(*args, **kwargs)
 
     @classmethod
     def sin_asignar(cls, wait=2):

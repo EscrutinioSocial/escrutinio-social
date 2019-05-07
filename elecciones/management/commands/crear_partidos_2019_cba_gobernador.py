@@ -3,11 +3,11 @@ from django.conf import settings
 
 from adjuntos.models import Email, Attachment
 from django.core.files.base import ContentFile
-from elecciones.management.commands.importar_carta_marina import escrutinio_socialBaseCommand
+from elecciones.management.commands.importar_carta_marina import BaseCommand
 from elecciones.models import Partido
 
 
-class Command(escrutinio_socialBaseCommand):
+class Command(BaseCommand):
     help = "Importa adjunto del email {}".format(settings.IMAP_ACCOUNT)
 
     def handle(self, *args, **options):

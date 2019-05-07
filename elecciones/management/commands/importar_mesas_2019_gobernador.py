@@ -20,14 +20,14 @@ def to_float(val):
         return None
 
 
-class escrutinio_socialBaseCommand(BaseCommand):
+class BaseCommand(BaseCommand):
 
     def success(self, msg):
         self.stdout.write(self.style.SUCCESS(msg))
 
     def warning(self, msg):
         self.stdout.write(self.style.WARNING(msg))
-    
+
     def error(self, msg):
         self.stdout.write(self.style.ERROR(msg))
 
@@ -38,7 +38,7 @@ class escrutinio_socialBaseCommand(BaseCommand):
             self.warning(f'{object} ya existe')
 
 
-class Command(escrutinio_socialBaseCommand):
+class Command(BaseCommand):
     help = "Importar carta marina"
 
     """ hay 3 mesas que son de una escuela y no son nros consecutivos
@@ -70,13 +70,13 @@ mesa_8653.save()
             c += 1
             mesa_nro = int(row['Mesa'])
             electores = int(row['CantElectores'])
-            
+
             if electores < 1:
                 err = f'La mesa {mesa_nro} tiene {electores} electores'
                 self.error(err)
                 errores.append(err)
                 continue
-            
+
             if electores > 405:
                 err = f'La mesa {mesa_nro} tiene {electores} electores'
                 self.error(err)
@@ -91,12 +91,12 @@ mesa_8653.save()
                 self.error(err)
                 errores.append(err)
                 continue
-                
+
             mesa.electores = electores
             mesa.save()
 
             self.stdout.write(self.style.SUCCESS(f"Mesa {mesa_nro}: {electores} electores"), ending='\r')
-        
+
         self.success(f"Se procesaron {c} mesas con {len(errores)} errores")
         for error in errores:
             self.error(error)

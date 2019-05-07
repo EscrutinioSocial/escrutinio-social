@@ -2,8 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse
 from django.urls import reverse
+from django.db import IntegrityError
 from django.views.generic.edit import UpdateView, FormView
+
 from elecciones.views import StaffOnlyMixing
+
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 
@@ -12,7 +15,6 @@ from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
 from .models import Attachment
 from .forms import AsignarMesaForm, AgregarAttachmentsModelForm
-
 
 
 @staff_member_required
@@ -80,15 +82,18 @@ class AgregarAdjuntos(StaffOnlyMixing, FormView):
             c = 0
             for f in files:
                 if f.content_type not in ('image/jpeg', 'image/png'):
-                    messages.warning(self.request, f'{f.name} ignorado. No es imagen' )
+                    messages.warning(self.request, f'{f.name} ignorado. No es una imágen' )
                     continue
 
-                instance = Attachment(
-                    mimetype=f.content_type
-                )
-                instance.foto.save(f.name, f, save=False)
-                instance.save()
-                c += 1
+                try:
+                    instance = Attachment(
+                        mimetype=f.content_type
+                    )
+                    instance.foto.save(f.name, f, save=False)
+                    instance.save()
+                    c += 1
+                except IntegrityError:
+                    messages.warning(self.request, f'{f.name} ya existe en el sistema' )
 
             if c:
                 messages.success(self.request, f'Subiste {c} imagenes de actas. Gracias!')

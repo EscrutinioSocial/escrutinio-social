@@ -15,7 +15,7 @@ def to_float(val):
         return None
 
 
-class escrutinio_socialBaseCommand(BaseCommand):
+class BaseCommand(BaseCommand):
 
     def success(self, msg, ending='\n'):
         self.stdout.write(self.style.SUCCESS(msg), ending=ending)
@@ -30,7 +30,7 @@ class escrutinio_socialBaseCommand(BaseCommand):
             self.warning(f'{object} ya existe', ending=ending)
 
 
-class Command(escrutinio_socialBaseCommand):
+class Command(BaseCommand):
     help = "Importar carta marina"
 
     def handle(self, *args, **options):
