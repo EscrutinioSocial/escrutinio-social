@@ -32,11 +32,10 @@ class Command(BaseCommand):
         user.save()
 
         fiscal, created = Fiscal.objects.get_or_create(user=user)
-        fical.estado = 'CONFIRMADO'
+        fiscal.estado = 'CONFIRMADO'
         fiscal.notas = f'Generado automaticamente en el equipo {nombre} por el sistema'
-        fiscal.codigo_confirmacion = models.UUIDField(default=uuid.uuid4, editable=False)
         fiscal.email_confirmado = True
-        fical.apellido = f'{nombre}'
+        fiscal.apellido = f'{nombre}'
         fiscal.nombres = f'{nombre}'
         fiscal.save()
 
