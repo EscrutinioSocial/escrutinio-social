@@ -81,6 +81,7 @@ class LugarVotacionFactory(DjangoModelFactory):
     direccion = 'direccion'
 
 
+
 class MesaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Mesa'
@@ -95,9 +96,16 @@ class MesaFactory(DjangoModelFactory):
             return
         if extracted:
             for eleccion in extracted:
-                self.eleccion.add(eleccion)
+                MesaEleccionFactory(mesa=self, eleccion=eleccion)
         else:
-            self.eleccion.add(EleccionFactory(id=1))
+            MesaEleccionFactory(mesa=self)
+
+
+class MesaEleccionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'elecciones.MesaEleccion'
+    mesa = factory.SubFactory(MesaFactory)
+    eleccion = factory.SubFactory(EleccionFactory, id=1)
 
 
 class FiscalFactory(DjangoModelFactory):

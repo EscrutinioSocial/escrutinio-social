@@ -99,7 +99,7 @@ class Circuito(models.Model):
         return reverse('resultados-eleccion') + f'?circuito={self.id}'
 
     def proximo_orden_de_carga(self):
-        orden = Mesa.objects.filter(
+        orden = Mesa.objects.exclude(id=self.id).filter(
             lugar_votacion__circuito=self
         ).aggregate(v=Max('orden_de_carga'))['v'] or 0
         return orden + 1
@@ -184,13 +184,23 @@ def path_foto_acta(instance, filename):
     )
 
 
+class MesaEleccion(models.Model):
+    mesa = models.ForeignKey('Mesa')
+    eleccion = models.ForeignKey('Eleccion')
+    confirmada = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('mesa', 'eleccion')
+
+
+
 class Mesa(models.Model):
     ESTADOS_ = ('EN ESPERA', 'ABIERTA', 'CERRADA', 'ESCRUTADA')
     ESTADOS = Choices(*ESTADOS_)
     estado = StatusField(choices_name='ESTADOS', default='EN ESPERA')
     hora_escrutada = MonitorField(monitor='estado', when=['ESCRUTADA'])
 
-    eleccion = models.ManyToManyField('Eleccion')
+    eleccion = models.ManyToManyField('Eleccion', through='MesaEleccion')
     numero = models.PositiveIntegerField()
     es_testigo = models.BooleanField(default=False)
     circuito = models.ForeignKey(Circuito, null=True)
@@ -201,6 +211,10 @@ class Mesa(models.Model):
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
 
     carga_confirmada = models.BooleanField(default=False)
+
+
+    def eleccion_add(self, eleccion):
+        MesaEleccion.objects.get_or_create(mesa=self, eleccion=eleccion)
 
 
     def siguiente_eleccion_sin_carga(self):
@@ -217,7 +231,6 @@ class Mesa(models.Model):
            - y tenga al menos una eleccion asociada que no tenga votosreportados para esa mesa
         """
         desde = timezone.now() - timedelta(minutes=wait)
-
         qs = cls.objects.filter(
             attachments__isnull=False,
             orden_de_carga__gte=1,
@@ -232,9 +245,11 @@ class Mesa(models.Model):
                     VotoMesaReportado.objects.filter(
                         mesa__id=OuterRef('id')
                     ).values('eleccion').distinct()
-                ), 0
-            )
-        ).filter(
+                ), 0)
+        )
+        vals = qs.values('id', 'a_cargar', 'cargadas')
+        import ipdb; ipdb.set_trace()
+        qs = qs.filter(
             cargadas__lt=F('a_cargar')
         ).annotate(
             tiene_problemas=Exists(
@@ -246,6 +261,7 @@ class Mesa(models.Model):
         ).filter(
             tiene_problemas=False
         ).distinct()
+        import ipdb; ipdb.set_trace()
         return qs
 
     @classmethod
@@ -253,7 +269,6 @@ class Mesa(models.Model):
         return cls.objects.filter(
             votomesareportado__isnull=False,
             carga_confirmada=False,
-            problemas__isnull=True
         ).distinct()
 
 

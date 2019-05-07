@@ -51,8 +51,8 @@ def test_total_electores_en_eleccion(carta_marina):
     # nota: el factory de mesa indirectamente crea la eleccion con id=1 que es actual()
     e2 = EleccionFactory()
     m1, m2 = carta_marina[:2]
-    m1.eleccion.add(e2)
-    m2.eleccion.add(e2)
+    m1.eleccion_add(e2)
+    m2.eleccion_add(e2)
 
     assert Eleccion.objects.get(id=1).electores == 800
     assert e2.electores == 200
@@ -71,7 +71,7 @@ def test_electores_filtro_mesa_multiple_eleccion(fiscal_client):
     mesa1 = MesaFactory(electores=120)
     MesaFactory(electores=120)      # mesa2 solo de la eleccion 1
     e1 = EleccionFactory()
-    mesa1.eleccion.add(e1)      # mesa 1 tambien está asociada a e1
+    mesa1.eleccion_add(e1)      # mesa 1 tambien está asociada a e1
     url = reverse('resultados-eleccion', args=[e1.id])
 
     response = fiscal_client.get(url, {'mesa': mesa1.id})

@@ -63,7 +63,7 @@ def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
 def test_con_carga_pendiente_incluye_mesa_con_eleccion_sin_cargar(db):
     m1 = AttachmentFactory().mesa
     m2 = AttachmentFactory().mesa
-    m3 = AttachmentFactory().mesa
+    m3 = AttachmentFactory(mesa__id=1000).mesa
 
     # mesa 2 ya se cargo, se excluirá
     eleccion = m2.eleccion.first()
@@ -71,8 +71,8 @@ def test_con_carga_pendiente_incluye_mesa_con_eleccion_sin_cargar(db):
     VotoMesaReportadoFactory(mesa=m2, eleccion=eleccion, opcion=eleccion.opciones.last(), votos=12)
 
     # para mesa 3 se cargó la primera eleccion, pero tiene mas elecciones pendientes
-    m3.eleccion.add(EleccionFactory())
-    m3.eleccion.add(EleccionFactory())
+    m3.eleccion_add(EleccionFactory())
+    m3.eleccion_add(EleccionFactory())
     eleccion = m3.eleccion.first()
     VotoMesaReportadoFactory(mesa=m3, eleccion=eleccion, opcion=eleccion.opciones.all()[0], votos=20)
     VotoMesaReportadoFactory(mesa=m3, eleccion=eleccion, opcion=eleccion.opciones.all()[1], votos=20)
