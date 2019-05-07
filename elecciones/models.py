@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
 from django.db.models import Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef, Subquery, Exists
+from django.db.models.functions import Coalesce
 from django.conf import settings
 from djgeojson.fields import PointField
 from django.template.loader import render_to_string
@@ -223,7 +224,6 @@ class Mesa(models.Model):
         """
         desde = timezone.now() - timedelta(minutes=wait)
 
-
         qs = cls.objects.filter(
             attachments__isnull=False,
             orden_de_carga__gte=1,
@@ -232,23 +232,15 @@ class Mesa(models.Model):
         ).annotate(
             a_cargar = Count('eleccion')
         ).annotate(
-            cargadas=Count(
+            cargadas=Coalesce(
                 Subquery(
-                    # cantidad de elecciones para las que hay votos reportados en la mesa
+                    # elecciones para las que hay votos reportados en la mesa
                     VotoMesaReportado.objects.filter(
                         mesa__id=OuterRef('id')
                     ).values('eleccion').distinct()
-
-                    # Eleccion.objects.filter(
-                    #    mesa__id=OuterRef('id'),
-                    #    votomesareportado__isnull=False
-                    # ).distinct().values('id')
-                )
+                ), 0
             )
-        )
-        # qs.values('id', 'a_cargar', 'cargadas')
-        # import pdb; pdb.set_trace()
-        qs = qs.filter(
+        ).filter(
             cargadas__lt=F('a_cargar')
         ).annotate(
             tiene_problemas=Exists(
