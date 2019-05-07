@@ -8,6 +8,10 @@
 .tabs {
         height:100%;
 }
+
+.card-content {
+    background-color: {{ eleccion.back_color }};
+}
 </style>
 
 <script type="text/javascript">
@@ -41,7 +45,8 @@ $(document).ready(function(){
 
 
 {% block card-content %}
-    <div class="card-title"> Mesa {{ object.numero }} {{ eleccion}}
+    <div class="card-title"> Mesa {{ object.numero }} 
+        <b style='background-color: {{ eleccion.back_color }}; color: {{ eleccion.color }}'>{{ eleccion }}</b>
 
 
     <a class="waves-effect waves-light btn-flat right-align" href="{% url "reportar-problema" object.numero %}" >¿Problemas?</a></div>

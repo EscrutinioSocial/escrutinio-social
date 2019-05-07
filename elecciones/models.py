@@ -313,7 +313,7 @@ class Opcion(models.Model):
 
     def __str__(self):
         if self.partido:
-            return f'{self.codigo_dne} - {self.nombre}' #  -- {self.partido.nombre_corto}
+            return f'{self.partido.codigo} - {self.nombre}' #  -- {self.partido.nombre_corto}
         return self.nombre
 
 
@@ -323,6 +323,8 @@ class Eleccion(models.Model):
     nombre = models.CharField(max_length=100)
     fecha = models.DateTimeField(blank=True, null=True)
     opciones = models.ManyToManyField(Opcion, related_name='elecciones')
+    color = models.CharField(max_length=10, default='black', help_text='Color para css (red o #FF0000)')
+    back_color = models.CharField(max_length=10, default='white', help_text='Color para css (red o #FF0000)')
 
     def get_absolute_url(self):
         return reverse('resultados-eleccion', args=[self.id])

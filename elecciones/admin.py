@@ -201,6 +201,10 @@ class OpcionAdmin(admin.ModelAdmin):
     list_display = ['nombre_corto', 'partido', 'nombre']
 
 
+class EleccionAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'fecha']
+    search_fields = ['nombre']
+
 admin.site.register(Seccion, SeccionAdmin)
 admin.site.register(Circuito, CircuitoAdmin)
 admin.site.register(Partido, PartidoAdmin)
@@ -208,9 +212,4 @@ admin.site.register(LugarVotacion, LugarVotacionAdmin)
 admin.site.register(Mesa, MesaAdmin)
 admin.site.register(VotoMesaReportado, VotoMesaReportadoAdmin)
 admin.site.register(Opcion, OpcionAdmin)
-
-for model in [Eleccion]:
-    admin.site.register(model)
-
-
-# Register your models here.
+admin.site.register(Eleccion, EleccionAdmin)
