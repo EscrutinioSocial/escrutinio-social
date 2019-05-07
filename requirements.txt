@@ -1,4 +1,4 @@
-django==1.11.20
+django
 django-model-utils==3.0.0
 git+https://github.com/mgaitan/django-admin-row-actions#egg=django-admin-row-actions
 git+https://github.com/mgaitan/django-sneak.git@#egg=django-sneak
@@ -9,7 +9,7 @@ django-anymail==0.11.1
 django-attachments==1.1.1
 django-dbbackup==3.1.3.
 django-fancy-cache==0.9.0
-git+https://github.com/mgaitan/django-material#egg=django-fmaterial
+django-material==1.3
 django-extensions==1.8.1
 django-formtools==2.0
 html2text==2016.9.19

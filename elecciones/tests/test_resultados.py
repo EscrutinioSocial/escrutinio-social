@@ -34,11 +34,8 @@ def carta_marina(db):
 
 
 @pytest.fixture()
-def fiscal_client(db, admin_user):
+def fiscal_client(db, admin_user, client):
     """A Django test client logged in as an admin user."""
-    from django.test.client import Client
-
-    client = Client()
     FiscalFactory(user=admin_user)
     client.login(username=admin_user.username, password='password')
     return client
@@ -54,8 +51,8 @@ def test_total_electores_en_eleccion(carta_marina):
     # nota: el factory de mesa indirectamente crea la eleccion con id=1 que es actual()
     e2 = EleccionFactory()
     m1, m2 = carta_marina[:2]
-    m1.eleccion.add(e2)
-    m2.eleccion.add(e2)
+    m1.eleccion_add(e2)
+    m2.eleccion_add(e2)
 
     assert Eleccion.objects.get(id=1).electores == 800
     assert e2.electores == 200
@@ -74,7 +71,7 @@ def test_electores_filtro_mesa_multiple_eleccion(fiscal_client):
     mesa1 = MesaFactory(electores=120)
     MesaFactory(electores=120)      # mesa2 solo de la eleccion 1
     e1 = EleccionFactory()
-    mesa1.eleccion.add(e1)      # mesa 1 tambien está asociada a e1
+    mesa1.eleccion_add(e1)      # mesa 1 tambien está asociada a e1
     url = reverse('resultados-eleccion', args=[e1.id])
 
     response = fiscal_client.get(url, {'mesa': mesa1.id})
@@ -179,6 +176,15 @@ def test_mesa_orden(carta_marina):
     assert m2.orden_de_carga == 0
     AttachmentFactory(mesa=m2)
     assert m2.orden_de_carga == 2
+
+
+def test_orden_para_circuito(db):
+    c1 = CircuitoFactory()  # sin mesas
+    assert c1.proximo_orden_de_carga() == 1
+    MesaFactory(lugar_votacion__circuito=c1)
+    MesaFactory(lugar_votacion__circuito=c1, orden_de_carga=3)
+    assert c1.proximo_orden_de_carga() == 4
+
 
 
 def test_elegir_acta(carta_marina, fiscal_client):

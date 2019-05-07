@@ -5,7 +5,8 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
-from django.db.models import Sum, IntegerField, Case, Value, When, F, Q
+from django.db.models import Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef, Subquery, Exists, Max, Value
+from django.db.models.functions import Coalesce
 from django.conf import settings
 from djgeojson.fields import PointField
 from django.template.loader import render_to_string
@@ -17,6 +18,7 @@ from model_utils.fields import StatusField, MonitorField
 from model_utils.models import TimeStampedModel
 from model_utils import Choices
 from adjuntos.models import Attachment
+from problemas.models import Problema
 
 
 class Seccion(models.Model):
@@ -96,17 +98,11 @@ class Circuito(models.Model):
         #)
         return reverse('resultados-eleccion') + f'?circuito={self.id}'
 
-
-    @property
     def proximo_orden_de_carga(self):
-        ordenes = Mesa.objects.filter(
-            eleccion__id=1,
+        orden = Mesa.objects.exclude(id=self.id).filter(
             lugar_votacion__circuito=self
-        ).values_list(
-            'orden_de_carga',
-            flat=True
-        )
-        return max(ordenes) + 1
+        ).aggregate(v=Max('orden_de_carga'))['v'] or 0
+        return orden + 1
 
 
 class LugarVotacion(models.Model):
@@ -188,13 +184,23 @@ def path_foto_acta(instance, filename):
     )
 
 
+class MesaEleccion(models.Model):
+    mesa = models.ForeignKey('Mesa')
+    eleccion = models.ForeignKey('Eleccion')
+    confirmada = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('mesa', 'eleccion')
+
+
+
 class Mesa(models.Model):
     ESTADOS_ = ('EN ESPERA', 'ABIERTA', 'CERRADA', 'ESCRUTADA')
     ESTADOS = Choices(*ESTADOS_)
     estado = StatusField(choices_name='ESTADOS', default='EN ESPERA')
     hora_escrutada = MonitorField(monitor='estado', when=['ESCRUTADA'])
 
-    eleccion = models.ManyToManyField('Eleccion')
+    eleccion = models.ManyToManyField('Eleccion', through='MesaEleccion')
     numero = models.PositiveIntegerField()
     es_testigo = models.BooleanField(default=False)
     circuito = models.ForeignKey(Circuito, null=True)
@@ -203,34 +209,70 @@ class Mesa(models.Model):
     electores = models.PositiveIntegerField(null=True, blank=True)
     taken = models.DateTimeField(null=True, editable=False)
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
-
     carga_confirmada = models.BooleanField(default=False)
+
+    # denormalizacion.
+    # lleva la cuenta de las elecciones que se han cargado hasta el momento.
+    # ver receiver actualizar_elecciones_cargadas_para_mesa()
+    cargadas = models.PositiveIntegerField(default=0, editable=False)
+    confirmadas = models.PositiveIntegerField(default=0, editable=False)
+
+    def eleccion_add(self, eleccion):
+        MesaEleccion.objects.get_or_create(mesa=self, eleccion=eleccion)
+
+
+    def siguiente_eleccion_sin_carga(self):
+        for eleccion in self.eleccion.order_by('id'):
+            if not VotoMesaReportado.objects.filter(mesa=self, eleccion=eleccion).exists():
+                return eleccion
 
 
     @classmethod
-    def con_carga_pendiente(cls, elecciones=[1], wait=2):
+    def con_carga_pendiente(cls, wait=2):
+        """
+        Una mesa cargable es aquella que
+           - no este tomada dentro de los ultimos `wait` minutos
+           - no este marcada con problemas o todos su problemas esten resueltos
+           - y tenga al menos una eleccion asociada que no tenga votosreportados para esa mesa
+        """
         desde = timezone.now() - timedelta(minutes=wait)
-
-        return cls.objects.filter(
-            votomesareportado__isnull=True,
+        qs = cls.objects.filter(
             attachments__isnull=False,
-            eleccion__id__in=elecciones,    # que fierooo
             orden_de_carga__gte=1,
         ).filter(
-            # esto esta'mal. puede tener problema resuelto y otro problema no resuelto
-            Q(problemas__isnull=True) # | Q(problemas__estado='resuelto')      # sin problemas en curso
-        ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
+        ).annotate(
+            a_cargar = Count('eleccion')
+        ).filter(
+            cargadas__lt=F('a_cargar')
+        ).annotate(
+            tiene_problemas=Exists(
+                Problema.objects.filter(
+                    Q(mesa__id=OuterRef('id')),
+                    ~Q(estado='resuelto')
+                )
+            )
+        ).filter(
+            tiene_problemas=False
         ).distinct()
+        return qs
 
+    def siguiente_eleccion_a_confirmar(self):
+        for me in MesaEleccion.objects.filter(mesa=self).order_by('eleccion'):
+            if not me.confirmada and VotoMesaReportado.objects.filter(
+                eleccion=me.eleccion, mesa=me.mesa
+            ).exists():
+                return me.eleccion
 
     @classmethod
     def con_carga_a_confirmar(cls):
-        return cls.objects.filter(
-            votomesareportado__isnull=False,
-            carga_confirmada=False,
-            problemas__isnull=True
+        qs = cls.objects.filter(
+            mesaeleccion__confirmada=False,
+            cargadas__gte=1
+        ).filter(
+            confirmadas__lt=F('cargadas')
         ).distinct()
+        return qs
 
 
     def get_absolute_url(self):
@@ -365,21 +407,21 @@ class VotoMesaReportado(TimeStampedModel):
         return f"{self.mesa} - {self.opcion}: {self.votos}"
 
 
-"""
-por si queremos mejorar lo que se muestra con nombres que entendemos
+@receiver(post_save, sender=VotoMesaReportado)
+def actualizar_elecciones_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
+    mesa = instance.mesa
+    elecciones_cargadas = VotoMesaReportado.objects.filter(mesa=mesa).values('eleccion').distinct().count()
+    if mesa.cargadas != elecciones_cargadas:
+        mesa.cargadas = elecciones_cargadas
+        mesa.save(update_fields=['cargadas'])
 
-class Candidato(models.Model):
-    nombre = models.CharField(max_length=140)
 
-    def __str__(self):
-        return self.nombre
+@receiver(post_save, sender=MesaEleccion)
+def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
+    if instance.confirmada:
+        mesa = instance.mesa
+        confirmadas = MesaEleccion.objects.filter(mesa=mesa, confirmada=True).count()
+        if mesa.confirmadas != confirmadas:
+            mesa.confirmadas = confirmadas
+            mesa.save(update_fields=['confirmadas'])
 
-class CandidatoEnEleccion(models.Model):
-    eleccion = models.ForeignKey(Eleccion)
-    partido = models.ForeignKey(Partido)
-    candidato = models.ForeignKey(Candidato)
-    orden = models.PositiveIntegerFields(default=0, help_text='Si corresponde, el orden (ej legisladores)')
-
-    class Meta:
-        unique_together = ('eleccion', 'partido', 'candidato')
-"""

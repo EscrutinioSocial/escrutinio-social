@@ -1,3 +1,9 @@
-from django.test import TestCase
 
-# Create your tests here.
+from elecciones.tests.factories import (
+    VotoMesaReportadoFactory,
+    EleccionFactory,
+    AttachmentFactory,
+    MesaFactory,
+    ProblemaFactory
+)
+

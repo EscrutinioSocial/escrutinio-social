@@ -263,7 +263,6 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
 def elegir_acta_a_cargar(request):
 
     # se eligen mesas que nunca se intentaron cargar o que se asignaron a
-
     mesas = Mesa.con_carga_pendiente().order_by('orden_de_carga')
 
     if mesas.exists():
@@ -272,12 +271,9 @@ def elegir_acta_a_cargar(request):
         mesa.taken = timezone.now()
         mesa.save(update_fields=['taken'])
 
-        # FIX ME: qué pasa si un dataentry cuelga cargando en una elección que no es la primera?
-        # se repartirá esa mesa de nuevo?
-
         return redirect(
             'mesa-cargar-resultados',
-            eleccion_id=mesa.eleccion.first().id,
+            eleccion_id=mesa.siguiente_eleccion_sin_carga().id,
             mesa_numero=mesa.numero
         )
 
@@ -289,6 +285,7 @@ def elegir_acta_a_cargar(request):
 def cargar_resultados(request, eleccion_id, mesa_numero):
     fiscal = get_object_or_404(Fiscal, user=request.user)
     eleccion = get_object_or_404(Eleccion, id=eleccion_id)
+
     mesa = get_object_or_404(Mesa, eleccion=eleccion, numero=mesa_numero)
     VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=eleccion.opciones.count())
 
@@ -311,7 +308,6 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
     qs = VotoMesaReportado.objects.filter(mesa=mesa, eleccion=eleccion)
     initial = [{'opcion': o} for o in eleccion.opciones_actuales()]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
-
     fix_opciones(formset)
     is_valid = False
     if qs:
@@ -336,22 +332,20 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
             # hubo otra carga previa.
             capture_exception(e)
             messages.error(request, 'Alguien cargó esta mesa con anterioridad')
+            return redirect('elegir-acta-a-cargar')
 
         # hay que cargar otra eleccion (categoria) de la misma mesa?
         # si es asi, se redirige a esa carga
-        elecciones_mesa = list(mesa.eleccion.values_list('id', flat=True))
-        if eleccion.id != elecciones_mesa[-1]:   # si no es la ultima
+        siguiente = mesa.siguiente_eleccion_sin_carga()
 
-            index_actual = elecciones_mesa.index(eleccion.id)
-            siguiente = elecciones_mesa[index_actual + 1]
-
-            # vuelvo a pedir un token
+        if siguiente:
+            # vuelvo a marcar un token
             mesa.taken = timezone.now()
             mesa.save(update_fields=['taken'])
 
             return redirect(
                 'mesa-cargar-resultados',
-                eleccion_id=siguiente,
+                eleccion_id=siguiente.id,
                 mesa_numero=mesa.numero
             )
 
@@ -368,8 +362,9 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
 def chequear_resultado(request):
     mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
     if not mesa:
-        return redirect('elegir-acta-a-cargar')
-    return redirect('chequear-resultado-mesa', eleccion_id=1, mesa_numero=mesa.numero)
+        return render(request, 'fiscales/sin-actas-cargadas.html')
+    eleccion = mesa.siguiente_eleccion_sin_carga()
+    return redirect('chequear-resultado-mesa', eleccion_id=eleccion.id, mesa_numero=mesa.numero)
 
 
 
