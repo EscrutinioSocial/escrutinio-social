@@ -90,6 +90,7 @@
                   {% endwith %}
               </table>
 
+              <div id="columnchart-{{object.id}}"></div>
               <div id="piechart-{{object.id}}"></div>
 
 
@@ -165,6 +166,17 @@ $(function() {
    $('tabs').tabs();
 
    var data = [{
+      y: {{ chart_values|safe }},
+      x: {{ chart_keys|safe }},
+      type: 'bar',
+      marker: {colors: 'red'}
+    }];
+
+    var layout = {height: 400, width: 900};
+    Plotly.newPlot('columnchart-{{eleccion_id}}', data, layout);
+
+
+    var data = [{
       values: {{ chart_values|safe }},
       labels: {{ chart_keys|safe }},
       type: 'pie',
@@ -173,12 +185,9 @@ $(function() {
       }
     }];
 
-    var layout = {
-      height: 900,
-      width: 900
-    };
-
+    var layout = {height: 900, width: 900};
     Plotly.newPlot('piechart-{{eleccion_id}}', data, layout);
+
 });
 </script>
 {% endblock messages %}
