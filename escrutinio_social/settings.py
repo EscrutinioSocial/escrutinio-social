@@ -215,7 +215,7 @@ CACHES = {
 }
 
 # config para el comando importar_actas
-IMAPs = [
+IMAPS = [
     {'email': 'e1@gmail.com', 'host': 'imap.gmail.com', 'user': 'e1@gmail.com', 'pass': 'xxxx', 'mailbox': 'INBOX'},
     {'email': 'eml@gmail.com', 'host': 'imap.gmail.com', 'user': 'e2@gmail.com', 'pass': 'xxxx', 'mailbox': 'INBOX'}
 ]

@@ -18,10 +18,10 @@ class Command(escrutinio_socialBaseCommand):
 
     def handle(self, *args, **options):
 
-        for imap in settings.IMAPs:
+        for imap in settings.IMAPS:
         
             imapper = easyimap.connect(imap['host'], imap['user'], imap['pass'], imap['mailbox'])
-            self.success('Loggueado')
+            self.success('Loggueado como {}'.format(imap['user']))
             if options['include_seen']:
                 # read every email not present in the db
                 imap_ids = {int(i) for i in imapper.listids()}
