@@ -18,38 +18,35 @@ class Command(escrutinio_socialBaseCommand):
 
     def handle(self, *args, **options):
 
-        imapper = easyimap.connect(
-            settings.IMAP_HOST,
-            settings.IMAP_USERNAME,
-            settings.IMAP_PASSWORD,
-            settings.IMAP_MAILBOX
-        )
-        self.success('Loggueado')
-        if options['include_seen']:
-            # read every email not present in the db
-            imap_ids = {int(i) for i in imapper.listids()}
-            known_ids = set(Email.objects.values_list('uid', flat=True))
-            unknown_ids = imap_ids - known_ids
-            mails = (imapper.mail(str(i)) for i in unknown_ids)
-        else:
-            mails = imapper.unseen()
+        for imap in settings.IMAPs:
+        
+            imapper = easyimap.connect(imap['host'], imap['user'], imap['pass'], imap['mailbox'])
+            self.success('Loggueado')
+            if options['include_seen']:
+                # read every email not present in the db
+                imap_ids = {int(i) for i in imapper.listids()}
+                known_ids = set(Email.objects.values_list('uid', flat=True))
+                unknown_ids = imap_ids - known_ids
+                mails = (imapper.mail(str(i)) for i in unknown_ids)
+            else:
+                mails = imapper.unseen()
 
-        for mail in mails:
-            attachments = mail.attachments
-            if not attachments:
-                continue
-
-            email = Email.from_mail_object(mail)
-            self.log(email)
-            for attachment in attachments:
-                if options['only_images'] and not attachment[2].startswith('image'):
-                    self.warning(f'Ignoring {attachment[0]} ({attachment[2]})')
+            for mail in mails:
+                attachments = mail.attachments
+                if not attachments:
                     continue
-                instance = Attachment(
-                    email=email,
-                    mimetype=attachment[2]
-                )
-                content = ContentFile(attachment[1])
-                instance.foto.save(attachment[0], content, save=False)
-                instance.save()
-                self.log(instance)
+
+                email = Email.from_mail_object(mail)
+                self.log(email)
+                for attachment in attachments:
+                    if options['only_images'] and not attachment[2].startswith('image'):
+                        self.warning(f'Ignoring {attachment[0]} ({attachment[2]})')
+                        continue
+                    instance = Attachment(
+                        email=email,
+                        mimetype=attachment[2]
+                    )
+                    content = ContentFile(attachment[1])
+                    instance.foto.save(attachment[0], content, save=False)
+                    instance.save()
+                    self.log(instance)
