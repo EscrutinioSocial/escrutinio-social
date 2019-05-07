@@ -285,6 +285,7 @@ def elegir_acta_a_cargar(request):
 def cargar_resultados(request, eleccion_id, mesa_numero):
     fiscal = get_object_or_404(Fiscal, user=request.user)
     eleccion = get_object_or_404(Eleccion, id=eleccion_id)
+
     mesa = get_object_or_404(Mesa, eleccion=eleccion, numero=mesa_numero)
     VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=eleccion.opciones.count())
 
@@ -307,7 +308,6 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
     qs = VotoMesaReportado.objects.filter(mesa=mesa, eleccion=eleccion)
     initial = [{'opcion': o} for o in eleccion.opciones_actuales()]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
-
     fix_opciones(formset)
     is_valid = False
     if qs:

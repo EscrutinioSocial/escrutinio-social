@@ -222,7 +222,7 @@ class Mesa(models.Model):
 
 
     def siguiente_eleccion_sin_carga(self):
-        for eleccion in self.eleccion.all().order_by('id'):
+        for eleccion in self.eleccion.order_by('id'):
             if not VotoMesaReportado.objects.filter(mesa=self, eleccion=eleccion).exists():
                 return eleccion
 

@@ -129,6 +129,7 @@ class VotoMesaReportadoFactory(DjangoModelFactory):
 
 class AttachmentFactory(DjangoModelFactory):
     mesa = factory.SubFactory(MesaFactory)
+    foto = factory.django.ImageField()
     class Meta:
         model = 'adjuntos.Attachment'
 
