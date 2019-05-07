@@ -362,8 +362,9 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
 def chequear_resultado(request):
     mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
     if not mesa:
-        return redirect('elegir-acta-a-cargar')
-    return redirect('chequear-resultado-mesa', eleccion_id=1, mesa_numero=mesa.numero)
+        return render(request, 'fiscales/sin-actas-cargadas.html')
+    eleccion = mesa.siguiente_eleccion_sin_carga()
+    return redirect('chequear-resultado-mesa', eleccion_id=eleccion.id, mesa_numero=mesa.numero)
 
 
 

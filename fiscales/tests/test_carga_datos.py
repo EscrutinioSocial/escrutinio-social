@@ -52,7 +52,6 @@ def test_elegir_resultados_mesas_redirige(db, fiscal_client):
 
     m2.taken = None
     m2.save()
-    import ipdb; ipdb.set_trace()
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e2.id, m2.id])
