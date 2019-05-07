@@ -25,3 +25,6 @@ Proceso de carga de datos para comenzar
 
     # darle colores diferenciados a la planilla de carga de datos
     ./manage.py colorize_elecciones
+
+    # Crear (por ejemplo) 5 usuarios para los data entries del bunker
+    ./manage.py generar_accesos_data_entries --equipo=BUNKER --cantidad=5 
