@@ -9,7 +9,7 @@ Datos
 
 Proceso de carga de datos para comenzar
 
-```
+``` bash
 # traer las secciones, circuitos, escuelas y mesas
 ./manage.py importar_carta_marina_2019_gobernador
 
