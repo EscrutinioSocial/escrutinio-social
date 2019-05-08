@@ -215,12 +215,10 @@ CACHES = {
 }
 
 # config para el comando importar_actas
-IMAP_ACCOUNT = 'eml@algo.com'
-IMAP_HOST = 'imap.gmail.com'
-IMAP_USERNAME = 'foo@bar.com'
-IMAP_PASSWORD = '***'
-IMAP_MAILBOX = 'INBOX'
-
+IMAPS = [
+    {'email': 'e1@gmail.com', 'host': 'imap.gmail.com', 'user': 'e1@gmail.com', 'pass': 'xxxx', 'mailbox': 'INBOX'},
+    {'email': 'eml@gmail.com', 'host': 'imap.gmail.com', 'user': 'e2@gmail.com', 'pass': 'xxxx', 'mailbox': 'INBOX'}
+]
 
 # contacto settings
 CARACTERISTICA_TELEFONO_DEFAULT = '351'     # CORDOBA
