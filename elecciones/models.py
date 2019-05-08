@@ -40,7 +40,7 @@ class Seccion(models.Model):
 
     @property
     def electores(self):
-        return Mesa.objects.filter(eleccion__id=1,
+        return Mesa.objects.filter(
             lugar_votacion__circuito__seccion=self,
         ).aggregate(v=Sum('electores'))['v']
 
@@ -59,7 +59,7 @@ class AgrupacionPK(models.Model):
 
     @property
     def electores(self):
-        return Mesa.objects.filter(eleccion__id=1,
+        return Mesa.objects.filter(
             lugar_votacion__circuito__agrupacionpk=self,
         ).aggregate(v=Sum('electores'))['v']
 
@@ -83,7 +83,7 @@ class Circuito(models.Model):
 
     @property
     def electores(self):
-        return Mesa.objects.filter(eleccion__id=1,
+        return Mesa.objects.filter(
             lugar_votacion__circuito=self,
         ).aggregate(v=Sum('electores'))['v']
 
@@ -92,10 +92,6 @@ class Circuito(models.Model):
         return self.electores / Eleccion.actual().electores
 
     def resultados_url(self):
-        # return reverse(
-        #    'resultados-por',
-        #    args=('circuito', self.numero, slugify(self.nombre))
-        #)
         return reverse('resultados-eleccion') + f'?circuito={self.id}'
 
     def proximo_orden_de_carga(self):
