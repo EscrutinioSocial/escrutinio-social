@@ -7,7 +7,7 @@ from django.core.files.base import ContentFile
 from elecciones.management.commands.importar_carta_marina_2019_gobernador import BaseCommand
 
 
-class Command(escrutinio_socialBaseCommand):
+class Command(BaseCommand):
     help = "Importa adjunto de los emails configurados"
 
     def add_arguments(self, parser):
