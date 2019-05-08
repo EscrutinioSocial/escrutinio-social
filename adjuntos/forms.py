@@ -27,9 +27,9 @@ class AsignarMesaForm(forms.ModelForm):
         if not numero:
             return numero
         try:
-            mesa = Mesa.objects.get(numero=numero, eleccion__id=1)
+            mesa = Mesa.objects.get(numero=numero)
         except Mesa.DoesNotExist:
-            raise forms.ValidationError('No existe una mesa con este numéro')
+            raise forms.ValidationError('No existe una mesa con este número. ')
         return mesa
 
 
@@ -41,13 +41,13 @@ class AsignarMesaForm(forms.ModelForm):
 
         if not mesa and not problema:
             self.add_error(
-                'mesa', 'Indicá la mesa o reportá un problema'
+                'mesa', 'Indicá la mesa o reportá un problema. '
             )
 
         elif problema and mesa:
             cleaned_data['mesa'] = None
             self.add_error(
-                'problema', 'Dejá el número en blanco si hay un problema'
+                'problema', 'Dejá el número en blanco si hay un problema. '
             )
 
         if mesa and Attachment.objects.filter(mesa=mesa).exists() and mesa.numero != mesa_confirm:
@@ -55,7 +55,7 @@ class AsignarMesaForm(forms.ModelForm):
             self.data['mesa_confirm'] = mesa.numero
             self.data._mutable = False
             self.add_error(
-                'mesa', 'Esta mesa ya tiene imagen adjunta. Revisá y guardá de nuevo para confirmar'
+                'mesa', 'Esta mesa ya tiene una o más imágenes adjuntas. Revisá y guardá de nuevo para confirmar .'
             )
 
         return cleaned_data
@@ -67,5 +67,5 @@ class SubirAttachmentModelForm(forms.ModelForm):
         fields = ['foto']
 
 
-class AgregarAttachmentsModelForm(forms.Form):
-    file_field = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}))
+class AgregarAttachmentsForm(forms.Form):
+    file_field = forms.FileField(label="Archivo/s", widget=forms.ClearableFileInput(attrs={'multiple': True}))

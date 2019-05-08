@@ -14,7 +14,7 @@ import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
 from .models import Attachment
-from .forms import AsignarMesaForm, AgregarAttachmentsModelForm
+from .forms import AsignarMesaForm, AgregarAttachmentsForm
 
 
 @staff_member_required
@@ -70,7 +70,7 @@ def editar_foto(request, attachment_id):
 
 
 class AgregarAdjuntos(StaffOnlyMixing, FormView):
-    form_class = AgregarAttachmentsModelForm
+    form_class = AgregarAttachmentsForm
     template_name = 'adjuntos/agregar-adjuntos.html'
     success_url = 'agregada'
 
