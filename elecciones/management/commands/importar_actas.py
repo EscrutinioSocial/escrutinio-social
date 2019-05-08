@@ -1,13 +1,13 @@
 import easyimap
 from django.conf import settings
+from django.db import IntegrityError
 
 from adjuntos.models import Email, Attachment
 from django.core.files.base import ContentFile
-from elecciones.management.commands.importar_carta_marina_2019_gobernador import escrutinio_socialBaseCommand
+from elecciones.management.commands.importar_carta_marina_2019_gobernador import BaseCommand
 
 
-
-class Command(escrutinio_socialBaseCommand):
+class Command(BaseCommand):
     help = "Importa adjunto de los emails configurados"
 
     def add_arguments(self, parser):
@@ -37,7 +37,7 @@ class Command(escrutinio_socialBaseCommand):
                 attachments = mail.attachments
                 if not attachments:
                     continue
-
+                
                 email = Email.from_mail_object(mail)
                 self.log(email)
                 for attachment in attachments:
@@ -48,7 +48,10 @@ class Command(escrutinio_socialBaseCommand):
                         email=email,
                         mimetype=attachment[2]
                     )
-                    content = ContentFile(attachment[1])
-                    instance.foto.save(attachment[0], content, save=False)
-                    instance.save()
-                    self.log(instance)
+                    try:
+                        content = ContentFile(attachment[1])
+                        instance.foto.save(attachment[0], content, save=False)
+                        instance.save()
+                        self.log(instance)
+                    except IntegrityError:
+                        self.warning(f'{attachment[0]} ya está en el sistema')
