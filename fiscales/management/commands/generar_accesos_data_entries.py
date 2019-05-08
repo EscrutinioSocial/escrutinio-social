@@ -35,8 +35,8 @@ class Command(BaseCommand):
         fiscal.estado = 'CONFIRMADO'
         fiscal.notas = f'Generado automaticamente en el equipo {nombre} por el sistema'
         fiscal.email_confirmado = True
-        fiscal.apellido = f'{nombre}'
-        fiscal.nombres = f'{nombre}'
+        fiscal.apellido = nombre
+        fiscal.nombres = nombre
         fiscal.save()
 
         return user, password
