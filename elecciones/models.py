@@ -55,24 +55,8 @@ class Seccion(models.Model):
         return self.electores / Eleccion.actual().electores
 
 
-class AgrupacionPK(models.Model):
-    # una agrupacion de circuitos interna
-    numero = models.PositiveIntegerField()
-    nombre = models.CharField(max_length=100)
-
-    def __str__(self):
-        return f"{self.numero} - {self.nombre}"
-
-    @property
-    def electores(self):
-        return Mesa.objects.filter(
-            lugar_votacion__circuito__agrupacionpk=self,
-        ).aggregate(v=Sum('electores'))['v']
-
-
 class Circuito(models.Model):
     seccion = models.ForeignKey(Seccion)
-    seccion_de_ponderacion = models.ForeignKey(AgrupacionPK, null=True)
     localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
 
     numero = models.CharField(max_length=10)

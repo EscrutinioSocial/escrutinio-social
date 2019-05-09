@@ -23,7 +23,7 @@ from django.views import View
 from django.contrib.auth.models import User
 from fiscales.models import Fiscal
 from .models import *
-from .models import LugarVotacion, Circuito, AgrupacionPK
+from .models import LugarVotacion, Circuito
 
 
 ESTRUCTURA = {
@@ -185,7 +185,6 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         if proyectado:
             # La proyeccion se calcula a partir de la ponderacion del subnivel
             # Ejemplo: para provincia por secciones, para secciones por sus circuitos. etc.
-
             agrupaciones = Seccion.objects.all()
             datos_ponderacion = {}
 
