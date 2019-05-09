@@ -37,7 +37,6 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
 
     # como m1 queda en periodo de "taken" (aunque no se haya ocupado aun) se pasa a la siguiente mesa
-
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m2.numero])
@@ -56,6 +55,47 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e2.id, m2.numero])
+
+
+def test_elegir_acta_prioriza_por_tamaño_seccion(db, fiscal_client):
+    e1 = EleccionFactory()
+
+    m1 = AttachmentFactory(mesa__eleccion=[e1]).mesa
+    m2 = AttachmentFactory(mesa__eleccion=[e1]).mesa
+    m3 = AttachmentFactory(mesa__eleccion=[e1]).mesa
+    # creo otras mesas asociadas a las secciones
+    s1 = m1.lugar_votacion.circuito.seccion
+    s2 = m2.lugar_votacion.circuito.seccion
+    s3 = m3.lugar_votacion.circuito.seccion
+
+    MesaFactory.create_batch(
+        3,
+        eleccion=[e1],
+        lugar_votacion__circuito__seccion=s1
+    )
+    MesaFactory.create_batch(
+        10,
+        eleccion=[e1],
+        lugar_votacion__circuito__seccion=s2
+    )
+    MesaFactory.create_batch(
+        5,
+        eleccion=[e1],
+        lugar_votacion__circuito__seccion=s3
+    )
+    assert s1.electores == 400
+    assert s2.electores == 1100
+    assert s3.electores == 600
+    assert m1.orden_de_carga == m2.orden_de_carga == m3.orden_de_carga == 1
+    response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
+    assert response.status_code == 302
+    assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m2.numero])
+    response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
+    assert response.status_code == 302
+    assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m3.numero])
+    response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
+    assert response.status_code == 302
+    assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
 
 
 def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
@@ -88,6 +128,7 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     })
     assert response.status_code == 302
     assert response.url == reverse('elegir-acta-a-cargar')
+
 
 
 

@@ -28,3 +28,6 @@ Proceso de carga de datos para comenzar
 
     # Crear (por ejemplo) 5 usuarios para los data entries del bunker
     ./manage.py generar_accesos_data_entries --equipo=BUNKER --cantidad=5 
+
+    # Importar mesas testigo
+    ./manage.py generar_accesos_data_entries importar_mesas_testigo_2019

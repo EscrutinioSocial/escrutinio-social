@@ -25,15 +25,14 @@ class Seccion(models.Model):
     # O departamento
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
+    electores = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = 'Sección electoral'
         verbose_name_plural = 'Secciones electorales'
 
-
     def resultados_url(self):
         return reverse('resultados-eleccion') + f'?seccion={self.id}'
-
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
@@ -43,12 +42,6 @@ class Seccion(models.Model):
             lugar_votacion__circuito__seccion=self,
             eleccion=eleccion
     )
-
-    @property
-    def electores(self):
-        return Mesa.objects.filter(
-            lugar_votacion__circuito__seccion=self,
-        ).aggregate(v=Sum('electores'))['v']
 
     @property
     def peso(self):
@@ -423,3 +416,10 @@ def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=F
             mesa.confirmadas = confirmadas
             mesa.save(update_fields=['confirmadas'])
 
+@receiver(post_save, sender=Mesa)
+def actualizar_electores_seccion(sender, instance=None, created=False, **kwargs):
+    seccion = instance.lugar_votacion.circuito.seccion
+    seccion.electores = Mesa.objects.filter(
+        lugar_votacion__circuito__seccion=seccion,
+    ).aggregate(v=Sum('electores'))['v']
+    seccion.save(update_fields=['electores'])
