@@ -3,7 +3,7 @@ import pytest
 from django.db.models import Sum
 from django.urls import reverse
 from elecciones.models import Eleccion, Mesa
-from elecciones.views import ResultadosEleccion, TOTAL, POSITIVOS
+from elecciones.views import ResultadosEleccion
 from .factories import (
     EleccionFactory,
     LugarVotacionFactory,
@@ -123,20 +123,20 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     eleccion = Eleccion.objects.get(id=1)
     # opciones a partido
     o1, o2, o3 = eleccion.opciones.filter(partido__isnull=False)
-    total = eleccion.opciones.get(nombre=TOTAL)
+    blanco = eleccion.opciones.get(nombre='blanco')
     VotoMesaReportadoFactory(opcion=o1, mesa=m1, eleccion=eleccion, votos=20)
     VotoMesaReportadoFactory(opcion=o2, mesa=m1, eleccion=eleccion, votos=30)
     VotoMesaReportadoFactory(opcion=o3, mesa=m1, eleccion=eleccion, votos=40)
 
     # votaron 90/100 personas
-    VotoMesaReportadoFactory(opcion=total, mesa=m1, eleccion=eleccion, votos=90)
+    VotoMesaReportadoFactory(opcion=blanco, mesa=m1, eleccion=eleccion, votos=0)
 
     VotoMesaReportadoFactory(opcion=o1, mesa=m3, eleccion=eleccion, votos=30)
     VotoMesaReportadoFactory(opcion=o2, mesa=m3, eleccion=eleccion, votos=40)
     VotoMesaReportadoFactory(opcion=o3, mesa=m3, eleccion=eleccion, votos=50)
 
     # votaron 120/120 personas
-    VotoMesaReportadoFactory(opcion=total, mesa=m3, eleccion=eleccion, votos=120)
+    VotoMesaReportadoFactory(opcion=blanco, mesa=m3, eleccion=eleccion, votos=0)
 
     response = fiscal_client.get(url_resultados)
     resultados = response.context['resultados']
@@ -167,6 +167,67 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     assert resultados['votantes'] == 210
     assert resultados['electores'] == 800
+
+
+def test_resultados_proyectados(fiscal_client):
+    url_resultados = reverse('resultados-eleccion', args=[1])
+    s1, s2, s3 = SeccionFactory.create_batch(3)
+    # s1 1000 votantes    # La matanza! :D
+    # s2 400 votantes
+    # s3 200 votantes
+    ms1, ms2, ms3 = (
+        MesaFactory.create_batch(5, lugar_votacion__circuito__seccion=s1, electores=200),
+        MesaFactory.create_batch(2, lugar_votacion__circuito__seccion=s2, electores=200),
+        MesaFactory.create_batch(1, lugar_votacion__circuito__seccion=s3, electores=200)
+    )
+
+    m1 = ms1[0]
+    m3 = ms3[0]
+
+    eleccion = Eleccion.objects.get(id=1)
+    # opciones a partido
+    o1, o2, o3 = eleccion.opciones.filter(partido__isnull=False)
+    blanco = eleccion.opciones.get(nombre='blanco')
+
+    VotoMesaReportadoFactory(opcion=o1, mesa=m1, eleccion=eleccion, votos=120)      # 50% de los votos
+    VotoMesaReportadoFactory(opcion=o2, mesa=m1, eleccion=eleccion, votos=80)       # 40%
+    VotoMesaReportadoFactory(opcion=o3, mesa=m1, eleccion=eleccion, votos=0)
+    VotoMesaReportadoFactory(opcion=blanco, mesa=m1, eleccion=eleccion, votos=0)
+
+    VotoMesaReportadoFactory(opcion=o1, mesa=m3, eleccion=eleccion, votos=79)
+    VotoMesaReportadoFactory(opcion=o2, mesa=m3, eleccion=eleccion, votos=121)
+    VotoMesaReportadoFactory(opcion=o3, mesa=m3, eleccion=eleccion, votos=0)
+    VotoMesaReportadoFactory(opcion=blanco, mesa=m3, eleccion=eleccion, votos=0)
+
+    # sin proyeccion va ganando o2 por 2 votos
+    response = fiscal_client.get(url_resultados)
+    positivos = response.context['resultados']['tabla_positivos']
+    assert list(positivos.keys()) == [o2.partido, o1.partido, o3.partido]
+
+    # cuentas
+    assert positivos[o2.partido]['votos'] == 201
+    assert positivos[o1.partido]['votos'] == 199
+    assert positivos[o3.partido]['votos'] == 0
+    assert positivos[o2.partido]['porcentajePositivos'] == '50.25'
+    assert positivos[o1.partido]['porcentajePositivos'] == '49.75'
+    # no hay proyeccion
+    assert 'proyeccion' not in positivos[o1.partido]
+
+    # cuando se proyecta, o1 gana porque va ganando en s1 que es la mas populosa
+    response = fiscal_client.get(url_resultados + '?proyectado=✓')
+    positivos = response.context['resultados']['tabla_positivos']
+    assert list(positivos.keys()) == [o1.partido, o2.partido, o3.partido]
+
+    # cuentas
+    assert positivos[o2.partido]['votos'] == 201
+    assert positivos[o1.partido]['votos'] == 199
+    assert positivos[o3.partido]['votos'] == 0
+    assert positivos[o2.partido]['porcentajePositivos'] == '50.25'
+    assert positivos[o1.partido]['porcentajePositivos'] == '49.75'
+
+    # TODO revisar. no deberia dar el 100 la suma de la proyeccion ?
+    assert positivos[o1.partido]['proyeccion'] == '42.44'
+    assert positivos[o2.partido]['proyeccion'] == '32.56'
 
 
 def test_mesa_orden(carta_marina):

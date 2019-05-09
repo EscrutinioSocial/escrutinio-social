@@ -38,6 +38,12 @@ class Seccion(models.Model):
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
 
+    def mesas(self, eleccion):
+        return Mesa.objects.filter(
+            lugar_votacion__circuito__seccion=self,
+            eleccion=eleccion
+    )
+
     @property
     def electores(self):
         return Mesa.objects.filter(
@@ -100,6 +106,12 @@ class Circuito(models.Model):
         ).aggregate(v=Max('orden_de_carga'))['v'] or 0
         return orden + 1
 
+    def mesas(self, eleccion):
+        return Mesa.objects.filter(
+            lugar_votacion__circuito=self,
+            eleccion=eleccion
+    )
+
 
 class LugarVotacion(models.Model):
     circuito = models.ForeignKey(Circuito, related_name='escuelas')
@@ -150,6 +162,12 @@ class LugarVotacion(models.Model):
         if inicio == fin:
             return inicio
         return f'{inicio} - {fin}'
+
+    def mesas(self, eleccion):
+        return Mesa.objects.filter(
+            lugar_votacion=self,
+            eleccion=eleccion
+    )
 
     @property
     def mesas_actuales(self):

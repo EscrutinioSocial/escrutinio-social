@@ -5,7 +5,6 @@ from io import BytesIO
 from django.contrib.auth.models import User
 from factory.django import DjangoModelFactory
 from faker import Faker
-from elecciones.views import TOTAL
 fake = Faker('es_ES')
 
 
@@ -54,10 +53,10 @@ class EleccionFactory(DjangoModelFactory):
             for opcion in extracted:
                 self.opciones.add(opcion)
         else:
-            self.opciones.add(OpcionFactory(nombre=TOTAL, partido=None, es_contable=False))
+            self.opciones.add(OpcionFactory(nombre='blanco', partido=None, es_contable=False))
             self.opciones.add(OpcionFactory(nombre='opc1', es_contable=True))
-            self.opciones.add(OpcionFactory(nombre='opc2'))
-            self.opciones.add(OpcionFactory(nombre='opc3'))
+            self.opciones.add(OpcionFactory(nombre='opc2', es_contable=True))
+            self.opciones.add(OpcionFactory(nombre='opc3', es_contable=True))
 
 
 

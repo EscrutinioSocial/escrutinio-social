@@ -12,9 +12,6 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.validators import ValidationError
 from contacto.forms import validar_telefono
 import phonenumbers
-from elecciones.views import POSITIVOS, TOTAL
-
-
 
 
 OPCION_CANTIDAD_DE_SOBRES = 22
@@ -222,13 +219,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         total = 0
         form_opcion_total = None
         for form in self.forms:
-            opcion = form.cleaned_data['opcion']
-
-            if opcion.nombre == TOTAL:
-                form_opcion_total = form
-                total = form.cleaned_data.get('votos') or 0
-            else:
-                suma += form.cleaned_data.get('votos') or 0
+            suma += form.cleaned_data.get('votos') or 0
 
         # if suma > positivos:
         #     #form_opcion_total.add_error(
@@ -238,15 +229,11 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         #         f'Positivos deberia ser igual o mayor a {suma}')
 
         errors = []
-        if form_opcion_total:
-            if suma > self.mesa.electores:
-                errors.append(f'Total no puede ser mayor a la cantidad de electores de la mesa: {self.mesa.electores}')
+        if suma > self.mesa.electores:
+            errors.append(f'Total no puede ser mayor a la cantidad de electores de la mesa: {self.mesa.electores}')
 
-            elif suma != total:
-                errors.append(f'Total deberia ser igual a la suma: {suma}')
-
-            if errors :
-                form_opcion_total.add_error('votos', ValidationError(errors))
+        if errors :
+            form.add_error('votos', ValidationError(errors))
 
 
 votomeesareportadoformset_factory = partial(modelformset_factory,
