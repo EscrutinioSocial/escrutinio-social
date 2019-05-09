@@ -1,9 +1,14 @@
 import factory
+import numpy as np
+from PIL import Image
+from io import BytesIO
 from django.contrib.auth.models import User
 from factory.django import DjangoModelFactory
 from faker import Faker
 from elecciones.views import TOTAL
 fake = Faker('es_ES')
+
+
 
 
 class UserFactory(DjangoModelFactory):
@@ -127,9 +132,15 @@ class VotoMesaReportadoFactory(DjangoModelFactory):
     fiscal = factory.SubFactory(FiscalFactory)
 
 
+def get_random_image():
+    data = np.random.rand(30,30,3) * 255
+    image = Image.fromarray(data.astype('uint8')).convert('RGBA')
+    return BytesIO(image.tobytes())
+
+
 class AttachmentFactory(DjangoModelFactory):
     mesa = factory.SubFactory(MesaFactory)
-    foto = factory.django.ImageField()
+    foto = factory.django.ImageField(from_func=get_random_image)
     class Meta:
         model = 'adjuntos.Attachment'
 
