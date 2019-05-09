@@ -173,7 +173,7 @@ class QuieroSerFiscal(SessionWizardView):
         if fiscal:
             fiscal.estado = 'AUTOCONFIRMADO'
         else:
-            fiscal = Fiscal(estado='AUTOCONFIRMADO', tipo='de_mesa', dni=dni)
+            fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=dni)
 
         fiscal.dni = dni
         fiscal.nombres = data['nombre']
@@ -408,26 +408,3 @@ def confirmar_fiscal(request, fiscal_id):
     msg = f'<a href="{url}">{fiscal}</a> ha sido confirmado en la escuela {fiscal.escuela_donde_vota}'
     messages.info(request, mark_safe(msg))
     return redirect(request.META.get('HTTP_REFERER'))
-
-
-@staff_member_required
-def exportar_emails(request):
-    out = StringIO()
-    call_command('export_emails', f='email', stdout=out)
-
-    text = '\n'.join(l for l in out.getvalue().split('\n') if '@' in l)
-    return HttpResponse(text, content_type="text/plain; charset=utf-8")
-
-
-@staff_member_required
-def datos_fiscales_por_seccion(request):
-    generales = {}
-    de_mesa = {}
-    for seccion in Seccion.objects.all():
-
-        generales[seccion] = Fiscal.objects.filter(tipo='general', escuela_donde_vota__circuito__seccion=seccion).distinct()
-        de_mesa[seccion] = Fiscal.objects.filter(tipo='de_mesa', escuela_donde_vota__circuito__seccion=seccion).distinct()
-
-
-    return render(request, 'fiscales/datos_fiscales_por_seccion.html', {'generales': generales, 'de_mesa': de_mesa})
-
