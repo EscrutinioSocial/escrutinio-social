@@ -30,3 +30,5 @@ factory_boy==2.9.2
 pytest-django==3.1.2
 psycopg2_binary==2.7.7
 sentry-sdk==0.7.6
+django-excel==0.0.10
+pyexcel==0.5.13
