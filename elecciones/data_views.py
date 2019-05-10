@@ -8,7 +8,7 @@ import django_excel as excel
 from django.views.decorators.cache import cache_page
 
 
-@cache_page(60 * 60)  # 1 hora
+@cache_page(60 * 5)  # 5 minutos
 def resultado_parcial_eleccion(request, slug_eleccion, filetype):
     '''
     lista de paradas de transporte urbano de pasajeros
