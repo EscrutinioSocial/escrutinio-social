@@ -416,8 +416,16 @@ def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=F
 
 @receiver(post_save, sender=Mesa)
 def actualizar_electores_seccion(sender, instance=None, created=False, **kwargs):
-    seccion = instance.lugar_votacion.circuito.seccion
-    seccion.electores = Mesa.objects.filter(
-        lugar_votacion__circuito__seccion=seccion,
-    ).aggregate(v=Sum('electores'))['v']
-    seccion.save(update_fields=['electores'])
+    
+    if instance.lugar_votacion is not None and instance.lugar_votacion.circuito is not None:
+        seccion = instance.lugar_votacion.circuito.seccion
+        if seccion is not None:
+            electores = Mesa.objects.filter(
+                lugar_votacion__circuito__seccion=seccion,
+            ).aggregate(v=Sum('electores'))['v']
+
+            if electores is None:
+                electores = 0
+    
+            seccion.electores = electores
+            seccion.save(update_fields=['electores'])
