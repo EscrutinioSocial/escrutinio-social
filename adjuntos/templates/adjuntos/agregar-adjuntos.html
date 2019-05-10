@@ -14,7 +14,9 @@
 
             <form action="{% url 'agregar-adjuntos' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                {% form  %}{% endform %}
+                {# FIXME django-material desactiva el atributo multiple del filefield #}
+                {# {% form  %}{% endform %} #}
+                {{ form }}
                 <div class="card-action">
                     <div class="right-align">
                         {% block submit_row %}
