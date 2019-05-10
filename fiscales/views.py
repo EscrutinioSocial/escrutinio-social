@@ -389,7 +389,6 @@ def chequear_resultado_mesa(request, eleccion_id, mesa_numero):
     )
 
 
-
 class CambiarPassword(PasswordChangeView):
     template_name = "fiscales/cambiar-contraseña.html"
     success_url = reverse_lazy('mis-datos')

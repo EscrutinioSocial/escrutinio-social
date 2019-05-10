@@ -9,6 +9,7 @@ from .factories import (
     LugarVotacionFactory,
     SeccionFactory,
     FiscalFactory,
+    OpcionFactory,
     CircuitoFactory,
     MesaFactory,
     AttachmentFactory,
@@ -228,6 +229,28 @@ def test_resultados_proyectados(fiscal_client):
     # TODO revisar. no deberia dar el 100 la suma de la proyeccion ?
     assert positivos[o1.partido]['proyeccion'] == '42.44'
     assert positivos[o2.partido]['proyeccion'] == '32.56'
+
+
+def test_resultados_proyectados_simple(fiscal_client):
+    s1, s2 = SeccionFactory.create_batch(2)
+    o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
+    e1 = EleccionFactory(opciones=[o1, o2])
+
+    m1, *_ = MesaFactory.create_batch(3, eleccion=[e1], lugar_votacion__circuito__seccion=s1, electores=200)
+    m2 = MesaFactory(eleccion=[e1], lugar_votacion__circuito__seccion=s2, electores=200)
+
+    VotoMesaReportadoFactory(opcion=o1, mesa=m1, eleccion=e1, votos=100)
+    VotoMesaReportadoFactory(opcion=o2, mesa=m1, eleccion=e1, votos=50)
+    VotoMesaReportadoFactory(opcion=o1, mesa=m2, eleccion=e1, votos=50)
+    VotoMesaReportadoFactory(opcion=o2, mesa=m2, eleccion=e1, votos=100)
+
+    response = fiscal_client.get(reverse('resultados-eleccion', args=[e1.id]) + '?proyectado=✓')
+
+    positivos = response.context['resultados']['tabla_positivos']
+    assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o2.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o1.partido]['proyeccion'] == '58.33'
+    assert positivos[o2.partido]['proyeccion'] == '41.67'
 
 
 def test_mesa_orden(carta_marina):
