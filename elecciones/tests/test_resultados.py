@@ -189,7 +189,7 @@ def test_resultados_proyectados(fiscal_client):
     # ####################################################
     # La seccion 1 tiene a 1000, el 62.5% del padron
     # La seccion 2 tiene a  400, el 25  % del padron
-    # La seccion 1 tiene a  200, el 12.5% del padron
+    # La seccion 3 tiene a  200, el 12.5% del padron
 
     # tomo las primerar mesas de las secciones 1 y 3
     m1 = ms1[0]
