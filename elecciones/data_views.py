@@ -16,7 +16,7 @@ def resultado_parcial_eleccion(request, slug_eleccion, filetype):
     eleccion = Eleccion.objects.get(slug=slug_eleccion)
     mesas_reportadas = VotoMesaReportado.objects.filter(eleccion=eleccion).order_by('mesa__numero')
     
-    headers = ['seccion', 'circuito', 'centro de votacion', 'mesa']
+    headers = ['seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa']
     for opcion in eleccion.opciones.all():
         headers.append(opcion.nombre)
 
@@ -35,7 +35,9 @@ def resultado_parcial_eleccion(request, slug_eleccion, filetype):
     
     for mesa, opciones in resultados.items():
         fila = [mesa.lugar_votacion.circuito.seccion.nombre,
+                mesa.lugar_votacion.circuito.seccion.numero,
                 mesa.lugar_votacion.circuito.nombre,
+                mesa.lugar_votacion.circuito.numero,
                 mesa.lugar_votacion.nombre,
                 mesa.numero]
         for opcion, votos in opciones.items():
