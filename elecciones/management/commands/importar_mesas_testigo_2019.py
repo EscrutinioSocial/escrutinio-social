@@ -6,7 +6,9 @@ from csv import DictReader
 from elecciones.models import Mesa
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/mesas-testigo-cba-capital-2019.csv'
+# antes pasaron solo de capitalCSV = Path(settings.BASE_DIR) / 'elecciones/data/mesas-testigo-cba-capital-2019.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/mesas-testigo-cba-prov-2019.csv'
+
 
 class Command(BaseCommand):
     help = "Importar lista de mesas testigo (según análisis estadísticos de uno de los partidos)"
