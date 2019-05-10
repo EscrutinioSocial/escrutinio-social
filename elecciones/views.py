@@ -193,7 +193,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
                 mesas = ag.mesas(eleccion)
                 datos_ponderacion[ag] = self.calcular(eleccion, mesas)
 
-                if datos_ponderacion[ag]["escrutados"] is None:
+                if not datos_ponderacion[ag]["escrutados"]:
                     proyeccion_incompleta.append(ag)
                 else:
                     electores_pond += datos_ponderacion[ag]["electores"]

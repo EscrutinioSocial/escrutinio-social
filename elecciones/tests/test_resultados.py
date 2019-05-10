@@ -253,12 +253,12 @@ def test_resultados_proyectados(fiscal_client):
     # proyeccion p2 = 400 + 121 = 521
     # votos proyectados = 1200
     # p1 = 679 / 1200 = 56.58%
-    # p3 = 521 / 1200 = 43.41%
+    # p3 = 521 / 1200 = 43.42%
     # OJO NO SE PUEDE PROYECTAR LA SECCION 2, no tiene ni una mesa
     # OJO, si el % de mesas es bajo la proyeccion puede ser ruidosa
     # TODO revisar. no deberia dar el 100 la suma de la proyeccion ?
     assert positivos[o1.partido]['proyeccion'] == '56.58'
-    assert positivos[o2.partido]['proyeccion'] == '43.41'
+    assert positivos[o2.partido]['proyeccion'] == '43.42'
 
 
 def test_resultados_proyectados_simple(fiscal_client):
