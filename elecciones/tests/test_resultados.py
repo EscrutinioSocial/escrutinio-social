@@ -55,7 +55,7 @@ def test_total_electores_en_eleccion(carta_marina):
     m1.eleccion_add(e2)
     m2.eleccion_add(e2)
 
-    assert Eleccion.objects.get(id=1).electores == 800
+    assert Eleccion.objects.first().electores == 800
     assert e2.electores == 200
 
 
@@ -121,7 +121,7 @@ def test_electores_sin_filtro(url_resultados, fiscal_client):
 def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # resultados para mesa 1
     m1, _, m3, *_ = carta_marina
-    eleccion = Eleccion.objects.get(id=1)
+    eleccion = Eleccion.objects.first()
     # opciones a partido
     o1, o2, o3 = eleccion.opciones.filter(partido__isnull=False)
     blanco = eleccion.opciones.get(nombre='blanco')
@@ -198,7 +198,7 @@ def test_resultados_proyectados(fiscal_client):
     m1 = ms1[0]
     m3 = ms3[0]
 
-    eleccion = Eleccion.objects.get(id=1)
+    eleccion = Eleccion.objects.first()
     # opciones a partido
     o1, o2, o3 = eleccion.opciones.filter(partido__isnull=False)
     blanco = eleccion.opciones.get(nombre='blanco')

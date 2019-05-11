@@ -40,7 +40,7 @@ class Command(BaseCommand):
         eleccion_gobernador_cordoba, created = Eleccion.objects.get_or_create(slug='gobernador-cordoba-2019', nombre='Gobernador Córdoba 2019', fecha=fecha)
         eleccion_intendente_cordoba, created = Eleccion.objects.get_or_create(slug='intendente-cordoba-2019', nombre='Intendente Córdoba 2019', fecha=fecha)
         eleccion_legisladores_distrito_unico, created = Eleccion.objects.get_or_create(slug='legisladores-dist-unico-cordoba-2019', nombre='Legisladores Distrito Único Córdoba 2019', fecha=fecha)
-        # eleccion_tribunal_de_cuentas_provincial, created = Eleccion.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha)
+        # eleccion_tribunal_de_cuentas_provincial, created = Eleccion.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha, activa=False)
 
         for c, row in enumerate(reader, 1):
             depto = row['Nombre Seccion']
@@ -49,10 +49,13 @@ class Command(BaseCommand):
 
             slg = f'legisladores-departamento-{depto}-2019'
             nombre = f'Legisladores Depto {depto} Córdoba 2019'
+            
             # las departamentales no están activas por defecto
-            eleccion_legislador_departamental, created = Eleccion.objects.get_or_create(
-                slug=slg, nombre=nombre, activa=False, fecha=fecha
-            )
+            # POR AHORA NO LAS USAMOS (inactivas)
+            eleccion_legislador_departamental, created = Eleccion.objects.get_or_create(slug=slg,
+                                                                                        nombre=nombre,
+                                                                                        activa=False,
+                                                                                        fecha=fecha)
 
             self.log(seccion, created)
             circuito, created = Circuito.objects.get_or_create(
@@ -131,4 +134,24 @@ class Command(BaseCommand):
                 mesa.save()
 
                 self.log(mesa, created)
+
+
+        """ hay 3 mesas que son de una escuela y no son nros consecutivos
+            Se requiere copiar la mesa 1 3 veces antes de tirar este comando para que no falten esos tres datos
+
+        """
+        mesa_8651 = Mesa.objects.get(numero=1)
+        mesa_8651.pk = None
+        mesa_8651.numero = 8651
+        mesa_8651.save()
+
+        mesa_8652 = Mesa.objects.get(numero=1)
+        mesa_8652.pk = None
+        mesa_8652.numero = 8652
+        mesa_8652.save()
+
+        mesa_8653 = Mesa.objects.get(numero=1)
+        mesa_8653.pk = None
+        mesa_8653.numero = 8653
+        mesa_8653.save()
 
