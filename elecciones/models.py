@@ -206,12 +206,10 @@ class Mesa(models.Model):
     def eleccion_add(self, eleccion):
         MesaEleccion.objects.get_or_create(mesa=self, eleccion=eleccion)
 
-
     def siguiente_eleccion_sin_carga(self):
         for eleccion in self.eleccion.order_by('id'):
             if not VotoMesaReportado.objects.filter(mesa=self, eleccion=eleccion).exists():
                 return eleccion
-
 
     @classmethod
     def con_carga_pendiente(cls, wait=2):
@@ -413,7 +411,7 @@ def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=F
 
 @receiver(post_save, sender=Mesa)
 def actualizar_electores_seccion(sender, instance=None, created=False, **kwargs):
-    
+
     if instance.lugar_votacion is not None and instance.lugar_votacion.circuito is not None:
         seccion = instance.lugar_votacion.circuito.seccion
         if seccion is not None:
@@ -423,6 +421,6 @@ def actualizar_electores_seccion(sender, instance=None, created=False, **kwargs)
 
             if electores is None:
                 electores = 0
-    
+
             seccion.electores = electores
             seccion.save(update_fields=['electores'])

@@ -24,6 +24,6 @@ class ProblemaCreate(StaffOnlyMixing, CreateView):
 
         problema.mesa = context['mesa']
         problema.save()
-        messages.success(self.request, 'El problema fue reportado. Gracias')
+        messages.success(self.request, 'El problema de esta carga fue reportado. Gracias')
 
         return redirect("home")

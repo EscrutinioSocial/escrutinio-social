@@ -21,7 +21,7 @@ from annoying.functions import get_object_or_None
 from contacto.forms import MinimoContactoInlineFormset
 from .models import Fiscal
 from elecciones.models import (
-    Mesa, Eleccion, VotoMesaReportado, Circuito, LugarVotacion, Seccion
+    Mesa, Eleccion, MesaEleccion, VotoMesaReportado, Circuito, LugarVotacion, Seccion
 )
 from datetime import timedelta
 from django.utils import timezone
@@ -351,31 +351,38 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
 
 @login_required
 def chequear_resultado(request):
+    """vista que elige una mesa con cargas a confirmar y redirige a la url correspondiente"""
     mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
     if not mesa:
         return render(request, 'fiscales/sin-actas-cargadas.html')
-    eleccion = mesa.siguiente_eleccion_sin_carga()
+    eleccion = mesa.siguiente_eleccion_a_confirmar()
     return redirect('chequear-resultado-mesa', eleccion_id=eleccion.id, mesa_numero=mesa.numero)
 
 
 
 @login_required
 def chequear_resultado_mesa(request, eleccion_id, mesa_numero):
-    mesa = get_object_or_404(Mesa, eleccion__id=eleccion_id, numero=mesa_numero)
+    """muestra la carga actual de la eleccion para la mesa"""
+
+    me = get_object_or_404(MesaEleccion, mesa__numero=mesa_numero, eleccion__id=eleccion_id)
+    mesa = me.mesa
+    eleccion = me.eleccion
+
     data = request.POST if request.method == 'POST' else None
     if data and 'confirmar' in data:
-
-        mesa.carga_confirmada = True
-        mesa.save(update_fields=['carga_confirmada'])
+        me.confirmada = True
+        me.save(update_fields=['confirmada'])
+        messages.success(request, f'Confirmaste la categoria {eleccion} para {mesa}')
         return redirect('chequear-resultado')
 
-    reportados = mesa.votomesareportado_set.all().order_by('opcion__orden')
+    reportados = mesa.votomesareportado_set.filter(eleccion=eleccion).order_by('opcion__orden')
     return render(
         request,
         "fiscales/chequeo_mesa.html",
         {
             'reportados': reportados,
-            'object': mesa
+            'object': mesa,
+            'eleccion': me.eleccion
         }
     )
 

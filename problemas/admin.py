@@ -5,6 +5,14 @@ from .models import Problema
 from django_admin_row_actions import AdminRowActionsMixin
 
 
+def marcar_resuelto(modeladmin, request, queryset):
+    queryset.update(estado=Problema.ESTADOS.resuelto)
+
+
+marcar_resuelto.short_description = "Marcar como resueltos"
+
+
+
 class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def mesa_(o):
@@ -19,11 +27,13 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def get_row_actions(self, obj):
         row_actions = []
-        row_actions.append({
-            'label': 'Editar/Cargar Mesa',
-            'url': reverse('mesa-cargar-resultados', args=[1, obj.mesa.numero]),
-            'enabled': True
-        })
+
+        for e in obj.mesa.eleccion.all():
+            row_actions.append({
+                'label': f'Editar/Cargar {e}',
+                'url': reverse('mesa-cargar-resultados', args=[e.id, obj.mesa.numero]),
+                'enabled': True
+            })
         row_actions += super().get_row_actions(obj)
         return row_actions
 

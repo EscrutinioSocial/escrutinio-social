@@ -67,13 +67,12 @@ check_box</i><span class="badge">{{ mesas_a_confirmar_count }}</span></a>
 
         {% if request.user.is_superuser %}
         <li>
-            <a href="{% url "resultados-eleccion" %}?proyectado=✓" class="collapsible-header" data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
+            <a href="{% url "resultados-eleccion" 1 %}?proyectado=✓" target="_blank" class="collapsible-header" data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
         </li>
         {% endif %}
 
-
         <li>
-            <a href="https://docs.google.com/document/d/1NpIIwJIoqli--0ZihaEo4a126GMRVgHrWLJ-qVO9QYc/edit#heading=h.nobg9kju7uol" target="_blank" class="collapsible-header" data-turbolinks="false">Ayuda<i class="material-icons">help_outline</i></a>
+            <a href="https://docs.google.com/document/d/19qFhQ6_bd1mvfOLmwSzj07nDtc4Q0WKJo75dhMPIhVg/edit?usp=sharing" target="_blank" class="collapsible-header" data-turbolinks="false">Ayuda<i class="material-icons">help_outline</i></a>
         </li>
 
 

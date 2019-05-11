@@ -22,7 +22,9 @@ $(document).ready(function(){
 
 
 {% block card-content %}
-    <div class="card-title"> Mesa {{ object.numero }}</div>
+    <div class="card-title"> Mesa {{ object.numero }}
+        <b style='background-color: {{ eleccion.back_color }}; color: {{ eleccion.color }}'>{{ eleccion }}</b>
+    </div>
 
 
 <table class="highlight bordered {% if responsive %}responsive-table{% endif %}">
@@ -43,18 +45,25 @@ $(document).ready(function(){
         <div class="row">
 
             <div class="col s12">
-                <div class="right-align">
-                    <form>
+                <form>
+
+                <div class="center-align">
                         {% csrf_token %}
                         <button name="confirmar" class="btn waves-effect waves-light btn white-text" type="submit" tabindex="30">
                         Confirmar
                         </button>
-                    </form>
+
+                    <a href="{% url 'mesa-cargar-resultados' eleccion.id object.numero %}" class="btn waves-effect waves-light btn white-text">
+                      Editar
+                   </a>
 
                     <a href="{% url 'reportar-problema'  object.numero %}" class="btn waves-effect waves-light btn white-text">
-                      Reportar problema
+                      Problema
                    </a>
+
                 </div>
+                    </form>
+
             </div>
 
         </div>
