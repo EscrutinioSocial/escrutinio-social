@@ -1,4 +1,5 @@
 import itertools
+from django.conf import settings
 from functools import lru_cache
 from collections import defaultdict, OrderedDict
 from attrdict import AttrDict
@@ -235,11 +236,13 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             "votos": c.positivos,
             "porcentajeTotal": f'{c.positivos*100/c.total:.2f}' if c.total else '-'
         }
-        result_piechart = [
-            {'key': str(k),
-             'y': v["votos"],
-             'color': k.color if not isinstance(k, str) else '#CCCCCC'} for k, v in tabla_positivos.items()
-        ]
+        result_piechart = None
+        if settings.SHOW_PLOT:
+            result_piechart = [
+                {'key': str(k),
+                'y': v["votos"],
+                'color': k.color if not isinstance(k, str) else '#CCCCCC'} for k, v in tabla_positivos.items()
+            ]
         resultados = {
             'tabla_positivos': tabla_positivos,
             'tabla_no_positivos': tabla_no_positivos,
@@ -329,11 +332,12 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         context['object'] = eleccion
         context['eleccion_id'] = eleccion.id
         context['resultados'] = self.get_resultados(eleccion)
-        chart = context['resultados']['result_piechart']
-
-        context['chart_values'] = [v['y'] for v in chart]
-        context['chart_keys'] = [v['key'] for v in chart]
-        context['chart_colors'] = [v['color'] for v in chart]
+        context['show_plot'] = settings.SHOW_PLOT
+        if settings.SHOW_PLOT:
+            chart = context['resultados']['result_piechart']
+            context['chart_values'] = [v['y'] for v in chart]
+            context['chart_keys'] = [v['key'] for v in chart]
+            context['chart_colors'] = [v['color'] for v in chart]
 
         if not self.filtros:
             context['elecciones'] = [Eleccion.objects.first()]
