@@ -139,16 +139,19 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # votaron 120/120 personas
     VotoMesaReportadoFactory(opcion=blanco, mesa=m3, eleccion=eleccion, votos=0)
 
+
     response = fiscal_client.get(url_resultados)
     resultados = response.context['resultados']
     positivos = resultados['tabla_positivos']
+
+    assert resultados['porcentaje_mesas_escrutadas'] == '25.00'     # 2 de 8
 
     # se ordena de acuerdo al que va ganando
     assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
 
     total_positivos = resultados['positivos']
 
-    assert total_positivos == 210 == 20 + 30 + 40 + 30 + 40 + 50
+    assert total_positivos == 210  # 20 + 30 + 40 + 30 + 40 + 50
 
     # cuentas
     assert positivos[o3.partido]['votos'] == 40 + 50

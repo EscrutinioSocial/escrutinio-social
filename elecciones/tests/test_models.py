@@ -6,7 +6,7 @@ from .factories import (
     MesaFactory,
     ProblemaFactory
 )
-from elecciones.models import Mesa, MesaEleccion
+from elecciones.models import Mesa, MesaEleccion, Eleccion
 from django.utils import timezone
 
 
@@ -18,6 +18,16 @@ def test_mesa_siguiente_eleccion(db):
     VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
     assert m1.siguiente_eleccion_sin_carga() == e2
     VotoMesaReportadoFactory(mesa=m1, eleccion=e2, opcion=e2.opciones.first(), votos=10)
+    assert m1.siguiente_eleccion_sin_carga() is None
+
+
+def test_mesa_siguiente_eleccion_desactiva(db):
+    e1, e2 = elecciones = EleccionFactory.create_batch(2)
+    e2.activa = False
+    e2.save()
+    m1 = MesaFactory(eleccion=elecciones)
+    assert m1.siguiente_eleccion_sin_carga() == e1
+    VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
     assert m1.siguiente_eleccion_sin_carga() is None
 
 
@@ -107,6 +117,14 @@ def test_mesa_siguiente_eleccion_a_confirmar(db):
     assert m1.siguiente_eleccion_a_confirmar() == e2
 
 
+def test_mesa_siguiente_eleccion_a_confirmar_eleccion_desactivada(db):
+    e1 = EleccionFactory(activa=False)
+    m1 = MesaFactory(eleccion=[e1])
+    VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
+    # aunque haya datos cargados, la eleccion desactivada la excluye de confirmacion
+    assert m1.siguiente_eleccion_a_confirmar() is None
+
+
 def test_con_carga_a_confirmar(db):
     e1, e2 = eleccion = EleccionFactory.create_batch(2)
     m1 = MesaFactory(eleccion=eleccion)
@@ -125,3 +143,42 @@ def test_con_carga_a_confirmar(db):
     me.save()
 
     assert set(Mesa.con_carga_a_confirmar()) == {m2}
+
+
+def test_con_carga_a_confirmar_eleccion_desactivada(db):
+    e1 = EleccionFactory(activa=False)
+    m1 = MesaFactory(eleccion=[e1])
+    VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
+    assert Mesa.con_carga_a_confirmar().count() == 0
+
+
+def test_elecciones_para_mesa(db):
+    e1, e2, e3 = EleccionFactory.create_batch(3)
+    e4 = EleccionFactory(activa=False)
+    m1 = MesaFactory(eleccion=[e1, e2])
+    m2 = MesaFactory(eleccion=[e1, e2, e4])
+    m3 = MesaFactory(eleccion=[e1])
+    m4 = MesaFactory(eleccion=[e4])
+    m5 = MesaFactory(eleccion=[e1, e2])
+
+    # no hay elecciones comunes a todas las mesas
+    assert list(
+        Eleccion.para_mesas([m1, m2, m3, m4, m5]).order_by('id')
+    ) == []
+
+    # no hay elecciones comunes a todas las mesas
+    assert list(
+        Eleccion.para_mesas([m1, m2, m3, m5]).order_by('id')
+    ) == [e1]
+
+    assert list(
+        Eleccion.para_mesas([m1, m2, m5]).order_by('id')
+    ) == [e1, e2]
+
+    assert list(
+        Eleccion.para_mesas([m1, m3]).order_by('id')
+    ) == [e1]
+
+    assert list(
+        Eleccion.para_mesas([m2, m4]).order_by('id')
+    ) == []
