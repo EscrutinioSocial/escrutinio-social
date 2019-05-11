@@ -319,9 +319,7 @@ class Partido(models.Model):
 
 
 class Opcion(models.Model):
-    MOSTRABLES = list(range(1, 21))
-    AGREGACIONES = {f'{id}': Sum(Case(When(opcion__id=id, then=F('votos')),
-                             output_field=IntegerField())) for id in MOSTRABLES}
+
 
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
@@ -330,6 +328,10 @@ class Opcion(models.Model):
         help_text='Orden en la boleta', null=True, blank=True)
     obligatorio = models.BooleanField(default=False)
     es_contable = models.BooleanField(default=True)
+
+    es_metadata = models.BooleanField(
+        default=False, help_text="para campos que son tipo 'Total positivo, o Total votos'")
+
     codigo_dne = models.PositiveIntegerField(null=True, blank=True, help_text='Nº asignado en la base de datos de resultados oficiales')
 
 
