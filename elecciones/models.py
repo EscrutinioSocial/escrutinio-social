@@ -400,7 +400,7 @@ class Eleccion(models.Model):
 
     @classmethod
     def actual(cls):
-        return cls.objects.get(id=1)
+        return cls.objects.first()
 
     @property
     def electores(self):
@@ -409,6 +409,7 @@ class Eleccion(models.Model):
     class Meta:
         verbose_name = 'Elección'
         verbose_name_plural = 'Elecciones'
+        ordering = ('id',)
 
     def __str__(self):
         return self.nombre
