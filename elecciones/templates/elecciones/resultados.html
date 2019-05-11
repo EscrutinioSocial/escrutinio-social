@@ -65,7 +65,10 @@
                       <th>Votos</th>
                       <th>%</th>
                       {% if resultados.proyectado %}
-                      <th>% proyectado</th>
+                      <th>% proyectado <i class="small material-icons {% if resultados.proyeccion_incompleta  %}tooltipped" data-position="bottom" data-tooltip="Proyección incompleta. Faltan cargar datos en
+
+{% for ag in resultados.proyeccion_incompleta %}{{ ag }} / {% endfor %}
+{% endif %}">warning</i> </th>
                       {% endif %}
                   </tr>
                   </thead>
@@ -90,7 +93,7 @@
                   {% endwith %}
               </table>
 
-              
+
               <div id="piechart-{{object.id}}"></div>
 
 
@@ -164,6 +167,8 @@
 $(function() {
 
    $('tabs').tabs();
+
+   $('.tooltipped').tooltip();
 
    var data = [{
       y: {{ chart_values|safe }},
