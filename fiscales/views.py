@@ -263,7 +263,7 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
 def elegir_acta_a_cargar(request):
     # se eligen mesas que nunca se intentaron cargar o que se asignaron a
     mesas = Mesa.con_carga_pendiente().order_by(
-        'orden_de_carga', '-lugar_votacion__circuito__seccion__electores'
+        'orden_de_carga', # '-lugar_votacion__circuito__seccion__electores'
     )
     if mesas.exists():
         mesa = mesas[0]
