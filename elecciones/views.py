@@ -217,7 +217,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
                 acumulador_positivos = 0
                 for ag in agrupaciones:
                     data = datos_ponderacion[ag]
-                    if k in data["votos"]:
+                    if k in data["votos"] and data["positivos"]:
                         acumulador_positivos += data["electores"]*data["votos"][k]/data["positivos"]
 
                 expanded_result[k]["proyeccion"] = f'{acumulador_positivos*100/electores_pond:.2f}'
