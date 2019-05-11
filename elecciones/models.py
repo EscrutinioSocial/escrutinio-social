@@ -26,6 +26,10 @@ class Seccion(models.Model):
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
+    proyeccion_ponderada = models.BooleanField(
+        default=False,
+        help_text='Si está marcado, el cálculo de proyeccion se agrupará por circuitos para esta sección'
+    )
 
     class Meta:
         verbose_name = 'Sección electoral'
@@ -418,7 +422,7 @@ def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=F
 
 @receiver(post_save, sender=Mesa)
 def actualizar_electores_seccion(sender, instance=None, created=False, **kwargs):
-    
+
     if instance.lugar_votacion is not None and instance.lugar_votacion.circuito is not None:
         seccion = instance.lugar_votacion.circuito.seccion
         if seccion is not None:
@@ -428,6 +432,6 @@ def actualizar_electores_seccion(sender, instance=None, created=False, **kwargs)
 
             if electores is None:
                 electores = 0
-    
+
             seccion.electores = electores
             seccion.save(update_fields=['electores'])

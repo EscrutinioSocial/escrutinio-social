@@ -1,6 +1,7 @@
-from attrdict import AttrDict
+import itertools
 from functools import lru_cache
 from collections import defaultdict, OrderedDict
+from attrdict import AttrDict
 from django.http import JsonResponse
 from datetime import timedelta
 from django.utils import timezone
@@ -183,9 +184,14 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
 
         proyeccion_incompleta = []
         if proyectado:
-            # La proyeccion se calcula a partir de la ponderacion del subnivel
-            # Ejemplo: para provincia por secciones, para secciones por sus circuitos. etc.
-            agrupaciones = Seccion.objects.all()
+            # La proyeccion se calcula sólo cuando no hay filtros (es decir, para provincia)
+            # ponderando por secciones (o circuitos para secciones de "proyeccion ponderada")
+
+
+            agrupaciones = list(itertools.chain(                                # cast para reusar
+                Circuito.objects.filter(seccion__proyeccion_ponderada=True),
+                Seccion.objects.filter(proyeccion_ponderada=False)
+            ))
             datos_ponderacion = {}
 
             electores_pond = 0

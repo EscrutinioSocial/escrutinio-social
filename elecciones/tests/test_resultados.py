@@ -237,7 +237,7 @@ def test_resultados_proyectados(fiscal_client):
     positivos = response.context['resultados']['tabla_positivos']
     assert list(positivos.keys()) == [o1.partido, o2.partido, o3.partido]
 
-    # cuentas
+    # la contabilidad absoluta es la misma
     assert positivos[o2.partido]['votos'] == 201
     assert positivos[o1.partido]['votos'] == 199
     assert positivos[o3.partido]['votos'] == 0
@@ -256,7 +256,6 @@ def test_resultados_proyectados(fiscal_client):
     # p3 = 521 / 1200 = 43.42%
     # OJO NO SE PUEDE PROYECTAR LA SECCION 2, no tiene ni una mesa
     # OJO, si el % de mesas es bajo la proyeccion puede ser ruidosa
-    # TODO revisar. no deberia dar el 100 la suma de la proyeccion ?
     assert positivos[o1.partido]['proyeccion'] == '56.58'
     assert positivos[o2.partido]['proyeccion'] == '43.42'
 
@@ -281,6 +280,56 @@ def test_resultados_proyectados_simple(fiscal_client):
     assert positivos[o2.partido]['porcentajePositivos'] == '50.00'
     assert positivos[o1.partido]['proyeccion'] == '58.33'
     assert positivos[o2.partido]['proyeccion'] == '41.67'
+
+
+def test_resultados_proyectados_usa_circuito(fiscal_client):
+    # 2 secciones. 1 ponderada con 2 circuitos
+    s1 = SeccionFactory(proyeccion_ponderada=True)
+    c1, c2 = CircuitoFactory.create_batch(2, seccion=s1)
+    c3 = CircuitoFactory()
+    s2 = c2.seccion
+
+
+    o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
+    e1 = EleccionFactory(opciones=[o1, o2])
+
+    ms1, ms2, ms3 = (
+        MesaFactory.create_batch(4, eleccion=[e1], lugar_votacion__circuito=c1, electores=200),
+        MesaFactory.create_batch(2, eleccion=[e1], lugar_votacion__circuito=c2, electores=200),
+        MesaFactory.create_batch(2, eleccion=[e1], lugar_votacion__circuito=c3, electores=200)
+    )
+
+
+    VotoMesaReportadoFactory(opcion=o1, mesa=ms1[0], eleccion=e1, votos=70)
+    VotoMesaReportadoFactory(opcion=o2, mesa=ms1[0], eleccion=e1, votos=90)
+
+    VotoMesaReportadoFactory(opcion=o1, mesa=ms2[0], eleccion=e1, votos=90)
+    VotoMesaReportadoFactory(opcion=o2, mesa=ms2[0], eleccion=e1, votos=70)
+
+
+    VotoMesaReportadoFactory(opcion=o1, mesa=ms3[0], eleccion=e1, votos=80)
+    VotoMesaReportadoFactory(opcion=o2, mesa=ms3[0], eleccion=e1, votos=80)
+
+    response = fiscal_client.get(reverse('resultados-eleccion', args=[e1.id]) + '?proyectado=✓')
+    positivos = response.context['resultados']['tabla_positivos']
+
+    assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o2.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o2.partido]['proyeccion'] == '51.56'
+    assert positivos[o1.partido]['proyeccion'] == '48.44'
+
+    s1.proyeccion_ponderada = False
+    s1.save()
+
+    # proyeccion sin ponderar circuitos
+    response = fiscal_client.get(reverse('resultados-eleccion', args=[e1.id]) + '?proyectado=✓')
+    positivos = response.context['resultados']['tabla_positivos']
+
+    assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o2.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o2.partido]['proyeccion'] == '50.00'
+    assert positivos[o1.partido]['proyeccion'] == '50.00'
+
 
 
 def test_mesa_orden(carta_marina):
