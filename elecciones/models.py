@@ -5,7 +5,11 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
-from django.db.models import Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef, Subquery, Exists, Max, Value
+from django.db.models import (
+    Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef,
+    Subquery, Exists, Max, Value
+)
+from django.db.models.query import QuerySet
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from djgeojson.fields import PointField
@@ -211,7 +215,7 @@ class Mesa(models.Model):
         MesaEleccion.objects.get_or_create(mesa=self, eleccion=eleccion)
 
     def siguiente_eleccion_sin_carga(self):
-        for eleccion in self.eleccion.order_by('id'):
+        for eleccion in self.eleccion.filter(activa=True).order_by('id'):
             if not VotoMesaReportado.objects.filter(mesa=self, eleccion=eleccion).exists():
                 return eleccion
 
@@ -230,7 +234,7 @@ class Mesa(models.Model):
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
-            a_cargar = Count('eleccion')
+            a_cargar = Count('eleccion', filter=Q(activa=True))
         ).filter(
             cargadas__lt=F('a_cargar')
         ).annotate(
@@ -246,7 +250,7 @@ class Mesa(models.Model):
         return qs
 
     def siguiente_eleccion_a_confirmar(self):
-        for me in MesaEleccion.objects.filter(mesa=self).order_by('eleccion'):
+        for me in MesaEleccion.objects.filter(mesa=self, eleccion__activa=True).order_by('eleccion'):
             if not me.confirmada and VotoMesaReportado.objects.filter(
                 eleccion=me.eleccion, mesa=me.mesa
             ).exists():
@@ -256,6 +260,7 @@ class Mesa(models.Model):
     def con_carga_a_confirmar(cls):
         qs = cls.objects.filter(
             mesaeleccion__confirmada=False,
+            mesaeleccion__eleccion__activa=True,
             cargadas__gte=1
         ).filter(
             confirmadas__lt=F('cargadas')
@@ -356,11 +361,42 @@ class Eleccion(models.Model):
     color = models.CharField(max_length=10, default='black', help_text='Color para css (red o #FF0000)')
     back_color = models.CharField(max_length=10, default='white', help_text='Color para css (red o #FF0000)')
 
+    activa = models.BooleanField(
+        default=True,
+        help_text='Si no está activa, no se cargan datos para esta eleccion y no se muestran resultados'
+    )
+
     def get_absolute_url(self):
         return reverse('resultados-eleccion', args=[self.id])
 
     def opciones_actuales(self):
         return self.opciones.all().order_by('orden')
+
+    @classmethod
+    def para_mesas(cls, mesas):
+        """Devuelve el conjunto de elecciones que son comunes a todas las mesas dadas"""
+        if isinstance(mesas, QuerySet):
+            mesas_count = mesas.count()
+        else:
+            # si es lista
+            mesas_count = len(mesas)
+
+        # el primer filtro devuelve elecciones activas que esten relacianadas a una o
+        # mas mesas, pero no necesariamente a todas
+        qs = cls.objects.filter(
+            activa=True,
+            mesa__in=mesas
+        )
+
+        # para garantizar que son elecciones asociadas a todas las mesas
+        # anotamos la cuenta y la comparamos con la cantidad de mesas del conjunto
+        qs = qs.annotate(
+            num_mesas=Count('mesa')
+        ).filter(
+            num_mesas=mesas_count
+        )
+        return qs
+
 
     @classmethod
     def actual(cls):

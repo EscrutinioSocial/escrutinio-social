@@ -339,15 +339,13 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             context['chart_keys'] = [v['key'] for v in chart]
             context['chart_colors'] = [v['color'] for v in chart]
 
-        if not self.filtros:
-            context['elecciones'] = [Eleccion.objects.first()]
-        else:
-            # solo las elecciones comunes a todas las mesas
-            mesas = self.mesas(eleccion)
-            elecciones = Eleccion.objects.filter(mesa__in=mesas).annotate(num_mesas=Count('mesa')).filter(num_mesas=mesas.count())
-            context['elecciones'] = elecciones.order_by('id')
+        # las pestañas de elecciones que se muestran son las que sean
+        # comunes a todas las mesas filtradas
 
-            # context['elecciones'] = reduce(lambda x, y: x & y, (m.eleccion.all() for m in self.mesas(eleccion)))
+        # para el calculo se filtran elecciones activas que esten relacionadas
+        # a las mesas
+        mesas = self.mesas(eleccion)
+        context['elecciones'] = Eleccion.para_mesas(mesas).order_by('id')
 
         context['secciones'] = Seccion.objects.all()
 
