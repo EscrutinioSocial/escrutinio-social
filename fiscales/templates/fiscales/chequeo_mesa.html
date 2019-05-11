@@ -22,7 +22,9 @@ $(document).ready(function(){
 
 
 {% block card-content %}
-    <div class="card-title"> Mesa {{ object.numero }}</div>
+    <div class="card-title"> Mesa {{ object.numero }}
+        <b style='background-color: {{ eleccion.back_color }}; color: {{ eleccion.color }}'>{{ eleccion }}</b>
+    </div>
 
 
 <table class="highlight bordered {% if responsive %}responsive-table{% endif %}">

@@ -6,9 +6,8 @@ from elecciones.tests.factories import (
     MesaFactory,
     OpcionFactory,
     CircuitoFactory,
-    ProblemaFactory
 )
-from elecciones.models import Mesa, VotoMesaReportado
+from elecciones.models import Mesa, VotoMesaReportado, MesaEleccion
 from elecciones.tests.test_resultados import fiscal_client          # noqa
 
 
@@ -36,7 +35,8 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
 
-    # como m1 queda en periodo de "taken" (aunque no se haya ocupado aun) se pasa a la siguiente mesa
+    # como m1 queda en periodo de "taken" (aunque no se haya ocupado aun)
+    # se pasa a la siguiente mesa
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m2.numero])
@@ -130,6 +130,45 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     assert response.url == reverse('elegir-acta-a-cargar')
 
 
+def test_chequear_resultado(db, fiscal_client):
+    o = OpcionFactory(es_contable=True)
+    e1 = EleccionFactory(opciones=[o])
+    mesa = MesaFactory(eleccion=[e1])
+    me = MesaEleccion.objects.get(eleccion=e1, mesa=mesa)
+    assert me.confirmada is False
+
+    VotoMesaReportadoFactory(opcion=o, mesa=mesa, eleccion=e1, votos=1)
+    response = fiscal_client.get(reverse('chequear-resultado'))
+    assert response.status_code == 302
+    assert response.url == reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
+    me.confirmada = True
+    me.save()
+    response = fiscal_client.get(reverse('chequear-resultado'))
+    assert response.status_code == 200
+    assert 'No hay actas cargadas para verificar por el momento' in response.content.decode('utf8')
 
 
+def test_chequear_resultado_mesa(db, fiscal_client):
+    opcs = OpcionFactory.create_batch(3, es_contable=True)
+    e1 = EleccionFactory(opciones=opcs)
+    e2 = EleccionFactory(opciones=opcs)
+    mesa = MesaFactory(eleccion=[e1, e2])
+    me = MesaEleccion.objects.get(eleccion=e1, mesa=mesa)
+    assert me.confirmada is False
+    votos1 = VotoMesaReportadoFactory(opcion=opcs[0], mesa=mesa, eleccion=e1, votos=1)
+    votos2 = VotoMesaReportadoFactory(opcion=opcs[1], mesa=mesa, eleccion=e1, votos=2)
+    votos3 = VotoMesaReportadoFactory(opcion=opcs[2], mesa=mesa, eleccion=e1, votos=1)
 
+    # a otra eleccion
+    VotoMesaReportadoFactory(opcion=opcs[2], mesa=mesa, eleccion=e2, votos=1)
+
+    url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
+    response = fiscal_client.get(url)
+
+    assert list(response.context['reportados']) == [votos1, votos2, votos3]
+
+    response = fiscal_client.post(url, {'confirmar': 'confirmar'})
+    assert response.status_code == 302
+    assert response.url == reverse('chequear-resultado')
+    me.refresh_from_db()
+    assert me.confirmada is True
