@@ -26,6 +26,10 @@ class Seccion(models.Model):
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
+    proyeccion_ponderada = models.BooleanField(
+        default=False,
+        help_text='Si está marcado, el cálculo de proyeccion se agrupará por circuitos para esta sección'
+    )
 
     class Meta:
         verbose_name = 'Sección electoral'

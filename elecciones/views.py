@@ -1,6 +1,8 @@
-from attrdict import AttrDict
+import itertools
+from django.conf import settings
 from functools import lru_cache
 from collections import defaultdict, OrderedDict
+from attrdict import AttrDict
 from django.http import JsonResponse
 from datetime import timedelta
 from django.utils import timezone
@@ -183,9 +185,14 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
 
         proyeccion_incompleta = []
         if proyectado:
-            # La proyeccion se calcula a partir de la ponderacion del subnivel
-            # Ejemplo: para provincia por secciones, para secciones por sus circuitos. etc.
-            agrupaciones = Seccion.objects.all()
+            # La proyeccion se calcula sólo cuando no hay filtros (es decir, para provincia)
+            # ponderando por secciones (o circuitos para secciones de "proyeccion ponderada")
+
+
+            agrupaciones = list(itertools.chain(                                # cast para reusar
+                Circuito.objects.filter(seccion__proyeccion_ponderada=True),
+                Seccion.objects.filter(proyeccion_ponderada=False)
+            ))
             datos_ponderacion = {}
 
             electores_pond = 0
@@ -211,7 +218,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
                 acumulador_positivos = 0
                 for ag in agrupaciones:
                     data = datos_ponderacion[ag]
-                    if k in data["votos"]:
+                    if k in data["votos"] and data["positivos"]:
                         acumulador_positivos += data["electores"]*data["votos"][k]/data["positivos"]
 
                 expanded_result[k]["proyeccion"] = f'{acumulador_positivos*100/electores_pond:.2f}'
@@ -229,11 +236,13 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             "votos": c.positivos,
             "porcentajeTotal": f'{c.positivos*100/c.total:.2f}' if c.total else '-'
         }
-        result_piechart = [
-            {'key': str(k),
-             'y': v["votos"],
-             'color': k.color if not isinstance(k, str) else '#CCCCCC'} for k, v in tabla_positivos.items()
-        ]
+        result_piechart = None
+        if settings.SHOW_PLOT:
+            result_piechart = [
+                {'key': str(k),
+                'y': v["votos"],
+                'color': k.color if not isinstance(k, str) else '#CCCCCC'} for k, v in tabla_positivos.items()
+            ]
         resultados = {
             'tabla_positivos': tabla_positivos,
             'tabla_no_positivos': tabla_no_positivos,
@@ -323,11 +332,12 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         context['object'] = eleccion
         context['eleccion_id'] = eleccion.id
         context['resultados'] = self.get_resultados(eleccion)
-        chart = context['resultados']['result_piechart']
-
-        context['chart_values'] = [v['y'] for v in chart]
-        context['chart_keys'] = [v['key'] for v in chart]
-        context['chart_colors'] = [v['color'] for v in chart]
+        context['show_plot'] = settings.SHOW_PLOT
+        if settings.SHOW_PLOT:
+            chart = context['resultados']['result_piechart']
+            context['chart_values'] = [v['y'] for v in chart]
+            context['chart_keys'] = [v['key'] for v in chart]
+            context['chart_colors'] = [v['color'] for v in chart]
 
         if not self.filtros:
             context['elecciones'] = [Eleccion.objects.first()]

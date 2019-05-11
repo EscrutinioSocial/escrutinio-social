@@ -1,3 +1,4 @@
+import pytest
 from django.urls import reverse
 from elecciones.tests.factories import (
     VotoMesaReportadoFactory,
@@ -57,6 +58,7 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     assert response.url == reverse('mesa-cargar-resultados', args=[e2.id, m2.numero])
 
 
+@pytest.mark.xfail(reason='para que no monopolice capital, comenté este criterio.')
 def test_elegir_acta_prioriza_por_tamaño_seccion(db, fiscal_client):
     e1 = EleccionFactory()
 

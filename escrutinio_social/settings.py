@@ -223,6 +223,9 @@ IMAPS = [
 # contacto settings
 CARACTERISTICA_TELEFONO_DEFAULT = '351'     # CORDOBA
 
+# por defecto no se muestra grafico en la página de resultados
+SHOW_PLOT = False
+
 
 try:
     from .local_settings import *
