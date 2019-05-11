@@ -114,13 +114,19 @@ class Command(BaseCommand):
                 #    mesa.eleccion.add(eleccion_tribunal_de_cuentas_provincial)
                 #    self.success('Se agregó la mesa a la eleccion a trib de cuentas provincial')
 
+
+                # TODO: confirmar si cargamos departamentales!
+
                 # agregar la eleccion a legislador departamental
-                if eleccion_legislador_departamental not in mesa.eleccion.all():
-                    mesa.eleccion_add(eleccion_legislador_departamental)
-                    self.success('Se agregó la mesa a la eleccion {}'.format(eleccion_legislador_departamental.nombre))
+                # if eleccion_legislador_departamental not in mesa.eleccion.all():
+                #    mesa.eleccion_add(eleccion_legislador_departamental)
+                #    self.success('Se agregó la mesa a la eleccion {}'.format(eleccion_legislador_departamental.nombre))
 
                 # si es de capital entonces vota a intendente
                 if numero_de_seccion == 1:
+                    # capital se pondera por circuitos
+                    seccion.proyeccion_ponderada = True
+                    seccion.save(updated_fields=['proyeccion_ponderada'])
                     mesa.eleccion_add(eleccion_intendente_cordoba)
                     self.success('Se agregó la mesa a la eleccion a intendente')
 
