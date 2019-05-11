@@ -110,11 +110,6 @@ class LugarVotacion(models.Model):
         verbose_name_plural = "Lugares de votación"
 
 
-    def get_absolute_url(self):
-        url = reverse('donde-fiscalizo')
-        return f'{url}#donde{self.id}'
-
-
     def save(self, *args, **kwargs):
 
         if self.geom:

@@ -58,22 +58,13 @@ def choice_home(request):
     """
     redirige a una página en funcion del tipo de usuario
     """
-
     user = request.user
     if not user.is_authenticated:
         return redirect('login')
 
     es_fiscal = Fiscal.objects.filter(user=request.user).exists()
 
-    if user.is_staff and es_fiscal:
-        return redirect('elegir-acta-a-cargar')
-
-    elif es_fiscal:
-        return redirect('donde-fiscalizo')
-    elif user.groups.filter(name='contacto').exists():
-        return redirect('/contacto/')
-    else:
-        return redirect('/admin/')
+    return redirect('elegir-acta-a-cargar')
 
 
 class BaseFiscal(LoginRequiredMixin, DetailView):
@@ -259,7 +250,7 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
         return reverse('mis-datos')
 
 
-@staff_member_required
+@login_required
 def elegir_acta_a_cargar(request):
     # se eligen mesas que nunca se intentaron cargar o que se asignaron a
     mesas = Mesa.con_carga_pendiente().order_by(
@@ -281,7 +272,7 @@ def elegir_acta_a_cargar(request):
 
 
 
-@staff_member_required
+@login_required
 def cargar_resultados(request, eleccion_id, mesa_numero):
     fiscal = get_object_or_404(Fiscal, user=request.user)
     eleccion = get_object_or_404(Eleccion, id=eleccion_id)
@@ -358,7 +349,7 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
     )
 
 
-@staff_member_required
+@login_required
 def chequear_resultado(request):
     mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
     if not mesa:
@@ -368,7 +359,7 @@ def chequear_resultado(request):
 
 
 
-@staff_member_required
+@login_required
 def chequear_resultado_mesa(request, eleccion_id, mesa_numero):
     mesa = get_object_or_404(Mesa, eleccion__id=eleccion_id, numero=mesa_numero)
     data = request.POST if request.method == 'POST' else None
@@ -398,7 +389,7 @@ class CambiarPassword(PasswordChangeView):
         return super().form_valid(form)
 
 
-@staff_member_required
+@login_required
 def confirmar_fiscal(request, fiscal_id):
     fiscal = get_object_or_404(Fiscal, id=fiscal_id, estado='AUTOCONFIRMADO')
     fiscal.estado = 'CONFIRMADO'
