@@ -328,7 +328,11 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             context['para'] = get_text_list([getattr(o, 'nombre', o) for o in self.filtros], " y ")
         else:
             context['para'] = 'Córdoba'
-        eleccion = get_object_or_404(Eleccion, id=self.kwargs.get('pk', 1))
+
+        pk = self.kwargs.get('pk', 1)
+        if pk == 1:
+            pk == Eleccion.objects.first().id
+        eleccion = get_object_or_404(Eleccion, id=pk)
         context['object'] = eleccion
         context['eleccion_id'] = eleccion.id
         context['resultados'] = self.get_resultados(eleccion)

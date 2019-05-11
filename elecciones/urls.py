@@ -13,6 +13,8 @@ urlpatterns = [
     url('^mapa/$', login_required(cached(views.Mapa.as_view())), name='mapa'),
     url('^resultados/(?P<pk>\d+)?$', login_required(cached(views.ResultadosEleccion.as_view())),
         name='resultados-eleccion'),
+    url('^resultados/primera$', login_required(cached(views.ResultadosEleccion.as_view())),
+        name='resultados-eleccion-primera'),
     url(r'^resultados-parciales-(?P<slug_eleccion>[\w-]+).(?P<filetype>csv|xls)$', data_views.resultado_parcial_eleccion, name='resultado-parcial-eleccion'),
 
     # url(r'^fiscal_mesa/', views.fiscal_mesa, name='fiscal_mesa'),
