@@ -115,7 +115,7 @@ mostrar_resultados_mesas.short_description = "Mostrar resultados de Mesas selecc
 class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     actions = [resultados_reportados]
     list_display = ('numero', 'lugar_votacion')
-    list_filter = (TieneResultados, 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito')
+    list_filter = (TieneResultados, 'es_testigo', 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito')
     search_fields = (
         'numero', 'lugar_votacion__nombre', 'lugar_votacion__direccion',
         'lugar_votacion__ciudad', 'lugar_votacion__barrio',

@@ -104,7 +104,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             sum_por_partido[str(id)] = Sum(Case(When(opcion__partido__id=id, eleccion=eleccion, then=F('votos')),
                                                 output_field=IntegerField()))
 
-        for nombre, id in Opcion.objects.filter(elecciones__id=eleccion.id, partido__isnull=True).values_list('nombre', 'id'):
+        for nombre, id in Opcion.objects.filter(elecciones__id=eleccion.id, partido__isnull=True, es_metadata=False).values_list('nombre', 'id'):
             otras_opciones[nombre] = Sum(Case(When(opcion__id=id, eleccion=eleccion, then=F('votos')),
                                               output_field=IntegerField()))
         return sum_por_partido, otras_opciones
@@ -309,7 +309,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         # calculamos el total como la suma de todos los positivos y los
         # validos no positivos.
         positivos = sum(result.values())
-        total = positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(nombre=k, es_contable=False).exists())
+        total = positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(nombre=k, es_contable=False, es_metadata=False).exists())
         result.update(result_opc)
 
         return AttrDict({

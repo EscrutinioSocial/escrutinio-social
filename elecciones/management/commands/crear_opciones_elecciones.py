@@ -27,7 +27,7 @@ class Command(BaseCommand):
             op.save()
 
             last_orden = partido.orden
-        
+
         # crear opciones extras segun el acta
         last_orden += 10
         op, created = Opcion.objects.get_or_create(nombre='TOTAL VOTOS AGRUPACIONES POLITICA')
@@ -35,7 +35,9 @@ class Command(BaseCommand):
         op.orden = last_orden
         op.obligatorio = True
         op.es_contable = False
+        op.es_metadata = True
         op.save()
+
 
         last_orden += 10
         op, created = Opcion.objects.get_or_create(nombre='VOTOS EN BLANCO')
@@ -67,10 +69,11 @@ class Command(BaseCommand):
         op.orden = last_orden
         op.obligatorio = True
         op.es_contable = False
+        op.es_metadata = True
         op.save()
 
         self.stdout.write(self.style.WARNING('Conectando las opciones a las elecciones'))
-        fecha = datetime.datetime(2019, 5, 12, 8, 0) 
+        fecha = datetime.datetime(2019, 5, 12, 8, 0)
         elecciones = Eleccion.objects.filter(fecha=fecha)
         self.stdout.write(self.style.WARNING('Se encontraron {} elecciones'.format(elecciones.count())))
 
@@ -80,7 +83,7 @@ class Command(BaseCommand):
 
             for opcion in opciones:
                 self.stdout.write(self.style.SUCCESS('  -- Opcion {}'.format(opcion.nombre)))
-                
+
                 # --------------------------------------------------------------------------------
                 #FIXME proximas elecciones: en la carga de partidos ya debería definirse a que elecciones se presenta cada uno
                 if opcion.partido:
@@ -90,7 +93,7 @@ class Command(BaseCommand):
                         continue
                 # --------------------------------------------------------------------------------
 
-                
+
                 if opcion not in eleccion.opciones.all():
                     eleccion.opciones.add(opcion)
                     eleccion.save()
@@ -99,7 +102,6 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING(' -- -- YA ESTABA'))
 
 
-        
+
         self.stdout.write(self.style.SUCCESS('Terminado'))
 
-        
