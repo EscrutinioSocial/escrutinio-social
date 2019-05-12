@@ -6,7 +6,7 @@ from django.db import IntegrityError
 from django.views.generic.edit import UpdateView, FormView
 
 from elecciones.views import StaffOnlyMixing
-
+from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 
@@ -17,7 +17,7 @@ from .models import Attachment
 from .forms import AsignarMesaForm, AgregarAttachmentsForm
 
 
-@staff_member_required
+@login_required
 def elegir_adjunto(request):
     # se eligen actas que nunca se intentaron cargar o que se asignaron a
     # hace más de 2 minutos
