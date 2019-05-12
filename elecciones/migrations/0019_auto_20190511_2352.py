@@ -3,6 +3,22 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+from django.db.models import Sum
+
+
+def calcular_electores(apps, schema_editor):
+    Circuito = apps.get_model("elecciones", "Circuito")
+    Mesa = apps.get_model("elecciones", "Mesa")
+    for circuito in Circuito.objects.all():
+        circuito.electores = Mesa.objects.filter(
+            lugar_votacion__circuito=circuito,
+        ).aggregate(v=Sum('electores'))['v']
+        circuito.save(update_fields=['electores'])
+
+
+def reverse_calcular_electores(apps, schema_editor):
+    Circuito = apps.get_model("elecciones", "Circuito")
+    Circuito.objects.all().update(electores=0)
 
 
 class Migration(migrations.Migration):
@@ -21,4 +37,5 @@ class Migration(migrations.Migration):
             name='electores',
             field=models.PositiveIntegerField(default=0),
         ),
+        migrations.RunPython(calcular_electores, reverse_calcular_electores),
     ]
