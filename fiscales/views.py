@@ -364,7 +364,12 @@ def chequear_resultado(request):
 def chequear_resultado_mesa(request, eleccion_id, mesa_numero):
     """muestra la carga actual de la eleccion para la mesa"""
 
-    me = get_object_or_404(MesaEleccion, mesa__numero=mesa_numero, eleccion__id=eleccion_id)
+    me = get_object_or_404(
+        MesaEleccion,
+        mesa__numero=mesa_numero,
+        eleccion__id=eleccion_id,
+        eleccion__activa=True
+    )
     mesa = me.mesa
     eleccion = me.eleccion
 

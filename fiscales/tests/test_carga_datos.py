@@ -174,3 +174,17 @@ def test_chequear_resultado_mesa(db, fiscal_client):
     assert response.url == reverse('chequear-resultado')
     me.refresh_from_db()
     assert me.confirmada is True
+
+
+def test_chequear_resultado_eleccion_desactivada(db, fiscal_client):
+    opcs = OpcionFactory.create_batch(3, es_contable=True)
+    e1 = EleccionFactory(opciones=opcs)
+    assert e1.activa is True
+    mesa = MesaFactory(eleccion=[e1])
+    url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
+    response = fiscal_client.get(url)
+    assert response.status_code == 200
+    e1.activa = False
+    e1.save()
+    response = fiscal_client.get(url)
+    assert response.status_code == 404
