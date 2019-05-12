@@ -49,7 +49,7 @@ def test_con_carga_pendiente_excluye_taken(db):
 def test_con_carga_pendiente_incluye_taken_vencido(db):
     now = timezone.now()
     m1 = AttachmentFactory().mesa
-    m2 = AttachmentFactory(mesa__taken=now - timedelta(minutes=3)).mesa
+    m2 = AttachmentFactory(mesa__taken=now - timedelta(minutes=13)).mesa
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
 
 
