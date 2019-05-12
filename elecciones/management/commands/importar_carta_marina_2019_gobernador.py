@@ -43,7 +43,7 @@ class Command(BaseCommand):
         # eleccion_tribunal_de_cuentas_provincial, created = Eleccion.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha, activa=False)
 
         for c, row in enumerate(reader, 1):
-            depto = row['Nombre Seccion']
+            depto = int(row['Nombre Seccion'])
             numero_de_seccion = int(row['Seccion'])
             seccion, created = Seccion.objects.get_or_create(nombre=depto, numero=numero_de_seccion)
 
