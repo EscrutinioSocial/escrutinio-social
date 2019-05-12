@@ -55,17 +55,23 @@
                 {% if resultados.proyectado %}
                   {% if resultados.proyeccion_incompleta  %}
                     <h4 style="background-color: red"> Proyección de datos incompleta </h4>
-                    <h5> Con un total de {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas. Faltan cargar datos en </h5>
+                    <h5> Con un total de {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
+                        ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }}). 
+                        Faltan cargar datos en </h5>
                       {% for ag in resultados.proyeccion_incompleta %}
                         <li> {{ ag|safe }}</li>
                       {% endfor %}
 
                   {% else %}
-                    <h4>Proyección de datos sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas </h4>
+                    <h4>Proyección de datos sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas 
+                        ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
+                    </h4>
                   {% endif %}
 
                 {% else %}
-                    <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas </h4>
+                    <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas 
+                        ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
+                    </h4>
 
                 {% endif %}
 

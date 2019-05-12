@@ -56,7 +56,9 @@
 
               {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
 
-              <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas </h4>
+              <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas 
+                ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
+              </h4>
 
 
 
