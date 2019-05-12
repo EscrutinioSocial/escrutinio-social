@@ -14,10 +14,10 @@ def resultado_parcial_eleccion(request, slug_eleccion, filetype):
     lista de paradas de transporte urbano de pasajeros
     '''
     eleccion = Eleccion.objects.get(slug=slug_eleccion)
-    mesas_reportadas = VotoMesaReportado.objects.filter(eleccion=eleccion).order_by('mesa__numero')
+    mesas_reportadas = VotoMesaReportado.objects.filter(eleccion=eleccion).order_by('mesa__numero', 'opcion__orden')
     
     headers = ['seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa']
-    for opcion in eleccion.opciones.all():
+    for opcion in eleccion.opciones.all().order_by('orden'):
         headers.append(opcion.nombre)
 
     csv_list = [headers]
