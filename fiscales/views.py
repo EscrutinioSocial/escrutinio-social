@@ -262,9 +262,16 @@ def elegir_acta_a_cargar(request):
         mesa.taken = timezone.now()
         mesa.save(update_fields=['taken'])
 
+        # que pasa si ya no hay elecciones sin carga?
+        # estamos teniendo un error
+        siguiente_eleccion = mesa.siguiente_eleccion_sin_carga()
+        if siguiente_eleccion is None:
+            return render(request, 'fiscales/sin-actas.html')
+        siguiente_id = siguiente_eleccion.id
+         
         return redirect(
             'mesa-cargar-resultados',
-            eleccion_id=mesa.siguiente_eleccion_sin_carga().id,
+            eleccion_id=siguiente_id,
             mesa_numero=mesa.numero
         )
 
