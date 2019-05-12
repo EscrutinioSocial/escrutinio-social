@@ -51,10 +51,6 @@ class Seccion(models.Model):
             eleccion=eleccion
     )
 
-    @property
-    def peso(self):
-        return self.electores / Eleccion.actual().electores
-
 
 class Circuito(models.Model):
     seccion = models.ForeignKey(Seccion)
@@ -62,7 +58,7 @@ class Circuito(models.Model):
 
     numero = models.CharField(max_length=10)
     nombre = models.CharField(max_length=100)
-
+    electores = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = 'Circuito electoral'
@@ -72,15 +68,6 @@ class Circuito(models.Model):
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
 
-    @property
-    def electores(self):
-        return Mesa.objects.filter(
-            lugar_votacion__circuito=self,
-        ).aggregate(v=Sum('electores'))['v']
-
-    @property
-    def peso(self):
-        return self.electores / Eleccion.actual().electores
 
     def resultados_url(self):
         return reverse('resultados-eleccion') + f'?circuito={self.id}'
@@ -453,17 +440,20 @@ def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=F
             mesa.save(update_fields=['confirmadas'])
 
 @receiver(post_save, sender=Mesa)
-def actualizar_electores_seccion(sender, instance=None, created=False, **kwargs):
+def actualizar_electores_seccion_circuito(sender, instance=None, created=False, **kwargs):
 
     if instance.lugar_votacion is not None and instance.lugar_votacion.circuito is not None:
         seccion = instance.lugar_votacion.circuito.seccion
-        if seccion is not None:
-            electores = Mesa.objects.filter(
-                lugar_votacion__circuito__seccion=seccion,
-            ).aggregate(v=Sum('electores'))['v']
+        circuito = instance.lugar_votacion.circuito
 
-            if electores is None:
-                electores = 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion=seccion,
+        ).aggregate(v=Sum('electores'))['v'] or 0
+        seccion.electores = electores
+        seccion.save(update_fields=['electores'])
 
-            seccion.electores = electores
-            seccion.save(update_fields=['electores'])
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito=circuito,
+        ).aggregate(v=Sum('electores'))['v'] or 0
+        circuito.electores = electores
+        circuito.save(update_fields=['electores'])

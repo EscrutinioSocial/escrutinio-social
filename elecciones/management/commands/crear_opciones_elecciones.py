@@ -38,7 +38,6 @@ class Command(BaseCommand):
         op.es_metadata = True
         op.save()
 
-
         last_orden += 10
         op, created = Opcion.objects.get_or_create(nombre='VOTOS EN BLANCO')
         op.nombre_corto = 'en blanco'
