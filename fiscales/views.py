@@ -279,6 +279,11 @@ def elegir_acta_a_cargar(request):
     return render(request, 'fiscales/sin-actas.html')
 
 
+def fix_404(request):
+    messages.error(request, 'hubo un problemita :(')
+    return redirect('/')
+
+
 
 @login_required
 def cargar_resultados(request, eleccion_id, mesa_numero):
@@ -367,7 +372,7 @@ def chequear_resultado(request):
         eleccion = mesa.siguiente_eleccion_a_confirmar()
     except Exception:
         return render(request, 'fiscales/sin-actas-cargadas.html')
-    
+
     if not eleccion:
         return render(request, 'fiscales/sin-actas-cargadas.html')
 

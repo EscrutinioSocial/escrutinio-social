@@ -22,6 +22,7 @@ def elegir_adjunto(request):
     # se eligen actas que nunca se intentaron cargar o que se asignaron a
     # hace más de 2 minutos
     attachments = Attachment.sin_asignar()
+
     if attachments.exists():
         a = attachments.order_by('?').first()
         # se marca el adjunto
@@ -81,7 +82,7 @@ class AgregarAdjuntos(FormView):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
-    
+
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
         form = self.get_form(form_class)

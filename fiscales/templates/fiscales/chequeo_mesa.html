@@ -53,9 +53,13 @@ $(document).ready(function(){
                         Confirmar
                         </button>
 
+                {% comment %}
+
                     <a href="{% url 'mesa-cargar-resultados' eleccion.id object.numero %}" class="btn waves-effect waves-light btn white-text">
                       Editar
                    </a>
+                {% endcomment %}
+
 
                     <a href="{% url 'reportar-problema'  object.numero %}" class="btn waves-effect waves-light btn white-text">
                       Problema
