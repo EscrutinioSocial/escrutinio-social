@@ -19,7 +19,7 @@ class Command(BaseCommand):
 
         eleccion = Eleccion.objects.get(slug='intendente-cordoba-2019')
         eleccion.color = '#DD1122'
-        eleccion.back_color = '#2244CC'
+        eleccion.back_color = '#77AAFF'
         eleccion.save()
         
         eleccion = Eleccion.objects.get(slug='legisladores-dist-unico-cordoba-2019')
