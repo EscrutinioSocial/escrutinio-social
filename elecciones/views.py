@@ -258,6 +258,8 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             'porcentaje_mesas_escrutadas': c.porcentaje_mesas_escrutadas,
             'porcentaje_escrutado': f'{c.escrutados*100/c.electores:.2f}' if c.electores else '-',
             'porcentaje_participacion': f'{c.total*100/c.escrutados:.2f}' if c.escrutados else '-',
+            'total_mesas_escrutadas': c.total_mesas_escrutadas,
+            'total_mesas': c.total_mesas
         }
         return resultados
 
@@ -318,7 +320,9 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             "porcentaje_mesas_escrutadas": porcentaje_mesas_escrutadas,
             "votos": result,
             "total": total,
-            "positivos": positivos
+            "positivos": positivos,
+            "total_mesas_escrutadas": total_mesas_escrutadas,
+            "total_mesas": total_mesas
         })
 
 
