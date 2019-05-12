@@ -73,7 +73,7 @@ def editar_foto(request, attachment_id):
     return JsonResponse({'message': 'No se pudo guardar la imágen'})
 
 
-class AgregarAdjuntos(StaffOnlyMixing, FormView):
+class AgregarAdjuntos(FormView):
     form_class = AgregarAttachmentsForm
     template_name = 'adjuntos/agregar-adjuntos.html'
     success_url = 'agregada'
