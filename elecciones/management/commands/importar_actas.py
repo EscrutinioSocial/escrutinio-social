@@ -33,7 +33,7 @@ class Command(BaseCommand):
             else:
                 mails = imapper.unseen()
 
-            self.success('Se encontraron {} emails'.format(len(mails)))
+            # self.success('Se encontraron {} emails'.format(len(mails)))
             for mail in mails:
                 attachments = mail.attachments
                 if not attachments:
