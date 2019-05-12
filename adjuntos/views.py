@@ -78,6 +78,10 @@ class AgregarAdjuntos(FormView):
     template_name = 'adjuntos/agregar-adjuntos.html'
     success_url = 'agregada'
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+    
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
