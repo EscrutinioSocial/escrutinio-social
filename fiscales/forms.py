@@ -219,7 +219,8 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         total = 0
         form_opcion_total = None
         for form in self.forms:
-            suma += form.cleaned_data.get('votos') or 0
+            if not form.cleaned_data.get('opcion').es_metadata:
+                suma += form.cleaned_data.get('votos') or 0
 
         # if suma > positivos:
         #     #form_opcion_total.add_error(
@@ -230,7 +231,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
 
         errors = []
         if suma > self.mesa.electores:
-            errors.append(f'Total no puede ser mayor a la cantidad de electores de la mesa: {self.mesa.electores}')
+            errors.append(f'El total de votos no puede ser mayor a la cantidad de electores de la mesa: {self.mesa.electores}')
 
         if errors :
             form.add_error('votos', ValidationError(errors))
