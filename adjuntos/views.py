@@ -33,11 +33,15 @@ def elegir_adjunto(request):
 
 
 
-class AsignarMesaAdjunto(StaffOnlyMixing, UpdateView):
+class AsignarMesaAdjunto(UpdateView):
     form_class = AsignarMesaForm
     template_name = "adjuntos/asignar-mesa.html"
     pk_url_kwarg = 'attachment_id'
     model = Attachment
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
     def get_success_url(self):
         return reverse('elegir-adjunto')
