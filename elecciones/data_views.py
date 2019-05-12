@@ -17,7 +17,7 @@ def resultado_parcial_eleccion(request, slug_eleccion, filetype):
     mesas_reportadas = VotoMesaReportado.objects.filter(eleccion=eleccion).order_by('mesa__numero')
     
     headers = ['seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa']
-    for opcion in eleccion.opciones.all():
+    for opcion in eleccion.opciones.all().order_by('orden_de_carga'):
         headers.append(opcion.nombre)
 
     csv_list = [headers]
