@@ -23,6 +23,7 @@ from .models import Fiscal
 from elecciones.models import (
     Mesa, Eleccion, MesaEleccion, VotoMesaReportado, Circuito, LugarVotacion, Seccion
 )
+from django.utils.decorators import method_decorator
 from datetime import timedelta
 from django.utils import timezone
 from formtools.wizard.views import SessionWizardView
