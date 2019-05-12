@@ -58,36 +58,35 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     assert response.url == reverse('mesa-cargar-resultados', args=[e2.id, m2.numero])
 
 
-@pytest.mark.xfail(reason='para que no monopolice capital, comenté este criterio.')
-def test_elegir_acta_prioriza_por_tamaño_seccion(db, fiscal_client):
+def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
     e1 = EleccionFactory()
 
     m1 = AttachmentFactory(mesa__eleccion=[e1]).mesa
     m2 = AttachmentFactory(mesa__eleccion=[e1]).mesa
     m3 = AttachmentFactory(mesa__eleccion=[e1]).mesa
-    # creo otras mesas asociadas a las secciones
-    s1 = m1.lugar_votacion.circuito.seccion
-    s2 = m2.lugar_votacion.circuito.seccion
-    s3 = m3.lugar_votacion.circuito.seccion
+    # creo otras mesas asociadas a los circuitos
+    c1 = m1.lugar_votacion.circuito
+    c2 = m2.lugar_votacion.circuito
+    c3 = m3.lugar_votacion.circuito
 
     MesaFactory.create_batch(
         3,
         eleccion=[e1],
-        lugar_votacion__circuito__seccion=s1
+        lugar_votacion__circuito=c1
     )
     MesaFactory.create_batch(
         10,
         eleccion=[e1],
-        lugar_votacion__circuito__seccion=s2
+        lugar_votacion__circuito=c2
     )
     MesaFactory.create_batch(
         5,
         eleccion=[e1],
-        lugar_votacion__circuito__seccion=s3
+        lugar_votacion__circuito=c3
     )
-    assert s1.electores == 400
-    assert s2.electores == 1100
-    assert s3.electores == 600
+    assert c1.electores == 400
+    assert c2.electores == 1100
+    assert c3.electores == 600
     assert m1.orden_de_carga == m2.orden_de_carga == m3.orden_de_carga == 1
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
