@@ -41,26 +41,6 @@ class BaseCommand(BaseCommand):
 class Command(BaseCommand):
     help = "Importar carta marina"
 
-    """ hay 3 mesas que son de una escuela y no son nros consecutivos
-    Se requiere copiar la mesa 1 3 veces antes de tirar este comando para que no falten esos tres datos
-
-from elecciones.models import Mesa
-mesa_8651 = Mesa.objects.get(numero=1)
-mesa_8651.pk = None
-mesa_8651.numero = 8651
-mesa_8651.save()
-
-mesa_8652 = Mesa.objects.get(numero=1)
-mesa_8652.pk = None
-mesa_8652.numero = 8652
-mesa_8652.save()
-
-mesa_8653 = Mesa.objects.get(numero=1)
-mesa_8653.pk = None
-mesa_8653.numero = 8653
-mesa_8653.save()
-    """
-
     def handle(self, *args, **options):
         reader = DictReader(CSV.open())
 
@@ -100,4 +80,3 @@ mesa_8653.save()
         self.success(f"Se procesaron {c} mesas con {len(errores)} errores")
         for error in errores:
             self.error(error)
-
