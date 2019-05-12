@@ -362,7 +362,11 @@ def chequear_resultado(request):
     mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
     if not mesa:
         return render(request, 'fiscales/sin-actas-cargadas.html')
-    eleccion = mesa.siguiente_eleccion_a_confirmar()
+    try:
+        eleccion = mesa.siguiente_eleccion_a_confirmar()
+    except Exception:
+        return render(request, 'fiscales/sin-actas-cargadas.html')
+    
     if not eleccion:
         return render(request, 'fiscales/sin-actas-cargadas.html')
 
