@@ -196,7 +196,7 @@ REST_FRAMEWORK = {
 ANYMAIL = {
     # (exact settings here depend on your ESP...)
     "MAILGUN_API_KEY": "",
-    "MAILGUN_SENDER_DOMAIN": '',  # your Mailgun domain, if needed
+    "MAILGUN_SENDER_DOMAIN": '',  # your Mailgun domain, if needepd
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"  # or sendgrid.EmailBackend, or...
@@ -222,6 +222,8 @@ IMAPS = [
 
 # contacto settings
 CARACTERISTICA_TELEFONO_DEFAULT = '351'     # CORDOBA
+CARACTERISTICA_DEFAULT = '351'
+
 
 # por defecto no se muestra grafico en la página de resultados
 SHOW_PLOT = False
