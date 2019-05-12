@@ -9,6 +9,6 @@ def contadores(request):
         'mesas_pendientes_count': Mesa.con_carga_pendiente().count(),
         'mesas_a_confirmar_count': Mesa.con_carga_a_confirmar().count(),
 
-        'primera_eleccion': e.id if e else 1   # las urls esperan un entero.
-                                               # aunque no exista el objeto
+        'primera_eleccion': e.id if e is not None else 1   # las urls esperan un entero.
+                                                           # aunque no exista el objeto
     }

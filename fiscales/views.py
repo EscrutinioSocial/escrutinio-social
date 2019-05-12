@@ -268,7 +268,7 @@ def elegir_acta_a_cargar(request):
         if siguiente_eleccion is None:
             return render(request, 'fiscales/sin-actas.html')
         siguiente_id = siguiente_eleccion.id
-         
+
         return redirect(
             'mesa-cargar-resultados',
             eleccion_id=siguiente_id,
@@ -363,6 +363,9 @@ def chequear_resultado(request):
     if not mesa:
         return render(request, 'fiscales/sin-actas-cargadas.html')
     eleccion = mesa.siguiente_eleccion_a_confirmar()
+    if not eleccion:
+        return render(request, 'fiscales/sin-actas-cargadas.html')
+
     return redirect('chequear-resultado-mesa', eleccion_id=eleccion.id, mesa_numero=mesa.numero)
 
 
