@@ -44,7 +44,7 @@ class Command(BaseCommand):
 
         for c, row in enumerate(reader, 1):
             depto = row['Nombre Seccion']
-            numero_de_seccion = row['Seccion']
+            numero_de_seccion = int(row['Seccion'])
             seccion, created = Seccion.objects.get_or_create(nombre=depto, numero=numero_de_seccion)
 
             slg = f'legisladores-departamento-{depto}-2019'
