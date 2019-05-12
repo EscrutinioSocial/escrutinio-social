@@ -207,7 +207,7 @@ class Mesa(models.Model):
                 return eleccion
 
     @classmethod
-    def con_carga_pendiente(cls, wait=2):
+    def con_carga_pendiente(cls, wait=10):
         """
         Una mesa cargable es aquella que
            - no este tomada dentro de los ultimos `wait` minutos

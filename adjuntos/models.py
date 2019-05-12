@@ -89,7 +89,7 @@ class Attachment(models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def sin_asignar(cls, wait=2):
+    def sin_asignar(cls, wait=10):
         desde = timezone.now() - timedelta(minutes=wait)
         return cls.objects.filter(
             Q(problema__isnull=True, mesa__isnull=True),
