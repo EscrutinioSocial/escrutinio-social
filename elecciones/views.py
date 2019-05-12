@@ -351,6 +351,5 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         mesas = self.mesas(eleccion)
         context['elecciones'] = Eleccion.para_mesas(mesas).order_by('id')
 
-        context['secciones'] = Seccion.objects.all()
-
+        context['secciones'] = Seccion.objects.all().order_by('numero')
         return context
