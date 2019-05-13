@@ -75,10 +75,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
-
-MIDDLEWARE_CLASSES = [
-     'elecciones.context_processors.DisableClientSideCachingMiddleware'
+    'elecciones.context_processors.DisableClientSideCachingMiddleware'
 ]
 
 
