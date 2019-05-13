@@ -30,29 +30,29 @@ class AsignarMesaForm(forms.ModelForm):
             mesa = Mesa.objects.get(numero=numero)
         except Mesa.DoesNotExist:
             raise forms.ValidationError('No existe una mesa con este número. ')
-        return mesa
+        return numero
 
 
     def clean(self):
         cleaned_data = super().clean()
         problema = cleaned_data.get('problema')
-        mesa = cleaned_data.get('mesa')
+        mesa_numero = cleaned_data.get('mesa')
         mesa_confirm = cleaned_data.get('mesa_confirm')
 
-        if not mesa and not problema:
+        if not mesa_numero and not problema:
             self.add_error(
                 'mesa', 'Indicá la mesa o reportá un problema. '
             )
 
-        elif problema and mesa:
+        elif problema and mesa_numero:
             cleaned_data['mesa'] = None
             self.add_error(
                 'problema', 'Dejá el número en blanco si hay un problema. '
             )
 
-        if mesa and Attachment.objects.filter(mesa=mesa).exists() and mesa.numero != mesa_confirm:
+        if mesa_numero and Attachment.objects.filter(mesa__numero=mesa_numero).exists() and mesa_numero != mesa_confirm:
             self.data._mutable = True
-            self.data['mesa_confirm'] = mesa.numero
+            self.data['mesa_confirm'] = mesa_numero
             self.data._mutable = False
             self.add_error(
                 'mesa', 'Esta mesa ya tiene una o más imágenes adjuntas. Revisá y guardá de nuevo para confirmar .'
