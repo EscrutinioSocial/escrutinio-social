@@ -44,7 +44,7 @@ class Command(BaseCommand):
                 email = Email.from_mail_object(mail)
                 self.log(email)
                 for attachment in attachments:
-                    self.success(' -- attachment {}'.format(attachment[0]))
+                    # self.success(' -- attachment {}'.format(attachment[0]))
                     if options['only_images'] and not attachment[2].startswith('image'):
                         self.warning(f'Ignoring {attachment[0]} ({attachment[2]})')
                         continue
