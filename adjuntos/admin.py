@@ -7,7 +7,7 @@ from django_admin_row_actions import AdminRowActionsMixin
 class AttachmentAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     list_display = ('email', 'problema', 'mesa', 'foto', 'foto_edited', 'taken')
     list_filter = ('problema',)
-    search_fields = ('mesa__numero', 'email__from_address')
+    search_fields = ('mesa__numero', 'email__from_address', 'email__title', 'email__body')
 
     def get_row_actions(self, obj):
         row_actions = []
