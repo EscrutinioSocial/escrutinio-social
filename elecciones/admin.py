@@ -167,7 +167,7 @@ class SeccionAdmin(admin.ModelAdmin):
     )
 
 class VotoMesaReportadoAdmin(admin.ModelAdmin):
-    list_display = ['mesa', 'id,' 'eleccion', 'opcion', 'votos', 'fiscal']
+    list_display = ['mesa', 'id', 'eleccion', 'opcion', 'votos', 'fiscal']
     list_display_links = list_display
     ordering = ['-id']
     list_filter = ('eleccion', 'opcion')
