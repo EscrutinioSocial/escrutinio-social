@@ -37,6 +37,7 @@ class Command(BaseCommand):
             for mail in mails:
                 attachments = mail.attachments
                 if not attachments:
+                    self.success(' ... sin adjuntos')
                     continue
                 
                 email = Email.from_mail_object(mail)
