@@ -107,5 +107,3 @@ for data in json_data:
             writer.writeheader()
         
         writer.writerow(mesa)
-
-writer.close()
