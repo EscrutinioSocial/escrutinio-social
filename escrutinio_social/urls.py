@@ -14,8 +14,6 @@ from fancy_cache import cache_page
 
 cached = cache_page(3600 * 24 * 30)
 
-# handler404 = 'fiscales.views.fix_404'
-
 urlpatterns = [
     url(r'^$', choice_home, name="home"),
     url(r'^quiero-ser-fiscal/$', QuieroSerFiscal.as_view(), name='quiero-ser-fiscal'),

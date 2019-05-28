@@ -250,9 +250,6 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
     def get_success_url(self):
         return reverse('mis-datos')
 
-import random
-import time
-random.seed(time.time())
 
 @login_required
 def elegir_acta_a_cargar(request):
@@ -261,8 +258,7 @@ def elegir_acta_a_cargar(request):
         'orden_de_carga', '-lugar_votacion__circuito__electores'
     )
     if mesas.exists():
-
-        mesa = random.choice(mesas)  # hack!
+        mesa = mesas[0]
         # se marca que se inicia una carga
         mesa.taken = timezone.now()
         mesa.save(update_fields=['taken'])
@@ -281,11 +277,6 @@ def elegir_acta_a_cargar(request):
         )
 
     return render(request, 'fiscales/sin-actas.html')
-
-
-def fix_404(request):
-    messages.error(request, 'hubo un problemita :(')
-    return redirect('/')
 
 
 
@@ -376,7 +367,7 @@ def chequear_resultado(request):
         eleccion = mesa.siguiente_eleccion_a_confirmar()
     except Exception:
         return render(request, 'fiscales/sin-actas-cargadas.html')
-
+    
     if not eleccion:
         return render(request, 'fiscales/sin-actas-cargadas.html')
 
