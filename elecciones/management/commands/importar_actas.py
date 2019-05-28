@@ -33,15 +33,18 @@ class Command(BaseCommand):
             else:
                 mails = imapper.unseen()
 
-            # self.success('Se encontraron {} emails'.format(len(mails)))
+            # self.success('Se encontraron {} emails'.format(len(list(mails))))
             for mail in mails:
+                self.success('Email {}'.format(mail))
                 attachments = mail.attachments
                 if not attachments:
+                    self.success(' ... sin adjuntos')
                     continue
                 
                 email = Email.from_mail_object(mail)
                 self.log(email)
                 for attachment in attachments:
+                    # self.success(' -- attachment {}'.format(attachment[0]))
                     if options['only_images'] and not attachment[2].startswith('image'):
                         self.warning(f'Ignoring {attachment[0]} ({attachment[2]})')
                         continue
@@ -49,10 +52,12 @@ class Command(BaseCommand):
                         email=email,
                         mimetype=attachment[2]
                     )
+                    
                     try:
                         content = ContentFile(attachment[1])
                         instance.foto.save(attachment[0], content, save=False)
                         instance.save()
+                        self.success(' -- saved {}'.format(instance))
                         self.log(instance)
                     except IntegrityError:
                         self.warning(f'{attachment[0]} ya está en el sistema')

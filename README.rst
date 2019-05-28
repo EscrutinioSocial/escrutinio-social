@@ -1,8 +1,12 @@
 Escrutinio Social
 =================
 
-Una aplicación web para la realización de un escrutinio provisorio y auditoría
-ciudadana a partir de fotos documentos aportados por fiscales partidarios
+Escrutinio Social es una plataforma web para la realización de un escrutinio provisorio y auditoría
+ciudadana a partir de fotos documentos aportados por fiscales partidarios. 
+
+Está basada en el framework Django, y un stack de tecnologías libres. 
+
+Licencia BSD 
 
 Datos
 -----
