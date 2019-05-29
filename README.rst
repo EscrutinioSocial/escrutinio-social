@@ -8,7 +8,7 @@ Está basada en el framework Django, y un stack de tecnologías libres.
 
 Licencia BSD 
 
-Sumate a la [sala de chat del proyecto](https://join.slack.com/t/opendatacba/shared_invite/enQtNjQ4OTY5MTg3Nzk2LTgxMDU5NTY1MWNmZTdkMzVmM2EyNmUwZGQ0Nzg0ZjdlNjBkZmI0Zjc2MTllMWZhZjAzMTEwMjAwYzk3NGNlMzk)
+Sumate a la `sala de chat del proyecto <https://join.slack.com/t/opendatacba/shared_invite/enQtNjQ4OTY5MTg3Nzk2LTgxMDU5NTY1MWNmZTdkMzVmM2EyNmUwZGQ0Nzg0ZjdlNjBkZmI0Zjc2MTllMWZhZjAzMTEwMjAwYzk3NGNlMzk>`__
 
 
 Datos
