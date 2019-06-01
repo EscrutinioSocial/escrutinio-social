@@ -42,4 +42,4 @@ Proceso de carga de datos para comenzar
 Instalación
 -----------
 
-Ver [Instalación](./install/README.md)
+Ver [Instalación](/install/README.md)
