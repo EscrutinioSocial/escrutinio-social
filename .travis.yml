@@ -7,7 +7,7 @@ services:
     - postgresql
 
 before_install:
-    sudo apt install -y nginx gdal-bin postgis-2.4
+    sudo apt install -y nginx gdal-bin postgresql-9.6-postgis-2.4 postgis
 
 addons:
     postgresql: "9.6"
