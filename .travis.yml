@@ -17,11 +17,14 @@ pip:
     - pip isntall -U pip
     - pip install -r requirements.txt
 
-before_srcript:
+before_script:
     - psql -c "CREATE USER escrutinio_user WITH PASSWORD 'escrutinio_pass';" -U postgres
     - psql -c "ALTER ROLE escrutinio_user SUPERUSER;" -U postgres
     - psql -c "CREATE EXTENSION postgis;" -U postgres
     - psql -c "CREATE DATABASE escrutinio_db OWNER escrutinio_user;" -U postgres
+
+    - ./manage.py migrate
+    - ./manage.py collectstatic
 
 script:
     - pytest
