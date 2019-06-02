@@ -312,7 +312,9 @@ class Opcion(models.Model):
 
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
-    partido = models.ForeignKey(Partido, null=True, blank=True, related_name='opciones')   # blanco, / recurrido / etc
+    partido = models.ForeignKey(
+        Partido, null=True, on_delete=models.SET_NULL, blank=True, related_name='opciones'
+    )   # blanco, / recurrido / etc
     orden = models.PositiveIntegerField(
         help_text='Orden en la boleta', null=True, blank=True)
     obligatorio = models.BooleanField(default=False)
