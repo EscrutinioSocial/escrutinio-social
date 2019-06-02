@@ -49,11 +49,11 @@ class Seccion(models.Model):
         return Mesa.objects.filter(
             lugar_votacion__circuito__seccion=self,
             eleccion=eleccion
-    )
+        )
 
 
 class Circuito(models.Model):
-    seccion = models.ForeignKey(Seccion)
+    seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
     localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
 
     numero = models.CharField(max_length=10)
@@ -67,7 +67,6 @@ class Circuito(models.Model):
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
-
 
     def resultados_url(self):
         return reverse('resultados-eleccion') + f'?circuito={self.id}'
@@ -86,7 +85,7 @@ class Circuito(models.Model):
 
 
 class LugarVotacion(models.Model):
-    circuito = models.ForeignKey(Circuito, related_name='escuelas')
+    circuito = models.ForeignKey(Circuito, related_name='escuelas', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, blank=True)
@@ -166,8 +165,8 @@ def path_foto_acta(instance, filename):
 
 
 class MesaEleccion(models.Model):
-    mesa = models.ForeignKey('Mesa')
-    eleccion = models.ForeignKey('Eleccion')
+    mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
+    eleccion = models.ForeignKey('Eleccion', on_delete=models.CASCADE)
     confirmada = models.BooleanField(default=False)
 
     class Meta:
@@ -184,8 +183,12 @@ class Mesa(models.Model):
     eleccion = models.ManyToManyField('Eleccion', through='MesaEleccion')
     numero = models.PositiveIntegerField()
     es_testigo = models.BooleanField(default=False)
-    circuito = models.ForeignKey(Circuito, null=True)
-    lugar_votacion = models.ForeignKey(LugarVotacion, verbose_name='Lugar de votacion', null=True, related_name='mesas')
+
+    circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)        # denormalizacion
+
+    lugar_votacion = models.ForeignKey(LugarVotacion, verbose_name='Lugar de votacion', null=True, related_name='mesas',
+        on_delete=models.CASCADE
+    )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
     taken = models.DateTimeField(null=True, editable=False)
@@ -221,7 +224,7 @@ class Mesa(models.Model):
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
-            a_cargar = Count('eleccion', filter=Q(activa=True))
+            a_cargar=Count('eleccion', filter=Q(eleccion__activa=True))
         ).filter(
             cargadas__lt=F('a_cargar')
         ).annotate(
@@ -307,10 +310,11 @@ class Partido(models.Model):
 
 class Opcion(models.Model):
 
-
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
-    partido = models.ForeignKey(Partido, null=True, blank=True, related_name='opciones')   # blanco, / recurrido / etc
+    partido = models.ForeignKey(
+        Partido, null=True, on_delete=models.SET_NULL, blank=True, related_name='opciones'
+    )   # blanco, / recurrido / etc
     orden = models.PositiveIntegerField(
         help_text='Orden en la boleta', null=True, blank=True)
     obligatorio = models.BooleanField(default=False)
@@ -349,7 +353,6 @@ class Eleccion(models.Model):
     opciones = models.ManyToManyField(Opcion, related_name='elecciones')
     color = models.CharField(max_length=10, default='black', help_text='Color para css (red o #FF0000)')
     back_color = models.CharField(max_length=10, default='white', help_text='Color para css (red o #FF0000)')
-
     activa = models.BooleanField(
         default=True,
         help_text='Si no está activa, no se cargan datos para esta eleccion y no se muestran resultados'
@@ -405,12 +408,11 @@ class Eleccion(models.Model):
 
 
 class VotoMesaReportado(TimeStampedModel):
-    mesa = models.ForeignKey(Mesa)
-    eleccion = models.ForeignKey(Eleccion)
-    opcion = models.ForeignKey(Opcion)
+    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
+    eleccion = models.ForeignKey(Eleccion, on_delete=models.CASCADE)
+    opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
     votos = models.PositiveIntegerField(null=True)
-    fiscal = models.ForeignKey('fiscales.Fiscal', null=True)
-
+    fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
 
     class Meta:
         # unique_together = ('mesa', 'opcion', 'fiscal')
