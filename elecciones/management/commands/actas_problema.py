@@ -3,7 +3,7 @@ from adjuntos.models import Attachment
 
 
 
-class Command(escrutinio_socialBaseCommand):
+class Command(BaseCommand):
 
     def handle(self, *args, **options):
 

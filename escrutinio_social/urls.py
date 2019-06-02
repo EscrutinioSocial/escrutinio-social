@@ -14,13 +14,11 @@ from fancy_cache import cache_page
 
 cached = cache_page(3600 * 24 * 30)
 
-
 urlpatterns = [
     url(r'^$', choice_home, name="home"),
     url(r'^quiero-ser-fiscal/$', QuieroSerFiscal.as_view(), name='quiero-ser-fiscal'),
     url(r'^quiero-ser-fiscal/confirmar-email/(?P<uuid>[0-9a-f-]+)$', confirmar_email, name='confirmar-email'),
-    url(r'^login/$', auth_views.LoginView.as_view(authentication_form=AuthenticationFormCustomError)),
-    url(r'^accounts/login/$', auth_views.LoginView.as_view(authentication_form=AuthenticationFormCustomError)),
+    url(r'^login/$', auth_views.LoginView.as_view(authentication_form=AuthenticationFormCustomError), name='login'),
 
     url(r'', include(frontend_urls)),
     url(r'', include('django.contrib.auth.urls')),

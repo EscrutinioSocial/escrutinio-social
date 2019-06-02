@@ -7,12 +7,14 @@
 
  {% block head %}
     {{ block.super }}
+    {% if show_plot %}
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    {% endif %}
  {% endblock %}
 
 {% block sidenav_items %}
 
-      <li><a href="{% url "resultados-eleccion" 1 %}">Provincia</a></li>
+      <li><a href="{% url "resultados-eleccion" primera_eleccion %}">Provincia</a></li>
 
       {% for seccion in secciones %}
 
@@ -54,7 +56,9 @@
 
               {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
 
-              <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas </h4>
+              <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas 
+                ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
+              </h4>
 
 
 
@@ -65,7 +69,10 @@
                       <th>Votos</th>
                       <th>%</th>
                       {% if resultados.proyectado %}
-                      <th>% proyectado</th>
+                      <th>% proyectado <i class="small material-icons {% if resultados.proyeccion_incompleta  %}tooltipped" data-position="bottom" data-tooltip="Proyección incompleta. Faltan cargar datos en
+
+{% for ag in resultados.proyeccion_incompleta %}{{ ag }} / {% endfor %}
+{% endif %}">warning</i> </th>
                       {% endif %}
                   </tr>
                   </thead>
@@ -90,7 +97,10 @@
                   {% endwith %}
               </table>
 
-              <div id="piechart-{{object.id}}"></div>
+
+              {% if show_plot %}
+                <div id="columnchart-{{object.id}}"></div>
+              {% endif %}
 
 
               {% else %}
@@ -164,21 +174,37 @@ $(function() {
 
    $('tabs').tabs();
 
+   $('.tooltipped').tooltip();
+
+   $('.collapsible').collapsible();
+
+   {% if show_plot %}
+
    var data = [{
-      values: {{ chart_values|safe }},
-      labels: {{ chart_keys|safe }},
-      type: 'pie',
-      marker: {
-        colors: {{ chart_colors|safe }}
-      }
+      y: {{ chart_values|safe }},
+      x: {{ chart_keys|safe }},
+      text: {{ chart_values|safe }},  // mosytrar los numeros en las barras
+      textposition: 'auto',
+      opacity: 0.6,
+      type: 'bar',
+      marker: {color: 'rgb(200,48,107)',
+                line: {
+                      color: 'rgb(8,48,107)',
+                      width: 1.5,
+                }
+              }
     }];
 
-    var layout = {
-      height: 900,
-      width: 900
-    };
+    var layout = {height: 600,
+                    width: 1200,
+                    xaxis: {tickangle: 15,
+                            tickfont: {size: 9}
+                            }
+                    };
 
-    Plotly.newPlot('piechart-{{eleccion_id}}', data, layout);
+    Plotly.newPlot('columnchart-{{eleccion_id}}', data, layout);
+    {% endif %}
+
 });
 </script>
 {% endblock messages %}

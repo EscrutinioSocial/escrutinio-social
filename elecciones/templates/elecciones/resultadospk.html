@@ -55,17 +55,23 @@
                 {% if resultados.proyectado %}
                   {% if resultados.proyeccion_incompleta  %}
                     <h4 style="background-color: red"> Proyección de datos incompleta </h4>
-                    <h5> Con un total de {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas. Faltan cargar datos en </h5>
+                    <h5> Con un total de {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
+                        ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }}). 
+                        Faltan cargar datos en </h5>
                       {% for ag in resultados.proyeccion_incompleta %}
                         <li> {{ ag|safe }}</li>
                       {% endfor %}
 
                   {% else %}
-                    <h4>Proyección de datos sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas </h4>
+                    <h4>Proyección de datos sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas 
+                        ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
+                    </h4>
                   {% endif %}
 
                 {% else %}
-                    <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas </h4>
+                    <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas 
+                        ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
+                    </h4>
 
                 {% endif %}
 
@@ -103,6 +109,7 @@
                   {% endwith %}
               </table>
 
+              <div id="columnchart-{{object.id}}"></div>
               <div id="piechart-{{object.id}}"></div>
 
 
@@ -178,6 +185,30 @@ $(function() {
    $('tabs').tabs();
 
    var data = [{
+      y: {{ chart_values|safe }},
+      x: {{ chart_keys|safe }},
+      text: {{ chart_values|safe }},  // mosytrar los numeros en las barras
+      textposition: 'auto',
+      opacity: 0.6,
+      type: 'bar',
+      marker: {color: 'rgb(200,48,107)',
+                line: {
+                      color: 'rgb(8,48,107)',
+                      width: 1.5,
+                }
+              }
+    }];
+
+    var layout = {height: 600,
+                    width: 1200,
+                    xaxis: {tickangle: 15,
+                            tickfont: {size: 9}
+                            }
+                    };
+
+    Plotly.newPlot('columnchart-{{eleccion_id}}', data, layout);
+
+    var data = [{
       values: {{ chart_values|safe }},
       labels: {{ chart_keys|safe }},
       type: 'pie',

@@ -5,7 +5,11 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
-from django.db.models import Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef, Subquery, Exists, Max
+from django.db.models import (
+    Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef,
+    Subquery, Exists, Max, Value
+)
+from django.db.models.query import QuerySet
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from djgeojson.fields import PointField
@@ -25,53 +29,36 @@ class Seccion(models.Model):
     # O departamento
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
+    electores = models.PositiveIntegerField(default=0)
+    proyeccion_ponderada = models.BooleanField(
+        default=False,
+        help_text='Si está marcado, el cálculo de proyeccion se agrupará por circuitos para esta sección'
+    )
 
     class Meta:
         verbose_name = 'Sección electoral'
         verbose_name_plural = 'Secciones electorales'
 
-
     def resultados_url(self):
         return reverse('resultados-eleccion') + f'?seccion={self.id}'
 
-
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
 
-    @property
-    def electores(self):
-        return Mesa.objects.filter(eleccion__id=1,
+    def mesas(self, eleccion):
+        return Mesa.objects.filter(
             lugar_votacion__circuito__seccion=self,
-        ).aggregate(v=Sum('electores'))['v']
-
-    @property
-    def peso(self):
-        return self.electores / Eleccion.actual().electores
-
-
-class AgrupacionPK(models.Model):
-    # una agrupacion de circuitos interna
-    numero = models.PositiveIntegerField()
-    nombre = models.CharField(max_length=100)
-
-    def __str__(self):
-        return f"{self.numero} - {self.nombre}"
-
-    @property
-    def electores(self):
-        return Mesa.objects.filter(eleccion__id=1,
-            lugar_votacion__circuito__agrupacionpk=self,
-        ).aggregate(v=Sum('electores'))['v']
+            eleccion=eleccion
+        )
 
 
 class Circuito(models.Model):
     seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
-    seccion_de_ponderacion = models.ForeignKey(AgrupacionPK, null=True, on_delete=models.SET_NULL)
     localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
 
     numero = models.CharField(max_length=10)
     nombre = models.CharField(max_length=100)
-
+    electores = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = 'Circuito electoral'
@@ -81,21 +68,7 @@ class Circuito(models.Model):
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
 
-    @property
-    def electores(self):
-        return Mesa.objects.filter(eleccion__id=1,
-            lugar_votacion__circuito=self,
-        ).aggregate(v=Sum('electores'))['v']
-
-    @property
-    def peso(self):
-        return self.electores / Eleccion.actual().electores
-
     def resultados_url(self):
-        # return reverse(
-        #    'resultados-por',
-        #    args=('circuito', self.numero, slugify(self.nombre))
-        #)
         return reverse('resultados-eleccion') + f'?circuito={self.id}'
 
     def proximo_orden_de_carga(self):
@@ -103,6 +76,12 @@ class Circuito(models.Model):
             lugar_votacion__circuito=self
         ).aggregate(v=Max('orden_de_carga'))['v'] or 0
         return orden + 1
+
+    def mesas(self, eleccion):
+        return Mesa.objects.filter(
+            lugar_votacion__circuito=self,
+            eleccion=eleccion
+    )
 
 
 class LugarVotacion(models.Model):
@@ -123,11 +102,6 @@ class LugarVotacion(models.Model):
     class Meta:
         verbose_name = 'Lugar de votación'
         verbose_name_plural = "Lugares de votación"
-
-
-    def get_absolute_url(self):
-        url = reverse('donde-fiscalizo')
-        return f'{url}#donde{self.id}'
 
 
     def save(self, *args, **kwargs):
@@ -154,6 +128,12 @@ class LugarVotacion(models.Model):
         if inicio == fin:
             return inicio
         return f'{inicio} - {fin}'
+
+    def mesas(self, eleccion):
+        return Mesa.objects.filter(
+            lugar_votacion=self,
+            eleccion=eleccion
+    )
 
     @property
     def mesas_actuales(self):
@@ -213,16 +193,19 @@ class Mesa(models.Model):
     electores = models.PositiveIntegerField(null=True, blank=True)
     taken = models.DateTimeField(null=True, editable=False)
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
-
     carga_confirmada = models.BooleanField(default=False)
 
+    # denormalizacion.
+    # lleva la cuenta de las elecciones que se han cargado hasta el momento.
+    # ver receiver actualizar_elecciones_cargadas_para_mesa()
+    cargadas = models.PositiveIntegerField(default=0, editable=False)
+    confirmadas = models.PositiveIntegerField(default=0, editable=False)
 
     def eleccion_add(self, eleccion):
         MesaEleccion.objects.get_or_create(mesa=self, eleccion=eleccion)
 
-
     def siguiente_eleccion_sin_carga(self):
-        for eleccion in self.eleccion.all().order_by('id'):
+        for eleccion in self.eleccion.filter(activa=True).order_by('id'):
             if not VotoMesaReportado.objects.filter(mesa=self, eleccion=eleccion).exists():
                 return eleccion
 
@@ -241,20 +224,8 @@ class Mesa(models.Model):
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
-            a_cargar = Count('eleccion')
-        ).annotate(
-            cargadas=Count(
-                Subquery(
-                    # elecciones para las que hay votos reportados en la mesa
-                    VotoMesaReportado.objects.filter(
-                        mesa__id=OuterRef('id')
-                    ).values('eleccion').distinct()
-                )
-            )
-        )
-        vals = qs.values('id', 'a_cargar', 'cargadas')
-
-        qs = qs.filter(
+            a_cargar=Count('eleccion', filter=Q(activa=True))
+        ).filter(
             cargadas__lt=F('a_cargar')
         ).annotate(
             tiene_problemas=Exists(
@@ -268,12 +239,23 @@ class Mesa(models.Model):
         ).distinct()
         return qs
 
+    def siguiente_eleccion_a_confirmar(self):
+        for me in MesaEleccion.objects.filter(mesa=self, eleccion__activa=True).order_by('eleccion'):
+            if not me.confirmada and VotoMesaReportado.objects.filter(
+                eleccion=me.eleccion, mesa=me.mesa
+            ).exists():
+                return me.eleccion
+
     @classmethod
     def con_carga_a_confirmar(cls):
-        return cls.objects.filter(
-            votomesareportado__isnull=False,
-            carga_confirmada=False,
+        qs = cls.objects.filter(
+            mesaeleccion__confirmada=False,
+            mesaeleccion__eleccion__activa=True,
+            cargadas__gte=1
+        ).filter(
+            confirmadas__lt=F('cargadas')
         ).distinct()
+        return qs
 
 
     def get_absolute_url(self):
@@ -327,18 +309,18 @@ class Partido(models.Model):
 
 
 class Opcion(models.Model):
-    MOSTRABLES = list(range(1, 21))
-    AGREGACIONES = {f'{id}': Sum(Case(When(opcion__id=id, then=F('votos')),
-                             output_field=IntegerField())) for id in MOSTRABLES}
 
     nombre = models.CharField(max_length=100)
-    nombre_corto = models.CharField(max_length=10, default='')
-    # blanco, / recurrido / etc
-    partido = models.ForeignKey(Partido, null=True, blank=True, related_name='opciones', on_delete=models.CASCADE)
+    nombre_corto = models.CharField(max_length=20, default='')
+    partido = models.ForeignKey(Partido, null=True, blank=True, related_name='opciones')   # blanco, / recurrido / etc
     orden = models.PositiveIntegerField(
         help_text='Orden en la boleta', null=True, blank=True)
     obligatorio = models.BooleanField(default=False)
     es_contable = models.BooleanField(default=True)
+
+    es_metadata = models.BooleanField(
+        default=False, help_text="para campos que son tipo 'Total positivo, o Total votos'")
+
     codigo_dne = models.PositiveIntegerField(null=True, blank=True, help_text='Nº asignado en la base de datos de resultados oficiales')
 
 
@@ -357,7 +339,7 @@ class Opcion(models.Model):
 
     def __str__(self):
         if self.partido:
-            return f'{self.codigo_dne} - {self.nombre}' #  -- {self.partido.nombre_corto}
+            return f'{self.partido.codigo} - {self.nombre}' #  -- {self.partido.nombre_corto}
         return self.nombre
 
 
@@ -367,6 +349,13 @@ class Eleccion(models.Model):
     nombre = models.CharField(max_length=100)
     fecha = models.DateTimeField(blank=True, null=True)
     opciones = models.ManyToManyField(Opcion, related_name='elecciones')
+    color = models.CharField(max_length=10, default='black', help_text='Color para css (red o #FF0000)')
+    back_color = models.CharField(max_length=10, default='white', help_text='Color para css (red o #FF0000)')
+
+    activa = models.BooleanField(
+        default=True,
+        help_text='Si no está activa, no se cargan datos para esta eleccion y no se muestran resultados'
+    )
 
     def get_absolute_url(self):
         return reverse('resultados-eleccion', args=[self.id])
@@ -375,8 +364,34 @@ class Eleccion(models.Model):
         return self.opciones.all().order_by('orden')
 
     @classmethod
+    def para_mesas(cls, mesas):
+        """Devuelve el conjunto de elecciones que son comunes a todas las mesas dadas"""
+        if isinstance(mesas, QuerySet):
+            mesas_count = mesas.count()
+        else:
+            # si es lista
+            mesas_count = len(mesas)
+
+        # el primer filtro devuelve elecciones activas que esten relacianadas a una o
+        # mas mesas, pero no necesariamente a todas
+        qs = cls.objects.filter(
+            activa=True,
+            mesa__in=mesas
+        )
+
+        # para garantizar que son elecciones asociadas a todas las mesas
+        # anotamos la cuenta y la comparamos con la cantidad de mesas del conjunto
+        qs = qs.annotate(
+            num_mesas=Count('mesa')
+        ).filter(
+            num_mesas=mesas_count
+        )
+        return qs
+
+
+    @classmethod
     def actual(cls):
-        return cls.objects.get(id=1)
+        return cls.objects.first()
 
     @property
     def electores(self):
@@ -385,6 +400,7 @@ class Eleccion(models.Model):
     class Meta:
         verbose_name = 'Elección'
         verbose_name_plural = 'Elecciones'
+        ordering = ('id',)
 
     def __str__(self):
         return self.nombre
@@ -406,21 +422,39 @@ class VotoMesaReportado(TimeStampedModel):
         return f"{self.mesa} - {self.opcion}: {self.votos}"
 
 
-"""
-por si queremos mejorar lo que se muestra con nombres que entendemos
+@receiver(post_save, sender=VotoMesaReportado)
+def actualizar_elecciones_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
+    mesa = instance.mesa
+    elecciones_cargadas = VotoMesaReportado.objects.filter(mesa=mesa).values('eleccion').distinct().count()
+    if mesa.cargadas != elecciones_cargadas:
+        mesa.cargadas = elecciones_cargadas
+        mesa.save(update_fields=['cargadas'])
 
-class Candidato(models.Model):
-    nombre = models.CharField(max_length=140)
 
-    def __str__(self):
-        return self.nombre
+@receiver(post_save, sender=MesaEleccion)
+def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
+    if instance.confirmada:
+        mesa = instance.mesa
+        confirmadas = MesaEleccion.objects.filter(mesa=mesa, confirmada=True).count()
+        if mesa.confirmadas != confirmadas:
+            mesa.confirmadas = confirmadas
+            mesa.save(update_fields=['confirmadas'])
 
-class CandidatoEnEleccion(models.Model):
-    eleccion = models.ForeignKey(Eleccion)
-    partido = models.ForeignKey(Partido)
-    candidato = models.ForeignKey(Candidato)
-    orden = models.PositiveIntegerFields(default=0, help_text='Si corresponde, el orden (ej legisladores)')
+@receiver(post_save, sender=Mesa)
+def actualizar_electores_seccion_circuito(sender, instance=None, created=False, **kwargs):
 
-    class Meta:
-        unique_together = ('eleccion', 'partido', 'candidato')
-"""
+    if instance.lugar_votacion is not None and instance.lugar_votacion.circuito is not None:
+        seccion = instance.lugar_votacion.circuito.seccion
+        circuito = instance.lugar_votacion.circuito
+
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion=seccion,
+        ).aggregate(v=Sum('electores'))['v'] or 0
+        seccion.electores = electores
+        seccion.save(update_fields=['electores'])
+
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito=circuito,
+        ).aggregate(v=Sum('electores'))['v'] or 0
+        circuito.electores = electores
+        circuito.save(update_fields=['electores'])

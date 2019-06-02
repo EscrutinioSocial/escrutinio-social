@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import reverse
 from django.db.models import Count
 from leaflet.admin import LeafletGeoAdmin
-from .models import Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion, Eleccion, VotoMesaReportado
+from .models import (Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion,
+                        Eleccion, VotoMesaReportado, MesaEleccion)
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
 
@@ -42,12 +43,8 @@ class TieneResultados(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         value = self.value()
         if value is not None:
-            mesas_anotadas = Mesa.objects.annotate(num_votos=Count('votomesareportado'))
-            if value == "no":
-                queryset = mesas_anotadas.filter(num_votos__lte=0)
-            else:
-                queryset = mesas_anotadas.filter(num_votos__gt=0)
-
+            isnull = value == 'no'
+            queryset = Mesa.objects.filter(votomesareportado__isnull=isnull)
         return queryset
 
 
@@ -69,28 +66,15 @@ def mostrar_resultados_escuelas(modeladmin, request, queryset):
 mostrar_resultados_escuelas.short_description = "Mostrar resultados de Escuelas seleccionadas"
 
 
-
-
-def resultados_proyectados(modeladmin, request, queryset):
-
-    selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
-    name = modeladmin.model.__name__.lower()
-    url = reverse('proyecciones', args=(3,))
-    ids = "&".join(f'{name}={s}' for s in selected)
-    return HttpResponseRedirect(f'{url}?{ids}')
-
-resultados_proyectados.short_description = "Ver Resultados Proyectados"
-
-
 def resultados_reportados(modeladmin, request, queryset):
 
     selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
     name = modeladmin.model.__name__.lower()
     ids = "&".join(f'{name}={s}' for s in selected)
-    res_url = reverse('resultados-eleccion')
+    res_url = reverse('resultados-eleccion', args=[1])
     return HttpResponseRedirect(f'{res_url}?{ids}')
 
-resultados_reportados.short_description = "Ver Resultados Reportados"
+resultados_reportados.short_description = "Ver Resultados"
 
 
 class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
@@ -130,34 +114,29 @@ mostrar_resultados_mesas.short_description = "Mostrar resultados de Mesas selecc
 
 class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     actions = [resultados_reportados]
-    list_display = ('numero', 'lugar_votacion', 'carga_confirmada')
-    list_filter = ('carga_confirmada', TieneResultados, 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito')
+    list_display = ('numero', 'lugar_votacion')
+    list_filter = (TieneResultados, 'es_testigo', 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito')
     search_fields = (
         'numero', 'lugar_votacion__nombre', 'lugar_votacion__direccion',
         'lugar_votacion__ciudad', 'lugar_votacion__barrio',
     )
 
     def get_row_actions(self, obj):
+        row_actions = []
+        for e in obj.eleccion.all():
+            row_actions.append({
+                'label': f'Ver resultados {e}',
+                'url': reverse('resultados-eleccion', args=(e.id,)) + f'?mesa={obj.id}',
+                'enabled': True
+            })
 
-        if obj.eleccion.count() == 0:
-            url = 'NO HAY ELECCION DEFINIDA PARA ESTA MESA'
-            extra_label = 'No hay eleccion definida'
-        else:
-            url = reverse('resultados-eleccion', args=(obj.eleccion.first().id,)) + f'?mesa={obj.id}',
-            extra_label = ''
-
-        row_actions = [
+        row_actions.append(
             {
                 'label': 'Escuela',
                 'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
                 'enabled': True,
-            },
-            {
-                'label': f'Resultados Reportados {extra_label}',
-                'url': url,
-                'enabled': obj.tiene_reporte,
-            },
-        ]
+            }
+        )
         row_actions += super().get_row_actions(obj)
         return row_actions
 
@@ -168,6 +147,11 @@ class PartidoAdmin(admin.ModelAdmin):
     list_display_links = list_display
 
 
+class MesaEleccionAdmin(admin.ModelAdmin):
+    list_display = ('mesa', 'eleccion', 'confirmada')
+    list_filter = ['mesa__lugar_votacion__circuito', 'mesa__lugar_votacion__circuito__seccion']
+
+
 class CircuitoAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'seccion')
     list_display_links = list_display
@@ -175,15 +159,7 @@ class CircuitoAdmin(admin.ModelAdmin):
     search_fields = (
         'nombre', 'numero',
     )
-    actions = ['asignar', resultados_proyectados]
 
-    def asignar(self, request, queryset):
-        selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
-        ids = ",".join(selected)
-        url = reverse('asignar-referentes')
-        return HttpResponseRedirect(f'{url}?ids={ids}')
-
-    asignar.short_description = "Asignar referentes"
 
 class SeccionAdmin(admin.ModelAdmin):
     search_fields = (
@@ -191,14 +167,21 @@ class SeccionAdmin(admin.ModelAdmin):
     )
 
 class VotoMesaReportadoAdmin(admin.ModelAdmin):
-    list_display = ['mesa', 'opcion', 'votos']
+    list_display = ['mesa', 'id', 'eleccion', 'opcion', 'votos', 'fiscal']
     list_display_links = list_display
+    ordering = ['-id']
+    list_filter = ('eleccion', 'opcion')
+    search_fields = ['fiscal__nombre', 'mesa__numero', 'mesa__lugar_votacion__nombre']
 
-    #list_filter = ('eleccion', TieneFiscal)
-    search_fields = ['mesa__numero', 'mesa__lugar_votacion__nombre', 'mesa__lugar_votacion__ciudad']
 
 class OpcionAdmin(admin.ModelAdmin):
     list_display = ['nombre_corto', 'partido', 'nombre']
+
+
+class EleccionAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'activa', 'color', 'back_color']
+    search_fields = ['nombre']
+    list_filter = ['activa']
 
 
 admin.site.register(Seccion, SeccionAdmin)
@@ -206,11 +189,7 @@ admin.site.register(Circuito, CircuitoAdmin)
 admin.site.register(Partido, PartidoAdmin)
 admin.site.register(LugarVotacion, LugarVotacionAdmin)
 admin.site.register(Mesa, MesaAdmin)
+admin.site.register(MesaEleccion, MesaEleccionAdmin)
 admin.site.register(VotoMesaReportado, VotoMesaReportadoAdmin)
 admin.site.register(Opcion, OpcionAdmin)
-
-for model in [Eleccion]:
-    admin.site.register(model)
-
-
-# Register your models here.
+admin.site.register(Eleccion, EleccionAdmin)

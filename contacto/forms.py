@@ -18,6 +18,7 @@ USERNAME_PATTERNS = {
 
 
 def validar_telefono(valor):
+    CARACTERISTICA_DEFAULT = '351'
     valor = valor.strip()
     if valor.startswith(('15', '4')):
         valor = f'{CARACTERISTICA_DEFAULT} {valor}'

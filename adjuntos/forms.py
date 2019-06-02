@@ -16,7 +16,11 @@ class AsignarMesaForm(forms.ModelForm):
         fields = ['mesa', 'problema', 'mesa_confirm']
 
     def __init__(self, *args, **kwargs):
+        if kwargs['instance'] and kwargs['instance'].mesa:
+            kwargs['initial']['mesa'] = kwargs['instance'].mesa.numero
         super().__init__(*args, **kwargs)
+
+
         self.fields['mesa'].widget.attrs['tabindex'] = 1
         self.fields['mesa'].widget.attrs['autofocus'] = True
         self.fields['problema'].widget.attrs['tabindex'] = 99
@@ -27,37 +31,40 @@ class AsignarMesaForm(forms.ModelForm):
         if not numero:
             return numero
         try:
-            mesa = Mesa.objects.get(numero=numero, eleccion__id=1)
+            mesa = Mesa.objects.get(numero=numero)
         except Mesa.DoesNotExist:
-            raise forms.ValidationError('No existe una mesa con este numéro')
-        return mesa
+            raise forms.ValidationError('No existe una mesa con este número. ')
+        return mesa.numero
 
 
     def clean(self):
         cleaned_data = super().clean()
         problema = cleaned_data.get('problema')
-        mesa = cleaned_data.get('mesa')
+        mesa_numero = cleaned_data.get('mesa')
         mesa_confirm = cleaned_data.get('mesa_confirm')
 
-        if not mesa and not problema:
+        if not mesa_numero and not problema:
+
             self.add_error(
-                'mesa', 'Indicá la mesa o reportá un problema'
+                'mesa', 'Indicá la mesa o reportá un problema. '
             )
 
-        elif problema and mesa:
+        elif problema and mesa_numero:
             cleaned_data['mesa'] = None
             self.add_error(
-                'problema', 'Dejá el número en blanco si hay un problema'
+                'problema', 'Dejá el número en blanco si hay un problema. '
             )
 
-        if mesa and Attachment.objects.filter(mesa=mesa).exists() and mesa.numero != mesa_confirm:
+        if mesa_numero and Attachment.objects.filter(mesa__numero=mesa_numero).exists() and mesa_numero != mesa_confirm:
             self.data._mutable = True
-            self.data['mesa_confirm'] = mesa.numero
+
+            self.data['mesa_confirm'] = mesa_numero
             self.data._mutable = False
             self.add_error(
-                'mesa', 'Esta mesa ya tiene imagen adjunta. Revisá y guardá de nuevo para confirmar'
+                'mesa', 'Esta mesa ya tiene una o más imágenes adjuntas. Revisá y guardá de nuevo para confirmar .'
             )
 
+        cleaned_data['mesa'] = Mesa.objects.get(numero=mesa_numero)
         return cleaned_data
 
 
@@ -67,5 +74,5 @@ class SubirAttachmentModelForm(forms.ModelForm):
         fields = ['foto']
 
 
-class AgregarAttachmentsModelForm(forms.Form):
-    file_field = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}))
+class AgregarAttachmentsForm(forms.Form):
+    file_field = forms.FileField(label="Archivo/s", widget=forms.ClearableFileInput(attrs={'multiple': True}))

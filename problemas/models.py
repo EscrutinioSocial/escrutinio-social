@@ -6,6 +6,9 @@ from model_utils.models import TimeStampedModel
 class Problema(TimeStampedModel):
 
     PROBLEMAS = Choices(
+        'Error de carga en Gobernador',
+        'Error de carga en Legisladores',
+        'Error de carga en Intendente'
         'Foto/s no válidas',
         'Total incorrecto',
         'Otro'

@@ -2,8 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse
 from django.urls import reverse
+from django.db import IntegrityError
 from django.views.generic.edit import UpdateView, FormView
+from django.utils.decorators import method_decorator
 from elecciones.views import StaffOnlyMixing
+from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 
@@ -11,11 +14,10 @@ import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
 from .models import Attachment
-from .forms import AsignarMesaForm, AgregarAttachmentsModelForm
+from .forms import AsignarMesaForm, AgregarAttachmentsForm
 
 
-
-@staff_member_required
+@login_required
 def elegir_adjunto(request):
     # se eligen actas que nunca se intentaron cargar o que se asignaron a
     # hace más de 2 minutos
@@ -31,17 +33,20 @@ def elegir_adjunto(request):
 
 
 
-class AsignarMesaAdjunto(StaffOnlyMixing, UpdateView):
+class AsignarMesaAdjunto(UpdateView):
     form_class = AsignarMesaForm
     template_name = "adjuntos/asignar-mesa.html"
     pk_url_kwarg = 'attachment_id'
     model = Attachment
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
     def get_success_url(self):
         return reverse('elegir-adjunto')
 
     def get_context_data(self, **kwargs):
-        #import ipdb; ipdb.set_trace()
         context = super().get_context_data(**kwargs)
         context['attachment'] = self.object
         context['button_tabindex'] = 2
@@ -68,11 +73,15 @@ def editar_foto(request, attachment_id):
     return JsonResponse({'message': 'No se pudo guardar la imágen'})
 
 
-class AgregarAdjuntos(StaffOnlyMixing, FormView):
-    form_class = AgregarAttachmentsModelForm
+class AgregarAdjuntos(FormView):
+    form_class = AgregarAttachmentsForm
     template_name = 'adjuntos/agregar-adjuntos.html'
     success_url = 'agregada'
 
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+    
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
@@ -81,15 +90,18 @@ class AgregarAdjuntos(StaffOnlyMixing, FormView):
             c = 0
             for f in files:
                 if f.content_type not in ('image/jpeg', 'image/png'):
-                    messages.warning(self.request, f'{f.name} ignorado. No es imagen' )
+                    messages.warning(self.request, f'{f.name} ignorado. No es una imágen' )
                     continue
 
-                instance = Attachment(
-                    mimetype=f.content_type
-                )
-                instance.foto.save(f.name, f, save=False)
-                instance.save()
-                c += 1
+                try:
+                    instance = Attachment(
+                        mimetype=f.content_type
+                    )
+                    instance.foto.save(f.name, f, save=False)
+                    instance.save()
+                    c += 1
+                except IntegrityError:
+                    messages.warning(self.request, f'{f.name} ya existe en el sistema' )
 
             if c:
                 messages.success(self.request, f'Subiste {c} imagenes de actas. Gracias!')

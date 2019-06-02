@@ -21,8 +21,9 @@ from annoying.functions import get_object_or_None
 from contacto.forms import MinimoContactoInlineFormset
 from .models import Fiscal
 from elecciones.models import (
-    Mesa, Eleccion, VotoMesaReportado, Circuito, LugarVotacion, Seccion
+    Mesa, Eleccion, MesaEleccion, VotoMesaReportado, Circuito, LugarVotacion, Seccion
 )
+from django.utils.decorators import method_decorator
 from datetime import timedelta
 from django.utils import timezone
 from formtools.wizard.views import SessionWizardView
@@ -58,22 +59,13 @@ def choice_home(request):
     """
     redirige a una página en funcion del tipo de usuario
     """
-
     user = request.user
     if not user.is_authenticated:
         return redirect('login')
 
     es_fiscal = Fiscal.objects.filter(user=request.user).exists()
 
-    if user.is_staff and es_fiscal:
-        return redirect('elegir-acta-a-cargar')
-
-    elif es_fiscal:
-        return redirect('donde-fiscalizo')
-    elif user.groups.filter(name='contacto').exists():
-        return redirect('/contacto/')
-    else:
-        return redirect('/admin/')
+    return redirect('elegir-acta-a-cargar')
 
 
 class BaseFiscal(LoginRequiredMixin, DetailView):
@@ -173,7 +165,7 @@ class QuieroSerFiscal(SessionWizardView):
         if fiscal:
             fiscal.estado = 'AUTOCONFIRMADO'
         else:
-            fiscal = Fiscal(estado='AUTOCONFIRMADO', tipo='de_mesa', dni=dni)
+            fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=dni)
 
         fiscal.dni = dni
         fiscal.nombres = data['nombre']
@@ -259,21 +251,28 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
         return reverse('mis-datos')
 
 
-@staff_member_required
+@login_required
 def elegir_acta_a_cargar(request):
-
     # se eligen mesas que nunca se intentaron cargar o que se asignaron a
-    mesas = Mesa.con_carga_pendiente().order_by('orden_de_carga')
-
+    mesas = Mesa.con_carga_pendiente().order_by(
+        'orden_de_carga', '-lugar_votacion__circuito__electores'
+    )
     if mesas.exists():
         mesa = mesas[0]
         # se marca que se inicia una carga
         mesa.taken = timezone.now()
         mesa.save(update_fields=['taken'])
 
+        # que pasa si ya no hay elecciones sin carga?
+        # estamos teniendo un error
+        siguiente_eleccion = mesa.siguiente_eleccion_sin_carga()
+        if siguiente_eleccion is None:
+            return render(request, 'fiscales/sin-actas.html')
+        siguiente_id = siguiente_eleccion.id
+
         return redirect(
             'mesa-cargar-resultados',
-            eleccion_id=mesa.siguiente_eleccion_sin_carga().id,
+            eleccion_id=siguiente_id,
             mesa_numero=mesa.numero
         )
 
@@ -281,10 +280,11 @@ def elegir_acta_a_cargar(request):
 
 
 
-@staff_member_required
+@login_required
 def cargar_resultados(request, eleccion_id, mesa_numero):
     fiscal = get_object_or_404(Fiscal, user=request.user)
     eleccion = get_object_or_404(Eleccion, id=eleccion_id)
+
     mesa = get_object_or_404(Mesa, eleccion=eleccion, numero=mesa_numero)
     VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=eleccion.opciones.count())
 
@@ -307,7 +307,6 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
     qs = VotoMesaReportado.objects.filter(mesa=mesa, eleccion=eleccion)
     initial = [{'opcion': o} for o in eleccion.opciones_actuales()]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
-
     fix_opciones(formset)
     is_valid = False
     if qs:
@@ -358,35 +357,54 @@ def cargar_resultados(request, eleccion_id, mesa_numero):
     )
 
 
-@staff_member_required
+@login_required
 def chequear_resultado(request):
+    """vista que elige una mesa con cargas a confirmar y redirige a la url correspondiente"""
     mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
     if not mesa:
-        return redirect('elegir-acta-a-cargar')
-    return redirect('chequear-resultado-mesa', eleccion_id=1, mesa_numero=mesa.numero)
+        return render(request, 'fiscales/sin-actas-cargadas.html')
+    try:
+        eleccion = mesa.siguiente_eleccion_a_confirmar()
+    except Exception:
+        return render(request, 'fiscales/sin-actas-cargadas.html')
+    
+    if not eleccion:
+        return render(request, 'fiscales/sin-actas-cargadas.html')
+
+    return redirect('chequear-resultado-mesa', eleccion_id=eleccion.id, mesa_numero=mesa.numero)
 
 
 
-@staff_member_required
+@login_required
 def chequear_resultado_mesa(request, eleccion_id, mesa_numero):
-    mesa = get_object_or_404(Mesa, eleccion__id=eleccion_id, numero=mesa_numero)
+    """muestra la carga actual de la eleccion para la mesa"""
+
+    me = get_object_or_404(
+        MesaEleccion,
+        mesa__numero=mesa_numero,
+        eleccion__id=eleccion_id,
+        eleccion__activa=True
+    )
+    mesa = me.mesa
+    eleccion = me.eleccion
+
     data = request.POST if request.method == 'POST' else None
     if data and 'confirmar' in data:
-
-        mesa.carga_confirmada = True
-        mesa.save(update_fields=['carga_confirmada'])
+        me.confirmada = True
+        me.save(update_fields=['confirmada'])
+        messages.success(request, f'Confirmaste la categoria {eleccion} para {mesa}')
         return redirect('chequear-resultado')
 
-    reportados = mesa.votomesareportado_set.all().order_by('opcion__orden')
+    reportados = mesa.votomesareportado_set.filter(eleccion=eleccion).order_by('opcion__orden')
     return render(
         request,
         "fiscales/chequeo_mesa.html",
         {
             'reportados': reportados,
-            'object': mesa
+            'object': mesa,
+            'eleccion': me.eleccion
         }
     )
-
 
 
 class CambiarPassword(PasswordChangeView):
@@ -398,7 +416,7 @@ class CambiarPassword(PasswordChangeView):
         return super().form_valid(form)
 
 
-@staff_member_required
+@login_required
 def confirmar_fiscal(request, fiscal_id):
     fiscal = get_object_or_404(Fiscal, id=fiscal_id, estado='AUTOCONFIRMADO')
     fiscal.estado = 'CONFIRMADO'
@@ -407,26 +425,3 @@ def confirmar_fiscal(request, fiscal_id):
     msg = f'<a href="{url}">{fiscal}</a> ha sido confirmado en la escuela {fiscal.escuela_donde_vota}'
     messages.info(request, mark_safe(msg))
     return redirect(request.META.get('HTTP_REFERER'))
-
-
-@staff_member_required
-def exportar_emails(request):
-    out = StringIO()
-    call_command('export_emails', f='email', stdout=out)
-
-    text = '\n'.join(l for l in out.getvalue().split('\n') if '@' in l)
-    return HttpResponse(text, content_type="text/plain; charset=utf-8")
-
-
-@staff_member_required
-def datos_fiscales_por_seccion(request):
-    generales = {}
-    de_mesa = {}
-    for seccion in Seccion.objects.all():
-
-        generales[seccion] = Fiscal.objects.filter(tipo='general', escuela_donde_vota__circuito__seccion=seccion).distinct()
-        de_mesa[seccion] = Fiscal.objects.filter(tipo='de_mesa', escuela_donde_vota__circuito__seccion=seccion).distinct()
-
-
-    return render(request, 'fiscales/datos_fiscales_por_seccion.html', {'generales': generales, 'de_mesa': de_mesa})
-

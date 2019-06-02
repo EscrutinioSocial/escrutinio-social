@@ -6,7 +6,7 @@ from .factories import (
     MesaFactory,
     ProblemaFactory
 )
-from elecciones.models import Mesa
+from elecciones.models import Mesa, MesaEleccion, Eleccion
 from django.utils import timezone
 
 
@@ -18,6 +18,16 @@ def test_mesa_siguiente_eleccion(db):
     VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
     assert m1.siguiente_eleccion_sin_carga() == e2
     VotoMesaReportadoFactory(mesa=m1, eleccion=e2, opcion=e2.opciones.first(), votos=10)
+    assert m1.siguiente_eleccion_sin_carga() is None
+
+
+def test_mesa_siguiente_eleccion_desactiva(db):
+    e1, e2 = elecciones = EleccionFactory.create_batch(2)
+    e2.activa = False
+    e2.save()
+    m1 = MesaFactory(eleccion=elecciones)
+    assert m1.siguiente_eleccion_sin_carga() == e1
+    VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
     assert m1.siguiente_eleccion_sin_carga() is None
 
 
@@ -63,20 +73,112 @@ def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
 def test_con_carga_pendiente_incluye_mesa_con_eleccion_sin_cargar(db):
     m1 = AttachmentFactory().mesa
     m2 = AttachmentFactory().mesa
-    m3 = AttachmentFactory(mesa__id=1000).mesa
+    m3 = AttachmentFactory().mesa
 
     # mesa 2 ya se cargo, se excluirá
     eleccion = m2.eleccion.first()
     VotoMesaReportadoFactory(mesa=m2, eleccion=eleccion, opcion=eleccion.opciones.first(), votos=10)
     VotoMesaReportadoFactory(mesa=m2, eleccion=eleccion, opcion=eleccion.opciones.last(), votos=12)
 
-    # para mesa 3 se cargó la primera eleccion, pero tiene mas elecciones pendientes
-    m3.eleccion_add(EleccionFactory())
-    m3.eleccion_add(EleccionFactory())
+    # m3 tiene mas elecciones pendientes
+    e2 = EleccionFactory(id=100)
+    e3 = EleccionFactory(id=101)
+    e4 = EleccionFactory(id=102)
+    m3.eleccion_add(e2)
+    m3.eleccion_add(e3)
+    m3.eleccion_add(e4)
+    m3.eleccion_add(EleccionFactory(id=101))
     eleccion = m3.eleccion.first()
-    VotoMesaReportadoFactory(mesa=m3, eleccion=eleccion, opcion=eleccion.opciones.all()[0], votos=20)
-    VotoMesaReportadoFactory(mesa=m3, eleccion=eleccion, opcion=eleccion.opciones.all()[1], votos=20)
-    VotoMesaReportadoFactory(mesa=m3, eleccion=eleccion, opcion=eleccion.opciones.all()[2], votos=10)
-
+    # se cargo primera y segunda eleccion para la mesa 3
+    VotoMesaReportadoFactory(mesa=m3, eleccion=eleccion, opcion=eleccion.opciones.first(), votos=20)
+    VotoMesaReportadoFactory(mesa=m3, eleccion=e2, opcion=e2.opciones.first(), votos=20)
 
     assert set(Mesa.con_carga_pendiente()) == {m1, m3}
+
+
+# carga a confirmar
+
+def test_mesa_siguiente_eleccion_a_confirmar(db):
+    e1, e2 = eleccion = EleccionFactory.create_batch(2)
+    m1 = MesaFactory(eleccion=eleccion)
+    VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
+
+    assert m1.siguiente_eleccion_a_confirmar() == e1
+
+    # confirmo
+    me = MesaEleccion.objects.get(eleccion=e1, mesa=m1)
+    me.confirmada = True
+    me.save()
+
+    assert m1.siguiente_eleccion_a_confirmar() is None
+
+    # se cargó la otra eleccion
+    VotoMesaReportadoFactory(mesa=m1, eleccion=e2, opcion=e2.opciones.first(), votos=10)
+    assert m1.siguiente_eleccion_a_confirmar() == e2
+
+
+def test_mesa_siguiente_eleccion_a_confirmar_eleccion_desactivada(db):
+    e1 = EleccionFactory(activa=False)
+    m1 = MesaFactory(eleccion=[e1])
+    VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
+    # aunque haya datos cargados, la eleccion desactivada la excluye de confirmacion
+    assert m1.siguiente_eleccion_a_confirmar() is None
+
+
+def test_con_carga_a_confirmar(db):
+    e1, e2 = eleccion = EleccionFactory.create_batch(2)
+    m1 = MesaFactory(eleccion=eleccion)
+    m2 = MesaFactory(eleccion=eleccion)
+
+    VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
+    assert set(Mesa.con_carga_a_confirmar()) == {m1}
+
+    VotoMesaReportadoFactory(mesa=m2, eleccion=e1, opcion=e1.opciones.first(), votos=10)
+    assert set(Mesa.con_carga_a_confirmar()) == {m1, m2}
+
+    # confirmo la primer mesa.
+    # no hay mas elecciones de m1 ya cargadas, por lo tanto no hay qué confirmar
+    me = MesaEleccion.objects.get(eleccion=e1, mesa=m1)
+    me.confirmada = True
+    me.save()
+
+    assert set(Mesa.con_carga_a_confirmar()) == {m2}
+
+
+def test_con_carga_a_confirmar_eleccion_desactivada(db):
+    e1 = EleccionFactory(activa=False)
+    m1 = MesaFactory(eleccion=[e1])
+    VotoMesaReportadoFactory(mesa=m1, eleccion=e1, opcion=e1.opciones.first(), votos=10)
+    assert Mesa.con_carga_a_confirmar().count() == 0
+
+
+def test_elecciones_para_mesa(db):
+    e1, e2, e3 = EleccionFactory.create_batch(3)
+    e4 = EleccionFactory(activa=False)
+    m1 = MesaFactory(eleccion=[e1, e2])
+    m2 = MesaFactory(eleccion=[e1, e2, e4])
+    m3 = MesaFactory(eleccion=[e1])
+    m4 = MesaFactory(eleccion=[e4])
+    m5 = MesaFactory(eleccion=[e1, e2])
+
+    # no hay elecciones comunes a todas las mesas
+    assert list(
+        Eleccion.para_mesas([m1, m2, m3, m4, m5]).order_by('id')
+    ) == []
+
+    # no hay elecciones comunes a todas las mesas
+    assert list(
+        Eleccion.para_mesas([m1, m2, m3, m5]).order_by('id')
+    ) == [e1]
+
+    assert list(
+        Eleccion.para_mesas([m1, m2, m5]).order_by('id')
+    ) == [e1, e2]
+
+    assert list(
+        Eleccion.para_mesas([m1, m3]).order_by('id')
+    ) == [e1]
+
+    assert list(
+        Eleccion.para_mesas([m2, m4]).order_by('id')
+    ) == []

@@ -158,7 +158,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
+LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
@@ -196,7 +196,7 @@ REST_FRAMEWORK = {
 ANYMAIL = {
     # (exact settings here depend on your ESP...)
     "MAILGUN_API_KEY": "",
-    "MAILGUN_SENDER_DOMAIN": '',  # your Mailgun domain, if needed
+    "MAILGUN_SENDER_DOMAIN": '',  # your Mailgun domain, if needepd
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"  # or sendgrid.EmailBackend, or...
@@ -215,15 +215,18 @@ CACHES = {
 }
 
 # config para el comando importar_actas
-IMAP_ACCOUNT = 'eml@algo.com'
-IMAP_HOST = 'imap.gmail.com'
-IMAP_USERNAME = 'foo@bar.com'
-IMAP_PASSWORD = '***'
-IMAP_MAILBOX = 'INBOX'
-
+IMAPS = [
+    {'email': 'e1@gmail.com', 'host': 'imap.gmail.com', 'user': 'e1@gmail.com', 'pass': 'xxxx', 'mailbox': 'INBOX'},
+    {'email': 'eml@gmail.com', 'host': 'imap.gmail.com', 'user': 'e2@gmail.com', 'pass': 'xxxx', 'mailbox': 'INBOX'}
+]
 
 # contacto settings
 CARACTERISTICA_TELEFONO_DEFAULT = '351'     # CORDOBA
+CARACTERISTICA_DEFAULT = '351'
+
+
+# por defecto no se muestra grafico en la página de resultados
+SHOW_PLOT = False
 
 
 try:

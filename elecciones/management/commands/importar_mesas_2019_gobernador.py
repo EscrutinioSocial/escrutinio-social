@@ -20,14 +20,14 @@ def to_float(val):
         return None
 
 
-class escrutinio_socialBaseCommand(BaseCommand):
+class BaseCommand(BaseCommand):
 
     def success(self, msg):
         self.stdout.write(self.style.SUCCESS(msg))
 
     def warning(self, msg):
         self.stdout.write(self.style.WARNING(msg))
-    
+
     def error(self, msg):
         self.stdout.write(self.style.ERROR(msg))
 
@@ -38,28 +38,8 @@ class escrutinio_socialBaseCommand(BaseCommand):
             self.warning(f'{object} ya existe')
 
 
-class Command(escrutinio_socialBaseCommand):
+class Command(BaseCommand):
     help = "Importar carta marina"
-
-    """ hay 3 mesas que son de una escuela y no son nros consecutivos
-    Se requiere copiar la mesa 1 3 veces antes de tirar este comando para que no falten esos tres datos
-
-from elecciones.models import Mesa
-mesa_8651 = Mesa.objects.get(numero=1)
-mesa_8651.pk = None
-mesa_8651.numero = 8651
-mesa_8651.save()
-
-mesa_8652 = Mesa.objects.get(numero=1)
-mesa_8652.pk = None
-mesa_8652.numero = 8652
-mesa_8652.save()
-
-mesa_8653 = Mesa.objects.get(numero=1)
-mesa_8653.pk = None
-mesa_8653.numero = 8653
-mesa_8653.save()
-    """
 
     def handle(self, *args, **options):
         reader = DictReader(CSV.open())
@@ -70,13 +50,13 @@ mesa_8653.save()
             c += 1
             mesa_nro = int(row['Mesa'])
             electores = int(row['CantElectores'])
-            
+
             if electores < 1:
                 err = f'La mesa {mesa_nro} tiene {electores} electores'
                 self.error(err)
                 errores.append(err)
                 continue
-            
+
             if electores > 405:
                 err = f'La mesa {mesa_nro} tiene {electores} electores'
                 self.error(err)
@@ -91,13 +71,12 @@ mesa_8653.save()
                 self.error(err)
                 errores.append(err)
                 continue
-                
+
             mesa.electores = electores
             mesa.save()
 
             self.stdout.write(self.style.SUCCESS(f"Mesa {mesa_nro}: {electores} electores"), ending='\r')
-        
+
         self.success(f"Se procesaron {c} mesas con {len(errores)} errores")
         for error in errores:
             self.error(error)
-

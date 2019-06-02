@@ -1,4 +1,5 @@
-django
+attrdict==2.0.1
+django==1.11.9
 django-model-utils==3.0.0
 git+https://github.com/mgaitan/django-admin-row-actions#egg=django-admin-row-actions
 git+https://github.com/mgaitan/django-sneak.git@#egg=django-sneak
@@ -19,6 +20,7 @@ django-leaflet==0.22.0
 django-localflavor==2.2
 jsonfield==2.0.2
 nameparser==0.5.3
+numpy==1.16.3
 phonenumbers==8.6.0
 Pillow==4.2.1
 pyexcel-xlsx==0.4.1
@@ -28,3 +30,5 @@ factory_boy==2.9.2
 pytest-django==3.1.2
 psycopg2_binary==2.7.7
 sentry-sdk==0.7.6
+django-excel==0.0.10
+pyexcel==0.5.13
