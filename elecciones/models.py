@@ -224,7 +224,7 @@ class Mesa(models.Model):
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
-            a_cargar=Count('eleccion', filter=Q(activa=True))
+            a_cargar=Count('eleccion', filter=Q(eleccion__activa=True))
         ).filter(
             cargadas__lt=F('a_cargar')
         ).annotate(
@@ -353,7 +353,6 @@ class Eleccion(models.Model):
     opciones = models.ManyToManyField(Opcion, related_name='elecciones')
     color = models.CharField(max_length=10, default='black', help_text='Color para css (red o #FF0000)')
     back_color = models.CharField(max_length=10, default='white', help_text='Color para css (red o #FF0000)')
-
     activa = models.BooleanField(
         default=True,
         help_text='Si no está activa, no se cargan datos para esta eleccion y no se muestran resultados'

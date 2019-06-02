@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     'django_admin_row_actions',
     'hijack',
     'compat',
-    # 'attachments',
     'djgeojson',
     'leaflet',
     'versatileimagefield',
