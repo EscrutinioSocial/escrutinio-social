@@ -38,3 +38,8 @@ Proceso de carga de datos para comenzar
 
     # Importar mesas testigo
     ./manage.py importar_mesas_testigo_2019
+
+Instalación
+-----------
+
+Ver `Instalación <./install/README.md>`__
