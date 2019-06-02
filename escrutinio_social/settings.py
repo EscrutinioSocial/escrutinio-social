@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django_admin_row_actions',
     'hijack',
     'compat',
+    # 'attachments',
     'djgeojson',
     'leaflet',
     'versatileimagefield',
@@ -102,12 +103,13 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+# Sobreescribir en local_settings.py
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'escrutinio_db',
-        'USER': 'escrutinio_user',
-        'PASSWORD': 'escrutinio_pass',
+        'NAME': 'travis_ci',
+        'USER': 'postgres',
+        'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '',
     }
