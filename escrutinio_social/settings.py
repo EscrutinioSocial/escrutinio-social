@@ -105,8 +105,12 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'escrutinio_db',
+        'USER': 'escrutinio_user',
+        'PASSWORD': 'escrutinio_pass',
+        'HOST': 'localhost',
+        'PORT': '',
     }
 }
 
