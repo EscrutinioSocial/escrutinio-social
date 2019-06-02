@@ -19,3 +19,6 @@ before_script:
 
 script:
     - pytest
+
+notifications:
+  slack: opendatacba:Pweez1BZ9RgtrReYzopBPMUh
