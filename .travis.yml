@@ -1,24 +1,16 @@
+dist: xenial
 language: python
-
 python:
     - "3.7"
 
 services:
     - postgresql
 
-
-addons:
-    postgresql: "11"
-    apt:
-        update: true
-
 pip:
     - pip install -r requirements.txt
 
 before_script:
-    - psql -c "CREATE USER escrutinio_user WITH PASSWORD 'escrutinio_pass';" -U postgres
-    - psql -c "ALTER ROLE escrutinio_user SUPERUSER;" -U postgres
-    - psql -c "CREATE DATABASE escrutinio_db OWNER escrutinio_user;" -U postgres
+  - psql -c 'create database travis_ci;' -U postgres
 
 script:
     - pytest
