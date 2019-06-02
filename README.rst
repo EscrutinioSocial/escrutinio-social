@@ -1,12 +1,16 @@
 Escrutinio Social
 =================
 
+.. image:: https://travis-ci.org/OpenDataCordoba/escrutinio-social.svg?branch=master
+   :target: https://travis-ci.org/OpenDataCordoba/escrutinio-social
+
+
 Escrutinio Social es una plataforma web para la realización de un escrutinio provisorio y auditoría
-ciudadana a partir de fotos documentos aportados por fiscales partidarios. 
+ciudadana a partir de fotos documentos aportados por fiscales partidarios.
 
-Está basada en el framework Django, y un stack de tecnologías libres. 
+Está basada en el framework Django, y un stack de tecnologías libres.
 
-Licencia BSD 
+Licencia BSD
 
 Sumate a la `sala de chat del proyecto <https://join.slack.com/t/opendatacba/shared_invite/enQtNjQ4OTY5MTg3Nzk2LTgxMDU5NTY1MWNmZTdkMzVmM2EyNmUwZGQ0Nzg0ZjdlNjBkZmI0Zjc2MTllMWZhZjAzMTEwMjAwYzk3NGNlMzk>`__
 
@@ -34,7 +38,7 @@ Proceso de carga de datos para comenzar
     ./manage.py colorize_elecciones
 
     # Crear (por ejemplo) 5 usuarios para los data entries del bunker
-    ./manage.py generar_accesos_data_entries --equipo=BUNKER --cantidad=5 
+    ./manage.py generar_accesos_data_entries --equipo=BUNKER --cantidad=5
 
     # Importar mesas testigo
     ./manage.py importar_mesas_testigo_2019
