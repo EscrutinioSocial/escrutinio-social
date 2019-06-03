@@ -13,12 +13,16 @@ services:
 
 pip:
     - pip install -r requirements.txt
+    - pip install coveralls
 
 before_script:
   - psql -c 'create database travis_ci;' -U postgres
 
 script:
     - pytest
+
+after_success:
+    - coveralls
 
 notifications:
   slack: opendatacba:Pweez1BZ9RgtrReYzopBPMUh

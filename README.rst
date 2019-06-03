@@ -4,6 +4,10 @@ Escrutinio Social
 .. image:: https://travis-ci.org/OpenDataCordoba/escrutinio-social.svg?branch=master
    :target: https://travis-ci.org/OpenDataCordoba/escrutinio-social
 
+.. image:: https://coveralls.io/repos/github/OpenDataCordoba/escrutinio-social/badge.svg?branch=master
+   :target: https://coveralls.io/github/OpenDataCordoba/escrutinio-social?branch=master
+
+
 
 Escrutinio Social es una plataforma web para la realización de un escrutinio provisorio y auditoría
 ciudadana a partir de fotos documentos aportados por fiscales partidarios.
