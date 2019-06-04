@@ -19,8 +19,8 @@ class Problema(TimeStampedModel):
         'resuelto',
     )
     problema = models.CharField(max_length=100, null=True, blank=True, choices=PROBLEMAS)
-    mesa = models.ForeignKey('elecciones.Mesa', related_name='problemas')
-    reportado_por = models.ForeignKey('fiscales.Fiscal')
+    mesa = models.ForeignKey('elecciones.Mesa', related_name='problemas', on_delete=models.CASCADE)
+    reportado_por = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
     descripcion = models.TextField(null=True, blank=True)
     estado = models.CharField(max_length=100, null=True, blank=True, choices=ESTADOS)
-    resuelto_por = models.ForeignKey('auth.User', null=True)
+    resuelto_por = models.ForeignKey('auth.User', null=True, on_delete=models.SET_NULL)

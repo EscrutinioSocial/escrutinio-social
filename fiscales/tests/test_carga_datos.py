@@ -187,3 +187,4 @@ def test_chequear_resultado_eleccion_desactivada(db, fiscal_client):
     e1.save()
     response = fiscal_client.get(url)
     assert response.status_code == 404
+

@@ -53,7 +53,7 @@ class Attachment(models.Model):
         # 'foto rotada',
     )
 
-    email = models.ForeignKey('Email', null=True)
+    email = models.ForeignKey('Email', null=True, on_delete=models.SET_NULL)
     mimetype = models.CharField(max_length=100, null=True)
     foto = VersatileImageField(upload_to='attachments/',
         null=True, blank=True,
@@ -77,8 +77,7 @@ class Attachment(models.Model):
         blank=True,
         null=True
     )
-
-    mesa = models.ForeignKey('elecciones.Mesa', null=True, related_name='attachments')
+    mesa = models.ForeignKey('elecciones.Mesa', null=True, related_name='attachments', on_delete=models.CASCADE)
     taken = models.DateTimeField(null=True)
     problema = models.CharField(max_length=100, null=True, blank=True, choices=PROBLEMAS)
 
