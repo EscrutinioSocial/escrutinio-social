@@ -173,7 +173,6 @@ class MesaEleccion(models.Model):
         unique_together = ('mesa', 'eleccion')
 
 
-
 class Mesa(models.Model):
     ESTADOS_ = ('EN ESPERA', 'ABIERTA', 'CERRADA', 'ESCRUTADA')
     ESTADOS = Choices(*ESTADOS_)
@@ -183,11 +182,10 @@ class Mesa(models.Model):
     eleccion = models.ManyToManyField('Eleccion', through='MesaEleccion')
     numero = models.PositiveIntegerField()
     es_testigo = models.BooleanField(default=False)
-
-    circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)        # denormalizacion
-
-    lugar_votacion = models.ForeignKey(LugarVotacion, verbose_name='Lugar de votacion', null=True, related_name='mesas',
-        on_delete=models.CASCADE
+    circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
+    lugar_votacion = models.ForeignKey(
+        LugarVotacion, verbose_name='Lugar de votacion',
+        null=True, related_name='mesas', on_delete=models.CASCADE
     )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
@@ -206,7 +204,9 @@ class Mesa(models.Model):
 
     def siguiente_eleccion_sin_carga(self):
         for eleccion in self.eleccion.filter(activa=True).order_by('id'):
-            if not VotoMesaReportado.objects.filter(mesa=self, eleccion=eleccion).exists():
+            if not VotoMesaReportado.objects.filter(
+                mesa=self, eleccion=eleccion
+            ).exists():
                 return eleccion
 
     @classmethod
@@ -240,7 +240,9 @@ class Mesa(models.Model):
         return qs
 
     def siguiente_eleccion_a_confirmar(self):
-        for me in MesaEleccion.objects.filter(mesa=self, eleccion__activa=True).order_by('eleccion'):
+        for me in MesaEleccion.objects.filter(
+            mesa=self, eleccion__activa=True
+        ).order_by('eleccion'):
             if not me.confirmada and VotoMesaReportado.objects.filter(
                 eleccion=me.eleccion, mesa=me.mesa
             ).exists():
@@ -426,7 +428,9 @@ class VotoMesaReportado(TimeStampedModel):
 @receiver(post_save, sender=VotoMesaReportado)
 def actualizar_elecciones_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
     mesa = instance.mesa
-    elecciones_cargadas = VotoMesaReportado.objects.filter(mesa=mesa).values('eleccion').distinct().count()
+    elecciones_cargadas = VotoMesaReportado.objects.filter(
+        mesa=mesa
+    ).values('eleccion').distinct().count()
     if mesa.cargadas != elecciones_cargadas:
         mesa.cargadas = elecciones_cargadas
         mesa.save(update_fields=['cargadas'])
@@ -441,10 +445,12 @@ def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=F
             mesa.confirmadas = confirmadas
             mesa.save(update_fields=['confirmadas'])
 
+
 @receiver(post_save, sender=Mesa)
 def actualizar_electores_seccion_circuito(sender, instance=None, created=False, **kwargs):
 
-    if instance.lugar_votacion is not None and instance.lugar_votacion.circuito is not None:
+    if (instance.lugar_votacion is not None
+        and instance.lugar_votacion.circuito is not None):
         seccion = instance.lugar_votacion.circuito.seccion
         circuito = instance.lugar_votacion.circuito
 
