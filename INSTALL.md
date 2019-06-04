@@ -15,7 +15,7 @@ sudo apt install -y python3.7 python3.7-dev gdal-bin
 ```
 
 ## Crear una base de datos
-Dar de alta la base con postgis
+Dar de alta la base
 ```
 sudo su - postgres
 psql
@@ -43,7 +43,6 @@ pip install -r requirements.txt
 Definir tu escrutinio_social/local_settings.py teniendo en cuenta la nueva base
 
 ``` py
-# Requiere una base de datos postgres con postgis activado
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
