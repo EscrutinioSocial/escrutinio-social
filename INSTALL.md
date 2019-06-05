@@ -15,7 +15,7 @@ sudo apt install -y python3.7 python3.7-dev gdal-bin postgresql
 ```
 
 ## Crear una base de datos
-Dar de alta la base con postgis
+Dar de alta la base
 ```
 sudo su - postgres
 psql
@@ -24,7 +24,6 @@ psql
 ``` sql
 CREATE USER escrutinio_user WITH PASSWORD 'escrutinio_pass';
 ALTER ROLE escrutinio_user SUPERUSER;
-CREATE EXTENSION postgis;
 CREATE DATABASE escrutinio_db OWNER escrutinio_user;
 ```
 
@@ -44,10 +43,9 @@ pip install -r requirements.txt
 Definir tu escrutinio_social/local_settings.py teniendo en cuenta la nueva base
 
 ``` py
-# Requiere una base de datos postgres con postgis activado
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'escrutinio_db',
         'USER': 'escrutinio_user',
         'HOST': 'localhost',
