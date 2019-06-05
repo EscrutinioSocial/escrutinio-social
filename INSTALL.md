@@ -11,7 +11,7 @@ Dependiendo la version de Python 3.7 puede no estar disponible. Puedes buscar el
 
 ```
 sudo apt update
-sudo apt install -y python3.7 python3.7-dev gdal-bin
+sudo apt install -y python3.7 python3.7-dev gdal-bin postgresql
 ```
 
 ## Crear una base de datos
