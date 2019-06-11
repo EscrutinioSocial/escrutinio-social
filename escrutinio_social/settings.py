@@ -103,14 +103,14 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-# Sobreescribir en local_settings.py
+# Sobreescribir en local_settings.py si se instala localmente.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'db_name',
         'USER': 'postgres',
         'PASSWORD': '',
-        'HOST': 'db',
+        'HOST': 'localhost' if os.environ.get('TRAVIS') == 'true' else 'db',
         'PORT': '',
     }
 }

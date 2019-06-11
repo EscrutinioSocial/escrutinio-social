@@ -15,9 +15,6 @@ before_install:
 services:
   - postgresql
 
-addons:
-  hostname: db
-
 pip:
   - pip install -r requirements.txt
 
