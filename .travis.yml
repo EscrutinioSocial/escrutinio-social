@@ -16,8 +16,7 @@ services:
   - postgresql
 
 addons:
-  hosts:
-    - db
+  hostname: db
 
 pip:
   - pip install -r requirements.txt
