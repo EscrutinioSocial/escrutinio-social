@@ -107,10 +107,10 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'travis_ci',
+        'NAME': 'db_name',
         'USER': 'postgres',
         'PASSWORD': '',
-        'HOST': 'localhost',
+        'HOST': 'db',
         'PORT': '',
     }
 }
