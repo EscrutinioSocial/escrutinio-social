@@ -3,7 +3,7 @@
 Escrutinio Social es un proyecto basado en Django (2.2), postgresql (9.6 o superior) y Python 3.7.
 Hemos puesto esfuerzo en simplificar todo lo posible el setup de un entorno de desarrollo
 
-Para levantar el proyecto necesitamos contar con [docker](https://docs.docker.com/engine/installation/) y [docker-compose](https://docs.docker.com/compose/install/).
+Para poner en marcha este entorno necesitamos contar con [docker](https://docs.docker.com/engine/installation/) y [docker-compose](https://docs.docker.com/compose/install/). Puedes seguir las instrucciones oficiales correspondientes a tu sistema operativo.
 
 Para crear e inicializar los contenedores,
 
@@ -12,7 +12,7 @@ make build
 make setup-dev-data
 ```
 
-Para levantar los servicios y lanzar la aplicación
+Para lanzar los servicios y la aplicación
 
 ```
 make up
