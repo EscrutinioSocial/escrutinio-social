@@ -18,9 +18,9 @@ Para levantar los servicios
 make up
 ```
 
-Luego puedes ingresar a http://localhost:8000 y loguearte con admin / admin. Este usuario, además de ser fiscal, tiene privilegios de superusuario.
+Luego puedes ingresar a http://localhost:8000/ y loguearte con `admin` / `admin`. Este usuario, además de ser fiscal, tiene privilegios de superusuario.
 
-Los datos sintéticos que se cargan es una elección ficticia con tres opciones, 8 mesas (mesa 1 a 8) divididas en 2 secciones y 4 circuitos.
+Los datos sintéticos que se cargan se tratan de una elección con tres opciones, 8 mesas (mesa 1 a 8) divididas en 2 secciones y 4 circuitos.
 
 Una vez logueado, podés subir imágenes desde la opción "Subir actas" y asociarlas a alguna de las mesas.
 
@@ -29,7 +29,3 @@ Una vez logueado, podés subir imágenes desde la opción "Subir actas" y asocia
 
 Si preferís no usar docker podés seguir las [instrucciones para armar un entorno de desarrollo local](https://github.com/OpenDataCordoba/escrutinio-social/wiki/Instalaci%C3%B3n-de-un-entorno-de-desarrollo-local
 ) en nuestra wiki.
-
-
-
-
