@@ -16,7 +16,7 @@ stop:
 restart:
 	docker-compose stop && docker-compose start
 
-prune:
+down:
 	docker-compose down --volumes
 
 shell-app:
