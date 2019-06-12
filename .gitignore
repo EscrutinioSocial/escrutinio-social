@@ -9,7 +9,6 @@ media/*
 
 # data
 *.sqlite3
-fixtures/*
 
 # C extensions
 *.so
