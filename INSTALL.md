@@ -31,13 +31,13 @@ Los datos sintéticos que se cargan se tratan de una elección con tres opciones
 Una vez logueado, podés subir imágenes desde la opción "Subir actas" y asociarlas a alguna de las mesas. Eso te habilitará la opción de cargar actas y luego computar resultados.
 
 
-Hay más comandos en el Makefile, que pueden ser útiles.
-- `shell-app` y `shell-db` para entrar a la consola de los contenedores
-- `log-app` y `log-db` para ver el dump de outputs capturados
-- `down` para remover los contenedores y sus volúmenes de datos (para un fresh install?)
-- y más.
+Hay más comandos que pueden ser útiles.
+- `make shell-app` y `make shell-db` para entrar a la consola de los contenedores
+- `make log-app` y `make log-db` para ver el dump de outputs capturados
+- `make down` para remover los contenedores y sus volúmenes de datos (para un fresh install)
+- y más. Revisá el código de `Makefile`
 
 ## Instalación local
 
-Si preferís no usar docker podés seguir las [instrucciones para armar un entorno de desarrollo local](https://github.com/OpenDataCordoba/escrutinio-social/wiki/Instalaci%C3%B3n-de-un-entorno-de-desarrollo-local
+Si preferís no usar Docker podés seguir las [instrucciones para armar un entorno de desarrollo local](https://github.com/OpenDataCordoba/escrutinio-social/wiki/Instalaci%C3%B3n-de-un-entorno-de-desarrollo-local
 ) en nuestra wiki.

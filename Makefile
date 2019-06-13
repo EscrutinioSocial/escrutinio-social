@@ -37,7 +37,7 @@ collectstatic:
 create:
 	docker-compose up --no-start
 
-migrate: create
+migrate: up
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py migrate"
 
 setup-dev-data: migrate
