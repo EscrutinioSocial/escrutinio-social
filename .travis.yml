@@ -20,5 +20,8 @@ script:
 after_success:
   - coveralls
 
+env:
+  - PGPORT=5432
+
 notifications:
   slack: opendatacba:Pweez1BZ9RgtrReYzopBPMUh

@@ -1,0 +1,29 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:11
+    container_name: escrutinio-social-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=
+      - POSTGRES_DB=db_name
+    ports:
+      - "5433:5432"
+    volumes:
+      - data:/var/lib/postgresql/data
+  app:
+    container_name: escrutinio-social-app
+    build: .
+    command: python3 manage.py runserver 0.0.0.0:8000
+    environment:
+      - DATABASE_URL=postgres://postgres@db/postgres
+    volumes:
+      - .:/src
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+volumes:
+  data:

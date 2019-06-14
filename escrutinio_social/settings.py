@@ -24,8 +24,7 @@ SECRET_KEY = 'gq9%*_m)=m*y$cnkl1xeg1xiihaz5%v+_d@a+3ft$b(cq29r8z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -103,14 +102,14 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-# Sobreescribir en local_settings.py
+# Sobreescribir en local_settings.py si se instala localmente.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'travis_ci',
+        'NAME': 'db_name',
         'USER': 'postgres',
         'PASSWORD': '',
-        'HOST': 'localhost',
+        'HOST': 'localhost' if os.environ.get('TRAVIS') == 'true' else 'db',
         'PORT': '',
     }
 }

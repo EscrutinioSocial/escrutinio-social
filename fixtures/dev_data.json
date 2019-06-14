@@ -1,0 +1,884 @@
+[
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
+    "last_login": "2019-06-12T19:12:06.663Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2019-06-12T18:23:00.331Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "fiscales.fiscal",
+  "pk": 1,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "13a16943-1f43-4061-8fed-cfd08a8b8145",
+    "email_confirmado": false,
+    "apellido": "Admin",
+    "nombres": "Fiscal",
+    "tipo_dni": "DNI",
+    "dni": "0000000",
+    "user": 1
+  }
+},
+{
+  "model": "elecciones.seccion",
+  "pk": 1,
+  "fields": {
+    "numero": 1,
+    "nombre": "Secci\u00f3n 1",
+    "electores": 440,
+    "proyeccion_ponderada": false
+  }
+},
+{
+  "model": "elecciones.seccion",
+  "pk": 2,
+  "fields": {
+    "numero": 2,
+    "nombre": "Secci\u00f3n 2",
+    "electores": 360,
+    "proyeccion_ponderada": false
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 1,
+  "fields": {
+    "seccion": 1,
+    "localidad_cabecera": null,
+    "numero": "1",
+    "nombre": "Circuito 1.1",
+    "electores": 200
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 2,
+  "fields": {
+    "seccion": 1,
+    "localidad_cabecera": null,
+    "numero": "2",
+    "nombre": "Circuito 1.2",
+    "electores": 240
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 3,
+  "fields": {
+    "seccion": 2,
+    "localidad_cabecera": null,
+    "numero": "3",
+    "nombre": "Circuito 2.3",
+    "electores": 180
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 4,
+  "fields": {
+    "seccion": 2,
+    "localidad_cabecera": null,
+    "numero": "4",
+    "nombre": "Circuito 2.4",
+    "electores": 180
+  }
+},
+{
+  "model": "elecciones.lugarvotacion",
+  "pk": 1,
+  "fields": {
+    "circuito": 1,
+    "nombre": "Escuela 0",
+    "direccion": "direccion",
+    "barrio": "",
+    "ciudad": "",
+    "calidad": "",
+    "electores": null,
+    "geom": null,
+    "estado_geolocalizacion": 0,
+    "latitud": null,
+    "longitud": null
+  }
+},
+{
+  "model": "elecciones.lugarvotacion",
+  "pk": 2,
+  "fields": {
+    "circuito": 1,
+    "nombre": "Escuela 1",
+    "direccion": "direccion",
+    "barrio": "",
+    "ciudad": "",
+    "calidad": "",
+    "electores": null,
+    "geom": null,
+    "estado_geolocalizacion": 0,
+    "latitud": null,
+    "longitud": null
+  }
+},
+{
+  "model": "elecciones.lugarvotacion",
+  "pk": 3,
+  "fields": {
+    "circuito": 2,
+    "nombre": "Escuela 2",
+    "direccion": "direccion",
+    "barrio": "",
+    "ciudad": "",
+    "calidad": "",
+    "electores": null,
+    "geom": null,
+    "estado_geolocalizacion": 0,
+    "latitud": null,
+    "longitud": null
+  }
+},
+{
+  "model": "elecciones.lugarvotacion",
+  "pk": 4,
+  "fields": {
+    "circuito": 2,
+    "nombre": "Escuela 3",
+    "direccion": "direccion",
+    "barrio": "",
+    "ciudad": "",
+    "calidad": "",
+    "electores": null,
+    "geom": null,
+    "estado_geolocalizacion": 0,
+    "latitud": null,
+    "longitud": null
+  }
+},
+{
+  "model": "elecciones.lugarvotacion",
+  "pk": 5,
+  "fields": {
+    "circuito": 3,
+    "nombre": "Escuela 4",
+    "direccion": "direccion",
+    "barrio": "",
+    "ciudad": "",
+    "calidad": "",
+    "electores": null,
+    "geom": null,
+    "estado_geolocalizacion": 0,
+    "latitud": null,
+    "longitud": null
+  }
+},
+{
+  "model": "elecciones.lugarvotacion",
+  "pk": 6,
+  "fields": {
+    "circuito": 3,
+    "nombre": "Escuela 5",
+    "direccion": "direccion",
+    "barrio": "",
+    "ciudad": "",
+    "calidad": "",
+    "electores": null,
+    "geom": null,
+    "estado_geolocalizacion": 0,
+    "latitud": null,
+    "longitud": null
+  }
+},
+{
+  "model": "elecciones.lugarvotacion",
+  "pk": 7,
+  "fields": {
+    "circuito": 4,
+    "nombre": "Escuela 6",
+    "direccion": "direccion",
+    "barrio": "",
+    "ciudad": "",
+    "calidad": "",
+    "electores": null,
+    "geom": null,
+    "estado_geolocalizacion": 0,
+    "latitud": null,
+    "longitud": null
+  }
+},
+{
+  "model": "elecciones.lugarvotacion",
+  "pk": 8,
+  "fields": {
+    "circuito": 4,
+    "nombre": "Escuela 7",
+    "direccion": "direccion",
+    "barrio": "",
+    "ciudad": "",
+    "calidad": "",
+    "electores": null,
+    "geom": null,
+    "estado_geolocalizacion": 0,
+    "latitud": null,
+    "longitud": null
+  }
+},
+{
+  "model": "elecciones.mesaeleccion",
+  "pk": 1,
+  "fields": {
+    "mesa": 1,
+    "eleccion": 1,
+    "confirmada": false
+  }
+},
+{
+  "model": "elecciones.mesaeleccion",
+  "pk": 2,
+  "fields": {
+    "mesa": 2,
+    "eleccion": 1,
+    "confirmada": false
+  }
+},
+{
+  "model": "elecciones.mesaeleccion",
+  "pk": 3,
+  "fields": {
+    "mesa": 3,
+    "eleccion": 1,
+    "confirmada": false
+  }
+},
+{
+  "model": "elecciones.mesaeleccion",
+  "pk": 4,
+  "fields": {
+    "mesa": 4,
+    "eleccion": 1,
+    "confirmada": false
+  }
+},
+{
+  "model": "elecciones.mesaeleccion",
+  "pk": 5,
+  "fields": {
+    "mesa": 5,
+    "eleccion": 1,
+    "confirmada": false
+  }
+},
+{
+  "model": "elecciones.mesaeleccion",
+  "pk": 6,
+  "fields": {
+    "mesa": 6,
+    "eleccion": 1,
+    "confirmada": false
+  }
+},
+{
+  "model": "elecciones.mesaeleccion",
+  "pk": 7,
+  "fields": {
+    "mesa": 7,
+    "eleccion": 1,
+    "confirmada": false
+  }
+},
+{
+  "model": "elecciones.mesaeleccion",
+  "pk": 8,
+  "fields": {
+    "mesa": 8,
+    "eleccion": 1,
+    "confirmada": false
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 1,
+  "fields": {
+    "estado": "EN ESPERA",
+    "hora_escrutada": "2019-06-12T18:24:57.205Z",
+    "numero": 1,
+    "es_testigo": false,
+    "circuito": 1,
+    "lugar_votacion": 1,
+    "url": "",
+    "electores": 100,
+    "taken": null,
+    "orden_de_carga": 0,
+    "carga_confirmada": false,
+    "cargadas": 0,
+    "confirmadas": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 2,
+  "fields": {
+    "estado": "EN ESPERA",
+    "hora_escrutada": "2019-06-12T18:24:57.346Z",
+    "numero": 2,
+    "es_testigo": false,
+    "circuito": 1,
+    "lugar_votacion": 2,
+    "url": "",
+    "electores": 100,
+    "taken": null,
+    "orden_de_carga": 0,
+    "carga_confirmada": false,
+    "cargadas": 0,
+    "confirmadas": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 3,
+  "fields": {
+    "estado": "EN ESPERA",
+    "hora_escrutada": "2019-06-12T18:24:57.408Z",
+    "numero": 3,
+    "es_testigo": false,
+    "circuito": 2,
+    "lugar_votacion": 3,
+    "url": "",
+    "electores": 120,
+    "taken": null,
+    "orden_de_carga": 0,
+    "carga_confirmada": false,
+    "cargadas": 0,
+    "confirmadas": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 4,
+  "fields": {
+    "estado": "EN ESPERA",
+    "hora_escrutada": "2019-06-12T18:24:57.460Z",
+    "numero": 4,
+    "es_testigo": false,
+    "circuito": 2,
+    "lugar_votacion": 4,
+    "url": "",
+    "electores": 120,
+    "taken": null,
+    "orden_de_carga": 0,
+    "carga_confirmada": false,
+    "cargadas": 0,
+    "confirmadas": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 5,
+  "fields": {
+    "estado": "EN ESPERA",
+    "hora_escrutada": "2019-06-12T18:24:57.538Z",
+    "numero": 5,
+    "es_testigo": false,
+    "circuito": 3,
+    "lugar_votacion": 5,
+    "url": "",
+    "electores": 90,
+    "taken": null,
+    "orden_de_carga": 0,
+    "carga_confirmada": false,
+    "cargadas": 0,
+    "confirmadas": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 6,
+  "fields": {
+    "estado": "EN ESPERA",
+    "hora_escrutada": "2019-06-12T18:24:57.622Z",
+    "numero": 6,
+    "es_testigo": false,
+    "circuito": 3,
+    "lugar_votacion": 6,
+    "url": "",
+    "electores": 90,
+    "taken": null,
+    "orden_de_carga": 0,
+    "carga_confirmada": false,
+    "cargadas": 0,
+    "confirmadas": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 7,
+  "fields": {
+    "estado": "EN ESPERA",
+    "hora_escrutada": "2019-06-12T18:24:57.686Z",
+    "numero": 7,
+    "es_testigo": false,
+    "circuito": 4,
+    "lugar_votacion": 7,
+    "url": "",
+    "electores": 90,
+    "taken": null,
+    "orden_de_carga": 0,
+    "carga_confirmada": false,
+    "cargadas": 0,
+    "confirmadas": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 8,
+  "fields": {
+    "estado": "EN ESPERA",
+    "hora_escrutada": "2019-06-12T18:24:57.758Z",
+    "numero": 8,
+    "es_testigo": false,
+    "circuito": 4,
+    "lugar_votacion": 8,
+    "url": "",
+    "electores": 90,
+    "taken": null,
+    "orden_de_carga": 0,
+    "carga_confirmada": false,
+    "cargadas": 0,
+    "confirmadas": 0
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 1,
+  "fields": {
+    "orden": 1,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 1",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 2,
+  "fields": {
+    "orden": 2,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 2",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 3,
+  "fields": {
+    "orden": 3,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 3",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 4,
+  "fields": {
+    "orden": 4,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 4",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 5,
+  "fields": {
+    "orden": 5,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 5",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 6,
+  "fields": {
+    "orden": 6,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 6",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 7,
+  "fields": {
+    "orden": 7,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 7",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 8,
+  "fields": {
+    "orden": 8,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 8",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 9,
+  "fields": {
+    "orden": 9,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 9",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 10,
+  "fields": {
+    "orden": 10,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 10",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 11,
+  "fields": {
+    "orden": 11,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 11",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 12,
+  "fields": {
+    "orden": 12,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 12",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 13,
+  "fields": {
+    "orden": 13,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 13",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 14,
+  "fields": {
+    "orden": 14,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 14",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 15,
+  "fields": {
+    "orden": 15,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 15",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 16,
+  "fields": {
+    "orden": 16,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 16",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 17,
+  "fields": {
+    "orden": 17,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 17",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 18,
+  "fields": {
+    "orden": 18,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 18",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 19,
+  "fields": {
+    "orden": 19,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 19",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 20,
+  "fields": {
+    "orden": 20,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 20",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 21,
+  "fields": {
+    "orden": 21,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 21",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 22,
+  "fields": {
+    "orden": 22,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 22",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 23,
+  "fields": {
+    "orden": 23,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 23",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 24,
+  "fields": {
+    "orden": 24,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 24",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 25,
+  "fields": {
+    "orden": 1,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 1",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 26,
+  "fields": {
+    "orden": 2,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 2",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.partido",
+  "pk": 27,
+  "fields": {
+    "orden": 3,
+    "numero": null,
+    "codigo": null,
+    "nombre": "Partido 3",
+    "nombre_corto": "",
+    "color": "",
+    "referencia": ""
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 1,
+  "fields": {
+    "nombre": "blanco",
+    "nombre_corto": "",
+    "partido": null,
+    "orden": 1,
+    "obligatorio": false,
+    "es_contable": false,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 2,
+  "fields": {
+    "nombre": "opc1",
+    "nombre_corto": "",
+    "partido": 1,
+    "orden": 2,
+    "obligatorio": false,
+    "es_contable": true,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 3,
+  "fields": {
+    "nombre": "opc2",
+    "nombre_corto": "",
+    "partido": 2,
+    "orden": 3,
+    "obligatorio": false,
+    "es_contable": true,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 4,
+  "fields": {
+    "nombre": "opc3",
+    "nombre_corto": "",
+    "partido": 3,
+    "orden": 4,
+    "obligatorio": false,
+    "es_contable": true,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.eleccion",
+  "pk": 1,
+  "fields": {
+    "slug": "elecciones-1",
+    "nombre": "elecciones-1",
+    "fecha": null,
+    "color": "black",
+    "back_color": "white",
+    "activa": true,
+    "opciones": [
+      1,
+      2,
+      3,
+      4
+    ]
+  }
+}
+]
