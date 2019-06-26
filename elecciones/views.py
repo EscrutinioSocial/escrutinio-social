@@ -65,7 +65,6 @@ class EscuelaDetailView(StaffOnlyMixing, DetailView):
     model = LugarVotacion
 
 
-
 class Mapa(StaffOnlyMixing, TemplateView):
     template_name = "elecciones/mapa.html"
 
@@ -87,9 +86,6 @@ class Mapa(StaffOnlyMixing, TemplateView):
 
 class ResultadosEleccion(StaffOnlyMixing, TemplateView):
     template_name = "elecciones/resultados.html"
-
-
-
 
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
@@ -188,8 +184,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             # La proyeccion se calcula sólo cuando no hay filtros (es decir, para provincia)
             # ponderando por secciones (o circuitos para secciones de "proyeccion ponderada")
 
-
-            agrupaciones = list(itertools.chain(                                # cast para reusar
+            agrupaciones = list(itertools.chain(  # cast para reusar
                 Circuito.objects.filter(seccion__proyeccion_ponderada=True),
                 Seccion.objects.filter(proyeccion_ponderada=False)
             ))
