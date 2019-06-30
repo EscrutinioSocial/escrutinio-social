@@ -3,7 +3,7 @@ Vistas con datos crudos
 ej: http://localhost:8000/elecciones/resultados-parciales-gobernador-cordoba-2019.csv
 
 """
-from elecciones.models import Eleccion, VotoMesaReportado
+from elecciones.models import Categoria, VotoMesaReportado
 import django_excel as excel
 from django.views.decorators.cache import cache_page
 
@@ -13,9 +13,9 @@ def resultado_parcial_eleccion(request, slug_eleccion, filetype):
     '''
     lista de paradas de transporte urbano de pasajeros
     '''
-    eleccion = Eleccion.objects.get(slug=slug_eleccion)
+    eleccion = Categoria.objects.get(slug=slug_eleccion)
     mesas_reportadas = VotoMesaReportado.objects.filter(eleccion=eleccion).order_by('mesa__numero', 'opcion__orden')
-    
+
     headers = ['seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa']
     for opcion in eleccion.opciones.all().order_by('orden'):
         headers.append(opcion.nombre)
@@ -30,9 +30,9 @@ def resultado_parcial_eleccion(request, slug_eleccion, filetype):
             resultados[mesa] = {}
         if opcion.nombre not in resultados[mesa].keys():
             resultados[mesa][opcion.nombre] = 0
-        
+
         resultados[mesa][opcion.nombre] += mesa_reportada.votos
-    
+
     for mesa, opciones in resultados.items():
         fila = [mesa.lugar_votacion.circuito.seccion.nombre,
                 mesa.lugar_votacion.circuito.seccion.numero,

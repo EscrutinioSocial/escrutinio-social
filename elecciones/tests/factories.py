@@ -36,9 +36,9 @@ class OpcionFactory(DjangoModelFactory):
     orden = factory.Sequence(lambda n: n + 1)
 
 
-class EleccionFactory(DjangoModelFactory):
+class CategoriaFactory(DjangoModelFactory):
     class Meta:
-        model = 'elecciones.Eleccion'
+        model = 'elecciones.Categoria'
         django_get_or_create = ('id',)
     id = factory.Sequence(lambda n: n)
     nombre = factory.LazyAttribute(lambda obj: f"elecciones-{obj.id}")
@@ -100,16 +100,16 @@ class MesaFactory(DjangoModelFactory):
             return
         if extracted:
             for eleccion in extracted:
-                MesaEleccionFactory(mesa=self, eleccion=eleccion)
+                MesaCategoriaFactory(mesa=self, eleccion=eleccion)
         else:
-            MesaEleccionFactory(mesa=self)
+            MesaCategoriaFactory(mesa=self)
 
 
-class MesaEleccionFactory(DjangoModelFactory):
+class MesaCategoriaFactory(DjangoModelFactory):
     class Meta:
-        model = 'elecciones.MesaEleccion'
+        model = 'elecciones.MesaCategoria'
     mesa = factory.SubFactory(MesaFactory)
-    eleccion = factory.SubFactory(EleccionFactory, id=1)
+    eleccion = factory.SubFactory(CategoriaFactory, id=1)
 
 
 class FiscalFactory(DjangoModelFactory):
@@ -126,7 +126,7 @@ class VotoMesaReportadoFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.VotoMesaReportado'
     mesa = factory.SubFactory(MesaFactory)
-    eleccion = factory.SubFactory(EleccionFactory, id=1)
+    eleccion = factory.SubFactory(CategoriaFactory, id=1)
     opcion = factory.SubFactory(OpcionFactory)
     fiscal = factory.SubFactory(FiscalFactory)
 

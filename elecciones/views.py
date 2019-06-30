@@ -84,7 +84,7 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
-class ResultadosEleccion(StaffOnlyMixing, TemplateView):
+class ResultadosCategoria(StaffOnlyMixing, TemplateView):
     template_name = "elecciones/resultados.html"
 
     def get_template_names(self):
@@ -271,7 +271,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
             positivos: total votos positivos
         """
         electores = mesas.filter(eleccion=eleccion).aggregate(v=Sum('electores'))['v'] or 0
-        sum_por_partido, otras_opciones = ResultadosEleccion.agregaciones_por_partido(eleccion)
+        sum_por_partido, otras_opciones = ResultadosCategoria.agregaciones_por_partido(eleccion)
 
         # primero para partidos
 
@@ -330,8 +330,8 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
 
         pk = self.kwargs.get('pk', 1)
         if pk == 1:
-            pk == Eleccion.objects.first().id
-        eleccion = get_object_or_404(Eleccion, id=pk)
+            pk == Categoria.objects.first().id
+        eleccion = get_object_or_404(Categoria, id=pk)
         context['object'] = eleccion
         context['eleccion_id'] = eleccion.id
         context['resultados'] = self.get_resultados(eleccion)
@@ -348,7 +348,7 @@ class ResultadosEleccion(StaffOnlyMixing, TemplateView):
         # para el calculo se filtran elecciones activas que esten relacionadas
         # a las mesas
         mesas = self.mesas(eleccion)
-        context['elecciones'] = Eleccion.para_mesas(mesas).order_by('id')
+        context['elecciones'] = Categoria.para_mesas(mesas).order_by('id')
 
         context['secciones'] = Seccion.objects.all().order_by('numero')
         return context

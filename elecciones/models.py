@@ -137,7 +137,7 @@ class LugarVotacion(models.Model):
 
     @property
     def mesas_actuales(self):
-        return self.mesas.filter(eleccion=Eleccion.actual())
+        return self.mesas.filter(eleccion=Categoria.actual())
 
     @property
     def color(self):
@@ -164,9 +164,9 @@ def path_foto_acta(instance, filename):
     )
 
 
-class MesaEleccion(models.Model):
+class MesaCategoria(models.Model):
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
-    eleccion = models.ForeignKey('Eleccion', on_delete=models.CASCADE)
+    eleccion = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     confirmada = models.BooleanField(default=False)
 
     class Meta:
@@ -179,7 +179,7 @@ class Mesa(models.Model):
     estado = StatusField(choices_name='ESTADOS', default='EN ESPERA')
     hora_escrutada = MonitorField(monitor='estado', when=['ESCRUTADA'])
 
-    eleccion = models.ManyToManyField('Eleccion', through='MesaEleccion')
+    eleccion = models.ManyToManyField('Categoria', through='MesaCategoria')
     numero = models.PositiveIntegerField()
     es_testigo = models.BooleanField(default=False)
     circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
@@ -200,7 +200,7 @@ class Mesa(models.Model):
     confirmadas = models.PositiveIntegerField(default=0, editable=False)
 
     def eleccion_add(self, eleccion):
-        MesaEleccion.objects.get_or_create(mesa=self, eleccion=eleccion)
+        MesaCategoria.objects.get_or_create(mesa=self, eleccion=eleccion)
 
     def siguiente_eleccion_sin_carga(self):
         for eleccion in self.eleccion.filter(activa=True).order_by('id'):
@@ -240,7 +240,7 @@ class Mesa(models.Model):
         return qs
 
     def siguiente_eleccion_a_confirmar(self):
-        for me in MesaEleccion.objects.filter(
+        for me in MesaCategoria.objects.filter(
             mesa=self, eleccion__activa=True
         ).order_by('eleccion'):
             if not me.confirmada and VotoMesaReportado.objects.filter(
@@ -251,8 +251,8 @@ class Mesa(models.Model):
     @classmethod
     def con_carga_a_confirmar(cls):
         qs = cls.objects.filter(
-            mesaeleccion__confirmada=False,
-            mesaeleccion__eleccion__activa=True,
+            mesacategoria__confirmada=False,
+            mesacategoria__eleccion__activa=True,
             cargadas__gte=1
         ).filter(
             confirmadas__lt=F('cargadas')
@@ -347,7 +347,7 @@ class Opcion(models.Model):
         return self.nombre
 
 
-class Eleccion(models.Model):
+class Categoria(models.Model):
     """este modelo representa una categoria electiva: gobernador, intendente de loma del orto, etc)"""
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100)
@@ -402,7 +402,7 @@ class Eleccion(models.Model):
 
     class Meta:
         verbose_name = 'Elección'
-        verbose_name_plural = 'Elecciones'
+        verbose_name_plural = 'Categoriaes'
         ordering = ('id',)
 
     def __str__(self):
@@ -411,7 +411,7 @@ class Eleccion(models.Model):
 
 class VotoMesaReportado(TimeStampedModel):
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
-    eleccion = models.ForeignKey(Eleccion, on_delete=models.CASCADE)
+    eleccion = models.ForeignKey(Categoria, on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
     votos = models.PositiveIntegerField(null=True)
     fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
@@ -436,11 +436,11 @@ def actualizar_elecciones_cargadas_para_mesa(sender, instance=None, created=Fals
         mesa.save(update_fields=['cargadas'])
 
 
-@receiver(post_save, sender=MesaEleccion)
+@receiver(post_save, sender=MesaCategoria)
 def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
     if instance.confirmada:
         mesa = instance.mesa
-        confirmadas = MesaEleccion.objects.filter(mesa=mesa, confirmada=True).count()
+        confirmadas = MesaCategoria.objects.filter(mesa=mesa, confirmada=True).count()
         if mesa.confirmadas != confirmadas:
             mesa.confirmadas = confirmadas
             mesa.save(update_fields=['confirmadas'])

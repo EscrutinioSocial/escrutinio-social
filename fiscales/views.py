@@ -21,7 +21,7 @@ from annoying.functions import get_object_or_None
 from contacto.forms import MinimoContactoInlineFormset
 from .models import Fiscal
 from elecciones.models import (
-    Mesa, Eleccion, MesaEleccion, VotoMesaReportado, Circuito, LugarVotacion, Seccion
+    Mesa, Categoria, MesaCategoria, VotoMesaReportado, Circuito, LugarVotacion, Seccion
 )
 from django.utils.decorators import method_decorator
 from datetime import timedelta
@@ -73,7 +73,7 @@ class BaseFiscal(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['eleccion'] = Eleccion.objects.first()
+        context['eleccion'] = Categoria.objects.first()
         return context
 
     def get_object(self, *args, **kwargs):
@@ -283,7 +283,7 @@ def elegir_acta_a_cargar(request):
 @login_required
 def cargar_resultados(request, eleccion_id, mesa_numero):
     fiscal = get_object_or_404(Fiscal, user=request.user)
-    eleccion = get_object_or_404(Eleccion, id=eleccion_id)
+    eleccion = get_object_or_404(Categoria, id=eleccion_id)
 
     mesa = get_object_or_404(Mesa, eleccion=eleccion, numero=mesa_numero)
     VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=eleccion.opciones.count())
@@ -367,7 +367,7 @@ def chequear_resultado(request):
         eleccion = mesa.siguiente_eleccion_a_confirmar()
     except Exception:
         return render(request, 'fiscales/sin-actas-cargadas.html')
-    
+
     if not eleccion:
         return render(request, 'fiscales/sin-actas-cargadas.html')
 
@@ -380,7 +380,7 @@ def chequear_resultado_mesa(request, eleccion_id, mesa_numero):
     """muestra la carga actual de la eleccion para la mesa"""
 
     me = get_object_or_404(
-        MesaEleccion,
+        MesaCategoria,
         mesa__numero=mesa_numero,
         eleccion__id=eleccion_id,
         eleccion__activa=True

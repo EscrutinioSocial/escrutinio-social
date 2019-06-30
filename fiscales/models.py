@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_delete
-from elecciones.models import Mesa, LugarVotacion, Eleccion
+from elecciones.models import Mesa, LugarVotacion, Categoria
 from django.contrib.contenttypes.models import ContentType
 from contacto.models import DatoDeContacto
 from model_utils.fields import StatusField

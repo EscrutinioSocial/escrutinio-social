@@ -5,7 +5,7 @@ from django.forms import modelformset_factory, BaseModelFormSet
 from django.utils.safestring import mark_safe
 from material import Layout, Row, Fieldset
 from .models import Fiscal
-from elecciones.models import Mesa, VotoMesaReportado, Eleccion, LugarVotacion, Circuito, Seccion
+from elecciones.models import Mesa, VotoMesaReportado, Categoria, LugarVotacion, Circuito, Seccion
 from localflavor.ar.forms import ARDNIField
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
@@ -35,7 +35,7 @@ class AuthenticationFormCustomError(AuthenticationForm):
 
 def opciones_actuales():
     try:
-        return Eleccion.opciones_actuales().count()
+        return Categoria.opciones_actuales().count()
     except:
         return 0
 

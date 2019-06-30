@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
 from csv import DictReader
-from elecciones.models import Seccion, Circuito, LugarVotacion, Mesa, Eleccion
+from elecciones.models import Seccion, Circuito, LugarVotacion, Mesa, Categoria
 import datetime
 
 CSV = Path(settings.BASE_DIR) / 'elecciones/data/escuelas-elecciones-2019-cordoba-gobernador.csv'
@@ -37,10 +37,10 @@ class Command(BaseCommand):
         reader = DictReader(CSV.open())
 
         fecha = datetime.datetime(2019, 5, 12, 8, 0)
-        eleccion_gobernador_cordoba, created = Eleccion.objects.get_or_create(slug='gobernador-cordoba-2019', nombre='Gobernador Córdoba 2019', fecha=fecha)
-        eleccion_intendente_cordoba, created = Eleccion.objects.get_or_create(slug='intendente-cordoba-2019', nombre='Intendente Córdoba 2019', fecha=fecha)
-        eleccion_legisladores_distrito_unico, created = Eleccion.objects.get_or_create(slug='legisladores-dist-unico-cordoba-2019', nombre='Legisladores Distrito Único Córdoba 2019', fecha=fecha)
-        # eleccion_tribunal_de_cuentas_provincial, created = Eleccion.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha, activa=False)
+        eleccion_gobernador_cordoba, created = Categoria.objects.get_or_create(slug='gobernador-cordoba-2019', nombre='Gobernador Córdoba 2019', fecha=fecha)
+        eleccion_intendente_cordoba, created = Categoria.objects.get_or_create(slug='intendente-cordoba-2019', nombre='Intendente Córdoba 2019', fecha=fecha)
+        eleccion_legisladores_distrito_unico, created = Categoria.objects.get_or_create(slug='legisladores-dist-unico-cordoba-2019', nombre='Legisladores Distrito Único Córdoba 2019', fecha=fecha)
+        # eleccion_tribunal_de_cuentas_provincial, created = Categoria.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha, activa=False)
 
         for c, row in enumerate(reader, 1):
             depto = row['Nombre Seccion']
@@ -49,10 +49,10 @@ class Command(BaseCommand):
 
             slg = f'legisladores-departamento-{depto}-2019'
             nombre = f'Legisladores Depto {depto} Córdoba 2019'
-            
+
             # las departamentales no están activas por defecto
             # POR AHORA NO LAS USAMOS (inactivas)
-            eleccion_legislador_departamental, created = Eleccion.objects.get_or_create(slug=slg,
+            eleccion_legislador_departamental, created = Categoria.objects.get_or_create(slug=slg,
                                                                                         nombre=nombre,
                                                                                         activa=False,
                                                                                         fecha=fecha)
@@ -69,7 +69,7 @@ class Command(BaseCommand):
             nombre_circuito = row['Nombre Seccion']
             slg = f'intendente-ciudad-{nombre_circuito}-2019'
             nombre = f'Intendente Ciudad {nombre_circuito} Córdoba 2019'
-            eleccion_intendente_municipal, created = Eleccion.objects.get_or_create(slug=slg, nombre=nombre, fecha=fecha)
+            eleccion_intendente_municipal, created = Categoria.objects.get_or_create(slug=slg, nombre=nombre, fecha=fecha)
             """
             self.log(circuito, created)
 

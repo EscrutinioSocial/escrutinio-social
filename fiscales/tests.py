@@ -1,7 +1,7 @@
 
 from elecciones.tests.factories import (
     VotoMesaReportadoFactory,
-    EleccionFactory,
+    CategoriaFactory,
     AttachmentFactory,
     MesaFactory,
     ProblemaFactory

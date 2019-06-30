@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.db.models import Count
 from leaflet.admin import LeafletGeoAdmin
 from .models import (Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion,
-                        Eleccion, VotoMesaReportado, MesaEleccion)
+                        Categoria, VotoMesaReportado, MesaCategoria)
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
 
@@ -147,7 +147,7 @@ class PartidoAdmin(admin.ModelAdmin):
     list_display_links = list_display
 
 
-class MesaEleccionAdmin(admin.ModelAdmin):
+class MesaCategoriaAdmin(admin.ModelAdmin):
     list_display = ('mesa', 'eleccion', 'confirmada')
     list_filter = ['mesa__lugar_votacion__circuito', 'mesa__lugar_votacion__circuito__seccion']
 
@@ -178,7 +178,7 @@ class OpcionAdmin(admin.ModelAdmin):
     list_display = ['nombre_corto', 'partido', 'nombre']
 
 
-class EleccionAdmin(admin.ModelAdmin):
+class CategoriaAdmin(admin.ModelAdmin):
     list_display = ['nombre', 'activa', 'color', 'back_color']
     search_fields = ['nombre']
     list_filter = ['activa']
@@ -189,7 +189,7 @@ admin.site.register(Circuito, CircuitoAdmin)
 admin.site.register(Partido, PartidoAdmin)
 admin.site.register(LugarVotacion, LugarVotacionAdmin)
 admin.site.register(Mesa, MesaAdmin)
-admin.site.register(MesaEleccion, MesaEleccionAdmin)
+admin.site.register(MesaCategoria, MesaCategoriaAdmin)
 admin.site.register(VotoMesaReportado, VotoMesaReportadoAdmin)
 admin.site.register(Opcion, OpcionAdmin)
-admin.site.register(Eleccion, EleccionAdmin)
+admin.site.register(Categoria, CategoriaAdmin)

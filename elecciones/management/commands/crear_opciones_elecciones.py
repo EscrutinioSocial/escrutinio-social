@@ -5,7 +5,7 @@ from pathlib import Path
 from pyexcel_io.exceptions import NoSupportingPluginFound
 from pyexcel_xlsx import get_data
 from csv import DictReader
-from elecciones.models import Opcion, Partido, Eleccion
+from elecciones.models import Opcion, Partido, Categoria
 import datetime
 
 
@@ -73,12 +73,12 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.WARNING('Conectando las opciones a las elecciones'))
         fecha = datetime.datetime(2019, 5, 12, 8, 0)
-        elecciones = Eleccion.objects.filter(fecha=fecha)
+        elecciones = Categoria.objects.filter(fecha=fecha)
         self.stdout.write(self.style.WARNING('Se encontraron {} elecciones'.format(elecciones.count())))
 
         opciones = Opcion.objects.all()
         for eleccion in elecciones:
-            self.stdout.write(self.style.SUCCESS('Eleccion {}'.format(eleccion.nombre)))
+            self.stdout.write(self.style.SUCCESS('Categoria {}'.format(eleccion.nombre)))
 
             for opcion in opciones:
                 self.stdout.write(self.style.SUCCESS('  -- Opcion {}'.format(opcion.nombre)))

@@ -2,10 +2,10 @@ import json
 import pytest
 from django.db.models import Sum
 from django.urls import reverse
-from elecciones.models import Eleccion, Mesa
-from elecciones.views import ResultadosEleccion
+from elecciones.models import Categoria, Mesa
+from elecciones.views import ResultadosCategoria
 from .factories import (
-    EleccionFactory,
+    CategoriaFactory,
     LugarVotacionFactory,
     SeccionFactory,
     FiscalFactory,
@@ -50,12 +50,12 @@ def url_resultados(carta_marina):
 def test_total_electores_en_eleccion(carta_marina):
     # la sumatoria de todas las mesas de la eleccion
     # nota: el factory de mesa indirectamente crea la eleccion con id=1 que es actual()
-    e2 = EleccionFactory()
+    e2 = CategoriaFactory()
     m1, m2 = carta_marina[:2]
     m1.eleccion_add(e2)
     m2.eleccion_add(e2)
 
-    assert Eleccion.objects.first().electores == 800
+    assert Categoria.objects.first().electores == 800
     assert e2.electores == 200
 
 
@@ -71,7 +71,7 @@ def test_electores_filtro_mesa(url_resultados, fiscal_client):
 def test_electores_filtro_mesa_multiple_eleccion(fiscal_client):
     mesa1 = MesaFactory(electores=120)
     MesaFactory(electores=120)      # mesa2 solo de la eleccion 1
-    e1 = EleccionFactory()
+    e1 = CategoriaFactory()
     mesa1.eleccion_add(e1)      # mesa 1 tambien está asociada a e1
     url = reverse('resultados-eleccion', args=[e1.id])
 
@@ -121,7 +121,7 @@ def test_electores_sin_filtro(url_resultados, fiscal_client):
 def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # resultados para mesa 1
     m1, _, m3, *_ = carta_marina
-    eleccion = Eleccion.objects.first()
+    eleccion = Categoria.objects.first()
     # opciones a partido
     o1, o2, o3 = eleccion.opciones.filter(partido__isnull=False)
     blanco = eleccion.opciones.get(nombre='blanco')
@@ -198,7 +198,7 @@ def test_resultados_proyectados(fiscal_client):
     m1 = ms1[0]
     m3 = ms3[0]
 
-    eleccion = Eleccion.objects.first()
+    eleccion = Categoria.objects.first()
     # opciones a partido
     o1, o2, o3 = eleccion.opciones.filter(partido__isnull=False)
     blanco = eleccion.opciones.get(nombre='blanco')
@@ -266,7 +266,7 @@ def test_resultados_proyectados(fiscal_client):
 def test_resultados_proyectados_simple(fiscal_client):
     s1, s2 = SeccionFactory.create_batch(2)
     o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
-    e1 = EleccionFactory(opciones=[o1, o2])
+    e1 = CategoriaFactory(opciones=[o1, o2])
 
     m1, *_ = MesaFactory.create_batch(3, eleccion=[e1], lugar_votacion__circuito__seccion=s1, electores=200)
     m2 = MesaFactory(eleccion=[e1], lugar_votacion__circuito__seccion=s2, electores=200)
@@ -294,7 +294,7 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
 
 
     o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
-    e1 = EleccionFactory(opciones=[o1, o2])
+    e1 = CategoriaFactory(opciones=[o1, o2])
 
     ms1, ms2, ms3 = (
         MesaFactory.create_batch(4, eleccion=[e1], lugar_votacion__circuito=c1, electores=200),
@@ -369,7 +369,7 @@ def test_elegir_acta(carta_marina, fiscal_client):
 def test_resultados_no_positivos(fiscal_client):
     o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
     o3 = OpcionFactory(nombre='blanco', partido=None, es_contable=False)
-    e1 = EleccionFactory(opciones=[o1, o2, o3])
+    e1 = CategoriaFactory(opciones=[o1, o2, o3])
 
     m1 = MesaFactory(eleccion=[e1], electores=200)
 
@@ -391,7 +391,7 @@ def test_resultados_excluye_metadata(fiscal_client):
     o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
     o3 = OpcionFactory(partido=None, es_contable=False)
     o4 = OpcionFactory(nombre='TOTAL', partido=None, es_contable=False, es_metadata=True)
-    e1 = EleccionFactory(opciones=[o1, o2, o3, o4])
+    e1 = CategoriaFactory(opciones=[o1, o2, o3, o4])
 
     m1, *_ = MesaFactory.create_batch(3, eleccion=[e1], lugar_votacion__circuito__seccion=s1, electores=200)
     m2 = MesaFactory(eleccion=[e1], lugar_votacion__circuito__seccion=s2, electores=200)

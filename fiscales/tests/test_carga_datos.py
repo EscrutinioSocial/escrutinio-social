@@ -2,13 +2,13 @@ import pytest
 from django.urls import reverse
 from elecciones.tests.factories import (
     VotoMesaReportadoFactory,
-    EleccionFactory,
+    CategoriaFactory,
     AttachmentFactory,
     MesaFactory,
     OpcionFactory,
     CircuitoFactory,
 )
-from elecciones.models import Mesa, VotoMesaReportado, MesaEleccion
+from elecciones.models import Mesa, VotoMesaReportado, MesaCategoria
 from elecciones.tests.test_resultados import fiscal_client          # noqa
 
 
@@ -22,11 +22,11 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     assert Mesa.objects.count() == 0
     assert VotoMesaReportado.objects.count() == 0
     c = CircuitoFactory()
-    e1 = EleccionFactory()
-    e2 = EleccionFactory()
+    e1 = CategoriaFactory()
+    e2 = CategoriaFactory()
 
     m1 = AttachmentFactory(mesa__eleccion=[e1], mesa__lugar_votacion__circuito=c).mesa
-    e2 = EleccionFactory()
+    e2 = CategoriaFactory()
     m2 = AttachmentFactory(mesa__eleccion=[e1, e2], mesa__lugar_votacion__circuito=c).mesa
 
     assert m1.orden_de_carga == 1
@@ -59,7 +59,7 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
 
 
 def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
-    e1 = EleccionFactory()
+    e1 = CategoriaFactory()
 
     m1 = AttachmentFactory(mesa__eleccion=[e1]).mesa
     m2 = AttachmentFactory(mesa__eleccion=[e1]).mesa
@@ -101,8 +101,8 @@ def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
 
 def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     o = OpcionFactory(es_contable=True)
-    e1 = EleccionFactory(opciones=[o])
-    e2 = EleccionFactory(opciones=[o])
+    e1 = CategoriaFactory(opciones=[o])
+    e2 = CategoriaFactory(opciones=[o])
     m1 = AttachmentFactory(mesa__eleccion=[e1, e2]).mesa
 
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
@@ -133,9 +133,9 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
 
 def test_chequear_resultado(db, fiscal_client):
     o = OpcionFactory(es_contable=True)
-    e1 = EleccionFactory(opciones=[o])
+    e1 = CategoriaFactory(opciones=[o])
     mesa = MesaFactory(eleccion=[e1])
-    me = MesaEleccion.objects.get(eleccion=e1, mesa=mesa)
+    me = MesaCategoria.objects.get(eleccion=e1, mesa=mesa)
     assert me.confirmada is False
 
     VotoMesaReportadoFactory(opcion=o, mesa=mesa, eleccion=e1, votos=1)
@@ -151,10 +151,10 @@ def test_chequear_resultado(db, fiscal_client):
 
 def test_chequear_resultado_mesa(db, fiscal_client):
     opcs = OpcionFactory.create_batch(3, es_contable=True)
-    e1 = EleccionFactory(opciones=opcs)
-    e2 = EleccionFactory(opciones=opcs)
+    e1 = CategoriaFactory(opciones=opcs)
+    e2 = CategoriaFactory(opciones=opcs)
     mesa = MesaFactory(eleccion=[e1, e2])
-    me = MesaEleccion.objects.get(eleccion=e1, mesa=mesa)
+    me = MesaCategoria.objects.get(eleccion=e1, mesa=mesa)
     assert me.confirmada is False
     votos1 = VotoMesaReportadoFactory(opcion=opcs[0], mesa=mesa, eleccion=e1, votos=1)
     votos2 = VotoMesaReportadoFactory(opcion=opcs[1], mesa=mesa, eleccion=e1, votos=2)
@@ -177,7 +177,7 @@ def test_chequear_resultado_mesa(db, fiscal_client):
 
 def test_chequear_resultado_eleccion_desactivada(db, fiscal_client):
     opcs = OpcionFactory.create_batch(3, es_contable=True)
-    e1 = EleccionFactory(opciones=opcs)
+    e1 = CategoriaFactory(opciones=opcs)
     assert e1.activa is True
     mesa = MesaFactory(eleccion=[e1])
     url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])

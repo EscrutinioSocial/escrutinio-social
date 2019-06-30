@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
 from csv import DictReader
-from elecciones.models import Seccion, Circuito, LugarVotacion, Mesa, Eleccion
+from elecciones.models import Seccion, Circuito, LugarVotacion, Mesa, Categoria
 import datetime
 
 CSV = Path(settings.BASE_DIR) / 'elecciones/data/mesas-cordoba-2019-gobernador.csv'
