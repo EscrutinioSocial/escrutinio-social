@@ -282,7 +282,6 @@ def elegir_acta_a_cargar(request):
 
 @login_required
 def cargar_resultados(request, categoria_id, mesa_numero):
-    import ipdb; ipdb.set_trace()
     fiscal = get_object_or_404(Fiscal, user=request.user)
     categoria = get_object_or_404(Categoria, id=categoria_id)
 
