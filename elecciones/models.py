@@ -351,8 +351,7 @@ class Opcion(models.Model):
 
 
 class Eleccion(models.Model):
-    fecha = models.DateTimeField(blank=True, null=True)
-    slug = models.SlugField(max_length=100, unique=True)
+    fecha = models.DateTimeField()
     nombre = models.CharField(max_length=100)
 
     def __str__(self):
