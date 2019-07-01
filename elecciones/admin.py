@@ -133,7 +133,7 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         row_actions.append(
             {
                 'label': 'Escuela',
-                'url': reverse('admin:elecciones.lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
+                'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
                 'enabled': True,
             }
         )
