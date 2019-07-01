@@ -179,9 +179,16 @@ class OpcionAdmin(admin.ModelAdmin):
 
 
 class CategoriaAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'eleccion', 'eleccion__fecha', 'activa', 'color', 'back_color']
+    search_fields = ['nombre']
+    list_filter = ['activa']
+
+
+class CategoriaAdmin(admin.ModelAdmin):
     list_display = ['nombre', 'activa', 'color', 'back_color']
     search_fields = ['nombre']
     list_filter = ['activa']
+
 
 
 admin.site.register(Seccion, SeccionAdmin)

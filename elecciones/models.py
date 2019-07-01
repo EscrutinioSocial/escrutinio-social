@@ -350,13 +350,24 @@ class Opcion(models.Model):
         return self.nombre
 
 
-class Categoria(models.Model):
-    """
-    Representa una categoria electiva: Presidente y Vicepresidente, Intendente de La Matanza, etc)
-    """
+class Eleccion(models.Model):
+    fecha = models.DateTimeField(blank=True, null=True)
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100)
-    fecha = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.nombre}'
+
+
+
+class Categoria(models.Model):
+    """
+    Representa una categoria electiva, es decir, una "columna" del acta.
+    Por ejemplo: Presidente y Vicepresidente, Intendente de La Matanza, etc)
+    """
+    eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
+    slug = models.SlugField(max_length=100, unique=True)
+    nombre = models.CharField(max_length=100)
     opciones = models.ManyToManyField(Opcion, related_name='categorias')
     color = models.CharField(max_length=10, default='black', help_text='Color para css (red o #FF0000)')
     back_color = models.CharField(max_length=10, default='white', help_text='Color para css (red o #FF0000)')
