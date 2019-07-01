@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class CategoriaesConfig(AppConfig):
+class EleccionesAppConfig(AppConfig):
     name = 'elecciones'

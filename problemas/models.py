@@ -23,4 +23,6 @@ class Problema(TimeStampedModel):
     reportado_por = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
     descripcion = models.TextField(null=True, blank=True)
     estado = models.CharField(max_length=100, null=True, blank=True, choices=ESTADOS)
-    resuelto_por = models.ForeignKey('auth.User', null=True, on_delete=models.SET_NULL)
+    resuelto_por = models.ForeignKey(
+        'auth.User', null=True, on_delete=models.SET_NULL
+    )

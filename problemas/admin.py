@@ -28,7 +28,7 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     def get_row_actions(self, obj):
         row_actions = []
 
-        for e in obj.mesa.eleccion.all():
+        for e in obj.mesa.categoria.all():
             row_actions.append({
                 'label': f'Editar/Cargar {e}',
                 'url': reverse('mesa-cargar-resultados', args=[e.id, obj.mesa.numero]),

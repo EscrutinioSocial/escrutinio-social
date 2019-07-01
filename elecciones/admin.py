@@ -71,7 +71,7 @@ def resultados_reportados(modeladmin, request, queryset):
     selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
     name = modeladmin.model.__name__.lower()
     ids = "&".join(f'{name}={s}' for s in selected)
-    res_url = reverse('resultados-eleccion', args=[1])
+    res_url = reverse('resultados-categoria', args=[1])
     return HttpResponseRedirect(f'{res_url}?{ids}')
 
 resultados_reportados.short_description = "Ver Resultados"
@@ -123,17 +123,17 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def get_row_actions(self, obj):
         row_actions = []
-        for e in obj.eleccion.all():
+        for e in obj.categoria.all():
             row_actions.append({
                 'label': f'Ver resultados {e}',
-                'url': reverse('resultados-eleccion', args=(e.id,)) + f'?mesa={obj.id}',
+                'url': reverse('resultados-categoria', args=(e.id,)) + f'?mesa={obj.id}',
                 'enabled': True
             })
 
         row_actions.append(
             {
                 'label': 'Escuela',
-                'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
+                'url': reverse('admin:elecciones.lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
                 'enabled': True,
             }
         )
@@ -148,7 +148,7 @@ class PartidoAdmin(admin.ModelAdmin):
 
 
 class MesaCategoriaAdmin(admin.ModelAdmin):
-    list_display = ('mesa', 'eleccion', 'confirmada')
+    list_display = ('mesa', 'categoria', 'confirmada')
     list_filter = ['mesa__lugar_votacion__circuito', 'mesa__lugar_votacion__circuito__seccion']
 
 
@@ -167,10 +167,10 @@ class SeccionAdmin(admin.ModelAdmin):
     )
 
 class VotoMesaReportadoAdmin(admin.ModelAdmin):
-    list_display = ['mesa', 'id', 'eleccion', 'opcion', 'votos', 'fiscal']
+    list_display = ['mesa', 'id', 'categoria', 'opcion', 'votos', 'fiscal']
     list_display_links = list_display
     ordering = ['-id']
-    list_filter = ('eleccion', 'opcion')
+    list_filter = ('categoria', 'opcion')
     search_fields = ['fiscal__nombre', 'mesa__numero', 'mesa__lugar_votacion__nombre']
 
 

@@ -8,29 +8,29 @@ import datetime
 
 
 class Command(BaseCommand):
-    help = "Darle colores a las elecciones"
+    help = "Darle colores a las elecciones.
 
     def handle(self, *args, **options):
 
-        eleccion = Categoria.objects.get(slug='gobernador-cordoba-2019')
-        eleccion.color = '#330022'
-        eleccion.back_color = '#AAFFDD'
-        eleccion.save()
+        categoria = Categoria.objects.get(slug='gobernador-cordoba-2019')
+        categoria.color = '#330022'
+        categoria.back_color = '#AAFFDD'
+        categoria.save()
 
-        eleccion = Categoria.objects.get(slug='intendente-cordoba-2019')
-        eleccion.color = '#DD1122'
-        eleccion.back_color = '#77AAFF'
-        eleccion.save()
+        categoria = Categoria.objects.get(slug='intendente-cordoba-2019')
+        categoria.color = '#DD1122'
+        categoria.back_color = '#77AAFF'
+        categoria.save()
 
-        eleccion = Categoria.objects.get(slug='legisladores-dist-unico-cordoba-2019')
-        eleccion.color = '#115522'
-        eleccion.back_color = '#AAAAEE'
-        eleccion.save()
+        categoria = Categoria.objects.get(slug='legisladores-dist-unico-cordoba-2019')
+        categoria.color = '#115522'
+        categoria.back_color = '#AAAAEE'
+        categoria.save()
 
-        #eleccion = Categoria.objects.get(slug='tribunal-cuentas-prov-cordoba-2019')
-        #eleccion.color = '#FF3322'
-        #eleccion.back_color = '#0022AA'
-        #eleccion.save()
+        #categoria = Categoria.objects.get(slug='tribunal-cuentas-prov-cordoba-2019')
+        #categoria.color = '#FF3322'
+        #categoria.back_color = '#0022AA'
+        #categoria.save()
 
 
 

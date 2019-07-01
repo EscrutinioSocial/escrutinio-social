@@ -38,5 +38,5 @@ class Command(BaseCommand):
                                                                 codigo=codigo_partido,
                                                                 nombre=nombre,
                                                                 nombre_corto=corto)
-            
+
             self.stdout.write(self.style.SUCCESS(f'Cargado {nombre}'))

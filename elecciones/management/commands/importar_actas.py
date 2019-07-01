@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
         imaps = settings.IMAPS
         for imap in imaps:
-        
+
             imapper = easyimap.connect(imap['host'], imap['user'], imap['pass'], imap['mailbox'])
             self.success('Loggueado como {}'.format(imap['user']))
             if options['include_seen']:
@@ -40,7 +40,7 @@ class Command(BaseCommand):
                 if not attachments:
                     self.success(' ... sin adjuntos')
                     continue
-                
+
                 email = Email.from_mail_object(mail)
                 self.log(email)
                 for attachment in attachments:
@@ -52,7 +52,7 @@ class Command(BaseCommand):
                         email=email,
                         mimetype=attachment[2]
                     )
-                    
+
                     try:
                         content = ContentFile(attachment[1])
                         instance.foto.save(attachment[0], content, save=False)

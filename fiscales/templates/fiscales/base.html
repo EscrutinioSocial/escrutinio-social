@@ -61,13 +61,13 @@ check_box</i><span class="badge">{{ mesas_a_confirmar_count }}</span></a>
 
 
         <li>
-            <a href="{% if request.user.is_staff %} {% url "resultados-eleccion"  primera_eleccion %}{% else %}#{% endif %}" class="collapsible-header" data-turbolinks="false">Resultados<i class="material-icons">insert_chart</i></a>
+            <a href="{% if request.user.is_staff %} {% url "resultados-categoria"  primera_categoria %}{% else %}#{% endif %}" class="collapsible-header" data-turbolinks="false">Resultados<i class="material-icons">insert_chart</i></a>
         </li>
 
 
         {% if request.user.is_superuser %}
         <li>
-            <a href="{% url "resultados-eleccion" primera_eleccion %}?proyectado=✓" target="_blank" class="collapsible-header" data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
+            <a href="{% url "resultados-categoria" primera_categoria %}?proyectado=✓" target="_blank" class="collapsible-header" data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
         </li>
         {% endif %}
 

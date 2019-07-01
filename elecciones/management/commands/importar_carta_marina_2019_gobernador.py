@@ -6,7 +6,7 @@ from csv import DictReader
 from elecciones.models import Seccion, Circuito, LugarVotacion, Mesa, Categoria
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/escuelas-elecciones-2019-cordoba-gobernador.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/escuelas-elecciones.2019-cordoba-gobernador.csv'
 
 def to_float(val):
     try:
@@ -37,10 +37,10 @@ class Command(BaseCommand):
         reader = DictReader(CSV.open())
 
         fecha = datetime.datetime(2019, 5, 12, 8, 0)
-        eleccion_gobernador_cordoba, created = Categoria.objects.get_or_create(slug='gobernador-cordoba-2019', nombre='Gobernador Córdoba 2019', fecha=fecha)
-        eleccion_intendente_cordoba, created = Categoria.objects.get_or_create(slug='intendente-cordoba-2019', nombre='Intendente Córdoba 2019', fecha=fecha)
-        eleccion_legisladores_distrito_unico, created = Categoria.objects.get_or_create(slug='legisladores-dist-unico-cordoba-2019', nombre='Legisladores Distrito Único Córdoba 2019', fecha=fecha)
-        # eleccion_tribunal_de_cuentas_provincial, created = Categoria.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha, activa=False)
+        categoria_gobernador_cordoba, created = Categoria.objects.get_or_create(slug='gobernador-cordoba-2019', nombre='Gobernador Córdoba 2019', fecha=fecha)
+        categoria_intendente_cordoba, created = Categoria.objects.get_or_create(slug='intendente-cordoba-2019', nombre='Intendente Córdoba 2019', fecha=fecha)
+        categoria_legisladores_distrito_unico, created = Categoria.objects.get_or_create(slug='legisladores-dist-unico-cordoba-2019', nombre='Legisladores Distrito Único Córdoba 2019', fecha=fecha)
+        # categoria_tribunal_de_cuentas_provincial, created = Categoria.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha, activa=False)
 
         for c, row in enumerate(reader, 1):
             depto = row['Nombre Seccion']
@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
             # las departamentales no están activas por defecto
             # POR AHORA NO LAS USAMOS (inactivas)
-            eleccion_legislador_departamental, created = Categoria.objects.get_or_create(slug=slg,
+            categoria_legislador_departamental, created = Categoria.objects.get_or_create(slug=slg,
                                                                                         nombre=nombre,
                                                                                         activa=False,
                                                                                         fecha=fecha)
@@ -69,7 +69,7 @@ class Command(BaseCommand):
             nombre_circuito = row['Nombre Seccion']
             slg = f'intendente-ciudad-{nombre_circuito}-2019'
             nombre = f'Intendente Ciudad {nombre_circuito} Córdoba 2019'
-            eleccion_intendente_municipal, created = Categoria.objects.get_or_create(slug=slg, nombre=nombre, fecha=fecha)
+            categoria_intendente_municipal, created = Categoria.objects.get_or_create(slug=slg, nombre=nombre, fecha=fecha)
             """
             self.log(circuito, created)
 
@@ -106,30 +106,30 @@ class Command(BaseCommand):
                 mesa.circuito=circuito
                 mesa.save()
 
-                if eleccion_gobernador_cordoba not in mesa.eleccion.all():
-                    mesa.eleccion_add(eleccion_gobernador_cordoba)
-                    self.success('Se agregó la mesa a la eleccion a gobernador')
-                if eleccion_legisladores_distrito_unico not in mesa.eleccion.all():
-                    mesa.eleccion_add(eleccion_legisladores_distrito_unico)
-                    self.success('Se agregó la mesa a la eleccion a legislador dist unico')
-                #if eleccion_tribunal_de_cuentas_provincial not in mesa.eleccion.all():
-                #    mesa.eleccion.add(eleccion_tribunal_de_cuentas_provincial)
-                #    self.success('Se agregó la mesa a la eleccion a trib de cuentas provincial')
+                if categoria_gobernador_cordoba not in mesa.categoria.all():
+                    mesa.categoria_add(categoria_gobernador_cordoba)
+                    self.success('Se agregó la mesa a la categoria a gobernador')
+                if categoria_legisladores_distrito_unico not in mesa.categoria.all():
+                    mesa.categoria_add(categoria_legisladores_distrito_unico)
+                    self.success('Se agregó la mesa a la categoria a legislador dist unico')
+                #if categoria_tribunal_de_cuentas_provincial not in mesa.categoria.all():
+                #    mesa.categoria.add(categoria_tribunal_de_cuentas_provincial)
+                #    self.success('Se agregó la mesa a la categoria a trib de cuentas provincial')
 
 
 
-                # agregar la eleccion a legislador departamental
-                if eleccion_legislador_departamental not in mesa.eleccion.all():
-                    mesa.eleccion_add(eleccion_legislador_departamental)
-                    self.success('Se agregó la mesa a la eleccion {}'.format(eleccion_legislador_departamental.nombre))
+                # agregar la categoria a legislador departamental
+                if categoria_legislador_departamental not in mesa.categoria.all():
+                    mesa.categoria_add(categoria_legislador_departamental)
+                    self.success('Se agregó la mesa a la categoria {}'.format(categoria_legislador_departamental.nombre))
 
                 # si es de capital entonces vota a intendente
                 if numero_de_seccion == 1:
                     # capital se pondera por circuitos
                     seccion.proyeccion_ponderada = True
                     seccion.save(update_fields=['proyeccion_ponderada'])
-                    mesa.eleccion_add(eleccion_intendente_cordoba)
-                    self.success('Se agregó la mesa a la eleccion a intendente')
+                    mesa.categoria_add(categoria_intendente_cordoba)
+                    self.success('Se agregó la mesa a la categoria a intendente')
 
                 mesa.save()
 

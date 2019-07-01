@@ -25,9 +25,9 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     e1 = CategoriaFactory()
     e2 = CategoriaFactory()
 
-    m1 = AttachmentFactory(mesa__eleccion=[e1], mesa__lugar_votacion__circuito=c).mesa
+    m1 = AttachmentFactory(mesa__categoria=[e1], mesa__lugar_votacion__circuito=c).mesa
     e2 = CategoriaFactory()
-    m2 = AttachmentFactory(mesa__eleccion=[e1, e2], mesa__lugar_votacion__circuito=c).mesa
+    m2 = AttachmentFactory(mesa__categoria=[e1, e2], mesa__lugar_votacion__circuito=c).mesa
 
     assert m1.orden_de_carga == 1
     assert m2.orden_de_carga == 2
@@ -42,11 +42,11 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m2.numero])
 
-    # se carga esa eleccion
-    VotoMesaReportadoFactory(mesa=m2, eleccion=e1, opcion=e1.opciones.first(), votos=1)
+    # se carga esa categoria
+    VotoMesaReportadoFactory(mesa=m2, categoria=e1, opcion=e1.opciones.first(), votos=1)
 
-    # FIX ME . El periodo de taken deberia ser *por eleccion*.
-    # en este escenario donde esta lockeado la mesa para la eleccion 1, pero no se está
+    # FIX ME . El periodo de taken deberia ser *por categoria*.
+    # en este escenario donde esta lockeado la mesa para la categoria 1, pero no se está
     # cargando la mesa 2, un dataentry queda idle
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 200   # no hay actas
@@ -61,9 +61,9 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
 def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
     e1 = CategoriaFactory()
 
-    m1 = AttachmentFactory(mesa__eleccion=[e1]).mesa
-    m2 = AttachmentFactory(mesa__eleccion=[e1]).mesa
-    m3 = AttachmentFactory(mesa__eleccion=[e1]).mesa
+    m1 = AttachmentFactory(mesa__categoria=[e1]).mesa
+    m2 = AttachmentFactory(mesa__categoria=[e1]).mesa
+    m3 = AttachmentFactory(mesa__categoria=[e1]).mesa
     # creo otras mesas asociadas a los circuitos
     c1 = m1.lugar_votacion.circuito
     c2 = m2.lugar_votacion.circuito
@@ -71,17 +71,17 @@ def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
 
     MesaFactory.create_batch(
         3,
-        eleccion=[e1],
+        categoria=[e1],
         lugar_votacion__circuito=c1
     )
     MesaFactory.create_batch(
         10,
-        eleccion=[e1],
+        categoria=[e1],
         lugar_votacion__circuito=c2
     )
     MesaFactory.create_batch(
         5,
-        eleccion=[e1],
+        categoria=[e1],
         lugar_votacion__circuito=c3
     )
     assert c1.electores == 400
@@ -103,7 +103,7 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     o = OpcionFactory(es_contable=True)
     e1 = CategoriaFactory(opciones=[o])
     e2 = CategoriaFactory(opciones=[o])
-    m1 = AttachmentFactory(mesa__eleccion=[e1, e2]).mesa
+    m1 = AttachmentFactory(mesa__categoria=[e1, e2]).mesa
 
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
@@ -134,11 +134,11 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
 def test_chequear_resultado(db, fiscal_client):
     o = OpcionFactory(es_contable=True)
     e1 = CategoriaFactory(opciones=[o])
-    mesa = MesaFactory(eleccion=[e1])
-    me = MesaCategoria.objects.get(eleccion=e1, mesa=mesa)
+    mesa = MesaFactory(categoria=[e1])
+    me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
     assert me.confirmada is False
 
-    VotoMesaReportadoFactory(opcion=o, mesa=mesa, eleccion=e1, votos=1)
+    VotoMesaReportadoFactory(opcion=o, mesa=mesa, categoria=e1, votos=1)
     response = fiscal_client.get(reverse('chequear-resultado'))
     assert response.status_code == 302
     assert response.url == reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
@@ -153,15 +153,15 @@ def test_chequear_resultado_mesa(db, fiscal_client):
     opcs = OpcionFactory.create_batch(3, es_contable=True)
     e1 = CategoriaFactory(opciones=opcs)
     e2 = CategoriaFactory(opciones=opcs)
-    mesa = MesaFactory(eleccion=[e1, e2])
-    me = MesaCategoria.objects.get(eleccion=e1, mesa=mesa)
+    mesa = MesaFactory(categoria=[e1, e2])
+    me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
     assert me.confirmada is False
-    votos1 = VotoMesaReportadoFactory(opcion=opcs[0], mesa=mesa, eleccion=e1, votos=1)
-    votos2 = VotoMesaReportadoFactory(opcion=opcs[1], mesa=mesa, eleccion=e1, votos=2)
-    votos3 = VotoMesaReportadoFactory(opcion=opcs[2], mesa=mesa, eleccion=e1, votos=1)
+    votos1 = VotoMesaReportadoFactory(opcion=opcs[0], mesa=mesa, categoria=e1, votos=1)
+    votos2 = VotoMesaReportadoFactory(opcion=opcs[1], mesa=mesa, categoria=e1, votos=2)
+    votos3 = VotoMesaReportadoFactory(opcion=opcs[2], mesa=mesa, categoria=e1, votos=1)
 
-    # a otra eleccion
-    VotoMesaReportadoFactory(opcion=opcs[2], mesa=mesa, eleccion=e2, votos=1)
+    # a otra categoria
+    VotoMesaReportadoFactory(opcion=opcs[2], mesa=mesa, categoria=e2, votos=1)
 
     url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
     response = fiscal_client.get(url)
@@ -175,11 +175,12 @@ def test_chequear_resultado_mesa(db, fiscal_client):
     assert me.confirmada is True
 
 
-def test_chequear_resultado_eleccion_desactivada(db, fiscal_client):
+def test_chequear_resultado_categoria_desactivada(db, fiscal_client):
     opcs = OpcionFactory.create_batch(3, es_contable=True)
     e1 = CategoriaFactory(opciones=opcs)
     assert e1.activa is True
-    mesa = MesaFactory(eleccion=[e1])
+    mesa = MesaFactory(categoria=[e1])
+
     url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
     response = fiscal_client.get(url)
     assert response.status_code == 200

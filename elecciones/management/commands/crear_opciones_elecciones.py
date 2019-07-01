@@ -1,16 +1,10 @@
-from decimal import Decimal
 from django.core.management.base import BaseCommand
-from django.conf import settings
-from pathlib import Path
-from pyexcel_io.exceptions import NoSupportingPluginFound
-from pyexcel_xlsx import get_data
-from csv import DictReader
 from elecciones.models import Opcion, Partido, Categoria
 import datetime
 
 
 class Command(BaseCommand):
-    help = "Crear las opciones en las elecciones disponibles"
+    help = "Crear las opciones en las categorias disponibles"
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.WARNING('Iniciando creacion de opciones'))
@@ -71,36 +65,34 @@ class Command(BaseCommand):
         op.es_metadata = True
         op.save()
 
-        self.stdout.write(self.style.WARNING('Conectando las opciones a las elecciones'))
+        self.stdout.write(self.style.WARNING('Conectando las opciones a las categorias'))
         fecha = datetime.datetime(2019, 5, 12, 8, 0)
-        elecciones = Categoria.objects.filter(fecha=fecha)
-        self.stdout.write(self.style.WARNING('Se encontraron {} elecciones'.format(elecciones.count())))
+        categorias = Categoria.objects.filter(fecha=fecha)
+        self.stdout.write(self.style.WARNING('Se encontraron {} categorias'.format(categorias.count())))
 
         opciones = Opcion.objects.all()
-        for eleccion in elecciones:
-            self.stdout.write(self.style.SUCCESS('Categoria {}'.format(eleccion.nombre)))
+        for categoria in categorias:
+            self.stdout.write(self.style.SUCCESS('Categoria {}'.format(categoria.nombre)))
 
             for opcion in opciones:
                 self.stdout.write(self.style.SUCCESS('  -- Opcion {}'.format(opcion.nombre)))
 
                 # --------------------------------------------------------------------------------
-                #FIXME proximas elecciones: en la carga de partidos ya debería definirse a que elecciones se presenta cada uno
+                # FIXME proximas elecciones:
+                # en la carga de partidos ya debería definirse a que categoria se presenta cada uno
                 if opcion.partido:
-                    if eleccion.slug != 'intendente-cordoba-2019' and opcion.partido.nombre_corto == 'Libres del Sur':
+                    if categoria.slug != 'intendente-cordoba-2019' and opcion.partido.nombre_corto == 'Libres del Sur':
                         # Olgita no tiene candidato a cobernador
                         self.stdout.write(self.style.WARNING(' -- -- Ignorado'))
                         continue
                 # --------------------------------------------------------------------------------
 
-
-                if opcion not in eleccion.opciones.all():
-                    eleccion.opciones.add(opcion)
-                    eleccion.save()
+                if opcion not in categoria.opciones.all():
+                    categoria.opciones.add(opcion)
+                    categoria.save()
                     self.stdout.write(self.style.SUCCESS(' -- -- Conectado'))
                 else:
                     self.stdout.write(self.style.WARNING(' -- -- YA ESTABA'))
-
-
 
         self.stdout.write(self.style.SUCCESS('Terminado'))
 

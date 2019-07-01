@@ -23,7 +23,7 @@ $(document).ready(function(){
 
 {% block card-content %}
     <div class="card-title"> Mesa {{ object.numero }}
-        <b style='background-color: {{ eleccion.back_color }}; color: {{ eleccion.color }}'>{{ eleccion }}</b>
+        <b style='background-color: {{ categoria.back_color }}; color: {{ categoria.color }}'>{{ categoria }}</b>
     </div>
 
 
@@ -53,7 +53,7 @@ $(document).ready(function(){
                         Confirmar
                         </button>
 
-                    <a href="{% url 'mesa-cargar-resultados' eleccion.id object.numero %}" class="btn waves-effect waves-light btn white-text">
+                    <a href="{% url 'mesa-cargar-resultados' categoria.id object.numero %}" class="btn waves-effect waves-light btn white-text">
                       Editar
                    </a>
 

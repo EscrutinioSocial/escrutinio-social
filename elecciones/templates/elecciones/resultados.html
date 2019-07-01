@@ -14,7 +14,7 @@
 
 {% block sidenav_items %}
 
-      <li><a href="{% url "resultados-eleccion" primera_eleccion %}">Provincia</a></li>
+      <li><a href="{% url "resultados-categoria" primera_categoria %}">Provincia</a></li>
 
       {% for seccion in secciones %}
 
@@ -43,20 +43,20 @@
 {% block left-panel %}
     <ul class="tabs">
 
-        {% for eleccion in elecciones %}
+        {% for categoria in categorias %}
         <li class="tab col s3" >
-            <a target="_self" href="{{eleccion.get_absolute_url}}?{{ request.GET.urlencode }}" {% if eleccion.id == object.id %}class="active"{% endif %}>{{ eleccion.nombre }}</a>
+            <a target="_self" href="{{categoria.get_absolute_url}}?{{ request.GET.urlencode }}" {% if categoria.id == object.id %}class="active"{% endif %}>{{ categoria.nombre }}</a>
         </li>
         {% endfor %}
     </ul>
 
 
-        <div class="card" id="{{eleccion.slug}}" data-id="{{ eleccion.id }}">
-            <div class="card-content" id="frame{{eleccion.id}}">
+        <div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
+            <div class="card-content" id="frame{{categoria.id}}">
 
               {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
 
-              <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas 
+              <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
                 ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
               </h4>
 
@@ -202,7 +202,7 @@ $(function() {
                             }
                     };
 
-    Plotly.newPlot('columnchart-{{eleccion_id}}', data, layout);
+    Plotly.newPlot('columnchart-{{categoria_id}}', data, layout);
     {% endif %}
 
 });

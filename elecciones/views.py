@@ -91,18 +91,38 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         return [self.kwargs.get("template_name", self.template_name)]
 
     @classmethod
-    def agregaciones_por_partido(cls, eleccion):
+    def agregaciones_por_partido(cls, categoria):
         oficiales = True
         sum_por_partido = {}
         otras_opciones = {}
 
-        for id in Partido.objects.filter(opciones__elecciones__id=eleccion.id).distinct().values_list('id', flat=True):
-            sum_por_partido[str(id)] = Sum(Case(When(opcion__partido__id=id, eleccion=eleccion, then=F('votos')),
-                                                output_field=IntegerField()))
+        for id in Partido.objects.filter(
+            opciones__categorias__id=categoria.id
+        ).distinct().values_list('id', flat=True):
+            sum_por_partido[str(id)] = Sum(
+                Case(
+                    When(
+                        opcion__partido__id=id,
+                        categoria=categoria,
+                        then=F('votos')
+                    ), output_field=IntegerField()
+                )
+            )
 
-        for nombre, id in Opcion.objects.filter(elecciones__id=eleccion.id, partido__isnull=True, es_metadata=False).values_list('nombre', 'id'):
-            otras_opciones[nombre] = Sum(Case(When(opcion__id=id, eleccion=eleccion, then=F('votos')),
-                                              output_field=IntegerField()))
+        for nombre, id in Opcion.objects.filter(
+            categorias__id=categoria.id,
+            partido__isnull=True,
+            es_metadata=False
+        ).values_list('nombre', 'id'):
+            otras_opciones[nombre] = Sum(
+                Case(
+                    When(
+                        opcion__id=id,
+                        categoria=categoria,
+                        then=F('votos')
+                    ), output_field=IntegerField()
+                )
+            )
         return sum_por_partido, otras_opciones
 
     @property
@@ -126,7 +146,7 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
             return Mesa.objects.filter(id__in=self.request.GET.getlist('mesa'))
 
     @lru_cache(128)
-    def mesas(self, eleccion):
+    def mesas(self, categoria):
         lookups = Q()
         meta = {}
         if self.filtros:
@@ -142,20 +162,19 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
             elif 'mesa' in self.request.GET:
                 lookups = Q(id__in=self.filtros)
 
-        return Mesa.objects.filter(eleccion=eleccion).filter(lookups).distinct()
+        return Mesa.objects.filter(categoria=categoria).filter(lookups).distinct()
 
     @lru_cache(128)
-    def electores(self, eleccion):
-        mesas = self.mesas(eleccion)
+    def electores(self, categoria):
+        mesas = self.mesas(categoria)
         electores = mesas.aggregate(v=Sum('electores'))['v']
         return electores or 0
 
-    def get_resultados(self, eleccion):
+    def get_resultados(self, categoria):
         lookups = Q()
         lookups2 = Q()
         resultados = {}
         proyectado = 'proyectado' in self.request.GET and not self.filtros
-
 
         if self.filtros:
             if 'seccion' in self.request.GET:
@@ -174,10 +193,9 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
                 lookups = Q(mesa__id__in=self.filtros)
                 lookups2 = Q(id__in=self.filtros)
 
+        mesas = self.mesas(categoria)
 
-        mesas = self.mesas(eleccion)
-
-        c = self.calcular(eleccion, mesas)
+        c = self.calcular(categoria, mesas)
 
         proyeccion_incompleta = []
         if proyectado:
@@ -192,8 +210,8 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
 
             electores_pond = 0
             for ag in agrupaciones:
-                mesas = ag.mesas(eleccion)
-                datos_ponderacion[ag] = self.calcular(eleccion, mesas)
+                mesas = ag.mesas(categoria)
+                datos_ponderacion[ag] = self.calcular(categoria, mesas)
 
                 if not datos_ponderacion[ag]["escrutados"]:
                     proyeccion_incompleta.append(ag)
@@ -221,23 +239,23 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         # TODO permitir opciones positivas no asociadas a partido.
         tabla_positivos = OrderedDict(
             sorted(
-                [(k, v) for k,v in expanded_result.items() if isinstance(k, Partido)],
+                [(k, v) for k, v in expanded_result.items() if isinstance(k, Partido)],
                 key=lambda x: float(x[1]["proyeccion" if proyectado else "votos"]), reverse=True
             )
         )
 
-        tabla_no_positivos = {k:v for k,v in c.votos.items() if not isinstance(k, Partido)}
+        tabla_no_positivos = {k: v for k, v in c.votos.items() if not isinstance(k, Partido)}
         tabla_no_positivos["Positivos"] = {
             "votos": c.positivos,
             "porcentajeTotal": f'{c.positivos*100/c.total:.2f}' if c.total else '-'
         }
         result_piechart = None
         if settings.SHOW_PLOT:
-            result_piechart = [
-                {'key': str(k),
+            result_piechart = [{
+                'key': str(k),
                 'y': v["votos"],
-                'color': k.color if not isinstance(k, str) else '#CCCCCC'} for k, v in tabla_positivos.items()
-            ]
+                'color': k.color if not isinstance(k, str) else '#CCCCCC'
+            } for k, v in tabla_positivos.items()]
         resultados = {
             'tabla_positivos': tabla_positivos,
             'tabla_no_positivos': tabla_no_positivos,
@@ -258,25 +276,25 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         }
         return resultados
 
-    def calcular(self, eleccion, mesas):
+    def calcular(self, categoria, mesas):
         """
-        Método donde se implementan los computos escenciales de la eleccion para las mesas dadas.
+        Implementa los cómputos escenciales de la categoria para las mesas dadas.
         Devuelve
 
-            electores: cantidad de electores en las mesas válidas en la eleccion
+            electores: cantidad de electores en las mesas válidas en la categoria
             escrutados: cantidad de electores en las mesas que efectivamente fueron escrutadas   # TODO revisar!
             porcentaje_mesas_escrutadas:
             votos: diccionario con resultados de votos por partido y opcion (positivos y no positivos)
             total: total votos (positivos + no positivos)
             positivos: total votos positivos
         """
-        electores = mesas.filter(eleccion=eleccion).aggregate(v=Sum('electores'))['v'] or 0
-        sum_por_partido, otras_opciones = ResultadosCategoria.agregaciones_por_partido(eleccion)
+        electores = mesas.filter(categoria=categoria).aggregate(v=Sum('electores'))['v'] or 0
+        sum_por_partido, otras_opciones = ResultadosCategoria.agregaciones_por_partido(categoria)
 
         # primero para partidos
 
         reportados = VotoMesaReportado.objects.filter(
-            eleccion=eleccion, mesa__in=Subquery(mesas.values('id'))
+            categoria=categoria, mesa__in=Subquery(mesas.values('id'))
         )
         mesas_escrutadas = mesas.filter(votomesareportado__isnull=False).distinct()
         escrutados = mesas_escrutadas.aggregate(v=Sum('electores'))['v']
@@ -288,7 +306,6 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         if total_mesas == 0:
             total_mesas = 1
         porcentaje_mesas_escrutadas = f'{total_mesas_escrutadas*100/total_mesas:.2f}'
-
 
         result = reportados.aggregate(
             **sum_por_partido
@@ -331,10 +348,10 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         pk = self.kwargs.get('pk', 1)
         if pk == 1:
             pk == Categoria.objects.first().id
-        eleccion = get_object_or_404(Categoria, id=pk)
-        context['object'] = eleccion
-        context['eleccion_id'] = eleccion.id
-        context['resultados'] = self.get_resultados(eleccion)
+        categoria = get_object_or_404(Categoria, id=pk)
+        context['object'] = categoria
+        context['categoria_id'] = categoria.id
+        context['resultados'] = self.get_resultados(categoria)
         context['show_plot'] = settings.SHOW_PLOT
         if settings.SHOW_PLOT:
             chart = context['resultados']['result_piechart']
@@ -342,13 +359,13 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
             context['chart_keys'] = [v['key'] for v in chart]
             context['chart_colors'] = [v['color'] for v in chart]
 
-        # las pestañas de elecciones que se muestran son las que sean
+        # las pestañas de categorias que se muestran son las que sean
         # comunes a todas las mesas filtradas
 
-        # para el calculo se filtran elecciones activas que esten relacionadas
+        # para el calculo se filtran categorias activas que esten relacionadas
         # a las mesas
-        mesas = self.mesas(eleccion)
-        context['elecciones'] = Categoria.para_mesas(mesas).order_by('id')
+        mesas = self.mesas(categoria)
+        context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
 
         context['secciones'] = Seccion.objects.all().order_by('numero')
         return context

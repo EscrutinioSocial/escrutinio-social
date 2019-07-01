@@ -21,7 +21,7 @@ class Command(BaseCommand):
         errores = []
         c = 0
         for row in reader:
-            
+
             mesa_nro = int(row['mesa'])
 
             mesas = Mesa.objects.filter(numero=mesa_nro)
@@ -29,12 +29,12 @@ class Command(BaseCommand):
                 c += 1
                 self.stdout.write(self.style.SUCCESS(f'Mesa {mesa_nro}'), ending = '\r')
                 mesa = mesas[0]
-                mesa.es_testigo = True  # TODO ¿es testigo solo en una eleccion?
+                mesa.es_testigo = True  # TODO ¿es testigo solo en una categoria?
                 mesa.save()
             else:
                 err = 'Hay {} mesas nro {}'.format(mesas.count(), mesa_nro)
                 errores.append(err)
-        
+
         self.stdout.write(self.style.SUCCESS(f'{c} mesas procesadas OK'))
         if len(errores) == 0:
             self.stdout.write(self.style.SUCCESS('FIN OK'))

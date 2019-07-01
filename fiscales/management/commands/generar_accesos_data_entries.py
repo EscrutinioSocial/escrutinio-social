@@ -6,11 +6,11 @@ from elecciones.models import Partido
 
 
 class Command(BaseCommand):
-    help = """ Generar accesos para los data entries del día de la eleccion
+    help = """ Generar accesos para los data entries del día de la categoria
             Ejemplos:
                 ./manage.py generar_accesos_data_entries --equipo=ALL # 20 usuarios para cada partido
-                ./manage.py generar_accesos_data_entries --equipo=ALL --cantidad=1 # un usuario para cada partido 
-                ./manage.py generar_accesos_data_entries --equipo=BUNKER_BECARIOS --cantidad=10 # 10 usuarios para un equipo nuevo  
+                ./manage.py generar_accesos_data_entries --equipo=ALL --cantidad=1 # un usuario para cada partido
+                ./manage.py generar_accesos_data_entries --equipo=BUNKER_BECARIOS --cantidad=10 # 10 usuarios para un equipo nuevo
             """
 
     def add_arguments(self, parser):
@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
     def crear_acceso(self, nombre, c, sobre_escribir=True):
         username = slugify(f'{nombre} {c}')
-        
+
         user, created = User.objects.get_or_create(username=username)
         user.is_staff= True
         if created or sobre_escribir:
@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 equipos.append(partido.nombre_corto)
         else:
             equipos = [equipo]
-        
+
         for equipo in equipos:
             self.stdout.write(self.style.SUCCESS('--- Creando usuarios fiscales de {} ---'.format(equipo)))
             for c in range(cantidad):
@@ -63,5 +63,5 @@ class Command(BaseCommand):
 
 
         self.stdout.write(self.style.SUCCESS('--- terminado ---'))
-    
-    
+
+

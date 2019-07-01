@@ -42,34 +42,34 @@
     <ul class="tabs">
         {% for eleccion in elecciones %}
         <li class="tab col s3" >
-            <a target="_self" href="{{eleccion.get_absolute_url}}" {% if eleccion.id == object.id %}class="active"{% endif %}>{{ eleccion.nombre }}</a>
+            <a target="_self" href="{{categoria.get_absolute_url}}" {% if categoria.id == object.id %}class="active"{% endif %}>{{ categoria.nombre }}</a>
         </li>
         {% endfor %}
     </ul>
 
 
-        <div class="card" id="{{eleccion.slug}}" data-id="{{ eleccion.id }}">
-            <div class="card-content" id="frame{{eleccion.id}}">
+        <div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
+            <div class="card-content" id="frame{{categoria.id}}">
 
               {% if resultados.tabla_positivos %}
                 {% if resultados.proyectado %}
                   {% if resultados.proyeccion_incompleta  %}
                     <h4 style="background-color: red"> Proyección de datos incompleta </h4>
                     <h5> Con un total de {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
-                        ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }}). 
+                        ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }}).
                         Faltan cargar datos en </h5>
                       {% for ag in resultados.proyeccion_incompleta %}
                         <li> {{ ag|safe }}</li>
                       {% endfor %}
 
                   {% else %}
-                    <h4>Proyección de datos sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas 
+                    <h4>Proyección de datos sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
                         ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
                     </h4>
                   {% endif %}
 
                 {% else %}
-                    <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas 
+                    <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
                         ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
                     </h4>
 

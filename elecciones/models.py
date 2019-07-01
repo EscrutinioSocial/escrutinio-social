@@ -40,15 +40,15 @@ class Seccion(models.Model):
         verbose_name_plural = 'Secciones electorales'
 
     def resultados_url(self):
-        return reverse('resultados-eleccion') + f'?seccion={self.id}'
+        return reverse('resultados-categoria') + f'?seccion={self.id}'
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
 
-    def mesas(self, eleccion):
+    def mesas(self, categoria):
         return Mesa.objects.filter(
             lugar_votacion__circuito__seccion=self,
-            eleccion=eleccion
+            categoria=categoria
         )
 
 
@@ -69,7 +69,7 @@ class Circuito(models.Model):
         return f"{self.numero} - {self.nombre}"
 
     def resultados_url(self):
-        return reverse('resultados-eleccion') + f'?circuito={self.id}'
+        return reverse('resultados-categoria') + f'?circuito={self.id}'
 
     def proximo_orden_de_carga(self):
         orden = Mesa.objects.exclude(id=self.id).filter(
@@ -77,10 +77,10 @@ class Circuito(models.Model):
         ).aggregate(v=Max('orden_de_carga'))['v'] or 0
         return orden + 1
 
-    def mesas(self, eleccion):
+    def mesas(self, categoria):
         return Mesa.objects.filter(
             lugar_votacion__circuito=self,
-            eleccion=eleccion
+            categoria=categoria
     )
 
 
@@ -129,15 +129,15 @@ class LugarVotacion(models.Model):
             return inicio
         return f'{inicio} - {fin}'
 
-    def mesas(self, eleccion):
+    def mesas(self, categoria):
         return Mesa.objects.filter(
             lugar_votacion=self,
-            eleccion=eleccion
+            categoria=categoria
     )
 
     @property
     def mesas_actuales(self):
-        return self.mesas.filter(eleccion=Categoria.actual())
+        return self.mesas.filter(categoria=Categoria.actual())
 
     @property
     def color(self):
@@ -158,7 +158,7 @@ def path_foto_acta(instance, filename):
     # file will be uploaded to MEDIA_ROOT/
     _, ext = os.path.splitext(filename)
     return 'actas/{}/{}{}'.format(
-        instance.eleccion.slug,
+        instance.categoria.slug,
         instance.numero,
         ext
     )
@@ -166,11 +166,11 @@ def path_foto_acta(instance, filename):
 
 class MesaCategoria(models.Model):
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
-    eleccion = models.ForeignKey('Categoria', on_delete=models.CASCADE)
+    categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     confirmada = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('mesa', 'eleccion')
+        unique_together = ('mesa', 'categoria')
 
 
 class Mesa(models.Model):
@@ -179,7 +179,7 @@ class Mesa(models.Model):
     estado = StatusField(choices_name='ESTADOS', default='EN ESPERA')
     hora_escrutada = MonitorField(monitor='estado', when=['ESCRUTADA'])
 
-    eleccion = models.ManyToManyField('Categoria', through='MesaCategoria')
+    categoria = models.ManyToManyField('Categoria', through='MesaCategoria')
     numero = models.PositiveIntegerField()
     es_testigo = models.BooleanField(default=False)
     circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
@@ -194,20 +194,20 @@ class Mesa(models.Model):
     carga_confirmada = models.BooleanField(default=False)
 
     # denormalizacion.
-    # lleva la cuenta de las elecciones que se han cargado hasta el momento.
-    # ver receiver actualizar_elecciones_cargadas_para_mesa()
+    # lleva la cuenta de las categorias que se han cargado hasta el momento.
+    # ver receiver actualizar_categorias_cargadas_para_mesa()
     cargadas = models.PositiveIntegerField(default=0, editable=False)
     confirmadas = models.PositiveIntegerField(default=0, editable=False)
 
-    def eleccion_add(self, eleccion):
-        MesaCategoria.objects.get_or_create(mesa=self, eleccion=eleccion)
+    def categoria_add(self, categoria):
+        MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
 
-    def siguiente_eleccion_sin_carga(self):
-        for eleccion in self.eleccion.filter(activa=True).order_by('id'):
+    def siguiente_categoria_sin_carga(self):
+        for categoria in self.categoria.filter(activa=True).order_by('id'):
             if not VotoMesaReportado.objects.filter(
-                mesa=self, eleccion=eleccion
+                mesa=self, categoria=categoria
             ).exists():
-                return eleccion
+                return categoria
 
     @classmethod
     def con_carga_pendiente(cls, wait=2):
@@ -215,7 +215,7 @@ class Mesa(models.Model):
         Una mesa cargable es aquella que
            - no este tomada dentro de los ultimos `wait` minutos
            - no este marcada con problemas o todos su problemas esten resueltos
-           - y tenga al menos una eleccion asociada que no tenga votosreportados para esa mesa
+           - y tenga al menos una categoria asociada que no tenga votosreportados para esa mesa
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
@@ -224,7 +224,7 @@ class Mesa(models.Model):
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
-            a_cargar=Count('eleccion', filter=Q(eleccion__activa=True))
+            a_cargar=Count('categoria', filter=Q(categoria__activa=True))
         ).filter(
             cargadas__lt=F('a_cargar')
         ).annotate(
@@ -239,20 +239,20 @@ class Mesa(models.Model):
         ).distinct()
         return qs
 
-    def siguiente_eleccion_a_confirmar(self):
+    def siguiente_categoria_a_confirmar(self):
         for me in MesaCategoria.objects.filter(
-            mesa=self, eleccion__activa=True
-        ).order_by('eleccion'):
+            mesa=self, categoria__activa=True
+        ).order_by('categoria'):
             if not me.confirmada and VotoMesaReportado.objects.filter(
-                eleccion=me.eleccion, mesa=me.mesa
+                categoria=me.categoria, mesa=me.mesa
             ).exists():
-                return me.eleccion
+                return me.categoria
 
     @classmethod
     def con_carga_a_confirmar(cls):
         qs = cls.objects.filter(
             mesacategoria__confirmada=False,
-            mesacategoria__eleccion__activa=True,
+            mesacategoria__categoria__activa=True,
             cargadas__gte=1
         ).filter(
             confirmadas__lt=F('cargadas')
@@ -261,7 +261,7 @@ class Mesa(models.Model):
 
 
     def get_absolute_url(self):
-        return '#' # reverse('detalle-mesa', args=(self.eleccion.first().id, self.numero,))
+        return '#' # reverse('detalle-mesa', args=(self.categoria.first().id, self.numero,))
 
     @property
     def asignacion_actual(self):
@@ -305,7 +305,6 @@ class Partido(models.Model):
     referencia = models.CharField(max_length=30, default='', blank=True)
     ordering = ['orden']
 
-
     def __str__(self):
         return self.nombre
 
@@ -323,10 +322,14 @@ class Opcion(models.Model):
     es_contable = models.BooleanField(default=True)
 
     es_metadata = models.BooleanField(
-        default=False, help_text="para campos que son tipo 'Total positivo, o Total votos'")
+        default=False,
+        help_text="para campos que son tipo 'Total positivo, o Total votos'"
+    )
 
-    codigo_dne = models.PositiveIntegerField(null=True, blank=True, help_text='Nº asignado en la base de datos de resultados oficiales')
-
+    codigo_dne = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text='Nº asignado en la base de datos de resultados oficiales'
+    )
 
     class Meta:
         verbose_name = 'Opción'
@@ -348,41 +351,43 @@ class Opcion(models.Model):
 
 
 class Categoria(models.Model):
-    """este modelo representa una categoria electiva: gobernador, intendente de loma del orto, etc)"""
+    """
+    Representa una categoria electiva: Presidente y Vicepresidente, Intendente de La Matanza, etc)
+    """
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100)
     fecha = models.DateTimeField(blank=True, null=True)
-    opciones = models.ManyToManyField(Opcion, related_name='elecciones')
+    opciones = models.ManyToManyField(Opcion, related_name='categorias')
     color = models.CharField(max_length=10, default='black', help_text='Color para css (red o #FF0000)')
     back_color = models.CharField(max_length=10, default='white', help_text='Color para css (red o #FF0000)')
     activa = models.BooleanField(
         default=True,
-        help_text='Si no está activa, no se cargan datos para esta eleccion y no se muestran resultados'
+        help_text='Si no está activa, no se cargan datos para esta categoria y no se muestran resultados'
     )
 
     def get_absolute_url(self):
-        return reverse('resultados-eleccion', args=[self.id])
+        return reverse('resultados-categoria', args=[self.id])
 
     def opciones_actuales(self):
         return self.opciones.all().order_by('orden')
 
     @classmethod
     def para_mesas(cls, mesas):
-        """Devuelve el conjunto de elecciones que son comunes a todas las mesas dadas"""
+        """Devuelve el conjunto de categorias que son comunes a todas las mesas dadas"""
         if isinstance(mesas, QuerySet):
             mesas_count = mesas.count()
         else:
             # si es lista
             mesas_count = len(mesas)
 
-        # el primer filtro devuelve elecciones activas que esten relacianadas a una o
+        # el primer filtro devuelve categorias activas que esten relacianadas a una o
         # mas mesas, pero no necesariamente a todas
         qs = cls.objects.filter(
             activa=True,
             mesa__in=mesas
         )
 
-        # para garantizar que son elecciones asociadas a todas las mesas
+        # para garantizar que son categorias asociadas a todas las mesas
         # anotamos la cuenta y la comparamos con la cantidad de mesas del conjunto
         qs = qs.annotate(
             num_mesas=Count('mesa')
@@ -391,18 +396,17 @@ class Categoria(models.Model):
         )
         return qs
 
-
     @classmethod
     def actual(cls):
         return cls.objects.first()
 
     @property
     def electores(self):
-        return Mesa.objects.filter(eleccion=self).aggregate(v=Sum('electores'))['v']
+        return Mesa.objects.filter(categoria=self).aggregate(v=Sum('electores'))['v']
 
     class Meta:
-        verbose_name = 'Elección'
-        verbose_name_plural = 'Categoriaes'
+        verbose_name = 'Categoría'
+        verbose_name_plural = 'Categorías'
         ordering = ('id',)
 
     def __str__(self):
@@ -411,7 +415,7 @@ class Categoria(models.Model):
 
 class VotoMesaReportado(TimeStampedModel):
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
-    eleccion = models.ForeignKey(Categoria, on_delete=models.CASCADE)
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
     votos = models.PositiveIntegerField(null=True)
     fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
@@ -419,25 +423,25 @@ class VotoMesaReportado(TimeStampedModel):
     class Meta:
         # unique_together = ('mesa', 'opcion', 'fiscal')
         # sólo vamos a permitir una carga por mesa.
-        unique_together = ('mesa', 'eleccion', 'opcion')
+        unique_together = ('mesa', 'categoria', 'opcion')
 
     def __str__(self):
         return f"{self.mesa} - {self.opcion}: {self.votos}"
 
 
 @receiver(post_save, sender=VotoMesaReportado)
-def actualizar_elecciones_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
+def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
     mesa = instance.mesa
-    elecciones_cargadas = VotoMesaReportado.objects.filter(
+    categorias_cargadas = VotoMesaReportado.objects.filter(
         mesa=mesa
-    ).values('eleccion').distinct().count()
-    if mesa.cargadas != elecciones_cargadas:
-        mesa.cargadas = elecciones_cargadas
+    ).values('categoria').distinct().count()
+    if mesa.cargadas != categorias_cargadas:
+        mesa.cargadas = categorias_cargadas
         mesa.save(update_fields=['cargadas'])
 
 
 @receiver(post_save, sender=MesaCategoria)
-def actualizar_elecciones_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
+def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
     if instance.confirmada:
         mesa = instance.mesa
         confirmadas = MesaCategoria.objects.filter(mesa=mesa, confirmada=True).count()

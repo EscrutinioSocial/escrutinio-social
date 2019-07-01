@@ -7,13 +7,13 @@ urlpatterns = [
     # url('^email$', views.email),
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
     url('^acta/$', views.elegir_acta_a_cargar, name='elegir-acta-a-cargar'),
-    url('^acta/(?P<eleccion_id>\d+)/(?P<mesa_numero>\d+)$',
+    url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.cargar_resultados, name='mesa-cargar-resultados'),
 
     url('^chequear$',
         views.chequear_resultado, name='chequear-resultado'),
 
-    url('^chequear/(?P<eleccion_id>\d+)/(?P<mesa_numero>\d+)$',
+    url('^chequear/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.chequear_resultado_mesa, name='chequear-resultado-mesa'),
 
     url('^mis-datos/profile$', views.MisDatosUpdate.as_view(), name='mis-datos-update'),
