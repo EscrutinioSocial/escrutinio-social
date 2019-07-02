@@ -15,9 +15,9 @@ def test_mesa_siguiente_categoria(db):
 
     m1 = MesaFactory(categoria=categoria)
     assert m1.siguiente_categoria_sin_carga() == e1
-    VotoMesaReportadoFactory(mesa=m1, categoria=e1, opcion=e1.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(carga__mesa=m1, carga__categoria=e1, opcion=e1.opciones.first(), votos=10)
     assert m1.siguiente_categoria_sin_carga() == e2
-    VotoMesaReportadoFactory(mesa=m1, categoria=e2, opcion=e2.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(carga__mesa=m1, carga__categoria=e2, opcion=e2.opciones.first(), votos=10)
     assert m1.siguiente_categoria_sin_carga() is None
 
 
@@ -27,7 +27,7 @@ def test_mesa_siguiente_categoria_desactiva(db):
     e2.save()
     m1 = MesaFactory(categoria=categorias)
     assert m1.siguiente_categoria_sin_carga() == e1
-    VotoMesaReportadoFactory(mesa=m1, categoria=e1, opcion=e1.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(carga__mesa=m1, carga__categoria=e1, opcion=e1.opciones.first(), votos=10)
     assert m1.siguiente_categoria_sin_carga() is None
 
 
@@ -77,8 +77,8 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
 
     # mesa 2 ya se cargo, se excluirá
     categoria = m2.categoria.first()
-    VotoMesaReportadoFactory(mesa=m2, categoria=categoria, opcion=categoria.opciones.first(), votos=10)
-    VotoMesaReportadoFactory(mesa=m2, categoria=categoria, opcion=categoria.opciones.last(), votos=12)
+    VotoMesaReportadoFactory(carga__mesa=m2, carga__categoria=categoria, opcion=categoria.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(carga__mesa=m2, carga__categoria=categoria, opcion=categoria.opciones.last(), votos=12)
 
     # m3 tiene mas elecciones.pendientes
     e2 = CategoriaFactory(id=100)
@@ -90,8 +90,8 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
     m3.categoria_add(CategoriaFactory(id=101))
     categoria = m3.categoria.first()
     # se cargo primera y segunda categoria para la mesa 3
-    VotoMesaReportadoFactory(mesa=m3, categoria=categoria, opcion=categoria.opciones.first(), votos=20)
-    VotoMesaReportadoFactory(mesa=m3, categoria=e2, opcion=e2.opciones.first(), votos=20)
+    VotoMesaReportadoFactory(carga__mesa=m3, carga__categoria=categoria, opcion=categoria.opciones.first(), votos=20)
+    VotoMesaReportadoFactory(carga__mesa=m3, carga__categoria=e2, opcion=e2.opciones.first(), votos=20)
 
     assert set(Mesa.con_carga_pendiente()) == {m1, m3}
 
@@ -101,8 +101,11 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
 def test_mesa_siguiente_categoria_a_confirmar(db):
     e1, e2 = categoria = CategoriaFactory.create_batch(2)
     m1 = MesaFactory(categoria=categoria)
-    VotoMesaReportadoFactory(mesa=m1, categoria=e1, opcion=e1.opciones.first(), votos=10)
-
+    VotoMesaReportadoFactory(
+        carga__mesa=m1, carga__categoria=e1,
+        opcion=e1.opciones.first(),
+        votos=10
+    )
     assert m1.siguiente_categoria_a_confirmar() == e1
 
     # confirmo
@@ -113,14 +116,24 @@ def test_mesa_siguiente_categoria_a_confirmar(db):
     assert m1.siguiente_categoria_a_confirmar() is None
 
     # se cargó la otra categoria
-    VotoMesaReportadoFactory(mesa=m1, categoria=e2, opcion=e2.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(
+        carga__mesa=m1,
+        carga__categoria=e2,
+        opcion=e2.opciones.first(),
+        votos=10
+    )
     assert m1.siguiente_categoria_a_confirmar() == e2
 
 
 def test_mesa_siguiente_categoria_a_confirmar_categoria_desactivada(db):
     e1 = CategoriaFactory(activa=False)
     m1 = MesaFactory(categoria=[e1])
-    VotoMesaReportadoFactory(mesa=m1, categoria=e1, opcion=e1.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(
+        carga__mesa=m1,
+        carga__categoria=e1,
+        opcion=e1.opciones.first(),
+        votos=10
+    )
     # aunque haya datos cargados, la categoria desactivada la excluye de confirmacion
     assert m1.siguiente_categoria_a_confirmar() is None
 
@@ -130,10 +143,10 @@ def test_con_carga_a_confirmar(db):
     m1 = MesaFactory(categoria=categoria)
     m2 = MesaFactory(categoria=categoria)
 
-    VotoMesaReportadoFactory(mesa=m1, categoria=e1, opcion=e1.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(carga__mesa=m1, carga__categoria=e1, opcion=e1.opciones.first(), votos=10)
     assert set(Mesa.con_carga_a_confirmar()) == {m1}
 
-    VotoMesaReportadoFactory(mesa=m2, categoria=e1, opcion=e1.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(carga__mesa=m2, carga__categoria=e1, opcion=e1.opciones.first(), votos=10)
     assert set(Mesa.con_carga_a_confirmar()) == {m1, m2}
 
     # confirmo la primer mesa.
@@ -148,7 +161,7 @@ def test_con_carga_a_confirmar(db):
 def test_con_carga_a_confirmar_categoria_desactivada(db):
     e1 = CategoriaFactory(activa=False)
     m1 = MesaFactory(categoria=[e1])
-    VotoMesaReportadoFactory(mesa=m1, categoria=e1, opcion=e1.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(carga__mesa=m1, carga__categoria=e1, opcion=e1.opciones.first(), votos=10)
     assert Mesa.con_carga_a_confirmar().count() == 0
 
 

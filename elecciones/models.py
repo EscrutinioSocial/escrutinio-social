@@ -204,7 +204,7 @@ class Mesa(models.Model):
 
     def siguiente_categoria_sin_carga(self):
         for categoria in self.categoria.filter(activa=True).order_by('id'):
-            if not VotoMesaReportado.objects.filter(
+            if not Carga.objects.filter(
                 mesa=self, categoria=categoria
             ).exists():
                 return categoria
@@ -244,7 +244,7 @@ class Mesa(models.Model):
             mesa=self, categoria__activa=True
         ).order_by('categoria'):
             if not me.confirmada and VotoMesaReportado.objects.filter(
-                categoria=me.categoria, mesa=me.mesa
+                carga__categoria=me.categoria, carga__mesa=me.mesa
             ).exists():
                 return me.categoria
 
@@ -266,10 +266,6 @@ class Mesa(models.Model):
     @property
     def asignacion_actual(self):
         return self.asignacion.order_by('-ingreso').last()
-
-    @property
-    def tiene_reporte(self):
-        return self.votomesareportado_set.aggregate(Sum('votos'))['votos__sum']
 
     def fotos(self):
         fotos = []
@@ -423,26 +419,36 @@ class Categoria(models.Model):
         return self.nombre
 
 
-class VotoMesaReportado(TimeStampedModel):
+class Carga(TimeStampedModel):
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
-    opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
-    votos = models.PositiveIntegerField(null=True)
     fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
+    consolidada = models.BooleanField(default=False)
 
     class Meta:
-        # unique_together = ('mesa', 'opcion', 'fiscal')
-        # sólo vamos a permitir una carga por mesa.
-        unique_together = ('mesa', 'categoria', 'opcion')
+        verbose_name = "Carga"
+        verbose_name_plural = "Cargas"
+
+    def __str__(self):
+        return f'carga de {self.mesa} / {self.categoria} por {self.fiscal}'
+
+
+class VotoMesaReportado(models.Model):
+    carga = models.ForeignKey(Carga, on_delete=models.CASCADE)
+    opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
+    votos = models.PositiveIntegerField(null=True)
+
+    class Meta:
+        unique_together = ('carga', 'opcion')
 
     def __str__(self):
         return f"{self.mesa} - {self.opcion}: {self.votos}"
 
 
-@receiver(post_save, sender=VotoMesaReportado)
+@receiver(post_save, sender=Carga)
 def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
     mesa = instance.mesa
-    categorias_cargadas = VotoMesaReportado.objects.filter(
+    categorias_cargadas = Carga.objects.filter(
         mesa=mesa
     ).values('categoria').distinct().count()
     if mesa.cargadas != categorias_cargadas:

@@ -21,7 +21,7 @@ from annoying.functions import get_object_or_None
 from contacto.forms import MinimoContactoInlineFormset
 from .models import Fiscal
 from elecciones.models import (
-    Mesa, Categoria, MesaCategoria, VotoMesaReportado, Circuito, LugarVotacion, Seccion
+    Mesa, Categoria, MesaCategoria, VotoMesaReportado, Carga, Circuito, LugarVotacion, Seccion
 )
 from django.utils.decorators import method_decorator
 from datetime import timedelta
@@ -281,22 +281,29 @@ def elegir_acta_a_cargar(request):
 
 
 @login_required
-def cargar_resultados(request, categoria_id, mesa_numero):
+def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
     fiscal = get_object_or_404(Fiscal, user=request.user)
     categoria = get_object_or_404(Categoria, id=categoria_id)
-
     mesa = get_object_or_404(Mesa, categoria=categoria, numero=mesa_numero)
+    if carga_id:
+        carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
+    else:
+        carga = None
+
     VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=categoria.opciones.count())
 
     def fix_opciones(formset):
-        # hack para dejar sólo la opcion correspondiente a cada fila
+        # hack para dejar sólo la opcion correspondiente a cada fila en los choicesfields
         # se podria hacer "disabled" pero ese caso quita el valor del
         # cleaned_data y luego lo exige por ser requerido.
         for i, (opcion, form) in enumerate(zip(categoria.opciones_actuales(), formset), 1):
             form.fields['opcion'].choices = [(opcion.id, str(opcion))]
 
+            # esto hace que la navegacion mediante Tabs priorice los inputs de "votos"
+            # por sobre los combo de "opcion"
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
             form.fields['votos'].widget.attrs['tabindex'] = i
+
             # si la opcion es obligatoria, se llenan estos campos
             if opcion.obligatorio:
                 form.fields['votos'].required = True
@@ -304,7 +311,7 @@ def cargar_resultados(request, categoria_id, mesa_numero):
                 form.fields['votos'].widget.attrs['autofocus'] = True
     data = request.POST if request.method == 'POST' else None
 
-    qs = VotoMesaReportado.objects.filter(mesa=mesa, categoria=categoria)
+    qs = VotoMesaReportado.objects.filter(carga=carga) if carga else None
     initial = [{'opcion': o} for o in categoria.opciones_actuales()]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
     fix_opciones(formset)
@@ -319,12 +326,17 @@ def cargar_resultados(request, categoria_id, mesa_numero):
 
         try:
             with transaction.atomic():
+                if carga:
+                    carga.fiscal = fiscal
+                    carga.save()
+                else:
+                    carga = Carga.objects.create(
+                        mesa=mesa, fiscal=fiscal, categoria=categoria
+                    )
+
                 for form in formset:
                     vmr = form.save(commit=False)
-                    vmr.mesa = mesa
-                    vmr.categoria = categoria
-                    vmr.fiscal = fiscal
-                    # vmr.categoria = categoria
+                    vmr.carga = carga
                     vmr.save()
             messages.success(request, f'Guardada categoria {categoria} para {mesa}')
         except IntegrityError as e:
@@ -374,9 +386,8 @@ def chequear_resultado(request):
     return redirect('chequear-resultado-mesa', categoria_id=categoria.id, mesa_numero=mesa.numero)
 
 
-
 @login_required
-def chequear_resultado_mesa(request, categoria_id, mesa_numero):
+def chequear_resultado_mesa(request, categoria_id, mesa_numero, carga_id=None):
     """muestra la carga actual de la categoria para la mesa"""
     me = get_object_or_404(
         MesaCategoria,
@@ -387,6 +398,18 @@ def chequear_resultado_mesa(request, categoria_id, mesa_numero):
     mesa = me.mesa
     categoria = me.categoria
 
+    if carga_id:
+        carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
+    else:
+        # redirijo a la primera carga
+        carga = get_object_or_404(Carga, mesa=mesa, categoria=categoria)
+        # return redirect(
+        #     'chequear-resultado-mesa',
+        #     categoria_id=categoria.id,
+        #     mesa_numero=mesa.numero,
+        #     carga_id=carga.id
+        # )
+
     data = request.POST if request.method == 'POST' else None
     if data and 'confirmar' in data:
         me.confirmada = True
@@ -394,14 +417,14 @@ def chequear_resultado_mesa(request, categoria_id, mesa_numero):
         messages.success(request, f'Confirmaste la categoria {categoria} para {mesa}')
         return redirect('chequear-resultado')
 
-    reportados = mesa.votomesareportado_set.filter(categoria=categoria).order_by('opcion__orden')
+    reportados = carga.votomesareportado_set.order_by('opcion__orden')
     return render(
         request,
         "fiscales/chequeo_mesa.html",
         {
             'reportados': reportados,
             'object': mesa,
-            'categoria': me.categoria
+            'categoria': categoria
         }
     )
 

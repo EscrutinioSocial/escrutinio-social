@@ -167,10 +167,10 @@ class SeccionAdmin(admin.ModelAdmin):
     )
 
 class VotoMesaReportadoAdmin(admin.ModelAdmin):
-    list_display = ['mesa', 'id', 'categoria', 'opcion', 'votos', 'fiscal']
+    list_display = ['carga', 'id', 'opcion', 'votos',]
     list_display_links = list_display
     ordering = ['-id']
-    list_filter = ('categoria', 'opcion')
+    list_filter = ('carga__categoria', 'opcion')
     search_fields = ['fiscal__nombre', 'mesa__numero', 'mesa__lugar_votacion__nombre']
 
 

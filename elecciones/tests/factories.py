@@ -121,14 +121,20 @@ class FiscalFactory(DjangoModelFactory):
     nombres = fake.first_name()
     dni = factory.Sequence(lambda n: f'{n}00000{n}')
 
+class CargaFactory(DjangoModelFactory):
+    class Meta:
+        model = 'elecciones.Carga'
+        django_get_or_create = ('mesa', 'categoria')
+    mesa = factory.SubFactory(MesaFactory)
+    categoria = factory.SubFactory(CategoriaFactory, id=1)
+    fiscal = factory.SubFactory(FiscalFactory)
+
 
 class VotoMesaReportadoFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.VotoMesaReportado'
-    mesa = factory.SubFactory(MesaFactory)
-    categoria = factory.SubFactory(CategoriaFactory, id=1)
+    carga = factory.SubFactory(CargaFactory)
     opcion = factory.SubFactory(OpcionFactory)
-    fiscal = factory.SubFactory(FiscalFactory)
 
 
 def get_random_image():

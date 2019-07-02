@@ -1,4 +1,3 @@
-import pytest
 from django.urls import reverse
 from elecciones.tests.factories import (
     VotoMesaReportadoFactory,
@@ -7,6 +6,7 @@ from elecciones.tests.factories import (
     MesaFactory,
     OpcionFactory,
     CircuitoFactory,
+    CargaFactory,
 )
 from elecciones.models import Mesa, VotoMesaReportado, MesaCategoria
 from elecciones.tests.test_resultados import fiscal_client          # noqa
@@ -43,7 +43,12 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m2.numero])
 
     # se carga esa categoria
-    VotoMesaReportadoFactory(mesa=m2, categoria=e1, opcion=e1.opciones.first(), votos=1)
+    VotoMesaReportadoFactory(
+        carga__mesa=m2,
+        carga__categoria=e1,
+        opcion=e1.opciones.first(),
+        votos=1
+    )
 
     # FIX ME . El periodo de taken deberia ser *por categoria*.
     # en este escenario donde esta lockeado la mesa para la categoria 1, pero no se está
@@ -138,7 +143,7 @@ def test_chequear_resultado(db, fiscal_client):
     me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
     assert me.confirmada is False
 
-    VotoMesaReportadoFactory(opcion=o, mesa=mesa, categoria=e1, votos=1)
+    VotoMesaReportadoFactory(opcion=o, carga__mesa=mesa, carga__categoria=e1, votos=1)
     response = fiscal_client.get(reverse('chequear-resultado'))
     assert response.status_code == 302
     assert response.url == reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
@@ -156,12 +161,12 @@ def test_chequear_resultado_mesa(db, fiscal_client):
     mesa = MesaFactory(categoria=[e1, e2])
     me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
     assert me.confirmada is False
-    votos1 = VotoMesaReportadoFactory(opcion=opcs[0], mesa=mesa, categoria=e1, votos=1)
-    votos2 = VotoMesaReportadoFactory(opcion=opcs[1], mesa=mesa, categoria=e1, votos=2)
-    votos3 = VotoMesaReportadoFactory(opcion=opcs[2], mesa=mesa, categoria=e1, votos=1)
+    votos1 = VotoMesaReportadoFactory(opcion=opcs[0], carga__mesa=mesa, carga__categoria=e1, votos=1)
+    votos2 = VotoMesaReportadoFactory(opcion=opcs[1], carga__mesa=mesa, carga__categoria=e1, votos=2)
+    votos3 = VotoMesaReportadoFactory(opcion=opcs[2], carga__mesa=mesa, carga__categoria=e1, votos=1)
 
     # a otra categoria
-    VotoMesaReportadoFactory(opcion=opcs[2], mesa=mesa, categoria=e2, votos=1)
+    VotoMesaReportadoFactory(opcion=opcs[2], carga__mesa=mesa, carga__categoria=e2, votos=1)
 
     url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
     response = fiscal_client.get(url)
@@ -180,7 +185,8 @@ def test_chequear_resultado_categoria_desactivada(db, fiscal_client):
     e1 = CategoriaFactory(opciones=opcs)
     assert e1.activa is True
     mesa = MesaFactory(categoria=[e1])
-
+    # existe una carga para esa categoria / mesa
+    CargaFactory(mesa=mesa, categoria=e1)
     url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
     response = fiscal_client.get(url)
     assert response.status_code == 200

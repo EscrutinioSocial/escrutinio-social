@@ -103,7 +103,7 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
                 Case(
                     When(
                         opcion__partido__id=id,
-                        categoria=categoria,
+                        carga__categoria=categoria,
                         then=F('votos')
                     ), output_field=IntegerField()
                 )
@@ -118,7 +118,7 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
                 Case(
                     When(
                         opcion__id=id,
-                        categoria=categoria,
+                        carga__categoria=categoria,
                         then=F('votos')
                     ), output_field=IntegerField()
                 )
@@ -294,9 +294,9 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         # primero para partidos
 
         reportados = VotoMesaReportado.objects.filter(
-            categoria=categoria, mesa__in=Subquery(mesas.values('id'))
+            carga__categoria=categoria, carga__mesa__in=Subquery(mesas.values('id'))
         )
-        mesas_escrutadas = mesas.filter(votomesareportado__isnull=False).distinct()
+        mesas_escrutadas = mesas.filter(carga__votomesareportado__isnull=False).distinct()
         escrutados = mesas_escrutadas.aggregate(v=Sum('electores'))['v']
         if escrutados is None:
             escrutados = 0

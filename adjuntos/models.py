@@ -105,7 +105,7 @@ def asignar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     """
     cuando se clasifica el attach, se le asigna el orden siguiente del circuito
     """
-    if instance.mesa and not instance.mesa.votomesareportado_set.exists():
+    if instance.mesa and not instance.mesa.carga_set.exists():
         mesa = instance.mesa
         mesa.orden_de_carga = mesa.circuito.proximo_orden_de_carga()
         mesa.save(update_fields=['orden_de_carga'])
