@@ -26,7 +26,11 @@ from problemas.models import Problema
 
 
 class Seccion(models.Model):
-    # O departamento
+    """
+    Define la sección electoral:
+
+    **Sección** -> Circuito -> Lugar de votación -> Mesa
+    """
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
@@ -53,6 +57,11 @@ class Seccion(models.Model):
 
 
 class Circuito(models.Model):
+    """
+    Define el circuito, perteneciente a una sección
+
+    Sección -> **Circuito** -> Lugar de votación -> Mesa
+    """
     seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
     localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
 
@@ -72,12 +81,22 @@ class Circuito(models.Model):
         return reverse('resultados-categoria') + f'?circuito={self.id}'
 
     def proximo_orden_de_carga(self):
+        """
+        Busca el máximo orden de carga `n` en una mesa perteciente al circuito
+        (esté o no cargada) y devuelve `n + 1`.
+
+        Este nuevo orden de carga incrematado se asigna a la nueva mesa
+        clasificada en func:`asignar_orden_de_carga`
+        """
         orden = Mesa.objects.exclude(id=self.id).filter(
             lugar_votacion__circuito=self
         ).aggregate(v=Max('orden_de_carga'))['v'] or 0
         return orden + 1
 
     def mesas(self, categoria):
+        """
+        Devuelve las mesas asociadas a este circuito para una categoría dada
+        """
         return Mesa.objects.filter(
             lugar_votacion__circuito=self,
             categoria=categoria
@@ -85,24 +104,42 @@ class Circuito(models.Model):
 
 
 class LugarVotacion(models.Model):
+    """
+    Define el lugar de votación (escuela) que pertenece a un circuito
+    y contiene mesas.
+    Tiene un representación geoespacial (point).
+
+    Sección -> Circuito -> **Lugar de votación** -> Mesa
+    """
+
     circuito = models.ForeignKey(Circuito, related_name='escuelas', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, blank=True)
     ciudad = models.CharField(max_length=100, blank=True)
-    calidad = models.CharField(max_length=20, help_text='calidad de la geolocalizacion', editable=False, blank=True)
+
+    # electores es una denormalización. debe coincidir con la sumatoria de
+    # los electores de cada mesa de la escuela
     electores = models.PositiveIntegerField(null=True, blank=True)
     geom = PointField(null=True)
-    estado_geolocalizacion = models.PositiveIntegerField(default=0, help_text='Indicador (0-10) de que confianza hay en la geolozalización')
 
+    # A veces, al importar datos, se realizan distintas iteraciones para geolocalizar
+    # escuelas. Estos campos sirven para cuantificar la calidad y poder filtrar para
+    # mejorar los valores de menor confianza
+    estado_geolocalizacion = models.PositiveIntegerField(
+        default=0, help_text='Indicador (0-10) de que confianza hay en la geolozalización'
+    )
+    calidad = models.CharField(
+        max_length=20, help_text='calidad de la geolocalizacion', editable=False, blank=True
+    )
     # denormalizacion para hacer queries más simples
+    # se sincronizan con ``geom`` en el método save()
     latitud = models.FloatField(null=True, editable=False)
     longitud = models.FloatField(null=True, editable=False)
 
     class Meta:
         verbose_name = 'Lugar de votación'
         verbose_name_plural = "Lugares de votación"
-
 
     def save(self, *args, **kwargs):
 
@@ -130,6 +167,9 @@ class LugarVotacion(models.Model):
         return f'{inicio} - {fin}'
 
     def mesas(self, categoria):
+        """
+        Devuelve las mesas asociadas a este lugar de votación para una categoría dada
+        """
         return Mesa.objects.filter(
             lugar_votacion=self,
             categoria=categoria
@@ -149,22 +189,27 @@ class LugarVotacion(models.Model):
     def seccion(self):
         return str(self.circuito.seccion)
 
-
     def __str__(self):
         return f"{self.nombre} - {self.circuito}"
 
 
 def path_foto_acta(instance, filename):
-    # file will be uploaded to MEDIA_ROOT/
+    """
+    Genera la ruta donde se almacenan las fotos de actas.
+    Se respeta la extensión del archivo original
+
+    ``MEDIA_ROOT/actas/<categoria>/<mesa>.<extension>``
+    """
     _, ext = os.path.splitext(filename)
-    return 'actas/{}/{}{}'.format(
-        instance.categoria.slug,
-        instance.numero,
-        ext
-    )
+    return f'actas/{instance.categoria.slug}/{instance.numero}{ext}'
 
 
 class MesaCategoria(models.Model):
+    """
+    Modelo intermedio para la relación m2m ``Mesa.categoria``
+
+    Permite guardar el booleano que marca la carga de esa "columna" como confirmada.
+    """
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     confirmada = models.BooleanField(default=False)
@@ -174,11 +219,23 @@ class MesaCategoria(models.Model):
 
 
 class Mesa(models.Model):
+    """
+    Define la mesa de votación que pertenece a un class:`LugarDeVotación`.
+
+    Sección -> Circuito -> Lugar de votación -> **Mesa**
+
+    Está asociada a una o más categorías electivas para los cuales
+    el elector habilitado debe elegir.
+
+    Por ejemplo, la mesa 12 del circuito 1J de La Matanza, elige
+    Presidente y Vice, Diputado de Prov de Buenos Aires e Intendente de La Matanza.
+    """
     ESTADOS_ = ('EN ESPERA', 'ABIERTA', 'CERRADA', 'ESCRUTADA')
     ESTADOS = Choices(*ESTADOS_)
     estado = StatusField(choices_name='ESTADOS', default='EN ESPERA')
     hora_escrutada = MonitorField(monitor='estado', when=['ESCRUTADA'])
 
+    # fixme. este campo deberia ser `categorias`, en plural.
     categoria = models.ManyToManyField('Categoria', through='MesaCategoria')
     numero = models.PositiveIntegerField()
     es_testigo = models.BooleanField(default=False)
@@ -240,6 +297,11 @@ class Mesa(models.Model):
         return qs
 
     def siguiente_categoria_a_confirmar(self):
+        """
+        Dadas las categorias de la mesa en orden, devuelve
+        la primera que tenga carga (i.e votos reportados) pero
+        aun no esté confirmada
+        """
         for me in MesaCategoria.objects.filter(
             mesa=self, categoria__activa=True
         ).order_by('categoria'):
@@ -250,6 +312,13 @@ class Mesa(models.Model):
 
     @classmethod
     def con_carga_a_confirmar(cls):
+        """
+        Devuelve un queryset de mesas con categorias activas que
+        tengan  al menos una carga sin confirmar.
+
+        Para una mesa de este queryset el método :meth:`siguiente_categoria_a_confirmar`
+        devuelve una categoría.
+        """
         qs = cls.objects.filter(
             mesacategoria__confirmada=False,
             mesacategoria__categoria__activa=True,
@@ -259,15 +328,21 @@ class Mesa(models.Model):
         ).distinct()
         return qs
 
-
     def get_absolute_url(self):
-        return '#' # reverse('detalle-mesa', args=(self.categoria.first().id, self.numero,))
+        # TODO: Por ahora no hay una vista que muestre la carga de datos
+        # para todas las categorias de una mesa
 
-    @property
-    def asignacion_actual(self):
-        return self.asignacion.order_by('-ingreso').last()
+        # return reverse('detalle-mesa', args=(self.categoria.first().id, self.numero,))
+        return '#'
 
     def fotos(self):
+        """
+        Devuelve una lista de tuplas (titulo, foto) asociados a la mesa, incluyendo
+        cualquier version editada de una foto.
+
+        Este método se utiliza para alimentar las pestañas en la pantalla de carga
+        de datos.
+        """
         fotos = []
         for i, a in enumerate(Attachment.objects.filter(mesa=self).order_by('-id'), 1):
             if a.foto_edited:
@@ -275,23 +350,14 @@ class Mesa(models.Model):
             fotos.append((f'Foto {i} (original)', a.foto))
         return fotos
 
-    @property
-    def proximo_estado(self):
-        if self.estado == 'ESCRUTADA':
-            return self.estado
-        pos = Mesa.ESTADOS_.index(self.estado)
-        return Mesa.ESTADOS_[pos + 1]
-
-    @property
-    def grupo_tabla_proyecciones(self):
-        mi_circuito = self.lugar_votacion.circuito
-        return mi_circuito if mi_circuito.seccion.numero == 1 else mi_circuito.seccion
-
     def __str__(self):
         return f"Mesa {self.numero}"
 
 
 class Partido(models.Model):
+    """
+    Representa un partido político o alianza, que contiene :py:class:`opciones <Opcion>`.
+    """
     orden = models.PositiveIntegerField(help_text='Orden opcion')
     numero = models.PositiveIntegerField(null=True, blank=True)
     codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True)
@@ -306,6 +372,20 @@ class Partido(models.Model):
 
 
 class Opcion(models.Model):
+    """
+    Una opción es lo que puede elegir hacer
+    el elector con voto para una categoría.
+
+    Incluye las opciones partidarias (que redundan en votos positivos)
+    o blanco, nulo, etc. que son opciones no positivas
+    y no asociadas a partidos.
+
+    Más de una opción puede estar asociada al mismo partido,
+    (por ejemplo varias listas de un espacio en una PASO)
+    pero actualmente sus votos se computan agregados
+
+    ver :issue:`48`
+    """
 
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
@@ -335,8 +415,12 @@ class Opcion(models.Model):
 
     @property
     def color(self):
-        if self.partido:
-            return self.partido.color or '#FFFFFF'
+        """
+        Devuelve el color del partido si existe o blanco.
+        Permite destacar con un color la fila en la tabla de resultados
+        """
+        if self.partido and self.partido.color:
+            return self.partido.color
         return '#FFFFFF'
 
 
@@ -347,6 +431,14 @@ class Opcion(models.Model):
 
 
 class Eleccion(models.Model):
+    """
+    Es un modelo contenedor que representa, basicamente, un dia de elecciones.
+
+    Contiene :py:class:`categorías <Categoria>`
+
+    La finalidad que tiene es permitir la persistencia de resultados de multiples
+    elecciones (por ejemplo PASO, primarias, balotaje) para hacer análisis
+    """
     fecha = models.DateTimeField()
     nombre = models.CharField(max_length=100)
 
@@ -354,46 +446,69 @@ class Eleccion(models.Model):
         return f'{self.nombre}'
 
 
-
 class Categoria(models.Model):
     """
     Representa una categoria electiva, es decir, una "columna" del acta.
     Por ejemplo: Presidente y Vicepresidente, Intendente de La Matanza, etc)
+
+    Una categoría tiene habilitadas diferentes :py:meth:`opciones <Opcion>`
+    que incluyen las partidarias (boletas) y blanco, nulo, etc.
     """
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100)
     opciones = models.ManyToManyField(Opcion, related_name='categorias')
-    color = models.CharField(max_length=10, default='black', help_text='Color para css (red o #FF0000)')
-    back_color = models.CharField(max_length=10, default='white', help_text='Color para css (red o #FF0000)')
+    color = models.CharField(
+        max_length=10, default='black', help_text='Color para css (Ej: red o #FF0000)'
+    )
+    back_color = models.CharField(
+        max_length=10, default='white', help_text='Color para css (red o #FF0000)'
+    )
     activa = models.BooleanField(
         default=True,
-        help_text='Si no está activa, no se cargan datos para esta categoria y no se muestran resultados'
+        help_text=(
+            'Si no está activa, no se cargan datos '
+            'para esta categoria y no se muestran resultados'
+        )
     )
 
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
 
     def opciones_actuales(self):
+        """
+        Devuelve las opciones asociadas a la categoria en el orden dado
+        Determina el orden de la filas a cargar, tal como se definen
+        en el acta
+        """
         return self.opciones.all().order_by('orden')
 
     @classmethod
     def para_mesas(cls, mesas):
-        """Devuelve el conjunto de categorias que son comunes a todas las mesas dadas"""
+        """
+        Devuelve el conjunto de categorias que son comunes a todas
+        las mesas dadas
+
+        Por ejemplo, permite mostrar links válidos a las distintas
+        categorias para una sección o circuito.
+        Por ejemplo, si filtramos el circuito 1J o cualquiera se sus
+        subniveles (escuela, mesa) se debe mostrar la categoria a
+        Intentendente de La Matanza, pero no a intendente de San Isidro.
+        """
         if isinstance(mesas, QuerySet):
             mesas_count = mesas.count()
         else:
             # si es lista
             mesas_count = len(mesas)
 
-        # el primer filtro devuelve categorias activas que esten relacianadas a una o
-        # mas mesas, pero no necesariamente a todas
+        # el primer filtro devuelve categorias activas que esten
+        # relacionadas a una o más mesas, pero no necesariamente a todas
         qs = cls.objects.filter(
             activa=True,
             mesa__in=mesas
         )
 
-        # para garantizar que son categorias asociadas a todas las mesas
+        # para garantizar que son categorias asociadas a **todas** las mesas
         # anotamos la cuenta y la comparamos con la cantidad de mesas del conjunto
         qs = qs.annotate(
             num_mesas=Count('mesa')
@@ -408,6 +523,9 @@ class Categoria(models.Model):
 
     @property
     def electores(self):
+        """
+        Devuelve la cantidad de electores habilitados para esta categoría
+        """
         return Mesa.objects.filter(categoria=self).aggregate(v=Sum('electores'))['v']
 
     class Meta:
