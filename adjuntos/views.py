@@ -19,8 +19,14 @@ from .forms import AsignarMesaForm, AgregarAttachmentsForm
 
 @login_required
 def elegir_adjunto(request):
-    # se eligen actas que nunca se intentaron cargar o que se asignaron a
-    # hace más de 2 minutos
+    """
+    Elige un acta al azar del queryset :meth:`Attachment.sin asignar`,
+    estampa el tiempo de "asignación" para que se excluya durante el periodo
+    de guarda y redirige a la vista para la clasificación de la mesa elegida
+
+    Si no hay más mesas sin asignar, se muestra un mensaje estático.
+    """
+
     attachments = Attachment.sin_asignar()
     if attachments.exists():
         a = attachments.order_by('?').first()
@@ -34,6 +40,13 @@ def elegir_adjunto(request):
 
 
 class AsignarMesaAdjunto(UpdateView):
+    """
+    Esta es la vista que permite clasificar un acta,
+    asociandola a una mesa o reportando un problema
+
+    Ver :class:`adjuntos.forms.AsignarMesaForm`
+    """
+
     form_class = AsignarMesaForm
     template_name = "adjuntos/asignar-mesa.html"
     pk_url_kwarg = 'attachment_id'
@@ -54,14 +67,18 @@ class AsignarMesaAdjunto(UpdateView):
 
     def form_valid(self, form):
         form.save()
-        # self.instance.mesa = form.cleaned_data['mesa']
-        # self.attachment.save(update_fields=['mesa'])
         return super().form_valid(form)
 
 
 @staff_member_required
 @csrf_exempt
 def editar_foto(request, attachment_id):
+    """
+    esta vista se invoca desde el plugin DarkRoom con el contenido
+    de la imágen editada codificada en base64.
+
+    Se decodifica y se guarda en el campo ``foto_edited``
+    """
     attachment = get_object_or_404(Attachment, id=attachment_id)
     if request.method == 'POST' and request.POST['data']:
         data = request.POST['data']
@@ -74,6 +91,13 @@ def editar_foto(request, attachment_id):
 
 
 class AgregarAdjuntos(FormView):
+    """
+    Permite subir una o más imágenes, generando instancias de ``Attachment``
+    Si una imágen ya existe en el sistema, se exluye con un mensaje de error
+    via `messages` framework.
+
+    """
+
     form_class = AgregarAttachmentsForm
     template_name = 'adjuntos/agregar-adjuntos.html'
     success_url = 'agregada'

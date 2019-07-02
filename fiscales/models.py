@@ -21,9 +21,17 @@ TOTAL = 'Total General'
 
 
 class Fiscal(models.Model):
+    """
+    Representa al usuario "data-entry" del sistema.
+    Es una extensión del modelo ``auth.User``
+
+    """
+
     TIPO_DNI = Choices('DNI', 'CI', 'LE', 'LC')
     ESTADOS = Choices('IMPORTADO', 'AUTOCONFIRMADO', 'PRE-INSCRIPTO', 'CONFIRMADO', 'DECLINADO')
 
+    # Actualmente no se consideran los diferentes estados
+    # salvo para la creación del user asociado.
     estado = StatusField(choices_name='ESTADOS', default='PRE-INSCRIPTO')
     notas = models.TextField(blank=True, help_text='Notas internas, no se muestran')
     codigo_confirmacion = models.UUIDField(default=uuid.uuid4, editable=False)
@@ -64,6 +72,11 @@ class Fiscal(models.Model):
 
 @receiver(post_save, sender=Fiscal)
 def crear_user_para_fiscal(sender, instance=None, created=False, **kwargs):
+    """
+    Cuando se crea o actualiza una instancia de ``Fiscal`` en estado confirmado
+    que no tiene usuario asociado,  automáticamente se crea uno ``auth.User``
+    utilizando el DNI como `username`
+    """
     if not instance.user and instance.dni and instance.estado in ('AUTOCONFIRMADO', 'CONFIRMADO'):
         user = User(
             username=re.sub("[^0-9]", "", instance.dni),

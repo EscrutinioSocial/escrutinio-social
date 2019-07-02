@@ -37,6 +37,10 @@ ESTRUCTURA = {
 }
 
 class StaffOnlyMixing:
+    """
+    Mixin para que sólo usuarios tipo "staff"
+    accedan a la vista.
+    """
 
     @method_decorator(staff_member_required)
     def dispatch(self, *args, **kwargs):
@@ -44,6 +48,19 @@ class StaffOnlyMixing:
 
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):
+    """
+    Devuelve el archivo geojson con la información geoposicional
+    de las escuelas, que es consumido por la el template de la
+    vista :class:`Mapa`
+
+    cada point tiene un color que determina si hay o no alguna mesa computada
+    en esa escuela, ver  :attr:`elecciones.LugarVotacion.color`
+
+    Documentación de referencia:
+
+        https://django-geojson.readthedocs.io/
+    """
+
     model = LugarVotacion
     properties = ('id', 'color')    # 'popup_html',)
 
@@ -61,11 +78,23 @@ class LugaresVotacionGeoJSON(GeoJSONLayerView):
 
 
 class EscuelaDetailView(StaffOnlyMixing, DetailView):
+    """
+    Devuelve una tabla estática con información general de una esuela
+    que se muestra an un popup al hacer click sobre una escuela en :class:`Mapa`
+    """
     template_name = "elecciones/detalle_escuela.html"
     model = LugarVotacion
 
 
 class Mapa(StaffOnlyMixing, TemplateView):
+    """
+    Vista estática que carga el mapa que consume el geojson de escuelas
+    el template utiliza leaflet
+
+    https://django-leaflet.readthedocs.io/en/latest/
+
+    """
+
     template_name = "elecciones/mapa.html"
 
     def get_context_data(self, **kwargs):
@@ -85,6 +114,10 @@ class Mapa(StaffOnlyMixing, TemplateView):
 
 
 class ResultadosCategoria(StaffOnlyMixing, TemplateView):
+    """
+    Vista principal para el cálculo de resultados
+    """
+
     template_name = "elecciones/resultados.html"
 
     def get_template_names(self):
@@ -92,6 +125,17 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
 
     @classmethod
     def agregaciones_por_partido(cls, categoria):
+        """
+        Dada una categoria, devuelve los criterios de agregación
+        aplicados a VotoMesaReporto para obtener una "tabla de resultados"
+        que incluye agregaciones por partido politico (considerados positivos)
+        y otros no positivos
+
+        Se utilizan expresiones condicionales. Referencia
+
+        https://docs.djangoproject.com/en/2.2/ref/models/conditional-expressions/
+        """
+
         oficiales = True
         sum_por_partido = {}
         otras_opciones = {}
@@ -127,8 +171,10 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
 
     @property
     def filtros(self):
-        """a partir de los argumentos de urls, devuelve
-        listas de seccion / circuito etc. para filtrar """
+        """
+        A partir de los argumentos de urls, devuelve
+        listas de seccion / circuito etc. para filtrar
+        """
         if self.kwargs.get('tipo') == 'seccion':
             return Seccion.objects.filter(numero=self.kwargs.get('numero'))
 
@@ -147,6 +193,10 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
 
     @lru_cache(128)
     def mesas(self, categoria):
+        """
+        Considerando los filtros posibles, devuelve el conjunto de mesas
+        asociadas a la categoria dada
+        """
         lookups = Q()
         meta = {}
         if self.filtros:
@@ -166,11 +216,24 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
 
     @lru_cache(128)
     def electores(self, categoria):
+        """
+        devuelve el número de electores para :meth:`~.mesas`
+
+        TODO: convertir esto en un método de ``MesaManager``
+        """
         mesas = self.mesas(categoria)
         electores = mesas.aggregate(v=Sum('electores'))['v']
         return electores or 0
 
     def get_resultados(self, categoria):
+        """
+        realiza la contabilidad para la categoria, invocando al método
+        ``calcular``.
+
+        Si el se pasa el parámetro proyectado, se incluye un diccionario
+        extra con la ponderación, invocando a ``calcular``para obtener los
+        resultados parciales de cada subdistrito para luego realizar la ponderación
+        """
         lookups = Q()
         lookups2 = Q()
         resultados = {}
@@ -279,6 +342,8 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
     def calcular(self, categoria, mesas):
         """
         Implementa los cómputos escenciales de la categoria para las mesas dadas.
+        Se invoca una vez para el cálculo de resultados y N veces para los proyectados.
+
         Devuelve
 
             electores: cantidad de electores en las mesas válidas en la categoria

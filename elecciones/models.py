@@ -377,8 +377,11 @@ class Opcion(models.Model):
     el elector con voto para una categoría.
 
     Incluye las opciones partidarias (que redundan en votos positivos)
-    o blanco, nulo, etc. que son opciones no positivas
-    y no asociadas a partidos.
+    o blanco, nulo, etc, que son opciones no positivas
+    y no asociadas a partidos. También pueden ser opciones de "metainformación"
+    del acta, como totales de votos positivos, votos válidos, etc,
+    que si bien pueden calcularse indirectamente a partir de otros datos,
+    a veces se prefiere cargar para minimizar las decisiones en quien carga datos.
 
     Más de una opción puede estar asociada al mismo partido,
     (por ejemplo varias listas de un espacio en una PASO)
@@ -538,6 +541,13 @@ class Categoria(models.Model):
 
 
 class Carga(TimeStampedModel):
+    """
+    Es el contenedor de la carga de datos de un fiscal
+    Define todos los datos comunes (fecha, fiscal, mesa, categoria)
+    de una carga, y contiene un conjunto de objetos :class:`VotoMesaReportado`
+    para las opciones válidas en la mesa-categoria.
+    """
+
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
     fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
@@ -552,6 +562,12 @@ class Carga(TimeStampedModel):
 
 
 class VotoMesaReportado(models.Model):
+    """
+    Es un "celda" del acta a cargar, es decir, dada una opción
+    que define mesa y categoria, existe una instancia de este modelo
+    para cada opción y su correspondiente cantidad de votos.
+    """
+
     carga = models.ForeignKey(Carga, on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
     votos = models.PositiveIntegerField(null=True)
@@ -565,6 +581,10 @@ class VotoMesaReportado(models.Model):
 
 @receiver(post_save, sender=Carga)
 def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
+    """
+    Actualiza el contador de categorias ya cargadas para una mesa dada.
+    Se actualiza cada vez que se guarda una instancia de :class:`Carga`
+    """
     mesa = instance.mesa
     categorias_cargadas = Carga.objects.filter(
         mesa=mesa
@@ -576,6 +596,10 @@ def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=Fals
 
 @receiver(post_save, sender=MesaCategoria)
 def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
+    """
+    Similar a :func:`actualizar_categorias_cargadas_para_mesa`,
+    actualiza el contador de categorias ya confirmadas para una mesa dada.
+    """
     if instance.confirmada:
         mesa = instance.mesa
         confirmadas = MesaCategoria.objects.filter(mesa=mesa, confirmada=True).count()
@@ -586,7 +610,12 @@ def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=F
 
 @receiver(post_save, sender=Mesa)
 def actualizar_electores_seccion_circuito(sender, instance=None, created=False, **kwargs):
+    """
+    Actualiza las denormalizaciones de cantidad de electores a nivel circuito y seccion
+    cada vez que se crea o actualiza una instancia de mesa.
 
+    En general, esto sólo debería ocurrir en la configuración inicial del sistema.
+    """
     if (instance.lugar_votacion is not None
         and instance.lugar_votacion.circuito is not None):
         seccion = instance.lugar_votacion.circuito.seccion

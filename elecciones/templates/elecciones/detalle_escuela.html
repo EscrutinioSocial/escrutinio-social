@@ -6,16 +6,6 @@
     <tr><th>ciudad</th><td>{{ object.ciudad }}</td></tr>
     <tr><th>Electores</th><td>{{ object.electores }}</td></tr>
 
-
-    <tr><th>Fiscal General</th>
-
-    <td>{% if object.asignacion_actual %}
-        <a href="{% url 'admin:fiscales_fiscal_changelist' %}?id={{ object.asignacion_actual.fiscal.id }}">{{ object.asignacion_actual.fiscal }}</a>
-        <small>(<a href="{% url 'admin:fiscales_asignacionfiscalgeneral_change' object.asignacion_actual.id %}">cambiar</a>)</small>
-    {% else %}
-        <a href="{% url 'admin:fiscales_asignacionfiscalgeneral_add' %}?lugar_votacion={{ object.id }}">Asignar</a>
-    {% endif %}
-    </td></tr>
 </table>
 
 <a href="{% url 'admin:elecciones_lugarvotacion_change' object.id %}">Editar escuela</a>

@@ -46,7 +46,6 @@ from .forms import (
 )
 from contacto.views import ConContactosMixin
 from adjuntos.models import Attachment
-from adjuntos.forms import SubirAttachmentModelForm
 from django.conf import settings
 
 

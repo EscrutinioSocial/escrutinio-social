@@ -12,6 +12,18 @@ from versatileimagefield.fields import VersatileImageField
 
 
 def hash_file(file, block_size=65536):
+    """
+    Dado un objeto file-like (en modo binario),
+    devuelve un hash digest único de 128 digitos hexadecimales
+
+    Utiliza el algoritmo de hashing
+    `blake2 <https://en.wikipedia.org/wiki/BLAKE_(hash_function)>`_
+    ::
+
+        >>> hash_file(open('messi.jpg', 'rb'))
+        '90554e1d519e0fc665fab042d7499a1bc9c191f2a13b0b2c369753dcb23b181866cb116007fc37a445421270e04912a46dbfb6a325cf27a2603eed45fc1d41b1'
+
+    """
     hasher = hashlib.blake2b()
     for buf in iter(partial(file.read, block_size), b''):
         hasher.update(buf)
@@ -19,6 +31,12 @@ def hash_file(file, block_size=65536):
 
 
 class Email(models.Model):
+    """
+    Almacena la información de emails que entran al sistema y contienen attachments
+    La persistencia de estos objetos no es estrictamente necesaria.
+
+    Ver :py:mod:`elecciones.management.commands.importar_actas`
+    """
     date = models.CharField(max_length=100)
     from_address = models.CharField(max_length=200)
     body = models.TextField()
@@ -47,6 +65,16 @@ class Email(models.Model):
 
 
 class Attachment(models.Model):
+    """
+    Guarda las fotos de ACTAS y otros documentos fuente desde los cuales se cargan los datos.
+    Están asociados a una imágen que a su vez puede tener una versión editada.
+
+    Los attachments están asociados a mesas una vez que se clasifican.
+
+    No pueden existir dos instancias de este modelo con la misma foto, dado que
+    el atributo digest es único.
+    """
+
     PROBLEMAS = Choices(
         'no es una foto válida',
         'no se entiende',
@@ -82,6 +110,11 @@ class Attachment(models.Model):
     problema = models.CharField(max_length=100, null=True, blank=True, choices=PROBLEMAS)
 
     def save(self, *args, **kwargs):
+        """
+        Actualiza el hash de la imágen original asociada antes de guardar.
+        Notar que esto puede puede producir una excepción si la imágen (el digest)
+        ya es conocido en el sistema
+        """
         if self.foto:
             self.foto.file.open()
             self.foto_digest = hash_file(self.foto.file)
@@ -89,6 +122,11 @@ class Attachment(models.Model):
 
     @classmethod
     def sin_asignar(cls, wait=2):
+        """
+        Devuelve un conjunto de Attachments que no tienen problemas
+        ni mesas asociados y no ha sido asignado para clasificar en los últimos
+        ``wait`` minutos
+        """
         desde = timezone.now() - timedelta(minutes=wait)
         return cls.objects.filter(
             Q(problema__isnull=True, mesa__isnull=True),
@@ -99,11 +137,11 @@ class Attachment(models.Model):
         return f'{self.foto} ({self.mimetype})'
 
 
-
 @receiver(post_save, sender=Attachment)
 def asignar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     """
-    cuando se clasifica el attach, se le asigna el orden siguiente del circuito
+    Cuando se clasifica el attachment, a la mesa asociada se le asigna el orden de carga
+    que corresponda actualmente al circuito
     """
     if instance.mesa and not instance.mesa.carga_set.exists():
         mesa = instance.mesa
