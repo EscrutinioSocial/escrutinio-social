@@ -563,11 +563,10 @@ class Carga(TimeStampedModel):
 
 class VotoMesaReportado(models.Model):
     """
-    Es un "celda" del acta a cargar, es decir, dada una opción
+    Representa una "celda" del acta a cargar, es decir, dada una carga
     que define mesa y categoria, existe una instancia de este modelo
     para cada opción y su correspondiente cantidad de votos.
     """
-
     carga = models.ForeignKey(Carga, on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
     votos = models.PositiveIntegerField(null=True)

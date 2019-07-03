@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.db.models import Count
 from leaflet.admin import LeafletGeoAdmin
 from .models import (Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion,
-                        Categoria, VotoMesaReportado, MesaCategoria)
+                        Categoria, VotoMesaReportado, MesaCategoria, Eleccion)
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
 
@@ -190,7 +190,7 @@ class CategoriaAdmin(admin.ModelAdmin):
     list_filter = ['activa']
 
 
-
+admin.site.register(Eleccion)
 admin.site.register(Seccion, SeccionAdmin)
 admin.site.register(Circuito, CircuitoAdmin)
 admin.site.register(Partido, PartidoAdmin)

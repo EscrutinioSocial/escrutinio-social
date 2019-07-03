@@ -384,7 +384,6 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         )
         result_opc = {k: v for k, v in result_opc.items() if v is not None}
 
-
         # calculamos el total como la suma de todos los positivos y los
         # validos no positivos.
         positivos = sum(result.values())

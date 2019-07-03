@@ -1,3 +1,8 @@
+"""
+define las vistas relacionadas a tareas que realizan los fiscales
+como elegir acta a clasificar / a cargar / validar
+"""
+
 from io import StringIO
 import sys
 from django.http import Http404, HttpResponseForbidden, HttpResponse
@@ -201,14 +206,6 @@ class QuieroSerFiscal(SessionWizardView):
         })
 
 
-def email(request):
-    return render(request, 'fiscales/email.html', {'fiscal': request.user.fiscal,
-                                                    'email': settings.DEFAULT_FROM_EMAIL,
-                                                    'cell_call': settings.DEFAULT_CEL_CALL,
-                                                    'cell_local': settings.DEFAULT_CEL_LOCAL,
-                                                    'site_url': settings.FULL_SITE_URL})
-
-
 def confirmar_email(request, uuid):
     fiscal = get_object_or_None(Fiscal, codigo_confirmacion=uuid)
     if not fiscal:
@@ -252,7 +249,11 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
 
 @login_required
 def elegir_acta_a_cargar(request):
-    # se eligen mesas que nunca se intentaron cargar o que se asignaron a
+    """
+    Para el conjunto de mesas con carga pendiente (es decir, que tienen categorias sin cargar)
+    se elige una por orden de prioridad y tamaño del circuito, se actualiza
+    la marca temporal de "asignación" y se redirige a la categoria a cargar para esa mesa.
+    """
     mesas = Mesa.con_carga_pendiente().order_by(
         'orden_de_carga', '-lugar_votacion__circuito__electores'
     )
@@ -262,8 +263,6 @@ def elegir_acta_a_cargar(request):
         mesa.taken = timezone.now()
         mesa.save(update_fields=['taken'])
 
-        # que pasa si ya no hay elecciones.sin carga?
-        # estamos teniendo un error
         siguiente_categoria = mesa.siguiente_categoria_sin_carga()
         if siguiente_categoria is None:
             return render(request, 'fiscales/sin-actas.html')
@@ -281,6 +280,10 @@ def elegir_acta_a_cargar(request):
 
 @login_required
 def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
+    """
+    Es la vista que muestra y procesa el formset de carga de datos para una categoria-mesa
+    """
+
     fiscal = get_object_or_404(Fiscal, user=request.user)
     categoria = get_object_or_404(Categoria, id=categoria_id)
     mesa = get_object_or_404(Mesa, categoria=categoria, numero=mesa_numero)
@@ -292,7 +295,7 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
     VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=categoria.opciones.count())
 
     def fix_opciones(formset):
-        # hack para dejar sólo la opcion correspondiente a cada fila en los choicesfields
+        # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
         # se podria hacer "disabled" pero ese caso quita el valor del
         # cleaned_data y luego lo exige por ser requerido.
         for i, (opcion, form) in enumerate(zip(categoria.opciones_actuales(), formset), 1):
@@ -325,6 +328,8 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
 
         try:
             with transaction.atomic():
+                # se guardan los datos. El contenedor `carga`
+                # y los votos del formset asociados.
                 if carga:
                     carga.fiscal = fiscal
                     carga.save()
@@ -332,12 +337,11 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                     carga = Carga.objects.create(
                         mesa=mesa, fiscal=fiscal, categoria=categoria
                     )
-
                 for form in formset:
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
-            messages.success(request, f'Guardada categoria {categoria} para {mesa}')
+            messages.success(request, f'Guardada categoría {categoria} para {mesa}')
         except IntegrityError as e:
             # hubo otra carga previa.
             capture_exception(e)
@@ -347,7 +351,6 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
         # hay que cargar otra categoria (categoria) de la misma mesa?
         # si es asi, se redirige a esa carga
         siguiente = mesa.siguiente_categoria_sin_carga()
-
         if siguiente:
             # vuelvo a marcar un token
             mesa.taken = timezone.now()
@@ -358,19 +361,23 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                 categoria_id=siguiente.id,
                 mesa_numero=mesa.numero
             )
-
         return redirect('elegir-acta-a-cargar')
 
-
     return render(
-        request, "fiscales/carga.html",
-        {'formset': formset, 'categoria': categoria, 'object': mesa, 'is_valid': is_valid or request.method == 'GET'}
+        request, "fiscales/carga.html", {
+            'formset': formset,
+            'categoria': categoria,
+            'object': mesa,
+            'is_valid': is_valid or request.method == 'GET'
+        }
     )
 
 
 @login_required
 def chequear_resultado(request):
-    """vista que elige una mesa con cargas a confirmar y redirige a la url correspondiente"""
+    """
+    Elige una mesa con cargas a confirmar y redirige a la url correspondiente
+    """
     mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
     if not mesa:
         return render(request, 'fiscales/sin-actas-cargadas.html')
@@ -382,12 +389,18 @@ def chequear_resultado(request):
     if not categoria:
         return render(request, 'fiscales/sin-actas-cargadas.html')
 
-    return redirect('chequear-resultado-mesa', categoria_id=categoria.id, mesa_numero=mesa.numero)
+    return redirect(
+        'chequear-resultado-mesa',
+        categoria_id=categoria.id,
+        mesa_numero=mesa.numero
+    )
 
 
 @login_required
 def chequear_resultado_mesa(request, categoria_id, mesa_numero, carga_id=None):
-    """muestra la carga actual de la categoria para la mesa"""
+    """
+    Muestra la carga actual de la categoria para la mesa
+    """
     me = get_object_or_404(
         MesaCategoria,
         mesa__numero=mesa_numero,
@@ -400,8 +413,9 @@ def chequear_resultado_mesa(request, categoria_id, mesa_numero, carga_id=None):
     if carga_id:
         carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
     else:
-        # redirijo a la primera carga
+        # FIXME asumimos que por ahora hay una sola carga.
         carga = get_object_or_404(Carga, mesa=mesa, categoria=categoria)
+
         # return redirect(
         #     'chequear-resultado-mesa',
         #     categoria_id=categoria.id,
@@ -439,10 +453,14 @@ class CambiarPassword(PasswordChangeView):
 
 @login_required
 def confirmar_fiscal(request, fiscal_id):
+    """
+    cambia el estado del fiscal con el id dado a CONFIRMADO y redirige a
+    a la página previa con un mensaje
+    """
     fiscal = get_object_or_404(Fiscal, id=fiscal_id, estado='AUTOCONFIRMADO')
     fiscal.estado = 'CONFIRMADO'
-    fiscal.save()
+    fiscal.save(update_fields=['estado'])
     url = reverse('admin:fiscales_fiscal_change', args=(fiscal_id,))
-    msg = f'<a href="{url}">{fiscal}</a> ha sido confirmado en la escuela {fiscal.escuela_donde_vota}'
+    msg = f'<a href="{url}">{fiscal}</a> ha sido confirmado'
     messages.info(request, mark_safe(msg))
     return redirect(request.META.get('HTTP_REFERER'))

@@ -4,7 +4,6 @@ from . import views
 
 
 urlpatterns = [
-    # url('^email$', views.email),
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
     url('^acta/$', views.elegir_acta_a_cargar, name='elegir-acta-a-cargar'),
     url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
