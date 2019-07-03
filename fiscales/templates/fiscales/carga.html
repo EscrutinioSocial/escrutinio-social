@@ -46,7 +46,7 @@ $(document).ready(function(){
 
 {% block card-content %}
     <div class="card-title"> Mesa {{ object.numero }}
-        <b style='background-color: {{ categoria.back_color }}; color: {{ categoria.color }}'>{{ eleccion }}</b>
+        <b style='background-color: {{ categoria.back_color }}; color: {{ categoria.color }}'>{{ categoria }}</b>
 
     <a class="waves-effect waves-light btn-flat right-align" href="{% url "reportar-problema" object.numero %}" >¿Problemas?</a></div>
 

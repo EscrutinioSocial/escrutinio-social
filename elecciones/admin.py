@@ -9,8 +9,9 @@ from django_admin_row_actions import AdminRowActionsMixin
 
 
 class HasLatLongListFilter(admin.SimpleListFilter):
-    # Human-readable title which will be displayed in the
-    # right admin sidebar just above the filter options.
+    """
+    Filtro para escuelas
+    """
     title = 'Tiene coordenadas'
 
     # Parameter for the filter that will be used in the URL query.
@@ -31,6 +32,9 @@ class HasLatLongListFilter(admin.SimpleListFilter):
 
 
 class TieneResultados(admin.SimpleListFilter):
+    """
+    filtro para mesas
+    """
     title = 'Tiene resultados'
     parameter_name = 'tiene_resultados'
 
@@ -82,7 +86,10 @@ class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
     def sección(o):
         return o.circuito.seccion.numero
 
-    list_display = ('nombre', 'direccion', 'ciudad', 'circuito', sección, 'mesas_desde_hasta', 'electores', 'estado_geolocalizacion')
+    list_display = (
+        'nombre', 'direccion', 'ciudad', 'circuito', sección,
+        'mesas_desde_hasta', 'electores', 'estado_geolocalizacion'
+    )
     list_display_links = ('nombre',)
     list_filter = (HasLatLongListFilter, 'circuito__seccion', 'circuito')
     search_fields = (
