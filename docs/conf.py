@@ -16,9 +16,11 @@ import sys
 try:
     import django
 except ImportError:
-    os.system('pip install -r ../requirements.txt')
+    # en readthedocs el enviroment se inicializa via conda
+    # debido a la dependecia GDAL (via django-leaflet)
+    # por lo tanto despues "inyectamos" las dependencias cuando antes de buildear
+    os.system('pip install -r ../requirements/docs.txt')
     import django
-
 
 sys.path.insert(0, os.path.abspath('..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'escrutinio_social.settings'
