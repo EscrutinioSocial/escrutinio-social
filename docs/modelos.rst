@@ -1,6 +1,9 @@
 Modelos
 =======
 
+.. image:: _static/models.png
+
+
 .. automodule:: elecciones.models
     :members:
 
