@@ -45,3 +45,7 @@ setup-dev-data: migrate
 
 dump-dev-data:
 	python manage.py dumpdata auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json
+
+update-models-diagram:
+	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
+
