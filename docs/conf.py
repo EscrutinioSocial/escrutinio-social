@@ -12,7 +12,14 @@
 #
 import os
 import sys
-import django
+
+try:
+    import django
+except ImportError:
+    os.system('pip install -r ../requirements.txt')
+    import django
+
+
 sys.path.insert(0, os.path.abspath('..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'escrutinio_social.settings'
 django.setup()
