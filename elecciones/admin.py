@@ -182,7 +182,7 @@ class VotoMesaReportadoAdmin(admin.ModelAdmin):
 
 
 class OpcionAdmin(admin.ModelAdmin):
-    list_display = ['nombre_corto', 'partido', 'nombre']
+    list_display = ['id', 'nombre_corto', 'partido', 'nombre', 'orden']
 
 
 class CategoriaAdmin(admin.ModelAdmin):
