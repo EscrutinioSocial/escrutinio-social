@@ -4,7 +4,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-06-12T19:12:06.663Z",
+    "last_login": "2019-07-04T19:44:42.061Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -105,10 +105,10 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "calidad": "",
     "electores": null,
     "geom": null,
     "estado_geolocalizacion": 0,
+    "calidad": "",
     "latitud": null,
     "longitud": null
   }
@@ -122,10 +122,10 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "calidad": "",
     "electores": null,
     "geom": null,
     "estado_geolocalizacion": 0,
+    "calidad": "",
     "latitud": null,
     "longitud": null
   }
@@ -139,10 +139,10 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "calidad": "",
     "electores": null,
     "geom": null,
     "estado_geolocalizacion": 0,
+    "calidad": "",
     "latitud": null,
     "longitud": null
   }
@@ -156,10 +156,10 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "calidad": "",
     "electores": null,
     "geom": null,
     "estado_geolocalizacion": 0,
+    "calidad": "",
     "latitud": null,
     "longitud": null
   }
@@ -173,10 +173,10 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "calidad": "",
     "electores": null,
     "geom": null,
     "estado_geolocalizacion": 0,
+    "calidad": "",
     "latitud": null,
     "longitud": null
   }
@@ -190,10 +190,10 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "calidad": "",
     "electores": null,
     "geom": null,
     "estado_geolocalizacion": 0,
+    "calidad": "",
     "latitud": null,
     "longitud": null
   }
@@ -207,10 +207,10 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "calidad": "",
     "electores": null,
     "geom": null,
     "estado_geolocalizacion": 0,
+    "calidad": "",
     "latitud": null,
     "longitud": null
   }
@@ -224,83 +224,83 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "calidad": "",
     "electores": null,
     "geom": null,
     "estado_geolocalizacion": 0,
+    "calidad": "",
     "latitud": null,
     "longitud": null
   }
 },
 {
-  "model": "elecciones.mesaeleccion",
+  "model": "elecciones.mesacategoria",
   "pk": 1,
   "fields": {
     "mesa": 1,
-    "eleccion": 1,
+    "categoria": 1,
     "confirmada": false
   }
 },
 {
-  "model": "elecciones.mesaeleccion",
+  "model": "elecciones.mesacategoria",
   "pk": 2,
   "fields": {
     "mesa": 2,
-    "eleccion": 1,
+    "categoria": 1,
     "confirmada": false
   }
 },
 {
-  "model": "elecciones.mesaeleccion",
+  "model": "elecciones.mesacategoria",
   "pk": 3,
   "fields": {
     "mesa": 3,
-    "eleccion": 1,
+    "categoria": 1,
     "confirmada": false
   }
 },
 {
-  "model": "elecciones.mesaeleccion",
+  "model": "elecciones.mesacategoria",
   "pk": 4,
   "fields": {
     "mesa": 4,
-    "eleccion": 1,
+    "categoria": 1,
     "confirmada": false
   }
 },
 {
-  "model": "elecciones.mesaeleccion",
+  "model": "elecciones.mesacategoria",
   "pk": 5,
   "fields": {
     "mesa": 5,
-    "eleccion": 1,
+    "categoria": 1,
     "confirmada": false
   }
 },
 {
-  "model": "elecciones.mesaeleccion",
+  "model": "elecciones.mesacategoria",
   "pk": 6,
   "fields": {
     "mesa": 6,
-    "eleccion": 1,
+    "categoria": 1,
     "confirmada": false
   }
 },
 {
-  "model": "elecciones.mesaeleccion",
+  "model": "elecciones.mesacategoria",
   "pk": 7,
   "fields": {
     "mesa": 7,
-    "eleccion": 1,
+    "categoria": 1,
     "confirmada": false
   }
 },
 {
-  "model": "elecciones.mesaeleccion",
+  "model": "elecciones.mesacategoria",
   "pk": 8,
   "fields": {
     "mesa": 8,
-    "eleccion": 1,
+    "categoria": 1,
     "confirmada": false
   }
 },
@@ -316,8 +316,8 @@
     "lugar_votacion": 1,
     "url": "",
     "electores": 100,
-    "taken": null,
-    "orden_de_carga": 0,
+    "taken": "2019-07-04T19:44:42.155Z",
+    "orden_de_carga": 1,
     "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
@@ -336,7 +336,7 @@
     "url": "",
     "electores": 100,
     "taken": null,
-    "orden_de_carga": 0,
+    "orden_de_carga": 2,
     "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
@@ -496,325 +496,13 @@
   }
 },
 {
-  "model": "elecciones.partido",
-  "pk": 4,
-  "fields": {
-    "orden": 4,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 4",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 5,
-  "fields": {
-    "orden": 5,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 5",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 6,
-  "fields": {
-    "orden": 6,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 6",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 7,
-  "fields": {
-    "orden": 7,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 7",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 8,
-  "fields": {
-    "orden": 8,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 8",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 9,
-  "fields": {
-    "orden": 9,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 9",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 10,
-  "fields": {
-    "orden": 10,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 10",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 11,
-  "fields": {
-    "orden": 11,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 11",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 12,
-  "fields": {
-    "orden": 12,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 12",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 13,
-  "fields": {
-    "orden": 13,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 13",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 14,
-  "fields": {
-    "orden": 14,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 14",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 15,
-  "fields": {
-    "orden": 15,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 15",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 16,
-  "fields": {
-    "orden": 16,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 16",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 17,
-  "fields": {
-    "orden": 17,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 17",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 18,
-  "fields": {
-    "orden": 18,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 18",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 19,
-  "fields": {
-    "orden": 19,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 19",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 20,
-  "fields": {
-    "orden": 20,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 20",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 21,
-  "fields": {
-    "orden": 21,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 21",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 22,
-  "fields": {
-    "orden": 22,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 22",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 23,
-  "fields": {
-    "orden": 23,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 23",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 24,
-  "fields": {
-    "orden": 24,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 24",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 25,
-  "fields": {
-    "orden": 1,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 1",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 26,
-  "fields": {
-    "orden": 2,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 2",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
-  "model": "elecciones.partido",
-  "pk": 27,
-  "fields": {
-    "orden": 3,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 3",
-    "nombre_corto": "",
-    "color": "",
-    "referencia": ""
-  }
-},
-{
   "model": "elecciones.opcion",
   "pk": 1,
   "fields": {
     "nombre": "blanco",
-    "nombre_corto": "",
+    "nombre_corto": "blanco",
     "partido": null,
-    "orden": 1,
+    "orden": 10,
     "obligatorio": false,
     "es_contable": false,
     "es_metadata": false,
@@ -864,20 +552,20 @@
   }
 },
 {
-  "model": "elecciones.eleccion",
+  "model": "elecciones.categoria",
   "pk": 1,
   "fields": {
+    "eleccion": null,
     "slug": "elecciones-1",
     "nombre": "elecciones-1",
-    "fecha": null,
     "color": "black",
     "back_color": "white",
     "activa": true,
     "opciones": [
-      1,
       2,
       3,
-      4
+      4,
+      1
     ]
   }
 }
