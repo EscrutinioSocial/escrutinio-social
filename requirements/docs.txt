@@ -1,2 +1,4 @@
 -r base.txt
 sphinxcontrib-django==0.4
+pyparsing==2.4.0
+pydot==1.4.1

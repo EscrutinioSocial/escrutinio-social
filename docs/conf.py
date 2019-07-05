@@ -26,6 +26,10 @@ sys.path.insert(0, os.path.abspath('..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'escrutinio_social.settings'
 django.setup()
 
+# update models diagram
+os.chdir('..')
+os.system('make update-models-diagram')
+os.chdir('docs')
 
 # -- Project information -----------------------------------------------------
 
