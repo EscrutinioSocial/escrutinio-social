@@ -283,7 +283,6 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoria-mesa
     """
-
     fiscal = get_object_or_404(Fiscal, user=request.user)
     categoria = get_object_or_404(Categoria, id=categoria_id)
     mesa = get_object_or_404(Mesa, categoria=categoria, numero=mesa_numero)
@@ -291,6 +290,7 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
         carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
     else:
         carga = None
+
 
     VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=categoria.opciones.count())
 
@@ -313,7 +313,7 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                 form.fields['votos'].widget.attrs['autofocus'] = True
     data = request.POST if request.method == 'POST' else None
 
-    qs = VotoMesaReportado.objects.filter(carga=carga) if carga else None
+    qs = VotoMesaReportado.objects.filter(carga=carga) if carga else VotoMesaReportado.objects.none()
     initial = [{'opcion': o} for o in categoria.opciones_actuales()]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
     fix_opciones(formset)
@@ -335,13 +335,17 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                     carga.save()
                 else:
                     carga = Carga.objects.create(
-                        mesa=mesa, fiscal=fiscal, categoria=categoria
+                        mesa=mesa,
+                        fiscal=fiscal,
+                        categoria=categoria
                     )
                 for form in formset:
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
-            messages.success(request, f'Guardada categoría {categoria} para {mesa}')
+            messages.success(
+                request,
+                f'Guardada categoría {categoria} para {mesa}')
         except IntegrityError as e:
             # hubo otra carga previa.
             capture_exception(e)

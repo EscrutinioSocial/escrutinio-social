@@ -21,7 +21,6 @@ django-localflavor==2.2
 IPython==7.5.0
 jsonfield==2.0.2
 nameparser==0.5.3
-numpy==1.16.3
 phonenumbers==8.6.0
 Pillow==4.2.1
 pyexcel-xlsx==0.4.1

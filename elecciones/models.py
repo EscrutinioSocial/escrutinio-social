@@ -575,7 +575,7 @@ class VotoMesaReportado(models.Model):
         unique_together = ('carga', 'opcion')
 
     def __str__(self):
-        return f"{self.mesa} - {self.opcion}: {self.votos}"
+        return f"{self.carga} - {self.opcion}: {self.votos}"
 
 
 @receiver(post_save, sender=Carga)

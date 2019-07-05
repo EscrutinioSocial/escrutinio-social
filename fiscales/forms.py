@@ -196,13 +196,15 @@ class VotoMesaModelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['carga'].widget = forms.HiddenInput()
+        self.fields['carga'].required = False
         self.fields['opcion'].label = ''
         self.fields['votos'].label = ''
         self.fields['votos'].required = False
 
     class Meta:
         model = VotoMesaReportado
-        fields = ('opcion', 'votos')
+        fields = ('carga', 'opcion', 'votos')
 
 
 class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
@@ -237,9 +239,13 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
             form.add_error('votos', ValidationError(errors))
 
 
-votomeesareportadoformset_factory = partial(modelformset_factory,
-    VotoMesaReportado, form=VotoMesaModelForm,
-    formset=BaseVotoMesaReportadoFormSet, extra=0, can_delete=False
+votomeesareportadoformset_factory = partial(
+    modelformset_factory,
+    VotoMesaReportado,
+    form=VotoMesaModelForm,
+    formset=BaseVotoMesaReportadoFormSet,
+    extra=0,
+    can_delete=False
 )
 
 

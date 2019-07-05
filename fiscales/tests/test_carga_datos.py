@@ -106,25 +106,46 @@ def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
 
 def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     o = OpcionFactory(es_contable=True)
-    e1 = CategoriaFactory(opciones=[o])
+    o2 = OpcionFactory(es_contable=False)
+    e1 = CategoriaFactory(opciones=[o, o2])
     e2 = CategoriaFactory(opciones=[o])
     m1 = AttachmentFactory(mesa__categoria=[e1, e2]).mesa
 
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
+
+    # formset para categoria e1 arranca en blanco
+    url = response.url
+    response = fiscal_client.get(response.url)
+    formset = response.context['formset']
+    assert len(formset) == 2
+    assert formset[0].initial == {'opcion': o}
+    assert formset[1].initial == {'opcion': o2}
+
     # response = fiscal_client.get(url)
-    response = fiscal_client.post(response.url, {
+    response = fiscal_client.post(url, {
         'form-0-opcion': str(o.id),
-        'form-0-votos': str(m1.electores),
-        'form-TOTAL_FORMS': '1',
+        'form-0-votos': str(m1.electores // 2),
+        'form-1-opcion': str(o2.id),
+        'form-1-votos': str(m1.electores // 2),
+        'form-TOTAL_FORMS': '2',
         'form-INITIAL_FORMS': '0',
-        'form-MIN_NUM_FORMS': '1',
+        'form-MIN_NUM_FORMS': '2',
         'form-MAX_NUM_FORMS': '1000',
     })
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e2.id, m1.numero])
 
-    response = fiscal_client.post(response.url, {
+    # el form de la nueva categoria e2 está en blanco
+    url = response.url
+    response = fiscal_client.get(response.url)
+    formset = response.context['formset']
+    assert len(formset) == 1
+    assert formset[0].initial == {'opcion': o}
+
+    # si completamos y es valido, no quedan
+    # categorias por cargar y pide otra acta
+    response = fiscal_client.post(url, {
         'form-0-opcion': str(o.id),
         'form-0-votos': str(m1.electores),
         'form-TOTAL_FORMS': '1',
@@ -134,6 +155,8 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     })
     assert response.status_code == 302
     assert response.url == reverse('elegir-acta-a-cargar')
+
+
 
 
 def test_chequear_resultado(db, fiscal_client):

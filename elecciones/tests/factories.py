@@ -1,13 +1,13 @@
 import factory
-import numpy as np
+import random
 from PIL import Image
 from io import BytesIO
 from django.contrib.auth.models import User
 from factory.django import DjangoModelFactory
 from faker import Faker
+
+
 fake = Faker('es_ES')
-
-
 
 
 class UserFactory(DjangoModelFactory):
@@ -138,9 +138,13 @@ class VotoMesaReportadoFactory(DjangoModelFactory):
 
 
 def get_random_image():
-    data = np.random.rand(30,30,3) * 255
-    image = Image.fromarray(data.astype('uint8')).convert('RGBA')
-    return BytesIO(image.tobytes())
+    """
+    devuelve una imagen jpg de 30x30 con un color aleatorio
+    """
+    image = Image.new('RGB', (30, 30), f'#{random.randint(0, 0xFFFFFF):06x}')
+    output = BytesIO()
+    image.save(output, format="JPEG")
+    return output
 
 
 class AttachmentFactory(DjangoModelFactory):
@@ -148,7 +152,6 @@ class AttachmentFactory(DjangoModelFactory):
     foto = factory.django.ImageField(from_func=get_random_image)
     class Meta:
         model = 'adjuntos.Attachment'
-
 
 
 class ProblemaFactory(DjangoModelFactory):
