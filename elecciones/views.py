@@ -293,7 +293,6 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
                     proyeccion_incompleta.append(ag)
                 else:
                     electores_pond += datos_ponderacion[ag]["electores"]
-
         expanded_result = {}
         for k, v in c.votos.items():
             porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
@@ -319,11 +318,13 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
                 key=lambda x: float(x[1]["proyeccion" if proyectado else "votos"]), reverse=True
             )
         )
-
         tabla_no_positivos = {k: v for k, v in c.votos.items() if not isinstance(k, Partido)}
-        tabla_no_positivos["Positivos"] = {
-            "votos": c.positivos,
-            "porcentajeTotal": f'{c.positivos*100/c.total:.2f}' if c.total else '-'
+        tabla_no_positivos["Positivos"] = c.positivos
+        tabla_no_positivos = {
+            k: {
+                "votos": v,
+                "porcentajeTotal": f'{v*100/c.total:.2f}' if c.total else '-'
+            } for k, v in  tabla_no_positivos.items()
         }
         result_piechart = None
         if settings.SHOW_PLOT:
@@ -390,7 +391,6 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         )
 
         result = {Partido.objects.get(id=k): v for k, v in result.items() if v is not None}
-
         # no positivos
         result_opc = reportados.aggregate(
            **otras_opciones
