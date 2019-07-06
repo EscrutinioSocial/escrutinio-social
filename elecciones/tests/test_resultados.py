@@ -111,6 +111,15 @@ def test_electores_filtro_seccion(url_resultados, fiscal_client):
     assert b'<td title="Electores">120 </td>' in response.content
 
 
+def test_electores_filtro_distrito(url_resultados, fiscal_client):
+    mesa1 = MesaFactory(electores=120)
+    MesaFactory(electores=90, lugar_votacion__circuito__seccion__distrito__nombre='otro')
+    response = fiscal_client.get(url_resultados, {'seccion': mesa1.lugar_votacion.circuito.seccion.id})
+    resultados = response.context['resultados']
+    assert resultados['electores'] == 120
+    assert b'<td title="Electores">120 </td>' in response.content
+
+
 def test_electores_sin_filtro(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados)
     resultados = response.context['resultados']
