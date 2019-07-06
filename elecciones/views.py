@@ -185,11 +185,20 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         A partir de los argumentos de urls, devuelve
         listas de seccion / circuito etc. para filtrar
         """
+        if self.kwargs.get('tipo') == 'distrito':
+            return Distrito.objects.filter(numero=self.kwargs.get('numero'))
+
+        if self.kwargs.get('tipo') == 'seccion':
+            return Seccion.objects.filter(numero=self.kwargs.get('numero'))
+
         if self.kwargs.get('tipo') == 'seccion':
             return Seccion.objects.filter(numero=self.kwargs.get('numero'))
 
         if self.kwargs.get('tipo') == 'circuito':
             return Circuito.objects.filter(numero=self.kwargs.get('numero'))
+
+        if 'distrito' in self.request.GET:
+            return Distrito.objects.filter(id__in=self.request.GET.getlist('distrito'))
 
         elif 'seccion' in self.request.GET:
             return Seccion.objects.filter(id__in=self.request.GET.getlist('seccion'))
@@ -444,5 +453,5 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         mesas = self.mesas(categoria)
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
 
-        context['secciones'] = Seccion.objects.all().order_by('numero')
+        context['distritos'] = Distrito.objects.all().order_by('numero')
         return context
