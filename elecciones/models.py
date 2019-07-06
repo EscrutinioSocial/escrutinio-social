@@ -25,18 +25,41 @@ from adjuntos.models import Attachment
 from problemas.models import Problema
 
 
+class Distrito(models.Model):
+    """
+    Define el distrito o circunscripción electoral. Es la subdivisión más
+    grande en una carta marina. En una elección provincial el distrito es único.
+
+    **Distrito** -> Sección -> Circuito -> Lugar de votación -> Mesa
+    """
+    numero = models.PositiveIntegerField(null=True)
+    nombre = models.CharField(max_length=100)
+    electores = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Distrito electoral'
+        verbose_name_plural = 'Distrito electorales'
+
+    def __str__(self):
+        return f"{self.numero} - {self.nombre}"
+
+
 class Seccion(models.Model):
     """
     Define la sección electoral:
 
-    **Sección** -> Circuito -> Lugar de votación -> Mesa
+    Distrito -> **Sección** -> Circuito -> Lugar de votación -> Mesa
     """
+    distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE)
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     proyeccion_ponderada = models.BooleanField(
         default=False,
-        help_text='Si está marcado, el cálculo de proyeccion se agrupará por circuitos para esta sección'
+        help_text=(
+            'Si está marcado, el cálculo de proyeccion se agrupará '
+            'por circuitos para esta sección'
+        )
     )
 
     class Meta:
@@ -60,7 +83,7 @@ class Circuito(models.Model):
     """
     Define el circuito, perteneciente a una sección
 
-    Sección -> **Circuito** -> Lugar de votación -> Mesa
+    Distrito -> Sección -> **Circuito** -> Lugar de votación -> Mesa
     """
     seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
     localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
@@ -109,7 +132,7 @@ class LugarVotacion(models.Model):
     y contiene mesas.
     Tiene un representación geoespacial (point).
 
-    Sección -> Circuito -> **Lugar de votación** -> Mesa
+    Distrito -> Sección -> Circuito -> **Lugar de votación** -> Mesa
     """
 
     circuito = models.ForeignKey(Circuito, related_name='escuelas', on_delete=models.CASCADE)

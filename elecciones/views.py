@@ -24,9 +24,19 @@ from django.http import HttpResponse
 from django.views import View
 from django.contrib.auth.models import User
 from fiscales.models import Fiscal
-from .models import *
-from .models import LugarVotacion, Circuito
-
+from django.db.models import Sum, IntegerField, Case, When
+from .models import (
+    Distrito,
+    Seccion,
+    Circuito,
+    Categoria,
+    Partido,
+    Opcion,
+    VotoMesaReportado,
+    Carga,
+    LugarVotacion,
+    Mesa,
+)
 
 ESTRUCTURA = {
     None: Seccion,
@@ -200,6 +210,9 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         lookups = Q()
         meta = {}
         if self.filtros:
+            if self.filtros.model is Distrito:
+                lookups = Q(lugar_votacion__circuito__seccion__distrito__in=self.filtros)
+
             if self.filtros.model is Seccion:
                 lookups = Q(lugar_votacion__circuito__seccion__in=self.filtros)
 
