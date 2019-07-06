@@ -50,7 +50,9 @@ class Seccion(models.Model):
 
     Distrito -> **Sección** -> Circuito -> Lugar de votación -> Mesa
     """
-    distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE)
+    distrito = models.ForeignKey(
+        Distrito, on_delete=models.CASCADE, related_name='secciones'
+    )
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
@@ -63,6 +65,7 @@ class Seccion(models.Model):
     )
 
     class Meta:
+        ordering = ('numero',)
         verbose_name = 'Sección electoral'
         verbose_name_plural = 'Secciones electorales'
 
