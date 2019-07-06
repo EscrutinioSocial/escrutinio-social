@@ -631,26 +631,37 @@ def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=F
 
 
 @receiver(post_save, sender=Mesa)
-def actualizar_electores_seccion_circuito(sender, instance=None, created=False, **kwargs):
+def actualizar_electores(sender, instance=None, created=False, **kwargs):
     """
-    Actualiza las denormalizaciones de cantidad de electores a nivel circuito y seccion
+    Actualiza las denormalizaciones de cantidad de electores a nivel circuito, seccion y distrito
     cada vez que se crea o actualiza una instancia de mesa.
 
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
     if (instance.lugar_votacion is not None
         and instance.lugar_votacion.circuito is not None):
-        seccion = instance.lugar_votacion.circuito.seccion
         circuito = instance.lugar_votacion.circuito
+        seccion = circuito.seccion
+        distrito = seccion.distrito
 
+        # circuito
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito=circuito,
+        ).aggregate(v=Sum('electores'))['v'] or 0
+        circuito.electores = electores
+        circuito.save(update_fields=['electores'])
+
+        # seccion
         electores = Mesa.objects.filter(
             lugar_votacion__circuito__seccion=seccion,
         ).aggregate(v=Sum('electores'))['v'] or 0
         seccion.electores = electores
         seccion.save(update_fields=['electores'])
 
+        # distrito
         electores = Mesa.objects.filter(
-            lugar_votacion__circuito=circuito,
+            lugar_votacion__circuito__seccion__distrito=distrito,
         ).aggregate(v=Sum('electores'))['v'] or 0
-        circuito.electores = electores
-        circuito.save(update_fields=['electores'])
+        distrito.electores = electores
+        distrito.save(update_fields=['electores'])
+

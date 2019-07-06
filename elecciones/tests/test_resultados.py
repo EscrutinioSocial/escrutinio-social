@@ -2,7 +2,7 @@ import json
 import pytest
 from django.db.models import Sum
 from django.urls import reverse
-from elecciones.models import Categoria, Mesa
+from elecciones.models import Categoria, Mesa, Distrito, Circuito, Seccion
 from elecciones.views import ResultadosCategoria
 from .factories import (
     CategoriaFactory,
@@ -19,19 +19,21 @@ from .factories import (
 @pytest.fixture()
 def carta_marina(db):
     """
-    2 secciones con 2 circuitos y 2 mesas por circuito
+    1 distrito, 2 secciones con 2 circuitos y 2 mesas por circuito
     """
     s1, s2 = SeccionFactory.create_batch(2)
     c1, c2 = CircuitoFactory.create_batch(2, seccion=s1)
     c3, c4 = CircuitoFactory.create_batch(2, seccion=s2)
-    return (MesaFactory(numero=1, lugar_votacion__circuito=c1, electores=100),
-            MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
-            MesaFactory(numero=3, lugar_votacion__circuito=c2, electores=120),
-            MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
-            MesaFactory(numero=5, lugar_votacion__circuito=c3, electores=90),
-            MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
-            MesaFactory(numero=7, lugar_votacion__circuito=c4, electores=90),
-            MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90))
+    return (
+        MesaFactory(numero=1, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=3, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=5, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=7, lugar_votacion__circuito=c4, electores=90),
+        MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90)
+    )
 
 
 @pytest.fixture()
@@ -79,7 +81,6 @@ def test_electores_filtro_mesa_multiple_categoria(fiscal_client):
     resultados = response.context['resultados']
     assert resultados['electores'] == 120
     assert b'<td title="Electores">120 </td>' in response.content
-
 
 
 def test_electores_filtro_escuela(url_resultados, fiscal_client):
@@ -429,3 +430,17 @@ def test_resultados_excluye_metadata(fiscal_client):
 
     assert no_positivos[o3.nombre] == 20
     assert list(no_positivos.keys()) == [o3.nombre, 'Positivos']
+
+
+def test_actualizar_electores(carta_marina):
+    """
+    prueba :func:`elecciones.models.actualizar_electores`
+    """
+    m1 = carta_marina[0]
+    c1 = m1.lugar_votacion.circuito
+    assert c1.electores == 100 * 2
+    s1 = c1.seccion
+    assert s1.electores == 100 * 2 + 120 * 2
+    d = s1.distrito
+    d.refresh_from_db()
+    assert d.electores == 100 * 2 + 120 * 2 + 90 * 4
