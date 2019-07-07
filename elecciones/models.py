@@ -1,26 +1,21 @@
 import os
-from itertools import chain
 from datetime import timedelta
-from django.utils import timezone
-from django.contrib.auth.models import User
-from django.urls import reverse
+
 from django.db import models
 from django.db.models import (
-    Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef,
-    Subquery, Exists, Max, Value
+    Sum, F, Q, Count, OuterRef,
+    Exists, Max
 )
 from django.db.models.query import QuerySet
-from django.db.models.functions import Coalesce
-from django.conf import settings
-from djgeojson.fields import PointField
-from django.template.loader import render_to_string
-from django.utils.safestring import mark_safe
-from django.utils.text import slugify
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db.models.signals import m2m_changed, post_save
+from django.urls import reverse
+from django.utils import timezone
+from djgeojson.fields import PointField
+from model_utils import Choices
 from model_utils.fields import StatusField, MonitorField
 from model_utils.models import TimeStampedModel
-from model_utils import Choices
+
 from adjuntos.models import Attachment
 from problemas.models import Problema
 
@@ -265,6 +260,18 @@ class Mesa(models.Model):
                 mesa=self, categoria=categoria
             ).exists():
                 return categoria
+
+    @classmethod
+    def existe_mesa_en_circuito_seccion(cls, mesa, circuito, seccion):
+        """
+        Valida si existe una mesa con dicho codigo en el circuito y seccion indicados
+        """
+        qs = cls.objects.filter(
+            numero=mesa,
+            circuito__numero=circuito,
+            circuito__seccion__numero=seccion
+        ).exists()
+        return qs
 
     @classmethod
     def con_carga_pendiente(cls, wait=2):
