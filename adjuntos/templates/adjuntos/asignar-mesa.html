@@ -139,6 +139,9 @@
 <script type="text/javascript">
    $(document).ready(function(){
 
+    // TODO refactorear esto para modularizar en una funcion.
+
+
     $('#id_distrito').change(function () {
       // rellena el dropdown de secciones
       value = $(this).val();
@@ -174,6 +177,27 @@
               }
           });
     });
+
+
+    $('#id_circuito').change(function () {
+      // rellena el dropdown de secciones
+      value = $(this).val();
+      console.log(value);
+      $.ajax({
+              type: "GET",
+              url: "{% url 'autocomplete-mesa' %}",
+              data: { 'parent_id': value },
+              success: function(data){
+                  $("#id_mesa option:gt(0)").remove();
+                  $.each(data.options, function(i, d) {
+                      $('#id_mesa').append('<option value="' + d.value + '">' + d.text + '</option>');
+                  });
+                  // actualiza el widget de materialize
+                  $('#id_mesa').formSelect();
+              }
+          });
+    });
+
   });
 </script>
 {% endblock messages %}

@@ -379,7 +379,7 @@ class Mesa(models.Model):
         return fotos
 
     def __str__(self):
-        return f"Mesa {self.numero}"
+        return self.numero
 
 
 class Partido(models.Model):

@@ -493,3 +493,11 @@ class CircuitoListView(AutocompleteBaseListView):
         qs = super().get_queryset()
         return qs.filter(seccion__id=self.request.GET['parent_id'])
 
+
+class MesaListView(AutocompleteBaseListView):
+    model = Mesa
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(lugar_votacion__circuito__id=self.request.GET['parent_id'])
+
