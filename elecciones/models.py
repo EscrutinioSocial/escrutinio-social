@@ -298,11 +298,11 @@ class Mesa(models.Model):
         Una mesa cargable es aquella que
            - no este tomada dentro de los ultimos `wait` minutos
            - no este marcada con problemas o todos su problemas esten resueltos
-           - y tenga al menos una categoria asociada que no tenga votosreportados para esa mesa
+           - y no tenga cargas consolidadas
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
-            attachments__isnull=False,
+            identificacion__isnull=False,
             orden_de_carga__gte=1,
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
@@ -371,14 +371,14 @@ class Mesa(models.Model):
         de datos.
         """
         fotos = []
-        for i, a in enumerate(self.attachments.filter(identificacion__status='consolidada').order_by('modified'), 1):
+        for i, a in enumerate(self.attachments.filter(identificacion__status='consolidada').order_by(''), 1):
             if a.foto_edited:
                 fotos.append((f'Foto {i} (editada)', a.foto_edited))
             fotos.append((f'Foto {i} (original)', a.foto))
         return fotos
 
     def __str__(self):
-        return self.numero
+        return str(self.numero)
 
 
 class Partido(models.Model):

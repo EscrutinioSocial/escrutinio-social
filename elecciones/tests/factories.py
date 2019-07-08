@@ -156,16 +156,24 @@ def get_random_image():
 
 
 class AttachmentFactory(DjangoModelFactory):
-    mesa = factory.SubFactory(MesaFactory)
-    foto = factory.django.ImageField(from_func=get_random_image)
     class Meta:
         model = 'adjuntos.Attachment'
+    foto = factory.django.ImageField(from_func=get_random_image)
+
+
+class IdentificacionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'adjuntos.Identificacion'
+        django_get_or_create = ('attachment',)
+    mesa = factory.SubFactory(MesaFactory)
+    attachment = factory.SubFactory(AttachmentFactory)
 
 
 class ProblemaFactory(DjangoModelFactory):
+    class Meta:
+        model = 'problemas.Problema'
+
     reportado_por = factory.SubFactory(FiscalFactory)
     mesa = factory.SubFactory(MesaFactory)
     estado = 'pendiente'
 
-    class Meta:
-        model = 'problemas.Problema'
