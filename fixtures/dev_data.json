@@ -33,9 +33,19 @@
   }
 },
 {
+  "model": "elecciones.distrito",
+  "pk": 1,
+  "fields": {
+    "numero": 1,
+    "nombre": "Distrito \u00fanico",
+    "electores": 0
+  }
+},
+{
   "model": "elecciones.seccion",
   "pk": 1,
   "fields": {
+    "distrito": 1,
     "numero": 1,
     "nombre": "Secci\u00f3n 1",
     "electores": 440,
@@ -46,6 +56,7 @@
   "model": "elecciones.seccion",
   "pk": 2,
   "fields": {
+    "distrito": 1,
     "numero": 2,
     "nombre": "Secci\u00f3n 2",
     "electores": 360,
@@ -316,10 +327,10 @@
     "lugar_votacion": 1,
     "url": "",
     "electores": 100,
-    "taken": "2019-07-04T19:44:42.155Z",
+    "taken": "2019-07-04T19:51:18.215Z",
     "orden_de_carga": 1,
     "carga_confirmada": false,
-    "cargadas": 0,
+    "cargadas": 1,
     "confirmadas": 0
   }
 },
@@ -335,7 +346,7 @@
     "lugar_votacion": 2,
     "url": "",
     "electores": 100,
-    "taken": null,
+    "taken": "2019-07-04T19:51:27.310Z",
     "orden_de_carga": 2,
     "carga_confirmada": false,
     "cargadas": 0,
@@ -354,8 +365,8 @@
     "lugar_votacion": 3,
     "url": "",
     "electores": 120,
-    "taken": null,
-    "orden_de_carga": 0,
+    "taken": "2019-07-04T19:52:19.468Z",
+    "orden_de_carga": 2,
     "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
@@ -567,6 +578,54 @@
       4,
       1
     ]
+  }
+},
+{
+  "model": "elecciones.carga",
+  "pk": 1,
+  "fields": {
+    "created": "2019-07-04T19:51:27.212Z",
+    "modified": "2019-07-04T19:51:27.212Z",
+    "mesa": 1,
+    "categoria": 1,
+    "fiscal": 1,
+    "consolidada": false
+  }
+},
+{
+  "model": "elecciones.votomesareportado",
+  "pk": 1,
+  "fields": {
+    "carga": 1,
+    "opcion": 2,
+    "votos": 10
+  }
+},
+{
+  "model": "elecciones.votomesareportado",
+  "pk": 2,
+  "fields": {
+    "carga": 1,
+    "opcion": 3,
+    "votos": 20
+  }
+},
+{
+  "model": "elecciones.votomesareportado",
+  "pk": 3,
+  "fields": {
+    "carga": 1,
+    "opcion": 4,
+    "votos": 30
+  }
+},
+{
+  "model": "elecciones.votomesareportado",
+  "pk": 4,
+  "fields": {
+    "carga": 1,
+    "opcion": 1,
+    "votos": 10
   }
 }
 ]
