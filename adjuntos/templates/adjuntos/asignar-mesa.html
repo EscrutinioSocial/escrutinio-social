@@ -132,3 +132,48 @@
 
     </div>
 {% endblock right-panel %}
+
+{% block messages %}
+{{ block.super }}
+
+<script type="text/javascript">
+   $(document).ready(function(){
+
+    $('#id_distrito').change(function () {
+      // rellena el dropdown de secciones
+      value = $(this).val();
+      $.ajax({
+              type: "GET",
+              url: "{% url 'autocomplete-seccion' %}",
+              data: { 'parent_id': value },
+              success: function(data){
+                  $("#id_seccion option:gt(0)").remove();
+                  $.each(data.options, function(i, d) {
+                      $('#id_seccion').append('<option value="' + d.value + '">' + d.text + '</option>');
+                  });
+                  // actualiza el widget de materialize
+                  $('#id_seccion').formSelect();
+              }
+          });
+    });
+
+    $('#id_seccion').change(function () {
+      // rellena el dropdown de secciones
+      value = $(this).val();
+      $.ajax({
+              type: "GET",
+              url: "{% url 'autocomplete-circuito' %}",
+              data: { 'parent_id': value },
+              success: function(data){
+                  $("#id_circuito option:gt(0)").remove();
+                  $.each(data.options, function(i, d) {
+                      $('#id_circuito').append('<option value="' + d.value + '">' + d.text + '</option>');
+                  });
+                  // actualiza el widget de materialize
+                  $('#id_circuito').formSelect();
+              }
+          });
+    });
+  });
+</script>
+{% endblock messages %}

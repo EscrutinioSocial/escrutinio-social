@@ -1,6 +1,6 @@
 from django import forms
 from .models import Attachment
-from elecciones.models import Mesa
+from elecciones.models import Mesa, Distrito, Seccion, Circuito
 
 
 class AsignarMesaForm(forms.ModelForm):
@@ -8,8 +8,17 @@ class AsignarMesaForm(forms.ModelForm):
     Este formulario se utiliza para asignar mesa
     o reportar un problema a una foto.
     """
+    distrito = forms.ModelChoiceField(
+        queryset=Distrito.objects.all()
+    )
 
-    # FIXME revisar si hay numero de mesas repetidas
+    seccion = forms.ModelChoiceField(
+        queryset=Seccion.objects.none()
+    )
+
+    circuito = forms.ModelChoiceField(
+        queryset=Circuito.objects.none()
+    )
     mesa = forms.IntegerField(
         label='Nº Mesa',
         required=False,
@@ -19,7 +28,7 @@ class AsignarMesaForm(forms.ModelForm):
 
     class Meta:
         model = Attachment
-        fields = ['mesa', 'problema', 'mesa_confirm']
+        fields = ['distrito', 'seccion', 'circuito', 'mesa', 'problema', 'mesa_confirm']
 
     def __init__(self, *args, **kwargs):
         # Dado que el campo ``mesa`` es un entero que refiere al "numero" de mesa (y no el ID)

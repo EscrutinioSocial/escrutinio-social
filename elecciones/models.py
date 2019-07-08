@@ -263,7 +263,9 @@ class Mesa(models.Model):
 
     # fixme. este campo deberia ser `categorias`, en plural.
     categoria = models.ManyToManyField('Categoria', through='MesaCategoria')
-    numero = models.PositiveIntegerField()
+
+    numero = models.CharField(max_length=10)
+
     es_testigo = models.BooleanField(default=False)
     circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
     lugar_votacion = models.ForeignKey(

@@ -5,7 +5,8 @@ como elegir acta a clasificar / a cargar / validar
 
 from io import StringIO
 import sys
-from django.http import Http404, HttpResponseForbidden, HttpResponse
+from django.core import serializers
+from django.http import Http404, HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -468,3 +469,27 @@ def confirmar_fiscal(request, fiscal_id):
     msg = f'<a href="{url}">{fiscal}</a> ha sido confirmado'
     messages.info(request, mark_safe(msg))
     return redirect(request.META.get('HTTP_REFERER'))
+
+
+class AutocompleteBaseListView(LoginRequiredMixin, ListView):
+
+    def get(self, request, *args, **kwargs):
+        data = {'options': [{'value': o.id, 'text': str(o)} for o in self.get_queryset()]}
+        return JsonResponse(data, status=200, safe=False)
+
+
+class SeccionListView(AutocompleteBaseListView):
+    model = Seccion
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(distrito__id=self.request.GET['parent_id'])
+
+
+class CircuitoListView(AutocompleteBaseListView):
+    model = Circuito
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(seccion__id=self.request.GET['parent_id'])
+
