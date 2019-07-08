@@ -49,3 +49,5 @@ dump-dev-data:
 update-models-diagram:
 	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
 
+crawl-resultados:
+	 wget --recursive --level=100 --convert-links --html-extension --restrict-file-names=windows --no-parent localhost:8000/elecciones/resultados/1
