@@ -474,6 +474,9 @@ class Eleccion(models.Model):
     def __str__(self):
         return f'{self.nombre}'
 
+    class Meta:
+        verbose_name = 'Elección'
+        verbose_name_plural = 'Elecciones'
 
 class Categoria(models.Model):
     """
