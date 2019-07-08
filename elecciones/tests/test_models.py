@@ -55,15 +55,15 @@ def test_con_carga_pendiente_incluye_taken_vencido(db):
 
 
 def test_con_carga_pendiente_excluye_si_tiene_problema_no_resuelto(db):
-    m2 = AttachmentFactory().mesa
-    m1 = AttachmentFactory().mesa
+    m2 = IdentificacionFactory(status='consolidada').mesa
+    m1 = IdentificacionFactory(status='consolidada').mesa
     ProblemaFactory(mesa=m1)
     assert set(Mesa.con_carga_pendiente()) == {m2}
 
 
 def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
-    m2 = AttachmentFactory().mesa
-    m1 = AttachmentFactory().mesa
+    m2 = IdentificacionFactory(status='consolidada').mesa
+    m1 = IdentificacionFactory(status='consolidada').mesa
     ProblemaFactory(mesa=m1, estado='resuelto')
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
     # nuevo problema
@@ -72,9 +72,9 @@ def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
 
 
 def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
-    m1 = AttachmentFactory().mesa
-    m2 = AttachmentFactory().mesa
-    m3 = AttachmentFactory().mesa
+    m1 = IdentificacionFactory(status='consolidada').mesa
+    m2 = IdentificacionFactory(status='consolidada').mesa
+    m3 = IdentificacionFactory(status='consolidada').mesa
 
     # mesa 2 ya se cargo, se excluirá
     categoria = m2.categoria.first()

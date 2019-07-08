@@ -111,10 +111,10 @@ class Circuito(models.Model):
         Busca el máximo orden de carga `n` en una mesa perteciente al circuito
         (esté o no cargada) y devuelve `n + 1`.
 
-        Este nuevo orden de carga incrematado se asigna a la nueva mesa
+        Este nuevo orden de carga incrementado se asigna a la nueva mesa
         clasificada en func:`asignar_orden_de_carga`
         """
-        orden = Mesa.objects.exclude(id=self.id).filter(
+        orden = Mesa.objects.filter(
             lugar_votacion__circuito=self
         ).aggregate(v=Max('orden_de_carga'))['v'] or 0
         return orden + 1
@@ -371,7 +371,7 @@ class Mesa(models.Model):
         de datos.
         """
         fotos = []
-        for i, a in enumerate(self.attachments.filter(identificacion__status='consolidada').order_by(''), 1):
+        for i, a in enumerate(self.attachments.filter(identificacion__status='consolidada').order_by('modified'), 1):
             if a.foto_edited:
                 fotos.append((f'Foto {i} (editada)', a.foto_edited))
             fotos.append((f'Foto {i} (original)', a.foto))
@@ -668,4 +668,5 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
         ).aggregate(v=Sum('electores'))['v'] or 0
         distrito.electores = electores
         distrito.save(update_fields=['electores'])
+
 

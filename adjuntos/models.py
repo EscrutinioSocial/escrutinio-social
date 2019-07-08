@@ -193,8 +193,7 @@ def asignar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     a la mesa asociada se le asigna el orden de carga
     que corresponda actualmente al circuito
     """
-
     if instance.status == Identificacion.STATUS.consolidada and not instance.mesa.carga_set.exists():
         mesa = instance.mesa
-        mesa.orden_de_carga = mesa.circuito.proximo_orden_de_carga()
+        mesa.orden_de_carga = mesa.lugar_votacion.circuito.proximo_orden_de_carga()
         mesa.save(update_fields=['orden_de_carga'])
