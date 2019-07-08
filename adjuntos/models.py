@@ -1,7 +1,15 @@
+from django.conf import settings
 from functools import partial
 from datetime import timedelta
 from urllib.parse import quote_plus
 from django.utils import timezone
+from model_utils import Choices
+from model_utils.fields import StatusField
+from model_utils.models import TimeStampedModel
+from django.db.models import (
+    OuterRef, Exists
+)
+
 from django.db.models import Q
 from django.db import models
 from django.dispatch import receiver
@@ -64,7 +72,7 @@ class Email(models.Model):
         return f'https://mail.google.com/mail/u/0/#search/rfc822msgid{mid}'
 
 
-class Attachment(models.Model):
+class Attachment(TimeStampedModel):
     """
     Guarda las fotos de ACTAS y otros documentos fuente desde los cuales se cargan los datos.
     Están asociados a una imágen que a su vez puede tener una versión editada.
@@ -105,7 +113,6 @@ class Attachment(models.Model):
         blank=True,
         null=True
     )
-    mesa = models.ForeignKey('elecciones.Mesa', null=True, related_name='attachments', on_delete=models.CASCADE)
     taken = models.DateTimeField(null=True)
     problema = models.CharField(max_length=100, null=True, blank=True, choices=PROBLEMAS)
 
@@ -121,29 +128,73 @@ class Attachment(models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def sin_asignar(cls, wait=2):
+    def sin_identificar(cls, wait=2, fiscal=None):
         """
         Devuelve un conjunto de Attachments que no tienen problemas
-        ni mesas asociados y no ha sido asignado para clasificar en los últimos
-        ``wait`` minutos
+        ni identificacion consolidada y no ha sido asignado
+        para clasificar en los últimos ``wait`` minutos
+
+        Se excluyen attachments que ya hayan sido clasificados por `fiscal`
         """
         desde = timezone.now() - timedelta(minutes=wait)
-        return cls.objects.filter(
-            Q(problema__isnull=True, mesa__isnull=True),
+        qs = cls.objects.filter(
+            Q(problema__isnull=True),
             Q(taken__isnull=True) | Q(taken__lt=desde)
+        ).annotate(
+            consolidada=Exists(
+                Identificacion.objects.filter(
+                    Q(attachment__id=OuterRef('id')),
+                    Q(status=Identificacion.STATUS.consolidada)
+                )
+            )
+        ).filter(
+            consolidada=False
         )
+        if fiscal:
+            qs = qs.exclude(identificacion__fiscal=fiscal)
+        return qs
+
 
     def __str__(self):
         return f'{self.foto} ({self.mimetype})'
 
 
-@receiver(post_save, sender=Attachment)
+class Identificacion(TimeStampedModel):
+    """
+    Es el modelo que guarda clasificaciones de actas para asociarlas a mesas
+    """
+    STATUS = Choices('agregada', 'consolidada')
+    status = StatusField(default='agregada')
+    fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
+    mesa = models.ForeignKey('elecciones.Mesa', on_delete=models.CASCADE)
+    attachment = models.ForeignKey(Attachment, on_delete=models.CASCADE)
+
+    def save(self, *args, **kwargs):
+        """
+        si no hay instancias ya consolidadas para la misma mesa
+        y se supera el minimo de coincidencias, entonces se marca esta instancia como consolidada
+        """
+        if (
+            not self.mesa.identificacion_set.filter(
+                status=Identificacion.STATUS.consolidada
+            ).exists() and
+                Identificacion.objects.filter(
+                mesa=self.mesa
+            ).count() + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION
+        ):
+            self.status = Identificacion.STATUS.consolidada
+        super().save(*args, **kwargs)
+
+
+@receiver(post_save, sender=Identificacion)
 def asignar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     """
-    Cuando se clasifica el attachment, a la mesa asociada se le asigna el orden de carga
+    Cuando se guarda una identificacion que consolida,
+    a la mesa asociada se le asigna el orden de carga
     que corresponda actualmente al circuito
     """
-    if instance.mesa and not instance.mesa.carga_set.exists():
+
+    if instance.status == Identificacion.STATUS.consolidada and not instance.mesa.carga_set.exists():
         mesa = instance.mesa
         mesa.orden_de_carga = mesa.circuito.proximo_orden_de_carga()
         mesa.save(update_fields=['orden_de_carga'])

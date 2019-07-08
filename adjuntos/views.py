@@ -3,18 +3,18 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.urls import reverse
 from django.db import IntegrityError
-from django.views.generic.edit import UpdateView, FormView
+from django.views.generic.edit import CreateView, FormView
 from django.utils.decorators import method_decorator
 from elecciones.views import StaffOnlyMixing
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
-
+from django.utils.functional import cached_property
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
-from .models import Attachment
-from .forms import AsignarMesaForm, AgregarAttachmentsForm
+from .models import Attachment, Identificacion
+from .forms import IdentificacionForm, AgregarAttachmentsForm
 
 
 @login_required
@@ -27,8 +27,10 @@ def elegir_adjunto(request):
     Si no hay más mesas sin asignar, se muestra un mensaje estático.
     """
 
-    attachments = Attachment.sin_asignar()
+    attachments = Attachment.sin_identificar(0, request.user.fiscal)
     if attachments.exists():
+        # TODO: deberiamos priorizar attachments que ya tienen carga
+        #       para maximizar la cola de actas cargables
         a = attachments.order_by('?').first()
         # se marca el adjunto
         a.taken = timezone.now()
@@ -39,34 +41,42 @@ def elegir_adjunto(request):
 
 
 
-class AsignarMesaAdjunto(UpdateView):
+class IdentificacionCreateView(CreateView):
     """
     Esta es la vista que permite clasificar un acta,
     asociandola a una mesa o reportando un problema
 
-    Ver :class:`adjuntos.forms.AsignarMesaForm`
+    Ver :class:`adjuntos.forms.IdentificacionForm`
     """
 
-    form_class = AsignarMesaForm
+    form_class = IdentificacionForm
     template_name = "adjuntos/asignar-mesa.html"
-    pk_url_kwarg = 'attachment_id'
-    model = Attachment
+    model = Identificacion
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+        response = super().dispatch(*args, **kwargs)
+        return response
 
     def get_success_url(self):
         return reverse('elegir-adjunto')
 
+    @cached_property
+    def attachment(self):
+        return get_object_or_404(
+            Attachment, id=self.kwargs['attachment_id']
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['attachment'] = self.object
+        context['attachment'] = self.attachment
         context['button_tabindex'] = 2
         return context
 
     def form_valid(self, form):
-        form.save()
+        identicacion = form.save(commit=False)
+        identicacion.fiscal = self.request.user.fiscal
+        identicacion.attachment = self.attachment
         return super().form_valid(form)
 
 

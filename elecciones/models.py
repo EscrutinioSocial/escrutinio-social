@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.db import models
 from django.db.models import (
     Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef,
-    Subquery, Exists, Max, Value
+    Exists, Max, Value
 )
 from django.db.models.query import QuerySet
 from django.db.models.functions import Coalesce
@@ -256,16 +256,10 @@ class Mesa(models.Model):
     Por ejemplo, la mesa 12 del circuito 1J de La Matanza, elige
     Presidente y Vice, Diputado de Prov de Buenos Aires e Intendente de La Matanza.
     """
-    ESTADOS_ = ('EN ESPERA', 'ABIERTA', 'CERRADA', 'ESCRUTADA')
-    ESTADOS = Choices(*ESTADOS_)
-    estado = StatusField(choices_name='ESTADOS', default='EN ESPERA')
-    hora_escrutada = MonitorField(monitor='estado', when=['ESCRUTADA'])
 
     # fixme. este campo deberia ser `categorias`, en plural.
     categoria = models.ManyToManyField('Categoria', through='MesaCategoria')
-
     numero = models.CharField(max_length=10)
-
     es_testigo = models.BooleanField(default=False)
     circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
     lugar_votacion = models.ForeignKey(
@@ -278,7 +272,11 @@ class Mesa(models.Model):
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
     carga_confirmada = models.BooleanField(default=False)
 
-    # denormalizacion.
+    attachments = models.ManyToManyField(
+        'adjuntos.Attachment', through='adjuntos.Identificacion'
+    )
+
+    # denormalizaciones
     # lleva la cuenta de las categorias que se han cargado hasta el momento.
     # ver receiver actualizar_categorias_cargadas_para_mesa()
     cargadas = models.PositiveIntegerField(default=0, editable=False)
@@ -366,13 +364,14 @@ class Mesa(models.Model):
     def fotos(self):
         """
         Devuelve una lista de tuplas (titulo, foto) asociados a la mesa, incluyendo
-        cualquier version editada de una foto.
+        cualquier version editada de una foto, para aquellos attachements que esten
+        consolidados
 
         Este método se utiliza para alimentar las pestañas en la pantalla de carga
         de datos.
         """
         fotos = []
-        for i, a in enumerate(Attachment.objects.filter(mesa=self).order_by('-id'), 1):
+        for i, a in enumerate(self.attachments.filter(identificacion__status='consolidada').order_by('modified'), 1):
             if a.foto_edited:
                 fotos.append((f'Foto {i} (editada)', a.foto_edited))
             fotos.append((f'Foto {i} (original)', a.foto))

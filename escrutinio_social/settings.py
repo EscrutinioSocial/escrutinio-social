@@ -90,7 +90,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'elecciones.context_processors.contadores'
+                # 'elecciones.context_processors.contadores'
             ],
         },
     },
@@ -232,6 +232,8 @@ CARACTERISTICA_DEFAULT = '351'
 # por defecto no se muestra grafico en la página de resultados
 SHOW_PLOT = False
 
+MIN_COINCIDENCIAS_IDENTIFICACION = 2
+MIN_COINCIDENCIAS_CARGAS = 2
 
 try:
     from .local_settings import *

@@ -1,9 +1,9 @@
 from django import forms
-from .models import Attachment
+from .models import Identificacion
 from elecciones.models import Mesa, Distrito, Seccion, Circuito
 
 
-class AsignarMesaForm(forms.ModelForm):
+class IdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar mesa
     """
@@ -13,7 +13,7 @@ class AsignarMesaForm(forms.ModelForm):
     mesa = forms.ModelChoiceField(queryset=Mesa.objects.all())
 
     class Meta:
-        model = Attachment
+        model = Identificacion
         fields = ['distrito', 'seccion', 'circuito', 'mesa']
 
     def __init__(self, *args, **kwargs):

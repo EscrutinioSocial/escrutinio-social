@@ -42,7 +42,7 @@ from sentry_sdk import capture_exception
 from .forms import (
     MisDatosForm,
     FiscalFormSimple,
-    votomeesareportadoformset_factory,
+    votomesareportadoformset_factory,
     QuieroSerFiscal1,
     QuieroSerFiscal2,
     QuieroSerFiscal3,
@@ -293,7 +293,7 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
         carga = None
 
 
-    VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=categoria.opciones.count())
+    VotoMesaReportadoFormset = votomesareportadoformset_factory(min_num=categoria.opciones.count())
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
@@ -367,7 +367,6 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                 mesa_numero=mesa.numero
             )
         return redirect('elegir-acta-a-cargar')
-
     return render(
         request, "fiscales/carga.html", {
             'formset': formset,

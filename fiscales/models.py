@@ -26,7 +26,6 @@ class Fiscal(models.Model):
     Es una extensión del modelo ``auth.User``
 
     """
-
     TIPO_DNI = Choices('DNI', 'CI', 'LE', 'LC')
     ESTADOS = Choices('IMPORTADO', 'AUTOCONFIRMADO', 'PRE-INSCRIPTO', 'CONFIRMADO', 'DECLINADO')
 
