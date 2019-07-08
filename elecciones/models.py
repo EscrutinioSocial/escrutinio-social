@@ -20,21 +20,47 @@ from adjuntos.models import Attachment
 from problemas.models import Problema
 
 
+class Distrito(models.Model):
+    """
+    Define el distrito o circunscripción electoral. Es la subdivisión más
+    grande en una carta marina. En una elección provincial el distrito es único.
+
+    **Distrito** -> Sección -> Circuito -> Lugar de votación -> Mesa
+    """
+    numero = models.PositiveIntegerField(null=True)
+    nombre = models.CharField(max_length=100)
+    electores = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Distrito electoral'
+        verbose_name_plural = 'Distrito electorales'
+
+    def __str__(self):
+        return f"{self.numero} - {self.nombre}"
+
+
 class Seccion(models.Model):
     """
     Define la sección electoral:
 
-    **Sección** -> Circuito -> Lugar de votación -> Mesa
+    Distrito -> **Sección** -> Circuito -> Lugar de votación -> Mesa
     """
+    distrito = models.ForeignKey(
+        Distrito, on_delete=models.CASCADE, related_name='secciones'
+    )
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     proyeccion_ponderada = models.BooleanField(
         default=False,
-        help_text='Si está marcado, el cálculo de proyeccion se agrupará por circuitos para esta sección'
+        help_text=(
+            'Si está marcado, el cálculo de proyeccion se agrupará '
+            'por circuitos para esta sección'
+        )
     )
 
     class Meta:
+        ordering = ('numero',)
         verbose_name = 'Sección electoral'
         verbose_name_plural = 'Secciones electorales'
 
@@ -55,7 +81,7 @@ class Circuito(models.Model):
     """
     Define el circuito, perteneciente a una sección
 
-    Sección -> **Circuito** -> Lugar de votación -> Mesa
+    Distrito -> Sección -> **Circuito** -> Lugar de votación -> Mesa
     """
     seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
     localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
@@ -104,7 +130,7 @@ class LugarVotacion(models.Model):
     y contiene mesas.
     Tiene un representación geoespacial (point).
 
-    Sección -> Circuito -> **Lugar de votación** -> Mesa
+    Distrito -> Sección -> Circuito -> **Lugar de votación** -> Mesa
     """
 
     circuito = models.ForeignKey(Circuito, related_name='escuelas', on_delete=models.CASCADE)
@@ -615,26 +641,37 @@ def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=F
 
 
 @receiver(post_save, sender=Mesa)
-def actualizar_electores_seccion_circuito(sender, instance=None, created=False, **kwargs):
+def actualizar_electores(sender, instance=None, created=False, **kwargs):
     """
-    Actualiza las denormalizaciones de cantidad de electores a nivel circuito y seccion
+    Actualiza las denormalizaciones de cantidad de electores a nivel circuito, seccion y distrito
     cada vez que se crea o actualiza una instancia de mesa.
 
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
     if (instance.lugar_votacion is not None
         and instance.lugar_votacion.circuito is not None):
-        seccion = instance.lugar_votacion.circuito.seccion
         circuito = instance.lugar_votacion.circuito
+        seccion = circuito.seccion
+        distrito = seccion.distrito
 
+        # circuito
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito=circuito,
+        ).aggregate(v=Sum('electores'))['v'] or 0
+        circuito.electores = electores
+        circuito.save(update_fields=['electores'])
+
+        # seccion
         electores = Mesa.objects.filter(
             lugar_votacion__circuito__seccion=seccion,
         ).aggregate(v=Sum('electores'))['v'] or 0
         seccion.electores = electores
         seccion.save(update_fields=['electores'])
 
+        # distrito
         electores = Mesa.objects.filter(
-            lugar_votacion__circuito=circuito,
+            lugar_votacion__circuito__seccion__distrito=distrito,
         ).aggregate(v=Sum('electores'))['v'] or 0
-        circuito.electores = electores
-        circuito.save(update_fields=['electores'])
+        distrito.electores = electores
+        distrito.save(update_fields=['electores'])
+

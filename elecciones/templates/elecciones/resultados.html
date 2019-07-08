@@ -14,11 +14,17 @@
 
 {% block sidenav_items %}
 
-      <li><a href="{% url "resultados-categoria" primera_categoria %}">Provincia</a></li>
+      <li><a href="{% url "resultados-categoria" primera_categoria %}">Todo</a></li>
 
-      {% for seccion in secciones %}
+      {% for distrito in distritos %}
 
-      <li><a href="{{ request.path }}?seccion={{ seccion.id }}">{{ seccion }}</a></li>
+      <li>
+        <a href="{{ request.path }}?distrito={{ distrito.id }}">{{ distrito }}</a>
+      </li>
+
+      {% for seccion in distrito.secciones.all %}
+
+      <li><a href="{{ request.path }}?seccion={{ seccion.id }}">&nbsp;&nbsp;{{ seccion }}</a></li>
       <li class="no-padding">
         <ul class="collapsible collapsible-accordion">
           <li>
@@ -34,7 +40,7 @@
         </ul>
       </li>
       {% endfor %}
-
+      {% endfor %}
 
 {% endblock %}
 

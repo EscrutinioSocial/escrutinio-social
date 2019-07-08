@@ -59,11 +59,19 @@ class CategoriaFactory(DjangoModelFactory):
             self.opciones.add(OpcionFactory(nombre='opc3', es_contable=True))
 
 
+class DistritoFactory(DjangoModelFactory):
+    class Meta:
+        model = 'elecciones.Distrito'
+        django_get_or_create = ('nombre',)
+
+    numero = factory.Sequence(lambda n: n + 1)
+    nombre = factory.LazyAttribute(lambda obj: f"Distrito {obj.numero}")
+
 
 class SeccionFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Seccion'
-
+    distrito = factory.SubFactory(DistritoFactory, nombre='único')
     numero = factory.Sequence(lambda n: n + 1)
     nombre = factory.LazyAttribute(lambda obj: f"Sección {obj.numero}")
 
