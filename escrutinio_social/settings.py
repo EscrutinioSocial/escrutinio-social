@@ -59,12 +59,18 @@ INSTALLED_APPS = [
     'versatileimagefield',
     'darkroom',
 
+    # django-rest-framework
+    'django_filters',
+    'rest_framework',
+    'drf_yasg',
+
     # nuestras apps
     'elecciones',
     'fiscales',
     'adjuntos',
     'problemas',
-    'contacto'
+    'contacto',
+    'api'
 ]
 
 MIDDLEWARE = [
@@ -192,8 +198,9 @@ LEAFLET_CONFIG = {
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAdminUser',
+        'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
 }
 
