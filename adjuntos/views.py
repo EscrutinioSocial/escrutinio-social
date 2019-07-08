@@ -164,7 +164,7 @@ class AgregarAdjuntosImportados(AgregarAdjuntos):
     def procesar_archivo(self, file):
         # validar la info del archivo
         try:
-            CSVImporter().procesar_archivo(file)
+            CSVImporter().validar_archivo(file)
             return 1
         except Exception as e:
             messages.error(self.request, f'{file.name} ignorado. {str(e)}')
