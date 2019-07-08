@@ -71,7 +71,10 @@ class DistritoFactory(DjangoModelFactory):
 class SeccionFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Seccion'
-    distrito = factory.SubFactory(DistritoFactory, nombre='único')
+    # notar que el distrito por default
+    # ya existe porque se crea via migracion 0026 de eleccion
+    # y get_or_create de distrito aplica por nombre
+    distrito = factory.SubFactory(DistritoFactory, nombre='Distrito único')
     numero = factory.Sequence(lambda n: n + 1)
     nombre = factory.LazyAttribute(lambda obj: f"Sección {obj.numero}")
 

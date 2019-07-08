@@ -356,10 +356,9 @@ def test_mesa_orden(carta_marina):
 def test_orden_para_circuito(db):
     c1 = CircuitoFactory()  # sin mesas
     assert c1.proximo_orden_de_carga() == 1
-    m0 = MesaFactory(lugar_votacion__circuito=c1)
-    m1 = MesaFactory(lugar_votacion__circuito=c1, orden_de_carga=3)
-    assert c1.proximo_orden_de_carga(m0) == 4
-
+    MesaFactory(lugar_votacion__circuito=c1)
+    MesaFactory(lugar_votacion__circuito=c1, orden_de_carga=3)
+    assert c1.proximo_orden_de_carga() == 4
 
 
 def test_elegir_acta(carta_marina, fiscal_client):
@@ -372,7 +371,6 @@ def test_elegir_acta(carta_marina, fiscal_client):
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=(1, m2.numero))
-
 
 
 def test_resultados_no_positivos(fiscal_client):
@@ -395,8 +393,6 @@ def test_resultados_no_positivos(fiscal_client):
 
 
 def test_resultados_excluye_metadata(fiscal_client):
-
-
     s1, s2 = SeccionFactory.create_batch(2)
     o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
     o3 = OpcionFactory(partido=None, es_contable=False)
