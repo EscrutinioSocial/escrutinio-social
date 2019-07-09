@@ -27,6 +27,11 @@ def siguiente_accion(request):
             accion = CargaCategoriaEnActa(request, mesa_y_categoria['mesa'], mesa_y_categoria['categoria'])
 
     if accion is None:
+        mesa_y_categoria = mesa_y_categoria_a_confirmar()
+        if not (mesa_y_categoria is None):
+            accion = ConfirmacionCategoriaEnActa(request, mesa_y_categoria['mesa'], mesa_y_categoria['categoria'])
+
+    if accion is None:
         accion = NoHayAccion(request)
 
     return accion
@@ -54,6 +59,23 @@ def mesa_y_categoria_a_cargar():
             categoria_elegida = mesa_elegida.siguiente_categoria_sin_carga()
             if categoria_elegida is None:
                 mesa_elegida.marcar_todas_las_categorias_cargadas()
+                mesa_elegida = None
+
+    return None if (mesa_elegida is None) else { 'mesa': mesa_elegida, 'categoria': categoria_elegida }
+
+
+def mesa_y_categoria_a_confirmar():
+    mesa_elegida = None
+    categoria_elegida = None
+    hay_mesas_posibles = True
+    while (mesa_elegida is None) and hay_mesas_posibles:
+        mesas = Mesa.con_carga_a_confirmar().order_by('?')
+        hay_mesas_posibles = mesas.exists()
+        if hay_mesas_posibles:
+            mesa_elegida = mesas[0]
+            categoria_elegida = mesa_elegida.siguiente_categoria_a_confirmar()
+            if categoria_elegida is None:
+                mesa_elegida.marcar_todas_las_categorias_confirmadas()
                 mesa_elegida = None
 
     return None if (mesa_elegida is None) else { 'mesa': mesa_elegida, 'categoria': categoria_elegida }
@@ -101,6 +123,28 @@ class CargaCategoriaEnActa():
             categoria_id=self.categoria.id,
             mesa_numero=self.mesa.numero
         )
+
+
+"""
+Accion sobre una mesa y una categoría:
+redirige a la vista para la carga de la mesa/categoría
+"""
+class ConfirmacionCategoriaEnActa():
+    mesa = None
+    categoria = None
+
+    def __init__(self, _request, _mesa, _categoria):
+        self.mesa = _mesa
+        self.categoria = _categoria
+
+    def ejecutar(self):
+        # se realiza el redirect
+        return redirect(
+            'chequear-resultado-mesa',
+            categoria_id=self.categoria.id,
+            mesa_numero=self.mesa.numero
+        )
+
 
 
 class NoHayAccion():

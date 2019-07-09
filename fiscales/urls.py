@@ -9,9 +9,6 @@ urlpatterns = [
     url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.cargar_resultados, name='mesa-cargar-resultados'),
 
-    url('^chequear$',
-        views.chequear_resultado, name='chequear-resultado'),
-
     url('^chequear/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.chequear_resultado_mesa, name='chequear-resultado-mesa'),
 

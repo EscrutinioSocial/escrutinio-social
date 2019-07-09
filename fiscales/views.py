@@ -371,28 +371,6 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
     )
 
 
-@login_required
-def chequear_resultado(request):
-    """
-    Elige una mesa con cargas a confirmar y redirige a la url correspondiente
-    """
-    mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
-    if not mesa:
-        return render(request, 'fiscales/sin-actas-cargadas.html')
-    try:
-        categoria = mesa.siguiente_categoria_a_confirmar()
-    except Exception:
-        return render(request, 'fiscales/sin-actas-cargadas.html')
-
-    if not categoria:
-        return render(request, 'fiscales/sin-actas-cargadas.html')
-
-    return redirect(
-        'chequear-resultado-mesa',
-        categoria_id=categoria.id,
-        mesa_numero=mesa.numero
-    )
-
 
 @login_required
 def chequear_resultado_mesa(request, categoria_id, mesa_numero, carga_id=None):
