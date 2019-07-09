@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from .views import elegir_adjunto, AsignarMesaAdjunto, editar_foto, AgregarAdjuntos
+from .views import AsignarMesaAdjunto, editar_foto, AgregarAdjuntos
 
 urlpatterns = [
     url(r'^(?P<attachment_id>\d+)/$', AsignarMesaAdjunto.as_view(), name='asignar-mesa'),
