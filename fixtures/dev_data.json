@@ -319,8 +319,6 @@
   "model": "elecciones.mesa",
   "pk": 1,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.205Z",
     "numero": 1,
     "es_testigo": false,
     "circuito": 1,
@@ -338,8 +336,6 @@
   "model": "elecciones.mesa",
   "pk": 2,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.346Z",
     "numero": 2,
     "es_testigo": false,
     "circuito": 1,
@@ -357,8 +353,6 @@
   "model": "elecciones.mesa",
   "pk": 3,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.408Z",
     "numero": 3,
     "es_testigo": false,
     "circuito": 2,
@@ -376,8 +370,6 @@
   "model": "elecciones.mesa",
   "pk": 4,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.460Z",
     "numero": 4,
     "es_testigo": false,
     "circuito": 2,
@@ -395,8 +387,6 @@
   "model": "elecciones.mesa",
   "pk": 5,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.538Z",
     "numero": 5,
     "es_testigo": false,
     "circuito": 3,
@@ -414,8 +404,6 @@
   "model": "elecciones.mesa",
   "pk": 6,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.622Z",
     "numero": 6,
     "es_testigo": false,
     "circuito": 3,
@@ -433,8 +421,6 @@
   "model": "elecciones.mesa",
   "pk": 7,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.686Z",
     "numero": 7,
     "es_testigo": false,
     "circuito": 4,
@@ -452,8 +438,6 @@
   "model": "elecciones.mesa",
   "pk": 8,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.758Z",
     "numero": 8,
     "es_testigo": false,
     "circuito": 4,
