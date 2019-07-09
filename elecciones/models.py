@@ -318,7 +318,13 @@ class Mesa(models.Model):
         print(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
         self.cargadas = cantidad_categorias
         self.save(update_fields=['cargadas'])
-        
+
+    def marcar_todas_las_categorias_confirmadas(self):
+        cantidad_categorias = self.cargadas
+        print(f'marcando {cantidad_categorias} como confirmadas en mesa {self.numero}')
+        self.confirmadas = cantidad_categorias
+        self.save(update_fields=['confirmadas'])
+
 
     @classmethod
     def con_carga_pendiente(cls, wait=2):
