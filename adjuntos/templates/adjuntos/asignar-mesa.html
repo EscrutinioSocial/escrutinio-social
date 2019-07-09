@@ -9,13 +9,14 @@
 
 
 {% block extrahead %}
-    <style type="text/css">
+<style type="text/css">
 
+.content {
+  padding-bottom: 0px;
+}
 
-.acta {
-  position: -webkit-sticky;
-  position: sticky;
-  top: 0;
+.darkroom-image-container {
+  overflow: auto;
 }
 
 .left-panel {
@@ -47,12 +48,23 @@
     flex-basis: 100%;
     width: 100%;
     margin-left: 0;
-    margin-right: 0; }
+    margin-right: 0;
+  }
   .left-panel > .card {
-    margin-top: 1px; }
+    margin-top: 1px;
+  }
+}
 
-
-    </style>
+</style>
+<script type="text/javascript">
+$(document).ready(function() {
+  var container = $('.darkroom-image-container');
+  if (container.length) {
+    container.height($("main").height() - 200);
+    $('html, body').css('overflowY', 'hidden');
+  }
+});
+</script>
 {% endblock %}
 
 
@@ -106,7 +118,7 @@
 
         <div class="card-content" >
            <a href="{{ attachment.foto.url }}" target="new">ampliar</a>
-           <img id="target" class="responsive-img" src="{{ attachment.foto.thumbnail.960x.url }}">
+           <img id="target" class="responsive-img acta" src="{{ attachment.foto.thumbnail.960x.url }}">
 
           <script src="{% static 'js/fabric.js' %}"></script>
           <script src="{% static 'js/darkroom.js' %}"></script>
