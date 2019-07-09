@@ -21,6 +21,11 @@ from .forms import (
 )
 
 
+@login_required
+def post_asignar_mesa(request, decision, contenido):
+    contenido_para_mostrar = contenido if decision == "mesa" else contenido.replace("_", " ")
+    return render(request, 'adjuntos/post-asignar-mesa.html', { 'decision': decision, 'contenido': contenido_para_mostrar })
+
 
 
 class IdentificacionCreateView(CreateView):
@@ -40,7 +45,14 @@ class IdentificacionCreateView(CreateView):
         return response
 
     def get_success_url(self):
-        return reverse('siguiente-accion')
+        resultado = self.get_operation_result()
+        return reverse('post-asignar-mesa', args=[resultado['decision'], resultado['contenido']])
+
+    def get_operation_result(self):
+        if self.object.mesa is None:
+            return {'decision': 'problema', 'contenido': self.object.problema.replace(" ", "_")}
+        else:
+            return {'decision': 'mesa', 'contenido': self.object.mesa.numero}
 
     @cached_property
     def attachment(self):
