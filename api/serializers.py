@@ -11,27 +11,45 @@ class ActaSerializer(serializers.Serializer):
 
 
 class MesaSerializer(serializers.Serializer):
-    distrito = serializers.PrimaryKeyRelatedField(
+    id_distrito = serializers.PrimaryKeyRelatedField(
         queryset=Distrito.objects.all()
     )
-    seccion = serializers.PrimaryKeyRelatedField(
+    id_seccion = serializers.PrimaryKeyRelatedField(
         queryset=Seccion.objects.all()
     )
-    circuito = serializers.PrimaryKeyRelatedField(
+    id_circuito = serializers.PrimaryKeyRelatedField(
         queryset=Circuito.objects.all()
     )
-    mesa = serializers.PrimaryKeyRelatedField(
+    id_mesa = serializers.PrimaryKeyRelatedField(
         queryset=Mesa.objects.all()
     )
 
 
 class VotoSerializer(serializers.Serializer):
-    categoria = serializers.PrimaryKeyRelatedField(
+    id_categoria = serializers.PrimaryKeyRelatedField(
         queryset=Categoria.objects.all()
     )
-    opcion = serializers.PrimaryKeyRelatedField(
+    id_opcion = serializers.PrimaryKeyRelatedField(
         queryset=Opcion.objects.all()
     )
     votos = serializers.IntegerField(
         min_value=0
     )
+
+class ListarCategoriasQuerySerializer(serializers.Serializer):
+    prioridad = serializers.IntegerField(default=2)
+
+
+class CategoriaSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+
+
+class ListarOpcionesQuerySerializer(serializers.Serializer):
+    solo_prioritarias = serializers.BooleanField(default=True)
+
+
+class OpcionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField()
+    nombre_corto = serializers.CharField()

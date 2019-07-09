@@ -53,3 +53,29 @@ def test_cargar_votos(db, admin_user):
 
     assert response.status_code == status.HTTP_201_CREATED
     assert response.data['mensaje'] == 'Se cargaron los votos con éxito.'
+
+
+def test_listar_categorias(db, admin_user):
+    url = reverse('categorias')
+    
+    # Esto es temporal hasta que se defina el mecanismo de autenticación de la API.
+    client = APIClient()
+    client.login(username='admin', password='password')
+    response = client.get(url, format='json')
+    client.logout()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == []
+
+
+def test_listar_opciones(db, admin_user):
+    url = reverse('opciones', kwargs={'id_categoria': 1})
+    
+    # Esto es temporal hasta que se defina el mecanismo de autenticación de la API.
+    client = APIClient()
+    client.login(username='admin', password='password')
+    response = client.get(url, format='json')
+    client.logout()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == []

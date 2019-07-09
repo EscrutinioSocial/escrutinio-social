@@ -23,9 +23,12 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
-    url(r'^actas/$', views.subir_acta, name='actas'),
+    path('actas/', views.subir_acta, name='actas'),
     path('actas/<foto_digest>/', views.identificar_acta, name='identificar-acta'),
     path('actas/<foto_digest>/votos/', views.cargar_votos, name='cargar-votos'),
+    
+    path('categorias/', views.listar_categorias, name='categorias'),
+    path('categorias/<int:id_categoria>/opciones/', views.listar_opciones, name='opciones'),
 
     url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

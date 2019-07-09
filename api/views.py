@@ -7,7 +7,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from .serializers import (
-    VotoSerializer, ActaSerializer, MesaSerializer
+    VotoSerializer, ActaSerializer, MesaSerializer, CategoriaSerializer, OpcionSerializer,
+    ListarCategoriasQuerySerializer, ListarOpcionesQuerySerializer
 )
 
 
@@ -69,17 +70,17 @@ def identificar_acta(request, foto_digest):
 
 @swagger_auto_schema(
     method='post', 
-    request_body=VotoSerializer,
+    request_body=VotoSerializer(many=True),
     responses={
         status.HTTP_201_CREATED: openapi.Response(
-            description='Se cargaron los votos para la opción y categoria dadas con éxito.',
+            description='Se cargaron los votos con éxito.',
         ),
         status.HTTP_404_NOT_FOUND: openapi.Response(
-            description='No se encontraron la opción y/o la categoria.',
+            description='No se encontraron alguna opción y/o categoria.',
         ),
         status.HTTP_409_CONFLICT: openapi.Response(
             description='El acta todavia no fue identificada.',
-        )
+        ),
     },
     tags=['Actas']
 )
@@ -88,8 +89,46 @@ def cargar_votos(request, foto_digest):
     """
     Permite cargar votos para un acta previamente identificada.
 
+    La lista de votos debe contener todas las opciones prioritarias.
+
     Si ya existiera una carga de votos para la misma mesa, opcion y categoria,
-    se actualizará el numero de votos con la version más reciente.
+    se actualizará el numero de votos de cada opción con la version más reciente.
     """
     return Response({"mensaje": "Se cargaron los votos con éxito."}, status=201)
     
+
+@swagger_auto_schema(
+    method='get', 
+    query_serializer=ListarCategoriasQuerySerializer,
+    responses={
+        status.HTTP_200_OK: CategoriaSerializer(many=True)
+    },
+    tags=['Categorias']
+)
+@api_view(['GET'],)
+def listar_categorias(request):
+    """
+    Permite listar las categorias de la elección
+
+    Se listan todas las categorias con prioridad menor o igual un valor dado.
+    Por defecto se listan solo categorias principales y secundarias (`prioridad=2`).
+    """
+    return Response([])
+    
+
+@swagger_auto_schema(
+    method='get', 
+    query_serializer=ListarOpcionesQuerySerializer,
+    responses={
+        status.HTTP_200_OK: OpcionSerializer(many=True)
+    },
+    tags=['Categorias', 'Opciones']
+)
+@api_view(['GET'],)
+def listar_opciones(request, id_categoria):
+    """
+    Permite listar las opciones por categorias.
+
+    Por defecto se listan solo las opciones prioritarias (`solo_prioritarias=true`).
+    """
+    return Response([])
