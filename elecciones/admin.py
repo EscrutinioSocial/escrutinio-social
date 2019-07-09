@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.db.models import Count
 from leaflet.admin import LeafletGeoAdmin
-from .models import (Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion,
+from .models import (Distrito, Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion,
                         Categoria, VotoMesaReportado, MesaCategoria, Eleccion)
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
@@ -168,7 +168,15 @@ class CircuitoAdmin(admin.ModelAdmin):
     )
 
 
+class DistritoAdmin(admin.ModelAdmin):
+    search_fields = (
+        'nombre', 'numero',
+    )
+
+
 class SeccionAdmin(admin.ModelAdmin):
+    list_display = ['numero', 'nombre', 'distrito']
+
     search_fields = (
         'nombre', 'numero',
     )
@@ -198,6 +206,7 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Eleccion)
+admin.site.register(Distrito, DistritoAdmin)
 admin.site.register(Seccion, SeccionAdmin)
 admin.site.register(Circuito, CircuitoAdmin)
 admin.site.register(Partido, PartidoAdmin)

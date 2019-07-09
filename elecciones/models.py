@@ -38,7 +38,7 @@ class Distrito(models.Model):
 
     class Meta:
         verbose_name = 'Distrito electoral'
-        verbose_name_plural = 'Distrito electorales'
+        verbose_name_plural = 'Distritos electorales'
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
@@ -242,6 +242,8 @@ class MesaCategoria(models.Model):
 
     class Meta:
         unique_together = ('mesa', 'categoria')
+        verbose_name = 'Mesa categoría'
+        verbose_name_plural = "Mesas Categorías"
 
 
 class Mesa(models.Model):
@@ -474,6 +476,10 @@ class Eleccion(models.Model):
 
     def __str__(self):
         return f'{self.nombre}'
+
+    class Meta:
+        verbose_name = 'Eleccion'
+        verbose_name_plural = 'Elecciones'
 
 
 class Categoria(models.Model):
