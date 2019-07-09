@@ -24,9 +24,19 @@ from django.http import HttpResponse
 from django.views import View
 from django.contrib.auth.models import User
 from fiscales.models import Fiscal
-from .models import *
-from .models import LugarVotacion, Circuito
-
+from django.db.models import Sum, IntegerField, Case, When
+from .models import (
+    Distrito,
+    Seccion,
+    Circuito,
+    Categoria,
+    Partido,
+    Opcion,
+    VotoMesaReportado,
+    Carga,
+    LugarVotacion,
+    Mesa,
+)
 
 ESTRUCTURA = {
     None: Seccion,
@@ -113,7 +123,7 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
-class ResultadosCategoria(StaffOnlyMixing, TemplateView):
+class ResultadosCategoria(TemplateView):
     """
     Vista principal para el cálculo de resultados
     """
@@ -175,11 +185,20 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         A partir de los argumentos de urls, devuelve
         listas de seccion / circuito etc. para filtrar
         """
+        if self.kwargs.get('tipo') == 'distrito':
+            return Distrito.objects.filter(numero=self.kwargs.get('numero'))
+
+        if self.kwargs.get('tipo') == 'seccion':
+            return Seccion.objects.filter(numero=self.kwargs.get('numero'))
+
         if self.kwargs.get('tipo') == 'seccion':
             return Seccion.objects.filter(numero=self.kwargs.get('numero'))
 
         if self.kwargs.get('tipo') == 'circuito':
             return Circuito.objects.filter(numero=self.kwargs.get('numero'))
+
+        if 'distrito' in self.request.GET:
+            return Distrito.objects.filter(id__in=self.request.GET.getlist('distrito'))
 
         elif 'seccion' in self.request.GET:
             return Seccion.objects.filter(id__in=self.request.GET.getlist('seccion'))
@@ -200,6 +219,9 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         lookups = Q()
         meta = {}
         if self.filtros:
+            if self.filtros.model is Distrito:
+                lookups = Q(lugar_votacion__circuito__seccion__distrito__in=self.filtros)
+
             if self.filtros.model is Seccion:
                 lookups = Q(lugar_votacion__circuito__seccion__in=self.filtros)
 
@@ -237,7 +259,11 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         lookups = Q()
         lookups2 = Q()
         resultados = {}
-        proyectado = 'proyectado' in self.request.GET and not self.filtros
+
+        proyectado = 'proyectado' in self.request.GET and not self.filtros 
+
+        if self.request.method == "GET" :
+            proyectado = self.request.GET.get('tipodesumarizacion', '1') == str(2) and not self.filtros
 
         if self.filtros:
             if 'seccion' in self.request.GET:
@@ -280,7 +306,6 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
                     proyeccion_incompleta.append(ag)
                 else:
                     electores_pond += datos_ponderacion[ag]["electores"]
-
         expanded_result = {}
         for k, v in c.votos.items():
             porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
@@ -306,11 +331,13 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
                 key=lambda x: float(x[1]["proyeccion" if proyectado else "votos"]), reverse=True
             )
         )
-
         tabla_no_positivos = {k: v for k, v in c.votos.items() if not isinstance(k, Partido)}
-        tabla_no_positivos["Positivos"] = {
-            "votos": c.positivos,
-            "porcentajeTotal": f'{c.positivos*100/c.total:.2f}' if c.total else '-'
+        tabla_no_positivos["Positivos"] = c.positivos
+        tabla_no_positivos = {
+            k: {
+                "votos": v,
+                "porcentajeTotal": f'{v*100/c.total:.2f}' if c.total else '-'
+            } for k, v in  tabla_no_positivos.items()
         }
         result_piechart = None
         if settings.SHOW_PLOT:
@@ -377,7 +404,6 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         )
 
         result = {Partido.objects.get(id=k): v for k, v in result.items() if v is not None}
-
         # no positivos
         result_opc = reportados.aggregate(
            **otras_opciones
@@ -401,9 +427,19 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
             "total_mesas": total_mesas
         })
 
+    def get_tipos_sumarizacion(self):
+        """
+        Esto deberia cambiarse cuando se realice el issue 17
+        Por ahora va a ser hardcodeado
+        """
+        return [{'pk': '1', 'name': 'Normal'}, {'pk': '2', 'name': 'Proyectado'}]
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['tipos_sumarizacion'] = self.get_tipos_sumarizacion()
+        context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
+
         if self.filtros:
             context['para'] = get_text_list([getattr(o, 'nombre', o) for o in self.filtros], " y ")
         else:
@@ -431,5 +467,5 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         mesas = self.mesas(categoria)
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
 
-        context['secciones'] = Seccion.objects.all().order_by('numero')
+        context['distritos'] = Distrito.objects.all().order_by('numero')
         return context
