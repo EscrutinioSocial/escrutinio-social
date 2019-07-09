@@ -66,12 +66,14 @@ NO_PERMISSION_REDIRECT = '/permission-denied/'
 
 @login_required
 def post_cargar_resultados(request, mesa, categoria):
-    return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': mesa, 'categoria': categoria})
+    categoria_para_mostrar = categoria.replace("_", " ")
+    return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': mesa, 'categoria': categoria_para_mostrar})
 
 
 @login_required
 def carga_simultanea(request, mesa, categoria):
-    return render(request, 'fiscales/carga-simultanea.html', {'mesa': mesa, 'categoria': categoria})
+    categoria_para_mostrar = categoria.replace("_", " ")
+    return render(request, 'fiscales/carga-simultanea.html', {'mesa': mesa, 'categoria': categoria_para_mostrar})
 
 @login_required
 def post_confirmar_resultados(request, mesa):
@@ -368,9 +370,12 @@ def cargar_resultados(
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
+<<<<<<< HEAD
                 # libero el token sobre la mesa
                 mesa.taken = None
                 mesa.save(update_fields=['taken'])
+=======
+>>>>>>> unificacion de acciones identificacion / carga / chequeo - listo para MR
             carga.actualizar_firma()
             messages.success(
                 request,
@@ -378,7 +383,7 @@ def cargar_resultados(
         except IntegrityError as e:
             # hubo otra carga previa.
             capture_exception(e)
-            return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre)
+            return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
 
         # comento esta parte porque debe cambiar el algoritmo de carga, no necesariamente se cargan
         # todas las categorias de una mesa consecutivamente
@@ -397,7 +402,7 @@ def cargar_resultados(
         #         categoria_id=siguiente.id,
         #         mesa_numero=mesa.numero
         #     )
-        return redirect('post-cargar-resultados', mesa=mesa.numero, categoria=categoria.nombre)
+        return redirect('post-cargar-resultados', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
 
     # llega hasta aca si hubo error
     return render(

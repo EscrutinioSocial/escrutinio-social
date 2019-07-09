@@ -496,10 +496,10 @@ def test_elegir_acta(carta_marina, fiscal_client):
     m1, m2, *_ = carta_marina
     IdentificacionFactory(status='identificada', consolidada=True, mesa=m1)
     IdentificacionFactory(status='identificada', consolidada=True, mesa=m2)
-    response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
+    response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=(1, m1.numero))
-    response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
+    response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=(1, m2.numero))
 

@@ -335,8 +335,9 @@ class Mesa(models.Model):
            - y no tenga cargas consolidadas
         """
         mesa = cls.objects.first()
-        print(f"mesa::con_carga_pendiente, primera mesa - numero: {mesa.numero}, categorias activas: {mesa.categorias.filter(activa=True).count()}, cargadas: {mesa.cargadas}")
-        print(f"  cargadas < categorias activas: {mesa.cargadas < mesa.categorias.filter(activa=True).count()}")
+        if (mesa is not None):
+            print(f"mesa::con_carga_pendiente, primera mesa - numero: {mesa.numero}, categorias activas: {mesa.categorias.filter(activa=True).count()}, cargadas: {mesa.cargadas}")
+            print(f"  cargadas < categorias activas: {mesa.cargadas < mesa.categorias.filter(activa=True).count()}")
 
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
