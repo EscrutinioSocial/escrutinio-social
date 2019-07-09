@@ -81,6 +81,11 @@ def post_reportar_problema(request, mesa):
     return render(request, 'fiscales/post-reportar-problema.html', {'mesa': mesa})
 
 
+@login_required
+def bienvenido(request):
+    return render(request, 'fiscales/bienvenido.html')
+
+
 def choice_home(request):
     """
     redirige a una página en funcion del tipo de usuario
@@ -91,7 +96,7 @@ def choice_home(request):
 
     es_fiscal = Fiscal.objects.filter(user=request.user).exists()
 
-    return redirect('siguiente-accion')
+    return redirect('bienvenido')
 
 
 class BaseFiscal(LoginRequiredMixin, DetailView):
