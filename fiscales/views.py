@@ -73,6 +73,11 @@ def post_confirmar_resultados(request, mesa):
     return render(request, 'fiscales/post-confirmar-resultados.html', {'mesa': mesa})
 
 
+@login_required
+def post_reportar_problema(request, mesa):
+    return render(request, 'fiscales/post-reportar-problema.html', {'mesa': mesa})
+
+
 def choice_home(request):
     """
     redirige a una página en funcion del tipo de usuario
