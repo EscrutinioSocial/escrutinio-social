@@ -66,6 +66,11 @@ WAITING_FOR = 2
 def post_cargar_resultados(request, mesa, categoria):
     return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': mesa, 'categoria': categoria})
 
+
+@login_required
+def carga_simultanea(request, mesa, categoria):
+    return render(request, 'fiscales/carga-simultanea.html', {'mesa': mesa, 'categoria': categoria})
+
 @login_required
 def post_confirmar_resultados(request, mesa):
     return render(request, 'fiscales/post-confirmar-resultados.html', {'mesa': mesa})
@@ -347,8 +352,7 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
         except IntegrityError as e:
             # hubo otra carga previa.
             capture_exception(e)
-            messages.error(request, 'Alguien cargó esta mesa con anterioridad')
-            return redirect('siguiente-accion')
+            return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre)
 
         # hay que cargar otra categoria (categoria) de la misma mesa?
         # si es asi, se redirige a esa carga
