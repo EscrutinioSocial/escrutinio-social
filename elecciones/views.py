@@ -259,7 +259,11 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         lookups = Q()
         lookups2 = Q()
         resultados = {}
-        proyectado = 'proyectado' in self.request.GET and not self.filtros
+
+        proyectado = 'proyectado' in self.request.GET and not self.filtros 
+
+        if self.request.method == "GET" :
+            proyectado = self.request.GET.get('tipodesumarizacion', '1') == str(2) and not self.filtros
 
         if self.filtros:
             if 'seccion' in self.request.GET:
@@ -428,12 +432,14 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
         Esto deberia cambiarse cuando se realice el issue 17
         Por ahora va a ser hardcodeado
         """
-        return [{'pk': 1, 'name': 'Normal'}, {'pk': 2, 'name': 'Proyectado'}]
+        return [{'pk': '1', 'name': 'Normal'}, {'pk': '2', 'name': 'Proyectado'}]
 
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tipos_sumarizacion'] = self.get_tipos_sumarizacion()
+        context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
+
         if self.filtros:
             context['para'] = get_text_list([getattr(o, 'nombre', o) for o in self.filtros], " y ")
         else:
