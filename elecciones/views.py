@@ -123,7 +123,7 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
-class ResultadosCategoria(StaffOnlyMixing, TemplateView):
+class ResultadosCategoria(TemplateView):
     """
     Vista principal para el cálculo de resultados
     """
