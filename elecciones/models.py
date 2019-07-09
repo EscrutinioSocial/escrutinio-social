@@ -313,6 +313,13 @@ class Mesa(models.Model):
             ).exists():
                 return categoria
 
+    def marcar_todas_las_categorias_cargadas(self):
+        cantidad_categorias = self.categoria.filter(activa=True).count()
+        print(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
+        self.cargadas = cantidad_categorias
+        self.save(update_fields=['cargadas'])
+        
+
     @classmethod
     def con_carga_pendiente(cls, wait=2):
         """

@@ -18,6 +18,8 @@ import hashlib
 from model_utils import Choices
 from versatileimagefield.fields import VersatileImageField
 
+import json
+
 
 def hash_file(file, block_size=65536):
     """
@@ -179,6 +181,7 @@ class Attachment(TimeStampedModel):
             qs = qs.exclude(id=exclude)
         result = {}
         for item in qs.values('mesa', 'status').annotate(total=Count('status')):
+            print("en status_count, mesa " + str(item['mesa']))
             result[(item['mesa'], item['status'])] = item['total']
         return result
 
@@ -229,14 +232,20 @@ class Identificacion(TimeStampedModel):
     def save(self, *args, **kwargs):
         if self.attachment:
             status_count_dict = self.attachment.status_count(self.id)
+            print("en Identificacion::save - status_count_dict = " + str(status_count_dict))
+            print("en Identificacion::save - mesa = " + str(self.mesa.id))
+            print("en Identificacion::save - status = " + str(self.status))
             same_status_count = status_count_dict.get(
-                (self.mesa, self.status)
+                (self.mesa.id, self.status)
             )
+            text = "None" if same_status_count is None else str(same_status_count)
+            print("en Identificacion::save - same_status_count = " + text)
             # si esta identificación iguala o supera el mónimo de
             # identificaciones coincidentes, la identificación se
             # consolida.
             # esto dispara la lógica de :func:`consolidacion_attachment`
             if same_status_count and same_status_count + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION:
+                print("en Identificacion::save - asigna self.consolidada")
                 self.consolidada = True
 
             # TODO, incorporar consolidación con origen en CSV, ver :issue:`49`.

@@ -29,6 +29,9 @@ from .models import Fiscal
 from elecciones.models import (
     Mesa, Categoria, MesaCategoria, VotoMesaReportado, Carga, Circuito, LugarVotacion, Seccion
 )
+from .acciones import ( siguiente_accion )
+
+
 from django.utils.decorators import method_decorator
 from datetime import timedelta
 from django.utils import timezone
@@ -71,7 +74,7 @@ def choice_home(request):
 
     es_fiscal = Fiscal.objects.filter(user=request.user).exists()
 
-    result = redirect('elegir-acta-a-cargar') if user.fiscal.esta_en_grupo('validadores') else render(request, 'fiscales/base.html')
+    result = redirect('siguiente-accion') if user.fiscal.esta_en_grupo('validadores') else render(request, 'fiscales/base.html')
 
     return result
 
@@ -255,33 +258,14 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def elegir_acta_a_cargar(request):
+def realizar_siguiente_accion(request):
     """
-    Para el conjunto de mesas con carga pendiente (es decir, que tienen categorías sin cargar)
-    se elige una por orden de prioridad y tamaño del circuito, se actualiza
-    la marca temporal de "asignación" y se redirige a la categoría a cargar para esa mesa.
+    Lanza la siguiente acción a realizar, que puede ser
+    - identificar una foto (attachment)
+    - cargar una mesa/categoría
+    Si no hay ninguna acción pendiente, entonces muestra un mensaje al respecto
     """
-    mesas = Mesa.con_carga_pendiente().order_by(
-        'orden_de_carga', '-lugar_votacion__circuito__electores'
-    )
-    if mesas.exists():
-        mesa = mesas[0]
-        # se marca que se inicia una carga
-        mesa.taken = timezone.now()
-        mesa.save(update_fields=['taken'])
-
-        siguiente_categoria = mesa.siguiente_categoria_sin_carga()
-        if siguiente_categoria is None:
-            return render(request, 'fiscales/sin-actas.html')
-        siguiente_id = siguiente_categoria.id
-
-        return redirect(
-            'mesa-cargar-resultados',
-            categoria_id=siguiente_id,
-            mesa_numero=mesa.numero
-        )
-
-    return render(request, 'fiscales/sin-actas.html')
+    return siguiente_accion(request).ejecutar()
 
 
 
@@ -369,7 +353,7 @@ def cargar_resultados(
             # hubo otra carga previa.
             capture_exception(e)
             messages.error(request, 'Alguien cargó esta mesa con anterioridad')
-            return redirect('elegir-acta-a-cargar')
+            return redirect('siguiente-accion')
 
         # hay que cargar otra categoria (categoria) de la misma mesa?
         # si es asi, se redirige a esa carga
@@ -384,7 +368,8 @@ def cargar_resultados(
                 categoria_id=siguiente.id,
                 mesa_numero=mesa.numero
             )
-        return redirect('elegir-acta-a-cargar')
+        return redirect('siguiente-accion')
+
     return render(
         request, "fiscales/carga.html", {
             'formset': formset,

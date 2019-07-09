@@ -38,17 +38,9 @@
         {% endif  %}
 
         {% if request.user.fiscal.esta_en_grupo_validadores %}
-            {% url 'elegir-adjunto' as url %}
+            {% url 'siguiente-accion' as url %}
             <li {% if url in request.path %} class="active"{% endif %}>
-                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Clasificar actas<i class="material-icons">picture_in_picture</i><span class="badge">{{ adjuntos_count }}</span></a>
-            </li>
-        {% endif  %}
-
-
-        {% if request.user.fiscal.esta_en_grupo_validadores %}
-            {% url 'elegir-acta-a-cargar' as url %}
-            <li {% if url in request.path %} class="active"{% endif %}>
-                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Cargar resultados<i class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
+                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Actuar sobre acta<i class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
             </li>
         {% endif  %}
 
