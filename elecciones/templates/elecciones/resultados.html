@@ -1,15 +1,36 @@
 {% extends "fiscales/base.html" %}
 {% load staticfiles %}
 
+
 {% block title %}Resultados{% endblock %}
 
-{% block page_title %}<h5>Resultados para {{para|default:para}}</h5>{% endblock %}
+{% block page_title %}
+
+    <h5>Resultados para {{para|default:para}}</h5>
+    <form id="formulariotipodesumarizacion" method="get">
+        <select id='tipodesumarizacion' name='tipodesumarizacion' class="browser-default selector-tipo-sumarizacion">
+            {% for tipo_sumarizacion in tipos_sumarizacion %}
+                <option value="{{ tipo_sumarizacion.pk }}" {% if tipo_sumarizacion_seleccionado == tipo_sumarizacion.pk %}selected{% endif %}>{{ tipo_sumarizacion.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+{% endblock %}
 
  {% block head %}
     {{ block.super }}
     {% if show_plot %}
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     {% endif %}
+    <link href="/static/elecciones/resultados.css" rel="stylesheet" type="text/css">
+    <script>
+        $( document ).ready(function() {
+            $( "#tipodesumarizacion" ).change(function() {
+                $( "#formulariotipodesumarizacion" ).submit();
+            });
+        });
+        
+    </script>
  {% endblock %}
 
 {% block sidenav_items %}
