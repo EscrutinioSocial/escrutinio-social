@@ -423,9 +423,17 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
             "total_mesas": total_mesas
         })
 
+    def get_tipos_sumarizacion(self):
+        """
+        Esto deberia cambiarse cuando se realice el issue 17
+        Por ahora va a ser hardcodeado
+        """
+        return [{'pk': 1, 'name': 'Normal'}, {'pk': 2, 'name': 'Proyectado'}]
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['tipos_sumarizacion'] = self.get_tipos_sumarizacion()
         if self.filtros:
             context['para'] = get_text_list([getattr(o, 'nombre', o) for o in self.filtros], " y ")
         else:
