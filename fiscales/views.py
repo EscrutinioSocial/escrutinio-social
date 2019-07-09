@@ -63,8 +63,8 @@ WAITING_FOR = 2
 
 
 @login_required
-def post_cargar_resultados(request):
-    return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': 42, 'categoria': 'PV'})
+def post_cargar_resultados(request, mesa, categoria):
+    return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': mesa, 'categoria': categoria})
 
 
 def choice_home(request):
@@ -354,7 +354,7 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                 categoria_id=siguiente.id,
                 mesa_numero=mesa.numero
             )
-        return redirect('post-cargar-resultados')
+        return redirect('post-cargar-resultados', mesa=mesa.numero, categoria=categoria.nombre)
 
     # llega hasta aca si hubo error
     return render(
