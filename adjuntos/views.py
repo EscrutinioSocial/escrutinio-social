@@ -17,26 +17,6 @@ from .models import Attachment
 from .forms import AsignarMesaForm, AgregarAttachmentsForm
 
 
-@login_required
-def elegir_adjunto(request):
-    """
-    Elige un acta al azar del queryset :meth:`Attachment.sin asignar`,
-    estampa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para la clasificación de la mesa elegida
-
-    Si no hay más mesas sin asignar, se muestra un mensaje estático.
-    """
-
-    attachments = Attachment.sin_asignar()
-    if attachments.exists():
-        a = attachments.order_by('?').first()
-        # se marca el adjunto
-        a.taken = timezone.now()
-        a.save(update_fields=['taken'])
-        return redirect('asignar-mesa', attachment_id=a.id)
-
-    return render(request, 'adjuntos/sin-actas.html')
-
 
 
 class AsignarMesaAdjunto(UpdateView):
@@ -57,7 +37,7 @@ class AsignarMesaAdjunto(UpdateView):
         return super().dispatch(*args, **kwargs)
 
     def get_success_url(self):
-        return reverse('elegir-adjunto')
+        return reverse('siguiente-accion')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -5,7 +5,7 @@ from . import views
 
 urlpatterns = [
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
-    url('^acta/$', views.elegir_acta_a_cargar, name='elegir-acta-a-cargar'),
+    url('^acta/$', views.realizar_siguiente_accion, name='siguiente-accion'),
     url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.cargar_resultados, name='mesa-cargar-resultados'),
 
