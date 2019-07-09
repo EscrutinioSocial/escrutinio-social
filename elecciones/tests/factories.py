@@ -167,10 +167,9 @@ class AttachmentFactory(DjangoModelFactory):
 class IdentificacionFactory(DjangoModelFactory):
     class Meta:
         model = 'adjuntos.Identificacion'
-        django_get_or_create = ('attachment',)
     mesa = factory.SubFactory(MesaFactory)
     attachment = factory.SubFactory(AttachmentFactory)
-    status='consolidada'
+
 
 class ProblemaFactory(DjangoModelFactory):
     class Meta:

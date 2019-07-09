@@ -359,7 +359,12 @@ class Mesa(models.Model):
         de datos.
         """
         fotos = []
-        for i, a in enumerate(self.attachments.filter(identificacion__status='consolidada').order_by('modified'), 1):
+        for i, a in enumerate(
+            self.attachments.filter(
+                identificaciones__status='identificada',
+                identificaciones__consolidada=True
+            ).distinct().order_by('modified'), 1
+        ):
             if a.foto_edited:
                 fotos.append((f'Foto {i} (editada)', a.foto_edited))
             fotos.append((f'Foto {i} (original)', a.foto))

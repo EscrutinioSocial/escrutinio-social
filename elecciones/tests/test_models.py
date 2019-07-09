@@ -7,6 +7,7 @@ from .factories import (
     ProblemaFactory,
     IdentificacionFactory
 )
+from factory import LazyAttribute
 from elecciones.models import Mesa, MesaCategoria, Categoria
 from django.utils import timezone
 
@@ -39,8 +40,8 @@ def test_con_carga_pendiente_excluye_sin_foto(db):
 
 
 def test_con_carga_pendiente_excluye_taken(db):
-    m1 = IdentificacionFactory(status='consolidada').mesa
-    m2 = IdentificacionFactory(status='consolidada').mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
     m2.taken = timezone.now()
     m2.save()
@@ -49,21 +50,21 @@ def test_con_carga_pendiente_excluye_taken(db):
 
 def test_con_carga_pendiente_incluye_taken_vencido(db):
     now = timezone.now()
-    m1 = IdentificacionFactory(status='consolidada').mesa
-    m2 = IdentificacionFactory(status='consolidada', mesa__taken=now - timedelta(minutes=3)).mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True, mesa__taken=now - timedelta(minutes=3)).mesa
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
 
 
 def test_con_carga_pendiente_excluye_si_tiene_problema_no_resuelto(db):
-    m2 = IdentificacionFactory(status='consolidada').mesa
-    m1 = IdentificacionFactory(status='consolidada').mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
     ProblemaFactory(mesa=m1)
     assert set(Mesa.con_carga_pendiente()) == {m2}
 
 
 def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
-    m2 = IdentificacionFactory(status='consolidada').mesa
-    m1 = IdentificacionFactory(status='consolidada').mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
     ProblemaFactory(mesa=m1, estado='resuelto')
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
     # nuevo problema
@@ -72,9 +73,9 @@ def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
 
 
 def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
-    m1 = IdentificacionFactory(status='consolidada').mesa
-    m2 = IdentificacionFactory(status='consolidada').mesa
-    m3 = IdentificacionFactory(status='consolidada').mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m3 = IdentificacionFactory(status='identificada', consolidada=True).mesa
 
     # mesa 2 ya se cargo, se excluirá
     categoria = m2.categorias.first()
@@ -196,3 +197,38 @@ def test_categorias_para_mesa(db):
     assert list(
         Categoria.para_mesas([m2, m4]).order_by('id')
     ) == []
+
+
+def test_fotos_de_mesa(db):
+    m = MesaFactory()
+    a1, a2, a3 = AttachmentFactory.create_batch(3)
+
+    # a3 tiene una version editada.
+    a3.foto_edited = a3.foto
+    a3.save()
+
+    IdentificacionFactory(
+        status='identificada',
+        consolidada=True,
+        attachment=a1,
+        mesa=m,
+    )
+    # a2 esta asociada a m pero se
+    # ignorada porque no está consolidada
+    IdentificacionFactory(
+        status='identificada',
+        consolidada=False,
+        attachment=a2,
+        mesa=m
+    )
+    IdentificacionFactory(
+        status='identificada',
+        consolidada=True,
+        attachment=a3,
+        mesa=m
+    )
+    assert m.fotos() == [
+        ('Foto 1 (original)', a1.foto),
+        ('Foto 2 (editada)', a3.foto_edited),
+        ('Foto 2 (original)', a3.foto),
+    ]

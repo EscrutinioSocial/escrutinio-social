@@ -7,7 +7,7 @@ from model_utils import Choices
 from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
 from django.db.models import (
-    OuterRef, Exists
+    OuterRef, Exists, Count
 )
 
 from django.db.models import Q
@@ -122,10 +122,17 @@ class Attachment(TimeStampedModel):
         Notar que esto puede puede producir una excepción si la imágen (el digest)
         ya es conocido en el sistema
         """
-        if self.foto:
+        if self.foto and not self.foto_digest:
+            # FIXME
+            # sólo se calcula el digest cuando no hay uno previo.
+            # esto impide recalcular el digest si eventualmente cambia
+            # la imagen por algun motivo
+            # Mejor seria verificar con un MonitorField si la foto cambió
+            # y sólo en ese caso actualizar el hash.
             self.foto.file.open()
             self.foto_digest = hash_file(self.foto.file)
         super().save(*args, **kwargs)
+
 
     @classmethod
     def sin_identificar(cls, wait=2, fiscal=None):
@@ -144,7 +151,7 @@ class Attachment(TimeStampedModel):
             consolidada=Exists(
                 Identificacion.objects.filter(
                     Q(attachment__id=OuterRef('id')),
-                    Q(status=Identificacion.STATUS.consolidada)
+                    Q(consolidada=True)
                 )
             )
         ).filter(
@@ -163,26 +170,67 @@ class Identificacion(TimeStampedModel):
     """
     Es el modelo que guarda clasificaciones de actas para asociarlas a mesas
     """
-    STATUS = Choices('agregada', 'consolidada')
-    status = StatusField(default='agregada')
-    fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
-    mesa = models.ForeignKey('elecciones.Mesa', on_delete=models.CASCADE)
-    attachment = models.ForeignKey(Attachment, on_delete=models.CASCADE)
+    STATUS = Choices(
+        'identificada',
+        'spam',
+        'invalida'
+    )
+    status = StatusField()
+
+    consolidada = models.BooleanField(
+        default=False,
+        help_text=(
+            'una identificacion consolidada es aquella '
+            'que se considera representativa y determina '
+            'el estado del attachment'
+        )
+    )
+    fiscal = models.ForeignKey(
+        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
+    )
+    mesa = models.ForeignKey(
+        'elecciones.Mesa',  null=True, blank=True, on_delete=models.CASCADE
+    )
+    attachment = models.ForeignKey(
+        Attachment, related_name='identificaciones', on_delete=models.CASCADE
+    )
+
+    @classmethod
+    def status_count(cls, attachment, exclude=None):
+        """
+        a partir del conjunto de identificaciones del attachment
+        se devuelve un diccionario con los cantidades para
+        cada grupo (mesa_id, status)
+        Por ejmplo:
+            {
+                (None, 'spam'): 2,
+                (None, 'invalida'): 1,
+                (1, 'identificada'): 1,
+                (2, 'identificada'): 1,
+            }
+
+        2 lo identificaron como spam, 1 como inválida,
+        1 a la mesa id=1, y otro a la mesa id=2
+        """
+
+        qs = cls.objects.filter(attachment=attachment)
+        if exclude:
+            # en caso de que se pase ID, se excluye
+            # este objeto, de manera de poder
+            qs = exclude(id=exclude)
+        result = {}
+        for item in qs.values('mesa', 'status').annotate(total=Count('status')):
+            result[(item['mesa'], item['status'])] = item['total']
+        return result
 
     def save(self, *args, **kwargs):
-        """
-        si no hay instancias ya consolidadas para la misma mesa
-        y se supera el minimo de coincidencias, entonces se marca esta instancia como consolidada
-        """
-        if (
-            not self.mesa.identificacion_set.filter(
-                status=Identificacion.STATUS.consolidada
-            ).exists() and
-                Identificacion.objects.filter(
-                mesa=self.mesa
-            ).count() + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION
-        ):
-            self.status = Identificacion.STATUS.consolidada
+        if self.attachment:
+            same_status_count = Identificacion.status_count(
+                self.attachment, self.id
+            ).get((self.mesa, self.status))
+
+            if same_status_count and same_status_count + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION:
+                self.consolidada = True
         super().save(*args, **kwargs)
 
 
@@ -193,7 +241,11 @@ def asignar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     a la mesa asociada se le asigna el orden de carga
     que corresponda actualmente al circuito
     """
-    if instance.status == Identificacion.STATUS.consolidada and not instance.mesa.carga_set.exists():
+    if (
+        instance.status == Identificacion.STATUS.identificada and
+        instance.consolidada and
+        not instance.mesa.carga_set.exists()
+    ):
         mesa = instance.mesa
         mesa.orden_de_carga = mesa.lugar_votacion.circuito.proximo_orden_de_carga()
         mesa.save(update_fields=['orden_de_carga'])

@@ -345,10 +345,10 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
 
 def test_mesa_orden(carta_marina):
     m1, m2, *_ = carta_marina
-    IdentificacionFactory(status='consolidada', mesa=m1)
+    IdentificacionFactory(status='identificada', consolidada=True, mesa=m1)
     assert m1.orden_de_carga == 1
     assert m2.orden_de_carga == 0
-    IdentificacionFactory(status='consolidada', mesa=m2)
+    IdentificacionFactory(status='identificada', consolidada=True, mesa=m2)
     # FIXME ver por qué da 1 en vez de 2
     assert m2.orden_de_carga == 2
 
@@ -363,8 +363,8 @@ def test_orden_para_circuito(db):
 
 def test_elegir_acta(carta_marina, fiscal_client):
     m1, m2, *_ = carta_marina
-    IdentificacionFactory(status='consolidada', mesa=m1)
-    IdentificacionFactory(status='consolidada', mesa=m2)
+    IdentificacionFactory(status='identificada', consolidada=True, mesa=m1)
+    IdentificacionFactory(status='identificada', consolidada=True, mesa=m2)
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=(1, m1.numero))
