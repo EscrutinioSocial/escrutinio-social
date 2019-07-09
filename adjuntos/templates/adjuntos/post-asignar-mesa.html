@@ -7,13 +7,15 @@
 
     <div class="card-content">
 
-        <div class="card-title">{% block card-title %}
-            {% if decision == "mesa" %}
-                Se asignó la imagen a la mesa {{ contenido }}
-            {% else %}
-                Se indicó el siguiente problema en la imagen: {{ contenido }}
-            {% endif %}
-            {% endblock card-title %}</div>
+        <div class="card-title">
+            {% block card-title %}
+                {% if decision == "mesa" %}
+                    Se asignó la imagen a la mesa {{ contenido }}
+                {% else %}
+                    Se indicó el siguiente problema en la imagen: {{ contenido }}
+                {% endif %}
+            {% endblock card-title %}
+        </div>
 
         <p></p>
 

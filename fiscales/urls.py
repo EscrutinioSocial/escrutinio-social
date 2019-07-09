@@ -18,4 +18,5 @@ urlpatterns = [
     url('^mis-datos/profile$', views.MisDatosUpdate.as_view(), name='mis-datos-update'),
     url('^mis-datos/password$', views.CambiarPassword.as_view(), name='cambiar-password'),
     url('^_confirmar/(?P<fiscal_id>\d+)$', views.confirmar_fiscal, name='confirmar-fiscal'),
+    url('^post-cargar-resultados$', views.post_cargar_resultados, name="post-cargar-resultados"),
 ]

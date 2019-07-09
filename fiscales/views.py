@@ -62,6 +62,11 @@ from django.conf import settings
 WAITING_FOR = 2
 
 
+@login_required
+def post_cargar_resultados(request):
+    return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': 42, 'categoria': 'PV'})
+
+
 def choice_home(request):
     """
     redirige a una página en funcion del tipo de usuario
@@ -349,8 +354,9 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                 categoria_id=siguiente.id,
                 mesa_numero=mesa.numero
             )
-        return redirect('siguiente-accion')
+        return redirect('post-cargar-resultados')
 
+    # llega hasta aca si hubo error
     return render(
         request, "fiscales/carga.html", {
             'formset': formset,
