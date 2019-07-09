@@ -66,6 +66,10 @@ WAITING_FOR = 2
 def post_cargar_resultados(request, mesa, categoria):
     return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': mesa, 'categoria': categoria})
 
+@login_required
+def post_confirmar_resultados(request, mesa):
+    return render(request, 'fiscales/post-confirmar-resultados.html', {'mesa': mesa})
+
 
 def choice_home(request):
     """
@@ -421,8 +425,7 @@ def chequear_resultado_mesa(request, categoria_id, mesa_numero, carga_id=None):
     if data and 'confirmar' in data:
         me.confirmada = True
         me.save(update_fields=['confirmada'])
-        messages.success(request, f'Confirmaste la categoria {categoria} para {mesa}')
-        return redirect('chequear-resultado')
+        return redirect('post-confirmar-resultados', mesa=mesa.numero)
 
     reportados = carga.votomesareportado_set.order_by('opcion__orden')
     return render(
