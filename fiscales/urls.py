@@ -25,4 +25,5 @@ urlpatterns = [
     url(r'^carga-simultanea/(?P<mesa>\w+)/(?P<categoria>\w+)$', views.carga_simultanea, name="carga-simultanea"),
     url(r'^post-confirmar-resultados/(?P<mesa>\w+)$', views.post_confirmar_resultados, name="post-confirmar-resultados"),
     url(r'^post-reportar-problema/(?P<mesa>\w+)$', views.post_reportar_problema, name="post-reportar-problema"),
+    url(r'^bienvenido$', views.bienvenido, name="bienvenido"),
 ]

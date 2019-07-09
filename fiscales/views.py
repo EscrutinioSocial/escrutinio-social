@@ -83,6 +83,11 @@ def post_reportar_problema(request, mesa):
     return render(request, 'fiscales/post-reportar-problema.html', {'mesa': mesa})
 
 
+@login_required
+def bienvenido(request):
+    return render(request, 'fiscales/bienvenido.html')
+
+
 def choice_home(request):
     """
     redirige a una página en funcion del tipo de usuario
@@ -93,9 +98,8 @@ def choice_home(request):
 
     es_fiscal = Fiscal.objects.filter(user=request.user).exists()
 
-    result = redirect('siguiente-accion') if user.fiscal.esta_en_grupo('validadores') else render(request, 'fiscales/base.html')
+    return redirect('bienvenido')
 
-    return result
 
 def permission_denied(request):
     return PermissionDenied
@@ -364,13 +368,10 @@ def cargar_resultados(
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
-<<<<<<< HEAD
-            carga.actualizar_firma()
-=======
                 # libero el token sobre la mesa
                 mesa.taken = None
                 mesa.save(update_fields=['taken'])
->>>>>>> ajustes al ruteo cuando hay varias categorias para cargar
+            carga.actualizar_firma()
             messages.success(
                 request,
                 f'Guardada categoría {categoria} para {mesa}')
