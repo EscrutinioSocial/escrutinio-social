@@ -23,8 +23,10 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
-    path('cargas/<int:mesa>/<int:categoria>/', views.crear_carga, name='crear-carga'),
-    url(r'^cargas/importar/$', views.importar_cargas, name='importar-cargas'),
+    url(r'^actas/$', views.subir_acta, name='actas'),
+    path('actas/<foto_digest>/', views.identificar_acta, name='identificar-acta'),
+    path('actas/<foto_digest>/votos/', views.cargar_votos, name='cargar-votos'),
+
     url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     url(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc')

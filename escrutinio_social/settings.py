@@ -60,9 +60,9 @@ INSTALLED_APPS = [
     'darkroom',
 
     # django-rest-framework
-    'django_filters',
     'rest_framework',
     'drf_yasg',
+    
 
     # nuestras apps
     'elecciones',
