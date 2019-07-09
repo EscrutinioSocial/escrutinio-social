@@ -364,7 +364,13 @@ def cargar_resultados(
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
+<<<<<<< HEAD
             carga.actualizar_firma()
+=======
+                # libero el token sobre la mesa
+                mesa.taken = None
+                mesa.save(update_fields=['taken'])
+>>>>>>> ajustes al ruteo cuando hay varias categorias para cargar
             messages.success(
                 request,
                 f'Guardada categoría {categoria} para {mesa}')
@@ -373,19 +379,23 @@ def cargar_resultados(
             capture_exception(e)
             return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre)
 
-        # hay que cargar otra categoria (categoria) de la misma mesa?
-        # si es asi, se redirige a esa carga
-        siguiente = mesa.siguiente_categoria_sin_carga()
-        if siguiente:
-            # vuelvo a marcar un token
-            mesa.taken = timezone.now()
-            mesa.save(update_fields=['taken'])
+        # comento esta parte porque debe cambiar el algoritmo de carga, no necesariamente se cargan
+        # todas las categorias de una mesa consecutivamente
+        # Carlos Lombardi, 2019.7.9
 
-            return redirect(
-                'mesa-cargar-resultados',
-                categoria_id=siguiente.id,
-                mesa_numero=mesa.numero
-            )
+        # # hay que cargar otra categoria (categoria) de la misma mesa?
+        # # si es asi, se redirige a esa carga
+        # siguiente = mesa.siguiente_categoria_sin_carga()
+        # if siguiente:
+        #     # vuelvo a marcar un token
+        #     mesa.taken = timezone.now()
+        #     mesa.save(update_fields=['taken'])
+
+        #     return redirect(
+        #         'mesa-cargar-resultados',
+        #         categoria_id=siguiente.id,
+        #         mesa_numero=mesa.numero
+        #     )
         return redirect('post-cargar-resultados', mesa=mesa.numero, categoria=categoria.nombre)
 
     # llega hasta aca si hubo error
