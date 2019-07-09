@@ -478,9 +478,8 @@ class Eleccion(models.Model):
         return f'{self.nombre}'
 
     class Meta:
-        verbose_name = 'Eleccion'
+        verbose_name = 'Elección'
         verbose_name_plural = 'Elecciones'
-
 
 class Categoria(models.Model):
     """

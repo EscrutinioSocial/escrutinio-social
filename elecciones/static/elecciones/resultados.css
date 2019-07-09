@@ -1,0 +1,9 @@
+.selector-tipo-sumarizacion {
+    font-size: 50%;
+    height: 2em;
+}
+
+nav.topbar .brand-logo {
+    display: flex;
+    justify-content: space-between;
+}
