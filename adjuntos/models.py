@@ -95,7 +95,7 @@ class Attachment(TimeStampedModel):
         null=True, blank=True,
         width_field='width',
         height_field='height'
-        )
+    )
     foto_edited = VersatileImageField(upload_to='attachments/edited',
         null=True, blank=True,
         width_field='width',

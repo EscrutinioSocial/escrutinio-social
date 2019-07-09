@@ -234,7 +234,7 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
             elif 'mesa' in self.request.GET:
                 lookups = Q(id__in=self.filtros)
 
-        return Mesa.objects.filter(categoria=categoria).filter(lookups).distinct()
+        return Mesa.objects.filter(categorias=categoria).filter(lookups).distinct()
 
     @lru_cache(128)
     def electores(self, categoria):
@@ -376,7 +376,7 @@ class ResultadosCategoria(StaffOnlyMixing, TemplateView):
             total: total votos (positivos + no positivos)
             positivos: total votos positivos
         """
-        electores = mesas.filter(categoria=categoria).aggregate(v=Sum('electores'))['v'] or 0
+        electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
         sum_por_partido, otras_opciones = ResultadosCategoria.agregaciones_por_partido(categoria)
 
         # primero para partidos

@@ -286,7 +286,7 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
     categoria = get_object_or_404(Categoria, id=categoria_id)
-    mesa = get_object_or_404(Mesa, categoria=categoria, numero=mesa_numero)
+    mesa = get_object_or_404(Mesa, categorias=categoria, numero=mesa_numero)
     if carga_id:
         carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
     else:

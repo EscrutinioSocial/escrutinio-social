@@ -77,7 +77,7 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
     m3 = IdentificacionFactory(status='consolidada').mesa
 
     # mesa 2 ya se cargo, se excluirá
-    categoria = m2.categoria.first()
+    categoria = m2.categorias.first()
     VotoMesaReportadoFactory(carga__mesa=m2, carga__categoria=categoria, opcion=categoria.opciones.first(), votos=10)
     VotoMesaReportadoFactory(carga__mesa=m2, carga__categoria=categoria, opcion=categoria.opciones.last(), votos=12)
 
@@ -89,7 +89,7 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
     m3.categoria_add(e3)
     m3.categoria_add(e4)
     m3.categoria_add(CategoriaFactory(id=101))
-    categoria = m3.categoria.first()
+    categoria = m3.categorias.first()
     # se cargo primera y segunda categoria para la mesa 3
     VotoMesaReportadoFactory(carga__mesa=m3, carga__categoria=categoria, opcion=categoria.opciones.first(), votos=20)
     VotoMesaReportadoFactory(carga__mesa=m3, carga__categoria=e2, opcion=e2.opciones.first(), votos=20)

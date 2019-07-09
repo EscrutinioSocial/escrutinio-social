@@ -78,7 +78,7 @@ class Seccion(models.Model):
     def mesas(self, categoria):
         return Mesa.objects.filter(
             lugar_votacion__circuito__seccion=self,
-            categoria=categoria
+            categorias=categoria
         )
 
 
@@ -125,7 +125,7 @@ class Circuito(models.Model):
         """
         return Mesa.objects.filter(
             lugar_votacion__circuito=self,
-            categoria=categoria
+            categorias=categoria
     )
 
 
@@ -198,12 +198,12 @@ class LugarVotacion(models.Model):
         """
         return Mesa.objects.filter(
             lugar_votacion=self,
-            categoria=categoria
+            categorias=categoria
     )
 
     @property
     def mesas_actuales(self):
-        return self.mesas.filter(categoria=Categoria.actual())
+        return self.mesas.filter(categorias=Categoria.actual())
 
     @property
     def color(self):
@@ -219,20 +219,9 @@ class LugarVotacion(models.Model):
         return f"{self.nombre} - {self.circuito}"
 
 
-def path_foto_acta(instance, filename):
-    """
-    Genera la ruta donde se almacenan las fotos de actas.
-    Se respeta la extensión del archivo original
-
-    ``MEDIA_ROOT/actas/<categoria>/<mesa>.<extension>``
-    """
-    _, ext = os.path.splitext(filename)
-    return f'actas/{instance.categoria.slug}/{instance.numero}{ext}'
-
-
 class MesaCategoria(models.Model):
     """
-    Modelo intermedio para la relación m2m ``Mesa.categoria``
+    Modelo intermedio para la relación m2m ``Mesa.categorias``
 
     Permite guardar el booleano que marca la carga de esa "columna" como confirmada.
     """
@@ -257,8 +246,7 @@ class Mesa(models.Model):
     Presidente y Vice, Diputado de Prov de Buenos Aires e Intendente de La Matanza.
     """
 
-    # fixme. este campo deberia ser `categorias`, en plural.
-    categoria = models.ManyToManyField('Categoria', through='MesaCategoria')
+    categorias = models.ManyToManyField('Categoria', through='MesaCategoria')
     numero = models.CharField(max_length=10)
     es_testigo = models.BooleanField(default=False)
     circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
@@ -286,7 +274,7 @@ class Mesa(models.Model):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
 
     def siguiente_categoria_sin_carga(self):
-        for categoria in self.categoria.filter(activa=True).order_by('id'):
+        for categoria in self.categorias.filter(activa=True).order_by('id'):
             if not Carga.objects.filter(
                 mesa=self, categoria=categoria
             ).exists():
@@ -307,7 +295,7 @@ class Mesa(models.Model):
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
-            a_cargar=Count('categoria', filter=Q(categoria__activa=True))
+            a_cargar=Count('categorias', filter=Q(categorias__activa=True))
         ).filter(
             cargadas__lt=F('a_cargar')
         ).annotate(
@@ -556,7 +544,7 @@ class Categoria(models.Model):
         """
         Devuelve la cantidad de electores habilitados para esta categoría
         """
-        return Mesa.objects.filter(categoria=self).aggregate(v=Sum('electores'))['v']
+        return Mesa.objects.filter(categorias=self).aggregate(v=Sum('electores'))['v']
 
     class Meta:
         verbose_name = 'Categoría'

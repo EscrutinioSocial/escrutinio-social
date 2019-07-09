@@ -106,7 +106,7 @@ class Command(BaseCommand):
                 mesa.circuito=circuito
                 mesa.save()
 
-                if categoria_gobernador_cordoba not in mesa.categoria.all():
+                if categoria_gobernador_cordoba not in mesa.categorias.all():
                     mesa.categoria_add(categoria_gobernador_cordoba)
                     self.success('Se agregó la mesa a la categoria a gobernador')
                 if categoria_legisladores_distrito_unico not in mesa.categoria.all():
