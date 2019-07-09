@@ -68,6 +68,10 @@ NO_PERMISSION_REDIRECT = '/permission-denied/'
 def post_cargar_resultados(request, mesa, categoria):
     return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': mesa, 'categoria': categoria})
 
+@login_required
+def post_confirmar_resultados(request, mesa):
+    return render(request, 'fiscales/post-confirmar-resultados.html', {'mesa': mesa})
+
 
 def choice_home(request):
     """
