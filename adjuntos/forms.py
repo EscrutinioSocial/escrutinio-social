@@ -3,6 +3,21 @@ from .models import Identificacion
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 
 
+class IdentificacionProblemaForm(forms.ModelForm):
+
+    class Meta:
+        model = Identificacion
+        fields = ['status']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['status'].label = ''
+        choices = self.fields['status'].choices
+        self.fields['status'].choices = [
+            (v, s) for (v, s) in choices if v != Identificacion.STATUS.identificada
+        ]
+
+
 class IdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar mesa

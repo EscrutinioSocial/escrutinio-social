@@ -34,6 +34,9 @@ $(document).ready(function(){
 {% endblock js %}
 
 
+  {% block extra_form %}
+  {% endblock extra_form %}
+
 
 {% block breadcrumbs_items %}
 <a href="{{ object.get_absolute_url }}">{{ object }}</a>

@@ -89,7 +89,9 @@ class Attachment(TimeStampedModel):
         'invalida',
     )
     status = StatusField(default=STATUS.sin_identificar)
-
+    mesa = models.ForeignKey(
+        'elecciones.Mesa', related_name='attachments', null=True, blank=True, on_delete=models.SET_NULL
+    )
     email = models.ForeignKey('Email', null=True, on_delete=models.SET_NULL)
     mimetype = models.CharField(max_length=100, null=True)
     foto = VersatileImageField(upload_to='attachments/',
@@ -149,7 +151,7 @@ class Attachment(TimeStampedModel):
             status='sin_identificar',
         )
         if fiscal:
-            qs = qs.exclude(identificacion__fiscal=fiscal)
+            qs = qs.exclude(identificaciones__fiscal=fiscal)
         return qs
 
 
@@ -163,8 +165,8 @@ class Identificacion(TimeStampedModel):
     """
     STATUS = Choices(
         'identificada',
-        'spam',
-        'invalida'
+        ('spam', 'Es SPAM'),
+        ('invalida', 'Es inválida'),
     )
     status = StatusField()
 
@@ -180,7 +182,7 @@ class Identificacion(TimeStampedModel):
         'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
     )
     mesa = models.ForeignKey(
-        'elecciones.Mesa',  null=True, blank=True, on_delete=models.CASCADE
+        'elecciones.Mesa',  null=True, blank=True, on_delete=models.SET_NULL
     )
     attachment = models.ForeignKey(
         Attachment, related_name='identificaciones', on_delete=models.CASCADE
@@ -236,7 +238,8 @@ def consolidacion_attachent(sender, instance=None, created=False, **kwargs):
     if instance.consolidada:
         attachment = instance.attachment
         attachment.status = instance.status
-        attachment.save(update_fields=['status'])
+        attachment.mesa = instance.mesa
+        attachment.save(update_fields=['mesa', 'status'])
 
 
         if (

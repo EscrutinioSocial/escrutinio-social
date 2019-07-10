@@ -14,7 +14,11 @@ import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
 from .models import Attachment, Identificacion
-from .forms import IdentificacionForm, AgregarAttachmentsForm
+from .forms import (
+    AgregarAttachmentsForm,
+    IdentificacionForm,
+    IdentificacionProblemaForm,
+)
 
 
 @login_required
@@ -69,17 +73,34 @@ class IdentificacionCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['attachment'] = self.attachment
+        context['form_problema'] = IdentificacionProblemaForm()
         context['button_tabindex'] = 2
         return context
 
     def form_valid(self, form):
-        identicacion = form.save(commit=False)
-        identicacion.status = Identificacion.STATUS.identificada
-        identicacion.fiscal = self.request.user.fiscal
-        identicacion.attachment = self.attachment
+        identificacion = form.save(commit=False)
+        identificacion.status = Identificacion.STATUS.identificada
+        identificacion.fiscal = self.request.user.fiscal
+        identificacion.attachment = self.attachment
+        messages.info(
+            self.request,
+            f'Identificada mesa Nº {identificacion.mesa} - Circuito {identificacion.mesa.circuito}',
+        )
         return super().form_valid(form)
 
 
+class IdentificacionProblemaCreateView(IdentificacionCreateView):
+    http_method_names = ['post']
+    form_class = IdentificacionProblemaForm
+
+    def form_valid(self, form):
+        identificacion = form.save(commit=False)
+        identificacion.fiscal = self.request.user.fiscal
+        messages.info(
+            self.request,
+            f'Guardado como "{identificacion.get_status_display()}"',
+        )
+        return redirect(self.get_success_url())
 
 
 @staff_member_required

@@ -260,10 +260,6 @@ class Mesa(models.Model):
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
     carga_confirmada = models.BooleanField(default=False)
 
-    attachments = models.ManyToManyField(
-        'adjuntos.Attachment', through='adjuntos.Identificacion'
-    )
-
     # denormalizaciones
     # lleva la cuenta de las categorias que se han cargado hasta el momento.
     # ver receiver actualizar_categorias_cargadas_para_mesa()
