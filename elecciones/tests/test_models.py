@@ -7,7 +7,6 @@ from .factories import (
     ProblemaFactory,
     IdentificacionFactory
 )
-from factory import LazyAttribute
 from elecciones.models import Mesa, MesaCategoria, Categoria
 from django.utils import timezone
 

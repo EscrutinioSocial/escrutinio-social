@@ -82,6 +82,13 @@ class Attachment(TimeStampedModel):
     No pueden existir dos instancias de este modelo con la misma foto, dado que
     el atributo digest es único.
     """
+    STATUS = Choices(
+        ('sin_identificar', 'sin identificar'),
+        'identificada',
+        'spam',
+        'invalida',
+    )
+    status = StatusField(default=STATUS.sin_identificar)
 
     email = models.ForeignKey('Email', null=True, on_delete=models.SET_NULL)
     mimetype = models.CharField(max_length=100, null=True)
@@ -138,16 +145,8 @@ class Attachment(TimeStampedModel):
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
-            Q(taken__isnull=True) | Q(taken__lt=desde)
-        ).annotate(
-            consolidada=Exists(
-                Identificacion.objects.filter(
-                    Q(attachment__id=OuterRef('id')),
-                    Q(consolidada=True)
-                )
-            )
-        ).filter(
-            consolidada=False
+            Q(taken__isnull=True) | Q(taken__lt=desde),
+            status='sin_identificar',
         )
         if fiscal:
             qs = qs.exclude(identificacion__fiscal=fiscal)
@@ -227,17 +226,24 @@ class Identificacion(TimeStampedModel):
 
 
 @receiver(post_save, sender=Identificacion)
-def asignar_orden_de_carga(sender, instance=None, created=False, **kwargs):
+def consolidacion_attachent(sender, instance=None, created=False, **kwargs):
     """
-    Cuando se guarda una identificacion que consolida,
-    a la mesa asociada se le asigna el orden de carga
-    que corresponda actualmente al circuito
+    la consolidacion de una identificacion determina una transicion
+    en el estado del attachment
+    Si se identifica como identificada, entonces se le asigna
+    orden de carga a la mesa en cuestión.
     """
-    if (
-        instance.status == Identificacion.STATUS.identificada and
-        instance.consolidada and
-        not instance.mesa.carga_set.exists()
-    ):
-        mesa = instance.mesa
-        mesa.orden_de_carga = mesa.lugar_votacion.circuito.proximo_orden_de_carga()
-        mesa.save(update_fields=['orden_de_carga'])
+    if instance.consolidada:
+        attachment = instance.attachment
+        attachment.status = instance.status
+        attachment.save(update_fields=['status'])
+
+
+        if (
+            instance.mesa and
+            instance.status == Identificacion.STATUS.identificada and
+            not instance.mesa.carga_set.exists()
+        ):
+            mesa = instance.mesa
+            mesa.orden_de_carga = mesa.lugar_votacion.circuito.proximo_orden_de_carga()
+            mesa.save(update_fields=['orden_de_carga'])

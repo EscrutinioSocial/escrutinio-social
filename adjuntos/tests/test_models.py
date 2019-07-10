@@ -5,7 +5,8 @@ from elecciones.tests.factories import (
     IdentificacionFactory,
     MesaFactory,
 )
-from adjuntos.models import Identificacion
+from django.utils import timezone
+from adjuntos.models import Identificacion, Attachment
 
 
 def test_attachment_unico(db):
@@ -14,6 +15,24 @@ def test_attachment_unico(db):
     assert a.foto_digest
     with pytest.raises(IntegrityError):
         AttachmentFactory(foto=a.foto)
+
+
+def test_sin_identificar_excluye_taken(db):
+    a1 = IdentificacionFactory(status='identificada').attachment
+    a2 = IdentificacionFactory(status='spam').attachment
+    a3 = IdentificacionFactory(status='spam').attachment
+    assert set(Attachment.sin_identificar()) == {a1, a2, a3}
+    a3.taken = timezone.now()
+    a3.save()
+    assert set(Attachment.sin_identificar()) == {a1, a2}
+
+
+def test_sin_identificar_excluye_otros_estados(db):
+    AttachmentFactory(status='spam')
+    AttachmentFactory(status='invalida')
+    AttachmentFactory(status='identificada')
+    a = AttachmentFactory(status=Attachment.STATUS.sin_identificar)
+    assert set(Attachment.sin_identificar()) == {a}
 
 
 def test_identificacion_status_count(db):
