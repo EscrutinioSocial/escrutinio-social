@@ -44,14 +44,21 @@ def test_identificacion_status_count(db):
     IdentificacionFactory(attachment=a, status='spam', mesa=None)
     IdentificacionFactory(attachment=a, status='spam', mesa=None)
     IdentificacionFactory(attachment=a, status='invalida', mesa=None)
-    IdentificacionFactory(attachment=a, status='identificada', mesa=m2)
+    i2 = IdentificacionFactory(attachment=a, status='identificada', mesa=m2)
 
-    result = Identificacion.status_count(a)
+    result = a.status_count()
     assert result == {
         (None, 'spam'): 2,
         (None, 'invalida'): 1,
         (m1.id, 'identificada'): 1,
         (m2.id, 'identificada'): 1,
+    }
+
+    result = a.status_count(exclude=i2.id)
+    assert result == {
+        (None, 'spam'): 2,
+        (None, 'invalida'): 1,
+        (m1.id, 'identificada'): 1,
     }
 
 

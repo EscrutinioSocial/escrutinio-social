@@ -154,6 +154,34 @@ class Attachment(TimeStampedModel):
             qs = qs.exclude(identificaciones__fiscal=fiscal)
         return qs
 
+    def status_count(self, exclude=None):
+        """
+        a partir del conjunto de identificaciones del attachment
+        se devuelve un diccionario con los cantidades para
+        cada grupo (mesa_id, status)
+        Por ejmplo:
+            {
+                (None, 'spam'): 2,
+                (None, 'invalida'): 1,
+                (1, 'identificada'): 1,
+                (2, 'identificada'): 1,
+            }
+
+        2 lo identificaron como spam, 1 como inválida,
+        1 a la mesa id=1, y otro a la mesa id=2
+        """
+        qs = self.identificaciones.all()
+        if exclude:
+            # en caso de que se pase ID, se excluye
+            # esa identificacion del cálculo.
+            # es util para no profucir cambios de estados
+            # en caso de edición de una identificacion
+            qs = qs.exclude(id=exclude)
+        result = {}
+        for item in qs.values('mesa', 'status').annotate(total=Count('status')):
+            result[(item['mesa'], item['status'])] = item['total']
+        return result
+
 
     def __str__(self):
         return f'{self.foto} ({self.mimetype})'
@@ -188,40 +216,19 @@ class Identificacion(TimeStampedModel):
         Attachment, related_name='identificaciones', on_delete=models.CASCADE
     )
 
-    @classmethod
-    def status_count(cls, attachment, exclude=None):
-        """
-        a partir del conjunto de identificaciones del attachment
-        se devuelve un diccionario con los cantidades para
-        cada grupo (mesa_id, status)
-        Por ejmplo:
-            {
-                (None, 'spam'): 2,
-                (None, 'invalida'): 1,
-                (1, 'identificada'): 1,
-                (2, 'identificada'): 1,
-            }
-
-        2 lo identificaron como spam, 1 como inválida,
-        1 a la mesa id=1, y otro a la mesa id=2
-        """
-
-        qs = cls.objects.filter(attachment=attachment)
-        if exclude:
-            # en caso de que se pase ID, se excluye
-            # este objeto, de manera de poder
-            qs = exclude(id=exclude)
-        result = {}
-        for item in qs.values('mesa', 'status').annotate(total=Count('status')):
-            result[(item['mesa'], item['status'])] = item['total']
-        return result
+    def __str__(self):
+        return f'{self.status} - {self.mesa} - {self.fiscal}'
 
     def save(self, *args, **kwargs):
         if self.attachment:
-            same_status_count = Identificacion.status_count(
-                self.attachment, self.id
-            ).get((self.mesa, self.status))
-
+            status_count_dict = self.attachment.status_count(self.id)
+            same_status_count = status_count_dict.get(
+                (self.mesa, self.status)
+            )
+            # si esta identificacion iguala o supera el minimo de
+            # identificaciones coincidentes, la identificacion se
+            # consolida.
+            # esto dispara la lógica de :func:`consolidacion_attachent`
             if same_status_count and same_status_count + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION:
                 self.consolidada = True
         super().save(*args, **kwargs)

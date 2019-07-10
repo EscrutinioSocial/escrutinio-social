@@ -82,6 +82,7 @@ class IdentificacionCreateView(CreateView):
         identificacion.status = Identificacion.STATUS.identificada
         identificacion.fiscal = self.request.user.fiscal
         identificacion.attachment = self.attachment
+        identificacion.save()
         messages.info(
             self.request,
             f'Identificada mesa Nº {identificacion.mesa} - Circuito {identificacion.mesa.circuito}',
@@ -95,7 +96,9 @@ class IdentificacionProblemaCreateView(IdentificacionCreateView):
 
     def form_valid(self, form):
         identificacion = form.save(commit=False)
+        identificacion.attachment = self.attachment
         identificacion.fiscal = self.request.user.fiscal
+        identificacion.save()
         messages.info(
             self.request,
             f'Guardado como "{identificacion.get_status_display()}"',

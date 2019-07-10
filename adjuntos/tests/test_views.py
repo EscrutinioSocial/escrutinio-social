@@ -28,6 +28,27 @@ def test_identificacion_create_view_post(fiscal_client, admin_user):
     assert a.identificaciones.count() == 1
     i = a.identificaciones.first()
     assert i.status == 'identificada'
+    assert i.mesa == m1
     assert i.fiscal == admin_user.fiscal
     assert not i.consolidada
-    assert list(m1.attachments.all()) == [a]
+    # la identificacion todavia no está consolidada
+    assert not m1.attachments.exists()
+
+
+def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
+    m1 = MesaFactory()
+    a = AttachmentFactory()
+    data = {
+        'status': 'spam',
+    }
+    response = fiscal_client.post(reverse('asignar-problema', args=[a.id]), data)
+    assert response.status_code == 302
+    assert response.url == reverse("elegir-adjunto")
+    assert a.identificaciones.count() == 1
+    i = a.identificaciones.first()
+    assert i.status == 'spam'
+    assert i.fiscal == admin_user.fiscal
+    assert i.mesa is None
+    assert not i.consolidada
+    # mesa no tiene attach aun
+    assert not m1.attachments.exists()
