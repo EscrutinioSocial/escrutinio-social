@@ -4,7 +4,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-07-04T19:44:42.061Z",
+    "last_login": "2019-07-08T20:55:08.469Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -316,12 +316,28 @@
   }
 },
 {
+  "model": "elecciones.mesacategoria",
+  "pk": 9,
+  "fields": {
+    "mesa": 8,
+    "categoria": 2,
+    "confirmada": false
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 10,
+  "fields": {
+    "mesa": 7,
+    "categoria": 2,
+    "confirmada": false
+  }
+},
+{
   "model": "elecciones.mesa",
   "pk": 1,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.205Z",
-    "numero": 1,
+    "numero": "1",
     "es_testigo": false,
     "circuito": 1,
     "lugar_votacion": 1,
@@ -338,9 +354,7 @@
   "model": "elecciones.mesa",
   "pk": 2,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.346Z",
-    "numero": 2,
+    "numero": "2",
     "es_testigo": false,
     "circuito": 1,
     "lugar_votacion": 2,
@@ -357,15 +371,13 @@
   "model": "elecciones.mesa",
   "pk": 3,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.408Z",
-    "numero": 3,
+    "numero": "3",
     "es_testigo": false,
     "circuito": 2,
     "lugar_votacion": 3,
     "url": "",
     "electores": 120,
-    "taken": "2019-07-04T19:52:19.468Z",
+    "taken": "2019-07-08T22:52:59.693Z",
     "orden_de_carga": 2,
     "carga_confirmada": false,
     "cargadas": 0,
@@ -376,9 +388,7 @@
   "model": "elecciones.mesa",
   "pk": 4,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.460Z",
-    "numero": 4,
+    "numero": "4",
     "es_testigo": false,
     "circuito": 2,
     "lugar_votacion": 4,
@@ -395,9 +405,7 @@
   "model": "elecciones.mesa",
   "pk": 5,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.538Z",
-    "numero": 5,
+    "numero": "5",
     "es_testigo": false,
     "circuito": 3,
     "lugar_votacion": 5,
@@ -414,9 +422,7 @@
   "model": "elecciones.mesa",
   "pk": 6,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.622Z",
-    "numero": 6,
+    "numero": "6",
     "es_testigo": false,
     "circuito": 3,
     "lugar_votacion": 6,
@@ -433,9 +439,7 @@
   "model": "elecciones.mesa",
   "pk": 7,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.686Z",
-    "numero": 7,
+    "numero": "7",
     "es_testigo": false,
     "circuito": 4,
     "lugar_votacion": 7,
@@ -452,9 +456,7 @@
   "model": "elecciones.mesa",
   "pk": 8,
   "fields": {
-    "estado": "EN ESPERA",
-    "hora_escrutada": "2019-06-12T18:24:57.758Z",
-    "numero": 8,
+    "numero": "8",
     "es_testigo": false,
     "circuito": 4,
     "lugar_votacion": 8,
@@ -563,12 +565,38 @@
   }
 },
 {
+  "model": "elecciones.eleccion",
+  "pk": 1,
+  "fields": {
+    "fecha": "2019-05-03T23:02:17Z",
+    "nombre": "Eleccion"
+  }
+},
+{
   "model": "elecciones.categoria",
   "pk": 1,
   "fields": {
     "eleccion": null,
     "slug": "elecciones-1",
     "nombre": "elecciones-1",
+    "color": "black",
+    "back_color": "white",
+    "activa": true,
+    "opciones": [
+      2,
+      3,
+      4,
+      1
+    ]
+  }
+},
+{
+  "model": "elecciones.categoria",
+  "pk": 2,
+  "fields": {
+    "eleccion": 1,
+    "slug": "int-circuito-2",
+    "nombre": "Int circuito 2",
     "color": "black",
     "back_color": "white",
     "activa": true,
