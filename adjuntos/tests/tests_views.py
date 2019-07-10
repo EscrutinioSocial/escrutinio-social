@@ -29,6 +29,5 @@ def test_identificacion_create_view_post(fiscal_client, admin_user):
     i = a.identificaciones.first()
     assert i.status == 'identificada'
     assert i.fiscal == admin_user.fiscal
-
     assert not i.consolidada
     assert list(m1.attachments.all()) == [a]

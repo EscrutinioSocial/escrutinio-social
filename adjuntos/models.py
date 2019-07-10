@@ -83,12 +83,6 @@ class Attachment(TimeStampedModel):
     el atributo digest es único.
     """
 
-    PROBLEMAS = Choices(
-        'no es una foto válida',
-        'no se entiende',
-        # 'foto rotada',
-    )
-
     email = models.ForeignKey('Email', null=True, on_delete=models.SET_NULL)
     mimetype = models.CharField(max_length=100, null=True)
     foto = VersatileImageField(upload_to='attachments/',
@@ -114,7 +108,6 @@ class Attachment(TimeStampedModel):
         null=True
     )
     taken = models.DateTimeField(null=True)
-    problema = models.CharField(max_length=100, null=True, blank=True, choices=PROBLEMAS)
 
     def save(self, *args, **kwargs):
         """
@@ -137,15 +130,14 @@ class Attachment(TimeStampedModel):
     @classmethod
     def sin_identificar(cls, wait=2, fiscal=None):
         """
-        Devuelve un conjunto de Attachments que no tienen problemas
-        ni identificacion consolidada y no ha sido asignado
+        Devuelve un conjunto de Attachments que no tienen
+        identificacion consolidada y no ha sido asignado
         para clasificar en los últimos ``wait`` minutos
 
         Se excluyen attachments que ya hayan sido clasificados por `fiscal`
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
-            Q(problema__isnull=True),
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
             consolidada=Exists(
