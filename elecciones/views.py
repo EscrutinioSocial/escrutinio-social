@@ -260,10 +260,11 @@ class ResultadosCategoria(TemplateView):
         lookups2 = Q()
         resultados = {}
 
-        proyectado = 'proyectado' in self.request.GET and not self.filtros 
-
-        if self.request.method == "GET" :
-            proyectado = self.request.GET.get('tipodesumarizacion', '1') == str(2) and not self.filtros
+        proyectado = (
+           self.request.method == "GET" and
+           self.request.GET.get('tipodesumarizacion', '1') == str(2) and
+           not self.filtros
+        )
 
         if self.filtros:
             if 'seccion' in self.request.GET:
