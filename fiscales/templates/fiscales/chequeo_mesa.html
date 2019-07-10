@@ -1,17 +1,6 @@
 {% extends "fiscales/carga.html" %}
 {% load i18n material_form material_frontend %}
 
-{% block js %}
-{{ block.super }}
-<script type="text/javascript">
-$(document).ready(function(){
-    $('ul.tabs').tabs();
-  });
-</script>
-{% endblock js %}
-
-
-
 {% block breadcrumbs_items %}
 <a href="{{ object.get_absolute_url }}">{{ object }}</a>
 <a class="active">Acta</a>

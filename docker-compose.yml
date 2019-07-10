@@ -22,6 +22,7 @@ services:
       - .:/src
     ports:
       - "8000:8000"
+      - "8080:8080"
     depends_on:
       - db
 
