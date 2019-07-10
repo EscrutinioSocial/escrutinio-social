@@ -43,6 +43,9 @@ class Distrito(models.Model):
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
 
+    def nombre_completo(self):
+        return self.nombre
+
 
 class Seccion(models.Model):
     """
@@ -80,6 +83,9 @@ class Seccion(models.Model):
             lugar_votacion__circuito__seccion=self,
             categoria=categoria
         )
+    
+    def nombre_completo(self):
+        return self.distrito.nombre_completo() + " - " + self.nombre
 
 
 class Circuito(models.Model):
@@ -127,6 +133,9 @@ class Circuito(models.Model):
             lugar_votacion__circuito=self,
             categoria=categoria
     )
+
+    def nombre_completo(self):
+        return self.seccion.nombre_completo() + " - " + self.nombre
 
 
 class LugarVotacion(models.Model):
@@ -217,6 +226,9 @@ class LugarVotacion(models.Model):
 
     def __str__(self):
         return f"{self.nombre} - {self.circuito}"
+
+    def nombre_completo(self):
+        return self.circuito.nombre_completo() + " - " + self.nombre
 
 
 def path_foto_acta(instance, filename):
@@ -381,6 +393,9 @@ class Mesa(models.Model):
 
     def __str__(self):
         return str(self.numero)
+
+    def nombre_completo(self):
+        return self.lugar_votacion.nombre_completo() + " - " + self.nombre
 
 
 class Partido(models.Model):

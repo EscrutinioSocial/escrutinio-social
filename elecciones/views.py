@@ -441,9 +441,9 @@ class ResultadosCategoria(TemplateView):
         context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
 
         if self.filtros:
-            context['para'] = get_text_list([getattr(o, 'nombre', o) for o in self.filtros], " y ")
+            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.filtros], " y ")
         else:
-            context['para'] = 'Córdoba'
+            context['para'] = 'el país'
 
         pk = self.kwargs.get('pk', 1)
         if pk == 1:
