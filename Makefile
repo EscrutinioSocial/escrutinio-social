@@ -34,6 +34,10 @@ log-db:
 collectstatic:
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py collectstatic --noinput"
 
+
+test:
+	docker exec escrutinio-social-app /bin/sh -c "pytest"
+
 create:
 	docker-compose up --no-start
 
@@ -48,4 +52,3 @@ dump-dev-data:
 
 update-models-diagram:
 	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
-
