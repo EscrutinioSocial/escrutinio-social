@@ -1,11 +1,17 @@
 from datetime import timedelta
+
+import pytest
+
 from .factories import (
     VotoMesaReportadoFactory,
     CategoriaFactory,
     AttachmentFactory,
     MesaFactory,
-    ProblemaFactory
-)
+    ProblemaFactory,
+    SeccionFactory,
+    CircuitoFactory,
+    DistritoFactory)
+
 from elecciones.models import Mesa, MesaCategoria, Categoria
 from django.utils import timezone
 
@@ -195,3 +201,20 @@ def test_categorias_para_mesa(db):
     assert list(
         Categoria.para_mesas([m2, m4]).order_by('id')
     ) == []
+
+
+def test_obtener_mesa_por_distrito_circuito_seccion_nro_no_encontrada(db):
+    with pytest.raises(Mesa.DoesNotExist):
+        Mesa.obtener_mesa_en_circuito_seccion_distrito(10, 10, 10, 10)
+
+
+def test_obtener_mesa_por_distrito_circuito_seccion_nro_encontrada(db):
+    d1 = DistritoFactory(numero=1)
+    s1 = SeccionFactory(numero=50, distrito=d1)
+    c1 = CircuitoFactory(numero=2, seccion=s1)
+    MesaFactory(numero=4012, lugar_votacion__circuito=c1, electores=100, circuito=c1)
+    mesa = Mesa.obtener_mesa_en_circuito_seccion_distrito(4012, 2, 50, 1)
+    assert mesa.numero == 4012
+    assert mesa.circuito.numero == '2'
+    assert mesa.circuito.seccion.numero == 50
+    assert mesa.circuito.seccion.distrito.numero == 1

@@ -288,16 +288,17 @@ class Mesa(models.Model):
                 return categoria
 
     @classmethod
-    def existe_mesa_en_circuito_seccion(cls, mesa, circuito, seccion):
+    def obtener_mesa_en_circuito_seccion_distrito(cls, mesa, circuito, seccion, distrito):
         """
         Valida si existe una mesa con dicho codigo en el circuito y seccion indicados
         """
         qs = cls.objects.filter(
             numero=mesa,
             circuito__numero=circuito,
-            circuito__seccion__numero=seccion
-        ).exists()
-        return qs
+            circuito__seccion__numero=seccion,
+            circuito__seccion__distrito__numero=distrito
+        )
+        return qs.get()
 
     @classmethod
     def con_carga_pendiente(cls, wait=2):
