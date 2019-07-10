@@ -48,7 +48,6 @@ class IdentificacionCreateView(CreateView):
 
     Ver :class:`adjuntos.forms.IdentificacionForm`
     """
-
     form_class = IdentificacionForm
     template_name = "adjuntos/asignar-mesa.html"
     model = Identificacion
@@ -75,9 +74,12 @@ class IdentificacionCreateView(CreateView):
 
     def form_valid(self, form):
         identicacion = form.save(commit=False)
+        identicacion.status = Identificacion.STATUS.identificada
         identicacion.fiscal = self.request.user.fiscal
         identicacion.attachment = self.attachment
         return super().form_valid(form)
+
+
 
 
 @staff_member_required
