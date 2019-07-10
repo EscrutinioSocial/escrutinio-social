@@ -37,25 +37,10 @@
 
         {% endif  %}
 
-            {% url 'elegir-adjunto' as url %}
+            {% url 'siguiente-accion' as url %}
             <li {% if url in request.path %} class="active"{% endif %}>
-                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Clasificar actas<i class="material-icons">picture_in_picture</i><span class="badge">{{ adjuntos_count }}</span></a>
+                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Actuar sobre acta<i class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
             </li>
-
-
-            {% url 'elegir-acta-a-cargar' as url %}
-            <li {% if url in request.path %} class="active"{% endif %}>
-                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Cargar resultados<i class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
-            </li>
-
-
-            {% url 'chequear-resultado' as url %}
-            <li {% if url in request.path %} class="active"{% endif %}>
-                <a href={% if mesas_a_confirmar_count == 0 %}"#"{% else %}"{{ url }}"{% endif %} class="collapsible-header" data-turbolinks="false">Chequear una mesa<i class="material-icons">
-check_box</i><span class="badge">{{ mesas_a_confirmar_count }}</span></a>
-            </li>
-
-
 
             <li></li>
 

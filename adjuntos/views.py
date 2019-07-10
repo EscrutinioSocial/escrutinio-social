@@ -18,24 +18,9 @@ from .forms import AsignarMesaForm, AgregarAttachmentsForm
 
 
 @login_required
-def elegir_adjunto(request):
-    """
-    Elige un acta al azar del queryset :meth:`Attachment.sin asignar`,
-    estampa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para la clasificación de la mesa elegida
-
-    Si no hay más mesas sin asignar, se muestra un mensaje estático.
-    """
-
-    attachments = Attachment.sin_asignar()
-    if attachments.exists():
-        a = attachments.order_by('?').first()
-        # se marca el adjunto
-        a.taken = timezone.now()
-        a.save(update_fields=['taken'])
-        return redirect('asignar-mesa', attachment_id=a.id)
-
-    return render(request, 'adjuntos/sin-actas.html')
+def post_asignar_mesa(request, decision, contenido):
+    contenido_para_mostrar = contenido if decision == "mesa" else contenido.replace("_", " ")
+    return render(request, 'adjuntos/post-asignar-mesa.html', { 'decision': decision, 'contenido': contenido_para_mostrar })
 
 
 
@@ -57,7 +42,14 @@ class AsignarMesaAdjunto(UpdateView):
         return super().dispatch(*args, **kwargs)
 
     def get_success_url(self):
-        return reverse('elegir-adjunto')
+        resultado = self.get_operation_result()
+        return reverse('post-asignar-mesa', args=[resultado['decision'], resultado['contenido']])
+
+    def get_operation_result(self):
+        if self.object.mesa is None:
+            return {'decision': 'problema', 'contenido': self.object.problema.replace(" ", "_")}
+        else:
+            return {'decision': 'mesa', 'contenido': self.object.mesa.numero}
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
