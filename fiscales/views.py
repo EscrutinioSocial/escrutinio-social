@@ -5,7 +5,8 @@ como elegir acta a clasificar / a cargar / validar
 
 from io import StringIO
 import sys
-from django.http import Http404, HttpResponseForbidden, HttpResponse
+from django.core import serializers
+from django.http import Http404, HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -41,7 +42,7 @@ from sentry_sdk import capture_exception
 from .forms import (
     MisDatosForm,
     FiscalFormSimple,
-    votomeesareportadoformset_factory,
+    votomesareportadoformset_factory,
     QuieroSerFiscal1,
     QuieroSerFiscal2,
     QuieroSerFiscal3,
@@ -285,14 +286,14 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
     categoria = get_object_or_404(Categoria, id=categoria_id)
-    mesa = get_object_or_404(Mesa, categoria=categoria, numero=mesa_numero)
+    mesa = get_object_or_404(Mesa, categorias=categoria, numero=mesa_numero)
     if carga_id:
         carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
     else:
         carga = None
 
 
-    VotoMesaReportadoFormset = votomeesareportadoformset_factory(min_num=categoria.opciones.count())
+    VotoMesaReportadoFormset = votomesareportadoformset_factory(min_num=categoria.opciones.count())
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
@@ -366,7 +367,6 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                 mesa_numero=mesa.numero
             )
         return redirect('elegir-acta-a-cargar')
-
     return render(
         request, "fiscales/carga.html", {
             'formset': formset,
@@ -468,3 +468,35 @@ def confirmar_fiscal(request, fiscal_id):
     msg = f'<a href="{url}">{fiscal}</a> ha sido confirmado'
     messages.info(request, mark_safe(msg))
     return redirect(request.META.get('HTTP_REFERER'))
+
+
+class AutocompleteBaseListView(LoginRequiredMixin, ListView):
+
+    def get(self, request, *args, **kwargs):
+        data = {'options': [{'value': o.id, 'text': str(o)} for o in self.get_queryset()]}
+        return JsonResponse(data, status=200, safe=False)
+
+
+class SeccionListView(AutocompleteBaseListView):
+    model = Seccion
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(distrito__id=self.request.GET['parent_id'])
+
+
+class CircuitoListView(AutocompleteBaseListView):
+    model = Circuito
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(seccion__id=self.request.GET['parent_id'])
+
+
+class MesaListView(AutocompleteBaseListView):
+    model = Mesa
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(lugar_votacion__circuito__id=self.request.GET['parent_id'])
+

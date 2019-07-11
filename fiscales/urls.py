@@ -4,6 +4,10 @@ from . import views
 
 
 urlpatterns = [
+    url('^_autocomplete/s$', views.SeccionListView.as_view(), name='autocomplete-seccion'),
+    url('^_autocomplete/c$', views.CircuitoListView.as_view(), name='autocomplete-circuito'),
+    url('^_autocomplete/m$', views.MesaListView.as_view(), name='autocomplete-mesa'),
+
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
     url('^acta/$', views.elegir_acta_a_cargar, name='elegir-acta-a-cargar'),
     url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',

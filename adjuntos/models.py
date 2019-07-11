@@ -1,7 +1,15 @@
+from django.conf import settings
 from functools import partial
 from datetime import timedelta
 from urllib.parse import quote_plus
 from django.utils import timezone
+from model_utils import Choices
+from model_utils.fields import StatusField
+from model_utils.models import TimeStampedModel
+from django.db.models import (
+    OuterRef, Exists, Count
+)
+
 from django.db.models import Q
 from django.db import models
 from django.dispatch import receiver
@@ -64,7 +72,7 @@ class Email(models.Model):
         return f'https://mail.google.com/mail/u/0/#search/rfc822msgid{mid}'
 
 
-class Attachment(models.Model):
+class Attachment(TimeStampedModel):
     """
     Guarda las fotos de ACTAS y otros documentos fuente desde los cuales se cargan los datos.
     Están asociados a una imágen que a su vez puede tener una versión editada.
@@ -74,20 +82,23 @@ class Attachment(models.Model):
     No pueden existir dos instancias de este modelo con la misma foto, dado que
     el atributo digest es único.
     """
-
-    PROBLEMAS = Choices(
-        'no es una foto válida',
-        'no se entiende',
-        # 'foto rotada',
+    STATUS = Choices(
+        ('sin_identificar', 'sin identificar'),
+        'identificada',
+        'spam',
+        'invalida',
     )
-
+    status = StatusField(default=STATUS.sin_identificar)
+    mesa = models.ForeignKey(
+        'elecciones.Mesa', related_name='attachments', null=True, blank=True, on_delete=models.SET_NULL
+    )
     email = models.ForeignKey('Email', null=True, on_delete=models.SET_NULL)
     mimetype = models.CharField(max_length=100, null=True)
     foto = VersatileImageField(upload_to='attachments/',
         null=True, blank=True,
         width_field='width',
         height_field='height'
-        )
+    )
     foto_edited = VersatileImageField(upload_to='attachments/edited',
         null=True, blank=True,
         width_field='width',
@@ -105,9 +116,7 @@ class Attachment(models.Model):
         blank=True,
         null=True
     )
-    mesa = models.ForeignKey('elecciones.Mesa', null=True, related_name='attachments', on_delete=models.CASCADE)
     taken = models.DateTimeField(null=True)
-    problema = models.CharField(max_length=100, null=True, blank=True, choices=PROBLEMAS)
 
     def save(self, *args, **kwargs):
         """
@@ -115,35 +124,149 @@ class Attachment(models.Model):
         Notar que esto puede puede producir una excepción si la imágen (el digest)
         ya es conocido en el sistema
         """
-        if self.foto:
+        if self.foto and not self.foto_digest:
+            # FIXME
+            # sólo se calcula el digest cuando no hay uno previo.
+            # esto impide recalcular el digest si eventualmente cambia
+            # la imagen por algun motivo
+            # Mejor seria verificar con un MonitorField si la foto cambió
+            # y sólo en ese caso actualizar el hash.
             self.foto.file.open()
             self.foto_digest = hash_file(self.foto.file)
         super().save(*args, **kwargs)
 
+
     @classmethod
-    def sin_asignar(cls, wait=2):
+    def sin_identificar(cls, wait=2, fiscal=None):
         """
-        Devuelve un conjunto de Attachments que no tienen problemas
-        ni mesas asociados y no ha sido asignado para clasificar en los últimos
-        ``wait`` minutos
+        Devuelve un conjunto de Attachments que no tienen
+        identificación consolidada y no ha sido asignado
+        para clasificar en los últimos ``wait`` minutos
+
+        Se excluyen attachments que ya hayan sido clasificados por `fiscal`
         """
         desde = timezone.now() - timedelta(minutes=wait)
-        return cls.objects.filter(
-            Q(problema__isnull=True, mesa__isnull=True),
-            Q(taken__isnull=True) | Q(taken__lt=desde)
+        qs = cls.objects.filter(
+            Q(taken__isnull=True) | Q(taken__lt=desde),
+            status='sin_identificar',
         )
+        if fiscal:
+            qs = qs.exclude(identificaciones__fiscal=fiscal)
+        return qs
+
+    def status_count(self, exclude=None):
+        """
+        a partir del conjunto de identificaciones del attachment
+        se devuelve un diccionario con los cantidades para
+        cada grupo (mesa_id, status)
+        Por ejemplo:
+            {
+                (None, 'spam'): 2,
+                (None, 'invalida'): 1,
+                (1, 'identificada'): 1,
+                (2, 'identificada'): 1,
+            }
+
+        2 lo identificaron como spam, 1 como inválida,
+        1 a la mesa id=1, y otro a la mesa id=2
+        """
+        qs = self.identificaciones.all()
+        if exclude:
+            # en caso de que se pase ID, se excluye
+            # esa identificación del cálculo.
+            # es útil para no profucir cambios de estados
+            # en caso de edición de una identificacion
+            qs = qs.exclude(id=exclude)
+        result = {}
+        for item in qs.values('mesa', 'status').annotate(total=Count('status')):
+            result[(item['mesa'], item['status'])] = item['total']
+        return result
+
 
     def __str__(self):
         return f'{self.foto} ({self.mimetype})'
 
 
-@receiver(post_save, sender=Attachment)
-def asignar_orden_de_carga(sender, instance=None, created=False, **kwargs):
+class Identificacion(TimeStampedModel):
     """
-    Cuando se clasifica el attachment, a la mesa asociada se le asigna el orden de carga
-    que corresponda actualmente al circuito
+    Es el modelo que guarda clasificaciones de actas para asociarlas a mesas
     """
-    if instance.mesa and not instance.mesa.carga_set.exists():
-        mesa = instance.mesa
-        mesa.orden_de_carga = mesa.circuito.proximo_orden_de_carga()
-        mesa.save(update_fields=['orden_de_carga'])
+    STATUS = Choices(
+        'identificada',
+        ('spam', 'Es SPAM'),
+        ('invalida', 'Es inválida'),
+    )
+    # 
+    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema. 
+    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene 
+    #     todos los datos de identificación.  
+    # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
+
+
+    status = StatusField()
+
+    consolidada = models.BooleanField(
+        default=False,
+        help_text=(
+            'una identificación consolidada es aquella '
+            'que se considera representativa y determina '
+            'el estado del attachment'
+        )
+    )
+    fiscal = models.ForeignKey(
+        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
+    )
+    mesa = models.ForeignKey(
+        'elecciones.Mesa',  null=True, blank=True, on_delete=models.SET_NULL
+    )
+    attachment = models.ForeignKey(
+        Attachment, related_name='identificaciones', on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return f'{self.status} - {self.mesa} - {self.fiscal}'
+
+    def save(self, *args, **kwargs):
+        if self.attachment:
+            status_count_dict = self.attachment.status_count(self.id)
+            same_status_count = status_count_dict.get(
+                (self.mesa, self.status)
+            )
+            # si esta identificación iguala o supera el mónimo de
+            # identificaciones coincidentes, la identificación se
+            # consolida.
+            # esto dispara la lógica de :func:`consolidacion_attachment`
+            if same_status_count and same_status_count + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION:
+                self.consolidada = True
+
+            # TODO, incorporar consolidación con origen en CSV, ver :issue:`49`.
+
+            # TODO - para reportar trolls
+            # sumar 200 a scoring de los usuarios que identificaron el acta diferente
+
+        super().save(*args, **kwargs)
+
+
+@receiver(post_save, sender=Identificacion)
+def consolidacion_attachment(sender, instance=None, created=False, **kwargs):
+    """
+    La consolidación de una identificación determina una transición
+    en el estado del attachment.
+    Si se identifica como identificada, entonces se le asigna
+    orden de carga a la mesa en cuestión.
+    """
+    if instance.consolidada:
+        attachment = instance.attachment
+        attachment.status = instance.status
+        attachment.mesa = instance.mesa
+        attachment.save(update_fields=['mesa', 'status'])
+
+
+        if (
+            instance.mesa and
+            instance.status == Identificacion.STATUS.identificada and
+            not instance.mesa.carga_set.exists()
+        ):
+            mesa = instance.mesa
+            mesa.orden_de_carga = mesa.lugar_votacion.circuito.proximo_orden_de_carga()
+            mesa.save(update_fields=['orden_de_carga'])

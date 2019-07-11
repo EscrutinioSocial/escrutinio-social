@@ -130,7 +130,7 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def get_row_actions(self, obj):
         row_actions = []
-        for e in obj.categoria.all():
+        for e in obj.categorias.all():
             row_actions.append({
                 'label': f'Ver resultados {e}',
                 'url': reverse('resultados-categoria', args=(e.id,)) + f'?mesa={obj.id}',

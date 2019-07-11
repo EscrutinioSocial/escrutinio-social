@@ -13,6 +13,7 @@ from .factories import (
     CircuitoFactory,
     MesaFactory,
     AttachmentFactory,
+    IdentificacionFactory,
     VotoMesaReportadoFactory,
 )
 
@@ -246,7 +247,7 @@ def test_resultados_proyectados(fiscal_client):
     assert 'proyeccion' not in positivos[o1.partido]
 
     # cuando se proyecta, o1 gana porque va ganando en s1 que es la mas populosa
-    response = fiscal_client.get(url_resultados + '?proyectado=✓')
+    response = fiscal_client.get(url_resultados + '?tipodesumarizacion=2')
     positivos = response.context['resultados']['tabla_positivos']
     assert list(positivos.keys()) == [o1.partido, o2.partido, o3.partido]
 
@@ -286,7 +287,7 @@ def test_resultados_proyectados_simple(fiscal_client):
     VotoMesaReportadoFactory(opcion=o1, carga__mesa=m2, carga__categoria=e1, votos=50)
     VotoMesaReportadoFactory(opcion=o2, carga__mesa=m2, carga__categoria=e1, votos=100)
 
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?proyectado=✓')
+    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
 
     positivos = response.context['resultados']['tabla_positivos']
     assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
@@ -321,7 +322,7 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     VotoMesaReportadoFactory(opcion=o1, carga__mesa=ms3[0], carga__categoria=e1, votos=80)
     VotoMesaReportadoFactory(opcion=o2, carga__mesa=ms3[0], carga__categoria=e1, votos=80)
 
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?proyectado=✓')
+    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
     positivos = response.context['resultados']['tabla_positivos']
 
     assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
@@ -333,7 +334,7 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     s1.save()
 
     # proyeccion sin ponderar circuitos
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?proyectado=✓')
+    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
     positivos = response.context['resultados']['tabla_positivos']
 
     assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
@@ -342,14 +343,13 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     assert positivos[o1.partido]['proyeccion'] == '50.00'
 
 
-
 def test_mesa_orden(carta_marina):
     m1, m2, *_ = carta_marina
-    AttachmentFactory(mesa=m1)
+    IdentificacionFactory(status='identificada', consolidada=True, mesa=m1)
     assert m1.orden_de_carga == 1
     assert m2.orden_de_carga == 0
-    AttachmentFactory(mesa=m2)
-    # assert m2.orden_de_carga == 2 porque? Da error, ambas tienen igual prioridad.
+    IdentificacionFactory(status='identificada', consolidada=True, mesa=m2)
+    assert m2.orden_de_carga == 2
 
 
 def test_orden_para_circuito(db):
@@ -360,18 +360,16 @@ def test_orden_para_circuito(db):
     assert c1.proximo_orden_de_carga() == 4
 
 
-
 def test_elegir_acta(carta_marina, fiscal_client):
     m1, m2, *_ = carta_marina
-    AttachmentFactory(mesa=m1)
-    AttachmentFactory(mesa=m2)
+    IdentificacionFactory(status='identificada', consolidada=True, mesa=m1)
+    IdentificacionFactory(status='identificada', consolidada=True, mesa=m2)
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=(1, m1.numero))
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=(1, m2.numero))
-
 
 
 def test_resultados_no_positivos(fiscal_client):
@@ -394,8 +392,6 @@ def test_resultados_no_positivos(fiscal_client):
 
 
 def test_resultados_excluye_metadata(fiscal_client):
-
-
     s1, s2 = SeccionFactory.create_batch(2)
     o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
     o3 = OpcionFactory(partido=None, es_contable=False)
@@ -415,7 +411,7 @@ def test_resultados_excluye_metadata(fiscal_client):
     VotoMesaReportadoFactory(opcion=o3, carga__mesa=m2, carga__categoria=e1, votos=10)
     VotoMesaReportadoFactory(opcion=o4, carga__mesa=m2, carga__categoria=e1, votos=160)
 
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?proyectado=✓')
+    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
 
     positivos = response.context['resultados']['tabla_positivos']
     no_positivos = response.context['resultados']['tabla_no_positivos']

@@ -82,8 +82,6 @@ $(document).ready(function() {
             <div class="card-title">¿De qué mesa es esta acta?</div>
 
                   {% form %}
-
-
                   {% endform %}
             </div>
           {% endblock card-content %}
@@ -101,8 +99,34 @@ $(document).ready(function() {
         </div>
 
        </form>
-
     </div>
+
+  {% block extra_form %}
+
+<div class="card">
+       <form method="POST" action="{% url 'asignar-problema' attachment.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card-content">
+
+            <div class="card-title">¿Hay un problema?</div>
+                  {% form form=form_problema %}
+                  {% endform %}
+            </div>
+
+        <div class="card-action">
+            <div class="right-align">
+               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="{{ button_tabindex }}">
+                  Reportar
+               </button>
+            </div>
+        </div>
+
+       </form>
+    </div>
+
+  {% endblock extra_form %}
+
+
 {% endblock left-panel %}
 
 {% block head %}
@@ -144,3 +168,72 @@ $(document).ready(function() {
 
     </div>
 {% endblock right-panel %}
+
+{% block messages %}
+{{ block.super }}
+
+<script type="text/javascript">
+   $(document).ready(function(){
+
+    // TODO refactorear esto para modularizar en una funcion.
+
+
+    $('#id_distrito').change(function () {
+      // rellena el dropdown de secciones
+      value = $(this).val();
+      $.ajax({
+              type: "GET",
+              url: "{% url 'autocomplete-seccion' %}",
+              data: { 'parent_id': value },
+              success: function(data){
+                  $("#id_seccion option:gt(0)").remove();
+                  $.each(data.options, function(i, d) {
+                      $('#id_seccion').append('<option value="' + d.value + '">' + d.text + '</option>');
+                  });
+                  // actualiza el widget de materialize
+                  $('#id_seccion').formSelect();
+              }
+          });
+    });
+
+    $('#id_seccion').change(function () {
+      // rellena el dropdown de secciones
+      value = $(this).val();
+      $.ajax({
+              type: "GET",
+              url: "{% url 'autocomplete-circuito' %}",
+              data: { 'parent_id': value },
+              success: function(data){
+                  $("#id_circuito option:gt(0)").remove();
+                  $.each(data.options, function(i, d) {
+                      $('#id_circuito').append('<option value="' + d.value + '">' + d.text + '</option>');
+                  });
+                  // actualiza el widget de materialize
+                  $('#id_circuito').formSelect();
+              }
+          });
+    });
+
+
+    $('#id_circuito').change(function () {
+      // rellena el dropdown de secciones
+      value = $(this).val();
+      console.log(value);
+      $.ajax({
+              type: "GET",
+              url: "{% url 'autocomplete-mesa' %}",
+              data: { 'parent_id': value },
+              success: function(data){
+                  $("#id_mesa option:gt(0)").remove();
+                  $.each(data.options, function(i, d) {
+                      $('#id_mesa').append('<option value="' + d.value + '">' + d.text + '</option>');
+                  });
+                  // actualiza el widget de materialize
+                  $('#id_mesa').formSelect();
+              }
+          });
+    });
+
+  });
+</script>
+{% endblock messages %}

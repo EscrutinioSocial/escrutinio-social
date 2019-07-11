@@ -6,6 +6,7 @@ from elecciones.tests.factories import (
     MesaFactory,
     OpcionFactory,
     CircuitoFactory,
+    IdentificacionFactory,
     CargaFactory,
 )
 from elecciones.models import Mesa, VotoMesaReportado, MesaCategoria
@@ -25,10 +26,19 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     e1 = CategoriaFactory()
     e2 = CategoriaFactory()
 
-    m1 = AttachmentFactory(mesa__categoria=[e1], mesa__lugar_votacion__circuito=c).mesa
+    m1 = IdentificacionFactory(
+        mesa__categoria=[e1],
+        mesa__lugar_votacion__circuito=c,
+        status='identificada',
+        consolidada=True,
+    ).mesa
     e2 = CategoriaFactory()
-    m2 = AttachmentFactory(mesa__categoria=[e1, e2], mesa__lugar_votacion__circuito=c).mesa
-
+    m2 = IdentificacionFactory(
+        mesa__categoria=[e1, e2],
+        mesa__lugar_votacion__circuito=c,
+        status='identificada',
+        consolidada=True,
+    ).mesa
     assert m1.orden_de_carga == 1
     assert m2.orden_de_carga == 2
 
@@ -66,9 +76,21 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
 def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
     e1 = CategoriaFactory()
 
-    m1 = AttachmentFactory(mesa__categoria=[e1]).mesa
-    m2 = AttachmentFactory(mesa__categoria=[e1]).mesa
-    m3 = AttachmentFactory(mesa__categoria=[e1]).mesa
+    m1 = IdentificacionFactory(
+        mesa__categoria=[e1],
+        status='identificada',
+        consolidada=True,
+    ).mesa
+    m2 = IdentificacionFactory(
+        mesa__categoria=[e1],
+        status='identificada',
+        consolidada=True,
+    ).mesa
+    m3 = IdentificacionFactory(
+        mesa__categoria=[e1],
+        status='identificada',
+        consolidada=True,
+    ).mesa
     # creo otras mesas asociadas a los circuitos
     c1 = m1.lugar_votacion.circuito
     c2 = m2.lugar_votacion.circuito
@@ -109,9 +131,13 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     o2 = OpcionFactory(es_contable=False)
     e1 = CategoriaFactory(opciones=[o, o2])
     e2 = CategoriaFactory(opciones=[o])
-    m1 = AttachmentFactory(mesa__categoria=[e1, e2]).mesa
-
+    m1 = IdentificacionFactory(
+        mesa__categoria=[e1, e2],
+        status='identificada',
+        consolidada=True,
+    ).mesa
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
+    assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
 
     # formset para categoria e1 arranca en blanco

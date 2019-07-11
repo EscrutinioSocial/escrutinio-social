@@ -4,7 +4,8 @@ from .factories import (
     CategoriaFactory,
     AttachmentFactory,
     MesaFactory,
-    ProblemaFactory
+    ProblemaFactory,
+    IdentificacionFactory
 )
 from elecciones.models import Mesa, MesaCategoria, Categoria
 from django.utils import timezone
@@ -38,8 +39,8 @@ def test_con_carga_pendiente_excluye_sin_foto(db):
 
 
 def test_con_carga_pendiente_excluye_taken(db):
-    m1 = AttachmentFactory().mesa
-    m2 = AttachmentFactory().mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
     m2.taken = timezone.now()
     m2.save()
@@ -48,21 +49,21 @@ def test_con_carga_pendiente_excluye_taken(db):
 
 def test_con_carga_pendiente_incluye_taken_vencido(db):
     now = timezone.now()
-    m1 = AttachmentFactory().mesa
-    m2 = AttachmentFactory(mesa__taken=now - timedelta(minutes=3)).mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True, mesa__taken=now - timedelta(minutes=3)).mesa
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
 
 
 def test_con_carga_pendiente_excluye_si_tiene_problema_no_resuelto(db):
-    m2 = AttachmentFactory().mesa
-    m1 = AttachmentFactory().mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
     ProblemaFactory(mesa=m1)
     assert set(Mesa.con_carga_pendiente()) == {m2}
 
 
 def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
-    m2 = AttachmentFactory().mesa
-    m1 = AttachmentFactory().mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
     ProblemaFactory(mesa=m1, estado='resuelto')
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
     # nuevo problema
@@ -71,12 +72,12 @@ def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
 
 
 def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
-    m1 = AttachmentFactory().mesa
-    m2 = AttachmentFactory().mesa
-    m3 = AttachmentFactory().mesa
+    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m3 = IdentificacionFactory(status='identificada', consolidada=True).mesa
 
     # mesa 2 ya se cargo, se excluirá
-    categoria = m2.categoria.first()
+    categoria = m2.categorias.first()
     VotoMesaReportadoFactory(carga__mesa=m2, carga__categoria=categoria, opcion=categoria.opciones.first(), votos=10)
     VotoMesaReportadoFactory(carga__mesa=m2, carga__categoria=categoria, opcion=categoria.opciones.last(), votos=12)
 
@@ -88,7 +89,7 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
     m3.categoria_add(e3)
     m3.categoria_add(e4)
     m3.categoria_add(CategoriaFactory(id=101))
-    categoria = m3.categoria.first()
+    categoria = m3.categorias.first()
     # se cargo primera y segunda categoria para la mesa 3
     VotoMesaReportadoFactory(carga__mesa=m3, carga__categoria=categoria, opcion=categoria.opciones.first(), votos=20)
     VotoMesaReportadoFactory(carga__mesa=m3, carga__categoria=e2, opcion=e2.opciones.first(), votos=20)
@@ -195,3 +196,38 @@ def test_categorias_para_mesa(db):
     assert list(
         Categoria.para_mesas([m2, m4]).order_by('id')
     ) == []
+
+
+def test_fotos_de_mesa(db):
+    m = MesaFactory()
+    a1, a2, a3 = AttachmentFactory.create_batch(3)
+
+    # a3 tiene una version editada.
+    a3.foto_edited = a3.foto
+    a3.save()
+
+    IdentificacionFactory(
+        status='identificada',
+        consolidada=True,
+        attachment=a1,
+        mesa=m,
+    )
+    # a2 esta asociada a m pero se
+    # ignorada porque no está consolidada
+    IdentificacionFactory(
+        status='identificada',
+        consolidada=False,
+        attachment=a2,
+        mesa=m
+    )
+    IdentificacionFactory(
+        status='identificada',
+        consolidada=True,
+        attachment=a3,
+        mesa=m
+    )
+    assert m.fotos() == [
+        ('Foto 1 (original)', a1.foto),
+        ('Foto 2 (editada)', a3.foto_edited),
+        ('Foto 2 (original)', a3.foto),
+    ]

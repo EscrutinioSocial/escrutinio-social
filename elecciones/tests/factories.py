@@ -71,7 +71,10 @@ class DistritoFactory(DjangoModelFactory):
 class SeccionFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Seccion'
-    distrito = factory.SubFactory(DistritoFactory, nombre='único')
+    # notar que el distrito por default
+    # ya existe porque se crea via migracion 0026 de eleccion
+    # y get_or_create de distrito aplica por nombre
+    distrito = factory.SubFactory(DistritoFactory, nombre='Distrito único')
     numero = factory.Sequence(lambda n: n + 1)
     nombre = factory.LazyAttribute(lambda obj: f"Sección {obj.numero}")
 
@@ -156,16 +159,23 @@ def get_random_image():
 
 
 class AttachmentFactory(DjangoModelFactory):
-    mesa = factory.SubFactory(MesaFactory)
-    foto = factory.django.ImageField(from_func=get_random_image)
     class Meta:
         model = 'adjuntos.Attachment'
+    foto = factory.django.ImageField(from_func=get_random_image)
+
+
+class IdentificacionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'adjuntos.Identificacion'
+    mesa = factory.SubFactory(MesaFactory)
+    attachment = factory.SubFactory(AttachmentFactory)
 
 
 class ProblemaFactory(DjangoModelFactory):
+    class Meta:
+        model = 'problemas.Problema'
+
     reportado_por = factory.SubFactory(FiscalFactory)
     mesa = factory.SubFactory(MesaFactory)
     estado = 'pendiente'
 
-    class Meta:
-        model = 'problemas.Problema'
