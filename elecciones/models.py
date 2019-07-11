@@ -158,7 +158,7 @@ class LugarVotacion(models.Model):
     calidad = models.CharField(
         max_length=20, help_text='calidad de la geolocalizacion', editable=False, blank=True
     )
-    # denormalizacion para hacer queries más simples
+    # denormalización para hacer queries más simples
     # se sincronizan con ``geom`` en el método save()
     latitud = models.FloatField(null=True, editable=False)
     longitud = models.FloatField(null=True, editable=False)
@@ -261,7 +261,7 @@ class Mesa(models.Model):
     carga_confirmada = models.BooleanField(default=False)
 
     # denormalizaciones
-    # lleva la cuenta de las categorias que se han cargado hasta el momento.
+    # lleva la cuenta de las categorías que se han cargado hasta el momento.
     # ver receiver actualizar_categorias_cargadas_para_mesa()
     cargadas = models.PositiveIntegerField(default=0, editable=False)
     confirmadas = models.PositiveIntegerField(default=0, editable=False)
@@ -280,8 +280,8 @@ class Mesa(models.Model):
     def con_carga_pendiente(cls, wait=2):
         """
         Una mesa cargable es aquella que
-           - no este tomada dentro de los ultimos `wait` minutos
-           - no este marcada con problemas o todos su problemas esten resueltos
+           - no esté tomada dentro de los últimos `wait` minutos
+           - no esté marcada con problemas o todos su problemas estén resueltos
            - y no tenga cargas consolidadas
         """
         desde = timezone.now() - timedelta(minutes=wait)
@@ -310,7 +310,7 @@ class Mesa(models.Model):
         """
         Dadas las categorias de la mesa en orden, devuelve
         la primera que tenga carga (i.e votos reportados) pero
-        aun no esté confirmada
+        aún no esté confirmada
         """
         for me in MesaCategoria.objects.filter(
             mesa=self, categoria__activa=True
