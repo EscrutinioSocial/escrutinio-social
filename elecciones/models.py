@@ -158,7 +158,7 @@ class LugarVotacion(models.Model):
     calidad = models.CharField(
         max_length=20, help_text='calidad de la geolocalizacion', editable=False, blank=True
     )
-    # denormalizacion para hacer queries más simples
+    # denormalización para hacer queries más simples
     # se sincronizan con ``geom`` en el método save()
     latitud = models.FloatField(null=True, editable=False)
     longitud = models.FloatField(null=True, editable=False)
@@ -281,7 +281,7 @@ class Mesa(models.Model):
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
 
     # denormalizaciones
-    # lleva la cuenta de las categorias que se han cargado hasta el momento.
+    # lleva la cuenta de las categorías que se han cargado hasta el momento.
     # ver receiver actualizar_categorias_cargadas_para_mesa()
     cargadas = models.PositiveIntegerField(default=0, editable=False)
     confirmadas = models.PositiveIntegerField(default=0, editable=False)
@@ -301,8 +301,8 @@ class Mesa(models.Model):
     def con_carga_pendiente(cls, wait=2):
         """
         Una mesa cargable es aquella que
-           - no este tomada dentro de los ultimos `wait` minutos
-           - no este marcada con problemas o todos su problemas esten resueltos
+           - no esté tomada dentro de los últimos `wait` minutos
+           - no esté marcada con problemas o todos su problemas estén resueltos
            - y no tenga cargas consolidadas
         """
         desde = timezone.now() - timedelta(minutes=wait)
@@ -327,38 +327,6 @@ class Mesa(models.Model):
         ).distinct()
         return qs
 
-
-    # def siguiente_categoria_a_confirmar(self):
-    #     """
-    #     Dadas las categorias de la mesa en orden, devuelve
-    #     la primera que tenga carga (i.e votos reportados) pero
-    #     aun no esté confirmada
-    #     """
-    #     for me in MesaCategoria.objects.filter(
-    #         mesa=self, categoria__activa=True
-    #     ).order_by('categoria'):
-    #         if not me.confirmada and VotoMesaReportado.objects.filter(
-    #             carga__categoria=me.categoria, carga__mesa=me.mesa
-    #         ).exists():
-    #             return me.categoria
-
-    # @classmethod
-    # def con_carga_a_confirmar(cls):
-    #     """
-    #     Devuelve un queryset de mesas con categorias activas que
-    #     tengan  al menos una carga sin confirmar.
-
-    #     Para una mesa de este queryset el método :meth:`siguiente_categoria_a_confirmar`
-    #     devuelve una categoría.
-    #     """
-    #     qs = cls.objects.filter(
-    #         mesacategoria__confirmada=False,
-    #         mesacategoria__categoria__activa=True,
-    #         cargadas__gte=1
-    #     ).filter(
-    #         confirmadas__lt=F('cargadas')
-    #     ).distinct()
-    #     return qs
 
     def get_absolute_url(self):
         # TODO: Por ahora no hay una vista que muestre la carga de datos
@@ -518,13 +486,16 @@ class Categoria(models.Model):
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
 
-    def opciones_actuales(self):
+    def opciones_actuales(self, solo_obligatorias=False):
         """
         Devuelve las opciones asociadas a la categoria en el orden dado
         Determina el orden de la filas a cargar, tal como se definen
         en el acta
         """
-        return self.opciones.all().order_by('orden')
+        qs = self.opciones.all()
+        if solo_obligatorias:
+            qs = qs.filter(obligatorio=True)
+        return qs.order_by('orden')
 
     @classmethod
     def para_mesas(cls, mesas):

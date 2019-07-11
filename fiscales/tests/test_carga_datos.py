@@ -2,14 +2,12 @@ from django.urls import reverse
 from elecciones.tests.factories import (
     VotoMesaReportadoFactory,
     CategoriaFactory,
-    AttachmentFactory,
     MesaFactory,
     OpcionFactory,
     CircuitoFactory,
     IdentificacionFactory,
-    CargaFactory,
 )
-from elecciones.models import Mesa, VotoMesaReportado, MesaCategoria
+from elecciones.models import Mesa, VotoMesaReportado
 from elecciones.tests.test_resultados import fiscal_client          # noqa
 
 
@@ -27,14 +25,14 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     e2 = CategoriaFactory()
 
     m1 = IdentificacionFactory(
-        mesa__categoria=[e1],
+        mesa__categorias=[e1],
         mesa__lugar_votacion__circuito=c,
         status='identificada',
         consolidada=True,
     ).mesa
     e2 = CategoriaFactory()
     m2 = IdentificacionFactory(
-        mesa__categoria=[e1, e2],
+        mesa__categorias=[e1, e2],
         mesa__lugar_votacion__circuito=c,
         status='identificada',
         consolidada=True,
@@ -70,24 +68,26 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     m2.save()
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[e2.id, m2.numero])
+    assert response.url == reverse(
+        'mesa-cargar-resultados', args=[e2.id, m2.numero]
+    )
 
 
 def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
     e1 = CategoriaFactory()
 
     m1 = IdentificacionFactory(
-        mesa__categoria=[e1],
+        mesa__categorias=[e1],
         status='identificada',
         consolidada=True,
     ).mesa
     m2 = IdentificacionFactory(
-        mesa__categoria=[e1],
+        mesa__categorias=[e1],
         status='identificada',
         consolidada=True,
     ).mesa
     m3 = IdentificacionFactory(
-        mesa__categoria=[e1],
+        mesa__categorias=[e1],
         status='identificada',
         consolidada=True,
     ).mesa
@@ -98,17 +98,17 @@ def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
 
     MesaFactory.create_batch(
         3,
-        categoria=[e1],
+        categorias=[e1],
         lugar_votacion__circuito=c1
     )
     MesaFactory.create_batch(
         10,
-        categoria=[e1],
+        categorias=[e1],
         lugar_votacion__circuito=c2
     )
     MesaFactory.create_batch(
         5,
-        categoria=[e1],
+        categorias=[e1],
         lugar_votacion__circuito=c3
     )
     assert c1.electores == 400
@@ -132,7 +132,7 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     e1 = CategoriaFactory(opciones=[o, o2])
     e2 = CategoriaFactory(opciones=[o])
     m1 = IdentificacionFactory(
-        mesa__categoria=[e1, e2],
+        mesa__categorias=[e1, e2],
         status='identificada',
         consolidada=True,
     ).mesa
@@ -183,10 +183,41 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     assert response.url == reverse('elegir-acta-a-cargar')
 
 
+def test_formset_en_carga_parcial(db, fiscal_client):
+    o = OpcionFactory(obligatorio=True)
+    o2 = OpcionFactory(obligatorio=False)
+    c = CategoriaFactory(opciones=[o, o2])
+    m = MesaFactory(categorias=[c])
+    parciales = reverse(
+        'mesa-cargar-resultados-parciales', args=[c.id, m.numero]
+    )
+    response = fiscal_client.get(parciales)
+    assert len(response.context['formset']) == 1
+    response.context['formset'][0].fields['opcion'].choices == [
+        (o.id, str(o))
+    ]
+
+
+def test_formset_en_carga_total(db, fiscal_client):
+    o = OpcionFactory(obligatorio=True, orden=3)
+    o2 = OpcionFactory(obligatorio=False, orden=1)
+    c = CategoriaFactory(opciones=[o, o2])
+    m = MesaFactory(categorias=[c])
+    totales = reverse(
+        'mesa-cargar-resultados', args=[c.id, m.numero]
+    )
+    response = fiscal_client.get(totales)
+    assert len(response.context['formset']) == 2
+    response.context['formset'][0].fields['opcion'].choices == [
+        (o2.id, str(o2)),
+        (o.id, str(o))
+    ]
+
+
 # def test_chequear_resultado(db, fiscal_client):
 #     o = OpcionFactory(es_contable=True)
 #     e1 = CategoriaFactory(opciones=[o])
-#     mesa = MesaFactory(categoria=[e1])
+#     mesa = MesaFactory(categorias=[e1])
 #     me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
 #     assert me.confirmada is False
 #     VotoMesaReportadoFactory(
@@ -209,7 +240,7 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
 #     opcs = OpcionFactory.create_batch(3, es_contable=True)
 #     e1 = CategoriaFactory(opciones=opcs)
 #     e2 = CategoriaFactory(opciones=opcs)
-#     mesa = MesaFactory(categoria=[e1, e2])
+#     mesa = MesaFactory(categorias=[e1, e2])
 #     me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
 #     assert me.confirmada is False
 #     votos1 = VotoMesaReportadoFactory(
@@ -255,7 +286,7 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
 #     opcs = OpcionFactory.create_batch(3, es_contable=True)
 #     e1 = CategoriaFactory(opciones=opcs)
 #     assert e1.activa is True
-#     mesa = MesaFactory(categoria=[e1])
+#     mesa = MesaFactory(categorias=[e1])
 #     # existe una carga para esa categoria / mesa
 #     CargaFactory(mesa_categoria__mesa=mesa, mesa_categoria__categoria=e1)
 #     url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])

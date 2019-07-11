@@ -7,16 +7,27 @@ from .factories import (
     MesaCategoriaFactory,
     ProblemaFactory,
     CargaFactory,
-    IdentificacionFactory
+    IdentificacionFactory,
+    CategoriaFactory,
+    OpcionFactory,
 )
 from elecciones.models import Mesa, MesaCategoria, Categoria
 from django.utils import timezone
 
 
-def test_mesa_siguiente_categoria(db):
-    e1, e2 = categoria = CategoriaFactory.create_batch(2)
+def test_opciones_actuales(db):
+    o1 = OpcionFactory(orden=1, obligatorio=True)
+    o2 = OpcionFactory(orden=3, obligatorio=False)
+    o3 = OpcionFactory(orden=2, obligatorio=False)
+    c = CategoriaFactory(opciones=[o1, o2, o3])
+    assert list(c.opciones_actuales()) == [o1, o3, o2]
+    assert list(c.opciones_actuales(True)) == [o1]
 
-    m1 = MesaFactory(categoria=categoria)
+
+def test_mesa_siguiente_categoria(db):
+    e1, e2 = categorias = CategoriaFactory.create_batch(2)
+
+    m1 = MesaFactory(categorias=categorias)
     assert m1.siguiente_categoria_sin_carga() == e1
     VotoMesaReportadoFactory(
         carga__mesa_categoria__mesa=m1,
@@ -38,7 +49,7 @@ def test_mesa_siguiente_categoria_desactiva(db):
     e1, e2 = categorias = CategoriaFactory.create_batch(2)
     e2.activa = False
     e2.save()
-    m1 = MesaFactory(categoria=categorias)
+    m1 = MesaFactory(categorias=categorias)
     assert m1.siguiente_categoria_sin_carga() == e1
     VotoMesaReportadoFactory(
         carga__mesa_categoria__mesa=m1,
@@ -127,7 +138,7 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
 
 # def test_mesa_siguiente_categoria_a_confirmar(db):
 #     e1, e2 = categoria = CategoriaFactory.create_batch(2)
-#     m1 = MesaFactory(categoria=categoria)
+#     m1 = MesaFactory(categorias=categoria)
 #     VotoMesaReportadoFactory(
 #         carga__mesa_categoria__mesa=m1,
 #         carga__mesa_categoria__categoria=e1,
@@ -155,7 +166,7 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
 
 # def test_mesa_siguiente_categoria_a_confirmar_categoria_desactivada(db):
 #     e1 = CategoriaFactory(activa=False)
-#     m1 = MesaFactory(categoria=[e1])
+#     m1 = MesaFactory(categorias=[e1])
 #     VotoMesaReportadoFactory(
 #         carga__mesa_categoria__mesa=m1,
 #         carga__mesa_categoria__categoria=e1,
@@ -168,8 +179,8 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
 
 # def test_con_carga_a_confirmar(db):
 #     e1, e2 = categoria = CategoriaFactory.create_batch(2)
-#     m1 = MesaFactory(categoria=categoria)
-#     m2 = MesaFactory(categoria=categoria)
+#     m1 = MesaFactory(categorias=categoria)
+#     m2 = MesaFactory(categorias=categoria)
 
 #     VotoMesaReportadoFactory(carga__mesa_categoria__mesa=m1, carga__mesa_categoria__categoria=e1, opcion=e1.opciones.first(), votos=10)
 #     assert set(Mesa.con_carga_a_confirmar()) == {m1}
@@ -188,7 +199,7 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
 
 # def test_con_carga_a_confirmar_categoria_desactivada(db):
 #     e1 = CategoriaFactory(activa=False)
-#     m1 = MesaFactory(categoria=[e1])
+#     m1 = MesaFactory(categorias=[e1])
 #     VotoMesaReportadoFactory(carga__mesa_categoria__mesa=m1, carga__mesa_categoria__categoria=e1, opcion=e1.opciones.first(), votos=10)
 #     assert Mesa.con_carga_a_confirmar().count() == 0
 
@@ -196,11 +207,11 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
 def test_categorias_para_mesa(db):
     e1, e2, e3 = CategoriaFactory.create_batch(3)
     e4 = CategoriaFactory(activa=False)
-    m1 = MesaFactory(categoria=[e1, e2])
-    m2 = MesaFactory(categoria=[e1, e2, e4])
-    m3 = MesaFactory(categoria=[e1])
-    m4 = MesaFactory(categoria=[e4])
-    m5 = MesaFactory(categoria=[e1, e2])
+    m1 = MesaFactory(categorias=[e1, e2])
+    m2 = MesaFactory(categorias=[e1, e2, e4])
+    m3 = MesaFactory(categorias=[e1])
+    m4 = MesaFactory(categorias=[e4])
+    m5 = MesaFactory(categorias=[e1, e2])
 
     # no hay elecciones.comunes a todas las mesas
     assert list(

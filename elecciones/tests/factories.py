@@ -106,7 +106,7 @@ class MesaFactory(DjangoModelFactory):
     electores = 100
 
     @factory.post_generation
-    def categoria(self, create, extracted, **kwargs):
+    def categorias(self, create, extracted, **kwargs):
         if not create:
             return
         if extracted:

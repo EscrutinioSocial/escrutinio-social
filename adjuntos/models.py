@@ -140,7 +140,7 @@ class Attachment(TimeStampedModel):
     def sin_identificar(cls, wait=2, fiscal=None):
         """
         Devuelve un conjunto de Attachments que no tienen
-        identificacion consolidada y no ha sido asignado
+        identificación consolidada y no ha sido asignado
         para clasificar en los últimos ``wait`` minutos
 
         Se excluyen attachments que ya hayan sido clasificados por `fiscal`
@@ -159,7 +159,7 @@ class Attachment(TimeStampedModel):
         a partir del conjunto de identificaciones del attachment
         se devuelve un diccionario con los cantidades para
         cada grupo (mesa_id, status)
-        Por ejmplo:
+        Por ejemplo:
             {
                 (None, 'spam'): 2,
                 (None, 'invalida'): 1,
@@ -173,8 +173,8 @@ class Attachment(TimeStampedModel):
         qs = self.identificaciones.all()
         if exclude:
             # en caso de que se pase ID, se excluye
-            # esa identificacion del cálculo.
-            # es util para no profucir cambios de estados
+            # esa identificación del cálculo.
+            # es útil para no profucir cambios de estados
             # en caso de edición de una identificacion
             qs = qs.exclude(id=exclude)
         result = {}
@@ -196,12 +196,19 @@ class Identificacion(TimeStampedModel):
         ('spam', 'Es SPAM'),
         ('invalida', 'Es inválida'),
     )
+    # 
+    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema. 
+    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene 
+    #     todos los datos de identificación.  
+    # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
+
+
     status = StatusField()
 
     consolidada = models.BooleanField(
         default=False,
         help_text=(
-            'una identificacion consolidada es aquella '
+            'una identificación consolidada es aquella '
             'que se considera representativa y determina '
             'el estado del attachment'
         )
@@ -225,20 +232,26 @@ class Identificacion(TimeStampedModel):
             same_status_count = status_count_dict.get(
                 (self.mesa, self.status)
             )
-            # si esta identificacion iguala o supera el minimo de
-            # identificaciones coincidentes, la identificacion se
+            # si esta identificación iguala o supera el mónimo de
+            # identificaciones coincidentes, la identificación se
             # consolida.
             # esto dispara la lógica de :func:`consolidacion_attachment`
             if same_status_count and same_status_count + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION:
                 self.consolidada = True
+
+            # TODO, incorporar consolidación con origen en CSV, ver :issue:`49`.
+
+            # TODO - para reportar trolls
+            # sumar 200 a scoring de los usuarios que identificaron el acta diferente
+
         super().save(*args, **kwargs)
 
 
 @receiver(post_save, sender=Identificacion)
 def consolidacion_attachment(sender, instance=None, created=False, **kwargs):
     """
-    la consolidacion de una identificacion determina una transicion
-    en el estado del attachment
+    La consolidación de una identificación determina una transición
+    en el estado del attachment.
     Si se identifica como identificada, entonces se le asigna
     orden de carga a la mesa en cuestión.
     """

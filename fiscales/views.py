@@ -280,7 +280,10 @@ def elegir_acta_a_cargar(request):
 
 
 @login_required
-def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
+def cargar_resultados(
+    request, categoria_id, mesa_numero, tipo='total', carga_id=None
+):
+
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoria-mesa
     """
@@ -290,6 +293,7 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
         categoria_id=categoria_id,
         mesa__numero=mesa_numero
     )
+    solo_obligatorias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
     if carga_id:
@@ -299,7 +303,9 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
     else:
         carga = None
 
-    VotoMesaReportadoFormset = votomesareportadoformset_factory(min_num=categoria.opciones.count())
+    VotoMesaReportadoFormset = votomesareportadoformset_factory(
+        min_num=categoria.opciones_actuales(solo_obligatorias).count()
+    )
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
@@ -313,15 +319,13 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
             form.fields['votos'].widget.attrs['tabindex'] = i
 
-            # si la opcion es obligatoria, se llenan estos campos
-            if opcion.obligatorio:
-                form.fields['votos'].required = True
+            form.fields['votos'].required = True
             if i == 1:
                 form.fields['votos'].widget.attrs['autofocus'] = True
     data = request.POST if request.method == 'POST' else None
 
     qs = VotoMesaReportado.objects.filter(carga=carga) if carga else VotoMesaReportado.objects.none()
-    initial = [{'opcion': o} for o in categoria.opciones_actuales()]
+    initial = [{'opcion': o} for o in categoria.opciones_actuales(solo_obligatorias)]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
     fix_opciones(formset)
     is_valid = False
