@@ -271,6 +271,20 @@ def test_carga_actualizar_firma(db):
     assert c.firma == f'{o1.id}-10|{o3.id}-|{o2.id}-8'
 
 
+def test_carga_actualizar_firma_consolida(db):
+    c = CargaFactory()
+    o1 = VotoMesaReportadoFactory(carga=c, votos=10, opcion__orden=1).opcion
+    c.actualizar_firma()
+    assert c.firma == f'{o1.id}-10'
+    assert c.consolidada is False
+
+    c2 = CargaFactory(mesa_categoria=c.mesa_categoria)
+    VotoMesaReportadoFactory(carga=c2, votos=10, opcion=o1)
+    c2.actualizar_firma()
+    assert c2.firma == f'{o1.id}-10'
+    assert c2.consolidada
+
+
 def test_firma_count(db):
     mc = MesaCategoriaFactory()
     CargaFactory(mesa_categoria=mc, firma='firma_1')

@@ -616,6 +616,14 @@ class Carga(TimeStampedModel):
         return self.mesa_categoria.categoria
 
     def actualizar_firma(self):
+        """
+        a partir del conjunto de reportes de la carga
+        se genera una firma como un string
+            <id_opcion_A>-<votos_opcion_A>|<id_opcion_B>-<votos_opcion_B>...
+
+        Si esta firma iguala o coincide con la de otras cargas
+        se marca consolidada
+        """
         tuplas = (
             f'{o}-{v or ""}' for (o, v) in
             self.reportados.values_list(
@@ -623,7 +631,12 @@ class Carga(TimeStampedModel):
             ).order_by('opcion__orden')
         )
         self.firma = '|'.join(tuplas)
-        self.save(update_fields=['firma'])
+        igual_firma = self.mesa_categoria.firma_count(
+            self.id
+        ).get(self.firma)
+        if igual_firma and igual_firma + 1 >= settings.MIN_COINCIDENCIAS_CARGAS:
+            self.consolidada = True
+        self.save(update_fields=['firma', 'consolidada'])
 
     def __str__(self):
         return f'carga de {self.mesa} / {self.categoria} por {self.fiscal}'

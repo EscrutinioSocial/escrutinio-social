@@ -349,6 +349,7 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
+            carga.actualizar_firma()
             messages.success(
                 request,
                 f'Guardada categoría {categoria} para {mesa}')
