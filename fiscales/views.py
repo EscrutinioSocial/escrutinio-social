@@ -281,7 +281,7 @@ def elegir_acta_a_cargar(request):
 
 @login_required
 def cargar_resultados(
-    request, categoria_id, mesa_numero, tipo='total', carga_id=None
+    request, categoria_id, mesa_numero, tipo='carga_total', carga_id=None
 ):
 
     """
@@ -293,7 +293,8 @@ def cargar_resultados(
         categoria_id=categoria_id,
         mesa__numero=mesa_numero
     )
-    solo_obligatorias = tipo == 'parcial'
+
+    solo_obligatorias = tipo == 'carga_parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
     if carga_id:
@@ -347,6 +348,7 @@ def cargar_resultados(
                 else:
                     carga = Carga.objects.create(
                         mesa_categoria=mesa_categoria,
+                        status=tipo,
                         fiscal=fiscal,
                     )
                 for form in formset:

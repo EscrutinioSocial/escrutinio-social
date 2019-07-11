@@ -7,7 +7,7 @@ from elecciones.tests.factories import (
     CircuitoFactory,
     IdentificacionFactory,
 )
-from elecciones.models import Mesa, VotoMesaReportado
+from elecciones.models import Mesa, VotoMesaReportado, Carga
 from elecciones.tests.test_resultados import fiscal_client          # noqa
 
 
@@ -159,6 +159,8 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
         'form-MIN_NUM_FORMS': '2',
         'form-MAX_NUM_FORMS': '1000',
     })
+    carga = Carga.objects.get()  # sólo hay una carga
+    assert carga.status == 'carga_total'
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e2.id, m1.numero])
 
