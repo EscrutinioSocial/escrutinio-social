@@ -88,7 +88,7 @@ class AsignarMesaForm(forms.ModelForm):
                 'mesa', 'Esta mesa ya tiene una o más imágenes adjuntas. Revisá y guardá de nuevo para confirmar .'
             )
 
-        cleaned_data['mesa'] = None if mesa_numero is None else Mesa.objects.get(numero=mesa_numero)
+        cleaned_data['mesa'] = Mesa.objects.get(numero=mesa_numero)
         return cleaned_data
 
 

@@ -48,7 +48,7 @@ class TieneResultados(admin.SimpleListFilter):
         value = self.value()
         if value is not None:
             isnull = value == 'no'
-            queryset = Mesa.objects.filter(cargas__isnull=isnull)
+            queryset = Mesa.objects.filter(votomesareportado__isnull=isnull)
         return queryset
 
 

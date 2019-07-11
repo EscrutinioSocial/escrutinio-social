@@ -5,9 +5,12 @@ from . import views
 
 urlpatterns = [
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
-    url('^acta/$', views.realizar_siguiente_accion, name='siguiente-accion'),
+    url('^acta/$', views.elegir_acta_a_cargar, name='elegir-acta-a-cargar'),
     url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.cargar_resultados, name='mesa-cargar-resultados'),
+
+    url('^chequear$',
+        views.chequear_resultado, name='chequear-resultado'),
 
     url('^chequear/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.chequear_resultado_mesa, name='chequear-resultado-mesa'),
@@ -15,9 +18,4 @@ urlpatterns = [
     url('^mis-datos/profile$', views.MisDatosUpdate.as_view(), name='mis-datos-update'),
     url('^mis-datos/password$', views.CambiarPassword.as_view(), name='cambiar-password'),
     url('^_confirmar/(?P<fiscal_id>\d+)$', views.confirmar_fiscal, name='confirmar-fiscal'),
-    url(r'^post-cargar-resultados/(?P<mesa>[^/]+)/(?P<categoria>.+)$', views.post_cargar_resultados, name="post-cargar-resultados"),
-    url(r'^carga-simultanea/(?P<mesa>[^/]+)/(?P<categoria>.+)$', views.carga_simultanea, name="carga-simultanea"),
-    url(r'^post-confirmar-resultados/(?P<mesa>\w+)$', views.post_confirmar_resultados, name="post-confirmar-resultados"),
-    url(r'^post-reportar-problema/(?P<mesa>\w+)$', views.post_reportar_problema, name="post-reportar-problema"),
-    url(r'^bienvenido$', views.bienvenido, name="bienvenido"),
 ]

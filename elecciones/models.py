@@ -292,19 +292,6 @@ class Mesa(models.Model):
             ).exists():
                 return categoria
 
-    def marcar_todas_las_categorias_cargadas(self):
-        cantidad_categorias = self.categoria.filter(activa=True).count()
-        print(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
-        self.cargadas = cantidad_categorias
-        self.save(update_fields=['cargadas'])
-
-    def marcar_todas_las_categorias_confirmadas(self):
-        cantidad_categorias = self.cargadas
-        print(f'marcando {cantidad_categorias} como confirmadas en mesa {self.numero}')
-        self.confirmadas = cantidad_categorias
-        self.save(update_fields=['confirmadas'])
-
-
     @classmethod
     def con_carga_pendiente(cls, wait=2):
         """
@@ -590,7 +577,7 @@ class Carga(TimeStampedModel):
     para las opciones válidas en la mesa-categoria.
     """
 
-    mesa = models.ForeignKey(Mesa, related_name='cargas', on_delete=models.CASCADE)
+    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
     fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
     consolidada = models.BooleanField(default=False)
