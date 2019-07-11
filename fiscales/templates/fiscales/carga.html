@@ -5,12 +5,14 @@
 {{ block.super }}
 
 <style>
-.tabs {
-        height:100%;
-}
 
 .card-content {
     background-color: {{ categoria.back_color }};
+}
+
+.right-panel > .card > .card-content > .acta-container {
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 </style>
 
@@ -20,14 +22,18 @@ $(document).ready(function(){
     $('ul.tabs').tabs();
 
     {% if not is_valid %}
-    $('html, body').animate({
-        scrollTop: $(".has-error").first().offset().top - 70
-    }, 2000);
+    var hasError = $(".has-error");
+    if (hasError.length) {
+      $('html, body').animate({
+          scrollTop: hasError.first().offset().top - 70
+      }, 2000);
 
-    // arreglar esta bosta!
-    $(".has-error").first().children('input').focus();
+      // arreglar esta bosta!
+      hasError.first().children('input').focus();
+    }
+    {% endif %}
 
-{% endif %}
+    $('.acta-container').height($("main").height() - 220);
 
 });
 </script>
@@ -89,53 +95,17 @@ $(document).ready(function(){
 
         <div class="card-content">
 
-            <div class="row">
-            <div class="col s12">
-              <ul class="tabs">
-                {% for title, foto in object.fotos %}
-
-                <li class="tab col s3"><a {% if forloop.counter == 1 %}class="active"{% endif %} href="#foto{{ forloop.counter }}">{{ title }}</a></li>
-                {% endfor %}
-              </ul>
-            </div>
+            <ul class="tabs">
+              {% for title, foto in object.fotos %}
+              <li class="tab col s3"><a {% if forloop.counter == 1 %}class="active"{% endif %} href="#foto{{ forloop.counter }}">{{ title }}</a></li>
+              {% endfor %}
+            </ul>
             {% for title, foto in object.fotos %}
-
-
-                <div id="foto{{ forloop.counter }}" class="col s12">
-
+                <div id="foto{{ forloop.counter }}" class="col s12 acta-container">
                     <a href="{{ foto.url }}" onclick="return !window.open(this.href, 'Acta mesa Nº {{ object.numero }}', 'width=640,height=600')">ampliar</a><br>
-
                     <img class="responsive-img" src="{{ foto.thumbnail.960x.url }}">
-
                 </div>
             {% endfor %}
-          </div>
-
-
-        {% comment %}
-
-        <div class="col s12">
-            <ul class="tabs">
-                <li class="tab col s3"><a href="#test1">Test 1</a></li>
-                <li class="tab col s3"><a href="#test1">Test 2</a></li>
-            </ul>
-        </div>
-         <div id="test1" class="col s12">
-           {% if object.foto_del_acta %}
-
-
-            {% else %}
-                <p>no hay foto de esta acta</p>
-
-            {% endif %}
-
-         </div>
-
-         <div id="test2" class="col s12">Test 2</div>
-
-
-        {% endcomment %}
-
 
         </div>
 

@@ -52,3 +52,12 @@ dump-dev-data:
 
 update-models-diagram:
 	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
+
+crawl-resultados:
+	 wget --recursive --level=100 --convert-links --html-extension --restrict-file-names=windows --no-parent --no-host-directories --directory-prefix=crawl-resultados --span-hosts localhost:8000/elecciones/resultados/1
+	 find crawl-resultados -type f -name "*.html*" -exec sed -i 's/http:\/\/localhost:8000//g' {} +
+	 find crawl-resultados -type f -name "*.html*" -exec sed -i '/href="\/login\/"/d' {} +
+	 find crawl-resultados -type f -name "*.html*" -exec sed -i "s/id='tipodesumarizacion'/id='tipodesumarizacion' style='display:none'/g" {} +
+
+crawl-resultados-up:
+	docker exec escrutinio-social-app /bin/sh -c "python simple-cors-http-server.py"

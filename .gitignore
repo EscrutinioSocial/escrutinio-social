@@ -112,3 +112,5 @@ ENV/
 
 .vscode
 .~lock*
+
+crawl-resultados
