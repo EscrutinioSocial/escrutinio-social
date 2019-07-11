@@ -196,6 +196,13 @@ class Identificacion(TimeStampedModel):
         ('spam', 'Es SPAM'),
         ('invalida', 'Es inválida'),
     )
+    # 
+    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema. 
+    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene 
+    #     todos los datos de identificación.  
+    # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
+
+
     status = StatusField()
 
     consolidada = models.BooleanField(
@@ -228,14 +235,18 @@ class Identificacion(TimeStampedModel):
             # si esta identificacion iguala o supera el minimo de
             # identificaciones coincidentes, la identificacion se
             # consolida.
-            # esto dispara la lógica de :func:`consolidacion_attachent`
+            # esto dispara la lógica de :func:`consolidacion_attachment`
             if same_status_count and same_status_count + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION:
                 self.consolidada = True
+
+            # TODO - para reportar trolls
+            # sumar 200 a scoring de los usuarios que identificaron el acta diferente
+
         super().save(*args, **kwargs)
 
 
 @receiver(post_save, sender=Identificacion)
-def consolidacion_attachent(sender, instance=None, created=False, **kwargs):
+def consolidacion_attachment(sender, instance=None, created=False, **kwargs):
     """
     la consolidacion de una identificacion determina una transicion
     en el estado del attachment
