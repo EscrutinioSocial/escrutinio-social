@@ -1,10 +1,10 @@
 from django.conf.urls import url
-from .views import elegir_adjunto, AsignarMesaAdjunto, editar_foto, AgregarAdjuntos,AgregarAdjuntosImportados
+from .views import AsignarMesaAdjunto, editar_foto, AgregarAdjuntos,AgregarAdjuntosImportados, post_asignar_mesa
 
 urlpatterns = [
-    url(r'^$', elegir_adjunto, name="elegir-adjunto"),
     url(r'^(?P<attachment_id>\d+)/$', AsignarMesaAdjunto.as_view(), name='asignar-mesa'),
     url(r'^(?P<attachment_id>\d+)/editar-foto$', editar_foto, name='editar-foto'),
     url(r'^agregar$', AgregarAdjuntos.as_view(), name="agregar-adjuntos"),
+    url(r'^post-asignar-mesa/(?P<decision>\w+)/(?P<contenido>\w+)$', post_asignar_mesa, name="post-asignar-mesa"),
     url(r'^agregar-adjuntos-csv/$', AgregarAdjuntosImportados.as_view(), name="agregar-adjuntos-csv"),
 ]

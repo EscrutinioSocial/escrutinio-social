@@ -43,7 +43,7 @@ class CSVImporter:
 
     def __init__(self, archivo, usuario):
         self.archivo = archivo
-        self.df = None
+        self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"])
         self.usuario = usuario
         self.mesas = []
 
@@ -62,8 +62,6 @@ class CSVImporter:
 
         """
         try:
-            valores_vacios = ["n/a", "na", "-"]
-            self.df = pd.read_csv(self.archivo, na_values=valores_vacios)
             self.validar_columnas()
             self.validar_mesas()
 
