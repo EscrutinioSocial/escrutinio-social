@@ -54,8 +54,8 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
 
     # se carga esa categoria
     VotoMesaReportadoFactory(
-        carga__mesa=m2,
-        carga__categoria=e1,
+        carga__mesa_categoria__mesa=m2,
+        carga__mesa_categoria__categoria=e1,
         opcion=e1.opciones.first(),
         votos=1
     )
@@ -183,64 +183,86 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     assert response.url == reverse('elegir-acta-a-cargar')
 
 
+# def test_chequear_resultado(db, fiscal_client):
+#     o = OpcionFactory(es_contable=True)
+#     e1 = CategoriaFactory(opciones=[o])
+#     mesa = MesaFactory(categoria=[e1])
+#     me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
+#     assert me.confirmada is False
+#     VotoMesaReportadoFactory(
+#         opcion=o,
+#         carga__mesa_categoria__mesa=mesa,
+#         carga__mesa_categoria__categoria=e1,
+#         votos=1
+#     )
+#     response = fiscal_client.get(reverse('chequear-resultado'))
+#     assert response.status_code == 302
+#     assert response.url == reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
+#     me.confirmada = True
+#     me.save()
+#     response = fiscal_client.get(reverse('chequear-resultado'))
+#     assert response.status_code == 200
+#     assert 'No hay actas cargadas para verificar por el momento' in response.content.decode('utf8')
 
 
-def test_chequear_resultado(db, fiscal_client):
-    o = OpcionFactory(es_contable=True)
-    e1 = CategoriaFactory(opciones=[o])
-    mesa = MesaFactory(categoria=[e1])
-    me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
-    assert me.confirmada is False
+# def test_chequear_resultado_mesa(db, fiscal_client):
+#     opcs = OpcionFactory.create_batch(3, es_contable=True)
+#     e1 = CategoriaFactory(opciones=opcs)
+#     e2 = CategoriaFactory(opciones=opcs)
+#     mesa = MesaFactory(categoria=[e1, e2])
+#     me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
+#     assert me.confirmada is False
+#     votos1 = VotoMesaReportadoFactory(
+#         opcion=opcs[0],
+#         carga__mesa_categoria__mesa=mesa,
+#         carga__mesa_categoria__categoria=e1,
+#         votos=1
+#     )
+#     votos2 = VotoMesaReportadoFactory(
+#         opcion=opcs[1],
+#         carga__mesa_categoria__mesa=mesa,
+#         carga__mesa_categoria__categoria=e1,
+#         votos=2
+#     )
+#     votos3 = VotoMesaReportadoFactory(
+#         opcion=opcs[2],
+#         carga__mesa_categoria__mesa=mesa,
+#         carga__mesa_categoria__categoria=e1,
+#         votos=1
+#     )
 
-    VotoMesaReportadoFactory(opcion=o, carga__mesa=mesa, carga__categoria=e1, votos=1)
-    response = fiscal_client.get(reverse('chequear-resultado'))
-    assert response.status_code == 302
-    assert response.url == reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
-    me.confirmada = True
-    me.save()
-    response = fiscal_client.get(reverse('chequear-resultado'))
-    assert response.status_code == 200
-    assert 'No hay actas cargadas para verificar por el momento' in response.content.decode('utf8')
+#     # a otra categoria
+#     VotoMesaReportadoFactory(
+#         opcion=opcs[2],
+#         carga__mesa_categoria__mesa=mesa,
+#         carga__mesa_categoria__categoria=e2,
+#         votos=1
+#     )
+
+#     url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
+#     response = fiscal_client.get(url)
+
+#     assert list(response.context['reportados']) == [votos1, votos2, votos3]
+
+#     response = fiscal_client.post(url, {'confirmar': 'confirmar'})
+#     assert response.status_code == 302
+#     assert response.url == reverse('chequear-resultado')
+#     me.refresh_from_db()
+#     assert me.confirmada is True
 
 
-def test_chequear_resultado_mesa(db, fiscal_client):
-    opcs = OpcionFactory.create_batch(3, es_contable=True)
-    e1 = CategoriaFactory(opciones=opcs)
-    e2 = CategoriaFactory(opciones=opcs)
-    mesa = MesaFactory(categoria=[e1, e2])
-    me = MesaCategoria.objects.get(categoria=e1, mesa=mesa)
-    assert me.confirmada is False
-    votos1 = VotoMesaReportadoFactory(opcion=opcs[0], carga__mesa=mesa, carga__categoria=e1, votos=1)
-    votos2 = VotoMesaReportadoFactory(opcion=opcs[1], carga__mesa=mesa, carga__categoria=e1, votos=2)
-    votos3 = VotoMesaReportadoFactory(opcion=opcs[2], carga__mesa=mesa, carga__categoria=e1, votos=1)
-
-    # a otra categoria
-    VotoMesaReportadoFactory(opcion=opcs[2], carga__mesa=mesa, carga__categoria=e2, votos=1)
-
-    url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
-    response = fiscal_client.get(url)
-
-    assert list(response.context['reportados']) == [votos1, votos2, votos3]
-
-    response = fiscal_client.post(url, {'confirmar': 'confirmar'})
-    assert response.status_code == 302
-    assert response.url == reverse('chequear-resultado')
-    me.refresh_from_db()
-    assert me.confirmada is True
-
-
-def test_chequear_resultado_categoria_desactivada(db, fiscal_client):
-    opcs = OpcionFactory.create_batch(3, es_contable=True)
-    e1 = CategoriaFactory(opciones=opcs)
-    assert e1.activa is True
-    mesa = MesaFactory(categoria=[e1])
-    # existe una carga para esa categoria / mesa
-    CargaFactory(mesa=mesa, categoria=e1)
-    url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
-    response = fiscal_client.get(url)
-    assert response.status_code == 200
-    e1.activa = False
-    e1.save()
-    response = fiscal_client.get(url)
-    assert response.status_code == 404
+# def test_chequear_resultado_categoria_desactivada(db, fiscal_client):
+#     opcs = OpcionFactory.create_batch(3, es_contable=True)
+#     e1 = CategoriaFactory(opciones=opcs)
+#     assert e1.activa is True
+#     mesa = MesaFactory(categoria=[e1])
+#     # existe una carga para esa categoria / mesa
+#     CargaFactory(mesa_categoria__mesa=mesa, mesa_categoria__categoria=e1)
+#     url = reverse('chequear-resultado-mesa', args=[e1.id, mesa.numero])
+#     response = fiscal_client.get(url)
+#     assert response.status_code == 200
+#     e1.activa = False
+#     e1.save()
+#     response = fiscal_client.get(url)
+#     assert response.status_code == 404
 

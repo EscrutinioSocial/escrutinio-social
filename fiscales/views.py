@@ -285,13 +285,19 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
     Es la vista que muestra y procesa el formset de carga de datos para una categoria-mesa
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
-    categoria = get_object_or_404(Categoria, id=categoria_id)
-    mesa = get_object_or_404(Mesa, categorias=categoria, numero=mesa_numero)
+    mesa_categoria = get_object_or_404(
+        MesaCategoria,
+        categoria_id=categoria_id,
+        mesa__numero=mesa_numero
+    )
+    mesa = mesa_categoria.mesa
+    categoria = mesa_categoria.categoria
     if carga_id:
-        carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
+        carga = get_object_or_404(
+            Carga, id=carga_id, carga__mesa_categoria=mesa_categoria
+        )
     else:
         carga = None
-
 
     VotoMesaReportadoFormset = votomesareportadoformset_factory(min_num=categoria.opciones.count())
 
@@ -336,9 +342,8 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                     carga.save()
                 else:
                     carga = Carga.objects.create(
-                        mesa=mesa,
+                        mesa_categoria=mesa_categoria,
                         fiscal=fiscal,
-                        categoria=categoria
                     )
                 for form in formset:
                     vmr = form.save(commit=False)
@@ -377,27 +382,28 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
     )
 
 
-@login_required
-def chequear_resultado(request):
-    """
-    Elige una mesa con cargas a confirmar y redirige a la url correspondiente
-    """
-    mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
-    if not mesa:
-        return render(request, 'fiscales/sin-actas-cargadas.html')
-    try:
-        categoria = mesa.siguiente_categoria_a_confirmar()
-    except Exception:
-        return render(request, 'fiscales/sin-actas-cargadas.html')
 
-    if not categoria:
-        return render(request, 'fiscales/sin-actas-cargadas.html')
+# @login_required
+# def chequear_resultado(request):
+#     """
+#     Elige una mesa con cargas a confirmar y redirige a la url correspondiente
+#     """
+#     mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
+#     if not mesa:
+#         return render(request, 'fiscales/sin-actas-cargadas.html')
+#     try:
+#         categoria = mesa.siguiente_categoria_a_confirmar()
+#     except Exception:
+#         return render(request, 'fiscales/sin-actas-cargadas.html')
 
-    return redirect(
-        'chequear-resultado-mesa',
-        categoria_id=categoria.id,
-        mesa_numero=mesa.numero
-    )
+#     if not categoria:
+#         return render(request, 'fiscales/sin-actas-cargadas.html')
+
+#     return redirect(
+#         'chequear-resultado-mesa',
+#         categoria_id=categoria.id,
+#         mesa_numero=mesa.numero
+#     )
 
 
 @login_required
@@ -434,7 +440,7 @@ def chequear_resultado_mesa(request, categoria_id, mesa_numero, carga_id=None):
         messages.success(request, f'Confirmaste la categoria {categoria} para {mesa}')
         return redirect('chequear-resultado')
 
-    reportados = carga.votomesareportado_set.order_by('opcion__orden')
+    reportados = carga.reportados.order_by('opcion__orden')
     return render(
         request,
         "fiscales/chequeo_mesa.html",

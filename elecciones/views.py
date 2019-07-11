@@ -157,7 +157,7 @@ class ResultadosCategoria(TemplateView):
                 Case(
                     When(
                         opcion__partido__id=id,
-                        carga__categoria=categoria,
+                        carga__mesa_categoria__categoria=categoria,
                         then=F('votos')
                     ), output_field=IntegerField()
                 )
@@ -172,7 +172,7 @@ class ResultadosCategoria(TemplateView):
                 Case(
                     When(
                         opcion__id=id,
-                        carga__categoria=categoria,
+                        carga__mesa_categoria__categoria=categoria,
                         then=F('votos')
                     ), output_field=IntegerField()
                 )
@@ -387,9 +387,13 @@ class ResultadosCategoria(TemplateView):
         # primero para partidos
 
         reportados = VotoMesaReportado.objects.filter(
-            carga__categoria=categoria, carga__mesa__in=Subquery(mesas.values('id'))
+            carga__mesa_categoria__categoria=categoria,
+            carga__mesa_categoria__mesa__in=Subquery(mesas.values('id'))
         )
-        mesas_escrutadas = mesas.filter(carga__votomesareportado__isnull=False).distinct()
+        mesas_escrutadas = mesas.filter(
+            mesacategoria__categoria=categoria,
+            mesacategoria__cargas__isnull=False
+        ).distinct()
         escrutados = mesas_escrutadas.aggregate(v=Sum('electores'))['v']
         if escrutados is None:
             escrutados = 0

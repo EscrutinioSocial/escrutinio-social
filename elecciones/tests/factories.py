@@ -119,6 +119,7 @@ class MesaFactory(DjangoModelFactory):
 class MesaCategoriaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.MesaCategoria'
+        django_get_or_create = ('mesa', 'categoria')
     mesa = factory.SubFactory(MesaFactory)
     categoria = factory.SubFactory(CategoriaFactory, id=1)
 
@@ -132,12 +133,12 @@ class FiscalFactory(DjangoModelFactory):
     nombres = fake.first_name()
     dni = factory.Sequence(lambda n: f'{n}00000{n}')
 
+
 class CargaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Carga'
-        django_get_or_create = ('mesa', 'categoria')
-    mesa = factory.SubFactory(MesaFactory)
-    categoria = factory.SubFactory(CategoriaFactory, id=1)
+        django_get_or_create = ('mesa_categoria',)
+    mesa_categoria = factory.SubFactory(MesaCategoriaFactory)
     fiscal = factory.SubFactory(FiscalFactory)
 
 

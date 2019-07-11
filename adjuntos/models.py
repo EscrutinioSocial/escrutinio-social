@@ -228,31 +228,32 @@ class Identificacion(TimeStampedModel):
             # si esta identificacion iguala o supera el minimo de
             # identificaciones coincidentes, la identificacion se
             # consolida.
-            # esto dispara la lógica de :func:`consolidacion_attachent`
+            # esto dispara la lógica de :func:`consolidacion_attachment`
             if same_status_count and same_status_count + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION:
                 self.consolidada = True
         super().save(*args, **kwargs)
 
 
 @receiver(post_save, sender=Identificacion)
-def consolidacion_attachent(sender, instance=None, created=False, **kwargs):
+def consolidacion_attachment(sender, instance=None, created=False, **kwargs):
     """
     la consolidacion de una identificacion determina una transicion
     en el estado del attachment
     Si se identifica como identificada, entonces se le asigna
     orden de carga a la mesa en cuestión.
     """
+    from elecciones.models import Carga
+
     if instance.consolidada:
         attachment = instance.attachment
         attachment.status = instance.status
         attachment.mesa = instance.mesa
         attachment.save(update_fields=['mesa', 'status'])
 
-
         if (
             instance.mesa and
             instance.status == Identificacion.STATUS.identificada and
-            not instance.mesa.carga_set.exists()
+            not Carga.objects.filter(mesa_categoria__mesa=instance.mesa).exists()
         ):
             mesa = instance.mesa
             mesa.orden_de_carga = mesa.lugar_votacion.circuito.proximo_orden_de_carga()

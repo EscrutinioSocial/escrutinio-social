@@ -3,6 +3,8 @@ from django.db import IntegrityError
 from elecciones.tests.factories import (
     AttachmentFactory,
     IdentificacionFactory,
+    VotoMesaReportadoFactory,
+    CargaFactory,
     MesaFactory,
 )
 from django.utils import timezone
@@ -74,3 +76,12 @@ def test_identificacion_consolidada(db):
     assert i3.consolidada
 
 
+def test_carga_actualizar_firma(db):
+    c = CargaFactory()
+    o1 = VotoMesaReportadoFactory(carga=c, votos=10, opcion__orden=1).opcion
+    o2 = VotoMesaReportadoFactory(carga=c, votos=8, opcion__orden=3).opcion
+    o3 = VotoMesaReportadoFactory(carga=c, votos=None, opcion__orden=2).opcion
+    # ignora otras
+    VotoMesaReportadoFactory()
+    c.actualizar_firma()
+    assert c.firma == f'{o1.id}-10|{o3.id}-|{o2.id}-8'
