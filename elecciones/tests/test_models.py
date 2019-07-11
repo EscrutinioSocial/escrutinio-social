@@ -4,7 +4,9 @@ from .factories import (
     CategoriaFactory,
     AttachmentFactory,
     MesaFactory,
+    MesaCategoriaFactory,
     ProblemaFactory,
+    CargaFactory,
     IdentificacionFactory
 )
 from elecciones.models import Mesa, MesaCategoria, Categoria
@@ -256,3 +258,34 @@ def test_fotos_de_mesa(db):
         ('Foto 2 (editada)', a3.foto_edited),
         ('Foto 2 (original)', a3.foto),
     ]
+
+
+def test_carga_actualizar_firma(db):
+    c = CargaFactory()
+    o1 = VotoMesaReportadoFactory(carga=c, votos=10, opcion__orden=1).opcion
+    o2 = VotoMesaReportadoFactory(carga=c, votos=8, opcion__orden=3).opcion
+    o3 = VotoMesaReportadoFactory(carga=c, votos=None, opcion__orden=2).opcion
+    # ignora otras
+    VotoMesaReportadoFactory()
+    c.actualizar_firma()
+    assert c.firma == f'{o1.id}-10|{o3.id}-|{o2.id}-8'
+
+
+def test_firma_count(db):
+    mc = MesaCategoriaFactory()
+    CargaFactory(mesa_categoria=mc, firma='firma_1')
+    CargaFactory(mesa_categoria=mc, firma='firma_2')
+    CargaFactory(mesa_categoria=mc, firma='firma_2')
+    CargaFactory(mesa_categoria=mc, firma='firma_3')
+    c4 = CargaFactory(mesa_categoria=mc, firma='firma_3')
+
+    assert mc.firma_count() == {
+        'firma_1': 1,
+        'firma_2': 2,
+        'firma_3': 2,
+    }
+    assert mc.firma_count(exclude=c4.id) == {
+        'firma_1': 1,
+        'firma_2': 2,
+        'firma_3': 1,
+    }

@@ -2,13 +2,11 @@ import pytest
 from django.db import IntegrityError
 from elecciones.tests.factories import (
     AttachmentFactory,
-    IdentificacionFactory,
-    VotoMesaReportadoFactory,
-    CargaFactory,
     MesaFactory,
+    IdentificacionFactory,
 )
 from django.utils import timezone
-from adjuntos.models import Identificacion, Attachment
+from adjuntos.models import Attachment
 
 
 def test_attachment_unico(db):
@@ -74,14 +72,3 @@ def test_identificacion_consolidada(db):
     assert not i1.consolidada
     assert not i2.consolidada
     assert i3.consolidada
-
-
-def test_carga_actualizar_firma(db):
-    c = CargaFactory()
-    o1 = VotoMesaReportadoFactory(carga=c, votos=10, opcion__orden=1).opcion
-    o2 = VotoMesaReportadoFactory(carga=c, votos=8, opcion__orden=3).opcion
-    o3 = VotoMesaReportadoFactory(carga=c, votos=None, opcion__orden=2).opcion
-    # ignora otras
-    VotoMesaReportadoFactory()
-    c.actualizar_firma()
-    assert c.firma == f'{o1.id}-10|{o3.id}-|{o2.id}-8'

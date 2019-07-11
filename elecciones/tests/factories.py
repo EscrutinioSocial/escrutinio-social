@@ -137,7 +137,6 @@ class FiscalFactory(DjangoModelFactory):
 class CargaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Carga'
-        django_get_or_create = ('mesa_categoria',)
     mesa_categoria = factory.SubFactory(MesaCategoriaFactory)
     fiscal = factory.SubFactory(FiscalFactory)
 
