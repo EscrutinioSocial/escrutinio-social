@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir /src
 WORKDIR /src
 ADD requirements.txt /src/
+ADD requirements /src/requirements
 RUN pip install -r requirements.txt
 CMD python manage.py migrate
 ADD . /src/
