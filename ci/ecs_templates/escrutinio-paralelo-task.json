@@ -1,0 +1,41 @@
+{
+  "family": "escrutinio-paralelo-task",
+  "containerDefinitions": [
+    {
+      "name": "escrutinio-paralelo",
+      "image": "927223451584.dkr.ecr.sa-east-1.amazonaws.com/escrutinio-paralelo:latest",
+      "memoryReservation": 300,
+      "cpu": 0,
+      "essential": true,
+      "portMappings": [
+          {
+              "containerPort": 8000,
+              "hostPort": 8000,
+              "protocol": "tcp"
+          }
+      ],
+      "environment": [
+        {
+          "name": "DATABASE_URL",
+          "value": "esdb.ciquvvzm89xm.sa-east-1.rds.amazonaws.com"
+        },
+        {
+          "name": "DB_NAME",
+          "value": "es_db"
+        },
+        {
+          "name": "DB_PASS",
+          "value": "changeme"
+        },
+        {
+          "name": "DB_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "DB_USER",
+          "value": "esdb_user"
+        }
+      ]
+    }
+  ]
+}
