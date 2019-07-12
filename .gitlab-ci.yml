@@ -18,6 +18,8 @@ build:
     - pip install --no-cache-dir awscli
   script:
     - ./ci/build.sh
+  tags:
+    - docker
 
 deploy:
   stage: deploy
