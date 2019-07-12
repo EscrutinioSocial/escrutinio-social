@@ -16,6 +16,6 @@ build:
 deploy:
   stage: deploy
   script:
-  	- ./ci/deploy.sh
+    - ./ci/deploy.sh
   only:
-  - setup-ci
+    - setup-ci
