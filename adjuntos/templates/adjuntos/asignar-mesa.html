@@ -80,9 +80,7 @@ $(document).ready(function() {
           {% block card-content %}
 
             <div class="card-title">¿De qué mesa es esta acta?</div>
-
-                  {% form %}
-                  {% endform %}
+                  {% include "adjuntos/asignar-mesa-form.html" %}
             </div>
           {% endblock card-content %}
 
@@ -91,7 +89,7 @@ $(document).ready(function() {
             {% block card-action %}
             <div class="right-align">
 
-               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="{{ button_tabindex }}">
+               <button class="btn waves-effect waves-light btn white-text" type="submit">
                   Guardar
                </button>
             </div>

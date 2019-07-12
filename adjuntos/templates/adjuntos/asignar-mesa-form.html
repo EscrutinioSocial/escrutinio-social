@@ -1,0 +1,111 @@
+<script>
+function getValuesMapForOption($option) {
+  var valuesMap = {};
+  $option.filter(function() {
+    return !!$(this).attr('value');
+  })
+  .each(function() {
+    valuesMap[$(this).text()] = $(this).attr('value');
+  });
+  return valuesMap;
+}
+
+function getValuesMapForJson(response) {
+  var valuesMap = {};
+  response.options.forEach(function(option) {
+    valuesMap[option.text] = option.value;
+  })
+  return valuesMap;
+}
+
+function getAutocompleteData(valuesMap) {
+  var data = {};
+  Object.keys(valuesMap).forEach(function(key) {
+    data[key] = null;
+  })
+  return data;
+}
+
+function getValidationPattern(valuesMap) {
+  var values = Object.keys(valuesMap).map(key => key);
+  return values.join('|');
+}
+
+function getValidationMessage(valuesMap) {
+  var values = Object.keys(valuesMap).map(key => key);
+  return 'Valores posibles: ' + values.join(', ');
+}
+
+function buildAutocomplete(fieldId, dataUrl, childAutocomplete) {
+  var autocomplete = {
+    dataUrl: dataUrl,
+    component: null,
+    valuesMap: {},
+    childAutocomplete: childAutocomplete
+  };
+  autocomplete.component = M.Autocomplete.init($('#' + fieldId + '-autocomplete')[0], {
+    onAutocomplete: function(text) {
+      // obtengo el valor a partir del texto
+      var value = autocomplete.valuesMap[text];
+      // Actualizo el valor del hidden
+      $('#' + fieldId).val(value);
+      // Actualizo el componente hijo
+      if (childAutocomplete) {
+        $.get(childAutocomplete.dataUrl + value, function(response) {
+          childAutocomplete.valuesMap = getValuesMapForJson(response);
+          childAutocomplete.component.updateData(getAutocompleteData(childAutocomplete.valuesMap));
+
+          // Actualizo la validación
+          $(childAutocomplete.component.el).attr('pattern', getValidationPattern(childAutocomplete.valuesMap));
+          $(childAutocomplete.component.el).attr('title', getValidationMessage(childAutocomplete.valuesMap));
+
+          // Seteo el valor de los hijos en vacio
+          $(childAutocomplete.component.el).val('');
+          if (childAutocomplete.childAutocomplete) {
+            $(childAutocomplete.childAutocomplete.component.el).val('');
+            if (childAutocomplete.childAutocomplete.childAutocomplete) {
+              $(childAutocomplete.childAutocomplete.childAutocomplete.component.el).val('');
+            }
+          }
+        }, "json" );
+      }
+    }
+  });
+  return autocomplete;
+}
+
+function buildDistritoAutocomplete(childAutocomplete) {
+  var autocomplete = buildAutocomplete('id_distrito', null, childAutocomplete);
+  autocomplete.valuesMap = getValuesMapForOption($('#id_distrito option'));
+  autocomplete.component.updateData(getAutocompleteData(autocomplete.valuesMap));
+  return autocomplete;
+}
+
+$(document).ready(function() {
+  var mesaAutocomplete = buildAutocomplete('id_mesa', '/fiscales/_autocomplete/m?parent_id=', null);
+  var circuitoAutocomplete = buildAutocomplete('id_circuito', '/fiscales/_autocomplete/c?parent_id=', mesaAutocomplete);
+  var seccionAutocomplete = buildAutocomplete('id_seccion', '/fiscales/_autocomplete/s?parent_id=', circuitoAutocomplete);
+  var distritoAutocomplete = buildDistritoAutocomplete(seccionAutocomplete);
+
+  $('#id_distrito-autocomplete').focus();
+
+  // Borrar los <select generados por django
+  $('.remove').remove();
+});
+</script>
+{{ form.non_field_errors }}
+{% for field in form %}
+    <div class="input-field col s12">
+      {{ field.errors }}
+      <i class="material-icons prefix">textsms</i>
+      <input type="hidden" id="{{field.auto_id}}" name="{{field.html_name}}">
+      <input type="text" id="{{field.auto_id}}-autocomplete" name="{{field.html_name}}-autocomplete" class="autocomplete" tabindex="{{forloop.counter}}" autocomplete="off" required>
+      <label for="{{field.auto_id}}-autocomplete">{{field.label}}</label>
+      {% if field.help_text %}
+      <p class="help">{{ field.help_text|safe }}</p>
+      {% endif %}
+      <div class="remove">
+        {{ field }}
+      </div>
+    </div>
+{% endfor %}
