@@ -1,6 +1,8 @@
 variables:
   CONTAINER_IMAGE: '927223451584.dkr.ecr.sa-east-1.amazonaws.com/escrutinio-paralelo:latest' 
-  REGION: 'sa-east-1'
+  REGION: "sa-east-1"
+
+image: b4ck3r/aws-cli:latest 
 
 stages:
 	- build
