@@ -196,10 +196,10 @@ class Identificacion(TimeStampedModel):
         ('spam', 'Es SPAM'),
         ('invalida', 'Es inválida'),
     )
-    # 
-    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema. 
-    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene 
-    #     todos los datos de identificación.  
+    #
+    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
+    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
+    #     todos los datos de identificación.
     # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
 
 

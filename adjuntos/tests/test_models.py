@@ -44,6 +44,10 @@ def test_identificacion_status_count(db):
     IdentificacionFactory(attachment=a, status='spam', mesa=None)
     IdentificacionFactory(attachment=a, status='spam', mesa=None)
     IdentificacionFactory(attachment=a, status='invalida', mesa=None)
+
+    # un estado excepcional, pero eventualmente posible?
+    IdentificacionFactory(attachment=a, status='spam', mesa=m1)
+
     i2 = IdentificacionFactory(attachment=a, status='identificada', mesa=m2)
 
     result = a.status_count()
@@ -52,6 +56,7 @@ def test_identificacion_status_count(db):
         (None, 'invalida'): 1,
         (m1.id, 'identificada'): 1,
         (m2.id, 'identificada'): 1,
+        (m1.id, 'spam'): 1,
     }
 
     result = a.status_count(exclude=i2.id)
@@ -59,6 +64,7 @@ def test_identificacion_status_count(db):
         (None, 'spam'): 2,
         (None, 'invalida'): 1,
         (m1.id, 'identificada'): 1,
+        (m1.id, 'spam'): 1,
     }
 
 

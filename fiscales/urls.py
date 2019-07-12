@@ -13,7 +13,7 @@ urlpatterns = [
     url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.cargar_resultados, name='mesa-cargar-resultados'),
     url('^acta-parcial/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
-        views.cargar_resultados, {'tipo': 'carga_parcial'}, name='mesa-cargar-resultados-parciales'),
+        views.cargar_resultados, {'tipo': 'parcial'}, name='mesa-cargar-resultados-parciales'),
 
     # url('^chequear$',
     #     views.chequear_resultado, name='chequear-resultado'),

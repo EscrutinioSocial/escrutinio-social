@@ -228,10 +228,10 @@ class MesaCategoria(models.Model):
     "columna" como confirmada.
     """
     STATUS = Choices(
-        'sin_cargar',                    # no hay cargas
-        'parcial_sin_confirmar',   # carga minima unica o coincidente
-        'parcial_en_conflicto',    # cargas minimas divergentes sin consolidar
-        'parcial_confirmada',      # carga minima consolidada
+        'sin_cargar',                   # no hay cargas
+        'parcial_sin_confirmar',        # carga minima unica o coincidente
+        'parcial_en_conflicto',         # cargas minimas divergentes sin consolidar
+        'parcial_confirmada',           # carga minima consolidada
         'total_sin_confirmar',
         'total_en_conflicto',
         'total_confirmada',
@@ -240,15 +240,26 @@ class MesaCategoria(models.Model):
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
 
+    # carga es representativa del estado actual
+    carga_testigo = models.ForeignKey(
+        'Carga', related_name='es_testigo',
+        null=True, blank=True, on_delete=models.SET_NULL
+    )
+
     def firma_count(self, exclude=None):
+        from collections import defaultdict
         qs = self.cargas.all()
         if exclude:
             # en caso de que se pase ID, se excluye
             # esa carga  del cálculo.
-            # es util para no profucir cambios de estados
+            # es util para no producir cambios de estados
             # en caso de edición de una carga
             qs = qs.exclude(id=exclude)
-        return dict(qs.values_list('firma').annotate(Count('firma')))
+        result = defaultdict(dict)
+
+        for item in qs.values('firma', 'status').annotate(total=Count('firma')):
+            result[item['status']][item['firma']] = item['total']
+        return result
 
     class Meta:
         unique_together = ('mesa', 'categoria')
@@ -561,8 +572,8 @@ class Carga(TimeStampedModel):
     """
     STATUS = Choices(
         'falta_foto',
-        'carga_parcial',
-        'carga_total'
+        'parcial',
+        'total'
     )
     SOURCES = Choices('web', 'csv', 'telegram')
     status = StatusField(null=True, blank=True)
@@ -576,7 +587,6 @@ class Carga(TimeStampedModel):
     firma = models.CharField(
         max_length=300, null=True, blank=True, editable=False
     )
-    consolidada = models.BooleanField(default=False)
 
     @property
     def mesa(self):
@@ -602,12 +612,7 @@ class Carga(TimeStampedModel):
             ).order_by('opcion__orden')
         )
         self.firma = '|'.join(tuplas)
-        igual_firma = self.mesa_categoria.firma_count(
-            self.id
-        ).get(self.firma)
-        if igual_firma and igual_firma + 1 >= settings.MIN_COINCIDENCIAS_CARGAS:
-            self.consolidada = True
-        self.save(update_fields=['firma', 'consolidada'])
+        self.save(update_fields=['firma'])
 
     def __str__(self):
         return f'carga de {self.mesa} / {self.categoria} por {self.fiscal}'
@@ -647,6 +652,28 @@ def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=Fals
         mesa.save(update_fields=['cargadas'])
 
 
+@receiver(post_save, sender=Carga)
+def actualizar_estado_mesa_categoria(sender, instance=None, created=False, **kwargs):
+    if instance.id and instance.firma:
+        csv = instance.origen == 'csv'
+        total = instance.status == 'total'
+        mc = instance.mesa_categoria
+        firmas = mc.firma_count()
+        supera = firmas[instance.status][instance.firma] >= settings.MIN_COINCIDENCIAS_CARGAS
+
+        if supera:
+            mc.status = 'total_confirmada' if total else 'parcial_confirmada'
+            mc.carga_testigo = instance
+        elif len(firmas[instance.status]) == 1:
+            # la instancia es la unica de su status
+            mc.status = 'total_sin_confirmar' if total else 'parcial_sin_confirmar'
+            mc.carga_testigo = instance
+        else:
+            mc.status =  'total_en_conflicto' if total else 'parcial_en_conflicto'
+            mc.carga_testigo = None
+        mc.save(update_fields=['status', 'carga_testigo'])
+
+
 @receiver(post_save, sender=MesaCategoria)
 def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
     """
@@ -655,7 +682,7 @@ def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=F
     """
     if instance.status == MesaCategoria.STATUS.total_confirmada:
         mesa = instance.mesa
-        confirmadas = MesaCategoria.objects.filter(mesa=mesa, confirmada=True).count()
+        confirmadas = MesaCategoria.objects.filter(mesa=mesa, status='total_confirmada').count()
         if mesa.confirmadas != confirmadas:
             mesa.confirmadas = confirmadas
             mesa.save(update_fields=['confirmadas'])

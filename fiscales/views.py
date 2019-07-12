@@ -281,7 +281,7 @@ def elegir_acta_a_cargar(request):
 
 @login_required
 def cargar_resultados(
-    request, categoria_id, mesa_numero, tipo='carga_total', carga_id=None
+    request, categoria_id, mesa_numero, tipo='total', carga_id=None
 ):
 
     """
@@ -294,7 +294,7 @@ def cargar_resultados(
         mesa__numero=mesa_numero
     )
 
-    solo_obligatorias = tipo == 'carga_parcial'
+    solo_obligatorias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
     if carga_id:
