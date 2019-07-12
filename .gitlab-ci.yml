@@ -11,6 +11,8 @@ stages:
 build:
   stage: build
   image: docker:stable
+  services:
+    - docker:dind
   before_script:
     - apk -uv add --no-cache groff bash jq less git py-pip
     - pip install --no-cache-dir awscli
