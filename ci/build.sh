@@ -9,4 +9,4 @@ $(aws ecr get-login --no-include-email --region ${REGION})
 docker build -t "${CONTAINER_IMAGE}" .
 docker push "${CONTAINER_IMAGE}"
 
-echo "${CONTAINER_IMAGE}" > container_image
+#echo "${CONTAINER_IMAGE}" > container_image

@@ -29,3 +29,5 @@ deploy:
     - ./ci/deploy.sh
   only:
     - setup-ci
+  tags:
+    - docker

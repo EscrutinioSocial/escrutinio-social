@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-export CONTAINER_IMAGE="$(cat container_image)"
+#export CONTAINER_IMAGE="$(cat container_image)"
 PATHDIR='./ci/ecs_templates'
+
+pwd
 
 # MASTER
 ################################################
