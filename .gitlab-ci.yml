@@ -1,8 +1,8 @@
 variables:
   CONTAINER_IMAGE: '927223451584.dkr.ecr.sa-east-1.amazonaws.com/escrutinio-paralelo:latest' 
   REGION: "sa-east-1"
-  DOCKER_HOST: tcp://localhost:2375
-  #DOCKER_HOST: tcp://docker:2375
+#  DOCKER_HOST: tcp://localhost:2375
+  DOCKER_HOST: tcp://docker:2375
   DOCKER_DRIVER: overlay2
 
 stages:
