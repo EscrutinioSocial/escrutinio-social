@@ -4,7 +4,8 @@ from elecciones.tests.factories import (
 )
 from django.urls import reverse
 from elecciones.tests.test_resultados import fiscal_client  # noqa
-
+from adjuntos.views import NINGUN_ATTACHMENT_VALIDO_MESSAGE
+import os 
 
 def test_identificacion_create_view_get(fiscal_client):
     a = AttachmentFactory()
@@ -52,3 +53,31 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     assert not i.consolidada
     # mesa no tiene attach aun
     assert not m1.attachments.exists()
+
+
+def test_subir_adjunto_unidad_basica_no_file(fiscal_client):
+    data = {}
+    response = fiscal_client.post(reverse('agregar-adjuntos-ub'))
+
+    assert response.status_code == 200
+    form_errors = response.context['form'].errors 
+    
+    assert len(form_errors) == 1
+    assert len(form_errors['file_field']) == 1
+    assert form_errors['file_field'][0] == "This field is required."
+
+def test_subir_adjunto_unidad_basica_no_imagen(fiscal_client):
+    este_directorio = os.path.dirname(os.path.realpath(__file__))
+    no_imagen = open(os.path.join(este_directorio, 'archivo_no_imagen.txt'),'r') 
+    data = { 'file_field' : no_imagen}
+    response = fiscal_client.post(reverse('agregar-adjuntos-ub'), data)
+    print(response.context['form'])
+
+    assert response.status_code == 200
+    form_errors = response.context['form'].errors 
+    
+    assert len(form_errors) == 1
+    assert len(form_errors['file_field']) == 1
+    assert form_errors['file_field'][0] == NINGUN_ATTACHMENT_VALIDO_MESSAGE
+
+

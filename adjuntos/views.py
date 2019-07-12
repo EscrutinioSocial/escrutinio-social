@@ -20,6 +20,7 @@ from .forms import (
     IdentificacionProblemaForm,
 )
 
+NINGUN_ATTACHMENT_VALIDO_MESSAGE = 'Ningun archivo es válido'
 
 @login_required
 def elegir_adjunto(request):
@@ -133,38 +134,86 @@ class AgregarAdjuntos(FormView):
     via `messages` framework.
 
     """
-
     form_class = AgregarAttachmentsForm
     template_name = 'adjuntos/agregar-adjuntos.html'
-    success_url = 'agregada'
+    agregar_adjuntos_url = 'agregar-adjuntos'
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['url_to_post'] = self.get_url_to_post()
+        return context
+
+
+    def get_url_to_post(self):
+        return self.agregar_adjuntos_url
 
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
         if form.is_valid():
-            c = 0
-            for f in files:
-                if f.content_type not in ('image/jpeg', 'image/png'):
-                    messages.warning(self.request, f'{f.name} ignorado. No es una imágen' )
-                    continue
+            contador_fotos = 0
+            for file in files:
+                instance = self.procesar_adjunto(file)
+                if instance is not None:
+                    contador_fotos = contador_fotos + 1
+            if contador_fotos:
+                messages.success(self.request, f'Subiste {contador_fotos} imagenes de actas. Gracias!')
+            return redirect(self.agregar_adjuntos_url)
+        
+        return self.form_invalid(form)
 
-                try:
-                    instance = Attachment(
-                        mimetype=f.content_type
-                    )
-                    instance.foto.save(f.name, f, save=False)
-                    instance.save()
-                    c += 1
-                except IntegrityError:
-                    messages.warning(self.request, f'{f.name} ya existe en el sistema' )
 
-            if c:
-                messages.success(self.request, f'Subiste {c} imagenes de actas. Gracias!')
-            return redirect('agregar-adjuntos')
-        else:
-            return self.form_invalid(form)
+    def procesar_adjunto(self, adjunto):
+        if adjunto.content_type not in ('image/jpeg', 'image/png'):
+            messages.warning(self.request, f'{adjunto.name} ignorado. No es una imágen' )
+            return None
+        try:
+            instance = Attachment(
+                mimetype=adjunto.content_type
+            )
+            instance.foto.save(adjunto.name, adjunto, save=False)
+            instance.save()
+            return instance
+        except IntegrityError:
+            messages.warning(self.request, f'{adjunto.name} ya existe en el sistema' )
+        return None
+
+class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
+    """
+    Permite subir una imágen, genera la instancia de Attachment y debería redirigir al flujo de 
+    asignación de mesa -> carga de datos pp -> carga de datos secundarios , etc
+
+    Si una imágen ya existe en el sistema, se exluye con un mensaje de error
+    via `messages` framework.
+
+    """
+
+    form_class = AgregarAttachmentsForm
+
+    def get_url_to_post(self):
+        return 'agregar-adjuntos-ub'
+
+    def post(self, request, *args, **kwargs):
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        files = request.FILES.getlist('file_field')
+        if len(files) > 0 and form.is_valid():
+            file = files[0]
+            instance = self.procesar_adjunto(file)
+            if instance is not None:
+                messages.success(self.request, 'Subiste el acta correctamente.')
+                return redirect(reverse('asignar-mesa', args=[instance.id]))
+            
+            form.add_error('file_field', NINGUN_ATTACHMENT_VALIDO_MESSAGE)
+        return self.form_invalid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'es_multiple': False})
+        return kwargs
+

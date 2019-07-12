@@ -12,7 +12,7 @@
                 Subir Adjuntos
             {% endblock card-title %}</div>
 
-            <form action="{% url 'agregar-adjuntos' %}" method="post" enctype="multipart/form-data">
+            <form action="{% url url_to_post %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 {# FIXME django-material desactiva el atributo multiple del filefield #}
                 {# {% form  %}{% endform %} #}
