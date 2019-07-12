@@ -10,7 +10,7 @@ build:
   stage: build
   image: docker:stable
   before_script:
-    - apk -uv add --no-cache groff bash jq less git
+    - apk -uv add --no-cache groff bash jq less git py-pip
     - pip install --no-cache-dir awscli
   script:
     - ./ci/build.sh
