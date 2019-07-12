@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-#export CONTAINER_IMAGE="$(cat container_image)"
+export AWS_DEFAULT_REGION=${REGION}
 PATHDIR='./ci/ecs_templates'
 
 pwd
@@ -32,5 +32,13 @@ else
     exit 2
 fi
 
+# Generating final manifest
+echo "Generating final Service Manifest"
 envsubst < ${PATHDIR}/escrutinio-paralelo-svc.json.template > ${PATHDIR}/escrutinio-paralelo-svc.json
+
+# Showing final manifest
+cat ${PATHDIR}/escrutinio-paralelo-svc.json
+
+# Deploying 
+echo "Deploying service"
 aws ecs update-service --cli-input-json file://${PATHDIR}/escrutinio-paralelo-svc.json --force-new-deployment
