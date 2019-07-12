@@ -2,19 +2,22 @@ variables:
   CONTAINER_IMAGE: '927223451584.dkr.ecr.sa-east-1.amazonaws.com/escrutinio-paralelo:latest' 
   REGION: "sa-east-1"
 
-image: b4ck3r/aws-cli:latest 
-
 stages:
   - build
   - deploy
 
 build:
   stage: build
+  image: docker:stable
+  before_script:
+    - apk -uv add --no-cache groff bash jq less git
+    - pip install --no-cache-dir awscli
   script:
     - ./ci/build.sh
 
 deploy:
   stage: deploy
+  image: b4ck3r/aws-cli:latest 
   script:
     - ./ci/deploy.sh
   only:
