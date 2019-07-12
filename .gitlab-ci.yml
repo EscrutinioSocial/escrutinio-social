@@ -5,8 +5,8 @@ variables:
 image: b4ck3r/aws-cli:latest 
 
 stages:
-	- build
-	- deploy
+  - build
+  - deploy
 
 build:
   stage: build
