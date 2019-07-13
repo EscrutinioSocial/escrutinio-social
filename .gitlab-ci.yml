@@ -26,8 +26,8 @@ test:
   stage: test
   image: tiangolo/docker-with-compose
   script:
-    - make build
-    - make test
+    - docker-compose build
+    - docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
   coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
   artifacts:
     paths:
