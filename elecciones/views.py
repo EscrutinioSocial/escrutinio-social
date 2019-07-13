@@ -19,7 +19,7 @@ from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from djgeojson.views import GeoJSONLayerView
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.utils.functional import cached_property
 from django.http import HttpResponse
 from django.views import View
 from django.contrib.auth.models import User
@@ -35,6 +35,7 @@ from .models import (
     VotoMesaReportado,
     Carga,
     LugarVotacion,
+    MesaCategoria,
     Mesa,
 )
 
@@ -133,8 +134,32 @@ class ResultadosCategoria(TemplateView):
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
 
-    @classmethod
-    def agregaciones_por_partido(cls, categoria):
+    @lru_cache(128)
+    def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
+        lookups = dict()
+        if self.kwargs['status'] == 'tc':
+            lookups[f'{prefix}status'] = MesaCategoria.STATUS.total_confirmada
+        elif self.kwargs['status'] == 'tsc':
+            # incluye confirmados y sin confirmar
+            lookups[f'{prefix}status__in'] = (
+                MesaCategoria.STATUS.total_confirmada,
+                MesaCategoria.STATUS.total_sin_confirmar,
+            )
+        elif self.kwargs['status'] == 'pc':
+            # total confirmada incluye a parcial
+            # total sin confirmar asume que hubo parcial confirmada. Revisar
+            lookups[f'{prefix}status__in'] = (
+                MesaCategoria.STATUS.total_confirmada,
+                MesaCategoria.STATUS.total_sin_confirmar,
+                MesaCategoria.STATUS.parcial_confirmada,
+            )
+        elif self.kwargs['status'] == 'psc':
+            # parciales sin confirmar no requieren filtro
+            # dado que se computa cualquier carga testigo.
+            pass
+        return lookups
+
+    def agregaciones_por_partido(self, categoria):
         """
         Dada una categoria, devuelve los criterios de agregación
         aplicados a VotoMesaReporto para obtener una "tabla de resultados"
@@ -145,10 +170,9 @@ class ResultadosCategoria(TemplateView):
 
         https://docs.djangoproject.com/en/2.2/ref/models/conditional-expressions/
         """
-
-        oficiales = True
         sum_por_partido = {}
         otras_opciones = {}
+        status_lookups = self.status_filter(categoria)
 
         for id in Partido.objects.filter(
             opciones__categorias__id=categoria.id
@@ -159,7 +183,9 @@ class ResultadosCategoria(TemplateView):
                         opcion__partido__id=id,
                         carga__mesa_categoria__categoria=categoria,
                         carga__es_testigo__isnull=False,
-                        then=F('votos')
+                        then=F('votos'),
+                        **status_lookups
+
                     ), output_field=IntegerField()
                 )
             )
@@ -175,7 +201,8 @@ class ResultadosCategoria(TemplateView):
                         opcion__id=id,
                         carga__mesa_categoria__categoria=categoria,
                         carga__es_testigo__isnull=False,
-                        then=F('votos')
+                        then=F('votos'),
+                        **status_lookups
                     ), output_field=IntegerField()
                 )
             )
@@ -384,17 +411,18 @@ class ResultadosCategoria(TemplateView):
             positivos: total votos positivos
         """
         electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
-        sum_por_partido, otras_opciones = ResultadosCategoria.agregaciones_por_partido(categoria)
+        sum_por_partido, otras_opciones = self.agregaciones_por_partido(categoria)
 
         # primero para partidos
-
         reportados = VotoMesaReportado.objects.filter(
-            carga__mesa_categoria__categoria=categoria,
-            carga__mesa_categoria__mesa__in=Subquery(mesas.values('id'))
+            carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
+            carga__es_testigo__isnull=False,
+            **self.status_filter(categoria)
         )
         mesas_escrutadas = mesas.filter(
             mesacategoria__categoria=categoria,
-            mesacategoria__cargas__isnull=False
+            mesacategoria__carga_testigo__isnull=False,
+            **self.status_filter(categoria, 'mesacategoria__')
         ).distinct()
         escrutados = mesas_escrutadas.aggregate(v=Sum('electores'))['v']
         if escrutados is None:

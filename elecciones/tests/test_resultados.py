@@ -2,7 +2,9 @@ import json
 import pytest
 from django.db.models import Sum
 from django.urls import reverse
-from elecciones.models import Categoria, Mesa, Distrito, Circuito, Seccion
+from elecciones.models import (
+    Categoria, Mesa, Distrito, Circuito, Seccion, MesaCategoria,
+)
 from elecciones.views import ResultadosCategoria
 from .factories import (
     CategoriaFactory,
@@ -362,6 +364,109 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     assert positivos[o2.partido]['porcentajePositivos'] == '50.00'
     assert positivos[o2.partido]['proyeccion'] == '50.00'
     assert positivos[o1.partido]['proyeccion'] == '50.00'
+
+
+
+def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fiscal_client):
+    m1, _, m3, *_ = carta_marina
+    categoria = m1.categorias.get()
+    # opciones a partido
+    blanco = categoria.opciones.get(nombre='blanco')
+
+    c1 = CargaFactory(
+        status='total', mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria
+    )
+    VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=20)
+    c1.actualizar_firma()
+    mc = c1.mesa_categoria
+    assert mc.carga_testigo == c1
+    assert mc.status == MesaCategoria.STATUS.total_sin_confirmar
+
+    response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
+    resultados = response.context['resultados']
+    assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
+    assert resultados['total_mesas_escrutadas'] == 1
+
+    response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
+    resultados = response.context['resultados']
+    assert 'blanco' not in resultados['tabla_no_positivos']
+    assert resultados['total_mesas_escrutadas'] == 0
+
+    c2 = CargaFactory(
+        status='total', mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria
+    )
+    VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=20)
+    c2.actualizar_firma()
+
+    assert mc == c2.mesa_categoria
+    mc.refresh_from_db()
+    assert mc.carga_testigo == c2
+    assert mc.status == MesaCategoria.STATUS.total_confirmada
+
+    response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
+    resultados = response.context['resultados']
+    assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
+    assert resultados['total_mesas_escrutadas'] == 1
+
+    response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
+    resultados = response.context['resultados']
+    assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
+    assert resultados['total_mesas_escrutadas'] == 1
+
+
+def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
+    m1, _, m3, *_ = carta_marina
+    categoria = m1.categorias.get()
+    # opciones a partido
+    blanco = categoria.opciones.get(nombre='blanco')
+
+    c1 = CargaFactory(
+        status='parcial', mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria
+    )
+    VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=20)
+    c1.actualizar_firma()
+    response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
+    resultados = response.context['resultados']
+    # la carga está en status sin_confirmar
+    assert 'blanco' not in resultados['tabla_no_positivos']
+    assert resultados['total_mesas_escrutadas'] == 0
+
+    c2 = CargaFactory(
+        status='parcial', mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria
+    )
+    VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=20)
+    c2.actualizar_firma()
+    mc = c1.mesa_categoria
+    mc.refresh_from_db()
+    assert mc == c2.mesa_categoria
+    assert mc.carga_testigo == c2
+    assert mc.status == MesaCategoria.STATUS.parcial_confirmada
+
+    response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
+    resultados = response.context['resultados']
+    assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
+    assert resultados['total_mesas_escrutadas'] == 1
+
+    c3 = CargaFactory(
+        status='total', mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria
+    )
+    VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=10)
+    c3.actualizar_firma()
+    response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
+    resultados = response.context['resultados']
+    assert resultados['tabla_no_positivos']['blanco']['votos'] == 30
+    assert resultados['total_mesas_escrutadas'] == 2
+
+    c4 = CargaFactory(
+        status='total', mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria
+    )
+    VotoMesaReportadoFactory(carga=c4, opcion=blanco, votos=10)
+    c4.actualizar_firma()
+
+    response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
+    resultados = response.context['resultados']
+    assert resultados['tabla_no_positivos']['blanco']['votos'] == 30
+    assert resultados['total_mesas_escrutadas'] == 2
 
 
 def test_mesa_orden(carta_marina):
