@@ -12,12 +12,11 @@ urlpatterns = [
     url('^acta/$', views.elegir_acta_a_cargar, name='elegir-acta-a-cargar'),
     url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.cargar_resultados, name='mesa-cargar-resultados'),
+    url('^acta-parcial/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
+        views.cargar_resultados, {'tipo': 'parcial'}, name='mesa-cargar-resultados-parciales'),
 
-    url('^chequear$',
-        views.chequear_resultado, name='chequear-resultado'),
-
-    url('^chequear/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
-        views.chequear_resultado_mesa, name='chequear-resultado-mesa'),
+    url('^mesa/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
+         views.detalle_mesa_categoria, name='detalle-mesa-categoria'),
 
     url('^mis-datos/profile$', views.MisDatosUpdate.as_view(), name='mis-datos-update'),
     url('^mis-datos/password$', views.CambiarPassword.as_view(), name='cambiar-password'),
