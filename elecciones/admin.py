@@ -156,10 +156,11 @@ class PartidoAdmin(admin.ModelAdmin):
 
 class MesaCategoriaAdmin(admin.ModelAdmin):
     list_display = ('mesa', 'categoria', 'status')
-    list_filter = ('status', 'categoria',)
     list_filter = [
-        'mesa__lugar_votacion__circuito',
-        'mesa__lugar_votacion__circuito__seccion'
+        'status',
+        'categoria',
+        'mesa__circuito',
+        'mesa__circuito__seccion'
     ]
 
 
