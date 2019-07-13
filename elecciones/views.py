@@ -158,6 +158,7 @@ class ResultadosCategoria(TemplateView):
                     When(
                         opcion__partido__id=id,
                         carga__mesa_categoria__categoria=categoria,
+                        carga__es_testigo__isnull=False,
                         then=F('votos')
                     ), output_field=IntegerField()
                 )
@@ -173,6 +174,7 @@ class ResultadosCategoria(TemplateView):
                     When(
                         opcion__id=id,
                         carga__mesa_categoria__categoria=categoria,
+                        carga__es_testigo__isnull=False,
                         then=F('votos')
                     ), output_field=IntegerField()
                 )
