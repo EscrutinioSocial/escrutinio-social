@@ -19,14 +19,22 @@ build:
     - pip install --no-cache-dir awscli
   script:
     - ./ci/build.sh
+  only:
+    - develop
   tags:
     - docker
 
 test:
   stage: test
-  image: tiangolo/docker-with-compose
+  image: docker:stable
   services:
     - docker:stable-dind
+  before_script:
+    - docker info
+    - apk update
+    - apk upgrade
+    - apk add python python-dev py-pip build-base
+    - pip install docker-compose
   script:
     - docker-compose build
     - docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
