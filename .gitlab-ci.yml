@@ -35,7 +35,7 @@ test:
   script:
     - docker-compose build
     - docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
-  coverage: "/Total coverage.+ \\(\\d+.\\d+\\%\\)/"
+  coverage: "/Total coverage.+ (\\d+.\\d+%)/"
   artifacts:
     paths:
       - htmlcov
