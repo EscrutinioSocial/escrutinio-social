@@ -25,6 +25,8 @@ build:
 test:
   stage: test
   image: tiangolo/docker-with-compose
+  services:
+    - docker:stable-dind
   script:
     - docker-compose build
     - docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
