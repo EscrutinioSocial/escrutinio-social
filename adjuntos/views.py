@@ -20,8 +20,8 @@ from .forms import (
     IdentificacionProblemaForm,
 )
 
-MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningun archivo es válido'
-MENSAJE_SOLO_UN_ACTA = 'Se debe subir una solo acta'
+MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
+MENSAJE_SOLO_UN_ACTA = 'Se debe subir una sola acta'
 
 @login_required
 def elegir_adjunto(request):
@@ -113,7 +113,7 @@ class IdentificacionProblemaCreateView(IdentificacionCreateView):
 def editar_foto(request, attachment_id):
     """
     esta vista se invoca desde el plugin DarkRoom con el contenido
-    de la imágen editada codificada en base64.
+    de la imagen editada codificada en base64.
 
     Se decodifica y se guarda en el campo ``foto_edited``
     """
@@ -124,14 +124,14 @@ def editar_foto(request, attachment_id):
         extension = file_format.split('/')[-1]
         attachment.foto_edited = ContentFile(base64.b64decode(imgstr), name=f'edited_{attachment_id}.{extension}')
         attachment.save(update_fields=['foto_edited'])
-        return JsonResponse({'message': 'Imágen guardada'})
-    return JsonResponse({'message': 'No se pudo guardar la imágen'})
+        return JsonResponse({'message': 'Imagen guardada'})
+    return JsonResponse({'message': 'No se pudo guardar la imagen'})
 
 
 class AgregarAdjuntos(FormView):
     """
     Permite subir una o más imágenes, generando instancias de ``Attachment``
-    Si una imágen ya existe en el sistema, se exluye con un mensaje de error
+    Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
 
     """
@@ -171,7 +171,7 @@ class AgregarAdjuntos(FormView):
 
     def procesar_adjunto(self, adjunto):
         if adjunto.content_type not in ('image/jpeg', 'image/png'):
-            messages.warning(self.request, f'{adjunto.name} ignorado. No es una imágen' )
+            messages.warning(self.request, f'{adjunto.name} ignorado. No es una imagen' )
             return None
         try:
             instance = Attachment(
@@ -186,10 +186,10 @@ class AgregarAdjuntos(FormView):
 
 class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     """
-    Permite subir una imágen, genera la instancia de Attachment y debería redirigir al flujo de 
+    Permite subir una imagen, genera la instancia de Attachment y debería redirigir al flujo de 
     asignación de mesa -> carga de datos pp -> carga de datos secundarios , etc
 
-    Si una imágen ya existe en el sistema, se exluye con un mensaje de error
+    Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
 
     """
