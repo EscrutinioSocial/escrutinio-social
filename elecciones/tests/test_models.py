@@ -222,7 +222,7 @@ def test_firma_count(db):
         mesa_categoria=mc, status='parcial', firma='firma_2')
     CargaFactory(mesa_categoria=mc, status='parcial', firma='firma_2')
     CargaFactory(mesa_categoria=mc, status='total', firma='firma_3')
-    c4 = CargaFactory(mesa_categoria=mc, status='total', firma='firma_3')
+    CargaFactory(mesa_categoria=mc, status='total', firma='firma_3')
 
     assert mc.firma_count() == {
         'parcial': {
@@ -231,15 +231,6 @@ def test_firma_count(db):
         },
         'total': {
             'firma_3': 2,
-        }
-    }
-    assert mc.firma_count(exclude=c4.id) == {
-        'parcial': {
-            'firma_1': 1,
-            'firma_2': 2,
-        },
-        'total': {
-            'firma_3': 1,
         }
     }
 

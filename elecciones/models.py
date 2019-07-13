@@ -1,5 +1,6 @@
 import os
 from itertools import chain
+from collections import defaultdict
 from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth.models import User
@@ -247,16 +248,20 @@ class MesaCategoria(models.Model):
     )
 
     def firma_count(self, exclude=None):
-        from collections import defaultdict
-        qs = self.cargas.all()
-        if exclude:
-            # en caso de que se pase ID, se excluye
-            # esa carga  del cálculo.
-            # es util para no producir cambios de estados
-            # en caso de edición de una carga
-            qs = qs.exclude(id=exclude)
-        result = defaultdict(dict)
+        """
+        Devuelve un diccionario que agrupa por estado y firmas
+        Por ejemplo::
 
+            {'total': {
+                '1-10|2-2': 1,
+                '1-10|2-1': 1'
+             },
+             'parcial': {
+                '1-10': 1}
+            }
+        """
+        qs = self.cargas.all()
+        result = defaultdict(dict)
         for item in qs.values('firma', 'status').annotate(total=Count('firma')):
             result[item['status']][item['firma']] = item['total']
         return result
