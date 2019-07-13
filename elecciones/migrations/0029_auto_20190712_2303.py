@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name='CategoriaOpcion',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('prioritario', models.BooleanField(default=False)),
+                ('prioritaria', models.BooleanField(default=False)),
                 ('categoria', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='elecciones.Categoria')),
                 ('opcion', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='elecciones.Opcion'))
 

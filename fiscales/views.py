@@ -388,74 +388,31 @@ def cargar_resultados(
     )
 
 
-
-# @login_required
-# def chequear_resultado(request):
-#     """
-#     Elige una mesa con cargas a confirmar y redirige a la url correspondiente
-#     """
-#     mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
-#     if not mesa:
-#         return render(request, 'fiscales/sin-actas-cargadas.html')
-#     try:
-#         categoria = mesa.siguiente_categoria_a_confirmar()
-#     except Exception:
-#         return render(request, 'fiscales/sin-actas-cargadas.html')
-
-#     if not categoria:
-#         return render(request, 'fiscales/sin-actas-cargadas.html')
-
-#     return redirect(
-#         'chequear-resultado-mesa',
-#         categoria_id=categoria.id,
-#         mesa_numero=mesa.numero
-#     )
-
-
 @login_required
-def chequear_resultado_mesa(request, categoria_id, mesa_numero, carga_id=None):
+def detalle_mesa_categoria(request, categoria_id, mesa_numero, carga_id=None):
     """
     Muestra la carga actual de la categoria para la mesa
     """
-    me = get_object_or_404(
+    mc = get_object_or_404(
         MesaCategoria,
         mesa__numero=mesa_numero,
         categoria__id=categoria_id,
-        categoria__activa=True
+        carga_testigo__isnull=False,
     )
-    mesa = me.mesa
-    categoria = me.categoria
-
-    if carga_id:
-        carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
-    else:
-        # FIXME asumimos que por ahora hay una sola carga.
-        carga = get_object_or_404(Carga, mesa=mesa, categoria=categoria)
-
-        # return redirect(
-        #     'chequear-resultado-mesa',
-        #     categoria_id=categoria.id,
-        #     mesa_numero=mesa.numero,
-        #     carga_id=carga.id
-        # )
-
-    data = request.POST if request.method == 'POST' else None
-    if data and 'confirmar' in data:
-        me.confirmada = True
-        me.save(update_fields=['confirmada'])
-        messages.success(request, f'Confirmaste la categoria {categoria} para {mesa}')
-        return redirect('chequear-resultado')
-
+    mesa = mc.mesa
+    categoria = mc.categoria
+    carga = mc.carga_testigo
     reportados = carga.reportados.order_by('opcion__orden')
     return render(
         request,
-        "fiscales/chequeo_mesa.html",
+        "fiscales/detalle_mesa_categoria.html",
         {
             'reportados': reportados,
             'object': mesa,
             'categoria': categoria
         }
     )
+
 
 
 class CambiarPassword(PasswordChangeView):
