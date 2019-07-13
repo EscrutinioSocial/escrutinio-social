@@ -3,7 +3,7 @@ from elecciones.tests.factories import (
     MesaFactory,
 )
 from django.urls import reverse
-from elecciones.tests.test_resultados import fiscal_client  # noqa
+from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
 
 
 def test_identificacion_create_view_get(fiscal_client):

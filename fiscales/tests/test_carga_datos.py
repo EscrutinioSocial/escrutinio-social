@@ -10,7 +10,7 @@ from elecciones.tests.factories import (
     CargaFactory,
 )
 from elecciones.models import Mesa, VotoMesaReportado, MesaCategoria
-from elecciones.tests.test_resultados import fiscal_client          # noqa
+from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
 
 
 def test_elegir_acta_sin_mesas(fiscal_client):

@@ -20,7 +20,7 @@ from django.views.generic.detail import DetailView
 from djgeojson.views import GeoJSONLayerView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.views import View
 from django.contrib.auth.models import User
 from fiscales.models import Fiscal
@@ -56,6 +56,17 @@ class StaffOnlyMixing:
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
+class VisualizadoresOnlyMixin:
+    """
+    Mixin para que sólo usuarios visualizadores
+    accedan a la vista.
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.fiscal.esta_en_grupo('visualizadores'):
+            return super().dispatch(request, *args, **kwargs)
+        
+        return HttpResponseForbidden()
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):
     """
@@ -123,7 +134,7 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
-class ResultadosCategoria(TemplateView):
+class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     """
     Vista principal para el cálculo de resultados
     """
@@ -136,10 +147,10 @@ class ResultadosCategoria(TemplateView):
     @classmethod
     def agregaciones_por_partido(cls, categoria):
         """
-        Dada una categoria, devuelve los criterios de agregación
+        Dada una categoría, devuelve los criterios de agregación
         aplicados a VotoMesaReporto para obtener una "tabla de resultados"
-        que incluye agregaciones por partido politico (considerados positivos)
-        y otros no positivos
+        que incluye agregaciones por partido político (considerados positivos)
+        y otros no positivos.
 
         Se utilizan expresiones condicionales. Referencia
 

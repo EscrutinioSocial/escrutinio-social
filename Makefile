@@ -48,7 +48,7 @@ setup-dev-data: migrate
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py loaddata fixtures/dev_data.json"
 
 dump-dev-data:
-	python manage.py dumpdata auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json
+	python manage.py dumpdata auth.Group auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json
 
 update-models-diagram:
 	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
