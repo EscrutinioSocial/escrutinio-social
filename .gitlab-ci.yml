@@ -6,7 +6,8 @@ variables:
 
 stages:
   - build
-  - test  
+  - test
+  - pages  
   - deploy
 
 build:
@@ -39,6 +40,18 @@ test:
     paths:
       - htmlcov
     expire_in: 1 days
+    
+pages:
+  stage: deploy
+  dependencies:
+    - test
+  script:
+    - mv htmlcov/ public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+
 
 deploy:
   stage: deploy
