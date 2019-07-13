@@ -413,7 +413,6 @@ class Opcion(models.Model):
     )   # blanco, / recurrido / etc
     orden = models.PositiveIntegerField(
         help_text='Orden en la boleta', null=True, blank=True)
-    obligatorio = models.BooleanField(default=False)
     es_contable = models.BooleanField(default=True)
 
     es_metadata = models.BooleanField(
@@ -468,6 +467,7 @@ class Eleccion(models.Model):
         verbose_name = 'Elección'
         verbose_name_plural = 'Elecciones'
 
+
 class Categoria(models.Model):
     """
     Representa una categoria electiva, es decir, una "columna" del acta.
@@ -479,7 +479,8 @@ class Categoria(models.Model):
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100)
-    opciones = models.ManyToManyField(Opcion, related_name='categorias')
+    opciones = models.ManyToManyField(
+        Opcion, through='CategoriaOpcion', related_name='categorias')
     color = models.CharField(
         max_length=10, default='black', help_text='Color para css (Ej: red o #FF0000)'
     )
@@ -497,16 +498,16 @@ class Categoria(models.Model):
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
 
-    def opciones_actuales(self, solo_obligatorias=False):
+    def opciones_actuales(self, solo_prioritarias=False):
         """
         Devuelve las opciones asociadas a la categoria en el orden dado
         Determina el orden de la filas a cargar, tal como se definen
         en el acta
         """
         qs = self.opciones.all()
-        if solo_obligatorias:
-            qs = qs.filter(obligatorio=True)
-        return qs.order_by('orden')
+        if solo_prioritarias:
+            qs = qs.filter(categoriaopcion__prioritaria=True)
+        return qs.distinct().order_by('orden')
 
     @classmethod
     def para_mesas(cls, mesas):
@@ -560,6 +561,15 @@ class Categoria(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class CategoriaOpcion(models.Model):
+    categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
+    opcion = models.ForeignKey('Opcion', on_delete=models.CASCADE)
+    prioritaria = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('categoria', 'opcion')
 
 
 class Carga(TimeStampedModel):

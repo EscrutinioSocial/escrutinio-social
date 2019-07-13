@@ -283,7 +283,6 @@ def elegir_acta_a_cargar(request):
 def cargar_resultados(
     request, categoria_id, mesa_numero, tipo='total', carga_id=None
 ):
-
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoria-mesa
     """
@@ -294,7 +293,7 @@ def cargar_resultados(
         mesa__numero=mesa_numero
     )
 
-    solo_obligatorias = tipo == 'parcial'
+    solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
     if carga_id:
@@ -305,14 +304,14 @@ def cargar_resultados(
         carga = None
 
     VotoMesaReportadoFormset = votomesareportadoformset_factory(
-        min_num=categoria.opciones_actuales(solo_obligatorias).count()
+        min_num=categoria.opciones_actuales(solo_prioritarias).count()
     )
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
         # se podria hacer "disabled" pero ese caso quita el valor del
         # cleaned_data y luego lo exige por ser requerido.
-        for i, (opcion, form) in enumerate(zip(categoria.opciones_actuales(), formset), 1):
+        for i, (opcion, form) in enumerate(zip(categoria.opciones_actuales(solo_prioritarias), formset), 1):
             form.fields['opcion'].choices = [(opcion.id, str(opcion))]
 
             # esto hace que la navegacion mediante Tabs priorice los inputs de "votos"
@@ -326,7 +325,7 @@ def cargar_resultados(
     data = request.POST if request.method == 'POST' else None
 
     qs = VotoMesaReportado.objects.filter(carga=carga) if carga else VotoMesaReportado.objects.none()
-    initial = [{'opcion': o} for o in categoria.opciones_actuales(solo_obligatorias)]
+    initial = [{'opcion': o} for o in categoria.opciones_actuales(solo_prioritarias)]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
     fix_opciones(formset)
     is_valid = False

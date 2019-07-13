@@ -132,7 +132,7 @@ def test_electores_sin_filtro(url_resultados, fiscal_client):
 def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # resultados para mesa 1
     m1, _, m3, *_ = carta_marina
-    categoria = Categoria.objects.first()
+    categoria = m1.categorias.get()
     # opciones a partido
     o1, o2, o3 = categoria.opciones.filter(partido__isnull=False)
     blanco = categoria.opciones.get(nombre='blanco')

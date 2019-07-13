@@ -9,6 +9,7 @@ from .factories import (
     CargaFactory,
     IdentificacionFactory,
     CategoriaFactory,
+    CategoriaOpcionFactory,
     OpcionFactory,
 )
 from elecciones.models import Mesa, MesaCategoria, Categoria
@@ -16,12 +17,12 @@ from django.utils import timezone
 
 
 def test_opciones_actuales(db):
-    o1 = OpcionFactory(orden=1, obligatorio=True)
-    o2 = OpcionFactory(orden=3, obligatorio=False)
-    o3 = OpcionFactory(orden=2, obligatorio=False)
-    c = CategoriaFactory(opciones=[o1, o2, o3])
+    o2 = OpcionFactory(orden=3)
+    o3 = OpcionFactory(orden=2)
+    c = CategoriaFactory(opciones=[o2, o3])
+    o1 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True).opcion
     assert list(c.opciones_actuales()) == [o1, o3, o2]
-    assert list(c.opciones_actuales(solo_obligatorias=True)) == [o1]
+    assert list(c.opciones_actuales(solo_prioritarias=True)) == [o1]
 
 
 def test_mesa_siguiente_categoria(db):

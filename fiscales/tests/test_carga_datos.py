@@ -5,6 +5,7 @@ from elecciones.tests.factories import (
     MesaFactory,
     OpcionFactory,
     CircuitoFactory,
+    CategoriaOpcionFactory,
     IdentificacionFactory,
 )
 from elecciones.models import Mesa, VotoMesaReportado, Carga
@@ -186,9 +187,9 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
 
 
 def test_formset_en_carga_parcial(db, fiscal_client):
-    o = OpcionFactory(obligatorio=True)
-    o2 = OpcionFactory(obligatorio=False)
-    c = CategoriaFactory(opciones=[o, o2])
+    c = CategoriaFactory()
+    o = CategoriaOpcionFactory(categoria=c, prioritaria=True).opcion
+    o2 = CategoriaOpcionFactory(categoria=c, prioritaria=False).opcion
     m = MesaFactory(categorias=[c])
     parciales = reverse(
         'mesa-cargar-resultados-parciales', args=[c.id, m.numero]
@@ -201,9 +202,9 @@ def test_formset_en_carga_parcial(db, fiscal_client):
 
 
 def test_formset_en_carga_total(db, fiscal_client):
-    o = OpcionFactory(obligatorio=True, orden=3)
-    o2 = OpcionFactory(obligatorio=False, orden=1)
-    c = CategoriaFactory(opciones=[o, o2])
+    c = CategoriaFactory(id=100, opciones=[])
+    o = CategoriaOpcionFactory(categoria=c, opcion__orden=3, prioritaria=True).opcion
+    o2 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=False).opcion
     m = MesaFactory(categorias=[c])
     totales = reverse(
         'mesa-cargar-resultados', args=[c.id, m.numero]

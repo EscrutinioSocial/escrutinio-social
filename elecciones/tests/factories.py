@@ -48,15 +48,35 @@ class CategoriaFactory(DjangoModelFactory):
     def opciones(self, create, extracted, **kwargs):
         if not create:
             return
-        if extracted:
+        if extracted is not None:
             # A list of groups were passed in, use them
             for opcion in extracted:
-                self.opciones.add(opcion)
+                CategoriaOpcionFactory(categoria=self, opcion=opcion)
         else:
-            self.opciones.add(OpcionFactory(nombre='blanco', partido=None, es_contable=False))
-            self.opciones.add(OpcionFactory(nombre='opc1', es_contable=True))
-            self.opciones.add(OpcionFactory(nombre='opc2', es_contable=True))
-            self.opciones.add(OpcionFactory(nombre='opc3', es_contable=True))
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='blanco', partido=None, es_contable=False)
+            )
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='opc1', es_contable=True)
+            )
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='opc2', es_contable=True)
+            )
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='opc3', es_contable=True)
+            )
+
+
+class CategoriaOpcionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'elecciones.CategoriaOpcion'
+        django_get_or_create = ('categoria', 'opcion')
+    categoria = factory.SubFactory(CategoriaFactory, id=1)
+    opcion = factory.SubFactory(OpcionFactory)
 
 
 class DistritoFactory(DjangoModelFactory):
