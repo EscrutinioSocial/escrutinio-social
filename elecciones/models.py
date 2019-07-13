@@ -314,7 +314,7 @@ class Mesa(models.Model):
                 return categoria
 
     def marcar_todas_las_categorias_cargadas(self):
-        cantidad_categorias = self.categoria.filter(activa=True).count()
+        cantidad_categorias = self.categorias.filter(activa=True).count()
         print(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
         self.cargadas = cantidad_categorias
         self.save(update_fields=['cargadas'])
@@ -334,9 +334,13 @@ class Mesa(models.Model):
            - no esté marcada con problemas o todos su problemas estén resueltos
            - y no tenga cargas consolidadas
         """
+        mesa = cls.objects.first()
+        print(f"mesa::con_carga_pendiente, primera mesa - numero: {mesa.numero}, categorias activas: {mesa.categorias.filter(activa=True).count()}, cargadas: {mesa.cargadas}")
+        print(f"  cargadas < categorias activas: {mesa.cargadas < mesa.categorias.filter(activa=True).count()}")
+
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
-            identificacion__isnull=False,
+            attachments__isnull=False,
             orden_de_carga__gte=1,
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
@@ -354,6 +358,7 @@ class Mesa(models.Model):
         ).filter(
             tiene_problemas=False
         ).distinct()
+        print(str(list(map(lambda mes: mes.numero, list(qs)))))
         return qs
 
 
