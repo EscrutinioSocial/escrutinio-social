@@ -26,15 +26,9 @@ build:
 
 test:
   stage: test
-  image: docker:stable
+  image: docker/compose:1.24.0
   services:
     - docker:stable-dind
-  before_script:
-    - docker info
-    - apk update
-    - apk upgrade
-    - apk add python python-dev py-pip build-base
-    - pip install docker-compose
   script:
     - docker-compose build
     - docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
