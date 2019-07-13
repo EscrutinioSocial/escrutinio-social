@@ -40,6 +40,8 @@ test:
     paths:
       - htmlcov
     expire_in: 1 days
+  tags:
+    - docker
     
 pages:
   stage: deploy
