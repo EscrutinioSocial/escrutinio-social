@@ -20,7 +20,8 @@ from .forms import (
     IdentificacionProblemaForm,
 )
 
-NINGUN_ATTACHMENT_VALIDO_MESSAGE = 'Ningun archivo es válido'
+MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningun archivo es válido'
+MENSAJE_SOLO_UN_ACTA = 'Se debe subir una solo acta'
 
 @login_required
 def elegir_adjunto(request):
@@ -202,14 +203,18 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
-        if len(files) > 0 and form.is_valid():
+        #no debiese poder cargarse por la ui dos imágenes, aunque es mejor poder chequear esto
+        if len(files) > 1:
+            form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
+            
+        if form.is_valid():
             file = files[0]
             instance = self.procesar_adjunto(file)
             if instance is not None:
                 messages.success(self.request, 'Subiste el acta correctamente.')
                 return redirect(reverse('asignar-mesa', args=[instance.id]))
             
-            form.add_error('file_field', NINGUN_ATTACHMENT_VALIDO_MESSAGE)
+            form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
         return self.form_invalid(form)
 
     def get_form_kwargs(self):
