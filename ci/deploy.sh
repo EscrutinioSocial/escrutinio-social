@@ -15,7 +15,7 @@ if [[ "${CI_COMMIT_REF_NAME}" = "master" ]] ; then
 
 # DEVELOPMENT
 ################################################
-elif [[ "${CI_COMMIT_REF_NAME}" = "setup-ci" ]] ; then
+elif [[ "${CI_COMMIT_REF_NAME}" = "develop" ]] ; then
     export ENVIRONMENT="DEV"
     export ECS_CLUSTER="Convencer-Test"
 
