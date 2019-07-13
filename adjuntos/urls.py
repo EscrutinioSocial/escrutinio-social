@@ -1,10 +1,11 @@
 from django.conf.urls import url
-from .views import AsignarMesaAdjunto, editar_foto, AgregarAdjuntos,AgregarAdjuntosImportados, post_asignar_mesa
+from . import views
 
 urlpatterns = [
-    url(r'^(?P<attachment_id>\d+)/$', AsignarMesaAdjunto.as_view(), name='asignar-mesa'),
-    url(r'^(?P<attachment_id>\d+)/editar-foto$', editar_foto, name='editar-foto'),
-    url(r'^agregar$', AgregarAdjuntos.as_view(), name="agregar-adjuntos"),
-    url(r'^post-asignar-mesa/(?P<decision>\w+)/(?P<contenido>\w+)$', post_asignar_mesa, name="post-asignar-mesa"),
-    url(r'^agregar-adjuntos-csv/$', AgregarAdjuntosImportados.as_view(), name="agregar-adjuntos-csv"),
+    url(r'^$', views.elegir_adjunto, name="elegir-adjunto"),
+    url(r'^(?P<attachment_id>\d+)/$', views.IdentificacionCreateView.as_view(), name='asignar-mesa'),
+    url(r'^(?P<attachment_id>\d+)/problema$', views.IdentificacionProblemaCreateView.as_view(), name='asignar-problema'),
+    url(r'^(?P<attachment_id>\d+)/editar-foto$', views.editar_foto, name='editar-foto'),
+    url(r'^agregar$', views.AgregarAdjuntos.as_view(), name="agregar-adjuntos"),
+    url(r'^agregar-adjuntos-csv/$', views.AgregarAdjuntosImportados.as_view(), name="agregar-adjuntos-csv"),
 ]

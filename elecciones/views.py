@@ -234,7 +234,7 @@ class ResultadosCategoria(TemplateView):
             elif 'mesa' in self.request.GET:
                 lookups = Q(id__in=self.filtros)
 
-        return Mesa.objects.filter(categoria=categoria).filter(lookups).distinct()
+        return Mesa.objects.filter(categorias=categoria).filter(lookups).distinct()
 
     @lru_cache(128)
     def electores(self, categoria):
@@ -260,10 +260,11 @@ class ResultadosCategoria(TemplateView):
         lookups2 = Q()
         resultados = {}
 
-        proyectado = 'proyectado' in self.request.GET and not self.filtros 
-
-        if self.request.method == "GET" :
-            proyectado = self.request.GET.get('tipodesumarizacion', '1') == str(2) and not self.filtros
+        proyectado = (
+           self.request.method == "GET" and
+           self.request.GET.get('tipodesumarizacion', '1') == str(2) and
+           not self.filtros
+        )
 
         if self.filtros:
             if 'seccion' in self.request.GET:
@@ -380,7 +381,7 @@ class ResultadosCategoria(TemplateView):
             total: total votos (positivos + no positivos)
             positivos: total votos positivos
         """
-        electores = mesas.filter(categoria=categoria).aggregate(v=Sum('electores'))['v'] or 0
+        electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
         sum_por_partido, otras_opciones = ResultadosCategoria.agregaciones_por_partido(categoria)
 
         # primero para partidos
@@ -388,7 +389,7 @@ class ResultadosCategoria(TemplateView):
         reportados = VotoMesaReportado.objects.filter(
             carga__categoria=categoria, carga__mesa__in=Subquery(mesas.values('id'))
         )
-        mesas_escrutadas = mesas.filter(cargas__votomesareportado__isnull=False).distinct()
+        mesas_escrutadas = mesas.filter(carga__votomesareportado__isnull=False).distinct()
         escrutados = mesas_escrutadas.aggregate(v=Sum('electores'))['v']
         if escrutados is None:
             escrutados = 0

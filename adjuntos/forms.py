@@ -1,94 +1,75 @@
 from django import forms
-from .models import Attachment
-from elecciones.models import Mesa
+from .models import Identificacion
+from elecciones.models import Mesa, Seccion, Circuito, Distrito
 
 
-class AsignarMesaForm(forms.ModelForm):
-    """
-    Este formulario se utiliza para asignar mesa
-    o reportar un problema a una foto.
-    """
-
-    # FIXME revisar si hay numero de mesas repetidas
-    mesa = forms.IntegerField(
-        label='Nº Mesa',
-        required=False,
-        help_text='A que número pertenece esta acta'
-    )
-    mesa_confirm = forms.IntegerField(required=False, widget=forms.HiddenInput)
+class IdentificacionProblemaForm(forms.ModelForm):
 
     class Meta:
-        model = Attachment
-        fields = ['mesa', 'problema', 'mesa_confirm']
+        model = Identificacion
+        fields = ['status']
 
     def __init__(self, *args, **kwargs):
-        # Dado que el campo ``mesa`` es un entero que refiere al "numero" de mesa (y no el ID)
-        # del objeto, para el caso de edición de un objeto preexistente, se cambia
-        # el valor
-        if kwargs['instance'] and kwargs['instance'].mesa:
-            kwargs['initial']['mesa'] = kwargs['instance'].mesa.numero
         super().__init__(*args, **kwargs)
+        self.fields['status'].label = ''
+        choices = self.fields['status'].choices
+        self.fields['status'].choices = [
+            (v, s) for (v, s) in choices if v != Identificacion.STATUS.identificada
+        ]
 
-        self.fields['mesa'].widget.attrs['tabindex'] = 1
-        self.fields['mesa'].widget.attrs['autofocus'] = True
-        self.fields['problema'].widget.attrs['tabindex'] = 99
 
-    def clean_mesa(self):
-        """
-        Verifica que el número entero ingresado corresponda con un número de mesa
-        válido
-        """
-        numero = self.cleaned_data['mesa']
-        if not numero:
-            return numero
-        try:
-            mesa = Mesa.objects.get(numero=numero)
-        except Mesa.DoesNotExist:
-            raise forms.ValidationError('No existe una mesa con este número. ')
-        return mesa.numero
+class IdentificacionForm(forms.ModelForm):
+    """
+    Este formulario se utiliza para asignar mesa
+    """
+    distrito = forms.ModelChoiceField(queryset=Distrito.objects.all())
+    seccion = forms.ModelChoiceField(queryset=Seccion.objects.all())
+    circuito = forms.ModelChoiceField(queryset=Circuito.objects.all())
+    mesa = forms.ModelChoiceField(queryset=Mesa.objects.all())
+
+    class Meta:
+        model = Identificacion
+        fields = ['distrito', 'seccion', 'circuito', 'mesa']
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        if instance and instance.mesa:
+            kwargs['initial']['circuito'] = circuito = instance.mesa.lugar_votacion.circuito
+            kwargs['initial']['seccion'] = seccion = circuito.seccion
+            kwargs['initial']['distrito'] = distrito = seccion.distrito
+        super().__init__(*args, **kwargs)
+        self.fields['distrito'].widget.attrs['autofocus'] = True
+        if instance and instance.mesa:
+            # si el attach ya estaba clasificado, limitamos los queryset a los
+            # de su jerarquia, tal como queda al ir definiendo en cascada.
+            self.fields['seccion'].queryset = Seccion.objects.filter(distrito=distrito)
+            self.fields['circuito'].queryset = Circuito.objects.filter(seccion=seccion)
+            self.fields['mesa'].queryset = Mesa.objects.filter(lugar_votacion__circuito=circuito)
+        else:
+            # si aun no está clasificado, entonces seccion circuito y empiezan sin opciones
+            # y se agregan dinamicamente via ajax cuando se va eligiendo el correspondiente ancestro
+            self.fields['seccion'].choices = (('', '---------'),)
+            self.fields['circuito'].choices = (('', '---------'),)
+            self.fields['mesa'].choices = (('', '---------'),)
 
     def clean(self):
-        """
-        Valida la exclusión mutua entre un numero de mesa y un problema
-        Si se clasifica con un numero de mesa, no puede reportarse un problema
-
-        Además existe un caso de "advertencia" al usuario cuando una mesa ya tiene un documento
-        conocido asociado por las dudas se trate de un erro de carga y no un documento efectivamente
-        distinto para la misma mesa. Si se intenta guardar, se reporta un aviso. Si el usuario vuelve
-        a guardar, entonces el documento se confirma para esa mesa.
-        """
-
         cleaned_data = super().clean()
-        problema = cleaned_data.get('problema')
-        mesa_numero = cleaned_data.get('mesa')
-        mesa_confirm = cleaned_data.get('mesa_confirm')
-
-        if not mesa_numero and not problema:
-
+        mesa = cleaned_data.get('mesa')
+        circuito = cleaned_data.get('circuito')
+        seccion = cleaned_data.get('seccion')
+        distrito = cleaned_data.get('distrito')
+        if seccion and seccion.distrito != distrito:
             self.add_error(
-                'mesa', 'Indicá la mesa o reportá un problema. '
+                'seccion', 'Esta sección no pertenece al distrito'
             )
-
-        elif problema and mesa_numero:
-            cleaned_data['mesa'] = None
+        elif circuito and circuito.seccion != seccion:
             self.add_error(
-                'problema', 'Dejá el número en blanco si hay un problema. '
+                'circuito', 'Este circuito no pertenece a la sección'
             )
-
-        if mesa_numero and Attachment.objects.filter(
-            mesa__numero=mesa_numero
-        ).exists() and mesa_numero != mesa_confirm:
-            # Se reporta un "warning"
-            # Si se guarda de nuevo se cumplirá que ``mesa_numero == mesa_confirm``
-            # y por lo tanto los datos serán válidos y no se reportará el warning
-            self.data._mutable = True    # necesario para poder modificar los datos crudos
-            self.data['mesa_confirm'] = mesa_numero
-            self.data._mutable = False
+        if mesa and mesa.lugar_votacion.circuito != circuito:
             self.add_error(
-                'mesa', 'Esta mesa ya tiene una o más imágenes adjuntas. Revisá y guardá de nuevo para confirmar .'
+                'mesa', 'Esta mesa no pertenece al circuito'
             )
-
-        cleaned_data['mesa'] = None if mesa_numero is None else Mesa.objects.get(numero=mesa_numero)
         return cleaned_data
 
 

@@ -48,7 +48,7 @@ class TieneResultados(admin.SimpleListFilter):
         value = self.value()
         if value is not None:
             isnull = value == 'no'
-            queryset = Mesa.objects.filter(cargas__isnull=isnull)
+            queryset = Mesa.objects.filter(votomesareportado__isnull=isnull)
         return queryset
 
 
@@ -130,7 +130,7 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def get_row_actions(self, obj):
         row_actions = []
-        for e in obj.categoria.all():
+        for e in obj.categorias.all():
             row_actions.append({
                 'label': f'Ver resultados {e}',
                 'url': reverse('resultados-categoria', args=(e.id,)) + f'?mesa={obj.id}',

@@ -1,10 +1,11 @@
 import os
 from datetime import timedelta
-
+from django.utils import timezone
+from django.urls import reverse
 from django.db import models
 from django.db.models import (
-    Sum, F, Q, Count, OuterRef,
-    Exists, Max
+    Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef,
+    Exists, Max, Value
 )
 from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
@@ -73,7 +74,7 @@ class Seccion(models.Model):
     def mesas(self, categoria):
         return Mesa.objects.filter(
             lugar_votacion__circuito__seccion=self,
-            categoria=categoria
+            categorias=categoria
         )
 
 
@@ -106,10 +107,10 @@ class Circuito(models.Model):
         Busca el máximo orden de carga `n` en una mesa perteciente al circuito
         (esté o no cargada) y devuelve `n + 1`.
 
-        Este nuevo orden de carga incrematado se asigna a la nueva mesa
+        Este nuevo orden de carga incrementado se asigna a la nueva mesa
         clasificada en func:`asignar_orden_de_carga`
         """
-        orden = Mesa.objects.exclude(id=self.id).filter(
+        orden = Mesa.objects.filter(
             lugar_votacion__circuito=self
         ).aggregate(v=Max('orden_de_carga'))['v'] or 0
         return orden + 1
@@ -120,7 +121,7 @@ class Circuito(models.Model):
         """
         return Mesa.objects.filter(
             lugar_votacion__circuito=self,
-            categoria=categoria
+            categorias=categoria
     )
 
 
@@ -153,7 +154,7 @@ class LugarVotacion(models.Model):
     calidad = models.CharField(
         max_length=20, help_text='calidad de la geolocalizacion', editable=False, blank=True
     )
-    # denormalizacion para hacer queries más simples
+    # denormalización para hacer queries más simples
     # se sincronizan con ``geom`` en el método save()
     latitud = models.FloatField(null=True, editable=False)
     longitud = models.FloatField(null=True, editable=False)
@@ -193,12 +194,12 @@ class LugarVotacion(models.Model):
         """
         return Mesa.objects.filter(
             lugar_votacion=self,
-            categoria=categoria
+            categorias=categoria
     )
 
     @property
     def mesas_actuales(self):
-        return self.mesas.filter(categoria=Categoria.actual())
+        return self.mesas.filter(categorias=Categoria.actual())
 
     @property
     def color(self):
@@ -214,20 +215,9 @@ class LugarVotacion(models.Model):
         return f"{self.nombre} - {self.circuito}"
 
 
-def path_foto_acta(instance, filename):
-    """
-    Genera la ruta donde se almacenan las fotos de actas.
-    Se respeta la extensión del archivo original
-
-    ``MEDIA_ROOT/actas/<categoria>/<mesa>.<extension>``
-    """
-    _, ext = os.path.splitext(filename)
-    return f'actas/{instance.categoria.slug}/{instance.numero}{ext}'
-
-
 class MesaCategoria(models.Model):
     """
-    Modelo intermedio para la relación m2m ``Mesa.categoria``
+    Modelo intermedio para la relación m2m ``Mesa.categorias``
 
     Permite guardar el booleano que marca la carga de esa "columna" como confirmada.
     """
@@ -251,14 +241,9 @@ class Mesa(models.Model):
     Por ejemplo, la mesa 12 del circuito 1J de La Matanza, elige
     Presidente y Vice, Diputado de Prov de Buenos Aires e Intendente de La Matanza.
     """
-    ESTADOS_ = ('EN ESPERA', 'ABIERTA', 'CERRADA', 'ESCRUTADA')
-    ESTADOS = Choices(*ESTADOS_)
-    estado = StatusField(choices_name='ESTADOS', default='EN ESPERA')
-    hora_escrutada = MonitorField(monitor='estado', when=['ESCRUTADA'])
 
-    # fixme. este campo deberia ser `categorias`, en plural.
-    categoria = models.ManyToManyField('Categoria', through='MesaCategoria')
-    numero = models.PositiveIntegerField()
+    categorias = models.ManyToManyField('Categoria', through='MesaCategoria')
+    numero = models.CharField(max_length=10)
     es_testigo = models.BooleanField(default=False)
     circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
     lugar_votacion = models.ForeignKey(
@@ -271,8 +256,8 @@ class Mesa(models.Model):
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
     carga_confirmada = models.BooleanField(default=False)
 
-    # denormalizacion.
-    # lleva la cuenta de las categorias que se han cargado hasta el momento.
+    # denormalizaciones
+    # lleva la cuenta de las categorías que se han cargado hasta el momento.
     # ver receiver actualizar_categorias_cargadas_para_mesa()
     cargadas = models.PositiveIntegerField(default=0, editable=False)
     confirmadas = models.PositiveIntegerField(default=0, editable=False)
@@ -281,24 +266,11 @@ class Mesa(models.Model):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
 
     def siguiente_categoria_sin_carga(self):
-        for categoria in self.categoria.filter(activa=True).order_by('id'):
+        for categoria in self.categorias.filter(activa=True).order_by('id'):
             if not Carga.objects.filter(
                 mesa=self, categoria=categoria
             ).exists():
                 return categoria
-
-    def marcar_todas_las_categorias_cargadas(self):
-        cantidad_categorias = self.categoria.filter(activa=True).count()
-        print(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
-        self.cargadas = cantidad_categorias
-        self.save(update_fields=['cargadas'])
-
-    def marcar_todas_las_categorias_confirmadas(self):
-        cantidad_categorias = self.cargadas
-        print(f'marcando {cantidad_categorias} como confirmadas en mesa {self.numero}')
-        self.confirmadas = cantidad_categorias
-        self.save(update_fields=['confirmadas'])
-
 
     @classmethod
     def obtener_mesa_en_circuito_seccion_distrito(cls, mesa, circuito, seccion, distrito):
@@ -317,18 +289,18 @@ class Mesa(models.Model):
     def con_carga_pendiente(cls, wait=2):
         """
         Una mesa cargable es aquella que
-           - no este tomada dentro de los ultimos `wait` minutos
-           - no este marcada con problemas o todos su problemas esten resueltos
-           - y tenga al menos una categoria asociada que no tenga votosreportados para esa mesa
+           - no esté tomada dentro de los últimos `wait` minutos
+           - no esté marcada con problemas o todos su problemas estén resueltos
+           - y no tenga cargas consolidadas
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
-            attachments__isnull=False,
+            identificacion__isnull=False,
             orden_de_carga__gte=1,
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
-            a_cargar=Count('categoria', filter=Q(categoria__activa=True))
+            a_cargar=Count('categorias', filter=Q(categorias__activa=True))
         ).filter(
             cargadas__lt=F('a_cargar')
         ).annotate(
@@ -347,7 +319,7 @@ class Mesa(models.Model):
         """
         Dadas las categorias de la mesa en orden, devuelve
         la primera que tenga carga (i.e votos reportados) pero
-        aun no esté confirmada
+        aún no esté confirmada
         """
         for me in MesaCategoria.objects.filter(
             mesa=self, categoria__activa=True
@@ -385,20 +357,25 @@ class Mesa(models.Model):
     def fotos(self):
         """
         Devuelve una lista de tuplas (titulo, foto) asociados a la mesa, incluyendo
-        cualquier version editada de una foto.
+        cualquier version editada de una foto, para aquellos attachements que esten
+        consolidados
 
         Este método se utiliza para alimentar las pestañas en la pantalla de carga
         de datos.
         """
         fotos = []
-        for i, a in enumerate(Attachment.objects.filter(mesa=self).order_by('-id'), 1):
+        for i, a in enumerate(
+            self.attachments.filter(
+                status='identificada'
+            ).order_by('modified'), 1
+        ):
             if a.foto_edited:
                 fotos.append((f'Foto {i} (editada)', a.foto_edited))
             fotos.append((f'Foto {i} (original)', a.foto))
         return fotos
 
     def __str__(self):
-        return f"Mesa {self.numero}"
+        return str(self.numero)
 
 
 class Partido(models.Model):
@@ -579,7 +556,7 @@ class Categoria(models.Model):
         """
         Devuelve la cantidad de electores habilitados para esta categoría
         """
-        return Mesa.objects.filter(categoria=self).aggregate(v=Sum('electores'))['v']
+        return Mesa.objects.filter(categorias=self).aggregate(v=Sum('electores'))['v']
 
     class Meta:
         verbose_name = 'Categoría'
@@ -598,7 +575,7 @@ class Carga(TimeStampedModel):
     para las opciones válidas en la mesa-categoria.
     """
 
-    mesa = models.ForeignKey(Mesa, related_name='cargas', on_delete=models.CASCADE)
+    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
     fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
     consolidada = models.BooleanField(default=False)
@@ -691,4 +668,5 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
         ).aggregate(v=Sum('electores'))['v'] or 0
         distrito.electores = electores
         distrito.save(update_fields=['electores'])
+
 
