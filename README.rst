@@ -1,22 +1,25 @@
 Escrutinio Social
 =================
 Master
+
 .. image:: https://gitlab.e-va.red/escrutinio/escrutinio-paralelo/badges/master/pipeline.svg?
-   :target: https://travis-ci.org/OpenDataCordoba/escrutinio-social
+   :target: https://gitlab.e-va.red/escrutinio/escrutinio-paralelo/pipelines
 
 .. image:: https://gitlab.e-va.red/escrutinio/escrutinio-paralelo/badges/master/coverage.svg?
-   :target: https://coveralls.io/github/OpenDataCordoba/escrutinio-social?branch=master
+   :target: https://gitlab.e-va.red/escrutinio/escrutinio-paralelo/tree/master
 
 
 .. image:: https://readthedocs.org/projects/escrutinio-social/badge/?version=latest
    :target: https://escrutinio-social.readthedocs.io/es/latest/?badge=latest
    :alt: Documentation Status
+
 Develop
+
 .. image:: https://gitlab.e-va.red/escrutinio/escrutinio-paralelo/badges/develop/pipeline.svg?
-   :target: https://travis-ci.org/OpenDataCordoba/escrutinio-social
+   :target: https://gitlab.e-va.red/escrutinio/escrutinio-paralelo/pipelines
 
 .. image:: https://gitlab.e-va.red/escrutinio/escrutinio-paralelo/badges/develop/coverage.svg?
-   :target: https://coveralls.io/github/OpenDataCordoba/escrutinio-social?branch=master
+   :target: https://gitlab.e-va.red/escrutinio/escrutinio-paralelo/tree/develop
 
 
 
