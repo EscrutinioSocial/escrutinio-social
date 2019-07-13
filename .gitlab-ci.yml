@@ -26,7 +26,9 @@ build:
 
 test:
   stage: test
-  image: docker/compose:1.24.0
+  image: 
+    name: docker/compose:1.24.0
+    entrypoint: [""]
   services:
     - docker:stable-dind
   script:
