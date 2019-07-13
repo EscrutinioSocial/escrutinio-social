@@ -54,7 +54,7 @@ update-models-diagram:
 	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
 
 crawl-resultados:
-	docker exec escrutinio-social-app /bin/sh -c "crawl_resultados.sh"
+	docker exec escrutinio-social-app /bin/sh -c "./crawl_resultados.sh"
 
 crawl-resultados-up:
 	docker exec escrutinio-social-app /bin/sh -c "python simple-cors-http-server.py"
