@@ -4,8 +4,6 @@ set -e
 export AWS_DEFAULT_REGION=${REGION}
 PATHDIR='./ci/ecs_templates'
 
-pwd
-
 # MASTER
 ################################################
 if [[ "${CI_COMMIT_REF_NAME}" = "master" ]] ; then
@@ -42,3 +40,6 @@ cat ${PATHDIR}/escrutinio-paralelo-svc.json
 # Deploying 
 echo "Deploying service"
 aws ecs update-service --cli-input-json file://${PATHDIR}/escrutinio-paralelo-svc.json --force-new-deployment
+
+# Output Info
+echo "Check deployment at: http://ecs-lb-2004188673.sa-east-1.elb.amazonaws.com"
