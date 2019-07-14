@@ -59,10 +59,10 @@ class Resultados():
 
     def agregaciones_por_partido(self, categoria):
         """
-        Dada una categoria, devuelve los criterios de agregación
+        Dada una categoría, devuelve los criterios de agregación
         aplicados a VotoMesaReporto para obtener una "tabla de resultados"
-        que incluye agregaciones por partido politico (considerados positivos)
-        y otros no positivos
+        que incluye agregaciones por partido político (considerados positivos)
+        y otros no positivos.
 
         Se utilizan expresiones condicionales. Referencia
 
@@ -180,7 +180,7 @@ class Resultados():
     @lru_cache(128)
     def electores(self, categoria):
         """
-        devuelve el número de electores para :meth:`~.mesas`
+        Devuelve el número de electores para :meth:`~.mesas`
 
         TODO: convertir esto en un método de ``MesaManager``
         """
@@ -193,7 +193,7 @@ class Resultados():
         Realiza la contabilidad para la categoría, invocando al método
         ``calcular``.
 
-        Si el se pasa el parámetro proyectado, se incluye un diccionario
+        Si se le pasa el parámetro `proyectado`, se incluye un diccionario
         extra con la ponderación, invocando a ``calcular`` para obtener los
         resultados parciales de cada subdistrito para luego realizar la ponderación.
         """
@@ -226,8 +226,8 @@ class Resultados():
 
         proyeccion_incompleta = []
         if proyectado:
-            # La proyeccion se calcula sólo cuando no hay filtros (es decir, para provincia)
-            # ponderando por secciones (o circuitos para secciones de "proyeccion ponderada")
+            # La proyección se calcula sólo cuando no hay filtros (es decir, para todo el universo)
+            # ponderando por secciones (o circuitos para secciones de "proyeccion ponderada").
 
             agrupaciones = list(itertools.chain(  # cast para reusar
                 Circuito.objects.filter(seccion__proyeccion_ponderada=True),
@@ -244,6 +244,7 @@ class Resultados():
                     proyeccion_incompleta.append(ag)
                 else:
                     electores_pond += datos_ponderacion[ag]["electores"]
+
         expanded_result = {}
         for k, v in c.votos.items():
             porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
@@ -278,12 +279,7 @@ class Resultados():
             } for k, v in  tabla_no_positivos.items()
         }
         result_piechart = None
-        if settings.SHOW_PLOT:
-            result_piechart = [{
-                'key': str(k),
-                'y': v["votos"],
-                'color': k.color if not isinstance(k, str) else '#CCCCCC'
-            } for k, v in tabla_positivos.items()]
+
         resultados = {
             'tabla_positivos': tabla_positivos,
             'tabla_no_positivos': tabla_no_positivos,
@@ -306,12 +302,12 @@ class Resultados():
 
     def calcular(self, categoria, mesas):
         """
-        Implementa los cómputos escenciales de la categoria para las mesas dadas.
+        Implementa los cómputos escenciales de la categoría para las mesas dadas.
         Se invoca una vez para el cálculo de resultados y N veces para los proyectados.
 
         Devuelve
 
-            electores: cantidad de electores en las mesas válidas en la categoria
+            electores: cantidad de electores en las mesas válidas en la categoría
             escrutados: cantidad de electores en las mesas que efectivamente fueron escrutadas   # TODO revisar!
             porcentaje_mesas_escrutadas:
             votos: diccionario con resultados de votos por partido y opcion (positivos y no positivos)
