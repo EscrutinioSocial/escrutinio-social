@@ -16,6 +16,7 @@ class IdentificacionProblemaForm(forms.ModelForm):
         self.fields['status'].choices = [
             (v, s) for (v, s) in choices if v != Identificacion.STATUS.identificada
         ]
+        self.fields['status'].tabindex = 6
 
 
 class IdentificacionForm(forms.ModelForm):

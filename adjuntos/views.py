@@ -76,7 +76,6 @@ class IdentificacionCreateView(CreateView):
         context = super().get_context_data(**kwargs)
         context['attachment'] = self.attachment
         context['form_problema'] = IdentificacionProblemaForm()
-        context['button_tabindex'] = 2
         return context
 
     def form_valid(self, form):
