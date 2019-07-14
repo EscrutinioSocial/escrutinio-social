@@ -280,26 +280,38 @@ def elegir_acta_a_cargar(request):
 
 
 @login_required
-def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
+def cargar_resultados(
+    request, categoria_id, mesa_numero, tipo='total', carga_id=None
+):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoria-mesa
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
-    categoria = get_object_or_404(Categoria, id=categoria_id)
-    mesa = get_object_or_404(Mesa, categoria=categoria, numero=mesa_numero)
+    mesa_categoria = get_object_or_404(
+        MesaCategoria,
+        categoria_id=categoria_id,
+        mesa__numero=mesa_numero
+    )
+
+    solo_prioritarias = tipo == 'parcial'
+    mesa = mesa_categoria.mesa
+    categoria = mesa_categoria.categoria
     if carga_id:
-        carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
+        carga = get_object_or_404(
+            Carga, id=carga_id, carga__mesa_categoria=mesa_categoria
+        )
     else:
         carga = None
 
-
-    VotoMesaReportadoFormset = votomesareportadoformset_factory(min_num=categoria.opciones.count())
+    VotoMesaReportadoFormset = votomesareportadoformset_factory(
+        min_num=categoria.opciones_actuales(solo_prioritarias).count()
+    )
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
         # se podria hacer "disabled" pero ese caso quita el valor del
         # cleaned_data y luego lo exige por ser requerido.
-        for i, (opcion, form) in enumerate(zip(categoria.opciones_actuales(), formset), 1):
+        for i, (opcion, form) in enumerate(zip(categoria.opciones_actuales(solo_prioritarias), formset), 1):
             form.fields['opcion'].choices = [(opcion.id, str(opcion))]
 
             # esto hace que la navegacion mediante Tabs priorice los inputs de "votos"
@@ -307,15 +319,13 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
             form.fields['votos'].widget.attrs['tabindex'] = i
 
-            # si la opcion es obligatoria, se llenan estos campos
-            if opcion.obligatorio:
-                form.fields['votos'].required = True
+            form.fields['votos'].required = True
             if i == 1:
                 form.fields['votos'].widget.attrs['autofocus'] = True
     data = request.POST if request.method == 'POST' else None
 
     qs = VotoMesaReportado.objects.filter(carga=carga) if carga else VotoMesaReportado.objects.none()
-    initial = [{'opcion': o} for o in categoria.opciones_actuales()]
+    initial = [{'opcion': o} for o in categoria.opciones_actuales(solo_prioritarias)]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
     fix_opciones(formset)
     is_valid = False
@@ -336,14 +346,15 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
                     carga.save()
                 else:
                     carga = Carga.objects.create(
-                        mesa=mesa,
+                        mesa_categoria=mesa_categoria,
+                        status=tipo,
                         fiscal=fiscal,
-                        categoria=categoria
                     )
                 for form in formset:
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
+            carga.actualizar_firma()
             messages.success(
                 request,
                 f'Guardada categoría {categoria} para {mesa}')
@@ -378,72 +389,30 @@ def cargar_resultados(request, categoria_id, mesa_numero, carga_id=None):
 
 
 @login_required
-def chequear_resultado(request):
-    """
-    Elige una mesa con cargas a confirmar y redirige a la url correspondiente
-    """
-    mesa = Mesa.con_carga_a_confirmar().order_by('?').first()
-    if not mesa:
-        return render(request, 'fiscales/sin-actas-cargadas.html')
-    try:
-        categoria = mesa.siguiente_categoria_a_confirmar()
-    except Exception:
-        return render(request, 'fiscales/sin-actas-cargadas.html')
-
-    if not categoria:
-        return render(request, 'fiscales/sin-actas-cargadas.html')
-
-    return redirect(
-        'chequear-resultado-mesa',
-        categoria_id=categoria.id,
-        mesa_numero=mesa.numero
-    )
-
-
-@login_required
-def chequear_resultado_mesa(request, categoria_id, mesa_numero, carga_id=None):
+def detalle_mesa_categoria(request, categoria_id, mesa_numero, carga_id=None):
     """
     Muestra la carga actual de la categoria para la mesa
     """
-    me = get_object_or_404(
+    mc = get_object_or_404(
         MesaCategoria,
         mesa__numero=mesa_numero,
         categoria__id=categoria_id,
-        categoria__activa=True
+        carga_testigo__isnull=False,
     )
-    mesa = me.mesa
-    categoria = me.categoria
-
-    if carga_id:
-        carga = get_object_or_404(Carga, id=carga_id, mesa=mesa, categoria=categoria)
-    else:
-        # FIXME asumimos que por ahora hay una sola carga.
-        carga = get_object_or_404(Carga, mesa=mesa, categoria=categoria)
-
-        # return redirect(
-        #     'chequear-resultado-mesa',
-        #     categoria_id=categoria.id,
-        #     mesa_numero=mesa.numero,
-        #     carga_id=carga.id
-        # )
-
-    data = request.POST if request.method == 'POST' else None
-    if data and 'confirmar' in data:
-        me.confirmada = True
-        me.save(update_fields=['confirmada'])
-        messages.success(request, f'Confirmaste la categoria {categoria} para {mesa}')
-        return redirect('chequear-resultado')
-
-    reportados = carga.votomesareportado_set.order_by('opcion__orden')
+    mesa = mc.mesa
+    categoria = mc.categoria
+    carga = mc.carga_testigo
+    reportados = carga.reportados.order_by('opcion__orden')
     return render(
         request,
-        "fiscales/chequeo_mesa.html",
+        "fiscales/detalle_mesa_categoria.html",
         {
             'reportados': reportados,
             'object': mesa,
             'categoria': categoria
         }
     )
+
 
 
 class CambiarPassword(PasswordChangeView):

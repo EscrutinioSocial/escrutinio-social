@@ -4,7 +4,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-07-04T19:44:42.061Z",
+    "last_login": "2019-07-08T20:55:08.469Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -247,79 +247,107 @@
   "model": "elecciones.mesacategoria",
   "pk": 1,
   "fields": {
+    "status": "sin_cargar",
     "mesa": 1,
     "categoria": 1,
-    "confirmada": false
+    "carga_testigo": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 2,
   "fields": {
+    "status": "sin_cargar",
     "mesa": 2,
     "categoria": 1,
-    "confirmada": false
+    "carga_testigo": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 3,
   "fields": {
+    "status": "sin_cargar",
     "mesa": 3,
     "categoria": 1,
-    "confirmada": false
+    "carga_testigo": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 4,
   "fields": {
+    "status": "sin_cargar",
     "mesa": 4,
     "categoria": 1,
-    "confirmada": false
+    "carga_testigo": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 5,
   "fields": {
+    "status": "sin_cargar",
     "mesa": 5,
     "categoria": 1,
-    "confirmada": false
+    "carga_testigo": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 6,
   "fields": {
+    "status": "sin_cargar",
     "mesa": 6,
     "categoria": 1,
-    "confirmada": false
+    "carga_testigo": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 7,
   "fields": {
+    "status": "sin_cargar",
     "mesa": 7,
     "categoria": 1,
-    "confirmada": false
+    "carga_testigo": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 8,
   "fields": {
+    "status": "sin_cargar",
     "mesa": 8,
     "categoria": 1,
-    "confirmada": false
+    "carga_testigo": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 9,
+  "fields": {
+    "status": "sin_cargar",
+    "mesa": 8,
+    "categoria": 2,
+    "carga_testigo": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 10,
+  "fields": {
+    "status": "sin_cargar",
+    "mesa": 7,
+    "categoria": 2,
+    "carga_testigo": null
   }
 },
 {
   "model": "elecciones.mesa",
   "pk": 1,
   "fields": {
-    "numero": 1,
+    "numero": "1",
     "es_testigo": false,
     "circuito": 1,
     "lugar_votacion": 1,
@@ -327,7 +355,6 @@
     "electores": 100,
     "taken": "2019-07-04T19:51:18.215Z",
     "orden_de_carga": 1,
-    "carga_confirmada": false,
     "cargadas": 1,
     "confirmadas": 0
   }
@@ -336,7 +363,7 @@
   "model": "elecciones.mesa",
   "pk": 2,
   "fields": {
-    "numero": 2,
+    "numero": "2",
     "es_testigo": false,
     "circuito": 1,
     "lugar_votacion": 2,
@@ -344,7 +371,6 @@
     "electores": 100,
     "taken": "2019-07-04T19:51:27.310Z",
     "orden_de_carga": 2,
-    "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
   }
@@ -353,15 +379,14 @@
   "model": "elecciones.mesa",
   "pk": 3,
   "fields": {
-    "numero": 3,
+    "numero": "3",
     "es_testigo": false,
     "circuito": 2,
     "lugar_votacion": 3,
     "url": "",
     "electores": 120,
-    "taken": "2019-07-04T19:52:19.468Z",
+    "taken": "2019-07-08T22:52:59.693Z",
     "orden_de_carga": 2,
-    "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
   }
@@ -370,7 +395,7 @@
   "model": "elecciones.mesa",
   "pk": 4,
   "fields": {
-    "numero": 4,
+    "numero": "4",
     "es_testigo": false,
     "circuito": 2,
     "lugar_votacion": 4,
@@ -378,7 +403,6 @@
     "electores": 120,
     "taken": null,
     "orden_de_carga": 0,
-    "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
   }
@@ -387,7 +411,7 @@
   "model": "elecciones.mesa",
   "pk": 5,
   "fields": {
-    "numero": 5,
+    "numero": "5",
     "es_testigo": false,
     "circuito": 3,
     "lugar_votacion": 5,
@@ -395,7 +419,6 @@
     "electores": 90,
     "taken": null,
     "orden_de_carga": 0,
-    "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
   }
@@ -404,7 +427,7 @@
   "model": "elecciones.mesa",
   "pk": 6,
   "fields": {
-    "numero": 6,
+    "numero": "6",
     "es_testigo": false,
     "circuito": 3,
     "lugar_votacion": 6,
@@ -412,7 +435,6 @@
     "electores": 90,
     "taken": null,
     "orden_de_carga": 0,
-    "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
   }
@@ -421,7 +443,7 @@
   "model": "elecciones.mesa",
   "pk": 7,
   "fields": {
-    "numero": 7,
+    "numero": "7",
     "es_testigo": false,
     "circuito": 4,
     "lugar_votacion": 7,
@@ -429,7 +451,6 @@
     "electores": 90,
     "taken": null,
     "orden_de_carga": 0,
-    "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
   }
@@ -438,7 +459,7 @@
   "model": "elecciones.mesa",
   "pk": 8,
   "fields": {
-    "numero": 8,
+    "numero": "8",
     "es_testigo": false,
     "circuito": 4,
     "lugar_votacion": 8,
@@ -446,7 +467,6 @@
     "electores": 90,
     "taken": null,
     "orden_de_carga": 0,
-    "carga_confirmada": false,
     "cargadas": 0,
     "confirmadas": 0
   }
@@ -498,7 +518,6 @@
     "nombre_corto": "blanco",
     "partido": null,
     "orden": 10,
-    "obligatorio": false,
     "es_contable": false,
     "es_metadata": false,
     "codigo_dne": null
@@ -512,7 +531,6 @@
     "nombre_corto": "",
     "partido": 1,
     "orden": 2,
-    "obligatorio": false,
     "es_contable": true,
     "es_metadata": false,
     "codigo_dne": null
@@ -526,7 +544,6 @@
     "nombre_corto": "",
     "partido": 2,
     "orden": 3,
-    "obligatorio": false,
     "es_contable": true,
     "es_metadata": false,
     "codigo_dne": null
@@ -540,10 +557,17 @@
     "nombre_corto": "",
     "partido": 3,
     "orden": 4,
-    "obligatorio": false,
     "es_contable": true,
     "es_metadata": false,
     "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.eleccion",
+  "pk": 1,
+  "fields": {
+    "fecha": "2019-05-03T23:02:17Z",
+    "nombre": "Eleccion"
   }
 },
 {
@@ -555,13 +579,19 @@
     "nombre": "elecciones-1",
     "color": "black",
     "back_color": "white",
-    "activa": true,
-    "opciones": [
-      2,
-      3,
-      4,
-      1
-    ]
+    "activa": true
+  }
+},
+{
+  "model": "elecciones.categoria",
+  "pk": 2,
+  "fields": {
+    "eleccion": 1,
+    "slug": "int-circuito-2",
+    "nombre": "Int circuito 2",
+    "color": "black",
+    "back_color": "white",
+    "activa": true
   }
 },
 {
@@ -570,10 +600,11 @@
   "fields": {
     "created": "2019-07-04T19:51:27.212Z",
     "modified": "2019-07-04T19:51:27.212Z",
-    "mesa": 1,
-    "categoria": 1,
+    "status": "falta_foto",
+    "origen": "web",
+    "mesa_categoria": 1,
     "fiscal": 1,
-    "consolidada": false
+    "firma": null
   }
 },
 {

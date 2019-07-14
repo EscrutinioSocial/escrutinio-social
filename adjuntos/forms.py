@@ -1,6 +1,21 @@
 from django import forms
 from .models import Identificacion
-from elecciones.models import Mesa, Distrito, Seccion, Circuito
+from elecciones.models import Mesa, Seccion, Circuito, Distrito
+
+
+class IdentificacionProblemaForm(forms.ModelForm):
+
+    class Meta:
+        model = Identificacion
+        fields = ['status']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['status'].label = ''
+        choices = self.fields['status'].choices
+        self.fields['status'].choices = [
+            (v, s) for (v, s) in choices if v != Identificacion.STATUS.identificada
+        ]
 
 
 class IdentificacionForm(forms.ModelForm):
@@ -17,7 +32,7 @@ class IdentificacionForm(forms.ModelForm):
         fields = ['distrito', 'seccion', 'circuito', 'mesa']
 
     def __init__(self, *args, **kwargs):
-        instance = kwargs['instance']
+        instance = kwargs.get('instance')
         if instance and instance.mesa:
             kwargs['initial']['circuito'] = circuito = instance.mesa.lugar_votacion.circuito
             kwargs['initial']['seccion'] = seccion = circuito.seccion
@@ -31,8 +46,8 @@ class IdentificacionForm(forms.ModelForm):
             self.fields['circuito'].queryset = Circuito.objects.filter(seccion=seccion)
             self.fields['mesa'].queryset = Mesa.objects.filter(lugar_votacion__circuito=circuito)
         else:
-            # si aun no está clasificado, entonces seccion circuito y mesa no tienen opciones
-            # que se populan via ajax cuando se va eligiendo el correspondiente ancestro
+            # si aun no está clasificado, entonces seccion circuito y empiezan sin opciones
+            # y se agregan dinamicamente via ajax cuando se va eligiendo el correspondiente ancestro
             self.fields['seccion'].choices = (('', '---------'),)
             self.fields['circuito'].choices = (('', '---------'),)
             self.fields['mesa'].choices = (('', '---------'),)
@@ -43,17 +58,17 @@ class IdentificacionForm(forms.ModelForm):
         circuito = cleaned_data.get('circuito')
         seccion = cleaned_data.get('seccion')
         distrito = cleaned_data.get('distrito')
-        if seccion.distrito != distrito:
+        if seccion and seccion.distrito != distrito:
             self.add_error(
                 'seccion', 'Esta sección no pertenece al distrito'
             )
-        elif circuito.seccion != seccion:
+        elif circuito and circuito.seccion != seccion:
             self.add_error(
-                'seccion', 'Este circuito no pertenece a la sección'
+                'circuito', 'Este circuito no pertenece a la sección'
             )
-        if mesa.lugar_votacion.circuito != circuito:
+        if mesa and mesa.lugar_votacion.circuito != circuito:
             self.add_error(
-                'seccion', 'Esta mesa no pertenece al circuito'
+                'mesa', 'Esta mesa no pertenece al circuito'
             )
         return cleaned_data
 
