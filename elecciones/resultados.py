@@ -187,19 +187,21 @@ class Resultados():
         resultados = {}
 
         if self.filtros:
-            if 'seccion' in self.request.GET:
+            tipo = self.kwargs.get('tipo')
+
+            if tipo == 'seccion':
                 lookups = Q(mesa__lugar_votacion__circuito__seccion__in=self.filtros)
                 lookups2 = Q(lugar_votacion__circuito__seccion__in=self.filtros)
 
-            elif 'circuito' in self.request.GET:
+            elif tipo == 'circuito':
                 lookups = Q(mesa__lugar_votacion__circuito__in=self.filtros)
                 lookups2 = Q(lugar_votacion__circuito__in=self.filtros)
 
-            elif 'lugarvotacion' in self.request.GET:
+            elif tipo == 'lugarvotacion':
                 lookups = Q(mesa__lugar_votacion__in=self.filtros)
                 lookups2 = Q(lugar_votacion__in=self.filtros)
 
-            elif 'mesa' in self.request.GET:
+            elif tipo == 'mesa':
                 lookups = Q(mesa__id__in=self.filtros)
                 lookups2 = Q(id__in=self.filtros)
 
