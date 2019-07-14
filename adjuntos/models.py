@@ -196,10 +196,10 @@ class Identificacion(TimeStampedModel):
         ('spam', 'Es SPAM'),
         ('invalida', 'Es inválida'),
     )
-    # 
-    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema. 
-    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene 
-    #     todos los datos de identificación.  
+    #
+    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
+    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
+    #     todos los datos de identificación.
     # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
 
 
@@ -255,17 +255,18 @@ def consolidacion_attachment(sender, instance=None, created=False, **kwargs):
     Si se identifica como identificada, entonces se le asigna
     orden de carga a la mesa en cuestión.
     """
+    from elecciones.models import Carga
+
     if instance.consolidada:
         attachment = instance.attachment
         attachment.status = instance.status
         attachment.mesa = instance.mesa
         attachment.save(update_fields=['mesa', 'status'])
 
-
         if (
             instance.mesa and
             instance.status == Identificacion.STATUS.identificada and
-            not instance.mesa.carga_set.exists()
+            not Carga.objects.filter(mesa_categoria__mesa=instance.mesa).exists()
         ):
             mesa = instance.mesa
             mesa.orden_de_carga = mesa.lugar_votacion.circuito.proximo_orden_de_carga()

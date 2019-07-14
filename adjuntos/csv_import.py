@@ -1,7 +1,7 @@
 import pandas as pd
 from django.shortcuts import get_object_or_404
 
-from elecciones.models import Mesa, Carga, VotoMesaReportado, Categoria, MesaCategoria
+from elecciones.models import Mesa, Carga, VotoMesaReportado
 from django.db import IntegrityError, transaction
 from fiscales.models import Fiscal
 
@@ -125,14 +125,16 @@ class CSVImporter:
                     mesa_bd = self.mesas_matches[mesa]
                     # Analizo por categoria, y por cada categoria, todos los partidos posibles
                     # TODO ver tema performance
-                    for categoria in mesa_bd.categorias.all():
+                    for mesa_categoria in mesa_bd.mesacategoria_set.all():
                         carga = Carga.objects.create(
-                            mesa=mesa_bd,
-                            fiscal=fiscal,
-                            categoria=categoria
+                            status=Carga.STATUS.total,
+                            origen=Carga.SOURCES.csv,
+                            mesa_categoria=mesa_categoria,
+                            fiscal=fiscal
                         )
                         # buscamos el nombre de la columna asociada a esta categoria
-                        matcheos = list(columna for columna in columnas_categorias if columna.lower() in categoria.nombre.lower())
+                        matcheos = list(
+                            columna for columna in columnas_categorias if columna.lower() in mesa_categoria.categoria.nombre.lower())
                         # TODO: Importa controlar el no matcheo? puedo tirar excepcion
                         if len(matcheos) != 0:
                             mesa_columna = matcheos[0]

@@ -1,6 +1,9 @@
 import os
+from itertools import chain
+from collections import defaultdict
 from datetime import timedelta
 from django.utils import timezone
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
 from django.db.models import (
@@ -8,15 +11,17 @@ from django.db.models import (
     Exists, Max, Value
 )
 from django.db.models.query import QuerySet
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.urls import reverse
-from django.utils import timezone
+from django.db.models.functions import Coalesce
+from django.conf import settings
 from djgeojson.fields import PointField
-from model_utils import Choices
+from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
+from django.utils.text import slugify
+from django.dispatch import receiver
+from django.db.models.signals import m2m_changed, post_save
 from model_utils.fields import StatusField, MonitorField
 from model_utils.models import TimeStampedModel
-
+from model_utils import Choices
 from adjuntos.models import Attachment
 from problemas.models import Problema
 
@@ -218,12 +223,48 @@ class LugarVotacion(models.Model):
 class MesaCategoria(models.Model):
     """
     Modelo intermedio para la relación m2m ``Mesa.categorias``
+    mantiene el estado de las `cargas`
 
-    Permite guardar el booleano que marca la carga de esa "columna" como confirmada.
+    Permite guardar el booleano que marca la carga de esa
+    "columna" como confirmada.
     """
+    STATUS = Choices(
+        'sin_cargar',                   # no hay cargas
+        'parcial_sin_confirmar',        # carga minima unica o coincidente
+        'parcial_en_conflicto',         # cargas minimas divergentes sin consolidar
+        'parcial_confirmada',           # carga minima consolidada
+        'total_sin_confirmar',
+        'total_en_conflicto',
+        'total_confirmada',
+    )
+    status = StatusField(default='sin_cargar')
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
-    confirmada = models.BooleanField(default=False)
+
+    # carga es representativa del estado actual
+    carga_testigo = models.ForeignKey(
+        'Carga', related_name='es_testigo',
+        null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    def firma_count(self, exclude=None):
+        """
+        Devuelve un diccionario que agrupa por estado y firmas
+        Por ejemplo::
+
+            {'total': {
+                '1-10|2-2': 1,
+                '1-10|2-1': 1'
+             },
+             'parcial': {
+                '1-10': 1}
+            }
+        """
+        qs = self.cargas.all()
+        result = defaultdict(dict)
+        for item in qs.values('firma', 'status').annotate(total=Count('firma')):
+            result[item['status']][item['firma']] = item['total']
+        return result
 
     class Meta:
         unique_together = ('mesa', 'categoria')
@@ -254,7 +295,6 @@ class Mesa(models.Model):
     electores = models.PositiveIntegerField(null=True, blank=True)
     taken = models.DateTimeField(null=True, editable=False)
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
-    carga_confirmada = models.BooleanField(default=False)
 
     # denormalizaciones
     # lleva la cuenta de las categorías que se han cargado hasta el momento.
@@ -268,7 +308,8 @@ class Mesa(models.Model):
     def siguiente_categoria_sin_carga(self):
         for categoria in self.categorias.filter(activa=True).order_by('id'):
             if not Carga.objects.filter(
-                mesa=self, categoria=categoria
+                mesa_categoria__mesa=self,
+                mesa_categoria__categoria=categoria
             ).exists():
                 return categoria
 
@@ -315,37 +356,6 @@ class Mesa(models.Model):
         ).distinct()
         return qs
 
-    def siguiente_categoria_a_confirmar(self):
-        """
-        Dadas las categorias de la mesa en orden, devuelve
-        la primera que tenga carga (i.e votos reportados) pero
-        aún no esté confirmada
-        """
-        for me in MesaCategoria.objects.filter(
-            mesa=self, categoria__activa=True
-        ).order_by('categoria'):
-            if not me.confirmada and VotoMesaReportado.objects.filter(
-                carga__categoria=me.categoria, carga__mesa=me.mesa
-            ).exists():
-                return me.categoria
-
-    @classmethod
-    def con_carga_a_confirmar(cls):
-        """
-        Devuelve un queryset de mesas con categorias activas que
-        tengan  al menos una carga sin confirmar.
-
-        Para una mesa de este queryset el método :meth:`siguiente_categoria_a_confirmar`
-        devuelve una categoría.
-        """
-        qs = cls.objects.filter(
-            mesacategoria__confirmada=False,
-            mesacategoria__categoria__activa=True,
-            cargadas__gte=1
-        ).filter(
-            confirmadas__lt=F('cargadas')
-        ).distinct()
-        return qs
 
     def get_absolute_url(self):
         # TODO: Por ahora no hay una vista que muestre la carga de datos
@@ -421,7 +431,6 @@ class Opcion(models.Model):
     )   # blanco, / recurrido / etc
     orden = models.PositiveIntegerField(
         help_text='Orden en la boleta', null=True, blank=True)
-    obligatorio = models.BooleanField(default=False)
     es_contable = models.BooleanField(default=True)
 
     es_metadata = models.BooleanField(
@@ -476,6 +485,7 @@ class Eleccion(models.Model):
         verbose_name = 'Elección'
         verbose_name_plural = 'Elecciones'
 
+
 class Categoria(models.Model):
     """
     Representa una categoria electiva, es decir, una "columna" del acta.
@@ -487,7 +497,8 @@ class Categoria(models.Model):
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100)
-    opciones = models.ManyToManyField(Opcion, related_name='categorias')
+    opciones = models.ManyToManyField(
+        Opcion, through='CategoriaOpcion', related_name='categorias')
     color = models.CharField(
         max_length=10, default='black', help_text='Color para css (Ej: red o #FF0000)'
     )
@@ -505,13 +516,16 @@ class Categoria(models.Model):
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
 
-    def opciones_actuales(self):
+    def opciones_actuales(self, solo_prioritarias=False):
         """
         Devuelve las opciones asociadas a la categoria en el orden dado
         Determina el orden de la filas a cargar, tal como se definen
         en el acta
         """
-        return self.opciones.all().order_by('orden')
+        qs = self.opciones.all()
+        if solo_prioritarias:
+            qs = qs.filter(categoriaopcion__prioritaria=True)
+        return qs.distinct().order_by('orden')
 
     @classmethod
     def para_mesas(cls, mesas):
@@ -567,22 +581,66 @@ class Categoria(models.Model):
         return self.nombre
 
 
+class CategoriaOpcion(models.Model):
+    categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
+    opcion = models.ForeignKey('Opcion', on_delete=models.CASCADE)
+    prioritaria = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('categoria', 'opcion')
+
+
 class Carga(TimeStampedModel):
     """
     Es el contenedor de la carga de datos de un fiscal
     Define todos los datos comunes (fecha, fiscal, mesa, categoria)
-    de una carga, y contiene un conjunto de objetos :class:`VotoMesaReportado`
+    de una carga, y contiene un conjunto de objetos
+    :class:`VotoMesaReportado`
     para las opciones válidas en la mesa-categoria.
     """
-
-    mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE)
-    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE)
+    STATUS = Choices(
+        'falta_foto',
+        'parcial',
+        'total'
+    )
+    SOURCES = Choices('web', 'csv', 'telegram')
+    status = StatusField(null=True, blank=True)
+    origen = models.CharField(
+        max_length=50, choices=SOURCES, default='web'
+    )
+    mesa_categoria = models.ForeignKey(
+        MesaCategoria, related_name='cargas', on_delete=models.CASCADE
+    )
     fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
-    consolidada = models.BooleanField(default=False)
+    firma = models.CharField(
+        max_length=300, null=True, blank=True, editable=False
+    )
 
-    class Meta:
-        verbose_name = "Carga"
-        verbose_name_plural = "Cargas"
+    @property
+    def mesa(self):
+        return self.mesa_categoria.mesa
+
+    @property
+    def categoria(self):
+        return self.mesa_categoria.categoria
+
+    def actualizar_firma(self):
+        """
+        a partir del conjunto de reportes de la carga
+        se genera una firma como un string
+            <id_opcion_A>-<votos_opcion_A>|<id_opcion_B>-<votos_opcion_B>...
+
+        Si esta firma iguala o coincide con la de otras cargas
+        se marca consolidada
+        """
+        tuplas = (
+            f'{o}-{v or ""}' for (o, v) in
+            self.reportados.values_list(
+                'opcion', 'votos'
+            ).order_by('opcion__orden')
+        )
+        self.firma = '|'.join(tuplas)
+        self.save(update_fields=['firma'])
 
     def __str__(self):
         return f'carga de {self.mesa} / {self.categoria} por {self.fiscal}'
@@ -594,8 +652,10 @@ class VotoMesaReportado(models.Model):
     que define mesa y categoria, existe una instancia de este modelo
     para cada opción y su correspondiente cantidad de votos.
     """
-    carga = models.ForeignKey(Carga, on_delete=models.CASCADE)
+    carga = models.ForeignKey(Carga, related_name='reportados', on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
+
+    # es null cuando hay cargas parciales.
     votos = models.PositiveIntegerField(null=True)
 
     class Meta:
@@ -611,13 +671,35 @@ def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=Fals
     Actualiza el contador de categorias ya cargadas para una mesa dada.
     Se actualiza cada vez que se guarda una instancia de :class:`Carga`
     """
-    mesa = instance.mesa
+    mesa = instance.mesa_categoria.mesa
     categorias_cargadas = Carga.objects.filter(
-        mesa=mesa
-    ).values('categoria').distinct().count()
+        mesa_categoria__mesa=mesa
+    ).values('mesa_categoria__categoria').distinct().count()
     if mesa.cargadas != categorias_cargadas:
         mesa.cargadas = categorias_cargadas
         mesa.save(update_fields=['cargadas'])
+
+
+@receiver(post_save, sender=Carga)
+def actualizar_estado_mesa_categoria(sender, instance=None, created=False, **kwargs):
+    if instance.id and instance.firma:
+        csv = instance.origen == 'csv'
+        total = instance.status == 'total'
+        mc = instance.mesa_categoria
+        firmas = mc.firma_count()
+        supera = firmas[instance.status][instance.firma] >= settings.MIN_COINCIDENCIAS_CARGAS
+
+        if supera:
+            mc.status = 'total_confirmada' if total else 'parcial_confirmada'
+            mc.carga_testigo = instance
+        elif len(firmas[instance.status]) == 1:
+            # la instancia es la unica de su status
+            mc.status = 'total_sin_confirmar' if total else 'parcial_sin_confirmar'
+            mc.carga_testigo = instance
+        else:
+            mc.status =  'total_en_conflicto' if total else 'parcial_en_conflicto'
+            mc.carga_testigo = None
+        mc.save(update_fields=['status', 'carga_testigo'])
 
 
 @receiver(post_save, sender=MesaCategoria)
@@ -626,9 +708,9 @@ def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=F
     Similar a :func:`actualizar_categorias_cargadas_para_mesa`,
     actualiza el contador de categorias ya confirmadas para una mesa dada.
     """
-    if instance.confirmada:
+    if instance.status == MesaCategoria.STATUS.total_confirmada:
         mesa = instance.mesa
-        confirmadas = MesaCategoria.objects.filter(mesa=mesa, confirmada=True).count()
+        confirmadas = MesaCategoria.objects.filter(mesa=mesa, status='total_confirmada').count()
         if mesa.confirmadas != confirmadas:
             mesa.confirmadas = confirmadas
             mesa.save(update_fields=['confirmadas'])
