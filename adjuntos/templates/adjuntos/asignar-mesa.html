@@ -150,7 +150,6 @@ $(document).ready(function() {
               plugins: {
                 save: {
                   callback: function() {
-                    this.darkroom.selfDestroy();
                     var newImage = this.darkroom.canvas.toDataURL();
                     $.post("{% url 'editar-foto' attachment.id %}", {data: newImage}, function(data){
                        Materialize.toast(data.message);
