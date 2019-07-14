@@ -48,11 +48,15 @@ class IdentificacionCreateView(CreateView):
         resultado = self.get_operation_result()
         return reverse('post-asignar-mesa', args=[resultado['decision'], resultado['contenido']])
 
+    def identificacion(self):
+        # redefinido en IdentificacionProblemaCreateView donde la identificacion se maneja distinto
+        return self.object
+
     def get_operation_result(self):
-        if self.object.mesa is None:
-            return {'decision': 'problema', 'contenido': self.object.problema.replace(" ", "_")}
+        if self.identificacion().mesa is None:
+            return {'decision': 'problema', 'contenido': self.identificacion().status.replace(" ", "_")}
         else:
-            return {'decision': 'mesa', 'contenido': self.object.mesa.numero}
+            return {'decision': 'mesa', 'contenido': self.identificacion().mesa.numero}
 
     @cached_property
     def attachment(self):
@@ -82,17 +86,22 @@ class IdentificacionCreateView(CreateView):
 class IdentificacionProblemaCreateView(IdentificacionCreateView):
     http_method_names = ['post']
     form_class = IdentificacionProblemaForm
+    identificacionCreada = None
 
     def form_valid(self, form):
         identificacion = form.save(commit=False)
         identificacion.attachment = self.attachment
         identificacion.fiscal = self.request.user.fiscal
         identificacion.save()
+        self.identificacionCreada = identificacion
         messages.info(
             self.request,
             f'Guardado como "{identificacion.get_status_display()}"',
         )
         return redirect(self.get_success_url())
+
+    def identificacion(self):
+        return self.identificacionCreada
 
 
 @staff_member_required

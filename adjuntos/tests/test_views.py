@@ -24,7 +24,7 @@ def test_identificacion_create_view_post(fiscal_client, admin_user):
     }
     response = fiscal_client.post(reverse('asignar-mesa', args=[a.id]), data)
     assert response.status_code == 302
-    assert response.url == reverse("elegir-adjunto")
+    assert response.url == reverse("post-asignar-mesa", args=["mesa", m1.numero])
     assert a.identificaciones.count() == 1
     i = a.identificaciones.first()
     assert i.status == 'identificada'
@@ -43,7 +43,7 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     }
     response = fiscal_client.post(reverse('asignar-problema', args=[a.id]), data)
     assert response.status_code == 302
-    assert response.url == reverse("elegir-adjunto")
+    assert response.url == reverse("post-asignar-mesa", args=["problema", "spam"])
     assert a.identificaciones.count() == 1
     i = a.identificaciones.first()
     assert i.status == 'spam'
