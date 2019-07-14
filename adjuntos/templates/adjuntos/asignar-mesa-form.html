@@ -43,15 +43,18 @@ function buildAutocomplete(fieldId, dataUrl, childAutocomplete) {
     valuesMap: {},
     childAutocomplete: childAutocomplete
   };
-  autocomplete.component = M.Autocomplete.init($('#' + fieldId + '-autocomplete')[0], {
+  var $autocomplete = $('#' + fieldId + '-autocomplete');
+  autocomplete.component = M.Autocomplete.init($autocomplete[0], {
     onAutocomplete: function(text) {
       // obtengo el valor a partir del texto
       var value = autocomplete.valuesMap[text];
-      // Actualizo el valor del hidden
-      $('#' + fieldId).val(value);
-      // Actualizo el componente hijo
+
       if (childAutocomplete) {
-        $.get(childAutocomplete.dataUrl + value, function(response) {
+        // Actualizo el componente hijo cuando se elige la opcion de autocomplete
+        $.get(childAutocomplete.dataUrl, {
+          'parent_id': value
+        },
+        function(response) {
           childAutocomplete.valuesMap = getValuesMapForJson(response);
           childAutocomplete.component.updateData(getAutocompleteData(childAutocomplete.valuesMap));
 
@@ -71,6 +74,13 @@ function buildAutocomplete(fieldId, dataUrl, childAutocomplete) {
       }
     }
   });
+  $autocomplete.change(function(a) {
+    // obtengo el valor a partir del texto
+    var value = autocomplete.valuesMap[$autocomplete.val()];
+    // Actualizo el valor del hidden
+    $('#' + fieldId).val(value);
+    console.log(value)
+  });
   return autocomplete;
 }
 
@@ -82,9 +92,9 @@ function buildDistritoAutocomplete(childAutocomplete) {
 }
 
 $(document).ready(function() {
-  var mesaAutocomplete = buildAutocomplete('id_mesa', '/fiscales/_autocomplete/m?parent_id=', null);
-  var circuitoAutocomplete = buildAutocomplete('id_circuito', '/fiscales/_autocomplete/c?parent_id=', mesaAutocomplete);
-  var seccionAutocomplete = buildAutocomplete('id_seccion', '/fiscales/_autocomplete/s?parent_id=', circuitoAutocomplete);
+  var mesaAutocomplete = buildAutocomplete('id_mesa', '{% url 'autocomplete-mesa' %}', null);
+  var circuitoAutocomplete = buildAutocomplete('id_circuito', '{% url 'autocomplete-circuito' %}', mesaAutocomplete);
+  var seccionAutocomplete = buildAutocomplete('id_seccion', '{% url 'autocomplete-seccion' %}', circuitoAutocomplete);
   var distritoAutocomplete = buildDistritoAutocomplete(seccionAutocomplete);
 
   $('#id_distrito-autocomplete').focus();
