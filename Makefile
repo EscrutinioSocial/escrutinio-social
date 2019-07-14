@@ -61,3 +61,9 @@ crawl-resultados:
 
 crawl-resultados-up:
 	docker exec escrutinio-social-app /bin/sh -c "python simple-cors-http-server.py"
+
+test-e2e:
+	cd e2e;npm i;npm test;
+
+test-e2e-headless:
+	cd e2e;npm i;npm run test-headless;

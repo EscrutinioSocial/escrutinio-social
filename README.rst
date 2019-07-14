@@ -32,6 +32,10 @@ Instalación
 
 Ver `Instalación <./INSTALL.md>`__
 
+Test
+-----------
+
+Ver `Test <./test.md>`__
 
 Visualizaciones
 -----------
