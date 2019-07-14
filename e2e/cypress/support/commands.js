@@ -26,6 +26,10 @@
 
 import { login } from './login'
 
+Cypress.Commands.add('loginAs', (user, pass) => {
+  return login(user, pass);
+})
+
 Cypress.Commands.add('loginAsAdmin', () => {
   return login('admin', 'admin');
 })
