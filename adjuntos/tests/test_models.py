@@ -51,24 +51,16 @@ def test_identificacion_status_count(db):
     i2 = IdentificacionFactory(attachment=a, status='identificada', mesa=m2)
 
     result = a.status_count()
-    assert result == {
-        (None, 'spam'): 2,
-        (None, 'invalida'): 1,
-        (m1.id, 'identificada'): 1,
-        (m2.id, 'identificada'): 1,
-        (m1.id, 'spam'): 1,
-    }
-
-    result = a.status_count(exclude=i2.id)
-    assert result == {
-        (None, 'spam'): 2,
-        (None, 'invalida'): 1,
-        (m1.id, 'identificada'): 1,
-        (m1.id, 'spam'): 1,
-    }
+    assert sorted(result) == sorted([
+        (0, 'spam', 2, 0),
+        (0, 'invalida', 1, 0),
+        (m1.id, 'identificada', 1, 0),
+        (m2.id, 'identificada', 1, 0),
+        (m1.id, 'spam', 1, 0)
+    ])
 
 
-def test_identificacion_consolidada(db):
+def test_identificacion_consolidada_ninguno(db):
     a = AttachmentFactory()
     m1 = MesaFactory()
     i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
@@ -77,4 +69,17 @@ def test_identificacion_consolidada(db):
 
     assert not i1.consolidada
     assert not i2.consolidada
-    assert i3.consolidada
+    assert not i3.consolidada
+
+def test_identificacion_consolidada_alguna(db):
+    a = AttachmentFactory()
+    m1 = MesaFactory()
+    i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+    i2 = IdentificacionFactory(attachment=a, status='spam', mesa=None)
+    i3 = IdentificacionFactory(attachment=a, status='spam', mesa=None)
+    i4 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+
+    assert not i1.consolidada
+    assert not i2.consolidada
+    assert not i3.consolidada
+    assert i4.consolidada

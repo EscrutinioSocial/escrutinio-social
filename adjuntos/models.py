@@ -18,7 +18,6 @@ import hashlib
 from model_utils import Choices
 from versatileimagefield.fields import VersatileImageField
 
-
 def hash_file(file, block_size=65536):
     """
     Dado un objeto file-like (en modo binario),
@@ -154,34 +153,37 @@ class Attachment(TimeStampedModel):
             qs = qs.exclude(identificaciones__fiscal=fiscal)
         return qs
 
-    def status_count(self, exclude=None):
+    def status_count(self):
         """
-        a partir del conjunto de identificaciones del attachment
-        se devuelve un diccionario con los cantidades para
-        cada grupo (mesa_id, status)
+        A partir del conjunto de identificaciones del attachment
+        se devuelve una lista de tuplas (mesa_id, status, cantidad, cantidad que viene de csv).
+
         Por ejemplo:
-            {
-                (None, 'spam'): 2,
-                (None, 'invalida'): 1,
-                (1, 'identificada'): 1,
-                (2, 'identificada'): 1,
-            }
+            [
+                (0, 'spam', 2, 0),
+                (0, 'invalida', 1, 0),
+                (1, 'identificada', 1, 0),
+                (2, 'identificada', 1, 1),
+            ]
 
         2 lo identificaron como spam, 1 como inválida,
-        1 a la mesa id=1, y otro a la mesa id=2
+        1 a la mesa id=1, y otro a la mesa id=2, pero esa vino de un csv.
         """
+        from django.db.models import Sum, Value as V
+        from django.db.models.functions import Coalesce
         qs = self.identificaciones.all()
-        if exclude:
-            # en caso de que se pase ID, se excluye
-            # esa identificación del cálculo.
-            # es útil para no profucir cambios de estados
-            # en caso de edición de una identificacion
-            qs = qs.exclude(id=exclude)
-        result = {}
-        for item in qs.values('mesa', 'status').annotate(total=Count('status')):
-            result[(item['mesa'], item['status'])] = item['total']
+        cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
+        result = []
+        query = qs.values('mesa', 'status').annotate(
+                    mesa_o_0=Coalesce('mesa', V(0)) # Esto es para facilitar el testing.
+                ).annotate(
+                    total=Count('status')
+                ).annotate(
+                    cuantos_csv=cuantos_csv
+                )
+        for item in query:
+            result.append((item['mesa_o_0'], item['status'], item['total'], item['cuantos_csv']))
         return result
-
 
     def __str__(self):
         return f'{self.foto} ({self.mimetype})'
@@ -202,13 +204,15 @@ class Identificacion(TimeStampedModel):
     #     todos los datos de identificación.
     # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
 
+    status = StatusField(choices_name='STATUS')
 
-    status = StatusField()
+    SOURCES = Choices('web', 'csv', 'telegram')
+    source = StatusField(choices_name='SOURCES', default=SOURCES.web)
 
     consolidada = models.BooleanField(
         default=False,
         help_text=(
-            'una identificación consolidada es aquella '
+            'Una identificación consolidada es aquella '
             'que se considera representativa y determina '
             'el estado del attachment'
         )
@@ -226,48 +230,8 @@ class Identificacion(TimeStampedModel):
     def __str__(self):
         return f'{self.status} - {self.mesa} - {self.fiscal}'
 
-    def save(self, *args, **kwargs):
-        if self.attachment:
-            status_count_dict = self.attachment.status_count(self.id)
-            same_status_count = status_count_dict.get(
-                (self.mesa, self.status)
-            )
-            # si esta identificación iguala o supera el mónimo de
-            # identificaciones coincidentes, la identificación se
-            # consolida.
-            # esto dispara la lógica de :func:`consolidacion_attachment`
-            if same_status_count and same_status_count + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION:
-                self.consolidada = True
+    def set_consolidada(self):
+        self.consolidada = True
+        self.save(update_fields=['consolidada'])
 
-            # TODO, incorporar consolidación con origen en CSV, ver :issue:`49`.
-
-            # TODO - para reportar trolls
-            # sumar 200 a scoring de los usuarios que identificaron el acta diferente
-
-        super().save(*args, **kwargs)
-
-
-@receiver(post_save, sender=Identificacion)
-def consolidacion_attachment(sender, instance=None, created=False, **kwargs):
-    """
-    La consolidación de una identificación determina una transición
-    en el estado del attachment.
-    Si se identifica como identificada, entonces se le asigna
-    orden de carga a la mesa en cuestión.
-    """
-    from elecciones.models import Carga
-
-    if instance.consolidada:
-        attachment = instance.attachment
-        attachment.status = instance.status
-        attachment.mesa = instance.mesa
-        attachment.save(update_fields=['mesa', 'status'])
-
-        if (
-            instance.mesa and
-            instance.status == Identificacion.STATUS.identificada and
-            not Carga.objects.filter(mesa_categoria__mesa=instance.mesa).exists()
-        ):
-            mesa = instance.mesa
-            mesa.orden_de_carga = mesa.lugar_votacion.circuito.proximo_orden_de_carga()
-            mesa.save(update_fields=['orden_de_carga'])
+import adjuntos.consolidacion
