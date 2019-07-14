@@ -5,7 +5,7 @@ from django.contrib import admin
 from material.frontend import urls as frontend_urls
 from elecciones import urls as elecciones_urls
 from fiscales import urls as fiscales_urls
-from fiscales.views import choice_home, QuieroSerFiscal, confirmar_email
+from fiscales.views import choice_home, permission_denied, QuieroSerFiscal, confirmar_email
 from fiscales.forms import AuthenticationFormCustomError
 from django.contrib.auth import views as auth_views
 from problemas.views import ProblemaCreate
@@ -16,6 +16,7 @@ cached = cache_page(3600 * 24 * 30)
 
 urlpatterns = [
     url(r'^$', choice_home, name="home"),
+    url(r'^permission-denied$', permission_denied, name='permission-denied'),
     url(r'^quiero-ser-fiscal/$', QuieroSerFiscal.as_view(), name='quiero-ser-fiscal'),
     url(r'^quiero-ser-fiscal/confirmar-email/(?P<uuid>[0-9a-f-]+)$', confirmar_email, name='confirmar-email'),
     url(r'^login/$', auth_views.LoginView.as_view(authentication_form=AuthenticationFormCustomError), name='login'),

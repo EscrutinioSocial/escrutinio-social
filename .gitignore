@@ -114,3 +114,5 @@ ENV/
 .~lock*
 
 crawl-resultados
+.DS_Store
+.idea
