@@ -59,15 +59,12 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
         votos=1
     )
 
+
     # FIX ME . El periodo de taken deberia ser *por categoria*.
     # en este escenario donde esta lockeado la mesa para la categoria 1, pero no se está
     # cargando la mesa 2, un dataentry queda idle
-    # ...
-    # Esto cambio, ahora la siguiente accion es chequear una categoria
-    # Carlos Lombardi, 2019.07.09
     response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
-    assert response.url == reverse('chequear-resultado-mesa', args=[e1.id, m2.numero])
+    assert response.status_code == 200   # no hay actas
 
     m2.taken = None
     m2.save()
@@ -76,6 +73,7 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     assert response.url == reverse(
         'mesa-cargar-resultados', args=[e2.id, m2.numero]
     )
+
 
 
 def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
