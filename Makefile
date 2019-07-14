@@ -48,16 +48,13 @@ setup-dev-data: migrate
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py loaddata fixtures/dev_data.json"
 
 dump-dev-data:
-	python manage.py dumpdata auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json
+	python manage.py dumpdata auth.Group auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json
 
 update-models-diagram:
 	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
 
 crawl-resultados:
-	 wget --recursive --level=100 --convert-links --html-extension --restrict-file-names=windows --no-parent --no-host-directories --directory-prefix=crawl-resultados --span-hosts localhost:8000/elecciones/resultados/1
-	 find crawl-resultados -type f -name "*.html*" -exec sed -i 's/http:\/\/localhost:8000//g' {} +
-	 find crawl-resultados -type f -name "*.html*" -exec sed -i '/href="\/login\/"/d' {} +
-	 find crawl-resultados -type f -name "*.html*" -exec sed -i "s/id='tipodesumarizacion'/id='tipodesumarizacion' style='display:none'/g" {} +
+	docker exec escrutinio-social-app /bin/sh -c "./crawl_resultados.sh"
 
 crawl-resultados-up:
 	docker exec escrutinio-social-app /bin/sh -c "python simple-cors-http-server.py"

@@ -15,7 +15,7 @@ from django.utils.safestring import mark_safe
 from django.views.generic.edit import UpdateView, CreateView, FormView
 from django.views.generic.list import ListView
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
 from django.core.management import call_command
 from django.utils import timezone
@@ -59,6 +59,7 @@ from django.conf import settings
 # es para que alguien no se "cuelgue" y quede un acta sin cargar.
 WAITING_FOR = 2
 
+NO_PERMISSION_REDIRECT = '/permission-denied/'
 
 def choice_home(request):
     """
@@ -70,8 +71,12 @@ def choice_home(request):
 
     es_fiscal = Fiscal.objects.filter(user=request.user).exists()
 
-    return redirect('elegir-acta-a-cargar')
+    result = redirect('elegir-acta-a-cargar') if user.fiscal.esta_en_grupo('validadores') else render(request, 'fiscales/base.html')
 
+    return result
+
+def permission_denied(request):
+    return PermissionDenied
 
 class BaseFiscal(LoginRequiredMixin, DetailView):
     model = Fiscal
@@ -192,7 +197,7 @@ class QuieroSerFiscal(SessionWizardView):
         body_text = html2text(body_html)
 
         send_mail(
-            '[NOREPLY] Recibimos tu inscripción como fiscal digital',
+            '[NOREPLY] Recibimos tu inscripción como validador/a.',
             body_text,
             settings.DEFAULT_FROM_EMAIL,
             [email],
@@ -249,11 +254,12 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
 
 
 @login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def elegir_acta_a_cargar(request):
     """
-    Para el conjunto de mesas con carga pendiente (es decir, que tienen categorias sin cargar)
+    Para el conjunto de mesas con carga pendiente (es decir, que tienen categorías sin cargar)
     se elige una por orden de prioridad y tamaño del circuito, se actualiza
-    la marca temporal de "asignación" y se redirige a la categoria a cargar para esa mesa.
+    la marca temporal de "asignación" y se redirige a la categoría a cargar para esa mesa.
     """
     mesas = Mesa.con_carga_pendiente().order_by(
         'orden_de_carga', '-lugar_votacion__circuito__electores'
@@ -280,6 +286,7 @@ def elegir_acta_a_cargar(request):
 
 
 @login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def cargar_resultados(
     request, categoria_id, mesa_numero, tipo='total', carga_id=None
 ):
@@ -387,8 +394,8 @@ def cargar_resultados(
         }
     )
 
-
 @login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def detalle_mesa_categoria(request, categoria_id, mesa_numero, carga_id=None):
     """
     Muestra la carga actual de la categoria para la mesa
