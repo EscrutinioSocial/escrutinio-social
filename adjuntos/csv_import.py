@@ -1,19 +1,17 @@
 import pandas as pd
 from django.shortcuts import get_object_or_404
 
-from elecciones.models import Mesa, Carga, VotoMesaReportado, Categoria
+from elecciones.models import Mesa, Carga, VotoMesaReportado, Categoria, MesaCategoria
 from django.db import IntegrityError, transaction
 from fiscales.models import Fiscal
 
-# TODO chequear si es importante buscar matches parciales ej: seccion en vez de Sección
-COLUMNAS_DEFAULT = [('Sección', False), ('Distrito', False), ('Circuito', False), ('Nro de mesa', False),
-                    ('Nro de lista', False),
-                    ('Presidente y vice', True), ('Gobernador y vice', True), ('Senadores Nacionales', True),
-                    ('Diputados Nacionales', True), ('Senadores Provinciales', True), ('Diputados Provinciales', True),
-                    ('Intendentes, Concejales y Consejeros Escolares', True), ('Diputados Provinciales', True),
-                    ('Concejales y Consejeros Escolares', True), ('Legisladores Provinciales', True),
-                    ('Cantidad de electores del padrón', False), ('Cantidad de sobres en la urna', False),
-                    ('Acta arreglada', False)]
+COLUMNAS_DEFAULT = [('seccion', False), ('distrito', False), ('circuito', False), ('nro de mesa', False),
+                    ('nro de lista', False), ('presidente y vice', True), ('gobernador y vice', True),
+                    ('senadores nacionales', True), ('diputados nacionales', True), ('legisladores provinciales', True),
+                    ('senadores provinciales', True), ('diputados provinciales', True),
+                    ('intendentes, concejales y consejeros escolares', True),
+                    ('cantidad de electores del padron', False), ('cantidad de sobres en la urna', False),
+                    ('acta arreglada', False)]
 
 
 # Excepciones custom, por si se quieren manejar
@@ -46,6 +44,7 @@ class CSVImporter:
         self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"])
         self.usuario = usuario
         self.mesas = []
+        self.mesas_matches = {}
 
     def procesar(self):
         self.validar()
@@ -77,6 +76,8 @@ class CSVImporter:
         Valida que estén las columnas en el archivo y que no hayan columnas repetidas.
         """
         headers = list(elem[0] for elem in COLUMNAS_DEFAULT)
+        # normalizar las columnas para evitar comparaciones con espacios/acentos
+        self.df.columns = self.df.columns.str.strip().str.lower().str.replace('ó', 'o')
         # validar la existencia de los headers mandatorios
         todas_las_columnas = all(elem in self.df.columns for elem in headers)
         if not todas_las_columnas:
@@ -95,7 +96,7 @@ class CSVImporter:
         Dichas validaciones se realizar revisando la info en la bd
         """
         # Obtener todos los combos diferentes de: numero de mesa, circuito, seccion, distrito para validar
-        grupos_mesas = self.df.groupby(['Sección', 'Circuito', 'Nro de mesa', 'Distrito'])
+        grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         mesa_circuito_seccion_distrito = list(mesa for mesa, grupo in grupos_mesas)
 
         for mesa in mesa_circuito_seccion_distrito:
@@ -104,6 +105,7 @@ class CSVImporter:
             except Mesa.DoesNotExist:
                 raise DatosInvalidosError(
                     f'No existe mesa: {mesa[2]} en circuito: {mesa[1]}, sección: {mesa[0]} y distrito: {mesa[3]}')
+            self.mesas_matches[mesa] = match_mesa
             self.mesas.append(match_mesa)
 
     def cargar_info(self):
@@ -114,52 +116,38 @@ class CSVImporter:
         try:
             with transaction.atomic():
                 fiscal = get_object_or_404(Fiscal, user=self.usuario)
-
-                mapa_categorias = self.mapear_categorias()
                 # se guardan los datos. El contenedor `carga` y los votos del archivo
                 # la carga es por mesa y categoria entonces nos conviene ir analizando grupos de mesas
-                # TODO: esta bien suponer acá que los nros de mesa son unicos?...dado que ya levanté las mesas por cicuito/distrito, etc
-                grupos_mesas = self.df.groupby(['Nro de mesa'])
-
+                grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
+                columnas_categorias = list(map(lambda x: x[0], filter(lambda x: x[1], COLUMNAS_DEFAULT)))
                 for mesa, grupos in grupos_mesas:
                     # obtengo la mesa correspondiente
-                    mesa_bd = next(m for m in self.mesas if m.numero == mesa)
+                    mesa_bd = self.mesas_matches[mesa]
                     # Analizo por categoria, y por cada categoria, todos los partidos posibles
-                    for categoria in mapa_categorias:
+                    # TODO ver tema performance
+                    for categoria in mesa_bd.categorias.all():
                         carga = Carga.objects.create(
                             mesa=mesa_bd,
                             fiscal=fiscal,
-                            categoria=mapa_categorias[categoria]
+                            categoria=categoria
                         )
-                        # los votos son por partido así que debemos iterar por todas las filas
-                        for indice, fila in grupos.iterrows():
-                            cantidad_votos = fila[categoria]
-                            opcion = fila['Nro de lista']
-                            # TODO: Bocha de dudas con esta parte donde tengo que cargar la opcion,
-                            #  no se con que mapea el Nrolista
-                            votos = VotoMesaReportado(carga=carga, votos=cantidad_votos)
-                            votos.save()
+                        # buscamos el nombre de la columna asociada a esta categoria
+                        matcheos = list(columna for columna in columnas_categorias if columna.lower() in categoria.nombre.lower())
+                        # TODO: Importa controlar el no matcheo? puedo tirar excepcion
+                        if len(matcheos) != 0:
+                            mesa_columna = matcheos[0]
+                            # los votos son por partido así que debemos iterar por todas las filas
+                            for indice, fila in grupos.iterrows():
+                                cantidad_votos = fila[mesa_columna]
+                                opcion = fila['nro de lista']
+                                # TODO: Bocha de dudas con esta parte donde tengo que cargar la opcion,
+                                #  no se con que mapea el Nrolista
+                                votos = VotoMesaReportado(carga=carga, votos=cantidad_votos)
+                                votos.save()
 
 
         except Exception as e:
             print(e)
+            raise e
         except IntegrityError as e:
             print(e)
-
-    def mapear_categorias(self):
-        # obtener todas las categorias diferentes que pueden existir para las mesas
-        categorias = Categoria.objects.filter(mesa__in=self.mesas, activa=True).distinct().all()
-        # obtener las categorias del archivo
-        columnas_categorias = list(map(lambda x: x[0], filter(lambda x: x[1], COLUMNAS_DEFAULT)))
-        mapa_categorias = {}
-        # TODO Cada columna corresponde siempre a la misma categoria dentro de un mismo archivo?
-        # mapeo entre las categorias de la BD y las columnas del file
-        # por ahora trato de buscar el match por nombre de categoria, una vez que esten definidas las categorias
-        # ver si tiene sentido hacer esto o es mejor "harcodearlas"
-        for categoria in categorias:
-            matcheos = list(columna for columna in columnas_categorias if columna.lower() in categoria.nombre.lower())
-            # mapeamos la columna del archivo con la categoria de la BD
-            if len(matcheos) != 0:
-                mapa_categorias[matcheos[0]] = categoria
-            # TODO: Importa controlar el no matcheo? puedo tirar excepcion
-        return mapa_categorias
