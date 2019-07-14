@@ -4,6 +4,21 @@ from functools import lru_cache
 from collections import defaultdict, OrderedDict
 from attrdict import AttrDict
 from functools import lru_cache
+from django.db.models import Q, F, Sum, Count, Subquery
+from django.db.models import Sum, IntegerField, Case, When
+from .models import (
+    Distrito,
+    Seccion,
+    Circuito,
+    Categoria,
+    Partido,
+    Opcion,
+    VotoMesaReportado,
+    Carga,
+    LugarVotacion,
+    MesaCategoria,
+    Mesa,
+)
 
 class Resultados():
     """
@@ -92,10 +107,10 @@ class Resultados():
         return sum_por_partido, otras_opciones
 
     @property
-    def filtros(self, kwargs):
+    def filtros(self):
         """
         A partir de los argumentos de urls, devuelve
-        listas de sección, circuito ,etc. para filtrar
+        listas de sección, circuito, etc. para filtrar.
         """
         numero = self.kwargs.get('numero')
         listado = self.kwargs.get('listado')
@@ -127,7 +142,7 @@ class Resultados():
             elif tipo == 'seccion':
                 return Seccion.objects.filter(id__in=listado)
 
-            elif tipo == 'circuito'
+            elif tipo == 'circuito':
                 return Circuito.objects.filter(id__in=listado)
 
             elif tipo == 'lugarvotacion':
@@ -154,10 +169,10 @@ class Resultados():
             elif self.filtros.model is Circuito:
                 lookups = Q(lugar_votacion__circuito__in=self.filtros)
 
-            elif 'lugarvotacion' in self.request.GET:
+            elif self.filtros.model is LugarVotacion:
                 lookups = Q(lugar_votacion__id__in=self.filtros)
 
-            elif 'mesa' in self.request.GET:
+            elif self.filtros.model is Mesa:
                 lookups = Q(id__in=self.filtros)
 
         return Mesa.objects.filter(categorias=categoria).filter(lookups).distinct()

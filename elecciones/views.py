@@ -135,8 +135,8 @@ class ResultadosCategoria(TemplateView):
     def get(self, request, *args, **kwargs):
         for nivel in ['mesa', 'lugarvotacion', 'circuito', 'seccion', 'distrito']:
             if nivel in self.request.GET:
-                self.kwargs.get('tipo') = nivel # XXX Esto probablemente esté mal y sean varios a la vez.
-                self.kwargs.get('listado') = self.request.GET[nivel]
+                kwargs['tipo'] = nivel
+                kwargs['listado'] = self.request.GET.getlist(nivel)
 
         self.resultados = Resultados(kwargs, None) # Por ahora None
         return super().get(request, *args, **kwargs)
@@ -146,9 +146,6 @@ class ResultadosCategoria(TemplateView):
 
     def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
         return self.resultados.status_filter(categoria, prefix)
-
-    def agregaciones_por_partido(self, categoria):
-        return self.resultados.agregaciones_por_partido(categoria)
 
     @property
     def filtros(self):
@@ -182,17 +179,9 @@ class ResultadosCategoria(TemplateView):
         resultados['result_piechart'] = result_piechart
         return resultados
 
-    def get_tipos_sumarizacion(self):
-        """
-        Esto deberia cambiarse cuando se realice el issue 17
-        Por ahora va a ser hardcodeado
-        """
-        return [{'pk': '1', 'name': 'Normal'}, {'pk': '2', 'name': 'Proyectado'}]
-
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tipos_sumarizacion'] = self.get_tipos_sumarizacion()
+        context['tipos_sumarizacion'] = Resultados.get_tipos_sumarizacion()
         context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
 
         if self.filtros:
