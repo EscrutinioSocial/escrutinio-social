@@ -48,7 +48,7 @@ class TieneResultados(admin.SimpleListFilter):
         value = self.value()
         if value is not None:
             isnull = value == 'no'
-            queryset = Mesa.objects.filter(votomesareportado__isnull=isnull)
+            queryset = Mesa.objects.filter(cargas__isnull=isnull)
         return queryset
 
 
@@ -155,8 +155,13 @@ class PartidoAdmin(admin.ModelAdmin):
 
 
 class MesaCategoriaAdmin(admin.ModelAdmin):
-    list_display = ('mesa', 'categoria', 'confirmada')
-    list_filter = ['mesa__lugar_votacion__circuito', 'mesa__lugar_votacion__circuito__seccion']
+    list_display = ('mesa', 'categoria', 'status')
+    list_filter = [
+        'status',
+        'categoria',
+        'mesa__circuito',
+        'mesa__circuito__seccion'
+    ]
 
 
 class CircuitoAdmin(admin.ModelAdmin):
@@ -177,8 +182,12 @@ class VotoMesaReportadoAdmin(admin.ModelAdmin):
     list_display = ['carga', 'id', 'opcion', 'votos',]
     list_display_links = list_display
     ordering = ['-id']
-    list_filter = ('carga__categoria', 'opcion')
-    search_fields = ['fiscal__nombre', 'mesa__numero', 'mesa__lugar_votacion__nombre']
+    list_filter = ('carga__mesa_categoria__categoria', 'opcion')
+    search_fields = [
+        'fiscal__nombre',
+        'carga__mesa_categoria__mesa__numero',
+        'carga__mesa_categoria__mesa__lugar_votacion__nombre'
+    ]
 
 
 class OpcionAdmin(admin.ModelAdmin):
