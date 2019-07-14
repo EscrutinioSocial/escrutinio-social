@@ -52,16 +52,6 @@
             </li>
         {% endif  %}
 
-        {% if request.user.fiscal.esta_en_grupo_validadores %}
-            {% url 'chequear-resultado' as url %}
-            <li {% if url in request.path %} class="active"{% endif %}>
-                <a href={% if mesas_a_confirmar_count == 0 %}"#"{% else %}"{{ url }}"{% endif %} class="collapsible-header" data-turbolinks="false">Chequear una mesa<i class="material-icons">
-check_box</i><span class="badge">{{ mesas_a_confirmar_count }}</span></a>
-            </li>
-        {% endif %}
-
-
-
             <li></li>
 
         {% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_staff %}
