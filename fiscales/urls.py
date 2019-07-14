@@ -12,6 +12,8 @@ urlpatterns = [
     url('^acta/$', views.elegir_acta_a_cargar, name='elegir-acta-a-cargar'),
     url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.cargar_resultados, name='mesa-cargar-resultados'),
+    
+    url('^ub/acta/(?P<mesa_id>\d+)$', views.elegir_acta_a_cargar, name='procesar-acta-mesa'),
     url('^acta-parcial/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
         views.cargar_resultados, {'tipo': 'parcial'}, name='mesa-cargar-resultados-parciales'),
 

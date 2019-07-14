@@ -33,7 +33,7 @@ def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client):
     }
     response = fiscal_client.post(reverse('asignar-mesa-ub', args=[a.id]), data)
     assert response.status_code == HTTPStatus.FOUND
-    assert response.url == reverse('mesa-cargar-resultados')
+    assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': m1.id})
     assert a.identificaciones.count() == 1
     i = a.identificaciones.first()
     assert i.status == 'identificada'
@@ -141,7 +141,7 @@ def test_subir_adjunto_unidad_basica__imagen_valida(fiscal_client):
     
     acta_sin_identificar = conjunto_actas_sin_identificar.pop()
     #y chequeamos que nos mande a asignar mesa
-    assert response.url == reverse('asignar-mesa', args=[acta_sin_identificar.id])
+    assert response.url == reverse('asignar-mesa-ub', args=[acta_sin_identificar.id])
 
 
 

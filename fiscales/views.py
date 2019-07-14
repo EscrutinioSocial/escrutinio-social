@@ -249,34 +249,60 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
 
 
 @login_required
-def elegir_acta_a_cargar(request):
+def elegir_acta_a_cargar(request, mesa_id=None):
     """
     Para el conjunto de mesas con carga pendiente (es decir, que tienen categorias sin cargar)
     se elige una por orden de prioridad y tamaño del circuito, se actualiza
     la marca temporal de "asignación" y se redirige a la categoria a cargar para esa mesa.
-    """
-    mesas = Mesa.con_carga_pendiente().order_by(
-        'orden_de_carga', '-lugar_votacion__circuito__electores'
-    )
-    if mesas.exists():
-        mesa = mesas[0]
-        # se marca que se inicia una carga
-        mesa.taken = timezone.now()
-        mesa.save(update_fields=['taken'])
 
-        siguiente_categoria = mesa.siguiente_categoria_sin_carga()
+    Si tenemos el id de la mesa ya predefinido (se puede dar en casos donde se cargan actas desde una UB),
+    es solo preguntar por la siguiente categoría.
+
+    """
+
+    mesa = _obtener_mesa_a_cargar(mesa_id)
+
+    if mesa is not None:
+        siguiente_categoria = _procesar_mesa_y_devolver_siguiente_categoria(mesa)
         if siguiente_categoria is None:
             return render(request, 'fiscales/sin-actas.html')
         siguiente_id = siguiente_categoria.id
-
         return redirect(
             'mesa-cargar-resultados',
             categoria_id=siguiente_id,
             mesa_numero=mesa.numero
         )
-
     return render(request, 'fiscales/sin-actas.html')
 
+def _obtener_mesa_a_cargar(mesa_id):
+    """
+    Si ya tienen la mesa identificada, la va a buscar y la devuelve.
+    Si el mesa_id es None (o sea, no está identificada), se buscan mesas con carga pendiente y
+    si hay disponibles, se devuelve.
+    """
+    if mesa_id is None:
+        mesas = Mesa.con_carga_pendiente().order_by(
+            'orden_de_carga', '-lugar_votacion__circuito__electores'
+        )
+        return mesas[0] if mesas.exists() else None
+    else:
+        try:
+            #TODO acá solo estamos trayendo la mesa desde la carga de la UB.
+            #deberíamos hacer algún chequeo de integridad? Cuáles aplicarían?
+            return Mesa.objects.get(pk=mesa_id)
+        except Mesa.DoesNotExist:
+            return None
+        
+    
+
+def _procesar_mesa_y_devolver_siguiente_categoria(mesa_existente):
+    """
+    Marca la mesa como tomada y devuelve la próxima categoría a ser cargada
+    """
+    # se marca que se inicia una carga
+    mesa_existente.taken = timezone.now()
+    mesa_existente.save(update_fields=['taken'])
+    return mesa_existente.siguiente_categoria_sin_carga()
 
 
 @login_required

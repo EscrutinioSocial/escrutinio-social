@@ -11,11 +11,12 @@ from elecciones.tests.factories import (
 )
 from elecciones.models import Mesa, VotoMesaReportado, Carga, MesaCategoria
 from elecciones.tests.test_resultados import fiscal_client          # noqa
+from http import HTTPStatus
 
 
 def test_elegir_acta_sin_mesas(fiscal_client):
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
-    assert 'No hay actas para cargar por el momento' in response.content.decode('utf8')
+    _assert_redireccion_sin_actas(response)
 
 
 def test_elegir_acta_mesas_redirige(db, fiscal_client):
@@ -74,6 +75,33 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
         'mesa-cargar-resultados', args=[e2.id, m2.numero]
     )
 
+def test_elegir_acta_mesas_con_id_de_mesa_desde_ub(fiscal_client):
+    circuito = CircuitoFactory()
+    categoria_1 = CategoriaFactory()
+    categoria_2 = CategoriaFactory()
+
+    mesa1 = IdentificacionFactory(
+        mesa__categorias=[categoria_1, categoria_2],
+        mesa__lugar_votacion__circuito=circuito,
+        status='identificada',
+        consolidada=True,
+    ).mesa
+
+    response = fiscal_client.get(reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa1.id}))
+
+    assert response.status_code == HTTPStatus.FOUND
+    #como es por id el order by del método que devuelve siguiente categoria, debería ser categoria_1
+    assert response.url == reverse('mesa-cargar-resultados', args=[categoria_1.id, mesa1.numero])
+
+def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
+    mesa_id_inexistente = 673162312
+    response = fiscal_client.get(reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_id_inexistente}))
+
+    _assert_redireccion_sin_actas(response)
+
+def _assert_redireccion_sin_actas(response):
+    assert response.status_code == HTTPStatus.OK
+    assert 'No hay actas para cargar por el momento' in response.content.decode('utf8')
 
 def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
     e1 = CategoriaFactory()

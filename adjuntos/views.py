@@ -98,11 +98,8 @@ class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
 
     def get_success_url(self):
         identificacion = self.object
-        #FIXME una vez que tenemos la mesa, tenemos que laburar con la mesa antes de mostrar esta pantalla.
-        #solo quiero commitear para mergear develop
-        categoria_id=1
-        mesa_numero = identificacion.mesa.numero
-        return reverse('mesa-cargar-resultados', kwargs={'categoria_id': categoria_id, 'mesa_numero': mesa_numero})
+        mesa_id = identificacion.mesa.id
+        return reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_id})
 
 
 class IdentificacionProblemaCreateView(IdentificacionCreateView):
