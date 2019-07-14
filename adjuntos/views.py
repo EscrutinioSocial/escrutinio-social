@@ -92,6 +92,19 @@ class IdentificacionCreateView(CreateView):
         return super().form_valid(form)
 
 
+class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
+    
+    template_name = "adjuntos/asignar-mesa-ub.html"
+
+    def get_success_url(self):
+        identificacion = self.object
+        #FIXME una vez que tenemos la mesa, tenemos que laburar con la mesa antes de mostrar esta pantalla.
+        #solo quiero commitear para mergear develop
+        categoria_id=1
+        mesa_numero = identificacion.mesa.numero
+        return reverse('mesa-cargar-resultados', kwargs={'categoria_id': categoria_id, 'mesa_numero': mesa_numero})
+
+
 class IdentificacionProblemaCreateView(IdentificacionCreateView):
     http_method_names = ['post']
     form_class = IdentificacionProblemaForm
@@ -212,7 +225,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
             instance = self.procesar_adjunto(file)
             if instance is not None:
                 messages.success(self.request, 'Subiste el acta correctamente.')
-                return redirect(reverse('asignar-mesa', args=[instance.id]))
+                return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
             
             form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
         return self.form_invalid(form)
