@@ -17,6 +17,8 @@ from django.db.models.signals import post_save
 import hashlib
 from model_utils import Choices
 from versatileimagefield.fields import VersatileImageField
+import json
+
 
 def hash_file(file, block_size=65536):
     """

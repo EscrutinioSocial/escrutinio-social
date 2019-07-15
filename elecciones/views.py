@@ -19,8 +19,8 @@ from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from djgeojson.views import GeoJSONLayerView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse, HttpResponseForbidden
 from django.utils.functional import cached_property
-from django.http import HttpResponse
 from django.views import View
 from django.contrib.auth.models import User
 from fiscales.models import Fiscal
@@ -58,6 +58,17 @@ class StaffOnlyMixing:
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
+class VisualizadoresOnlyMixin:
+    """
+    Mixin para que sólo usuarios visualizadores
+    accedan a la vista.
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.fiscal.esta_en_grupo('visualizadores'):
+            return super().dispatch(request, *args, **kwargs)
+        
+        return HttpResponseForbidden()
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):
     """
@@ -125,7 +136,7 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
-class ResultadosCategoria(TemplateView):
+class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     """
     Vista principal para el cálculo de resultados
     """
@@ -143,6 +154,7 @@ class ResultadosCategoria(TemplateView):
 
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
+
 
     def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
         return self.resultados.status_filter(categoria, prefix)
@@ -203,11 +215,11 @@ class ResultadosCategoria(TemplateView):
             context['chart_keys'] = [v['key'] for v in chart]
             context['chart_colors'] = [v['color'] for v in chart]
 
-        # las pestañas de categorias que se muestran son las que sean
-        # comunes a todas las mesas filtradas
+        # Las pestañas de categorías que se muestran son las que sean
+        # comunes a todas las mesas filtradas.
 
-        # para el calculo se filtran categorias activas que esten relacionadas
-        # a las mesas
+        # Para el cálculo se filtran categorías activas que estén relacionadas
+        # a las mesas.
         mesas = self.mesas(categoria)
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
 

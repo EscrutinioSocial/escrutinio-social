@@ -37,30 +37,23 @@
 
         {% endif  %}
 
-            {% url 'elegir-adjunto' as url %}
+        {% if request.user.fiscal.esta_en_grupo_validadores %}
+            {% url 'siguiente-accion' as url %}
             <li {% if url in request.path %} class="active"{% endif %}>
-                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Clasificar actas<i class="material-icons">picture_in_picture</i><span class="badge">{{ adjuntos_count }}</span></a>
+                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Actuar sobre acta<i class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
             </li>
-
-
-            {% url 'elegir-acta-a-cargar' as url %}
-            <li {% if url in request.path %} class="active"{% endif %}>
-                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Cargar resultados<i class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
-            </li>
-
+        {% endif  %}
 
             <li></li>
 
+        {% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_staff %}
+            <li>
+                <a href="{% url "resultados-categoria"  primera_categoria %}" class="collapsible-header" data-turbolinks="false">Resultados<i class="material-icons">insert_chart</i></a>
+            </li>
 
-        <li>
-            <a href="{% if request.user.is_staff %} {% url "resultados-categoria"  primera_categoria %}{% else %}#{% endif %}" class="collapsible-header" data-turbolinks="false">Resultados<i class="material-icons">insert_chart</i></a>
-        </li>
-
-
-        {% if request.user.is_superuser %}
-        <li>
-            <a href="{% url "resultados-categoria" primera_categoria %}?proyectado=✓" target="_blank" class="collapsible-header" data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
-        </li>
+            <li>
+                <a href="{% url "resultados-categoria" primera_categoria %}?proyectado=✓" target="_blank" class="collapsible-header" data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
+            </li>
         {% endif %}
 
         <li>
