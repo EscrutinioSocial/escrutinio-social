@@ -51,8 +51,6 @@ def save_identificacion(sender, instance=None, created=False, update_fields=None
 
         # TODO - para reportar trolls
         # sumar 200 a scoring de los usuarios que identificaron el acta diferente
-
-        # TODO - Falta ver si hay otra consolidada para la misma mesa. En ese caso hay que sumar la foto a la otra mesa.
     else:
         status_attachment = Attachment.STATUS.sin_identificar
         mesa_attachment = None
