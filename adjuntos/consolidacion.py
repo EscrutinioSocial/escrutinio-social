@@ -1,19 +1,7 @@
 from django.conf import settings
 from datetime import timedelta
-from django.db.models.signals import post_save
 from adjuntos.models import *
 from django.db import transaction
-
-@receiver(post_save, sender=Identificacion)
-def save_identificacion(sender, instance=None, created=False, update_fields=None, **kwargs):
-    if not instance.attachment:
-        return
-
-    # Si se cambió el campo consolidada, no tengo que volver a entrar.
-    if update_fields and 'consolidada' in update_fields:
-        return
-
-    consolidar_identificaciones(instance)
 
 def consolidar_identificaciones(la_identificacion_que_cambio):
     # Me quedo con todas las identificaciones para ese attachment.

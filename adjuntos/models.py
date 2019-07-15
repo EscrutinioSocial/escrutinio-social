@@ -228,14 +228,16 @@ class Identificacion(TimeStampedModel):
     )
 
     def __str__(self):
-        return f'{self.status} - {self.mesa} - {self.fiscal}'
+        return f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - {self.consolidada}'
 
     def set_consolidada(self):
         self.consolidada = True
         self.save(update_fields=['consolidada'])
 
-    def save(self, update_fields, *args, **kwargs):
-        if self.attachment and update_fields and 'consolidada' not in update_fields:
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        update_fields = kwargs['update_fields'] if 'update_fields' in kwargs else None
+        if self.attachment and not update_fields or 'consolidada' not in update_fields:
             NovedadesIdentificacion.objects.create(identificacion=self)
 
 
@@ -244,4 +246,4 @@ class NovedadesIdentificacion(TimeStampedModel):
         'Identificacion', null=False, on_delete=models.CASCADE
     )
 
-import adjuntos.consolidacion
+#import adjuntos.consolidacion

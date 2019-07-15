@@ -6,7 +6,8 @@ from elecciones.tests.factories import (
     IdentificacionFactory,
 )
 from django.utils import timezone
-from adjuntos.models import Attachment
+from adjuntos.models import Attachment, NovedadesIdentificacion
+from adjuntos.consolidacion import *
 
 
 def test_attachment_unico(db):
@@ -71,6 +72,21 @@ def test_identificacion_consolidada_ninguno(db):
     assert not i2.consolidada
     assert not i3.consolidada
 
+    cant_novedades = NovedadesIdentificacion.objects.count()
+    assert cant_novedades == 3
+    consumir_novedades_identificacion()
+
+    cant_novedades = NovedadesIdentificacion.objects.count()
+    assert cant_novedades == 0
+
+    i1.refresh_from_db()
+    i2.refresh_from_db()
+    i3.refresh_from_db()
+
+    assert not i1.consolidada
+    assert not i2.consolidada
+    assert not i3.consolidada
+
 def test_identificacion_consolidada_alguna(db):
     a = AttachmentFactory()
     m1 = MesaFactory()
@@ -82,4 +98,29 @@ def test_identificacion_consolidada_alguna(db):
     assert not i1.consolidada
     assert not i2.consolidada
     assert not i3.consolidada
-    assert i4.consolidada
+    assert not i4.consolidada
+
+    cant_novedades = NovedadesIdentificacion.objects.count()
+    assert cant_novedades == 4
+    consumir_novedades_identificacion()
+
+    cant_novedades = NovedadesIdentificacion.objects.count()
+    assert cant_novedades == 0
+
+    i1.refresh_from_db()
+    i2.refresh_from_db()
+    i3.refresh_from_db()
+    i4.refresh_from_db()
+
+    assert not i2.consolidada
+    assert not i3.consolidada
+    assert i1.consolidada or i4.consolidada
+    if i1.consolidada:
+        assert not i4.consolidada
+    else:
+        assert not i1.consolidada
+
+    m1.refresh_from_db()
+    attach_de_m1 = m1.attachments.first()
+    assert attach_de_m1 ==a
+    assert attach_de_m1.status == Attachment.STATUS.identificada
