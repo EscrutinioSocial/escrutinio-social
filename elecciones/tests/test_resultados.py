@@ -464,6 +464,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
 
     response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
     resultados = response.context['resultados']
+    # Como tenemos dos cargas confirmadas, se modifica el resultado.
     assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
     assert resultados['total_mesas_escrutadas'] == 1
 
@@ -475,8 +476,9 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     consumir_novedades_y_actualizar_objetos()
     response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
     resultados = response.context['resultados']
-    assert resultados['tabla_no_positivos']['blanco']['votos'] == 30
-    assert resultados['total_mesas_escrutadas'] == 2
+    # c3 no está confirmada, no varía el resultado.
+    assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
+    assert resultados['total_mesas_escrutadas'] == 1
 
     c4 = CargaFactory(
         tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria
@@ -487,6 +489,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
 
     response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
     resultados = response.context['resultados']
+    # Ahora sí varía.
     assert resultados['tabla_no_positivos']['blanco']['votos'] == 30
     assert resultados['total_mesas_escrutadas'] == 2
 
