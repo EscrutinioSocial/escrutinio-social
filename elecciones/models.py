@@ -350,13 +350,21 @@ class Mesa(models.Model):
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
             attachments__isnull=False,
-            # TODO: falta que al menos uno de los attachments esté como STATUS.identificada
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
             a_cargar=Count('categorias', filter=Q(categorias__activa=True))
         ).filter(
             cargadas__lt=F('a_cargar')
+        ).annotate(
+            algun_attachment_identificado=Exists(
+                Attachment.objects.filter(
+                    status=Attachment.STATUS.identificada,
+                    mesa__id=OuterRef('id'),
+                )
+            )
+        ).filter(
+            algun_attachment_identificado=True
         ).annotate(
             tiene_problemas=Exists(
                 Problema.objects.filter(
