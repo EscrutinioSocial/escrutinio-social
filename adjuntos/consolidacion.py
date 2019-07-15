@@ -70,11 +70,6 @@ def consumir_novedades_identificacion():
     # Ahora bien, no puedo hacerlo directo sobre el query que las seleccionó 'FOR UPDATE',
     # así que las selecciono de nuevo.
     attachments_con_novedades = Attachment.objects.filter(id__in=novedades.values('identificacion__attachment'))
-    # NovedadesIdentificacion.objects.values(
-    #                     'identificacion__attachment'
-    #                 ).annotate(
-    #                     count=Count('identificacion__attachment')
-    #                 ).values('identificacion__attachment')
     for attachment in attachments_con_novedades:
         consolidar_identificaciones(attachment)
 

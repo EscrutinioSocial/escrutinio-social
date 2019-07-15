@@ -327,7 +327,6 @@ class Mesa(models.Model):
         qs = cls.objects.filter(
             attachments__isnull=False,
             # TODO: falta que al menos uno de los attachments esté como STATUS.identificada
-            orden_de_carga__gte=1,
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(

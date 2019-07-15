@@ -14,6 +14,7 @@ from .factories import (
 )
 from elecciones.models import Mesa, MesaCategoria, Categoria
 from django.utils import timezone
+from adjuntos.consolidacion import *
 
 
 def test_opciones_actuales(db):
@@ -67,8 +68,14 @@ def test_con_carga_pendiente_excluye_sin_foto(db):
 
 
 def test_con_carga_pendiente_excluye_taken(db):
-    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
-    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    a1 = AttachmentFactory()
+    m1 = IdentificacionFactory(status='identificada', attachment=a1).mesa
+    IdentificacionFactory(status='identificada', attachment=a1, mesa=m1)
+    a2 = AttachmentFactory()
+    m2 = IdentificacionFactory(status='identificada', attachment=a2).mesa
+    IdentificacionFactory(status='identificada', attachment=a2, mesa=m2)
+    # Asocio el attach a la mesa.
+    consumir_novedades_identificacion()
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
     m2.taken = timezone.now()
     m2.save()
