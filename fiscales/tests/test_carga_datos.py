@@ -142,8 +142,6 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
-
-    import ipdb; ipdb.set_trace()
     # formset para categoria e1 arranca en blanco
     url = response.url
     response = fiscal_client.get(response.url)

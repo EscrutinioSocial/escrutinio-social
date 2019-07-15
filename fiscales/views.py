@@ -375,7 +375,7 @@ def cargar_resultados(
             capture_exception(e)
             return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
 
-        return reverse('siguiente-accion')
+        return redirect('siguiente-accion')
 
     # Llega hasta acá si hubo error.
     return render(
