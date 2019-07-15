@@ -248,5 +248,3 @@ class NovedadesIdentificacion(TimeStampedModel):
     identificacion = models.ForeignKey(
         'Identificacion', null=False, on_delete=models.CASCADE
     )
-
-#import adjuntos.consolidacion
