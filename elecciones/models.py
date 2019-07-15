@@ -230,26 +230,28 @@ class MesaCategoria(models.Model):
     """
     STATUS = Choices(
         'sin_cargar',                   # no hay cargas
-        'parcial_sin_confirmar',        # carga minima unica o coincidente
-        'parcial_en_conflicto',         # cargas minimas divergentes sin consolidar
-        'parcial_confirmada',           # carga minima consolidada
-        'total_sin_confirmar',
+        'parcial_sin_consolidar',       # carga parcial única (no csv) o no coincidente
+        'parcial_consolidada_csv',      # no hay dos cargas mínimas coincidentes, pero una es de csv. 
+        'parcial_en_conflicto',         # cargas parcial divergentes sin consolidar
+        'parcial_consolidada_dc',       # carga parcial consolidada por doble carga
+        'total_sin_consolidar',
+        'total_consolidada_csv',
         'total_en_conflicto',
-        'total_confirmada',
+        'total_consolidada_dc',
     )
     status = StatusField(default='sin_cargar')
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
 
-    # carga es representativa del estado actual
+    # Carga que es representativa del estado actual.
     carga_testigo = models.ForeignKey(
         'Carga', related_name='es_testigo',
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    def firma_count(self, exclude=None):
+    def firma_count(self):
         """
-        Devuelve un diccionario que agrupa por estado y firmas
+        Devuelve un diccionario que agrupa por tipo de carga y firmas.
         Por ejemplo::
 
             {'total': {
@@ -262,8 +264,8 @@ class MesaCategoria(models.Model):
         """
         qs = self.cargas.all()
         result = defaultdict(dict)
-        for item in qs.values('firma', 'status').annotate(total=Count('firma')):
-            result[item['status']][item['firma']] = item['total']
+        for item in qs.values('firma', 'tipo').annotate(total=Count('firma')):
+            result[item['tipo']][item['firma']] = item['total']
         return result
 
     class Meta:
@@ -582,21 +584,24 @@ class CategoriaOpcion(models.Model):
 class Carga(TimeStampedModel):
     """
     Es el contenedor de la carga de datos de un fiscal
-    Define todos los datos comunes (fecha, fiscal, mesa, categoria)
+    Define todos los datos comunes (fecha, fiscal, mesa, categoría)
     de una carga, y contiene un conjunto de objetos
     :class:`VotoMesaReportado`
-    para las opciones válidas en la mesa-categoria.
+    para las opciones válidas en la mesa-categoría.
     """
-    STATUS = Choices(
+    valida = BooleanField(null=False, default=True)
+    TIPOS = Choices(
         'falta_foto',
         'parcial',
         'total'
     )
+    tipo = StatusField(choices_name='TIPOS', null=True, blank=True)
+    
     SOURCES = Choices('web', 'csv', 'telegram')
-    status = StatusField(null=True, blank=True)
     origen = models.CharField(
         max_length=50, choices=SOURCES, default='web'
     )
+
     mesa_categoria = models.ForeignKey(
         MesaCategoria, related_name='cargas', on_delete=models.CASCADE
     )
@@ -633,6 +638,16 @@ class Carga(TimeStampedModel):
 
     def __str__(self):
         return f'carga de {self.mesa} / {self.categoria} por {self.fiscal}'
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Genero una novedad.
+        NovedadesCarga.objects.create(carga=self)
+
+class NovedadesCarga(TimeStampedModel):
+    carga = models.ForeignKey(
+        'Carga', null=False, on_delete=models.CASCADE
+    )
 
 
 class VotoMesaReportado(models.Model):

@@ -1,7 +1,73 @@
 from django.conf import settings
 from datetime import timedelta
 from adjuntos.models import *
+from elecciones.models import *
 from django.db import transaction
+
+
+def consolidar_cargas_csv(cargas, status_hasta_el_momento, carga_testigo_hasta_el_momento):
+    status_resultante = status_hasta_el_momento
+    carga_testigo_resultante = carga_testigo_hasta_el_momento
+
+    # Me fijo si hay alguna de csv.
+    cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
+    if cargas_csv.count() > 0:
+        # Me fijo si alguna es total.
+        cargas_csv_totales = cargas_csv.filter(tipo=Carga.TIPOS.total)
+        if cargas_csv_totales.count() > 0:
+            status_resultante = MesaCategoria.STATUS.total_consolidada_csv
+            carga_testigo_resultante = cargas_csv_totales.first() # Una de ellas es la testigo.
+        else:
+            # Ninguna de las de CSV es total.
+            status_resultante = MesaCategoria.STATUS.parcial_consolidada_csv
+            carga_testigo_resultante = cargas_csv.first() # Tomo una como testigo.
+
+    return status_resultante, carga_testigo_resultante
+
+def consolidar_cargas_totales(cargas_totales, status_hasta_el_momento, carga_testigo_hasta_el_momento):
+    status_resultante = status_hasta_el_momento
+    carga_testigo_resultante = carga_testigo_hasta_el_momento
+
+    cargas_totales_agrupadas_por_firma = cargas_totales.values('firma').annotate(
+                                                count=Count('firma')
+                                            ).order_by('count')
+    for item in cargas_totales_agrupadas_por_firma:
+
+    return status_resultante, carga_testigo_resultante
+
+def consolidar_cargas(mesa_categoria):
+    """
+    Consolida todas las cargas de la MesaCategoria parámetro.
+    """
+
+    # Por lo pronto el status es sin_cargar.
+    status_resultante = MesaCategoria.STATUS.sin_cargar
+    carga_testigo_resultante = None
+
+    # Obtengo todas las cargas actualmente válidas para mesa_categoria.
+    cargas = mesa_categoria.cargas.filter(valida=True)
+
+    # Si no hay cargas, no sigo.
+    if cargas.count() == 0:
+        # XXX Tengo que hacer algo con esto.
+        return status_resultante, carga_testigo_resultante
+
+    # Hay cargas. A continuación voy probando los distintos status de mayor a menor.
+
+    # Analizo las totales.
+    cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
+    if cargas_totales.count() > 0:
+        status_resultante, carga_testigo_resultante = 
+            consolidar_cargas_totales(cargas_totales, status_resultante, carga_testigo_resultante)
+    cargas_totales_agrupadas_por_firma = cargas_totales.values('firma').annotate(total=Count('firma'))
+    qs.values('firma', 'tipo').annotate(total=Count('firma'))
+    for carga_total in cargas_totales:
+
+    # Analizo los casos de csv.
+    status_resultante, carga_testigo_resultante = 
+            consolidar_cargas_csv(cargas, status_resultante, carga_testigo_resultante)
+
+    
 
 def consolidar_identificaciones(attachment):
     """
@@ -81,6 +147,22 @@ def consumir_novedades_identificacion():
     attachments_con_novedades = Attachment.objects.filter(id__in=novedades.values('identificacion__attachment'))
     for attachment in attachments_con_novedades:
         consolidar_identificaciones(attachment)
+
+    # Todas consumidas, las borro.
+    novedades.delete()
+
+@transaction.atomic
+def consumir_novedades_carga():
+    novedades = NovedadesCarga.objects.select_for_update(
+                        skip_locked=True
+                    ).all()
+
+    # Agrupo por MesaCategoria.
+    # Ahora bien, no puedo hacerlo directo sobre el query que las seleccionó 'FOR UPDATE',
+    # así que las selecciono de nuevo.
+    mesa_categorias_con_novedades = MesaCategoria.objects.filter(id__in=novedades.values('carga__mesa_categoria'))
+    for mesa_categoria_con_novedades in mesa_categorias_con_novedades:
+        consolidar_cargas(mesa_categoria_con_novedades)
 
     # Todas consumidas, las borro.
     novedades.delete()
