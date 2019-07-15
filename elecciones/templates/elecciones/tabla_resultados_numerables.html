@@ -1,13 +1,13 @@
-{% for partido, fila in  tabla.items %}
+{% for partido, fila in  tabla.items %}>
 <tr {% if partido.color %}style="background-color: {{ partido.color}};"{% endif %} class="partido">
         <td id="partido_{{partido.id}}">{{ partido }}<a class="show_detail btn-flat"><i class="material-icons small">expand_more</i></a>
 	</td>
         {% if incluir_votos %}
             <td><!-- votos de opciones !--></td>
-            <td id="votos_{{ partido.id|default:partido|lower }}" class="dato"> {{ fila.votos }}</td>
+            <td id="votos_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.votos }}</td>
         {% endif %}
         <td><!-- porcentajes de opciones !--></td>
-        <td class="dato"> {{ fila.porcentajePositivos }}%</td>
+        <td class="dato">{{ fila.porcentajePositivos }}%</td>
         {% if resultados.proyectado %}
         <td class="dato">{{ fila.proyeccion }}%</td>
         {% endif %}

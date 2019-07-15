@@ -143,7 +143,10 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
     # opciones a partido
-    o1, o2, o3 = categoria.opciones.filter(partido__isnull=False)
+    o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
+    # la opción 4 pasa a ser del mismo partido que la 1
+    o4.partido = o1.partido
+    o4.save()
     blanco = categoria.opciones.get(nombre='blanco')
     c1 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria)
     c2 = CargaFactory(mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria)
@@ -151,14 +154,16 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     VotoMesaReportadoFactory(carga=c1, opcion=o1, votos=20)
     VotoMesaReportadoFactory(carga=c1, opcion=o2, votos=30)
     VotoMesaReportadoFactory(carga=c1, opcion=o3, votos=40)
+    VotoMesaReportadoFactory(carga=c1, opcion=o4, votos=5)
 
-    # votaron 90/100 personas
+    # votaron 95/100 personas
     VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=0)
 
-    VotoMesaReportadoFactory(carga=c2, opcion=o1, votos=30)
+    VotoMesaReportadoFactory(carga=c2, opcion=o1, votos=10)
     VotoMesaReportadoFactory(carga=c2, opcion=o2, votos=40)
     VotoMesaReportadoFactory(carga=c2, opcion=o3, votos=50)
-
+    VotoMesaReportadoFactory(carga=c2, opcion=o4, votos=20)
+ 
     # votaron 120/120 personas
     VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=0)
     c1.actualizar_firma()
@@ -177,25 +182,30 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     total_positivos = resultados['positivos']
 
-    assert total_positivos == 210  # 20 + 30 + 40 + 30 + 40 + 50
+    assert total_positivos == 215  # 20 + 5 + 30 + 40 + 20 + 10 + 40 + 50
 
     # cuentas
     assert positivos[o3.partido]['votos'] == 40 + 50
-    assert positivos[o3.partido]['porcentajePositivos'] == '42.86' # (40 + 50) / total_positivos
+    assert positivos[o3.partido]['porcentajePositivos'] == '41.86' # (40 + 50) / total_positivos
     assert positivos[o2.partido]['votos'] == 30 + 40
-    assert positivos[o2.partido]['porcentajePositivos'] == '33.33' #  (30 + 40) / total_positivos
-    assert positivos[o1.partido]['votos'] == 20 + 30
-    assert positivos[o1.partido]['porcentajePositivos'] == '23.81' # (20 + 30) / total_positivos
+    assert positivos[o2.partido]['porcentajePositivos'] == '32.56' #  (30 + 40) / total_positivos
+    assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
+    assert positivos[o1.partido]['porcentajePositivos'] == '25.58' # (20 + 5 + 10 + 20) / total_positivos
 
     # todos los positivos suman 100
     assert sum(float(v['porcentajePositivos']) for v in positivos.values()) == 100.0
 
+    # votos de partido 1 son iguales a los de o1 + o4
+    assert positivos[o1.partido]['votos'] == sum(x['votos'] for x in positivos[o4.partido]['detalle'].values())
+    
     content = response.content.decode('utf8')
-    assert f'<td id="votos_{o1.partido.id}" class="dato"> 50</td>' in content
-    assert f'<td id="votos_{o2.partido.id}" class="dato"> 70</td>' in content
-    assert f'<td id="votos_{o3.partido.id}" class="dato"> 90</td>' in content
 
-    assert resultados['votantes'] == 210
+    assert f'<td id="votos_{o1.partido.id}" class="dato">55</td>' in content
+    assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
+    assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
+
+    
+    assert resultados['votantes'] == 215
     assert resultados['electores'] == 800
 
 
@@ -226,7 +236,7 @@ def test_resultados_proyectados(fiscal_client):
 
     categoria = Categoria.objects.first()
     # opciones a partido
-    o1, o2, o3 = categoria.opciones.filter(partido__isnull=False)
+    o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
     blanco = categoria.opciones.get(nombre='blanco')
 
     # simulo que van entrandom resultados en las mesas 1 (la primera de la seccion 1) y 3 (la primera de la seccion 3)

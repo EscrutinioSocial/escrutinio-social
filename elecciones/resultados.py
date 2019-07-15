@@ -258,6 +258,8 @@ class Resultados():
             if isinstance(v,dict):
                 d = v['detalle']
                 v = v['total']
+            else:
+                d = {}
 
             porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
             porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.positivos and isinstance(k, Partido) else '-'
