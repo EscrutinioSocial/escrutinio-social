@@ -21,13 +21,6 @@ from .forms import (
 )
 
 
-@login_required
-def post_asignar_mesa(request, decision, contenido):
-    contenido_para_mostrar = contenido if decision == "mesa" else contenido.replace("_", " ")
-    return render(request, 'adjuntos/post-asignar-mesa.html', { 'decision': decision, 'contenido': contenido_para_mostrar })
-
-
-
 class IdentificacionCreateView(CreateView):
     """
     Esta es la vista que permite clasificar un acta,
@@ -45,8 +38,8 @@ class IdentificacionCreateView(CreateView):
         return response
 
     def get_success_url(self):
-        resultado = self.get_operation_result()
-        return reverse('post-asignar-mesa', args=[resultado['decision'], resultado['contenido']])
+        #result = get_operation_result(self)
+        return reverse('siguiente-accion')
 
     def identificacion(self):
         # redefinido en IdentificacionProblemaCreateView donde la identificacion se maneja distinto

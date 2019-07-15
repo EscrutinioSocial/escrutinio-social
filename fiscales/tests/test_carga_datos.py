@@ -45,7 +45,7 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
 
-    # como m1 queda en periodo de "taken" (aunque no se haya ocupado aun)
+    # como m1 queda en periodo de "taken" (aunque no se haya ocupado aún)
     # se pasa a la siguiente mesa
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
@@ -143,6 +143,7 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
 
+    import ipdb; ipdb.set_trace()
     # formset para categoria e1 arranca en blanco
     url = response.url
     response = fiscal_client.get(response.url)
@@ -165,8 +166,8 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     carga = Carga.objects.get()  # sólo hay una carga
     assert carga.status == 'total'
     assert response.status_code == 302
-    assert response.url == reverse('post-cargar-resultados', args=[m1.numero, e1.nombre])
-    # en rigor, aca habria que probar que al "pulsar" el boton de post-cargar-resultados,
+    assert response.url == reverse('siguiente-accion')
+    # en rigor, aca habria que probar que
     # aparece la siguiente categoria de la misma acta
     # igualmente esta logica debería cambiar en breve
     # por la misma razon, el resto del test no tiene sentido

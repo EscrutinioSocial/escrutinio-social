@@ -67,22 +67,9 @@ NO_PERMISSION_REDIRECT = '/permission-denied/'
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def post_cargar_resultados(request, mesa, categoria):
-    categoria_para_mostrar = categoria.replace("_", " ")
-    return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': mesa, 'categoria': categoria_para_mostrar})
-
-
-@login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def carga_simultanea(request, mesa, categoria):
     categoria_para_mostrar = categoria.replace("_", " ")
     return render(request, 'fiscales/carga-simultanea.html', {'mesa': mesa, 'categoria': categoria_para_mostrar})
-
-
-@login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def post_confirmar_resultados(request, mesa):
-    return render(request, 'fiscales/post-confirmar-resultados.html', {'mesa': mesa})
 
 
 @login_required
@@ -306,7 +293,7 @@ def cargar_resultados(
     request, categoria_id, mesa_numero, tipo='total', carga_id=None
 ):
     """
-    Es la vista que muestra y procesa el formset de carga de datos para una categoria-mesa
+    Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
     mesa_categoria = get_object_or_404(
@@ -388,9 +375,9 @@ def cargar_resultados(
             capture_exception(e)
             return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
 
-        return redirect('post-cargar-resultados', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
+        return reverse('siguiente-accion')
 
-    # llega hasta aca si hubo error
+    # Llega hasta acá si hubo error.
     return render(
         request, "fiscales/carga.html", {
             'formset': formset,
