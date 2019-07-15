@@ -234,4 +234,14 @@ class Identificacion(TimeStampedModel):
         self.consolidada = True
         self.save(update_fields=['consolidada'])
 
+    def save(self, update_fields, *args, **kwargs):
+        if self.attachment and update_fields and 'consolidada' not in update_fields:
+            NovedadesIdentificacion.objects.create(identificacion=self)
+
+
+class NovedadesIdentificacion(TimeStampedModel):
+    identificacion = models.ForeignKey(
+        'Identificacion', null=False, on_delete=models.CASCADE
+    )
+
 import adjuntos.consolidacion

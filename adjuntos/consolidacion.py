@@ -2,6 +2,7 @@ from django.conf import settings
 from datetime import timedelta
 from django.db.models.signals import post_save
 from adjuntos.models import *
+from django.db import transaction
 
 @receiver(post_save, sender=Identificacion)
 def save_identificacion(sender, instance=None, created=False, update_fields=None, **kwargs):
@@ -12,6 +13,9 @@ def save_identificacion(sender, instance=None, created=False, update_fields=None
     if update_fields and 'consolidada' in update_fields:
         return
 
+    consolidar_identificaciones(instance)
+
+def consolidar_identificaciones(la_identificacion_que_cambio):
     # Me quedo con todas las identificaciones para ese attachment.
     # Formato: (mesa_id, status, cantidad)
     # Ejemplo:
@@ -21,7 +25,7 @@ def save_identificacion(sender, instance=None, created=False, update_fields=None
     #       (1, 'identificada', 1),
     #       (2, 'identificada', 1),
     #  ]
-    status_count_dict = instance.attachment.status_count()
+    status_count_dict = la_identificacion_que_cambio.attachment.status_count()
 
     mesa_id_consolidada = None
     for (mesa_id, status, cantidad, cuantos_csv) in status_count_dict:
@@ -34,7 +38,7 @@ def save_identificacion(sender, instance=None, created=False, update_fields=None
     if mesa_id_consolidada:
         # Consolidamos una mesa, ya sea por CSV o por multicoincidencia.
 
-        identificaciones_correctas = instance.attachment.identificaciones.filter(mesa_id=mesa_id_consolidada, status=Identificacion.STATUS.identificada)
+        identificaciones_correctas = la_identificacion_que_cambio.attachment.identificaciones.filter(mesa_id=mesa_id_consolidada, status=Identificacion.STATUS.identificada)
 
         identificacion_con_csv = identificaciones_correctas.filter(source=Identificacion.SOURCES.csv).first()
 
@@ -57,9 +61,21 @@ def save_identificacion(sender, instance=None, created=False, update_fields=None
         consolidada_set = []
 
     # Identifico el attachment.
-    instance.attachment.status = status_attachment
-    instance.attachment.mesa = mesa_attachment
-    instance.attachment.save(update_fields=['mesa', 'status'])
-        
+    # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
+    # Eso es correcto.
+    attachment = la_identificacion_que_cambio.attachment
+    attachment.status = status_attachment
+    attachment.mesa = mesa_attachment
+    attachment.save(update_fields=['mesa', 'status'])
+
     # El resto no tiene que quedar como consolidada.
-    instance.attachment.identificaciones.exclude(id__in=consolidada_set).update(consolidada=False)
+    la_identificacion_que_cambio.attachment.identificaciones.exclude(id__in=consolidada_set).update(consolidada=False)
+
+@transaction.atomic
+def consumir_novedades_identificacion():
+    novedades = NovedadesIdentificacion.objects.select_for_update(skip_locked=True).all()
+    for novedad in novedades:
+        consolidar_identificaciones(novedad.identificacion)
+
+    # Todas consumidas, las borro.
+    novedades.delete()
