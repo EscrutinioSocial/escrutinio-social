@@ -15,44 +15,9 @@
   padding-bottom: 0px;
 }
 
-/* .darkroom-image-container {
-  overflow: auto;
-} */
-
-figure {
-  margin: 0;
-}
-
-.image-container {
-  display: inline-block;
-  max-width: 100%;
-  background: white;
-  padding: 10px;
-  margin: 5px 0;
-  border: 1px solid #e2e2e2;
-  border-bottom: 1px solid #ccc;
-  border-right: 1px solid #ccc;
-}
-
-.image-container.target {
-  margin-top: 40px;
-}
-
-.image-container img {
-  max-width: 100%;
-}
-
-.image-container .image-meta {
-  margin-top: 10px;
-  font-size: 12px;
-  text-align: left;
-}
-.image-container .image-meta a {
-  text-decoration: none;
-  color: #444;
-}
-.image-container .image-meta a:hover .image-meta-title {
-  text-decoration: underline;
+.acta .card-content {
+  padding-top: 50px;
+  overflow-y: auto;
 }
 
 .left-panel {
@@ -94,11 +59,29 @@ figure {
 </style>
 <script type="text/javascript">
 $(document).ready(function() {
-  // var container = $('.darkroom-image-container');
-  // if (container.length) {
-  //   container.height($("main").height() - 200);
-  //   $('html, body').css('overflowY', 'hidden');
-  // }
+  var container = $('.acta .card-content');
+  if (container.length) {
+    $('html, body').css('overflowY', 'hidden');
+    var darkroomWidth = container.width() - 11;
+    var darkroomHeight = $("main").height() - 200;
+    container.height(darkroomHeight);
+    $('#target').darkroom({
+      maxWidth: darkroomWidth,
+      minWidth: darkroomWidth,
+      minHeight: darkroomHeight,
+      plugins: {
+        save: {
+          callback: function() {
+            var newImage = this.darkroom.canvas.toDataURL();
+            $.post("{% url 'editar-foto' attachment.id %}", {data: newImage}, function(data){
+               Materialize.toast(data.message);
+            })
+          }
+        }
+      }
+    });
+
+  }
 });
 </script>
 {% endblock %}
@@ -173,38 +156,19 @@ $(document).ready(function() {
 
 {% block right-panel %}
     <div class="acta card">
+        <div class="card-content">
+            <!-- <a href="{{ attachment.foto.url }}" target="new">ampliar</a> -->
+            <img id="target" class="responsive-img" src="{{ attachment.foto.thumbnail.960x.url }}">
 
-        <div class="card-content" >
-            <figure class="image-container target">
-                <!-- <a href="{{ attachment.foto.url }}" target="new">ampliar</a> -->
-                <img id="target" src="{{ attachment.foto.thumbnail.960x.url }}">
-
-                <script src="{% static 'js/fabric.js' %}"></script>
-                <script src="{% static 'js/darkroom.js' %}"></script>
-
-                <script>
-                new Darkroom('#target', {
-                  minWidth: 100,
-                  minHeight: 100,
-                  maxWidth: 600,
-                  maxHeight: 500,
-                  plugins: {
-                    save: {
-                      callback: function() {
-                        var newImage = this.darkroom.canvas.toDataURL();
-                        $.post("{% url 'editar-foto' attachment.id %}", {data: newImage}, function(data){
-                           Materialize.toast(data.message);
-                        })
-                      }
-                    }
-                  }
-                });
-                </script>
-            </figure>
+            <script src="{% static 'js/fabric.js' %}"></script>
+            <script src="{% static 'js/darkroom.js' %}"></script>
+            <script>
+            $.fn.darkroom = function(options) {
+              var id = this.attr('id');
+              return new Darkroom('#' + id, options);
+            };
+            </script>
         </div>
-
-
-
     </div>
 {% endblock right-panel %}
 
