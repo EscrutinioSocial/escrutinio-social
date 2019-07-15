@@ -252,6 +252,7 @@ class MesaCategoria(models.Model):
     def firma_count(self):
         """
         Devuelve un diccionario que agrupa por tipo de carga y firmas.
+        Este método se usa para testing solamente.
         Por ejemplo::
 
             {'total': {

@@ -16,6 +16,11 @@ from elecciones.models import Mesa, MesaCategoria, Categoria
 from django.utils import timezone
 from adjuntos.consolidacion import *
 
+def consumir_novedades_y_actualizar_objetos(lista):
+    consumir_novedades_carga()
+    for item in lista:
+        item.refresh_from_db()
+
 
 def test_opciones_actuales(db):
     o2 = OpcionFactory(orden=3)
@@ -253,60 +258,108 @@ def test_mc_status_carga_parcial_desde_mc_sin_carga(db):
     assert mc.status == MesaCategoria.STATUS.sin_cargar
     # se emula la firma de la carga
     c1 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
-    consumir_novedades_carga()
+    consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.parcial_sin_consolidar
     assert mc.carga_testigo == c1
 
     # diverge
     c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-9')
-    consumir_novedades_carga()
+    consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.parcial_en_conflicto
     assert mc.carga_testigo is None
 
     # c2 coincide con c1
     c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
-    consumir_novedades_carga()
+    consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.parcial_consolidada_dc
-    assert mc.carga_testigo == c2
+    assert mc.carga_testigo == c2 or mc.carga_testigo == c1
 
 
 def test_mc_status_total_desde_mc_sin_carga(db):
     mc = MesaCategoriaFactory()
-    assert mc.tipo == 'sin_cargar'
-    c1 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10')
-    assert mc.tipo == 'total_sin_confirmar'
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    c1 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mc.carga_testigo == c1
 
     # diverge
-    c2 = CargaFactory(mesa_categoria=mc, status='total', firma='1-9')
-    assert mc.tipo == 'total_en_conflicto'
+    c2 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-9')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_en_conflicto
     assert mc.carga_testigo is None
 
     # c2 coincide con c1
-    c2 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10')
-    assert mc.tipo == 'total_confirmada'
-    assert mc.carga_testigo == c2
+    c2 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert mc.carga_testigo == c2 or mc.carga_testigo == c1
 
 
 def test_mc_status_carga_total_desde_mc_parcial(db):
     mc = MesaCategoriaFactory(
-        status='parcial_confirmada',
+        status=MesaCategoria.STATUS.parcial_consolidada_dc,
     )
-    c1 = CargaFactory(mesa_categoria=mc, status='parcial', firma='1-10')
+    c1 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
     mc.carga_testigo = c1
     mc.save()
 
     # se asume que la carga total reusará los datos coincidentes de la carga parcial
-    c2 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10|2-20')
-    assert mc.tipo == 'total_sin_confirmar'
+    c2 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10|2-20')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mc.carga_testigo == c2
 
     # diverge
-    c3 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10|2-19')
-    assert mc.tipo == 'total_en_conflicto'
+    c3 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10|2-19')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_en_conflicto
     assert mc.carga_testigo is None
 
     # se asume que la carga total reusará los datos coincidentes de la carga parcial confirmada
-    c4 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10|2-20')
-    assert mc.tipo == 'total_confirmada'
-    assert mc.carga_testigo == c4
+    c4 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10|2-20')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert mc.carga_testigo == c4 or mc.carga_testigo == c2
+
+def test_mc_status_carga_parcial_csv_desde_mc_sin_carga(db):
+    mc = MesaCategoriaFactory()
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    # se emula la firma de la carga
+    c1 = CargaFactory(mesa_categoria=mc, tipo='parcial', origen=Carga.SOURCES.csv, firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.parcial_consolidada_csv
+    assert mc.carga_testigo == c1
+
+    # diverge pero prima csv
+    c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-9')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.parcial_consolidada_csv
+    assert mc.carga_testigo is None
+
+    # c2 coincide con c1
+    c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.parcial_consolidada_dc
+    assert mc.carga_testigo == c2 or mc.carga_testigo == c1
+
+
+def test_mc_status_total_csv_desde_mc_sin_carga(db):
+    mc = MesaCategoriaFactory()
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    c1 = CargaFactory(mesa_categoria=mc, tipo='total', origen=Carga.SOURCES.csv, firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_csv
+    assert mc.carga_testigo == c1
+
+    # diverge pero prima csv
+    c2 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-9')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_csv
+    assert mc.carga_testigo is None
+
+    # c2 coincide con c1
+    c2 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert mc.carga_testigo == c2 or mc.carga_testigo == c1
