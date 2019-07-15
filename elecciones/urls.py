@@ -36,7 +36,6 @@ urlpatterns = [
         name='resultados-totales-confirmados'
     ),
 
-
     url(r'^resultados-parciales-(?P<slug_categoria>[\w-]+).(?P<filetype>csv|xls)$', data_views.resultado_parcial_categoria, name='resultado-parcial-categoria'),
 
     # url(r'^fiscal_mesa/', views.fiscal_mesa, name='fiscal_mesa'),

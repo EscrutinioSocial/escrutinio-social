@@ -7,8 +7,10 @@ from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from elecciones.tests.test_resultados import fiscal_client  # noqa
 from adjuntos.views import MENSAJE_NINGUN_ATTACHMENT_VALIDO, MENSAJE_SOLO_UN_ACTA
-import os 
+import os
 from http import HTTPStatus
+from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
+
 
 def test_identificacion_create_view_get(fiscal_client):
     a = AttachmentFactory()
@@ -89,21 +91,21 @@ def test_subir_adjunto_unidad_basica__sin_adjuntos(fiscal_client):
     response = fiscal_client.post(reverse('agregar-adjuntos-ub'))
 
     assert response.status_code == HTTPStatus.OK
-    form_errors = response.context['form'].errors 
-    
+    form_errors = response.context['form'].errors
+
     assert len(form_errors) == 1
     assert len(form_errors['file_field']) == 1
     assert form_errors['file_field'][0] == "This field is required."
 
 def test_subir_adjunto_unidad_basica__no_imagen(fiscal_client):
     este_directorio = os.path.dirname(os.path.realpath(__file__))
-    no_imagen = open(os.path.join(este_directorio, 'archivo_no_imagen.txt'),'rb') 
+    no_imagen = open(os.path.join(este_directorio, 'archivo_no_imagen.txt'),'rb')
     data = { 'file_field' : no_imagen}
     response = fiscal_client.post(reverse('agregar-adjuntos-ub'), data)
 
     assert response.status_code == HTTPStatus.OK
-    form_errors = response.context['form'].errors 
-    
+    form_errors = response.context['form'].errors
+
     assert len(form_errors) == 1
     assert len(form_errors['file_field']) == 1
     assert form_errors['file_field'][0] == MENSAJE_NINGUN_ATTACHMENT_VALIDO
@@ -111,14 +113,14 @@ def test_subir_adjunto_unidad_basica__no_imagen(fiscal_client):
 def test_subir_adjunto_unidad_basica__varias_imagenes(fiscal_client):
     simple_upload_1 = _get_adjunto_para_subir('acta.jpg')
     simple_upload_2 = _get_adjunto_para_subir('acta2.jpg')
-    
+
 
     data = { 'file_field' : [simple_upload_1,simple_upload_2]}
     response = fiscal_client.post(reverse('agregar-adjuntos-ub'), data)
 
     assert response.status_code == HTTPStatus.OK
-    form_errors = response.context['form'].errors 
-    
+    form_errors = response.context['form'].errors
+
     assert len(form_errors) == 1
     assert len(form_errors['file_field']) == 1
     assert form_errors['file_field'][0] == MENSAJE_SOLO_UN_ACTA
@@ -133,12 +135,12 @@ def test_subir_adjunto_unidad_basica__imagen_valida(fiscal_client):
     response = fiscal_client.post(reverse('agregar-adjuntos-ub'), data)
 
     assert response.status_code == HTTPStatus.FOUND
-    
+
     conjunto_actas_sin_identificar = set(Attachment.sin_identificar())
 
     #chequeamos que haya una
     assert len(conjunto_actas_sin_identificar) == 1
-    
+
     acta_sin_identificar = conjunto_actas_sin_identificar.pop()
     #y chequeamos que nos mande a asignar mesa
     assert response.url == reverse('asignar-mesa-ub', args=[acta_sin_identificar.id])

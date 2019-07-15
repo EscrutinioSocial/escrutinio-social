@@ -2,11 +2,13 @@ import json
 import pytest
 from django.db.models import Sum
 from django.urls import reverse
+from django.contrib.auth.models import Group
 from elecciones.models import (
     Categoria, Mesa, Distrito, Circuito, Seccion, MesaCategoria,
 )
 from elecciones.views import ResultadosCategoria
 from .factories import (
+    UserFactory,
     CategoriaFactory,
     LugarVotacionFactory,
     SeccionFactory,
@@ -39,9 +41,14 @@ def carta_marina(db):
         MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90)
     )
 
+@pytest.fixture()
+def setup_groups(db, admin_user):
+    for nombre in ['validadores', 'unidades basicas', 'visualizadores', 'supervisores', 'fiscales con acceso al bot']:
+        g = Group.objects.create(name=nombre)
+        admin_user.groups.add(g)
 
 @pytest.fixture()
-def fiscal_client(db, admin_user, client):
+def fiscal_client(db, admin_user, setup_groups, client):
     """A Django test client logged in as an admin user."""
     FiscalFactory(user=admin_user)
     client.login(username=admin_user.username, password='password')
@@ -51,7 +58,6 @@ def fiscal_client(db, admin_user, client):
 @pytest.fixture()
 def url_resultados(carta_marina):
     return reverse('resultados-categoria', args=[1])
-
 
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
@@ -571,3 +577,28 @@ def test_actualizar_electores(carta_marina):
     d = s1.distrito
     d.refresh_from_db()
     assert d.electores == 100 * 2 + 120 * 2 + 90 * 4
+
+
+def test_permisos_vistas(setup_groups, url_resultados, client):
+    u_visualizador = UserFactory()
+    visualizador = FiscalFactory(user=u_visualizador)
+    g_visualizadores = Group.objects.get(name='visualizadores')
+    u_visualizador.groups.add(g_visualizadores)
+    u_validador = UserFactory()
+    validador = FiscalFactory(user=u_validador)
+    g_validadores = Group.objects.get(name='validadores')
+    u_validador.groups.add(g_validadores)
+
+    # El usuario visualizador intenta cargar un acta, no debería poder.
+    client.login(username=u_visualizador.username, password='password')
+    response = client.get(reverse('elegir-acta-a-cargar'))
+    assert response.status_code == 302 and response.url.startswith('/permission-denied')
+
+    # Sí debería poder ver resultados.
+    response = client.get(url_resultados, {'distrito': 1})
+    assert response.status_code == 200
+
+    # El usuario validador intenta cargar un acta, sí debería poder
+    client.login(username=u_validador.username, password='password')
+    response = client.get(reverse('elegir-acta-a-cargar'))
+    assert response.status_code == 200

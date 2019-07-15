@@ -50,7 +50,7 @@ def elegir_adjunto(request):
 class IdentificacionCreateView(CreateView):
     """
     Esta es la vista que permite clasificar un acta,
-    asociandola a una mesa o reportando un problema
+    asociándola a una mesa o reportando un problema
 
     Ver :class:`adjuntos.forms.IdentificacionForm`
     """
@@ -92,7 +92,7 @@ class IdentificacionCreateView(CreateView):
 
 
 class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
-    
+
     template_name = "adjuntos/asignar-mesa-ub.html"
 
     def get_success_url(self):
@@ -172,9 +172,9 @@ class AgregarAdjuntos(FormView):
                 if instance is not None:
                     contador_fotos = contador_fotos + 1
             if contador_fotos:
-                messages.success(self.request, f'Subiste {contador_fotos} imagenes de actas. Gracias!')
+                messages.success(self.request, f'Subiste {contador_fotos} imágenes de actas. Gracias!')
             return redirect(self.agregar_adjuntos_url)
-        
+
         return self.form_invalid(form)
 
 
@@ -195,7 +195,7 @@ class AgregarAdjuntos(FormView):
 
 class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     """
-    Permite subir una imagen, genera la instancia de Attachment y debería redirigir al flujo de 
+    Permite subir una imagen, genera la instancia de Attachment y debería redirigir al flujo de
     asignación de mesa -> carga de datos pp -> carga de datos secundarios , etc
 
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
@@ -215,14 +215,14 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         #no debiese poder cargarse por la ui dos imágenes, aunque es mejor poder chequear esto
         if len(files) > 1:
             form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
-            
+
         if form.is_valid():
             file = files[0]
             instance = self.procesar_adjunto(file)
             if instance is not None:
                 messages.success(self.request, 'Subiste el acta correctamente.')
                 return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
-            
+
             form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
         return self.form_invalid(form)
 
