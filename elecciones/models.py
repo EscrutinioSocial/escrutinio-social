@@ -317,13 +317,16 @@ class Mesa(models.Model):
     def con_carga_pendiente(cls, wait=2):
         """
         Una mesa cargable es aquella que
-           - no esté tomada dentro de los últimos `wait` minutos
-           - no esté marcada con problemas o todos su problemas estén resueltos
+           - no esté tomada dentro de los últimos `wait` minutos,
+           - no esté marcada con problemas o todos su problemas estén resueltos,
+           - esté identificada,
            - y no tenga cargas consolidadas
+           TODO no tenga cargas consolidadas con doble carga.
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
-            identificacion__isnull=False,
+            attachments__isnull=False,
+            # TODO: falta que al menos uno de los attachments esté como STATUS.identificada
             orden_de_carga__gte=1,
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)

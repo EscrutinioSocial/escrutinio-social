@@ -86,6 +86,7 @@ class Attachment(TimeStampedModel):
         'identificada',
         'spam',
         'invalida',
+        'ilegible',
     )
     status = StatusField(default=STATUS.sin_identificar)
     mesa = models.ForeignKey(
@@ -136,21 +137,21 @@ class Attachment(TimeStampedModel):
 
 
     @classmethod
-    def sin_identificar(cls, wait=2, fiscal=None):
+    def sin_identificar(cls, wait=2, fiscal_a_excluir=None):
         """
         Devuelve un conjunto de Attachments que no tienen
         identificación consolidada y no ha sido asignado
         para clasificar en los últimos ``wait`` minutos
 
-        Se excluyen attachments que ya hayan sido clasificados por `fiscal`
+        Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
             Q(taken__isnull=True) | Q(taken__lt=desde),
             status='sin_identificar',
         )
-        if fiscal:
-            qs = qs.exclude(identificaciones__fiscal=fiscal)
+        if fiscal_a_excluir:
+            qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
         return qs
 
     def status_count(self):
@@ -197,12 +198,14 @@ class Identificacion(TimeStampedModel):
         'identificada',
         ('spam', 'Es SPAM'),
         ('invalida', 'Es inválida'),
+        ('ilegible', 'No se entiende')
     )
     #
     # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
     #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
     #     todos los datos de identificación.
     # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
+    # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
 
     status = StatusField(choices_name='STATUS')
 

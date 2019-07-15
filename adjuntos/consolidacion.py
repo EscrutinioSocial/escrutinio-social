@@ -51,6 +51,8 @@ def consolidar_identificaciones(la_identificacion_que_cambio):
     # Identifico el attachment.
     # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
     # Eso es correcto.
+    # También podría estar haciendo pasar una attachment identificado al estado sin_identificar,
+    # porque ya no está más vigente alguna identificación que antes sí.
     attachment = la_identificacion_que_cambio.attachment
     attachment.status = status_attachment
     attachment.mesa = mesa_attachment
