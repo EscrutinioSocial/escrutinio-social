@@ -85,7 +85,7 @@ class Resultados():
                     When(
                         carga__mesa_categoria__categoria=categoria,
                         carga__es_testigo__isnull=False,
-                         then=F('votos'),
+                        then=F('votos'),
                         **filtro
                     ), output_field=IntegerField()
                 )
@@ -365,7 +365,7 @@ class Resultados():
                 'total': v,
                 'detalle': {
                     op_nom: {
-                        'votos': op_votos,
+                        'votos': op_votos if op_votos else "0",
                         'porcentaje': self.f_perc(op_votos/v) if v>0 else "-"
                     } for op_nom,op_votos in reportados.aggregate(
                             **opciones_por_partido[k]
