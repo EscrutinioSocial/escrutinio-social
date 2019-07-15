@@ -271,6 +271,11 @@ class MesaCategoria(models.Model):
     class Meta:
         unique_together = ('mesa', 'categoria')
 
+    def actualizar_status(self, status, carga_testigo):
+        self.status = status
+        self.carga_testigo = carga_testigo
+        self.save(update_fields=['status', 'carga_testigo'])
+
 
 class Mesa(models.Model):
     """
@@ -589,7 +594,7 @@ class Carga(TimeStampedModel):
     :class:`VotoMesaReportado`
     para las opciones válidas en la mesa-categoría.
     """
-    valida = BooleanField(null=False, default=True)
+    valida = models.BooleanField(null=False, default=True)
     TIPOS = Choices(
         'falta_foto',
         'parcial',
@@ -754,5 +759,3 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
         ).aggregate(v=Sum('electores'))['v'] or 0
         distrito.electores = electores
         distrito.save(update_fields=['electores'])
-
-

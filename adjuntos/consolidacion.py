@@ -9,31 +9,62 @@ def consolidar_cargas_csv(cargas, status_hasta_el_momento, carga_testigo_hasta_e
     status_resultante = status_hasta_el_momento
     carga_testigo_resultante = carga_testigo_hasta_el_momento
 
-    # Me fijo si hay alguna de csv.
-    cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
-    if cargas_csv.count() > 0:
-        # Me fijo si alguna es total.
-        cargas_csv_totales = cargas_csv.filter(tipo=Carga.TIPOS.total)
-        if cargas_csv_totales.count() > 0:
-            status_resultante = MesaCategoria.STATUS.total_consolidada_csv
-            carga_testigo_resultante = cargas_csv_totales.first() # Una de ellas es la testigo.
-        else:
-            # Ninguna de las de CSV es total.
-            status_resultante = MesaCategoria.STATUS.parcial_consolidada_csv
-            carga_testigo_resultante = cargas_csv.first() # Tomo una como testigo.
+    # Me fijo si alguna es total.
+    cargas_csv_totales = cargas_csv.filter(tipo=Carga.TIPOS.total)
+    if cargas_csv_totales.count() > 0:
+        status_resultante = MesaCategoria.STATUS.total_consolidada_csv
+        carga_testigo_resultante = cargas_csv_totales.first() # Una de ellas es la testigo.
+    else:
+        # Ninguna de las de CSV es total.
+        status_resultante = MesaCategoria.STATUS.parcial_consolidada_csv
+        carga_testigo_resultante = cargas_csv.first() # Tomo una como testigo.
 
     return status_resultante, carga_testigo_resultante
 
-def consolidar_cargas_totales(cargas_totales, status_hasta_el_momento, carga_testigo_hasta_el_momento):
-    status_resultante = status_hasta_el_momento
-    carga_testigo_resultante = carga_testigo_hasta_el_momento
+def consolidar_cargas_no_csv(cargas, tipo):
+    """
+    El parámetro cargas tiene solamente cargas del tipo parámetro.
+    """
+    statuses = {
+        Carga.TIPOS.total: {
+            'consolidada_dc': MesaCategoria.STATUS.total_consolidada_dc,
+            'en_conflicto': MesaCategoria.STATUS.total_en_conflicto,
+            'sin_consolidar': MesaCategoria.STATUS.total_sin_consolidar,
+        },
+        Carga.TIPOS.parcial: {
+            'consolidada_dc': MesaCategoria.STATUS.parcial_consolidada_dc,
+            'en_conflicto': MesaCategoria.STATUS.parcial_en_conflicto,
+            'sin_consolidar': MesaCategoria.STATUS.parcial_sin_consolidar,
+        }
+    }
 
-    cargas_totales_agrupadas_por_firma = cargas_totales.values('firma').annotate(
-                                                count=Count('firma')
-                                            ).order_by('count')
-    for item in cargas_totales_agrupadas_por_firma:
+    cargas_agrupadas_por_firma = cargas.values('firma').annotate(
+                                            count=Count('firma')
+                                        ).order_by('count')
+
+    # Como están ordenadas por cantidad de coincidencia, si alguna tiene doble carga, es la primera.
+    primera = cargas_totales_agrupadas_por_firma.first()
+
+    if primera.count >= settings.MIN_COINCIDENCIAS_CARGAS:
+        # Encontré doble carga coincidente.
+        status_resultante = statuses[tipo]['consolidada_dc']
+        # Me quedo con alguna de las que tiene doble carga coincidente.
+        carga_testigo_resultante = cargas_totales.filter(firma=primera.firma).first()
+
+    elif cargas_totales_agrupadas_por_firma.count() > 1:
+        # No hay doble coincidencia, pero hay más de una firma. Caso de conflicto.
+        status_resultante = statuses[tipo]['en_conflicto']
+        # Me quedo con alguna de las que tiene conflicto.
+        carga_testigo_resultante = cargas_totales.filter(firma=primera.firma).first()
+
+    else:
+        # Hay sólo una firma total.
+        status_resultante = statuses[tipo]['sin_consolidar']
+        # Me quedo con la única que hay.
+        carga_testigo_resultante = cargas_totales.filter(firma=primera.firma).first()
 
     return status_resultante, carga_testigo_resultante
+
 
 def consolidar_cargas(mesa_categoria):
     """
@@ -49,8 +80,8 @@ def consolidar_cargas(mesa_categoria):
 
     # Si no hay cargas, no sigo.
     if cargas.count() == 0:
-        # XXX Tengo que hacer algo con esto.
-        return status_resultante, carga_testigo_resultante
+        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        return
 
     # Hay cargas. A continuación voy probando los distintos status de mayor a menor.
 
@@ -58,16 +89,25 @@ def consolidar_cargas(mesa_categoria):
     cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
     if cargas_totales.count() > 0:
         status_resultante, carga_testigo_resultante = 
-            consolidar_cargas_totales(cargas_totales, status_resultante, carga_testigo_resultante)
-    cargas_totales_agrupadas_por_firma = cargas_totales.values('firma').annotate(total=Count('firma'))
-    qs.values('firma', 'tipo').annotate(total=Count('firma'))
-    for carga_total in cargas_totales:
+            consolidar_cargas_no_csv(cargas_totales, Carga.TIPOS.total)
+        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        return
 
-    # Analizo los casos de csv.
-    status_resultante, carga_testigo_resultante = 
+    # Me fijo si hay alguna de csv.
+    cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
+    if cargas_csv.count() > 0:
+        status_resultante, carga_testigo_resultante = 
             consolidar_cargas_csv(cargas, status_resultante, carga_testigo_resultante)
+        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        return
 
-    
+    # Por último analizo las parciales.
+    cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
+    if cargas_parciales.count() > 0:
+        status_resultante, carga_testigo_resultante = 
+            consolidar_cargas_no_csv(cargas_parciales, Carga.TIPOS.parcial)
+        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        return
 
 def consolidar_identificaciones(attachment):
     """
