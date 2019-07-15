@@ -84,22 +84,25 @@ def test_con_carga_pendiente_excluye_taken(db):
 
 def test_con_carga_pendiente_incluye_taken_vencido(db):
     now = timezone.now()
-    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
-    m2 = IdentificacionFactory(status='identificada', consolidada=True, mesa__taken=now - timedelta(minutes=3)).mesa
+    m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv, mesa__taken=now - timedelta(minutes=3)).mesa
+    consumir_novedades_identificacion()
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
 
 
 def test_con_carga_pendiente_excluye_si_tiene_problema_no_resuelto(db):
-    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
-    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
     ProblemaFactory(mesa=m1)
+    consumir_novedades_identificacion()
     assert set(Mesa.con_carga_pendiente()) == {m2}
 
 
 def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
-    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
-    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
     ProblemaFactory(mesa=m1, estado='resuelto')
+    consumir_novedades_identificacion()
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
     # nuevo problema
     ProblemaFactory(mesa=m1)
@@ -107,16 +110,18 @@ def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
 
 
 def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
-    m1 = IdentificacionFactory(status='identificada', consolidada=True).mesa
-    m2 = IdentificacionFactory(status='identificada', consolidada=True).mesa
-    m3 = IdentificacionFactory(status='identificada', consolidada=True).mesa
+    m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    m3 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
 
-    # mesa 2 ya se cargo, se excluirá
+    consumir_novedades_identificacion()
+
+    # mesa 2 ya se cargó, se excluirá
     categoria = m2.categorias.first()
     VotoMesaReportadoFactory(carga__mesa_categoria__mesa=m2, carga__mesa_categoria__categoria=categoria, opcion=categoria.opciones.first(), votos=10)
     VotoMesaReportadoFactory(carga__mesa_categoria__mesa=m2, carga__mesa_categoria__categoria=categoria, opcion=categoria.opciones.last(), votos=12)
 
-    # m3 tiene mas elecciones.pendientes
+    # m3 tiene más elecciones.pendientes
     e2 = CategoriaFactory(id=100)
     e3 = CategoriaFactory(id=101)
     e4 = CategoriaFactory(id=102)
@@ -125,7 +130,7 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
     m3.categoria_add(e4)
     m3.categoria_add(CategoriaFactory(id=101))
     categoria = m3.categorias.first()
-    # se cargo primera y segunda categoria para la mesa 3
+    # Se cargó primera y segunda categoría para la mesa 3
     VotoMesaReportadoFactory(
         carga__mesa_categoria__mesa=m3,
         carga__mesa_categoria__categoria=categoria,
@@ -184,12 +189,12 @@ def test_fotos_de_mesa(db):
 
     IdentificacionFactory(
         status='identificada',
-        consolidada=True,
+        source=Identificacion.SOURCES.csv,
         attachment=a1,
         mesa=m,
     )
-    # a2 esta asociada a m pero se
-    # ignorada porque no está consolidada
+    # a2 está asociada a m pero se
+    # ignora porque no está consolidada.
     IdentificacionFactory(
         status='identificada',
         consolidada=False,
@@ -198,10 +203,11 @@ def test_fotos_de_mesa(db):
     )
     IdentificacionFactory(
         status='identificada',
-        consolidada=True,
+        source=Identificacion.SOURCES.csv,
         attachment=a3,
         mesa=m
     )
+    consumir_novedades_identificacion()
     assert m.fotos() == [
         ('Foto 1 (original)', a1.foto),
         ('Foto 2 (editada)', a3.foto_edited),

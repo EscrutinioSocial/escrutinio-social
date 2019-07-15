@@ -19,6 +19,8 @@ from .factories import (
     VotoMesaReportadoFactory,
     CargaFactory,
 )
+from adjuntos.consolidacion import *
+
 
 @pytest.fixture()
 def carta_marina(db):
@@ -469,15 +471,6 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     assert resultados['total_mesas_escrutadas'] == 2
 
 
-def test_mesa_orden(carta_marina):
-    m1, m2, *_ = carta_marina
-    IdentificacionFactory(status='identificada', consolidada=True, mesa=m1)
-    assert m1.orden_de_carga == 1
-    assert m2.orden_de_carga == 0
-    IdentificacionFactory(status='identificada', consolidada=True, mesa=m2)
-    assert m2.orden_de_carga == 2
-
-
 def test_orden_para_circuito(db):
     c1 = CircuitoFactory()  # sin mesas
     assert c1.proximo_orden_de_carga() == 1
@@ -488,8 +481,9 @@ def test_orden_para_circuito(db):
 
 def test_elegir_acta(carta_marina, fiscal_client):
     m1, m2, *_ = carta_marina
-    IdentificacionFactory(status='identificada', consolidada=True, mesa=m1)
-    IdentificacionFactory(status='identificada', consolidada=True, mesa=m2)
+    IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv, mesa=m1)
+    IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv, mesa=m2)
+    consumir_novedades_identificacion()
     response = fiscal_client.get(reverse('elegir-acta-a-cargar'))
     assert response.status_code == 302
     assert response.url == reverse('mesa-cargar-resultados', args=(1, m1.numero))
