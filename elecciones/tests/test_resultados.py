@@ -591,7 +591,7 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
 
     # El usuario visualizador intenta cargar un acta, no debería poder.
     client.login(username=u_visualizador.username, password='password')
-    response = client.get(reverse('elegir-acta-a-cargar'))
+    response = client.get(reverse('siguiente-accion'))
     assert response.status_code == 302 and response.url.startswith('/permission-denied')
 
     # Sí debería poder ver resultados.
@@ -600,5 +600,5 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
 
     # El usuario validador intenta cargar un acta, sí debería poder
     client.login(username=u_validador.username, password='password')
-    response = client.get(reverse('elegir-acta-a-cargar'))
+    response = client.get(reverse('siguiente-accion'))
     assert response.status_code == 200
