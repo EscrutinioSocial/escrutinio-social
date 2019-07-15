@@ -250,20 +250,23 @@ def test_firma_count(db):
 
 def test_mc_status_carga_parcial_desde_mc_sin_carga(db):
     mc = MesaCategoriaFactory()
-    assert mc.tipo == 'sin_cargar'
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
     # se emula la firma de la carga
-    c1 = CargaFactory(mesa_categoria=mc, status='parcial', firma='1-10')
-    assert mc.tipo == 'parcial_sin_confirmar'
+    c1 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
+    consumir_novedades_carga()
+    assert mc.status == MesaCategoria.STATUS.parcial_sin_consolidar
     assert mc.carga_testigo == c1
 
     # diverge
-    c2 = CargaFactory(mesa_categoria=mc, status='parcial', firma='1-9')
-    assert mc.tipo == 'parcial_en_conflicto'
+    c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-9')
+    consumir_novedades_carga()
+    assert mc.status == MesaCategoria.STATUS.parcial_en_conflicto
     assert mc.carga_testigo is None
 
     # c2 coincide con c1
-    c2 = CargaFactory(mesa_categoria=mc, status='parcial', firma='1-10')
-    assert mc.tipo == 'parcial_confirmada'
+    c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
+    consumir_novedades_carga()
+    assert mc.status == MesaCategoria.STATUS.parcial_consolidada_dc
     assert mc.carga_testigo == c2
 
 

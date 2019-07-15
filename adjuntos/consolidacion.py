@@ -30,11 +30,11 @@ def consolidar_cargas_por_tipo(cargas, tipo):
     # Como están ordenadas por cantidad de coincidencia, si alguna tiene doble carga, es la primera.
     primera = cargas_agrupadas_por_firma.first()
 
-    if primera.count >= settings.MIN_COINCIDENCIAS_CARGAS:
+    if primera['count'] >= settings.MIN_COINCIDENCIAS_CARGAS:
         # Encontré doble carga coincidente.
         status_resultante = statuses[tipo]['consolidada_dc']
         # Me quedo con alguna de las que tiene doble carga coincidente.
-        carga_testigo_resultante = cargas.filter(firma=primera.firma).first()
+        carga_testigo_resultante = cargas.filter(firma=primera['firma']).first()
 
     elif cargas_agrupadas_por_firma.count() > 1:
         # Alguna viene de CSV?
@@ -47,13 +47,13 @@ def consolidar_cargas_por_tipo(cargas, tipo):
             # No hay doble coincidencia ni carga de CSV, pero hay más de una firma. Caso de conflicto.
             status_resultante = statuses[tipo]['en_conflicto']
             # Me quedo con alguna de las que tiene conflicto.
-            carga_testigo_resultante = cargas.filter(firma=primera.firma).first()
+            carga_testigo_resultante = cargas.filter(firma=primera['firma']).first()
 
     else:
         # Hay sólo una firma total.
         status_resultante = statuses[tipo]['sin_consolidar']
         # Me quedo con la única que hay.
-        carga_testigo_resultante = cargas.filter(firma=primera.firma).first()
+        carga_testigo_resultante = cargas.filter(firma=primera['firma']).first()
 
     return status_resultante, carga_testigo_resultante
 
