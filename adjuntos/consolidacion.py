@@ -16,8 +16,8 @@ def save_identificacion(sender, instance=None, created=False, update_fields=None
     # Formato: (mesa_id, status, cantidad)
     # Ejemplo:
     #  [
-    #       (None, 'spam', 2),
-    #       (None, 'invalida', 1),
+    #       (0, 'spam', 2),
+    #       (0, 'invalida', 1),
     #       (1, 'identificada', 1),
     #       (2, 'identificada', 1),
     #  ]
