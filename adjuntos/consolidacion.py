@@ -4,24 +4,7 @@ from adjuntos.models import *
 from elecciones.models import *
 from django.db import transaction
 
-
-def consolidar_cargas_csv(cargas, status_hasta_el_momento, carga_testigo_hasta_el_momento):
-    status_resultante = status_hasta_el_momento
-    carga_testigo_resultante = carga_testigo_hasta_el_momento
-
-    # Me fijo si alguna es total.
-    cargas_csv_totales = cargas_csv.filter(tipo=Carga.TIPOS.total)
-    if cargas_csv_totales.count() > 0:
-        status_resultante = MesaCategoria.STATUS.total_consolidada_csv
-        carga_testigo_resultante = cargas_csv_totales.first() # Una de ellas es la testigo.
-    else:
-        # Ninguna de las de CSV es total.
-        status_resultante = MesaCategoria.STATUS.parcial_consolidada_csv
-        carga_testigo_resultante = cargas_csv.first() # Tomo una como testigo.
-
-    return status_resultante, carga_testigo_resultante
-
-def consolidar_cargas_no_csv(cargas, tipo):
+def consolidar_cargas_por_tipo(cargas, tipo):
     """
     El parámetro cargas tiene solamente cargas del tipo parámetro.
     """
@@ -54,10 +37,17 @@ def consolidar_cargas_no_csv(cargas, tipo):
         carga_testigo_resultante = cargas.filter(firma=primera.firma).first()
 
     elif cargas_agrupadas_por_firma.count() > 1:
-        # No hay doble coincidencia, pero hay más de una firma. Caso de conflicto.
-        status_resultante = statuses[tipo]['en_conflicto']
-        # Me quedo con alguna de las que tiene conflicto.
-        carga_testigo_resultante = cargas.filter(firma=primera.firma).first()
+        # Alguna viene de CSV?
+        cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
+        if cargas_csv.count() > 0:
+            status_resultante = statuses[tipo]['consolidada_csv']
+            # Me quedo con alguna de las CSV como testigo.
+            carga_testigo_resultante = cargas_csv.first()
+        else:
+            # No hay doble coincidencia ni carga de CSV, pero hay más de una firma. Caso de conflicto.
+            status_resultante = statuses[tipo]['en_conflicto']
+            # Me quedo con alguna de las que tiene conflicto.
+            carga_testigo_resultante = cargas.filter(firma=primera.firma).first()
 
     else:
         # Hay sólo una firma total.
@@ -91,23 +81,16 @@ def consolidar_cargas(mesa_categoria):
     cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
     if cargas_totales.count() > 0:
         status_resultante, carga_testigo_resultante = \
-            consolidar_cargas_no_csv(cargas_totales, Carga.TIPOS.total)
+            consolidar_cargas_por_tipo(cargas_totales, Carga.TIPOS.total)
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
-
-    # Me fijo si hay alguna de csv.
-    cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
-    if cargas_csv.count() > 0:
-        status_resultante, carga_testigo_resultante = \
-            consolidar_cargas_csv(cargas, status_resultante, carga_testigo_resultante)
     
     # Por último analizo las parciales.
     cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
     if cargas_parciales.count() > 0:
         status_resultante, carga_testigo_resultante = \
-            consolidar_cargas_no_csv(cargas_parciales, Carga.TIPOS.parcial)
-    
-    mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+            consolidar_cargas_por_tipo(cargas_parciales, Carga.TIPOS.parcial)
+        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
     
 def consolidar_identificaciones(attachment):
     """
