@@ -12,6 +12,7 @@ from elecciones.tests.factories import (
 from elecciones.models import Mesa, VotoMesaReportado, Carga, MesaCategoria
 from elecciones.tests.test_resultados import fiscal_client          # noqa
 from adjuntos.consolidacion import *
+from elecciones.tests.test_models import consumir_novedades_y_actualizar_objetos
 
 
 def test_elegir_acta_sin_mesas(fiscal_client):
