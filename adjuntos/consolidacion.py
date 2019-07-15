@@ -4,6 +4,7 @@ from adjuntos.models import *
 from elecciones.models import *
 from django.db import transaction
 
+
 def consolidar_cargas_por_tipo(cargas, tipo):
     """
     El parámetro cargas tiene solamente cargas del tipo parámetro.
@@ -198,3 +199,7 @@ def consumir_novedades_carga():
 
     # Todas consumidas, las borro.
     novedades.delete()
+
+def consumir_novedades():
+    consumir_novedades_identificacion()
+    consumir_novedades_carga()

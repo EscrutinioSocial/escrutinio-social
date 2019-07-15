@@ -27,7 +27,7 @@ from model_utils import Choices
 from adjuntos.models import Attachment
 from problemas.models import Problema
 
-logger = logging.getLogger("e-va");
+logger = logging.getLogger("e-va")
 
 class Distrito(models.Model):
     """
@@ -349,6 +349,7 @@ class Mesa(models.Model):
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
+            # Si existe es porque está identificado.
             attachments__isnull=False,
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)
@@ -356,15 +357,6 @@ class Mesa(models.Model):
             a_cargar=Count('categorias', filter=Q(categorias__activa=True))
         ).filter(
             cargadas__lt=F('a_cargar')
-        ).annotate(
-            algun_attachment_identificado=Exists(
-                Attachment.objects.filter(
-                    status=Attachment.STATUS.identificada,
-                    mesa__id=OuterRef('id'),
-                )
-            )
-        ).filter(
-            algun_attachment_identificado=True
         ).annotate(
             tiene_problemas=Exists(
                 Problema.objects.filter(
@@ -702,7 +694,7 @@ class VotoMesaReportado(models.Model):
 @receiver(post_save, sender=Carga)
 def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
     """
-    Actualiza el contador de categorias ya cargadas para una mesa dada.
+    Actualiza el contador de categorías ya cargadas para una mesa dada.
     Se actualiza cada vez que se guarda una instancia de :class:`Carga`
     """
     mesa = instance.mesa_categoria.mesa
