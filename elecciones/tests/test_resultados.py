@@ -191,9 +191,9 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert sum(float(v['porcentajePositivos']) for v in positivos.values()) == 100.0
 
     content = response.content.decode('utf8')
-    assert f'<td id="votos_{o1.partido.id}"> 50</td>' in content
-    assert f'<td id="votos_{o2.partido.id}"> 70</td>' in content
-    assert f'<td id="votos_{o3.partido.id}"> 90</td>' in content
+    assert f'<td id="votos_{o1.partido.id}" class="dato"> 50</td>' in content
+    assert f'<td id="votos_{o2.partido.id}" class="dato"> 70</td>' in content
+    assert f'<td id="votos_{o3.partido.id}" class="dato"> 90</td>' in content
 
     assert resultados['votantes'] == 210
     assert resultados['electores'] == 800

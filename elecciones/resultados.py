@@ -32,6 +32,11 @@ class Resultados():
         self.kwargs = kwargs
         self.tipo_de_computo = tipo_de_computo
 
+
+    @staticmethod
+    def f_perc(num): return f'{num*100:.2f}'
+
+
     @lru_cache(128)
     def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
         lookups = dict()
@@ -70,41 +75,44 @@ class Resultados():
         """
         sum_por_partido = {}
         otras_opciones = {}
+        opciones_por_partido = {}
         status_lookups = self.status_filter(categoria)
 
+        def qry(**lista):
+            filtro = {**status_lookups,**lista}
+            return Sum(
+                Case(
+                    When(
+                        carga__mesa_categoria__categoria=categoria,
+                        carga__es_testigo__isnull=False,
+                         then=F('votos'),
+                        **filtro
+                    ), output_field=IntegerField()
+                )
+              )
+          
         for id in Partido.objects.filter(
             opciones__categorias__id=categoria.id
         ).distinct().values_list('id', flat=True):
-            sum_por_partido[str(id)] = Sum(
-                Case(
-                    When(
-                        opcion__partido__id=id,
-                        carga__mesa_categoria__categoria=categoria,
-                        carga__es_testigo__isnull=False,
-                        then=F('votos'),
-                        **status_lookups
+            sum_por_partido[str(id)] = qry(opcion__partido__id=id)
 
-                    ), output_field=IntegerField()
-                )
-            )
+            opciones = Opcion.objects.filter(
+                categorias__id=categoria.id,
+                partido_id=id
+            ).distinct().values_list('id','nombre')
+            opciones_por_partido[str(id)] = {
+                nom: qry(opcion__id=oid) for oid,nom in opciones
+            }
 
         for nombre, id in Opcion.objects.filter(
             categorias__id=categoria.id,
             partido__isnull=True,
             es_metadata=False
         ).values_list('nombre', 'id'):
-            otras_opciones[nombre] = Sum(
-                Case(
-                    When(
-                        opcion__id=id,
-                        carga__mesa_categoria__categoria=categoria,
-                        carga__es_testigo__isnull=False,
-                        then=F('votos'),
-                        **status_lookups
-                    ), output_field=IntegerField()
-                )
-            )
-        return sum_por_partido, otras_opciones
+            otras_opciones[nombre] = qry(opcion__id=id)
+
+
+        return sum_por_partido, otras_opciones, opciones_por_partido
 
     @property
     def filtros(self):
@@ -247,10 +255,15 @@ class Resultados():
 
         expanded_result = {}
         for k, v in c.votos.items():
+            if isinstance(v,dict):
+                d = v['detalle']
+                v = v['total']
+
             porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
             porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.positivos and isinstance(k, Partido) else '-'
             expanded_result[k] = {
                 "votos": v,
+                "detalle": d,
                 "porcentajeTotal": porcentaje_total,
                 "porcentajePositivos": porcentaje_positivos
             }
@@ -259,7 +272,11 @@ class Resultados():
                 for ag in agrupaciones:
                     data = datos_ponderacion[ag]
                     if k in data["votos"] and data["positivos"]:
-                        acumulador_positivos += data["electores"]*data["votos"][k]/data["positivos"]
+                        if isinstance(data['votos'][k],dict):
+                            v = data['votos'][k]['total']
+                        else:
+                            v = data['votos'][k]
+                        acumulador_positivos += data["electores"]*v/data["positivos"]
 
                 expanded_result[k]["proyeccion"] = f'{acumulador_positivos*100/electores_pond:.2f}'
 
@@ -315,14 +332,15 @@ class Resultados():
             positivos: total votos positivos
         """
         electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
-        sum_por_partido, otras_opciones = self.agregaciones_por_partido(categoria)
-
+        sum_por_partido, otras_opciones, opciones_por_partido = self.agregaciones_por_partido(categoria)
         # primero para partidos
         reportados = VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
             carga__es_testigo__isnull=False,
             **self.status_filter(categoria)
         )
+
+
         mesas_escrutadas = mesas.filter(
             mesacategoria__categoria=categoria,
             mesacategoria__carga_testigo__isnull=False,
@@ -342,7 +360,20 @@ class Resultados():
             **sum_por_partido
         )
 
-        result = {Partido.objects.get(id=k): v for k, v in result.items() if v is not None}
+        result = {
+            Partido.objects.get(id=k): {
+                'total': v,
+                'detalle': {
+                    op_nom: {
+                        'votos': op_votos,
+                        'porcentaje': self.f_perc(op_votos/v) if v>0 else "-"
+                    } for op_nom,op_votos in reportados.aggregate(
+                            **opciones_por_partido[k]
+                    ).items()
+                }
+            } for k, v in result.items() if v is not None
+        }
+
         # no positivos
         result_opc = reportados.aggregate(
            **otras_opciones
@@ -351,7 +382,7 @@ class Resultados():
 
         # calculamos el total como la suma de todos los positivos y los
         # validos no positivos.
-        positivos = sum(result.values())
+        positivos = sum([x['total'] for x in result.values()])
         total = positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(nombre=k, es_contable=False, es_metadata=False).exists())
         result.update(result_opc)
 
