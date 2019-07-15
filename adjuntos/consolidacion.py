@@ -88,7 +88,7 @@ def consolidar_cargas(mesa_categoria):
     # Analizo las totales.
     cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
     if cargas_totales.count() > 0:
-        status_resultante, carga_testigo_resultante = 
+        status_resultante, carga_testigo_resultante = \
             consolidar_cargas_no_csv(cargas_totales, Carga.TIPOS.total)
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
@@ -96,7 +96,7 @@ def consolidar_cargas(mesa_categoria):
     # Me fijo si hay alguna de csv.
     cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
     if cargas_csv.count() > 0:
-        status_resultante, carga_testigo_resultante = 
+        status_resultante, carga_testigo_resultante = \
             consolidar_cargas_csv(cargas, status_resultante, carga_testigo_resultante)
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
@@ -104,7 +104,7 @@ def consolidar_cargas(mesa_categoria):
     # Por último analizo las parciales.
     cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
     if cargas_parciales.count() > 0:
-        status_resultante, carga_testigo_resultante = 
+        status_resultante, carga_testigo_resultante = \
             consolidar_cargas_no_csv(cargas_parciales, Carga.TIPOS.parcial)
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return

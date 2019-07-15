@@ -688,38 +688,15 @@ def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=Fals
         mesa.cargadas = categorias_cargadas
         mesa.save(update_fields=['cargadas'])
 
-
-@receiver(post_save, sender=Carga)
-def actualizar_estado_mesa_categoria(sender, instance=None, created=False, **kwargs):
-    if instance.id and instance.firma:
-        csv = instance.origen == 'csv'
-        total = instance.status == 'total'
-        mc = instance.mesa_categoria
-        firmas = mc.firma_count()
-        supera = firmas[instance.status][instance.firma] >= settings.MIN_COINCIDENCIAS_CARGAS
-
-        if supera:
-            mc.status = 'total_confirmada' if total else 'parcial_confirmada'
-            mc.carga_testigo = instance
-        elif len(firmas[instance.status]) == 1:
-            # la instancia es la unica de su status
-            mc.status = 'total_sin_confirmar' if total else 'parcial_sin_confirmar'
-            mc.carga_testigo = instance
-        else:
-            mc.status =  'total_en_conflicto' if total else 'parcial_en_conflicto'
-            mc.carga_testigo = None
-        mc.save(update_fields=['status', 'carga_testigo'])
-
-
 @receiver(post_save, sender=MesaCategoria)
 def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
     """
     Similar a :func:`actualizar_categorias_cargadas_para_mesa`,
     actualiza el contador de categorias ya confirmadas para una mesa dada.
     """
-    if instance.status == MesaCategoria.STATUS.total_confirmada:
+    if instance.status == MesaCategoria.STATUS.total_consolidada_dc:
         mesa = instance.mesa
-        confirmadas = MesaCategoria.objects.filter(mesa=mesa, status='total_confirmada').count()
+        confirmadas = MesaCategoria.objects.filter(mesa=mesa, status='total_consolidada_dc').count()
         if mesa.confirmadas != confirmadas:
             mesa.confirmadas = confirmadas
             mesa.save(update_fields=['confirmadas'])

@@ -229,13 +229,13 @@ def test_carga_actualizar_firma(db):
 def test_firma_count(db):
     mc = MesaCategoriaFactory()
     CargaFactory(
-        mesa_categoria=mc, status='parcial', firma='firma_1'
+        mesa_categoria=mc, tipo='parcial', firma='firma_1'
     )
     CargaFactory(
-        mesa_categoria=mc, status='parcial', firma='firma_2')
-    CargaFactory(mesa_categoria=mc, status='parcial', firma='firma_2')
-    CargaFactory(mesa_categoria=mc, status='total', firma='firma_3')
-    CargaFactory(mesa_categoria=mc, status='total', firma='firma_3')
+        mesa_categoria=mc, tipo='parcial', firma='firma_2')
+    CargaFactory(mesa_categoria=mc, tipo='parcial', firma='firma_2')
+    CargaFactory(mesa_categoria=mc, tipo='total', firma='firma_3')
+    CargaFactory(mesa_categoria=mc, tipo='total', firma='firma_3')
 
     assert mc.firma_count() == {
         'parcial': {
@@ -250,38 +250,38 @@ def test_firma_count(db):
 
 def test_mc_status_carga_parcial_desde_mc_sin_carga(db):
     mc = MesaCategoriaFactory()
-    assert mc.status == 'sin_cargar'
+    assert mc.tipo == 'sin_cargar'
     # se emula la firma de la carga
     c1 = CargaFactory(mesa_categoria=mc, status='parcial', firma='1-10')
-    assert mc.status == 'parcial_sin_confirmar'
+    assert mc.tipo == 'parcial_sin_confirmar'
     assert mc.carga_testigo == c1
 
     # diverge
     c2 = CargaFactory(mesa_categoria=mc, status='parcial', firma='1-9')
-    assert mc.status == 'parcial_en_conflicto'
+    assert mc.tipo == 'parcial_en_conflicto'
     assert mc.carga_testigo is None
 
     # c2 coincide con c1
     c2 = CargaFactory(mesa_categoria=mc, status='parcial', firma='1-10')
-    assert mc.status == 'parcial_confirmada'
+    assert mc.tipo == 'parcial_confirmada'
     assert mc.carga_testigo == c2
 
 
 def test_mc_status_total_desde_mc_sin_carga(db):
     mc = MesaCategoriaFactory()
-    assert mc.status == 'sin_cargar'
+    assert mc.tipo == 'sin_cargar'
     c1 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10')
-    assert mc.status == 'total_sin_confirmar'
+    assert mc.tipo == 'total_sin_confirmar'
     assert mc.carga_testigo == c1
 
     # diverge
     c2 = CargaFactory(mesa_categoria=mc, status='total', firma='1-9')
-    assert mc.status == 'total_en_conflicto'
+    assert mc.tipo == 'total_en_conflicto'
     assert mc.carga_testigo is None
 
     # c2 coincide con c1
     c2 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10')
-    assert mc.status == 'total_confirmada'
+    assert mc.tipo == 'total_confirmada'
     assert mc.carga_testigo == c2
 
 
@@ -295,15 +295,15 @@ def test_mc_status_carga_total_desde_mc_parcial(db):
 
     # se asume que la carga total reusará los datos coincidentes de la carga parcial
     c2 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10|2-20')
-    assert mc.status == 'total_sin_confirmar'
+    assert mc.tipo == 'total_sin_confirmar'
     assert mc.carga_testigo == c2
 
     # diverge
     c3 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10|2-19')
-    assert mc.status == 'total_en_conflicto'
+    assert mc.tipo == 'total_en_conflicto'
     assert mc.carga_testigo is None
 
     # se asume que la carga total reusará los datos coincidentes de la carga parcial confirmada
     c4 = CargaFactory(mesa_categoria=mc, status='total', firma='1-10|2-20')
-    assert mc.status == 'total_confirmada'
+    assert mc.tipo == 'total_confirmada'
     assert mc.carga_testigo == c4
