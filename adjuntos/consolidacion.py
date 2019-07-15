@@ -4,7 +4,16 @@ from adjuntos.models import *
 from django.db import transaction
 
 def consolidar_identificaciones(attachment):
-    # Me quedo con todas las identificaciones para ese attachment.
+    """
+    Consolida todas las identificaciones del Attachment parámetro.
+    Deja sólo una como consolidada, si están dadas las condiciones.
+    Si hay una identificación con origen csv, ésa es la consolidada.
+
+    En cualquier caso adecúa el estado de identificación del attach parámetro
+    y lo asocia a la mesa identificada o a ninguna, si no quedó identificado.
+    """
+
+    # Primero me quedo con todas las identificaciones para ese attachment.
     # Formato: (mesa_id, status, cantidad)
     # Ejemplo:
     #  [
