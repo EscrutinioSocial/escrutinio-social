@@ -16,8 +16,10 @@ from elecciones.models import Mesa, MesaCategoria, Categoria
 from django.utils import timezone
 from adjuntos.consolidacion import *
 
-def consumir_novedades_y_actualizar_objetos(lista):
+def consumir_novedades_y_actualizar_objetos(lista=None):
     consumir_novedades_carga()
+    if not lista:
+        return
     for item in lista:
         item.refresh_from_db()
 
@@ -257,19 +259,19 @@ def test_mc_status_carga_parcial_desde_mc_sin_carga(db):
     mc = MesaCategoriaFactory()
     assert mc.status == MesaCategoria.STATUS.sin_cargar
     # se emula la firma de la carga
-    c1 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
+    c1 = CargaFactory(mesa_categoria=mc, tipo=Carga.TIPOS.parcial, firma='1-10')
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.parcial_sin_consolidar
     assert mc.carga_testigo == c1
 
     # diverge
-    c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-9')
+    c2 = CargaFactory(mesa_categoria=mc, tipo=Carga.TIPOS.parcial, firma='1-9')
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.parcial_en_conflicto
     assert mc.carga_testigo is None
 
     # c2 coincide con c1
-    c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
+    c2 = CargaFactory(mesa_categoria=mc, tipo=Carga.TIPOS.parcial, firma='1-10')
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.parcial_consolidada_dc
     assert mc.carga_testigo == c2 or mc.carga_testigo == c1
@@ -335,7 +337,7 @@ def test_mc_status_carga_parcial_csv_desde_mc_sin_carga(db):
     c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-9')
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.parcial_consolidada_csv
-    assert mc.carga_testigo is None
+    assert mc.carga_testigo == c1
 
     # c2 coincide con c1
     c2 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
@@ -356,7 +358,7 @@ def test_mc_status_total_csv_desde_mc_sin_carga(db):
     c2 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-9')
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.total_consolidada_csv
-    assert mc.carga_testigo is None
+    assert mc.carga_testigo == c1
 
     # c2 coincide con c1
     c2 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')

@@ -36,6 +36,7 @@ def consolidar_cargas_por_tipo(cargas, tipo):
         # Me quedo con alguna de las que tiene doble carga coincidente.
         carga_testigo_resultante = cargas.filter(firma=primera['firma']).first()
 
+
     elif cargas_agrupadas_por_firma.count() > 1:
         # Alguna viene de CSV?
         cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
@@ -50,10 +51,18 @@ def consolidar_cargas_por_tipo(cargas, tipo):
             carga_testigo_resultante = None
 
     else:
-        # Hay sólo una firma total.
-        status_resultante = statuses[tipo]['sin_consolidar']
-        # Me quedo con la única que hay.
-        carga_testigo_resultante = cargas.filter(firma=primera['firma']).first()
+        # Hay sólo una firma.
+        # Viene de CSV?
+        cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
+        if cargas_csv.count() > 0:
+            status_resultante = statuses[tipo]['consolidada_csv']
+            # Me quedo con alguna de las CSV como testigo.
+            carga_testigo_resultante = cargas_csv.first()
+        else:
+            # No viene de CSV.
+            status_resultante = statuses[tipo]['sin_consolidar']
+            # Me quedo con la única que hay.
+            carga_testigo_resultante = cargas.filter(firma=primera['firma']).first()
 
     return status_resultante, carga_testigo_resultante
 
