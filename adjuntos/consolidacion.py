@@ -28,11 +28,13 @@ def consolidar_cargas_no_csv(cargas, tipo):
     statuses = {
         Carga.TIPOS.total: {
             'consolidada_dc': MesaCategoria.STATUS.total_consolidada_dc,
+            'consolidada_csv': MesaCategoria.STATUS.total_consolidada_csv,
             'en_conflicto': MesaCategoria.STATUS.total_en_conflicto,
             'sin_consolidar': MesaCategoria.STATUS.total_sin_consolidar,
         },
         Carga.TIPOS.parcial: {
             'consolidada_dc': MesaCategoria.STATUS.parcial_consolidada_dc,
+            'consolidada_csv': MesaCategoria.STATUS.parcial_consolidada_csv,
             'en_conflicto': MesaCategoria.STATUS.parcial_en_conflicto,
             'sin_consolidar': MesaCategoria.STATUS.parcial_sin_consolidar,
         }
@@ -43,25 +45,25 @@ def consolidar_cargas_no_csv(cargas, tipo):
                                         ).order_by('count')
 
     # Como están ordenadas por cantidad de coincidencia, si alguna tiene doble carga, es la primera.
-    primera = cargas_totales_agrupadas_por_firma.first()
+    primera = cargas_agrupadas_por_firma.first()
 
     if primera.count >= settings.MIN_COINCIDENCIAS_CARGAS:
         # Encontré doble carga coincidente.
         status_resultante = statuses[tipo]['consolidada_dc']
         # Me quedo con alguna de las que tiene doble carga coincidente.
-        carga_testigo_resultante = cargas_totales.filter(firma=primera.firma).first()
+        carga_testigo_resultante = cargas.filter(firma=primera.firma).first()
 
-    elif cargas_totales_agrupadas_por_firma.count() > 1:
+    elif cargas_agrupadas_por_firma.count() > 1:
         # No hay doble coincidencia, pero hay más de una firma. Caso de conflicto.
         status_resultante = statuses[tipo]['en_conflicto']
         # Me quedo con alguna de las que tiene conflicto.
-        carga_testigo_resultante = cargas_totales.filter(firma=primera.firma).first()
+        carga_testigo_resultante = cargas.filter(firma=primera.firma).first()
 
     else:
         # Hay sólo una firma total.
         status_resultante = statuses[tipo]['sin_consolidar']
         # Me quedo con la única que hay.
-        carga_testigo_resultante = cargas_totales.filter(firma=primera.firma).first()
+        carga_testigo_resultante = cargas.filter(firma=primera.firma).first()
 
     return status_resultante, carga_testigo_resultante
 
