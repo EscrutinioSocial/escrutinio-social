@@ -98,17 +98,15 @@ def consolidar_cargas(mesa_categoria):
     if cargas_csv.count() > 0:
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_csv(cargas, status_resultante, carga_testigo_resultante)
-        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
-        return
-
+    
     # Por último analizo las parciales.
     cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
     if cargas_parciales.count() > 0:
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_no_csv(cargas_parciales, Carga.TIPOS.parcial)
-        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
-        return
-
+    
+    mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+    
 def consolidar_identificaciones(attachment):
     """
     Consolida todas las identificaciones del Attachment parámetro.
