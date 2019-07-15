@@ -86,14 +86,14 @@ class IdentificacionCreateView(CreateView):
 class IdentificacionProblemaCreateView(IdentificacionCreateView):
     http_method_names = ['post']
     form_class = IdentificacionProblemaForm
-    identificacionCreada = None
+    identificacion_creada = None
 
     def form_valid(self, form):
         identificacion = form.save(commit=False)
         identificacion.attachment = self.attachment
         identificacion.fiscal = self.request.user.fiscal
         identificacion.save()
-        self.identificacionCreada = identificacion
+        self.identificacion_creada = identificacion
         messages.info(
             self.request,
             f'Guardado como "{identificacion.get_status_display()}"',
@@ -101,7 +101,7 @@ class IdentificacionProblemaCreateView(IdentificacionCreateView):
         return redirect(self.get_success_url())
 
     def identificacion(self):
-        return self.identificacionCreada
+        return self.identificacion_creada
 
 
 @staff_member_required

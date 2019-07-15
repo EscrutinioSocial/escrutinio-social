@@ -1,4 +1,6 @@
 import os
+import logging
+
 from itertools import chain
 from collections import defaultdict
 from datetime import timedelta
@@ -25,6 +27,7 @@ from model_utils import Choices
 from adjuntos.models import Attachment
 from problemas.models import Problema
 
+logger = logging.getLogger("e-va");
 
 class Distrito(models.Model):
     """
@@ -315,13 +318,13 @@ class Mesa(models.Model):
 
     def marcar_todas_las_categorias_cargadas(self):
         cantidad_categorias = self.categorias.filter(activa=True).count()
-        print(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
+        logger.debug(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
         self.cargadas = cantidad_categorias
         self.save(update_fields=['cargadas'])
 
     def marcar_todas_las_categorias_confirmadas(self):
         cantidad_categorias = self.cargadas
-        print(f'marcando {cantidad_categorias} como confirmadas en mesa {self.numero}')
+        logger.debug(f'marcando {cantidad_categorias} como confirmadas en mesa {self.numero}')
         self.confirmadas = cantidad_categorias
         self.save(update_fields=['confirmadas'])
 
@@ -334,11 +337,6 @@ class Mesa(models.Model):
            - no esté marcada con problemas o todos su problemas estén resueltos
            - y no tenga cargas consolidadas
         """
-        mesa = cls.objects.first()
-        if (mesa is not None):
-            print(f"mesa::con_carga_pendiente, primera mesa - numero: {mesa.numero}, categorias activas: {mesa.categorias.filter(activa=True).count()}, cargadas: {mesa.cargadas}")
-            print(f"  cargadas < categorias activas: {mesa.cargadas < mesa.categorias.filter(activa=True).count()}")
-
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
             attachments__isnull=False,
@@ -359,7 +357,6 @@ class Mesa(models.Model):
         ).filter(
             tiene_problemas=False
         ).distinct()
-        print(str(list(map(lambda mes: mes.numero, list(qs)))))
         return qs
 
 

@@ -19,8 +19,10 @@
 
         <p></p>
 
-        {% url 'siguiente-accion' as url %}
-        <a href="{{ url }}" class="btn waves-effect waves-light btn white-text" id="theLink">Nueva acción</a>
+        {% if request.user.fiscal.esta_en_grupo_validadores %}
+            {% url 'siguiente-accion' as url %}
+            <a href="{{ url }}" class="btn waves-effect waves-light btn white-text" id="theLink">Nueva acción</a>
+        {% endif %}
 
     </div>
 </div>

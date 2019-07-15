@@ -64,23 +64,29 @@ WAITING_FOR = 2
 
 NO_PERMISSION_REDIRECT = '/permission-denied/'
 
+
 @login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def post_cargar_resultados(request, mesa, categoria):
     categoria_para_mostrar = categoria.replace("_", " ")
     return render(request, 'fiscales/post-cargar-resultados.html', {'mesa': mesa, 'categoria': categoria_para_mostrar})
 
 
 @login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def carga_simultanea(request, mesa, categoria):
     categoria_para_mostrar = categoria.replace("_", " ")
     return render(request, 'fiscales/carga-simultanea.html', {'mesa': mesa, 'categoria': categoria_para_mostrar})
 
+
 @login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def post_confirmar_resultados(request, mesa):
     return render(request, 'fiscales/post-confirmar-resultados.html', {'mesa': mesa})
 
 
 @login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def post_reportar_problema(request, mesa):
     return render(request, 'fiscales/post-reportar-problema.html', {'mesa': mesa})
 
@@ -370,12 +376,9 @@ def cargar_resultados(
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
-<<<<<<< HEAD
                 # libero el token sobre la mesa
                 mesa.taken = None
                 mesa.save(update_fields=['taken'])
-=======
->>>>>>> unificacion de acciones identificacion / carga / chequeo - listo para MR
             carga.actualizar_firma()
             messages.success(
                 request,
@@ -385,23 +388,6 @@ def cargar_resultados(
             capture_exception(e)
             return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
 
-        # comento esta parte porque debe cambiar el algoritmo de carga, no necesariamente se cargan
-        # todas las categorias de una mesa consecutivamente
-        # Carlos Lombardi, 2019.7.9
-
-        # # hay que cargar otra categoria (categoria) de la misma mesa?
-        # # si es asi, se redirige a esa carga
-        # siguiente = mesa.siguiente_categoria_sin_carga()
-        # if siguiente:
-        #     # vuelvo a marcar un token
-        #     mesa.taken = timezone.now()
-        #     mesa.save(update_fields=['taken'])
-
-        #     return redirect(
-        #         'mesa-cargar-resultados',
-        #         categoria_id=siguiente.id,
-        #         mesa_numero=mesa.numero
-        #     )
         return redirect('post-cargar-resultados', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
 
     # llega hasta aca si hubo error

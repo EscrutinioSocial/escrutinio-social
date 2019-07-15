@@ -59,13 +59,12 @@ def mesa_y_categoria_a_cargar():
     return None if (mesa_elegida is None) else { 'mesa': mesa_elegida, 'categoria': categoria_elegida }
 
 
-"""
-Accion sobre una foto (attachment):
-estampa el tiempo de "asignación" para que se excluya durante el periodo
-de guarda y redirige a la vista para su clasificación
-"""
 class IdentificacionDeFoto():
-    attachment = None
+    """
+    Accion sobre una foto (attachment):
+    estampa el tiempo de "asignación" para que se excluya durante el periodo
+    de guarda y redirige a la vista para su clasificación
+    """
 
     def __init__(self, _request, _attachment):
         self.attachment = _attachment
@@ -78,12 +77,13 @@ class IdentificacionDeFoto():
         return redirect('asignar-mesa', attachment_id=self.attachment.id)
 
 
-"""
-Accion sobre una mesa y una categoría:
-estampa en la mesa el tiempo de "asignación" para que se excluya durante el periodo
-de guarda y redirige a la vista para la carga de la mesa/categoría
-"""
 class CargaCategoriaEnActa():
+    """
+    Accion sobre una mesa y una categoría:
+    estampa en la mesa el tiempo de "asignación" para que se excluya durante el periodo
+    de guarda y redirige a la vista para la carga de la mesa/categoría
+    """
+
     mesa = None
     categoria = None
 
@@ -103,11 +103,12 @@ class CargaCategoriaEnActa():
         )
 
 
-"""
-Accion sobre una mesa y una categoría:
-redirige a la vista para la carga de la mesa/categoría
-"""
 class ConfirmacionCategoriaEnActa():
+    """
+    Accion sobre una mesa y una categoría:
+    redirige a la vista para la carga de la mesa/categoría
+    """
+
     mesa = None
     categoria = None
 
