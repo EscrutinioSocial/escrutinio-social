@@ -1,6 +1,8 @@
 import pytest
 import os
 
+from django.http import Http404
+
 from adjuntos.csv_import import ColumnasInvalidasError, CSVImporter, DatosInvalidosError
 from elecciones.tests.factories import DistritoFactory, SeccionFactory, CircuitoFactory, MesaFactory, CategoriaFactory, \
     OpcionFactory, CategoriaOpcionFactory, MesaCategoriaFactory, FiscalFactory, UserFactory
@@ -23,19 +25,34 @@ def test_validar_csv_mesas_invalidas(db):
         CSVImporter(PATH_ARCHIVOS_TEST + 'mesas_invalidas.csv', None).validar()
     assert 'No existe mesa' in str(e.value)
 
-# fixme : esta fallando por algo del usuario/fiscal
-def test_procesar_csv_votos_negativos(db):
+
+def test_procesar_csv_fiscal_no_encontrado(db):
     d1 = DistritoFactory(numero=1)
     user = UserFactory()
-    fiscal = FiscalFactory(user=user)
     s1 = SeccionFactory(numero=50, distrito=d1)
     c1 = CircuitoFactory(numero='2', seccion=s1)
     m = MesaFactory(numero='4012', lugar_votacion__circuito=c1, electores=100, circuito=c1)
     o2 = OpcionFactory(orden=3, codigo='A')
     o3 = OpcionFactory(orden=2, codigo='B')
     c = CategoriaFactory(opciones=[o2, o3], nombre='Presidente y vice')
-    o1 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True).opcion
+    CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True)
+    MesaCategoriaFactory(mesa=m, categoria=c)
+    with pytest.raises(Http404) as e:
+        CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_negativos.csv', user).procesar()
+
+
+def test_procesar_csv_categorias_faltantes_en_archivo(db):
+    d1 = DistritoFactory(numero=1)
+    user = UserFactory()
+    FiscalFactory(user=user)
+    s1 = SeccionFactory(numero=50, distrito=d1)
+    c1 = CircuitoFactory(numero='2', seccion=s1)
+    m = MesaFactory(numero='4012', lugar_votacion__circuito=c1, electores=100, circuito=c1)
+    o2 = OpcionFactory(orden=3, codigo='A')
+    o3 = OpcionFactory(orden=2, codigo='B')
+    c = CategoriaFactory(opciones=[o2, o3], nombre='Presidente y vice')
+    o1 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True)
     MesaCategoriaFactory(mesa=m, categoria=c)
     with pytest.raises(DatosInvalidosError) as e:
-        CSVImporter(PATH_ARCHIVOS_TEST+'info_resultados_negativos.csv', fiscal).procesar()
-    assert 'Los resultados deben ser números positivos' in str(e.value)
+        CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_negativos.csv', user).procesar()
+    assert 'Faltan datos en el archivo de la siguiente categoria' in str(e.value)
