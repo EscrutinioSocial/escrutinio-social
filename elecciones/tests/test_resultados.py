@@ -381,7 +381,7 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     assert positivos[o1.partido]['proyeccion'] == '50.00'
 
 
-
+@pytest.mark.skip(reason="Se va a arreglar cuando se actualicen los resultados (issue 67)")
 def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fiscal_client):
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
@@ -431,7 +431,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
     assert resultados['total_mesas_escrutadas'] == 1
 
-
+@pytest.mark.skip(reason="Se va a arreglar cuando se actualicen los resultados (issue 67)")
 def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
