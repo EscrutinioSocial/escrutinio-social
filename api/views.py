@@ -109,7 +109,7 @@ def listar_categorias(request):
 
     Se listan todas las categorías con prioridad menor o igual un valor dado.
     Por defecto se listan sólo categorias principales y secundarias (`prioridad=2`).
-    Las categorias se ordenan primero por prioridad asendente y luego alfabeticamente.
+    Las categorias se ordenan primero por prioridad ascendente y luego alfabeticamente.
     """
     return Response([])
     
@@ -128,6 +128,6 @@ def listar_opciones(request, id_categoria):
     Permite listar las opciones por categorías.
 
     Por defecto se listan sólo las opciones prioritarias (`solo_prioritarias=true`).
-    Las opciones se ordenan de forma ascendete según el campo orden (orden en la boleta).
+    Las opciones se ordenan de forma ascendente según el campo orden (orden en la boleta).
     """
     return Response([])
