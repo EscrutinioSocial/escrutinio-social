@@ -1,0 +1,28 @@
+{% extends "fiscales/carga.html" %}
+{% load i18n material_form material_frontend %}
+
+{% block breadcrumbs_items %}
+<a href="{{ object.get_absolute_url }}">{{ object }}</a>
+<a class="active">Acta</a>
+{% endblock %}
+
+
+{% block page_title %}Chequear Mesa {% endblock %}
+
+
+{% block card-content %}
+    <div class="card-title"> Mesa {{ object.numero }}
+        <b style='background-color: {{ categoria.back_color }}; color: {{ categoria.color }}'>{{ categoria }}</b>
+    </div>
+
+
+<table class="highlight bordered {% if responsive %}responsive-table{% endif %}">
+    {% for r in reportados %}
+        <tr>
+            <th>{{ r.opcion }}</th>
+            <td> {{ r.votos }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+{% endblock card-content %}

@@ -96,7 +96,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'elecciones.context_processors.contadores'
+                # 'elecciones.context_processors.contadores'
             ],
         },
     },
@@ -143,7 +143,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
-LANGUAGE_CODE = 'es-ar'
+LANGUAGE_CODE = 'en' #'es-ar'
 
 TIME_ZONE = 'America/Argentina/Cordoba'
 
@@ -210,6 +210,23 @@ ANYMAIL = {
     "MAILGUN_SENDER_DOMAIN": '',  # your Mailgun domain, if needepd
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'e-va': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
+
 # EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"  # or sendgrid.EmailBackend, or...
 DEFAULT_FROM_EMAIL = "algo@email.com"         # if you don't already have this in settings
 DEFAULT_CEL_CALL = '+54 9 351 XXXXXX'
@@ -239,8 +256,12 @@ CARACTERISTICA_DEFAULT = '351'
 # por defecto no se muestra grafico en la página de resultados
 SHOW_PLOT = False
 
+MIN_COINCIDENCIAS_IDENTIFICACION = 2
+MIN_COINCIDENCIAS_CARGAS = 2
 
 try:
     from .local_settings import *
 except ImportError:
     pass
+
+

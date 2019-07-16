@@ -48,15 +48,35 @@ class CategoriaFactory(DjangoModelFactory):
     def opciones(self, create, extracted, **kwargs):
         if not create:
             return
-        if extracted:
+        if extracted is not None:
             # A list of groups were passed in, use them
             for opcion in extracted:
-                self.opciones.add(opcion)
+                CategoriaOpcionFactory(categoria=self, opcion=opcion)
         else:
-            self.opciones.add(OpcionFactory(nombre='blanco', partido=None, es_contable=False))
-            self.opciones.add(OpcionFactory(nombre='opc1', es_contable=True))
-            self.opciones.add(OpcionFactory(nombre='opc2', es_contable=True))
-            self.opciones.add(OpcionFactory(nombre='opc3', es_contable=True))
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='blanco', partido=None, es_contable=False)
+            )
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='opc1', es_contable=True)
+            )
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='opc2', es_contable=True)
+            )
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='opc3', es_contable=True)
+            )
+
+
+class CategoriaOpcionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'elecciones.CategoriaOpcion'
+        django_get_or_create = ('categoria', 'opcion')
+    categoria = factory.SubFactory(CategoriaFactory, id=1)
+    opcion = factory.SubFactory(OpcionFactory)
 
 
 class DistritoFactory(DjangoModelFactory):
@@ -71,7 +91,10 @@ class DistritoFactory(DjangoModelFactory):
 class SeccionFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Seccion'
-    distrito = factory.SubFactory(DistritoFactory, nombre='único')
+    # notar que el distrito por default
+    # ya existe porque se crea via migracion 0026 de eleccion
+    # y get_or_create de distrito aplica por nombre
+    distrito = factory.SubFactory(DistritoFactory, nombre='Distrito único')
     numero = factory.Sequence(lambda n: n + 1)
     nombre = factory.LazyAttribute(lambda obj: f"Sección {obj.numero}")
 
@@ -103,7 +126,7 @@ class MesaFactory(DjangoModelFactory):
     electores = 100
 
     @factory.post_generation
-    def categoria(self, create, extracted, **kwargs):
+    def categorias(self, create, extracted, **kwargs):
         if not create:
             return
         if extracted:
@@ -116,6 +139,7 @@ class MesaFactory(DjangoModelFactory):
 class MesaCategoriaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.MesaCategoria'
+        django_get_or_create = ('mesa', 'categoria')
     mesa = factory.SubFactory(MesaFactory)
     categoria = factory.SubFactory(CategoriaFactory, id=1)
 
@@ -129,12 +153,11 @@ class FiscalFactory(DjangoModelFactory):
     nombres = fake.first_name()
     dni = factory.Sequence(lambda n: f'{n}00000{n}')
 
+
 class CargaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Carga'
-        django_get_or_create = ('mesa', 'categoria')
-    mesa = factory.SubFactory(MesaFactory)
-    categoria = factory.SubFactory(CategoriaFactory, id=1)
+    mesa_categoria = factory.SubFactory(MesaCategoriaFactory)
     fiscal = factory.SubFactory(FiscalFactory)
 
 
@@ -156,16 +179,23 @@ def get_random_image():
 
 
 class AttachmentFactory(DjangoModelFactory):
-    mesa = factory.SubFactory(MesaFactory)
-    foto = factory.django.ImageField(from_func=get_random_image)
     class Meta:
         model = 'adjuntos.Attachment'
+    foto = factory.django.ImageField(from_func=get_random_image)
+
+
+class IdentificacionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'adjuntos.Identificacion'
+    mesa = factory.SubFactory(MesaFactory)
+    attachment = factory.SubFactory(AttachmentFactory)
 
 
 class ProblemaFactory(DjangoModelFactory):
+    class Meta:
+        model = 'problemas.Problema'
+
     reportado_por = factory.SubFactory(FiscalFactory)
     mesa = factory.SubFactory(MesaFactory)
     estado = 'pendiente'
 
-    class Meta:
-        model = 'problemas.Problema'

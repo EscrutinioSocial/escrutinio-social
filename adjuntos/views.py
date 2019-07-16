@@ -3,71 +3,98 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.urls import reverse
 from django.db import IntegrityError
-from django.views.generic.edit import UpdateView, FormView
+from django.views.generic.edit import CreateView, FormView
 from django.utils.decorators import method_decorator
 from elecciones.views import StaffOnlyMixing
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
-
+from django.utils.functional import cached_property
 import base64
 from django.core.files.base import ContentFile
 from django.views.decorators.csrf import csrf_exempt
-from .models import Attachment
-from .forms import AsignarMesaForm, AgregarAttachmentsForm
+from .models import Attachment, Identificacion
+from .forms import (
+    AgregarAttachmentsForm,
+    IdentificacionForm,
+    IdentificacionProblemaForm,
+)
 
 
-@login_required
-def elegir_adjunto(request):
-    """
-    Elige un acta al azar del queryset :meth:`Attachment.sin asignar`,
-    estampa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para la clasificación de la mesa elegida
-
-    Si no hay más mesas sin asignar, se muestra un mensaje estático.
-    """
-
-    attachments = Attachment.sin_asignar()
-    if attachments.exists():
-        a = attachments.order_by('?').first()
-        # se marca el adjunto
-        a.taken = timezone.now()
-        a.save(update_fields=['taken'])
-        return redirect('asignar-mesa', attachment_id=a.id)
-
-    return render(request, 'adjuntos/sin-actas.html')
-
-
-
-class AsignarMesaAdjunto(UpdateView):
+class IdentificacionCreateView(CreateView):
     """
     Esta es la vista que permite clasificar un acta,
-    asociandola a una mesa o reportando un problema
+    asociándola a una mesa o reportando un problema
 
-    Ver :class:`adjuntos.forms.AsignarMesaForm`
+    Ver :class:`adjuntos.forms.IdentificacionForm`
     """
-
-    form_class = AsignarMesaForm
+    form_class = IdentificacionForm
     template_name = "adjuntos/asignar-mesa.html"
-    pk_url_kwarg = 'attachment_id'
-    model = Attachment
+    model = Identificacion
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+        response = super().dispatch(*args, **kwargs)
+        return response
 
     def get_success_url(self):
-        return reverse('elegir-adjunto')
+        #result = get_operation_result(self)
+        return reverse('siguiente-accion')
+
+    def identificacion(self):
+        # redefinido en IdentificacionProblemaCreateView donde la identificacion se maneja distinto
+        return self.object
+
+    def get_operation_result(self):
+        if self.identificacion().mesa is None:
+            return {'decision': 'problema', 'contenido': self.identificacion().status.replace(" ", "_")}
+        else:
+            return {'decision': 'mesa', 'contenido': self.identificacion().mesa.numero}
+
+    @cached_property
+    def attachment(self):
+        return get_object_or_404(
+            Attachment, id=self.kwargs['attachment_id']
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['attachment'] = self.object
-        context['button_tabindex'] = 2
+        context['attachment'] = self.attachment
+        context['form_problema'] = IdentificacionProblemaForm()
         return context
 
     def form_valid(self, form):
-        form.save()
+        identificacion = form.save(commit=False)
+        identificacion.status = Identificacion.STATUS.identificada
+        identificacion.fiscal = self.request.user.fiscal
+        identificacion.attachment = self.attachment
+        identificacion.save()
+        messages.info(
+            self.request,
+            f'Identificada mesa Nº {identificacion.mesa} - Circuito {identificacion.mesa.circuito}',
+        )
         return super().form_valid(form)
+
+
+class IdentificacionProblemaCreateView(IdentificacionCreateView):
+    http_method_names = ['post']
+    form_class = IdentificacionProblemaForm
+    identificacion_creada = None
+
+    def form_valid(self, form):
+        identificacion = form.save(commit=False)
+        identificacion.attachment = self.attachment
+        identificacion.fiscal = self.request.user.fiscal
+        identificacion.save()
+        self.identificacion_creada = identificacion
+        messages.info(
+            self.request,
+            f'Guardado como "{identificacion.get_status_display()}"',
+        )
+        return redirect(self.get_success_url())
+
+    def identificacion(self):
+        return self.identificacion_creada
 
 
 @staff_member_required
@@ -75,7 +102,7 @@ class AsignarMesaAdjunto(UpdateView):
 def editar_foto(request, attachment_id):
     """
     esta vista se invoca desde el plugin DarkRoom con el contenido
-    de la imágen editada codificada en base64.
+    de la imagen editada codificada en base64.
 
     Se decodifica y se guarda en el campo ``foto_edited``
     """
@@ -86,14 +113,14 @@ def editar_foto(request, attachment_id):
         extension = file_format.split('/')[-1]
         attachment.foto_edited = ContentFile(base64.b64decode(imgstr), name=f'edited_{attachment_id}.{extension}')
         attachment.save(update_fields=['foto_edited'])
-        return JsonResponse({'message': 'Imágen guardada'})
-    return JsonResponse({'message': 'No se pudo guardar la imágen'})
+        return JsonResponse({'message': 'Imagen guardada'})
+    return JsonResponse({'message': 'No se pudo guardar la imagen'})
 
 
 class AgregarAdjuntos(FormView):
     """
     Permite subir una o más imágenes, generando instancias de ``Attachment``
-    Si una imágen ya existe en el sistema, se exluye con un mensaje de error
+    Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
 
     """
@@ -114,7 +141,7 @@ class AgregarAdjuntos(FormView):
             c = 0
             for f in files:
                 if f.content_type not in ('image/jpeg', 'image/png'):
-                    messages.warning(self.request, f'{f.name} ignorado. No es una imágen' )
+                    messages.warning(self.request, f'{f.name} ignorado. No es una imagen' )
                     continue
 
                 try:

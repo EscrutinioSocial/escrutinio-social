@@ -15,6 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from contacto.models import DatoDeContacto
 from model_utils.fields import StatusField
 from model_utils import Choices
+from django.contrib.auth.models import Group
 
 
 TOTAL = 'Total General'
@@ -26,7 +27,6 @@ class Fiscal(models.Model):
     Es una extensión del modelo ``auth.User``
 
     """
-
     TIPO_DNI = Choices('DNI', 'CI', 'LE', 'LC')
     ESTADOS = Choices('IMPORTADO', 'AUTOCONFIRMADO', 'PRE-INSCRIPTO', 'CONFIRMADO', 'DECLINADO')
 
@@ -68,14 +68,26 @@ class Fiscal(models.Model):
     def __str__(self):
         return f'{self.nombres} {self.apellido}'
 
+    def esta_en_grupo(self, nombre_grupo):
+        grupo = Group.objects.get(name=nombre_grupo)
 
+        return grupo in self.user.groups.all()
+
+    # Especializaciones para usar desde los templates.
+    @property
+    def esta_en_grupo_validadores(self):
+        return self.esta_en_grupo('validadores')
+
+    @property
+    def esta_en_grupo_visualizadores(self):
+        return self.esta_en_grupo('visualizadores')
 
 @receiver(post_save, sender=Fiscal)
 def crear_user_para_fiscal(sender, instance=None, created=False, **kwargs):
     """
     Cuando se crea o actualiza una instancia de ``Fiscal`` en estado confirmado
-    que no tiene usuario asociado,  automáticamente se crea uno ``auth.User``
-    utilizando el DNI como `username`
+    que no tiene usuario asociado, automáticamente se crea uno ``auth.User``
+    utilizando el DNI como `username`.
     """
     if not instance.user and instance.dni and instance.estado in ('AUTOCONFIRMADO', 'CONFIRMADO'):
         user = User(

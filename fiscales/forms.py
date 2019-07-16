@@ -239,7 +239,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
             form.add_error('votos', ValidationError(errors))
 
 
-votomeesareportadoformset_factory = partial(
+votomesareportadoformset_factory = partial(
     modelformset_factory,
     VotoMesaReportado,
     form=VotoMesaModelForm,
@@ -247,12 +247,4 @@ votomeesareportadoformset_factory = partial(
     extra=0,
     can_delete=False
 )
-
-
-EstadoMesaModelForm = modelform_factory(
-    Mesa,
-    fields=['estado'],
-    widgets={"estado": forms.HiddenInput}
-)
-
 
