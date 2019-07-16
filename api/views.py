@@ -7,7 +7,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from .serializers import (
-    VotoSerializer, ActaSerializer, MesaSerializer, CategoriaSerializer, OpcionSerializer,
+    VotoSerializer, ActaSerializer, CategoriaSerializer, OpcionSerializer,
+    DistritoSerializer, SeccionSerializer, CircuitoSerializer, MesaSerializer,
     ListarCategoriasQuerySerializer, ListarOpcionesQuerySerializer
 )
 
@@ -122,7 +123,7 @@ def listar_categorias(request):
     responses={
         status.HTTP_200_OK: OpcionSerializer(many=True)
     },
-    tags=['Categorias', 'Opciones']
+    tags=['Opciones']
 )
 @api_view(['GET'],)
 def listar_opciones(request, id_categoria):
@@ -130,5 +131,70 @@ def listar_opciones(request, id_categoria):
     Permite listar las opciones por categorias.
 
     Por defecto se listan solo las opciones prioritarias (`solo_prioritarias=true`).
+    """
+    return Response([])
+
+
+@swagger_auto_schema(
+    method='get', 
+    responses={
+        status.HTTP_200_OK: DistritoSerializer(many=True)
+    },
+    tags=['Distritos']
+)
+@api_view(['GET'],)
+def listar_distritos(request):
+    """
+    Permite listar los distritos.
+
+    Se listan todos los distritos.
+    """
+    return Response([])
+
+@swagger_auto_schema(
+    method='get', 
+    responses={
+        status.HTTP_200_OK: SeccionSerializer(many=True)
+    },
+    tags=['Secciones']
+)
+@api_view(['GET'],)
+def listar_secciones(request, id_distrito):
+    """
+    Permite listar las secciones por distrito.
+
+    Se listan todos las secciones del distrito.
+    """
+    return Response([])
+
+@swagger_auto_schema(
+    method='get', 
+    responses={
+        status.HTTP_200_OK: CircuitoSerializer(many=True)
+    },
+    tags=['Circuitos']
+)
+@api_view(['GET'],)
+def listar_circuitos(request, id_seccion):
+    """
+    Permite listar los circuitos por seccion.
+
+    Se listan todos los circuitos de la seccion.
+    """
+    return Response([])
+
+@swagger_auto_schema(
+    method='get', 
+    responses={
+        status.HTTP_200_OK: MesaSerializer(many=True)
+    },
+    tags=['Mesas']
+)
+@api_view(['GET'],)
+def listar_mesas(request, id_circuito):
+    """
+    Permite listar las mesas por circuito.
+
+    Se listan todos las mesas del circuito.
     """
     return Response([])

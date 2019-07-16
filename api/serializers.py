@@ -10,21 +10,6 @@ class ActaSerializer(serializers.Serializer):
     foto = serializers.ImageField(help_text='La foto del acta')
 
 
-class MesaSerializer(serializers.Serializer):
-    id_distrito = serializers.PrimaryKeyRelatedField(
-        queryset=Distrito.objects.all()
-    )
-    id_seccion = serializers.PrimaryKeyRelatedField(
-        queryset=Seccion.objects.all()
-    )
-    id_circuito = serializers.PrimaryKeyRelatedField(
-        queryset=Circuito.objects.all()
-    )
-    id_mesa = serializers.PrimaryKeyRelatedField(
-        queryset=Mesa.objects.all()
-    )
-
-
 class VotoSerializer(serializers.Serializer):
     id_categoria = serializers.PrimaryKeyRelatedField(
         queryset=Categoria.objects.all()
@@ -53,3 +38,26 @@ class OpcionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
     nombre_corto = serializers.CharField()
+
+
+class DistritoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    numero = serializers.IntegerField(min_value=0)
+    nombre = serializers.CharField()
+
+
+class SeccionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    numero = serializers.IntegerField(min_value=0)
+    nombre = serializers.CharField()
+
+
+class CircuitoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    numero = serializers.CharField()
+    nombre = serializers.CharField()
+
+
+class MesaSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    numero = serializers.CharField(read_only=True)

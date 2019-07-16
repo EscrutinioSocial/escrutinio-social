@@ -35,3 +35,4 @@ django-excel==0.0.10
 pyexcel==0.5.13
 djangorestframework==3.9.4
 drf-yasg[validation]==1.16.0
+djangorestframework_simplejwt==4.3.0
