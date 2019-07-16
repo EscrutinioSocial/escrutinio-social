@@ -246,14 +246,14 @@ CARACTERISTICA_TELEFONO_DEFAULT = '351'     # CORDOBA
 CARACTERISTICA_DEFAULT = '351'
 
 
-# por defecto no se muestra grafico en la página de resultados
+# Por defecto no se muestra gráfico en la página de resultados
 SHOW_PLOT = False
 
 MIN_COINCIDENCIAS_IDENTIFICACION = 2
 MIN_COINCIDENCIAS_CARGAS = 2
 
-# tiempo en segundos que se espera entre
-# recalculo de consolidaciones de identificacion y carga
+# Tiempo en segundos que se espera entre
+# recálculo de consolidaciones de identificación y carga
 PAUSA_CONSOLIDACION = 15
 
 
