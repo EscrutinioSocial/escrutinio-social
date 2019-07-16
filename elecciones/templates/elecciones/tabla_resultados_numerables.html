@@ -1,13 +1,29 @@
-{% for partido, fila in  tabla.items %}
-    <tr {% if partido.color %}style="background-color: {{ partido.color}};"{% endif %}>
-        <td>{{ partido }}</td>
+{% for partido, fila in  tabla.items %}>
+<tr {% if partido.color %}style="background-color: {{ partido.color}};"{% endif %} class="partido">
+        <td id="partido_{{partido.id}}">{{ partido }}<a class="show_detail btn-flat"><i class="material-icons small">expand_more</i></a>
+	</td>
         {% if incluir_votos %}
-            <td id="votos_{{ partido.id|default:partido|lower }}"> {{ fila.votos }}</td>
+            <td><!-- votos de opciones !--></td>
+            <td id="votos_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.votos }}</td>
         {% endif %}
-        <td> {{ fila.porcentajePositivos }}%</td>
-
+        <td><!-- porcentajes de opciones !--></td>
+        <td class="dato">{{ fila.porcentaje_positivos }}%</td>
         {% if resultados.proyectado %}
-        <td>{{ fila.proyeccion }}%</td>
+        <td class="dato">{{ fila.proyeccion }}%</td>
         {% endif %}
-    </tr>
+</tr>
+{% for op, v in fila.detalle.items %}
+<tr class="partido_{{partido.id}}_detalle fila_detalle">
+  <td class="opcion">{{op}}</td>
+  {% if incluir_votos %}
+  <td class="dato">{{v.votos}}</td>
+  <td><!-- votos de partido !--></td>
+  {% endif %}
+  <td  class="dato">{{v.porcentaje}}%</td>
+  <td><!-- porcentajes de partido !--></td>
+  {% if resultados.proyectado %}
+  <td>-</td>
+  {% endif %}
+</tr>
+{% endfor %}
 {% endfor %}

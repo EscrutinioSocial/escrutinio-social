@@ -179,7 +179,6 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         )
 
         resultados = self.resultados.get_resultados(categoria, proyectado)
-
         result_piechart = None
         if settings.SHOW_PLOT:
             result_piechart = [{
