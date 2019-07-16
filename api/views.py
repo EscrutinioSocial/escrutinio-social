@@ -7,8 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from .serializers import (
-    VotoSerializer, ActaSerializer, CategoriaSerializer, OpcionSerializer,
-    DistritoSerializer, SeccionSerializer, CircuitoSerializer, MesaSerializer,
+    VotoSerializer, ActaSerializer, MesaSerializer, CategoriaSerializer, OpcionSerializer,
     ListarCategoriasQuerySerializer, ListarOpcionesQuerySerializer
 )
 
@@ -113,6 +112,7 @@ def listar_categorias(request):
 
     Se listan todas las categorias con prioridad menor o igual un valor dado.
     Por defecto se listan solo categorias principales y secundarias (`prioridad=2`).
+    Las categorias se ordenan primero por prioridad asendente y luego alfabeticamente.
     """
     return Response([])
     
@@ -131,70 +131,6 @@ def listar_opciones(request, id_categoria):
     Permite listar las opciones por categorias.
 
     Por defecto se listan solo las opciones prioritarias (`solo_prioritarias=true`).
-    """
-    return Response([])
-
-
-@swagger_auto_schema(
-    method='get', 
-    responses={
-        status.HTTP_200_OK: DistritoSerializer(many=True)
-    },
-    tags=['Distritos']
-)
-@api_view(['GET'],)
-def listar_distritos(request):
-    """
-    Permite listar los distritos.
-
-    Se listan todos los distritos.
-    """
-    return Response([])
-
-@swagger_auto_schema(
-    method='get', 
-    responses={
-        status.HTTP_200_OK: SeccionSerializer(many=True)
-    },
-    tags=['Secciones']
-)
-@api_view(['GET'],)
-def listar_secciones(request, id_distrito):
-    """
-    Permite listar las secciones por distrito.
-
-    Se listan todos las secciones del distrito.
-    """
-    return Response([])
-
-@swagger_auto_schema(
-    method='get', 
-    responses={
-        status.HTTP_200_OK: CircuitoSerializer(many=True)
-    },
-    tags=['Circuitos']
-)
-@api_view(['GET'],)
-def listar_circuitos(request, id_seccion):
-    """
-    Permite listar los circuitos por seccion.
-
-    Se listan todos los circuitos de la seccion.
-    """
-    return Response([])
-
-@swagger_auto_schema(
-    method='get', 
-    responses={
-        status.HTTP_200_OK: MesaSerializer(many=True)
-    },
-    tags=['Mesas']
-)
-@api_view(['GET'],)
-def listar_mesas(request, id_circuito):
-    """
-    Permite listar las mesas por circuito.
-
-    Se listan todos las mesas del circuito.
+    Las opciones se ordenan de forma ascendete según el campo orden (orden en la boleta).
     """
     return Response([])

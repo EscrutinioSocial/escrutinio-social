@@ -35,11 +35,6 @@ urlpatterns = [
    path('categorias/', views.listar_categorias, name='categorias'),
    path('categorias/<int:id_categoria>/opciones/', views.listar_opciones, name='opciones'),
 
-   path('distritos/', views.listar_distritos, name='distritos'),
-   path('distritos/<int:id_distrito>/secciones/', views.listar_secciones, name='secciones'),
-   path('secciones/<int:id_seccion>/circuitos/', views.listar_circuitos, name='circuitos'),
-   path('circuitos/<int:id_circuito>/mesas/', views.listar_mesas, name='mesas'),
-
    url(r'^token/$', TokenObtainPairView.as_view(), name='token_obtain_pair'),
    url(r'^token/refresh/$', TokenRefreshView.as_view(), name='token_refresh'),
 

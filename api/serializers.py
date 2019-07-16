@@ -1,13 +1,19 @@
 from rest_framework import serializers
 from elecciones.models import (
-    Categoria, Opcion, 
-    Distrito, Seccion, Circuito, Mesa
+    Categoria, Opcion
 )
 from fiscales.models import Fiscal
 
 
 class ActaSerializer(serializers.Serializer):
     foto = serializers.ImageField(help_text='La foto del acta')
+
+
+class MesaSerializer(serializers.Serializer):
+    numero_distrito = serializers.IntegerField(min_value=0)
+    numero_seccion = serializers.IntegerField(min_value=0)
+    numero_circuito = serializers.CharField()
+    numero_mesa = serializers.CharField()
 
 
 class VotoSerializer(serializers.Serializer):
@@ -38,26 +44,3 @@ class OpcionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
     nombre_corto = serializers.CharField()
-
-
-class DistritoSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    numero = serializers.IntegerField(min_value=0)
-    nombre = serializers.CharField()
-
-
-class SeccionSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    numero = serializers.IntegerField(min_value=0)
-    nombre = serializers.CharField()
-
-
-class CircuitoSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    numero = serializers.CharField()
-    nombre = serializers.CharField()
-
-
-class MesaSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    numero = serializers.CharField(read_only=True)
