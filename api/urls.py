@@ -17,10 +17,10 @@ from . import views
 
 
 swagger_info =  openapi.Info(
-   title="La API del escrutinio social paralelo",
+   title="La API del escrutinio del Frente de Todos",
    default_version='v1',
-   description="Escrutinio social paralelo / Democracia con codigos",
-   license=openapi.License(name="GPLv3 License"),
+   #description="Escrutinio social paralelo / Democracia con códigos",
+   #license=openapi.License(name="GPLv3 License"),
 )
 
 schema_view = get_schema_view(
