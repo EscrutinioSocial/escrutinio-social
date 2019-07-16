@@ -20,6 +20,17 @@ from .models import (
     Mesa,
 )
 
+
+def porcentaje(numerador, denominador):
+    """
+    expresa la razon numerador/denominador como un porcentaje con 2 digitos decimales
+    Si no puede calcularse, devuelve '-'
+    """
+    if denominador and denominador > 0:
+        return f'{numerador*100/denominador:.2f}'
+    return '-'
+
+
 class Resultados():
     """
     Esta clase encapsula el cómputo de resultados.
@@ -70,41 +81,44 @@ class Resultados():
         """
         sum_por_partido = {}
         otras_opciones = {}
+        opciones_por_partido = {}
         status_lookups = self.status_filter(categoria)
+
+        def qry(**filtros):
+            """devuelve el criterio de agregacion"""
+            filtros.update(**status_lookups)
+            return Sum(
+                Case(
+                    When(
+                        carga__mesa_categoria__categoria=categoria,
+                        carga__es_testigo__isnull=False,
+                        then=F('votos'),
+                        **filtros
+                    ), output_field=IntegerField()
+                )
+              )
 
         for id in Partido.objects.filter(
             opciones__categorias__id=categoria.id
         ).distinct().values_list('id', flat=True):
-            sum_por_partido[str(id)] = Sum(
-                Case(
-                    When(
-                        opcion__partido__id=id,
-                        carga__mesa_categoria__categoria=categoria,
-                        carga__es_testigo__isnull=False,
-                        then=F('votos'),
-                        **status_lookups
+            sum_por_partido[str(id)] = qry(opcion__partido__id=id)
 
-                    ), output_field=IntegerField()
-                )
-            )
+            opciones = Opcion.objects.filter(
+                categorias__id=categoria.id,
+                partido_id=id
+            ).distinct().values_list('id','nombre')
+            opciones_por_partido[str(id)] = {
+                nom: qry(opcion__id=oid) for oid, nom in opciones
+            }
 
         for nombre, id in Opcion.objects.filter(
             categorias__id=categoria.id,
             partido__isnull=True,
             es_metadata=False
         ).values_list('nombre', 'id'):
-            otras_opciones[nombre] = Sum(
-                Case(
-                    When(
-                        opcion__id=id,
-                        carga__mesa_categoria__categoria=categoria,
-                        carga__es_testigo__isnull=False,
-                        then=F('votos'),
-                        **status_lookups
-                    ), output_field=IntegerField()
-                )
-            )
-        return sum_por_partido, otras_opciones
+            otras_opciones[nombre] = qry(opcion__id=id)
+
+        return sum_por_partido, otras_opciones, opciones_por_partido
 
     @property
     def filtros(self):
@@ -247,19 +261,30 @@ class Resultados():
 
         expanded_result = {}
         for k, v in c.votos.items():
-            porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
-            porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.positivos and isinstance(k, Partido) else '-'
+            if isinstance(v,dict):
+                d = v['detalle']
+                v = v['total']
+            else:
+                d = {}
+
+            porcentaje_total = porcentaje(v, c.total)
+            porcentaje_positivos = porcentaje(v, c.positivos) if isinstance(k, Partido) else '-'
             expanded_result[k] = {
                 "votos": v,
-                "porcentajeTotal": porcentaje_total,
-                "porcentajePositivos": porcentaje_positivos
+                "detalle": d,
+                "porcentaje_total": porcentaje_total,
+                "porcentaje_positivos": porcentaje_positivos
             }
             if proyectado:
                 acumulador_positivos = 0
                 for ag in agrupaciones:
                     data = datos_ponderacion[ag]
                     if k in data["votos"] and data["positivos"]:
-                        acumulador_positivos += data["electores"]*data["votos"][k]/data["positivos"]
+                        if isinstance(data['votos'][k],dict):
+                            v = data['votos'][k]['total']
+                        else:
+                            v = data['votos'][k]
+                        acumulador_positivos += data["electores"]*v/data["positivos"]
 
                 expanded_result[k]["proyeccion"] = f'{acumulador_positivos*100/electores_pond:.2f}'
 
@@ -275,7 +300,7 @@ class Resultados():
         tabla_no_positivos = {
             k: {
                 "votos": v,
-                "porcentajeTotal": f'{v*100/c.total:.2f}' if c.total else '-'
+                "porcentaje_total": porcentaje(v, c.total)
             } for k, v in  tabla_no_positivos.items()
         }
         result_piechart = None
@@ -293,8 +318,8 @@ class Resultados():
             'proyectado': proyectado,
             'proyeccion_incompleta': proyeccion_incompleta,
             'porcentaje_mesas_escrutadas': c.porcentaje_mesas_escrutadas,
-            'porcentaje_escrutado': f'{c.escrutados*100/c.electores:.2f}' if c.electores else '-',
-            'porcentaje_participacion': f'{c.total*100/c.escrutados:.2f}' if c.escrutados else '-',
+            'porcentaje_escrutado': porcentaje(c.escrutados, c.electores),
+            'porcentaje_participacion': porcentaje(c.total, c.escrutados),
             'total_mesas_escrutadas': c.total_mesas_escrutadas,
             'total_mesas': c.total_mesas
         }
@@ -315,14 +340,15 @@ class Resultados():
             positivos: total votos positivos
         """
         electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
-        sum_por_partido, otras_opciones = self.agregaciones_por_partido(categoria)
-
+        sum_por_partido, otras_opciones, opciones_por_partido = self.agregaciones_por_partido(categoria)
         # primero para partidos
         reportados = VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
             carga__es_testigo__isnull=False,
             **self.status_filter(categoria)
         )
+
+
         mesas_escrutadas = mesas.filter(
             mesacategoria__categoria=categoria,
             mesacategoria__carga_testigo__isnull=False,
@@ -336,13 +362,26 @@ class Resultados():
         total_mesas = mesas.count()
         if total_mesas == 0:
             total_mesas = 1
-        porcentaje_mesas_escrutadas = f'{total_mesas_escrutadas*100/total_mesas:.2f}'
+        porcentaje_mesas_escrutadas = porcentaje(total_mesas_escrutadas, total_mesas)
 
         result = reportados.aggregate(
             **sum_por_partido
         )
 
-        result = {Partido.objects.get(id=k): v for k, v in result.items() if v is not None}
+        result = {
+            Partido.objects.get(id=k): {
+                'total': v,
+                'detalle': {
+                    op_nom: {
+                        'votos': op_votos if op_votos else "0",
+                        'porcentaje': porcentaje(op_votos, v)
+                    } for op_nom,op_votos in reportados.aggregate(
+                            **opciones_por_partido[k]
+                    ).items()
+                }
+            } for k, v in result.items() if v is not None
+        }
+
         # no positivos
         result_opc = reportados.aggregate(
            **otras_opciones
@@ -351,7 +390,7 @@ class Resultados():
 
         # calculamos el total como la suma de todos los positivos y los
         # validos no positivos.
-        positivos = sum(result.values())
+        positivos = sum([x['total'] for x in result.values()])
         total = positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(nombre=k, es_contable=False, es_metadata=False).exists())
         result.update(result_opc)
 
