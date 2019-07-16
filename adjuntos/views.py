@@ -23,30 +23,6 @@ from .forms import (
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
 MENSAJE_SOLO_UN_ACTA = 'Se debe subir una sola acta'
 
-@login_required
-def elegir_adjunto(request):
-    """
-    Elige un acta al azar del queryset :meth:`Attachment.sin asignar`,
-    estampa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para la clasificación de la mesa elegida
-
-    Si no hay más mesas sin asignar, se muestra un mensaje estático.
-    """
-
-    attachments = Attachment.sin_identificar(0, request.user.fiscal)
-    if attachments.exists():
-        # TODO: deberiamos priorizar attachments que ya tienen carga
-        #       para maximizar la cola de actas cargables
-        a = attachments.order_by('?').first()
-        # se marca el adjunto
-        a.taken = timezone.now()
-        a.save(update_fields=['taken'])
-        return redirect('asignar-mesa', attachment_id=a.id)
-
-    return render(request, 'adjuntos/sin-actas.html')
-
-
-
 class IdentificacionCreateView(CreateView):
     """
     Esta es la vista que permite clasificar un acta,
@@ -64,7 +40,18 @@ class IdentificacionCreateView(CreateView):
         return response
 
     def get_success_url(self):
-        return reverse('elegir-adjunto')
+        #result = get_operation_result(self)
+        return reverse('siguiente-accion')
+
+    def identificacion(self):
+        # redefinido en IdentificacionProblemaCreateView donde la identificacion se maneja distinto
+        return self.object
+
+    def get_operation_result(self):
+        if self.identificacion().mesa is None:
+            return {'decision': 'problema', 'contenido': self.identificacion().status.replace(" ", "_")}
+        else:
+            return {'decision': 'mesa', 'contenido': self.identificacion().mesa.numero}
 
     @cached_property
     def attachment(self):
@@ -104,17 +91,22 @@ class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
 class IdentificacionProblemaCreateView(IdentificacionCreateView):
     http_method_names = ['post']
     form_class = IdentificacionProblemaForm
+    identificacion_creada = None
 
     def form_valid(self, form):
         identificacion = form.save(commit=False)
         identificacion.attachment = self.attachment
         identificacion.fiscal = self.request.user.fiscal
         identificacion.save()
+        self.identificacion_creada = identificacion
         messages.info(
             self.request,
             f'Guardado como "{identificacion.get_status_display()}"',
         )
         return redirect(self.get_success_url())
+
+    def identificacion(self):
+        return self.identificacion_creada
 
 
 @staff_member_required

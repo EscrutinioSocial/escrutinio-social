@@ -29,6 +29,9 @@ from .models import Fiscal
 from elecciones.models import (
     Mesa, Categoria, MesaCategoria, VotoMesaReportado, Carga, Circuito, LugarVotacion, Seccion
 )
+from .acciones import ( siguiente_accion )
+
+
 from django.utils.decorators import method_decorator
 from datetime import timedelta
 from django.utils import timezone
@@ -61,6 +64,25 @@ WAITING_FOR = 2
 
 NO_PERMISSION_REDIRECT = '/permission-denied/'
 
+
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
+def carga_simultanea(request, mesa, categoria):
+    categoria_para_mostrar = categoria.replace("_", " ")
+    return render(request, 'fiscales/carga-simultanea.html', {'mesa': mesa, 'categoria': categoria_para_mostrar})
+
+
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
+def post_reportar_problema(request, mesa):
+    return render(request, 'fiscales/post-reportar-problema.html', {'mesa': mesa})
+
+
+@login_required
+def bienvenido(request):
+    return render(request, 'fiscales/bienvenido.html')
+
+
 def choice_home(request):
     """
     redirige a una página en funcion del tipo de usuario
@@ -71,9 +93,8 @@ def choice_home(request):
 
     es_fiscal = Fiscal.objects.filter(user=request.user).exists()
 
-    result = redirect('elegir-acta-a-cargar') if user.fiscal.esta_en_grupo('validadores') else render(request, 'fiscales/base.html')
+    return redirect('siguiente-accion') if user.fiscal.esta_en_grupo('validadores') else render(request, 'fiscales/base.html')
 
-    return result
 
 def permission_denied(request):
     return PermissionDenied
@@ -255,60 +276,15 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def elegir_acta_a_cargar(request, mesa_id=None):
+def realizar_siguiente_accion(request):
     """
-    Para el conjunto de mesas con carga pendiente (es decir, que tienen categorías sin cargar)
-    se elige una por orden de prioridad y tamaño del circuito, se actualiza
-    la marca temporal de "asignación" y se redirige a la categoría a cargar para esa mesa.
-
-    Si tenemos el id de la mesa ya predefinido (se puede dar en casos donde se cargan actas desde una UB),
-    es solo preguntar por la siguiente categoría.
-
+    Lanza la siguiente acción a realizar, que puede ser
+    - identificar una foto (attachment)
+    - cargar una mesa/categoría
+    Si no hay ninguna acción pendiente, entonces muestra un mensaje al respecto
     """
+    return siguiente_accion(request).ejecutar()
 
-    mesa = _obtener_mesa_a_cargar(mesa_id)
-
-    if mesa is not None:
-        siguiente_categoria = _procesar_mesa_y_devolver_siguiente_categoria(mesa)
-        if siguiente_categoria is None:
-            return render(request, 'fiscales/sin-actas.html')
-        siguiente_id = siguiente_categoria.id
-        return redirect(
-            'mesa-cargar-resultados',
-            categoria_id=siguiente_id,
-            mesa_numero=mesa.numero
-        )
-    return render(request, 'fiscales/sin-actas.html')
-
-def _obtener_mesa_a_cargar(mesa_id):
-    """
-    Si ya tienen la mesa identificada, la va a buscar y la devuelve.
-    Si el mesa_id es None (o sea, no está identificada), se buscan mesas con carga pendiente y
-    si hay disponibles, se devuelve.
-    """
-    if mesa_id is None:
-        mesas = Mesa.con_carga_pendiente().order_by(
-            'orden_de_carga', '-lugar_votacion__circuito__electores'
-        )
-        return mesas[0] if mesas.exists() else None
-    else:
-        try:
-            #TODO acá solo estamos trayendo la mesa desde la carga de la UB.
-            #deberíamos hacer algún chequeo de integridad? Cuáles aplicarían?
-            return Mesa.objects.get(pk=mesa_id)
-        except Mesa.DoesNotExist:
-            return None
-
-
-
-def _procesar_mesa_y_devolver_siguiente_categoria(mesa_existente):
-    """
-    Marca la mesa como tomada y devuelve la próxima categoría a ser cargada
-    """
-    # se marca que se inicia una carga
-    mesa_existente.taken = timezone.now()
-    mesa_existente.save(update_fields=['taken'])
-    return mesa_existente.siguiente_categoria_sin_carga()
 
 
 @login_required
@@ -317,7 +293,7 @@ def cargar_resultados(
     request, categoria_id, mesa_numero, tipo='total', carga_id=None
 ):
     """
-    Es la vista que muestra y procesa el formset de carga de datos para una categoria-mesa
+    Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
     mesa_categoria = get_object_or_404(
@@ -387,6 +363,9 @@ def cargar_resultados(
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
+                # libero el token sobre la mesa
+                mesa.taken = None
+                mesa.save(update_fields=['taken'])
             carga.actualizar_firma()
             messages.success(
                 request,
@@ -394,23 +373,11 @@ def cargar_resultados(
         except IntegrityError as e:
             # hubo otra carga previa.
             capture_exception(e)
-            messages.error(request, 'Alguien cargó esta mesa con anterioridad')
-            return redirect('elegir-acta-a-cargar')
+            return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
 
-        # hay que cargar otra categoria (categoria) de la misma mesa?
-        # si es asi, se redirige a esa carga
-        siguiente = mesa.siguiente_categoria_sin_carga()
-        if siguiente:
-            # vuelvo a marcar un token
-            mesa.taken = timezone.now()
-            mesa.save(update_fields=['taken'])
+        return redirect('siguiente-accion')
 
-            return redirect(
-                'mesa-cargar-resultados',
-                categoria_id=siguiente.id,
-                mesa_numero=mesa.numero
-            )
-        return redirect('elegir-acta-a-cargar')
+    # Llega hasta acá si hubo error.
     return render(
         request, "fiscales/carga.html", {
             'formset': formset,
