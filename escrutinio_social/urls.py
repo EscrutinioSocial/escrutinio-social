@@ -2,15 +2,22 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
+
+from fancy_cache import cache_page
+from rest_framework import routers
+
 from material.frontend import urls as frontend_urls
+
 from elecciones import urls as elecciones_urls
+
 from fiscales import urls as fiscales_urls
 from fiscales.views import choice_home, permission_denied, QuieroSerFiscal, confirmar_email
 from fiscales.forms import AuthenticationFormCustomError
-from django.contrib.auth import views as auth_views
-from problemas.views import ProblemaCreate
-from fancy_cache import cache_page
 
+from problemas.views import ProblemaCreate
+
+from api import urls as api_urls
 
 cached = cache_page(3600 * 24 * 30)
 
@@ -30,6 +37,8 @@ urlpatterns = [
     url(r'^elecciones/', include(elecciones_urls)),
     url(r'^clasificar-actas/', include('adjuntos.urls')),
     url('^reportar-problema/(?P<mesa_numero>\d+)$', ProblemaCreate.as_view(), name='reportar-problema'),
+
+    url(r'^api/', include(api_urls))
 ]
 
 if settings.DEBUG:
