@@ -249,12 +249,10 @@ CARACTERISTICA_DEFAULT = '351'
 # por defecto no se muestra grafico en la página de resultados
 SHOW_PLOT = False
 
-MIN_COINCIDENCIAS_IDENTIFICACION = 2
-MIN_COINCIDENCIAS_CARGAS = 2
+MIN_COINCIDENCIAS_IDENTIFICACION = 1
+MIN_COINCIDENCIAS_CARGAS = 1
 
 try:
     from .local_settings import *
 except ImportError:
     pass
-
-

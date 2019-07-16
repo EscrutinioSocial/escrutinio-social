@@ -58,7 +58,7 @@ $(document).ready(function() {
   var container = $('.darkroom-container');
   if (container.length) {
     $('html, body').css('overflowY', 'hidden');
-    var darkroomHeight = $("main").height() - 200;
+    var darkroomHeight = $("main").height() - container.offset().top - 50;
     container.height(darkroomHeight);
   }
 });
@@ -136,7 +136,6 @@ $(document).ready(function() {
 {% block right-panel %}
     <div class="acta card">
         <div class="card-content">
-            <!-- <a href="{{ attachment.foto.url }}" target="new">ampliar</a> -->
             <img id="target" class="responsive-img" src="{{ attachment.foto.thumbnail.960x.url }}">
 
             <script src="{% static 'js/fabric.js' %}"></script>
