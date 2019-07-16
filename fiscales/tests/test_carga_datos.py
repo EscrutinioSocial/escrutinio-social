@@ -11,6 +11,7 @@ from elecciones.tests.factories import (
 )
 from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
 from elecciones.models import Mesa, VotoMesaReportado, Carga, MesaCategoria
+from http import HTTPStatus
 
 
 def test_elegir_acta_sin_mesas(fiscal_client):
@@ -260,3 +261,35 @@ def test_detalle_mesa_categoria(db, fiscal_client):
     response = fiscal_client.get(url)
 
     assert list(response.context['reportados']) == [votos1, votos2, votos3]
+
+
+def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(fiscal_client):
+    circuito = CircuitoFactory()
+    categoria_1 = CategoriaFactory()
+    categoria_2 = CategoriaFactory()
+
+    nombre_categoria = "Un nombre especifico"
+    categoria_1.nombre = nombre_categoria
+    categoria_1.save(update_fields=['nombre'])
+
+    mesa1 = IdentificacionFactory(
+        mesa__categorias=[categoria_1, categoria_2],
+        mesa__lugar_votacion__circuito=circuito,
+        status='identificada',
+        consolidada=True,
+    ).mesa
+
+    response = fiscal_client.get(reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa1.id}))
+    
+    assert response.status_code == HTTPStatus.OK
+    #nos aseguramos que haya cargado el template específico para UB
+    assert "/clasificar-actas/ub/agregar" in str(response.content)  
+    #como es por id el order by del método que devuelve siguiente categoria, debería ser categoria_1
+    assert nombre_categoria in str(response.content)
+
+
+def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
+    mesa_id_inexistente = 673162312
+    response = fiscal_client.get(reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_id_inexistente}))
+    
+    assert response.status_code == HTTPStatus.NOT_FOUND

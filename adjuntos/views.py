@@ -87,6 +87,20 @@ class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
         mesa_id = identificacion.mesa.id
         return reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_id})
 
+    def form_valid(self, form):
+        identificacion = form.save(commit=False)
+        identificacion.status = Identificacion.STATUS.identificada
+        #como viene desde una UB, marcamos la identificación como consolidada (el receiver/trigger hará su magia luego)
+        identificacion.consolidada = True
+        identificacion.fiscal = self.request.user.fiscal
+        identificacion.attachment = self.attachment
+        identificacion.save()
+        messages.info(
+            self.request,
+            f'Identificada mesa Nº {identificacion.mesa} - Circuito {identificacion.mesa.circuito}',
+        )
+        return super().form_valid(form)
+
 
 class IdentificacionProblemaCreateView(IdentificacionCreateView):
     http_method_names = ['post']

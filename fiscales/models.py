@@ -82,6 +82,10 @@ class Fiscal(models.Model):
     def esta_en_grupo_visualizadores(self):
         return self.esta_en_grupo('visualizadores')
 
+    @property
+    def esta_en_grupo_unidades_basicas(self):
+        return self.esta_en_grupo('unidades basicas')
+
 @receiver(post_save, sender=Fiscal)
 def crear_user_para_fiscal(sender, instance=None, created=False, **kwargs):
     """

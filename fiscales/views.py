@@ -285,12 +285,27 @@ def realizar_siguiente_accion(request):
     """
     return siguiente_accion(request).ejecutar()
 
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
+def cargar_resultados_mesa_desde_ub(request, mesa_id, tipo='total'):
+    #TODO acá solo estamos trayendo la mesa desde la carga de la UB.
+    #deberíamos hacer algún chequeo de integridad? Cuáles aplicarían?
+    mesa_existente = get_object_or_404(Mesa, id=mesa_id)
+    mesa_existente.taken = timezone.now()
+    mesa_existente.save(update_fields=['taken'])
+    categoria = mesa_existente.siguiente_categoria_sin_carga()
+    #si categoríá no es None, cargamos resultados
+    if categoria is not None:
+        return cargar_resultados(request, categoria.id, mesa_existente.numero, desde_ub=True)
+    #si es None, lo llevamos a subir un adjunto    
+    return redirect('agregar-adjuntos-ub')
+   
 
 
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores') or u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
 def cargar_resultados(
-    request, categoria_id, mesa_numero, tipo='total', carga_id=None
+    request, categoria_id, mesa_numero, tipo='total', carga_id=None, desde_ub = False
 ):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
@@ -375,11 +390,15 @@ def cargar_resultados(
             capture_exception(e)
             return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
 
-        return redirect('siguiente-accion')
+        #si está en medio de la carga desde la unidad básica, vuelve a procesar-acta para que le tire la próxima categoría
+        #si es un validador, va a siguiente-accion
+        redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+        return redirect(redirect_to)
 
     # Llega hasta acá si hubo error.
+    template_carga = 'carga.html' if not desde_ub else 'carga_ub.html'
     return render(
-        request, "fiscales/carga.html", {
+        request, "fiscales/" + template_carga, {
             'formset': formset,
             'categoria': categoria,
             'object': mesa,
