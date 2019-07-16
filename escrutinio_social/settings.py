@@ -252,8 +252,13 @@ SHOW_PLOT = False
 MIN_COINCIDENCIAS_IDENTIFICACION = 2
 MIN_COINCIDENCIAS_CARGAS = 2
 
+# tiempo en segundos que se espera entre
+# recalculo de consolidaciones de identificacion y carga
+PAUSA_CONSOLIDACION = 15
+
+
 try:
-    from .local_settings import *
+    from .local_settings import *      # noqa
 except ImportError:
     pass
 

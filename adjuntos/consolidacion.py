@@ -179,7 +179,8 @@ def consumir_novedades_identificacion():
     ).distinct()
     for attachment in attachments_con_novedades:
         consolidar_identificaciones(attachment)
-    a_procesar.update(procesada=True)
+    procesadas =  a_procesar.update(procesada=True)
+    return procesadas
 
 
 @transaction.atomic
@@ -193,9 +194,12 @@ def consumir_novedades_carga():
         consolidar_cargas(mesa_categoria_con_novedades)
 
     # Todas procesadas
-    a_procesar.update(procesada=True)
+    procesadas = a_procesar.update(procesada=True)
+    return procesadas
 
 
 def consumir_novedades():
-    consumir_novedades_identificacion()
-    consumir_novedades_carga()
+    return (
+        consumir_novedades_identificacion(),
+        consumir_novedades_carga()
+    )
