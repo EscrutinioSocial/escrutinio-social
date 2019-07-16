@@ -15,11 +15,6 @@
   padding-bottom: 0px;
 }
 
-.acta .card-content {
-  padding-top: 50px;
-  overflow-y: auto;
-}
-
 .left-panel {
 
   flex-basis: 30%;
@@ -59,28 +54,11 @@
 </style>
 <script type="text/javascript">
 $(document).ready(function() {
-  var container = $('.acta .card-content');
+  // Actualizar el alto de la foto a lo disponible
+  var container = $('.darkroom-container');
   if (container.length) {
-    $('html, body').css('overflowY', 'hidden');
-    var darkroomWidth = container.width() - 11;
     var darkroomHeight = $("main").height() - 200;
     container.height(darkroomHeight);
-    $('#target').darkroom({
-      maxWidth: darkroomWidth,
-      minWidth: darkroomWidth,
-      minHeight: darkroomHeight,
-      plugins: {
-        save: {
-          callback: function() {
-            var newImage = this.darkroom.canvas.toDataURL();
-            $.post("{% url 'editar-foto' attachment.id %}", {data: newImage}, function(data){
-               Materialize.toast(data.message);
-            })
-          }
-        }
-      }
-    });
-
   }
 });
 </script>
@@ -163,10 +141,19 @@ $(document).ready(function() {
             <script src="{% static 'js/fabric.js' %}"></script>
             <script src="{% static 'js/darkroom.js' %}"></script>
             <script>
-            $.fn.darkroom = function(options) {
-              var id = this.attr('id');
-              return new Darkroom('#' + id, options);
-            };
+            new Darkroom('#target', {
+              plugins: {
+                save: {
+                  callback: function() {
+                    this.darkroom.selfDestroy();
+                    var newImage = this.darkroom.canvas.toDataURL();
+                    $.post("{% url 'editar-foto' attachment.id %}", {data: newImage}, function(data){
+                       Materialize.toast(data.message);
+                    })
+                  }
+                }
+              }
+            });
             </script>
         </div>
     </div>
