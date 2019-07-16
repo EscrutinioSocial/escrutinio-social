@@ -17,5 +17,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         while True:
             n_identificaciones, n_cargas = consumir_novedades()
-            logger.debug("Identificaciones: {n_identificaciones}, Cargas: {n_cargas}")
+            logger.debug("Identificaciones: %d, cargas: %d.", n_identificaciones, n_cargas)
             time.sleep(settings.PAUSA_CONSOLIDACION)
