@@ -1,8 +1,10 @@
 import pandas as pd
+from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
 
-from elecciones.models import Mesa, Carga, VotoMesaReportado
-from django.db import IntegrityError, transaction
+from elecciones.models import Mesa, Carga, VotoMesaReportado, Opcion
+from django.db import transaction
+from django.db.utils import IntegrityError
 from fiscales.models import Fiscal
 
 COLUMNAS_DEFAULT = [('seccion', False), ('distrito', False), ('circuito', False), ('nro de mesa', False),
@@ -81,11 +83,10 @@ class CSVImporter:
         # validar la existencia de los headers mandatorios
         todas_las_columnas = all(elem in self.df.columns for elem in headers)
         if not todas_las_columnas:
-            faltantes = list(filter(lambda x: x not in self.df.columns, headers))
+            faltantes = [columna for columna in headers if columna not in self.df.columns]
             raise ColumnasInvalidasError(f'Faltan las columnas: {faltantes} en el archivo')
         # las columnas duplicadas en Panda se especifican como ‘X’, ‘X.1’, …’X.N’
-        columnas_candidatas = list(
-            map(lambda x: x.replace('.1', ''), filter(lambda x: x.endswith('.1'), self.df.columns)))
+        columnas_candidatas = [columna.replace('.1', '') for columna in self.df.columns if columna.endswith('.1')]
         columnas_duplicadas = any(elem in columnas_candidatas for elem in headers)
         if columnas_duplicadas:
             raise ColumnasInvalidasError('Hay columnas duplicadas en el archivo')
@@ -113,43 +114,69 @@ class CSVImporter:
         Carga la info del archivo csv en la base de datos.
         Si hay errores, los reporta a traves de excepciones
         """
+        fila_analizada = None
         try:
             with transaction.atomic():
                 fiscal = get_object_or_404(Fiscal, user=self.usuario)
-                # se guardan los datos. El contenedor `carga` y los votos del archivo
+                # se guardan los datos: El contenedor `carga` y los votos del archivo
                 # la carga es por mesa y categoria entonces nos conviene ir analizando grupos de mesas
                 grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
-                columnas_categorias = list(map(lambda x: x[0], filter(lambda x: x[1], COLUMNAS_DEFAULT)))
+                columnas_categorias = [i[0] for i in COLUMNAS_DEFAULT if i[1]]
                 for mesa, grupos in grupos_mesas:
                     # obtengo la mesa correspondiente
                     mesa_bd = self.mesas_matches[mesa]
+                    votos = []
                     # Analizo por categoria, y por cada categoria, todos los partidos posibles
-                    # TODO ver tema performance
                     for mesa_categoria in mesa_bd.mesacategoria_set.all():
                         carga = Carga.objects.create(
+                            # fixme cambiar este status
                             status=Carga.STATUS.total,
                             origen=Carga.SOURCES.csv,
                             mesa_categoria=mesa_categoria,
                             fiscal=fiscal
                         )
                         # buscamos el nombre de la columna asociada a esta categoria
-                        matcheos = list(
-                            columna for columna in columnas_categorias if columna.lower() in mesa_categoria.categoria.nombre.lower())
-                        # TODO: Importa controlar el no matcheo? puedo tirar excepcion
+                        matcheos = [columna for columna in columnas_categorias if columna.lower()
+                                        in mesa_categoria.categoria.nombre.lower()]
+                        # se encontro la categoria de la mesa en el archivo
                         if len(matcheos) != 0:
                             mesa_columna = matcheos[0]
                             # los votos son por partido así que debemos iterar por todas las filas
                             for indice, fila in grupos.iterrows():
                                 cantidad_votos = fila[mesa_columna]
                                 opcion = fila['nro de lista']
-                                # TODO: Bocha de dudas con esta parte donde tengo que cargar la opcion,
-                                #  no se con que mapea el Nrolista
-                                votos = VotoMesaReportado(carga=carga, votos=cantidad_votos)
-                                votos.save()
+                                fila_analizada = FilaCSVImporter(mesa[0], mesa[1], mesa[2], mesa[3])
+                                # buscamos este nro de lista dentro de las opciones
+                                match_opcion = [una_opcion for una_opcion in mesa_categoria.categoria.opciones.all()
+                                                if una_opcion.codigo.strip().lower() == str(opcion).strip().lower()]
+                                opcion_bd = match_opcion if len(match_opcion) > 0 else None
+                                if not opcion_bd:
+                                    raise DatosInvalidosError(f'El número de lista no fue encontrado, revise que sea '
+                                                              f'el correcto: {opcion}')
+                                voto = VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
+                                votos.append(voto)
+                        # si todas las opciones fueron prioritarias entonces la carga es total, sino parcial
+                        VotoMesaReportado.objects.bulk_create(votos)
 
-
-        except Exception as e:
-            print(e)
-            raise e
         except IntegrityError as e:
-            print(e)
+            # fixme ver mejor forma de manejar estos errores
+            if 'votomesareportado_votos_check' in str(e):
+                raise DatosInvalidosError(
+                    f'Los resultados deben ser números positivos. Revise las filas correspondientes a {fila_analizada}')
+            raise DatosInvalidosError(f'Error al guardar los resultados. Revise las filas correspondientes a  {fila_analizada}')
+        except ValueError as e:
+            raise DatosInvalidosError(
+                f'Revise que los datos de resultados sean numéricos. Revise las filas correspondientes a  {fila_analizada}')
+        except Exception as e:
+            raise e
+
+
+class FilaCSVImporter:
+    def __init__(self, seccion, circuito, mesa, distrito):
+        self.mesa = mesa
+        self.seccion = seccion
+        self.circuito = circuito
+        self.distrito = distrito
+
+    def __str__(self):
+        return f"Mesa: {self.mesa} - Sección: {self.seccion} - Circuito: {self.circuito} - Distrito: {self.distrito}"
