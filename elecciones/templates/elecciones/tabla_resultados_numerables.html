@@ -7,7 +7,7 @@
             <td id="votos_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.votos }}</td>
         {% endif %}
         <td><!-- porcentajes de opciones !--></td>
-        <td class="dato">{{ fila.porcentajePositivos }}%</td>
+        <td class="dato">{{ fila.porcentaje_positivos }}%</td>
         {% if resultados.proyectado %}
         <td class="dato">{{ fila.proyeccion }}%</td>
         {% endif %}
@@ -25,5 +25,5 @@
   <td>-</td>
   {% endif %}
 </tr>
-{% endfor %}  
+{% endfor %}
 {% endfor %}

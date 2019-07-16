@@ -163,7 +163,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     VotoMesaReportadoFactory(carga=c2, opcion=o2, votos=40)
     VotoMesaReportadoFactory(carga=c2, opcion=o3, votos=50)
     VotoMesaReportadoFactory(carga=c2, opcion=o4, votos=20)
- 
+
     # votaron 120/120 personas
     VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=0)
     c1.actualizar_firma()
@@ -186,25 +186,25 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     # cuentas
     assert positivos[o3.partido]['votos'] == 40 + 50
-    assert positivos[o3.partido]['porcentajePositivos'] == '41.86' # (40 + 50) / total_positivos
+    assert positivos[o3.partido]['porcentaje_positivos'] == '41.86' # (40 + 50) / total_positivos
     assert positivos[o2.partido]['votos'] == 30 + 40
-    assert positivos[o2.partido]['porcentajePositivos'] == '32.56' #  (30 + 40) / total_positivos
+    assert positivos[o2.partido]['porcentaje_positivos'] == '32.56' #  (30 + 40) / total_positivos
     assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
-    assert positivos[o1.partido]['porcentajePositivos'] == '25.58' # (20 + 5 + 10 + 20) / total_positivos
+    assert positivos[o1.partido]['porcentaje_positivos'] == '25.58' # (20 + 5 + 10 + 20) / total_positivos
 
     # todos los positivos suman 100
-    assert sum(float(v['porcentajePositivos']) for v in positivos.values()) == 100.0
+    assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
 
     # votos de partido 1 son iguales a los de o1 + o4
     assert positivos[o1.partido]['votos'] == sum(x['votos'] for x in positivos[o4.partido]['detalle'].values())
-    
+
     content = response.content.decode('utf8')
 
     assert f'<td id="votos_{o1.partido.id}" class="dato">55</td>' in content
     assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
 
-    
+
     assert resultados['votantes'] == 215
     assert resultados['electores'] == 800
 
@@ -271,8 +271,8 @@ def test_resultados_proyectados(fiscal_client):
     assert positivos[o2.partido]['votos'] == 201
     assert positivos[o1.partido]['votos'] == 199
     assert positivos[o3.partido]['votos'] == 0
-    assert positivos[o2.partido]['porcentajePositivos'] == '50.25'  # 201/400
-    assert positivos[o1.partido]['porcentajePositivos'] == '49.75'  # 199/400
+    assert positivos[o2.partido]['porcentaje_positivos'] == '50.25'  # 201/400
+    assert positivos[o1.partido]['porcentaje_positivos'] == '49.75'  # 199/400
     # no hay proyeccion
     assert 'proyeccion' not in positivos[o1.partido]
 
@@ -285,8 +285,8 @@ def test_resultados_proyectados(fiscal_client):
     assert positivos[o2.partido]['votos'] == 201
     assert positivos[o1.partido]['votos'] == 199
     assert positivos[o3.partido]['votos'] == 0
-    assert positivos[o2.partido]['porcentajePositivos'] == '50.25'
-    assert positivos[o1.partido]['porcentajePositivos'] == '49.75'
+    assert positivos[o2.partido]['porcentaje_positivos'] == '50.25'
+    assert positivos[o1.partido]['porcentaje_positivos'] == '49.75'
 
     # PROYECCION:
     # la seccion 3 esta sobre representada por el momento (está al 100%)
@@ -324,8 +324,8 @@ def test_resultados_proyectados_simple(fiscal_client):
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
 
     positivos = response.context['resultados']['tabla_positivos']
-    assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
-    assert positivos[o2.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
+    assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o1.partido]['proyeccion'] == '58.33'
     assert positivos[o2.partido]['proyeccion'] == '41.67'
 
@@ -364,8 +364,8 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
     positivos = response.context['resultados']['tabla_positivos']
 
-    assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
-    assert positivos[o2.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
+    assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o2.partido]['proyeccion'] == '51.56'
     assert positivos[o1.partido]['proyeccion'] == '48.44'
 
@@ -376,8 +376,8 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
     positivos = response.context['resultados']['tabla_positivos']
 
-    assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
-    assert positivos[o2.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
+    assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o2.partido]['proyeccion'] == '50.00'
     assert positivos[o1.partido]['proyeccion'] == '50.00'
 
@@ -530,7 +530,7 @@ def test_resultados_no_positivos(fiscal_client):
     assert o3.nombre in response.content.decode('utf8')
     no_positivos = response.context['resultados']['tabla_no_positivos']
 
-    assert no_positivos['blanco'] == {'porcentajeTotal': '10.00', 'votos': 10}
+    assert no_positivos['blanco'] == {'porcentaje_total': '10.00', 'votos': 10}
     assert no_positivos['Positivos']['votos'] == 90
 
 
@@ -566,12 +566,12 @@ def test_resultados_excluye_metadata(fiscal_client):
     assert positivos[o2.partido]['votos'] == 150
     assert no_positivos['Positivos']['votos'] == 300
 
-    assert positivos[o1.partido]['porcentajePositivos'] == '50.00'
-    assert positivos[o2.partido]['porcentajePositivos'] == '50.00'
+    assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
+    assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o1.partido]['proyeccion'] == '58.33'
     assert positivos[o2.partido]['proyeccion'] == '41.67'
 
-    assert no_positivos[o3.nombre] == {'porcentajeTotal': '6.25', 'votos': 20}
+    assert no_positivos[o3.nombre] == {'porcentaje_total': '6.25', 'votos': 20}
     assert list(no_positivos.keys()) == [o3.nombre, 'Positivos']
 
 
