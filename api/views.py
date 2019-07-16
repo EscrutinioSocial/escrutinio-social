@@ -53,7 +53,7 @@ def subir_acta(request):
             description='El acta fue identificada con éxito.',
         ),
         status.HTTP_404_NOT_FOUND: openapi.Response(
-            description='No se encontro la mesa de votación.',
+            description='No se existe la mesa de votación.',
         ),
     },
     tags=['Actas']
@@ -76,10 +76,10 @@ def identificar_acta(request, foto_digest):
             description='Se cargaron los votos con éxito.',
         ),
         status.HTTP_404_NOT_FOUND: openapi.Response(
-            description='No se encontraron alguna opción y/o categoria.',
+            description='No se encontraron alguna opción y/o categoría.',
         ),
         status.HTTP_409_CONFLICT: openapi.Response(
-            description='El acta todavia no fue identificada.',
+            description='El acta todavía no fue identificada.',
         ),
     },
     tags=['Actas']
@@ -89,10 +89,7 @@ def cargar_votos(request, foto_digest):
     """
     Permite cargar votos para un acta previamente identificada.
 
-    La lista de votos debe contener todas las opciones prioritarias.
-
-    Si ya existiera una carga de votos para la misma mesa, opcion y categoria,
-    se actualizará el numero de votos de cada opción con la version más reciente.
+    La lista de votos debe contener al mebnos todas las opciones prioritarias.
     """
     return Response({"mensaje": "Se cargaron los votos con éxito."}, status=201)
     
@@ -108,10 +105,10 @@ def cargar_votos(request, foto_digest):
 @api_view(['GET'],)
 def listar_categorias(request):
     """
-    Permite listar las categorias de la elección
+    Permite listar las categorías de la elección
 
-    Se listan todas las categorias con prioridad menor o igual un valor dado.
-    Por defecto se listan solo categorias principales y secundarias (`prioridad=2`).
+    Se listan todas las categorías con prioridad menor o igual un valor dado.
+    Por defecto se listan sólo categorias principales y secundarias (`prioridad=2`).
     Las categorias se ordenan primero por prioridad asendente y luego alfabeticamente.
     """
     return Response([])
@@ -128,9 +125,9 @@ def listar_categorias(request):
 @api_view(['GET'],)
 def listar_opciones(request, id_categoria):
     """
-    Permite listar las opciones por categorias.
+    Permite listar las opciones por categorías.
 
-    Por defecto se listan solo las opciones prioritarias (`solo_prioritarias=true`).
+    Por defecto se listan sólo las opciones prioritarias (`solo_prioritarias=true`).
     Las opciones se ordenan de forma ascendete según el campo orden (orden en la boleta).
     """
     return Response([])
