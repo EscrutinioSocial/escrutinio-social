@@ -480,6 +480,14 @@ class Eleccion(models.Model):
     """
     fecha = models.DateTimeField()
     nombre = models.CharField(max_length=100)
+    # Se usan para referencia en otros lugares, no aquí.
+    NIVELES_AGREGACION = Choices(
+        'distrito',
+        'seccion',
+        'circuito',
+        'lugar_de_votacion',
+        'mesa'
+    )
 
     def __str__(self):
         return f'{self.nombre}'

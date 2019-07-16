@@ -4,6 +4,7 @@ from functools import lru_cache
 from collections import defaultdict, OrderedDict
 from attrdict import AttrDict
 from functools import lru_cache
+from model_utils import Choices
 from django.db.models import Q, F, Sum, Count, Subquery
 from django.db.models import Sum, IntegerField, Case, When
 from .models import (
@@ -24,43 +25,72 @@ class Resultados():
     """
     Esta clase encapsula el cómputo de resultados.
     """
+    TIPOS_DE_AGREGACIONES = Choices(
+        'todas_las_cargas',
+        'solo_consolidados',
+        'solo_consolidados_doble_carga'
+    )
+    OPCIONES_A_CONSIDERAR = Choices(
+        'prioritarias',
+        'todas'
+    )
 
-    def __init__(self, kwargs, tipo_de_computo):
+    def __init__(self, kwargs, tipo_de_agregacion, opciones_a_considerar):
         """
         El tipo de cómputo indica qué datos se tienen en cuenta y cuáles no.
         """
         self.kwargs = kwargs
-        self.tipo_de_computo = tipo_de_computo
+        self.tipo_de_agregacion = tipo_de_agregacion # Es una de TIPOS_DE_AGREGACIONES
+        self.opciones_a_considerar = opciones_a_considerar # Es una de OPCIONES_A_CONSIDERAR
+        self.nivel_de_agregacion = kwargs.get('nivel_de_agregacion') # Era tipo
+
+        # Los ids de la unidad correspondiente según el nivel de agregación
+        # (si es Mesa, entonces son ids de mesas, y así)
+        self.ids_a_considerar = self.kwargs.get('ids_a_considerar') # Era listado.
 
     @lru_cache(128)
     def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
         lookups = dict()
-        if self.kwargs['status'] == 'tc':
-            lookups[f'{prefix}status'] = MesaCategoria.STATUS.total_confirmada
-        elif self.kwargs['status'] == 'tsc':
-            # incluye confirmados y sin confirmar
-            lookups[f'{prefix}status__in'] = (
-                MesaCategoria.STATUS.total_confirmada,
-                MesaCategoria.STATUS.total_sin_confirmar,
-            )
-        elif self.kwargs['status'] == 'pc':
-            # total confirmada incluye a parcial
-            # total sin confirmar asume que hubo parcial confirmada. Revisar
-            lookups[f'{prefix}status__in'] = (
-                MesaCategoria.STATUS.total_confirmada,
-                MesaCategoria.STATUS.total_sin_confirmar,
-                MesaCategoria.STATUS.parcial_confirmada,
-            )
-        elif self.kwargs['status'] == 'psc':
-            # parciales sin confirmar no requieren filtro
-            # dado que se computa cualquier carga testigo.
-            pass
+
+        if self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga: #['status'] == 'tc':
+            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
+                lookups[f'{prefix}status'] = MesaCategoria.STATUS.total_consolidada_dc
+            else: # éste era pc
+                lookups[f'{prefix}status'] = MesaCategoria.STATUS.parcial_consolidada_dc
+
+        elif self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.solo_consolidados: #no estaba
+            # Doble carga y CSV.
+            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
+                lookups[f'{prefix}status__in'] = (
+                    MesaCategoria.STATUS.total_consolidada_dc,
+                    MesaCategoria.STATUS.total_consolidada_csv,
+                )
+            else:
+                lookups[f'{prefix}status__in'] = (
+                    MesaCategoria.STATUS.parcial_consolidada_dc,
+                    MesaCategoria.STATUS.parcial_consolidada_csv,
+                )
+
+        elif self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.todas_las_cargas: #['status'] == 'tsc':
+            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
+                lookups[f'{prefix}status__in'] = (
+                    MesaCategoria.STATUS.total_consolidada_dc,
+                    MesaCategoria.STATUS.total_consolidada_csv,
+                    MesaCategoria.STATUS.total_sin_consolidar,
+                )
+            else: # este era psc
+                lookups[f'{prefix}status__in'] = (
+                    MesaCategoria.STATUS.parcial_consolidada_dc,
+                    MesaCategoria.STATUS.parcial_consolidada_csv,
+                    MesaCategoria.STATUS.parcial_sin_consolidar,
+                )
+
         return lookups
 
     def agregaciones_por_partido(self, categoria):
         """
         Dada una categoría, devuelve los criterios de agregación
-        aplicados a VotoMesaReporto para obtener una "tabla de resultados"
+        aplicados a VotoMesaReportado para obtener una "tabla de resultados"
         que incluye agregaciones por partido político (considerados positivos)
         y otros no positivos.
 
@@ -113,43 +143,42 @@ class Resultados():
         listas de sección, circuito, etc. para filtrar.
         """
         numero = self.kwargs.get('numero')
-        listado = self.kwargs.get('listado')
-        tipo = self.kwargs.get('tipo')
+        nivel_de_agregacion = self.nivel_de_agregacion
 
         if numero:
             # Pidieron una sola.
 
-            if tipo == 'distrito':
+            if nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.distrito:
                 return Distrito.objects.filter(numero=numero)
 
-            elif tipo == 'seccion':
+            elif nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion:
                 return Seccion.objects.filter(numero=numero)
 
-            elif tipo == 'circuito':
+            elif nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.circuito:
                 return Circuito.objects.filter(numero=numero)
 
-            elif tipo == 'lugarvotacion':
+            elif nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.lugar_de_votacion:
                 return LugarVotacion.objects.filter(numero=numero)
 
-            elif tipo == 'mesa':
+            elif nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
                 return Mesa.objects.filter(numero=numero)
-        elif listado:
+        elif self.ids_a_considerar:
             # Pidieron varias.
 
-            if tipo == 'distrito':
-                return Distrito.objects.filter(id__in=listado)
+            if nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.distrito:
+                return Distrito.objects.filter(id__in=self.ids_a_considerar)
 
-            elif tipo == 'seccion':
-                return Seccion.objects.filter(id__in=listado)
+            elif nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion:
+                return Seccion.objects.filter(id__in=self.ids_a_considerar)
 
-            elif tipo == 'circuito':
-                return Circuito.objects.filter(id__in=listado)
+            elif nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.circuito:
+                return Circuito.objects.filter(id__in=self.ids_a_considerar)
 
-            elif tipo == 'lugarvotacion':
-                return LugarVotacion.objects.filter(id__in=listado)
+            elif nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.lugar_de_votacion:
+                return LugarVotacion.objects.filter(id__in=self.ids_a_considerar)
 
-            elif tipo == 'mesa':
-               return Mesa.objects.filter(id__in=listado)
+            elif nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
+               return Mesa.objects.filter(id__in=self.ids_a_considerar)
 
     @lru_cache(128)
     def mesas(self, categoria):
@@ -188,7 +217,166 @@ class Resultados():
         electores = mesas.aggregate(v=Sum('electores'))['v']
         return electores or 0
 
-    def get_resultados(self, categoria, proyectado):
+    def get_resultados(self, categoria):
+        """
+        Realiza la contabilidad para la categoría, invocando al método
+        ``calcular``.
+        """
+        lookups = Q()
+        lookups2 = Q()
+        resultados = {}
+
+        if self.filtros:
+            if self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.distrito:
+                lookups = Q(mesa__lugar_votacion__circuito__seccion__distrito__in=self.filtros)
+                lookups2 = Q(lugar_votacion__circuito__seccion__distrito__in=self.filtros)
+
+            if self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion:
+                lookups = Q(mesa__lugar_votacion__circuito__seccion__in=self.filtros)
+                lookups2 = Q(lugar_votacion__circuito__seccion__in=self.filtros)
+
+            elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.circuito:
+                lookups = Q(mesa__lugar_votacion__circuito__in=self.filtros)
+                lookups2 = Q(lugar_votacion__circuito__in=self.filtros)
+
+            elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.lugar_de_votacion:
+                lookups = Q(mesa__lugar_votacion__in=self.filtros)
+                lookups2 = Q(lugar_votacion__in=self.filtros)
+
+            elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
+                lookups = Q(mesa__id__in=self.filtros)
+                lookups2 = Q(id__in=self.filtros)
+
+        mesas = self.mesas(categoria)
+
+        c = self.calcular(categoria, mesas)
+
+        expanded_result = {}
+        for k, v in c.votos.items():
+            porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
+            porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.positivos and isinstance(k, Partido) else '-'
+            expanded_result[k] = {
+                "votos": v,
+                "porcentajeTotal": porcentaje_total,
+                "porcentajePositivos": porcentaje_positivos
+            }
+
+        # TODO permitir opciones positivas no asociadas a partido.
+        tabla_positivos = OrderedDict(
+            sorted(
+                [(k, v) for k, v in expanded_result.items() if isinstance(k, Partido)],
+                key=lambda x: float(x[1]["votos"]), reverse=True
+            )
+        )
+        tabla_no_positivos = {k: v for k, v in c.votos.items() if not isinstance(k, Partido)}
+        tabla_no_positivos["Positivos"] = c.positivos
+        tabla_no_positivos = {
+            k: {
+                "votos": v,
+                "porcentajeTotal": f'{v*100/c.total:.2f}' if c.total else '-'
+            } for k, v in  tabla_no_positivos.items()
+        }
+
+        resultados = {
+            'tabla_positivos': tabla_positivos,
+            'tabla_no_positivos': tabla_no_positivos,
+
+            'electores': c.electores,
+            'positivos': c.positivos,
+            'electores_en_mesas_escrutadas': c.electores_en_mesas_escrutadas,
+            'votantes': c.total,
+
+            'proyectado': proyectado,
+            'proyeccion_incompleta': proyeccion_incompleta,
+            'porcentaje_mesas_escrutadas': c.porcentaje_mesas_escrutadas,
+            'porcentaje_escrutado': f'{c.electores_en_mesas_escrutadas*100/c.electores:.2f}' if c.electores else '-',
+            'porcentaje_participacion': f'{c.total*100/c.electores_en_mesas_escrutadas:.2f}' if c.electores_en_mesas_escrutadas else '-',
+            'total_mesas_escrutadas': c.total_mesas_escrutadas,
+            'total_mesas': c.total_mesas
+        }
+        return resultados
+
+    def calcular(self, categoria, mesas):
+        """
+        Implementa los cómputos escenciales de la categoría para las mesas dadas.
+        Se invoca una vez para el cálculo de resultados y N veces para los proyectados.
+
+        Devuelve
+
+            electores: cantidad de electores en las mesas válidas en la categoría
+            electores_en_mesas_escrutadas: cantidad de electores en las mesas que efectivamente fueron escrutadas   # TODO revisar!
+            porcentaje_mesas_escrutadas:
+            votos: diccionario con resultados de votos por partido y opcion (positivos y no positivos)
+            total: total votos (positivos + no positivos)
+            positivos: total votos positivos
+        """
+        electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
+        sum_por_partido, otras_opciones = self.agregaciones_por_partido(categoria)
+
+        # primero para partidos
+        reportados = VotoMesaReportado.objects.filter(
+            carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
+            carga__es_testigo__isnull=False,
+            **self.status_filter(categoria)
+        )
+        mesas_escrutadas = mesas.filter(
+            mesacategoria__categoria=categoria,
+            mesacategoria__carga_testigo__isnull=False,
+            **self.status_filter(categoria, 'mesacategoria__')
+        ).distinct()
+        electores_en_mesas_escrutadas = mesas_escrutadas.aggregate(v=Sum('electores'))['v']
+        if electores_en_mesas_escrutadas is None:
+            electores_en_mesas_escrutadas = 0
+
+        total_mesas_escrutadas = mesas_escrutadas.count()
+        total_mesas = mesas.count()
+        if total_mesas == 0:
+            total_mesas = 1
+        porcentaje_mesas_escrutadas = f'{total_mesas_escrutadas*100/total_mesas:.2f}'
+
+        result = reportados.aggregate(
+            **sum_por_partido
+        )
+
+        result = {Partido.objects.get(id=k): v for k, v in result.items() if v is not None}
+        # no positivos
+        result_opc = reportados.aggregate(
+           **otras_opciones
+        )
+        result_opc = {k: v for k, v in result_opc.items() if v is not None}
+
+        # Calculamos el total como la suma de todos los positivos y los
+        # válidos no positivos.
+        positivos = sum(result.values())
+        total = positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(nombre=k, es_contable=False, es_metadata=False).exists())
+        result.update(result_opc)
+
+        return AttrDict({
+            "electores": electores,
+            "electores_en_mesas_escrutadas": electores_en_mesas_escrutadas,
+            "votos": result,
+            "total": total,
+            "positivos": positivos,
+            "porcentaje_mesas_escrutadas": porcentaje_mesas_escrutadas,
+            "total_mesas_escrutadas": total_mesas_escrutadas,
+            "total_mesas": total_mesas
+        })
+
+    @classmethod
+    def get_tipos_sumarizacion(cls):
+        id = 0
+        tipos_sumarizacion = []
+        for tipo_de_agregacion in TIPOS_DE_AGREGACIONES:
+            for opcion in OPCIONES_A_CONSIDERAR:
+                tipos_sumarizacion.append('pk': str(id), 'name': tipo_de_agregacion+'-'+opcion)
+
+        return tipos_sumarizacion
+
+class Proyecciones(Resultados):
+    """
+    Esta clase encapsula el cómputo de proyecciones.
+    """
+    def get_resultados(self, categoria):
         """
         Realiza la contabilidad para la categoría, invocando al método
         ``calcular``.
@@ -200,23 +388,22 @@ class Resultados():
         lookups = Q()
         lookups2 = Q()
         resultados = {}
+        proyectado = True
 
         if self.filtros:
-            tipo = self.kwargs.get('tipo')
-
-            if tipo == 'seccion':
+            if self.nivel_de_agregacion == 'seccion':
                 lookups = Q(mesa__lugar_votacion__circuito__seccion__in=self.filtros)
                 lookups2 = Q(lugar_votacion__circuito__seccion__in=self.filtros)
 
-            elif tipo == 'circuito':
+            elif self.nivel_de_agregacion == 'circuito':
                 lookups = Q(mesa__lugar_votacion__circuito__in=self.filtros)
                 lookups2 = Q(lugar_votacion__circuito__in=self.filtros)
 
-            elif tipo == 'lugarvotacion':
+            elif self.nivel_de_agregacion == 'lugarvotacion':
                 lookups = Q(mesa__lugar_votacion__in=self.filtros)
                 lookups2 = Q(lugar_votacion__in=self.filtros)
 
-            elif tipo == 'mesa':
+            elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
                 lookups = Q(mesa__id__in=self.filtros)
                 lookups2 = Q(id__in=self.filtros)
 
@@ -240,7 +427,7 @@ class Resultados():
                 mesas = ag.mesas(categoria)
                 datos_ponderacion[ag] = self.calcular(categoria, mesas)
 
-                if not datos_ponderacion[ag]["escrutados"]:
+                if not datos_ponderacion[ag]["electores_en_mesas_escrutadas"]:
                     proyeccion_incompleta.append(ag)
                 else:
                     electores_pond += datos_ponderacion[ag]["electores"]
@@ -287,89 +474,15 @@ class Resultados():
 
             'electores': c.electores,
             'positivos': c.positivos,
-            'escrutados': c.escrutados,
+            'electores_en_mesas_escrutadas': c.electores_en_mesas_escrutadas,
             'votantes': c.total,
 
             'proyectado': proyectado,
             'proyeccion_incompleta': proyeccion_incompleta,
             'porcentaje_mesas_escrutadas': c.porcentaje_mesas_escrutadas,
-            'porcentaje_escrutado': f'{c.escrutados*100/c.electores:.2f}' if c.electores else '-',
-            'porcentaje_participacion': f'{c.total*100/c.escrutados:.2f}' if c.escrutados else '-',
+            'porcentaje_escrutado': f'{c.electores_en_mesas_escrutadas*100/c.electores:.2f}' if c.electores else '-',
+            'porcentaje_participacion': f'{c.total*100/c.electores_en_mesas_escrutadas:.2f}' if c.electores_en_mesas_escrutadas else '-',
             'total_mesas_escrutadas': c.total_mesas_escrutadas,
             'total_mesas': c.total_mesas
         }
         return resultados
-
-    def calcular(self, categoria, mesas):
-        """
-        Implementa los cómputos escenciales de la categoría para las mesas dadas.
-        Se invoca una vez para el cálculo de resultados y N veces para los proyectados.
-
-        Devuelve
-
-            electores: cantidad de electores en las mesas válidas en la categoría
-            escrutados: cantidad de electores en las mesas que efectivamente fueron escrutadas   # TODO revisar!
-            porcentaje_mesas_escrutadas:
-            votos: diccionario con resultados de votos por partido y opcion (positivos y no positivos)
-            total: total votos (positivos + no positivos)
-            positivos: total votos positivos
-        """
-        electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
-        sum_por_partido, otras_opciones = self.agregaciones_por_partido(categoria)
-
-        # primero para partidos
-        reportados = VotoMesaReportado.objects.filter(
-            carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
-            carga__es_testigo__isnull=False,
-            **self.status_filter(categoria)
-        )
-        mesas_escrutadas = mesas.filter(
-            mesacategoria__categoria=categoria,
-            mesacategoria__carga_testigo__isnull=False,
-            **self.status_filter(categoria, 'mesacategoria__')
-        ).distinct()
-        escrutados = mesas_escrutadas.aggregate(v=Sum('electores'))['v']
-        if escrutados is None:
-            escrutados = 0
-
-        total_mesas_escrutadas = mesas_escrutadas.count()
-        total_mesas = mesas.count()
-        if total_mesas == 0:
-            total_mesas = 1
-        porcentaje_mesas_escrutadas = f'{total_mesas_escrutadas*100/total_mesas:.2f}'
-
-        result = reportados.aggregate(
-            **sum_por_partido
-        )
-
-        result = {Partido.objects.get(id=k): v for k, v in result.items() if v is not None}
-        # no positivos
-        result_opc = reportados.aggregate(
-           **otras_opciones
-        )
-        result_opc = {k: v for k, v in result_opc.items() if v is not None}
-
-        # calculamos el total como la suma de todos los positivos y los
-        # validos no positivos.
-        positivos = sum(result.values())
-        total = positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(nombre=k, es_contable=False, es_metadata=False).exists())
-        result.update(result_opc)
-
-        return AttrDict({
-            "electores": electores,
-            "escrutados": escrutados,
-            "porcentaje_mesas_escrutadas": porcentaje_mesas_escrutadas,
-            "votos": result,
-            "total": total,
-            "positivos": positivos,
-            "total_mesas_escrutadas": total_mesas_escrutadas,
-            "total_mesas": total_mesas
-        })
-
-    @classmethod
-    def get_tipos_sumarizacion(cls):
-        """
-        Esto debería cambiarse cuando se realice el issue 17.
-        Por ahora va a ser hardcodeado
-        """
-        return [{'pk': '1', 'name': 'Normal'}, {'pk': '2', 'name': 'Proyectado'}]
