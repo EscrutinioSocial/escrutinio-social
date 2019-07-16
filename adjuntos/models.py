@@ -18,6 +18,8 @@ import hashlib
 from model_utils import Choices
 from versatileimagefield.fields import VersatileImageField
 
+import json
+
 
 def hash_file(file, block_size=65536):
     """
@@ -229,9 +231,11 @@ class Identificacion(TimeStampedModel):
     def save(self, *args, **kwargs):
         if self.attachment:
             status_count_dict = self.attachment.status_count(self.id)
+            dato_mesa = None if self.mesa is None else self.mesa.id
             same_status_count = status_count_dict.get(
-                (self.mesa, self.status)
+                (dato_mesa, self.status)
             )
+            text = "None" if same_status_count is None else str(same_status_count)
             # si esta identificación iguala o supera el mónimo de
             # identificaciones coincidentes, la identificación se
             # consolida.

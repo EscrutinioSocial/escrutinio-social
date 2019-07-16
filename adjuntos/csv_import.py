@@ -1,8 +1,7 @@
 import pandas as pd
-from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404
 
-from elecciones.models import Mesa, Carga, VotoMesaReportado, Opcion
+from elecciones.models import Mesa, Carga, VotoMesaReportado
 from django.db import transaction
 from django.db.utils import IntegrityError
 from fiscales.models import Fiscal
@@ -115,29 +114,36 @@ class CSVImporter:
         Si hay errores, los reporta a traves de excepciones
         """
         fila_analizada = None
+        fiscal = get_object_or_404(Fiscal, user=self.usuario)
+        # se guardan los datos: El contenedor `carga` y los votos del archivo
+        # la carga es por mesa y categoria entonces nos conviene ir analizando grupos de mesas
+        grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
+        columnas_categorias = [i[0] for i in COLUMNAS_DEFAULT if i[1]]
         try:
             with transaction.atomic():
-                fiscal = get_object_or_404(Fiscal, user=self.usuario)
-                # se guardan los datos: El contenedor `carga` y los votos del archivo
-                # la carga es por mesa y categoria entonces nos conviene ir analizando grupos de mesas
-                grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
-                columnas_categorias = [i[0] for i in COLUMNAS_DEFAULT if i[1]]
+
                 for mesa, grupos in grupos_mesas:
                     # obtengo la mesa correspondiente
                     mesa_bd = self.mesas_matches[mesa]
                     votos = []
-                    # Analizo por categoria, y por cada categoria, todos los partidos posibles
+                    # Analizo por categoria-mesa, y por cada categoria-mesa, todos los partidos posibles
                     for mesa_categoria in mesa_bd.mesacategoria_set.all():
-                        carga = Carga.objects.create(
-                            # fixme cambiar este status
+                        carga_total = Carga.objects.create(
                             status=Carga.STATUS.total,
                             origen=Carga.SOURCES.csv,
                             mesa_categoria=mesa_categoria,
                             fiscal=fiscal
                         )
+                        carga_parcial = Carga.objects.create(
+                            status=Carga.STATUS.parcial,
+                            origen=Carga.SOURCES.csv,
+                            mesa_categoria=mesa_categoria,
+                            fiscal=fiscal
+                        )
+                        categoria_bd = mesa_categoria.categoria
                         # buscamos el nombre de la columna asociada a esta categoria
                         matcheos = [columna for columna in columnas_categorias if columna.lower()
-                                        in mesa_categoria.categoria.nombre.lower()]
+                                        in categoria_bd.nombre.lower()]
                         # se encontro la categoria de la mesa en el archivo
                         if len(matcheos) != 0:
                             mesa_columna = matcheos[0]
@@ -146,17 +152,25 @@ class CSVImporter:
                                 cantidad_votos = fila[mesa_columna]
                                 opcion = fila['nro de lista']
                                 fila_analizada = FilaCSVImporter(mesa[0], mesa[1], mesa[2], mesa[3])
-                                # buscamos este nro de lista dentro de las opciones
-                                match_opcion = [una_opcion for una_opcion in mesa_categoria.categoria.opciones.all()
+                                # buscamos este nro de lista dentro de las opciones asociadas a esta categoria
+                                match_opcion = [una_opcion for una_opcion in categoria_bd.opciones.all()
                                                 if una_opcion.codigo.strip().lower() == str(opcion).strip().lower()]
-                                opcion_bd = match_opcion if len(match_opcion) > 0 else None
+                                opcion_bd = match_opcion[0] if len(match_opcion) > 0 else None
                                 if not opcion_bd:
-                                    raise DatosInvalidosError(f'El número de lista no fue encontrado, revise que sea '
-                                                              f'el correcto: {opcion}')
+                                    raise DatosInvalidosError(f'El número de lista {opcion} no fue encontrado asociado la '
+                                                              f'categoria {categoria_bd.nombre}, '
+                                                              f'revise que sea el correcto.')
+                                opcion_categoria = opcion_bd.categoriaopcion_set.filter(categoria=categoria_bd).first()
+                                carga = carga_parcial if opcion_categoria.prioritaria else carga_total
                                 voto = VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
                                 votos.append(voto)
+                        else :
+                            raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente categoria {categoria_bd.nombre}.')
                         # si todas las opciones fueron prioritarias entonces la carga es total, sino parcial
                         VotoMesaReportado.objects.bulk_create(votos)
+                        # TODO revisar esto de actualizar firma si es necesario para ambas cargas
+                        #carga_parcial.actualizar_firma()
+                        #carga_total.actualizar_firma()
 
         except IntegrityError as e:
             # fixme ver mejor forma de manejar estos errores
@@ -165,6 +179,7 @@ class CSVImporter:
                     f'Los resultados deben ser números positivos. Revise las filas correspondientes a {fila_analizada}')
             raise DatosInvalidosError(f'Error al guardar los resultados. Revise las filas correspondientes a  {fila_analizada}')
         except ValueError as e:
+            print(e)
             raise DatosInvalidosError(
                 f'Revise que los datos de resultados sean numéricos. Revise las filas correspondientes a  {fila_analizada}')
         except Exception as e:

@@ -1,4 +1,6 @@
 import os
+import logging
+
 from itertools import chain
 from collections import defaultdict
 from datetime import timedelta
@@ -25,6 +27,7 @@ from model_utils import Choices
 from adjuntos.models import Attachment
 from problemas.models import Problema
 
+logger = logging.getLogger("e-va");
 
 class Distrito(models.Model):
     """
@@ -313,6 +316,19 @@ class Mesa(models.Model):
             ).exists():
                 return categoria
 
+    def marcar_todas_las_categorias_cargadas(self):
+        cantidad_categorias = self.categorias.filter(activa=True).count()
+        logger.debug(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
+        self.cargadas = cantidad_categorias
+        self.save(update_fields=['cargadas'])
+
+    def marcar_todas_las_categorias_confirmadas(self):
+        cantidad_categorias = self.cargadas
+        logger.debug(f'marcando {cantidad_categorias} como confirmadas en mesa {self.numero}')
+        self.confirmadas = cantidad_categorias
+        self.save(update_fields=['confirmadas'])
+
+
     @classmethod
     def obtener_mesa_en_circuito_seccion_distrito(cls, mesa, circuito, seccion, distrito):
         """
@@ -336,7 +352,7 @@ class Mesa(models.Model):
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
-            identificacion__isnull=False,
+            attachments__isnull=False,
             orden_de_carga__gte=1,
         ).filter(
             Q(taken__isnull=True) | Q(taken__lt=desde)

@@ -1,0 +1,11 @@
+{% extends "fiscales/base.html" %}
+
+{% block page_title %}Bienvenido{% endblock %}
+
+{% block card-title %}
+    {% if request.user.fiscal.esta_en_grupo_validadores %}
+        Para comenzar la carga, elegir la opción "Actuar sobre acta" en el menú de la izquierda, o pulsar este botón.
+    {% else %}
+        Elija la acción a realizar del menú de la izquierda.
+    {% endif %}
+{% endblock card-title %}

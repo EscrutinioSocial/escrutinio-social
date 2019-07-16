@@ -3,7 +3,7 @@ from elecciones.tests.factories import (
     MesaFactory,
 )
 from django.urls import reverse
-from elecciones.tests.test_resultados import fiscal_client  # noqa
+from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
 
 
 def test_identificacion_create_view_get(fiscal_client):
@@ -24,7 +24,7 @@ def test_identificacion_create_view_post(fiscal_client, admin_user):
     }
     response = fiscal_client.post(reverse('asignar-mesa', args=[a.id]), data)
     assert response.status_code == 302
-    assert response.url == reverse("elegir-adjunto")
+    assert response.url == reverse('siguiente-accion')
     assert a.identificaciones.count() == 1
     i = a.identificaciones.first()
     assert i.status == 'identificada'
@@ -43,7 +43,7 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     }
     response = fiscal_client.post(reverse('asignar-problema', args=[a.id]), data)
     assert response.status_code == 302
-    assert response.url == reverse("elegir-adjunto")
+    assert response.url == reverse('siguiente-accion')
     assert a.identificaciones.count() == 1
     i = a.identificaciones.first()
     assert i.status == 'spam'

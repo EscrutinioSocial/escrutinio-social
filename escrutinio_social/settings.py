@@ -203,6 +203,23 @@ ANYMAIL = {
     "MAILGUN_SENDER_DOMAIN": '',  # your Mailgun domain, if needepd
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'e-va': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
+
 # EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"  # or sendgrid.EmailBackend, or...
 DEFAULT_FROM_EMAIL = "algo@email.com"         # if you don't already have this in settings
 DEFAULT_CEL_CALL = '+54 9 351 XXXXXX'
@@ -239,3 +256,5 @@ try:
     from .local_settings import *
 except ImportError:
     pass
+
+
