@@ -15,17 +15,17 @@ from drf_yasg import openapi
 
 from . import views
 
-schema_view = get_schema_view(
-   openapi.Info(
-      title="La API del escrutinio social paralelo",
-      default_version='v1',
-      description="Escrutinio social paralelo / Democracia con codigos",
-      license=openapi.License(name="GPLv3 License"),
-   ),
-   public=True,
-   permission_classes=(permissions.AllowAny,),
+
+swagger_info =  openapi.Info(
+   title="La API del escrutinio social paralelo",
+   default_version='v1',
+   description="Escrutinio social paralelo / Democracia con codigos",
+   license=openapi.License(name="GPLv3 License"),
 )
 
+schema_view = get_schema_view(
+   swagger_info, public=True, permission_classes=(permissions.AllowAny,)
+)
 
 urlpatterns = [
    path('actas/', views.subir_acta, name='actas'),
