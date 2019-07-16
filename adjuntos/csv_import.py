@@ -125,26 +125,15 @@ class CSVImporter:
                 for mesa, grupos in grupos_mesas:
                     # obtengo la mesa correspondiente
                     mesa_bd = self.mesas_matches[mesa]
-                    votos = []
                     # Analizo por categoria-mesa, y por cada categoria-mesa, todos los partidos posibles
                     for mesa_categoria in mesa_bd.mesacategoria_set.all():
-                        carga_total = Carga.objects.create(
-                            status=Carga.STATUS.total,
-                            origen=Carga.SOURCES.csv,
-                            mesa_categoria=mesa_categoria,
-                            fiscal=fiscal
-                        )
-                        carga_parcial = Carga.objects.create(
-                            status=Carga.STATUS.parcial,
-                            origen=Carga.SOURCES.csv,
-                            mesa_categoria=mesa_categoria,
-                            fiscal=fiscal
-                        )
+                        carga_total = None
+                        carga_parcial = None
                         categoria_bd = mesa_categoria.categoria
                         # buscamos el nombre de la columna asociada a esta categoria
                         matcheos = [columna for columna in columnas_categorias if columna.lower()
                                         in categoria_bd.nombre.lower()]
-                        # se encontro la categoria de la mesa en el archivo
+                        # se encontró la categoria de la mesa en el archivo
                         if len(matcheos) != 0:
                             mesa_columna = matcheos[0]
                             # los votos son por partido así que debemos iterar por todas las filas
@@ -161,13 +150,29 @@ class CSVImporter:
                                                               f'categoria {categoria_bd.nombre}, '
                                                               f'revise que sea el correcto.')
                                 opcion_categoria = opcion_bd.categoriaopcion_set.filter(categoria=categoria_bd).first()
-                                carga = carga_parcial if opcion_categoria.prioritaria else carga_total
+                                if opcion_categoria.prioritaria:
+                                    if not carga_parcial:
+                                        carga_parcial = Carga.objects.create(
+                                            status=Carga.STATUS.parcial,
+                                            origen=Carga.SOURCES.csv,
+                                            mesa_categoria=mesa_categoria,
+                                            fiscal=fiscal
+                                        )
+                                    carga = carga_parcial
+                                else:
+                                    if not carga_total:
+                                        carga_total = Carga.objects.create(
+                                            status=Carga.STATUS.total,
+                                            origen=Carga.SOURCES.csv,
+                                            mesa_categoria=mesa_categoria,
+                                            fiscal=fiscal
+                                        )
+                                    carga = carga_total
                                 voto = VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
-                                votos.append(voto)
+                                voto.save()
                         else :
                             raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente categoria {categoria_bd.nombre}.')
                         # si todas las opciones fueron prioritarias entonces la carga es total, sino parcial
-                        VotoMesaReportado.objects.bulk_create(votos)
                         # TODO revisar esto de actualizar firma si es necesario para ambas cargas
                         #carga_parcial.actualizar_firma()
                         #carga_total.actualizar_firma()
