@@ -120,6 +120,12 @@ class Attachment(TimeStampedModel):
     )
     taken = models.DateTimeField(null=True)
 
+    # Identificacion representativa del estado actual.
+    identificacion_testigo = models.ForeignKey(
+        'Identificacion', related_name='es_testigo',
+        null=True, blank=True, on_delete=models.SET_NULL
+    )
+
     def save(self, *args, **kwargs):
         """
         Actualiza el hash de la imágen original asociada antes de guardar.
@@ -159,7 +165,8 @@ class Attachment(TimeStampedModel):
     def status_count(self):
         """
         A partir del conjunto de identificaciones del attachment
-        se devuelve una lista de tuplas (mesa_id, status, cantidad, cantidad que viene de csv).
+        se devuelve una lista de tuplas
+        (mesa_id, status, cantidad, cantidad que viene de csv).
 
         Por ejemplo:
             [
@@ -178,14 +185,16 @@ class Attachment(TimeStampedModel):
         cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
         result = []
         query = qs.values('mesa', 'status').annotate(
-                    mesa_o_0=Coalesce('mesa', V(0)) # Esto es para facilitar el testing.
-                ).annotate(
-                    total=Count('status')
-                ).annotate(
-                    cuantos_csv=cuantos_csv
-                )
+                mesa_o_0=Coalesce('mesa', V(0)) # Esto es para facilitar el testing.
+            ).annotate(
+                total=Count('status')
+            ).annotate(
+                cuantos_csv=cuantos_csv
+            )
         for item in query:
-            result.append((item['mesa_o_0'], item['status'], item['total'], item['cuantos_csv']))
+            result.append(
+                (item['mesa_o_0'], item['status'], item['total'], item['cuantos_csv'])
+            )
         return result
 
     def __str__(self):
@@ -214,14 +223,6 @@ class Identificacion(TimeStampedModel):
     SOURCES = Choices('web', 'csv', 'telegram')
     source = StatusField(choices_name='SOURCES', default=SOURCES.web)
 
-    consolidada = models.BooleanField(
-        default=False,
-        help_text=(
-            'Una identificación consolidada es aquella '
-            'que se considera representativa y determina '
-            'el estado del attachment'
-        )
-    )
     fiscal = models.ForeignKey(
         'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -231,22 +232,8 @@ class Identificacion(TimeStampedModel):
     attachment = models.ForeignKey(
         Attachment, related_name='identificaciones', on_delete=models.CASCADE
     )
+    procesada = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - {self.consolidada}'
+        return f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - Procesada: {self.procesada}'
 
-    def set_consolidada(self):
-        self.consolidada = True
-        self.save(update_fields=['consolidada'])
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        update_fields = kwargs['update_fields'] if 'update_fields' in kwargs else None
-        if self.attachment and not update_fields or 'consolidada' not in update_fields:
-            NovedadesIdentificacion.objects.create(identificacion=self)
-
-
-class NovedadesIdentificacion(TimeStampedModel):
-    identificacion = models.ForeignKey(
-        'Identificacion', null=False, on_delete=models.CASCADE
-    )

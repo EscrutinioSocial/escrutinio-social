@@ -6,8 +6,8 @@ from elecciones.tests.factories import (
     IdentificacionFactory,
 )
 from django.utils import timezone
-from adjuntos.models import Attachment, NovedadesIdentificacion
-from adjuntos.consolidacion import *
+from adjuntos.models import Attachment, Identificacion
+from adjuntos.consolidacion import consumir_novedades_identificacion
 
 
 def test_attachment_unico(db):
@@ -49,7 +49,7 @@ def test_identificacion_status_count(db):
     # un estado excepcional, pero eventualmente posible?
     IdentificacionFactory(attachment=a, status='spam', mesa=m1)
 
-    i2 = IdentificacionFactory(attachment=a, status='identificada', mesa=m2)
+    IdentificacionFactory(attachment=a, status='identificada', mesa=m2)
 
     result = a.status_count()
     assert sorted(result) == sorted([
@@ -64,63 +64,40 @@ def test_identificacion_status_count(db):
 def test_identificacion_consolidada_ninguno(db):
     a = AttachmentFactory()
     m1 = MesaFactory()
-    i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
-    i2 = IdentificacionFactory(attachment=a, status='spam', mesa=None)
-    i3 = IdentificacionFactory(attachment=a, status='spam', mesa=None)
+    IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+    IdentificacionFactory(attachment=a, status='spam', mesa=None)
+    IdentificacionFactory(attachment=a, status='spam', mesa=None)
 
-    assert not i1.consolidada
-    assert not i2.consolidada
-    assert not i3.consolidada
+    assert a.identificacion_testigo is None
 
-    cant_novedades = NovedadesIdentificacion.objects.count()
+    cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 3
     consumir_novedades_identificacion()
 
-    cant_novedades = NovedadesIdentificacion.objects.count()
+    cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 0
 
-    i1.refresh_from_db()
-    i2.refresh_from_db()
-    i3.refresh_from_db()
+    assert a.identificacion_testigo is None
 
-    assert not i1.consolidada
-    assert not i2.consolidada
-    assert not i3.consolidada
 
 def test_identificacion_consolidada_alguna(db):
     a = AttachmentFactory()
     m1 = MesaFactory()
     i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
-    i2 = IdentificacionFactory(attachment=a, status='spam', mesa=None)
-    i3 = IdentificacionFactory(attachment=a, status='spam', mesa=None)
-    i4 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+    IdentificacionFactory(attachment=a, status='spam', mesa=None)
+    IdentificacionFactory(attachment=a, status='spam', mesa=None)
+    IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
 
-    assert not i1.consolidada
-    assert not i2.consolidada
-    assert not i3.consolidada
-    assert not i4.consolidada
+    assert a.identificacion_testigo is None
 
-    cant_novedades = NovedadesIdentificacion.objects.count()
+    cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 4
     consumir_novedades_identificacion()
 
-    cant_novedades = NovedadesIdentificacion.objects.count()
+    cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 0
 
-    i1.refresh_from_db()
-    i2.refresh_from_db()
-    i3.refresh_from_db()
-    i4.refresh_from_db()
-
-    assert not i2.consolidada
-    assert not i3.consolidada
-    assert i1.consolidada or i4.consolidada
-    if i1.consolidada:
-        assert not i4.consolidada
-    else:
-        assert not i1.consolidada
-
-    m1.refresh_from_db()
-    attach_de_m1 = m1.attachments.first()
-    assert attach_de_m1 ==a
-    assert attach_de_m1.status == Attachment.STATUS.identificada
+    a.refresh_from_db()
+    assert a.identificacion_testigo == i1
+    assert a.mesa == m1
+    assert a.status == Attachment.STATUS.identificada

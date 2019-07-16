@@ -16,6 +16,7 @@ from elecciones.models import Mesa, MesaCategoria, Categoria
 from django.utils import timezone
 from adjuntos.consolidacion import *
 
+
 def consumir_novedades_y_actualizar_objetos(lista=None):
     consumir_novedades_carga()
     if not lista:
@@ -204,7 +205,6 @@ def test_fotos_de_mesa(db):
     # ignora porque no está consolidada.
     IdentificacionFactory(
         status='identificada',
-        consolidada=False,
         attachment=a2,
         mesa=m
     )

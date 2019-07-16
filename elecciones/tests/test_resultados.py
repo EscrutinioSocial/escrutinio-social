@@ -62,6 +62,7 @@ def fiscal_client(db, admin_user, setup_groups, client):
 def url_resultados(carta_marina):
     return reverse('resultados-categoria', args=[1])
 
+
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
     # nota: el factory de mesa indirectamente crea la categoria con id=1 que es actual()
@@ -381,7 +382,6 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     assert positivos[o1.partido]['proyeccion'] == '50.00'
 
 
-@pytest.mark.skip(reason="Se va a arreglar cuando se actualicen los resultados (issue 67)")
 def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fiscal_client):
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
@@ -389,15 +389,15 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     blanco = categoria.opciones.get(nombre='blanco')
 
     c1 = CargaFactory(
-        status='total', mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria,
-        tipo=Carga.TIPOS.parcial
+        mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria,
+        tipo=Carga.TIPOS.total
     )
     VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=20)
     c1.actualizar_firma()
     mc = c1.mesa_categoria
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.carga_testigo == c1
-    assert mc.status == MesaCategoria.STATUS.total_sin_confirmar
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
 
     response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
     resultados = response.context['resultados']
@@ -410,16 +410,17 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert resultados['total_mesas_escrutadas'] == 0
 
     c2 = CargaFactory(
-        status='total', mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria,
-        tipo=Carga.TIPOS.parcial
+        mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria,
+        tipo=Carga.TIPOS.total
     )
     VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=20)
     c2.actualizar_firma()
 
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc == c2.mesa_categoria
-    assert mc.carga_testigo == c2
-    assert mc.status == MesaCategoria.STATUS.total_confirmada
+    # la carga testigo sigue siendo la primera coincidentes
+    assert mc.carga_testigo == c1
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
 
     response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
     resultados = response.context['resultados']
@@ -431,7 +432,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
     assert resultados['total_mesas_escrutadas'] == 1
 
-@pytest.mark.skip(reason="Se va a arreglar cuando se actualicen los resultados (issue 67)")
+
 def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
@@ -473,7 +474,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     )
     VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=10)
     c3.actualizar_firma()
-    consumir_novedades_y_actualizar_objetos()
+    consumir_novedades_y_actualizar_objetos([mc])
     response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
     resultados = response.context['resultados']
     # c3 no está confirmada, no varía el resultado.
@@ -484,8 +485,8 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
         tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria
     )
     VotoMesaReportadoFactory(carga=c4, opcion=blanco, votos=10)
-    consumir_novedades_y_actualizar_objetos()
     c4.actualizar_firma()
+    consumir_novedades_y_actualizar_objetos([mc])
 
     response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
     resultados = response.context['resultados']

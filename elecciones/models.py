@@ -234,7 +234,7 @@ class MesaCategoria(models.Model):
     STATUS = Choices(
         'sin_cargar',                   # no hay cargas
         'parcial_sin_consolidar',       # carga parcial única (no csv) o no coincidente
-        'parcial_consolidada_csv',      # no hay dos cargas mínimas coincidentes, pero una es de csv. 
+        'parcial_consolidada_csv',      # no hay dos cargas mínimas coincidentes, pero una es de csv.
         'parcial_en_conflicto',         # cargas parcial divergentes sin consolidar
         'parcial_consolidada_dc',       # carga parcial consolidada por doble carga
         'total_sin_consolidar',
@@ -617,13 +617,9 @@ class Carga(TimeStampedModel):
         'parcial',
         'total'
     )
-    tipo = StatusField(choices_name='TIPOS', null=True, blank=True)
-    
     SOURCES = Choices('web', 'csv', 'telegram')
-    origen = models.CharField(
-        max_length=50, choices=SOURCES, default='web'
-    )
-
+    tipo = models.CharField(max_length=50, choices=TIPOS, null=True, blank=True)
+    origen = models.CharField(max_length=50, choices=SOURCES, default='web')
     mesa_categoria = models.ForeignKey(
         MesaCategoria, related_name='cargas', on_delete=models.CASCADE
     )
@@ -631,6 +627,8 @@ class Carga(TimeStampedModel):
     firma = models.CharField(
         max_length=300, null=True, blank=True, editable=False
     )
+    procesada = models.BooleanField(default=False)
+
 
     @property
     def mesa(self):
@@ -660,16 +658,6 @@ class Carga(TimeStampedModel):
 
     def __str__(self):
         return f'carga de {self.mesa} / {self.categoria} por {self.fiscal}'
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        # Genero una novedad.
-        NovedadesCarga.objects.create(carga=self)
-
-class NovedadesCarga(TimeStampedModel):
-    carga = models.ForeignKey(
-        'Carga', null=False, on_delete=models.CASCADE
-    )
 
 
 class VotoMesaReportado(models.Model):
@@ -704,6 +692,7 @@ def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=Fals
     if mesa.cargadas != categorias_cargadas:
         mesa.cargadas = categorias_cargadas
         mesa.save(update_fields=['cargadas'])
+
 
 @receiver(post_save, sender=MesaCategoria)
 def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
