@@ -182,8 +182,10 @@ class CSVImporter:
                                                       f'categoria: {categoria_bd.nombre}.')
                         # si todas las opciones fueron prioritarias entonces la carga es total, sino parcial
                         # TODO revisar esto de actualizar firma si es necesario para ambas cargas
-                        #carga_parcial.actualizar_firma()
-                        #carga_total.actualizar_firma()
+                        if carga_parcial:
+                            carga_parcial.actualizar_firma()
+                        if carga_total:
+                            carga_total.actualizar_firma()
 
         except IntegrityError as e:
             # fixme ver mejor forma de manejar estos errores
