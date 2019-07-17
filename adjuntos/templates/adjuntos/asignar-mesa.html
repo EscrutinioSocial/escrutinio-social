@@ -92,6 +92,9 @@ $(document).ready(function() {
                <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
                   Guardar
                </button>
+               <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem">
+                  Ilegible
+	       </a>
             </div>
             {% endblock card-action %}
         </div>
@@ -101,26 +104,22 @@ $(document).ready(function() {
 
   {% block extra_form %}
 
-<div class="card">
-       <form method="POST" action="{% url 'asignar-problema' attachment.id %}" enctype="multipart/form-data">
+  <div class="modal" id="modal-problem">
+    <form method="POST" action="{% url 'asignar-problema' attachment.id %}" enctype="multipart/form-data" id="problema-imagen">
+      <div class="modal-content">
+      <h4>Reportar problema con imágen</h4>
         {% csrf_token %}
-        <div class="card-content">
-
-            <div class="card-title">¿Hay un problema?</div>
-                  {% form form=form_problema %}
-                  {% endform %}
-            </div>
-
-        <div class="card-action">
-            <div class="right-align">
-               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="7">
-                  Reportar
-               </button>
-            </div>
-        </div>
-
-       </form>
+        {% form form=form_problema %}
+	{% endform %}
+      <div class="modal-footer" style="padding-right: 5%;" >
+	<a href="#!" class="modal-close waves-effect waves-green btn-flat">Volver</a>
+	<button class="btn waves-effect waves-light btn white-text red" type="submit" tabindex="7">
+          Reportar
+      </button>
     </div>
+    </div>
+    </form>
+  </div>
 
   {% endblock extra_form %}
 
@@ -170,8 +169,12 @@ $(document).ready(function() {
 {% block messages %}
 {{ block.super }}
 <script type="text/javascript">
-$(document).ready(function(){
-  $('#id_status_container').attr('tabindex', 6);
-});
+  $(document).ready(function(){
+      $('#id_status_container').attr('tabindex', 6);
+  });
+  $(document).ready(function(){
+      $('.modal').modal();
+  });
+  $('.modal').modal('endingTop','10%');
 </script>
 {% endblock messages %}

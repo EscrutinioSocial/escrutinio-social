@@ -86,10 +86,12 @@ class Attachment(TimeStampedModel):
     STATUS = Choices(
         ('sin_identificar', 'sin identificar'),
         'identificada',
-        'spam',
-        'invalida',
-        'ilegible',
-    )
+        ('spam', 'La foto no es ni de un acta ni de un certificado.'),
+        ('invalida', 'Falla alguna validación del sistema.'),
+        ('ilegible', 'La foto es de un acta pero no la puedo leer.'),
+        ('mesa_tomada','El sistema no acepta la mesa de la que es esta foto.'),
+        ('Falta imagen','Falta hoja del acta para cargar esta opción.')
+        )
     status = StatusField(default=STATUS.sin_identificar)
     mesa = models.ForeignKey(
         'elecciones.Mesa', related_name='attachments', null=True, blank=True, on_delete=models.SET_NULL
@@ -206,11 +208,12 @@ class Identificacion(TimeStampedModel):
     Es el modelo que guarda clasificaciones de actas para asociarlas a mesas
     """
     STATUS = Choices(
-        'identificada',
-        ('spam', 'Es SPAM'),
-        ('invalida', 'Es inválida'),
-        ('ilegible', 'No se entiende')
-    )
+        ('identificada',
+        ('spam', 'La foto no es ni de un acta ni de un certificado.'),
+        ('invalida', 'Falla alguna validación del sistema.'),
+        ('ilegible', 'La foto es de un acta pero no la puedo leer.'),
+        ('Falta imagen','Falta hoja del acta para cargar esta opción.')
+        )
     #
     # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
     #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
