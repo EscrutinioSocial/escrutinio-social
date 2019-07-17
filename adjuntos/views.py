@@ -91,7 +91,8 @@ class IdentificacionProblemaCreateView(IdentificacionCreateView):
         self.identificacion_creada = identificacion
         messages.info(
             self.request,
-            f'Guardado como "{identificacion.get_status_display()}"',
+            f'Gracias por el reporte. Ahora pasamos a la siguiente acta.',
+            extra_tags="problema"
         )
         return redirect(self.get_success_url())
 
