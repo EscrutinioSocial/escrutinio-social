@@ -16,7 +16,7 @@
       ],
       "environment": [
         {
-          "name": "DATABASE_URL",
+          "name": "DB_HOST",
           "value": "esdb.ciquvvzm89xm.sa-east-1.rds.amazonaws.com"
         },
         {

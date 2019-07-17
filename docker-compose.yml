@@ -21,7 +21,7 @@ services:
       - DB_NAME=db_name
       - DB_USER=postgres
       - DB_PASS=changeme
-      - DATABASE_URL=db
+      - DB_HOST=db
     volumes:
       - .:/src
     ports:
