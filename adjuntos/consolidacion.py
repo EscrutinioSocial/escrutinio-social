@@ -89,7 +89,7 @@ def consolidar_cargas(mesa_categoria):
 
     # Primero les actualizo la firma.
     for carga in cargas:
-        carga.actualizar_firma_si_hace_falta()
+        carga.actualizar_firma()
 
     # Analizo las totales.
     cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)

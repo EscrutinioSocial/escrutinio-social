@@ -222,11 +222,11 @@ def test_fotos_de_mesa(db):
         mesa=m
     )
     consumir_novedades_identificacion()
-    assert sorted(m.fotos()) == sorted([
+    assert m.fotos() == [
         ('Foto 1 (original)', a1.foto),
         ('Foto 2 (editada)', a3.foto_edited),
         ('Foto 2 (original)', a3.foto),
-    ])
+    ]
 
 
 def test_carga_actualizar_firma(db):

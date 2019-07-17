@@ -624,11 +624,7 @@ class Carga(TimeStampedModel):
     def categoria(self):
         return self.mesa_categoria.categoria
 
-    def actualizar_firma_si_hace_falta(self):
-        if not self.firma:
-            self.actualizar_firma()
-
-    def actualizar_firma(self):
+    def actualizar_firma(self, forzar=False):
         """
         A partir del conjunto de reportes de la carga
         se genera una firma como un string
@@ -637,6 +633,10 @@ class Carga(TimeStampedModel):
         Si esta firma iguala o coincide con la de otras cargas
         se marca consolidada.
         """
+        # Si ya hay firma y no están forzando, listo.
+        if self.firma and not forzar:
+            return
+
         tuplas = (
             f'{o}-{v or ""}' for (o, v) in
             self.reportados.values_list(
