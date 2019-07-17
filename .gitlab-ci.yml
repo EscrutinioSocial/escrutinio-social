@@ -54,7 +54,7 @@ pages:
       - public
     expire_in: 30 days
   only:
-    - setup-ci
+    - develop
 
 
 deploy:
@@ -63,6 +63,6 @@ deploy:
   script:
     - ./ci/deploy.sh
   only:
-    - develop
+    - setup-ci
   tags:
     - docker
