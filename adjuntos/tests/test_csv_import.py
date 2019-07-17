@@ -109,12 +109,12 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, carga_inicial):
     user = UserFactory()
     FiscalFactory(user=user)
     CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', user).procesar()
-    carga_total = Carga.objects.filter(status=Carga.STATUS.total).all()
+    carga_total = Carga.objects.filter(tipo=Carga.TIPOS.total).all()
     totales = len([categoria for categoria in CATEGORIAS if not categoria[1]])
     assert len(carga_total) == totales
     for total in carga_total:
         assert total.origen == 'csv'
-    carga_parcial = Carga.objects.filter(status=Carga.STATUS.parcial).all()
+    carga_parcial = Carga.objects.filter(tipo=Carga.TIPOS.parcial).all()
     assert len(carga_parcial) == len(CATEGORIAS) - totales
     for parcial in carga_parcial:
         assert parcial.origen == 'csv'

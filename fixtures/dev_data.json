@@ -575,9 +575,7 @@
     "url": "",
     "electores": 100,
     "taken": "2019-07-04T19:51:18.215Z",
-    "orden_de_carga": 1,
-    "cargadas": 1,
-    "confirmadas": 0
+    "orden_de_carga": 1
   }
 },
 {
@@ -591,9 +589,7 @@
     "url": "",
     "electores": 100,
     "taken": "2019-07-04T19:51:27.310Z",
-    "orden_de_carga": 2,
-    "cargadas": 0,
-    "confirmadas": 0
+    "orden_de_carga": 2
   }
 },
 {
@@ -607,9 +603,7 @@
     "url": "",
     "electores": 120,
     "taken": "2019-07-08T22:52:59.693Z",
-    "orden_de_carga": 2,
-    "cargadas": 0,
-    "confirmadas": 0
+    "orden_de_carga": 2
   }
 },
 {
@@ -623,9 +617,7 @@
     "url": "",
     "electores": 120,
     "taken": null,
-    "orden_de_carga": 0,
-    "cargadas": 0,
-    "confirmadas": 0
+    "orden_de_carga": 0
   }
 },
 {
@@ -639,9 +631,7 @@
     "url": "",
     "electores": 90,
     "taken": null,
-    "orden_de_carga": 0,
-    "cargadas": 0,
-    "confirmadas": 0
+    "orden_de_carga": 0
   }
 },
 {
@@ -655,9 +645,7 @@
     "url": "",
     "electores": 90,
     "taken": null,
-    "orden_de_carga": 0,
-    "cargadas": 0,
-    "confirmadas": 0
+    "orden_de_carga": 0
   }
 },
 {
@@ -671,9 +659,7 @@
     "url": "",
     "electores": 90,
     "taken": null,
-    "orden_de_carga": 0,
-    "cargadas": 0,
-    "confirmadas": 0
+    "orden_de_carga": 0
   }
 },
 {
@@ -687,9 +673,7 @@
     "url": "",
     "electores": 90,
     "taken": null,
-    "orden_de_carga": 0,
-    "cargadas": 0,
-    "confirmadas": 0
+    "orden_de_carga": 0
   }
 },
 {
@@ -821,7 +805,7 @@
   "fields": {
     "created": "2019-07-04T19:51:27.212Z",
     "modified": "2019-07-04T19:51:27.212Z",
-    "status": "falta_foto",
+    "tipo": "falta_foto",
     "origen": "web",
     "mesa_categoria": 1,
     "fiscal": 1,

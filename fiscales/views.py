@@ -356,7 +356,7 @@ def cargar_resultados(
                 else:
                     carga = Carga.objects.create(
                         mesa_categoria=mesa_categoria,
-                        status=tipo,
+                        tipo=tipo,
                         fiscal=fiscal,
                     )
                 for form in formset:

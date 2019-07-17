@@ -160,7 +160,7 @@ class CSVImporter:
                                 if opcion_categoria.prioritaria:
                                     if not carga_parcial:
                                         carga_parcial = Carga.objects.create(
-                                            status=Carga.STATUS.parcial,
+                                            tipo=Carga.TIPOS.parcial,
                                             origen=Carga.SOURCES.csv,
                                             mesa_categoria=mesa_categoria,
                                             fiscal=fiscal
@@ -169,7 +169,7 @@ class CSVImporter:
                                 else:
                                     if not carga_total:
                                         carga_total = Carga.objects.create(
-                                            status=Carga.STATUS.total,
+                                            tipo=Carga.TIPOS.total,
                                             origen=Carga.SOURCES.csv,
                                             mesa_categoria=mesa_categoria,
                                             fiscal=fiscal
