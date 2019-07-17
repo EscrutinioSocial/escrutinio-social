@@ -49,7 +49,11 @@ class Resultados():
         self.ids_a_considerar = self.kwargs.get('ids_a_considerar') # Era listado.
 
     @lru_cache(128)
-    def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
+    def cargas_a_considerar_cargas_a_considerar_status_filter(self, categoria, prefix='carga__mesa_categoria__'):
+        """
+        Esta función devuelve los filtros que indican qué cargas se consideran para hacer el
+        cómputo.
+        """
         lookups = dict()
 
         if self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga: #['status'] == 'tc':
@@ -87,7 +91,7 @@ class Resultados():
 
         return lookups
 
-    def agregaciones_por_partido(self, categoria):
+    def agregaciones_por_partido(self, categoria): # XXX Cambiar nombre.
         """
         Dada una categoría, devuelve los criterios de agregación
         aplicados a VotoMesaReportado para obtener una "tabla de resultados"
@@ -99,12 +103,13 @@ class Resultados():
         https://docs.djangoproject.com/en/2.2/ref/models/conditional-expressions/
         """
         sum_por_partido = {}
-        otras_opciones = {}
-        status_lookups = self.status_filter(categoria)
+        sum_por_opcion_no_partidaria = {}
+        cargas_a_considerar_status_filter = self.cargas_a_considerar_status_filter(categoria)
 
-        for id in Partido.objects.filter(
-            opciones__categorias__id=categoria.id
-        ).distinct().values_list('id', flat=True):
+        ids_partidos = Partido.objects.filter(
+                        opciones__categorias__id=categoria.id
+                    ).distinct().values_list('id', flat=True)
+        for id in ids_partidos:
             sum_por_partido[str(id)] = Sum(
                 Case(
                     When(
@@ -112,29 +117,30 @@ class Resultados():
                         carga__mesa_categoria__categoria=categoria,
                         carga__es_testigo__isnull=False,
                         then=F('votos'),
-                        **status_lookups
+                        **cargas_a_considerar_status_filter
 
                     ), output_field=IntegerField()
                 )
             )
 
-        for nombre, id in Opcion.objects.filter(
-            categorias__id=categoria.id,
-            partido__isnull=True,
-            es_metadata=False
-        ).values_list('nombre', 'id'):
-            otras_opciones[nombre] = Sum(
+        ids_opciones_no_partidarias = Opcion.objects.filter(
+                                        categorias__id=categoria.id,
+                                        partido__isnull=True,
+                                        es_metadata=False
+                                    ).values_list('nombre', 'id')
+        for nombre, id in ids_opciones_no_partidarias:
+            sum_por_opcion_no_partidaria[nombre] = Sum(
                 Case(
                     When(
                         opcion__id=id,
                         carga__mesa_categoria__categoria=categoria,
                         carga__es_testigo__isnull=False,
                         then=F('votos'),
-                        **status_lookups
+                        **cargas_a_considerar_status_filter
                     ), output_field=IntegerField()
                 )
             )
-        return sum_por_partido, otras_opciones
+        return sum_por_partido, sum_por_opcion_no_partidaria
 
     @property
     def filtros(self):
@@ -303,7 +309,7 @@ class Resultados():
 
         Devuelve
 
-            electores: cantidad de electores en las mesas válidas en la categoría
+            electores: cantidad de electores en las mesas válidas de la categoría
             electores_en_mesas_escrutadas: cantidad de electores en las mesas que efectivamente fueron escrutadas   # TODO revisar!
             porcentaje_mesas_escrutadas:
             votos: diccionario con resultados de votos por partido y opcion (positivos y no positivos)
@@ -311,18 +317,18 @@ class Resultados():
             positivos: total votos positivos
         """
         electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
-        sum_por_partido, otras_opciones = self.agregaciones_por_partido(categoria)
+        sum_por_partido, sum_por_opcion_no_partidaria = self.agregaciones_por_partido(categoria)
 
         # primero para partidos
         reportados = VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
             carga__es_testigo__isnull=False,
-            **self.status_filter(categoria)
+            **self.cargas_a_considerar_status_filter(categoria)
         )
         mesas_escrutadas = mesas.filter(
             mesacategoria__categoria=categoria,
             mesacategoria__carga_testigo__isnull=False,
-            **self.status_filter(categoria, 'mesacategoria__')
+            **self.cargas_a_considerar_status_filter(categoria, 'mesacategoria__')
         ).distinct()
         electores_en_mesas_escrutadas = mesas_escrutadas.aggregate(v=Sum('electores'))['v']
         if electores_en_mesas_escrutadas is None:
@@ -341,7 +347,7 @@ class Resultados():
         result = {Partido.objects.get(id=k): v for k, v in result.items() if v is not None}
         # no positivos
         result_opc = reportados.aggregate(
-           **otras_opciones
+           **sum_por_opcion_no_partidaria
         )
         result_opc = {k: v for k, v in result_opc.items() if v is not None}
 
