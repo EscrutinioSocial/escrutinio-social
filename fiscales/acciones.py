@@ -7,7 +7,7 @@ from elecciones.models import Mesa
 
 def siguiente_accion(request):
     """
-    Elige la siguiente accion a ejecutarse
+    Elige la siguiente acción a ejecutarse
     - si hay actas en el queryset :meth:`Attachment.sin asignar`,
       entonces la accion es identificar una al azar
     - si hay mesas con carga pendiente (es decir, que tienen categorias sin cargar),
@@ -53,7 +53,6 @@ def mesa_y_categoria_a_cargar():
             mesa_elegida = mesas[0]
             categoria_elegida = mesa_elegida.siguiente_categoria_sin_carga()
             if categoria_elegida is None:
-                mesa_elegida.marcar_todas_las_categorias_cargadas()
                 mesa_elegida = None
 
     return None if (mesa_elegida is None) else { 'mesa': mesa_elegida, 'categoria': categoria_elegida }

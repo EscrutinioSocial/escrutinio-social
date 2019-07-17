@@ -124,12 +124,18 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
 
     consumir_novedades_identificacion()
 
-    # mesa 2 ya se cargó, se excluirá
+    # mesa 2 ya se cargó (doble carga), se excluirá
     categoria = m2.categorias.first()
-    VotoMesaReportadoFactory(carga__mesa_categoria__mesa=m2, carga__mesa_categoria__categoria=categoria, opcion=categoria.opciones.first(), votos=10)
-    VotoMesaReportadoFactory(carga__mesa_categoria__mesa=m2, carga__mesa_categoria__categoria=categoria, opcion=categoria.opciones.last(), votos=12)
+    c2 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=categoria, 
+        tipo=Carga.TIPOS.total)
+    VotoMesaReportadoFactory(carga=c2, opcion=categoria.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(carga=c2, opcion=categoria.opciones.last(), votos=12)
+    c3 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=categoria, 
+        tipo=Carga.TIPOS.total)
+    VotoMesaReportadoFactory(carga=c3, opcion=categoria.opciones.first(), votos=10)
+    VotoMesaReportadoFactory(carga=c3, opcion=categoria.opciones.last(), votos=12)
 
-    # m3 tiene más elecciones.pendientes
+    # m3 tiene más elecciones pendientes
     e2 = CategoriaFactory(id=100)
     e3 = CategoriaFactory(id=101)
     e4 = CategoriaFactory(id=102)
@@ -152,6 +158,7 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
         votos=20
     )
 
+    consumir_novedades_y_actualizar_objetos()
     assert set(Mesa.con_carga_pendiente()) == {m1, m3}
 
 
@@ -215,11 +222,11 @@ def test_fotos_de_mesa(db):
         mesa=m
     )
     consumir_novedades_identificacion()
-    assert m.fotos() == [
+    assert sorted(m.fotos()) == sorted([
         ('Foto 1 (original)', a1.foto),
         ('Foto 2 (editada)', a3.foto_edited),
         ('Foto 2 (original)', a3.foto),
-    ]
+    ])
 
 
 def test_carga_actualizar_firma(db):
