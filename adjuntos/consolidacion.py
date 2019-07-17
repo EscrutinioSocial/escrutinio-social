@@ -87,6 +87,10 @@ def consolidar_cargas(mesa_categoria):
 
     # Hay cargas. A continuación voy probando los distintos status de mayor a menor.
 
+    # Primero les actualizo la firma.
+    for carga in cargas:
+        carga.actualizar_firma()
+
     # Analizo las totales.
     cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
     if cargas_totales.count() > 0:

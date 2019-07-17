@@ -120,7 +120,7 @@ class Attachment(TimeStampedModel):
     )
     taken = models.DateTimeField(null=True)
 
-    # Identificacion representativa del estado actual.
+    # Identificación representativa del estado actual.
     identificacion_testigo = models.ForeignKey(
         'Identificacion', related_name='es_testigo',
         null=True, blank=True, on_delete=models.SET_NULL
@@ -130,7 +130,7 @@ class Attachment(TimeStampedModel):
         """
         Actualiza el hash de la imágen original asociada antes de guardar.
         Notar que esto puede puede producir una excepción si la imágen (el digest)
-        ya es conocido en el sistema
+        ya es conocido en el sistema.
         """
         if self.foto and not self.foto_digest:
             # FIXME

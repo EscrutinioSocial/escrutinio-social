@@ -307,12 +307,6 @@ class Mesa(models.Model):
     taken = models.DateTimeField(null=True, editable=False)
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
 
-    # denormalizaciones
-    # lleva la cuenta de las categorías que se han cargado hasta el momento.
-    # ver receiver actualizar_categorias_cargadas_para_mesa()
-    cargadas = models.PositiveIntegerField(default=0, editable=False)
-    confirmadas = models.PositiveIntegerField(default=0, editable=False)
-
     def categoria_add(self, categoria):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
 
@@ -324,19 +318,6 @@ class Mesa(models.Model):
             ).exists():
                 return categoria
 
-    def marcar_todas_las_categorias_cargadas(self):
-        cantidad_categorias = self.categorias.filter(activa=True).count()
-        logger.debug(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
-        self.cargadas = cantidad_categorias
-        self.save(update_fields=['cargadas'])
-
-    def marcar_todas_las_categorias_confirmadas(self):
-        cantidad_categorias = self.cargadas
-        logger.debug(f'marcando {cantidad_categorias} como confirmadas en mesa {self.numero}')
-        self.confirmadas = cantidad_categorias
-        self.save(update_fields=['confirmadas'])
-
-
     @classmethod
     def con_carga_pendiente(cls, wait=2):
         """
@@ -344,19 +325,25 @@ class Mesa(models.Model):
            - no esté tomada dentro de los últimos `wait` minutos,
            - no esté marcada con problemas o todos su problemas estén resueltos,
            - esté identificada,
-           - y no tenga cargas consolidadas
-           TODO no tenga cargas consolidadas con doble carga.
+           - y que todas sus categorías estén consolidadas con doble carga total.
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
-            # Si existe es porque está identificado.
+            # Tiene que tener una imagen asociada.
+            # Y si la tiene es porque está identificada.
             attachments__isnull=False,
         ).filter(
+            # No puede estar tomado o tiene que haber expirado el periodo de taken.
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
-            a_cargar=Count('categorias', filter=Q(categorias__activa=True))
+            # Cuántas categorías deben cargarse.
+            a_cargar=Count('categorias', filter=Q(categorias__activa=True)),
+            # Cuántas llegaron a doble carga total.
+            terminadas=Count('mesacategoria',
+                filter=Q(mesacategoria__status=MesaCategoria.STATUS.total_consolidada_dc))
         ).filter(
-            cargadas__lt=F('a_cargar')
+            # Me fijo si no llegaron a doble carga.
+            terminadas__lt=F('a_cargar')
         ).annotate(
             tiene_problemas=Exists(
                 Problema.objects.filter(
@@ -368,7 +355,6 @@ class Mesa(models.Model):
             tiene_problemas=False
         ).distinct()
         return qs
-
 
     def get_absolute_url(self):
         # TODO: Por ahora no hay una vista que muestre la carga de datos
@@ -638,15 +624,19 @@ class Carga(TimeStampedModel):
     def categoria(self):
         return self.mesa_categoria.categoria
 
-    def actualizar_firma(self):
+    def actualizar_firma(self, forzar=False):
         """
-        a partir del conjunto de reportes de la carga
+        A partir del conjunto de reportes de la carga
         se genera una firma como un string
             <id_opcion_A>-<votos_opcion_A>|<id_opcion_B>-<votos_opcion_B>...
 
         Si esta firma iguala o coincide con la de otras cargas
-        se marca consolidada
+        se marca consolidada.
         """
+        # Si ya hay firma y no están forzando, listo.
+        if self.firma and not forzar:
+            return
+
         tuplas = (
             f'{o}-{v or ""}' for (o, v) in
             self.reportados.values_list(
@@ -677,35 +667,6 @@ class VotoMesaReportado(models.Model):
 
     def __str__(self):
         return f"{self.carga} - {self.opcion}: {self.votos}"
-
-
-@receiver(post_save, sender=Carga)
-def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
-    """
-    Actualiza el contador de categorías ya cargadas para una mesa dada.
-    Se actualiza cada vez que se guarda una instancia de :class:`Carga`
-    """
-    mesa = instance.mesa_categoria.mesa
-    categorias_cargadas = Carga.objects.filter(
-        mesa_categoria__mesa=mesa
-    ).values('mesa_categoria__categoria').distinct().count()
-    if mesa.cargadas != categorias_cargadas:
-        mesa.cargadas = categorias_cargadas
-        mesa.save(update_fields=['cargadas'])
-
-
-@receiver(post_save, sender=MesaCategoria)
-def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
-    """
-    Similar a :func:`actualizar_categorias_cargadas_para_mesa`,
-    actualiza el contador de categorias ya confirmadas para una mesa dada.
-    """
-    if instance.status == MesaCategoria.STATUS.total_consolidada_dc:
-        mesa = instance.mesa
-        confirmadas = MesaCategoria.objects.filter(mesa=mesa, status='total_consolidada_dc').count()
-        if mesa.confirmadas != confirmadas:
-            mesa.confirmadas = confirmadas
-            mesa.save(update_fields=['confirmadas'])
 
 
 @receiver(post_save, sender=Mesa)
