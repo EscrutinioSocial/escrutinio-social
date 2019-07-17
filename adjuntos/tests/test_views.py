@@ -5,13 +5,12 @@ from elecciones.tests.factories import (
 from django.urls import reverse
 from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
 
-
 def test_identificacion_create_view_get(fiscal_client):
     a = AttachmentFactory()
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
+    fotoUrl = a.foto.thumbnail['960x'].url
     assert response.status_code == 200
-    assert a.foto.url in a.foto.url in response.content.decode('utf8')
-
+    assert fotoUrl in response.content.decode('utf8')
 
 def test_identificacion_create_view_post(fiscal_client, admin_user):
     m1 = MesaFactory()
