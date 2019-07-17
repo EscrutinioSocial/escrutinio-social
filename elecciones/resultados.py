@@ -47,20 +47,21 @@ class Resultados():
     def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
         lookups = dict()
         if self.kwargs['status'] == 'tc':
-            lookups[f'{prefix}status'] = MesaCategoria.STATUS.total_confirmada
+            lookups[f'{prefix}status'] = MesaCategoria.STATUS.total_consolidada_dc
         elif self.kwargs['status'] == 'tsc':
-            # incluye confirmados y sin confirmar
+            # incluye consolidadas y sin confirmar
             lookups[f'{prefix}status__in'] = (
-                MesaCategoria.STATUS.total_confirmada,
-                MesaCategoria.STATUS.total_sin_confirmar,
+                MesaCategoria.STATUS.total_consolidada_dc,
+                MesaCategoria.STATUS.total_consolidada_csv,
+                MesaCategoria.STATUS.total_sin_consolidar,
             )
         elif self.kwargs['status'] == 'pc':
-            # total confirmada incluye a parcial
+            # total consolidada incluye a parcial
             # total sin confirmar asume que hubo parcial confirmada. Revisar
             lookups[f'{prefix}status__in'] = (
-                MesaCategoria.STATUS.total_confirmada,
-                MesaCategoria.STATUS.total_sin_confirmar,
-                MesaCategoria.STATUS.parcial_confirmada,
+                MesaCategoria.STATUS.total_consolidada_dc,
+                MesaCategoria.STATUS.total_sin_consolidar,
+                MesaCategoria.STATUS.parcial_consolidada_dc,
             )
         elif self.kwargs['status'] == 'psc':
             # parciales sin confirmar no requieren filtro
