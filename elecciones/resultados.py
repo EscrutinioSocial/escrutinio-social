@@ -225,34 +225,7 @@ class Resultados():
         Realiza la contabilidad para la categoría, invocando al método
         ``calcular``.
         """
-        lookups = Q()
-        lookups2 = Q()
         resultados = {}
-
-        if self.filtros:
-            if self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.distrito:
-                lookups = Q(
-                    mesa__lugar_votacion__circuito__seccion__distrito__in=self.filtros)
-                lookups2 = Q(
-                    lugar_votacion__circuito__seccion__distrito__in=self.filtros)
-
-            if self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion:
-                lookups = Q(
-                    mesa__lugar_votacion__circuito__seccion__in=self.filtros)
-                lookups2 = Q(
-                    lugar_votacion__circuito__seccion__in=self.filtros)
-
-            elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.circuito:
-                lookups = Q(mesa__lugar_votacion__circuito__in=self.filtros)
-                lookups2 = Q(lugar_votacion__circuito__in=self.filtros)
-
-            elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.lugar_de_votacion:
-                lookups = Q(mesa__lugar_votacion__in=self.filtros)
-                lookups2 = Q(lugar_votacion__in=self.filtros)
-
-            elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
-                lookups = Q(mesa__id__in=self.filtros)
-                lookups2 = Q(id__in=self.filtros)
 
         mesas = self.mesas(categoria)
 
@@ -261,7 +234,7 @@ class Resultados():
         expanded_result = {}
         for k, v in c.votos.items():
             porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
-            porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.positivos and isinstance(k, Partido) else '-'
+            porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.total_positivos and isinstance(k, Partido) else '-'
             expanded_result[k] = {
                 "votos": v,
                 "porcentajeTotal": porcentaje_total,
@@ -476,7 +449,7 @@ class Proyecciones(Resultados):
                 acumulador_positivos = 0
                 for ag in agrupaciones:
                     data = datos_ponderacion[ag]
-                    if k in data["votos"] and data["positivos"]:
+                    if k in data["votos"] and data["total_positivos"]:
                         acumulador_positivos += data["electores"] * \
                             data["votos"][k] / data["positivos"]
 
@@ -507,7 +480,7 @@ class Proyecciones(Resultados):
             'result_piechart': result_piechart,
 
             'electores': c.electores,
-            'positivos': c.positivos,
+            'total_positivos': c.total_positivos,
             'electores_en_mesas_escrutadas': c.electores_en_mesas_escrutadas,
             'votantes': c.total,
 
