@@ -21,6 +21,7 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.dispatch import receiver
 from django.db.models.signals import m2m_changed, post_save
+from django.core.validators import MaxValueValidator
 from model_utils.fields import StatusField, MonitorField
 from model_utils.models import TimeStampedModel
 from model_utils import Choices
@@ -28,6 +29,7 @@ from adjuntos.models import Attachment
 from problemas.models import Problema
 
 logger = logging.getLogger("e-va")
+
 
 class Distrito(models.Model):
     """
@@ -39,6 +41,8 @@ class Distrito(models.Model):
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
+    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
+
 
     class Meta:
         verbose_name = 'Distrito electoral'
@@ -67,6 +71,8 @@ class Seccion(models.Model):
             'por circuitos para esta sección'
         )
     )
+    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
+
 
     class Meta:
         ordering = ('numero',)
@@ -98,6 +104,8 @@ class Circuito(models.Model):
     numero = models.CharField(max_length=10)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
+    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
+
 
     class Meta:
         verbose_name = 'Circuito electoral'
@@ -232,15 +240,20 @@ class MesaCategoria(models.Model):
     "columna" como confirmada.
     """
     STATUS = Choices(
-        'sin_cargar',                   # no hay cargas
-        'parcial_sin_consolidar',       # carga parcial única (no csv) o no coincidente
-        'parcial_consolidada_csv',      # no hay dos cargas mínimas coincidentes, pero una es de csv.
-        'parcial_en_conflicto',         # cargas parcial divergentes sin consolidar
-        'parcial_consolidada_dc',       # carga parcial consolidada por doble carga
-        'total_sin_consolidar',
-        'total_consolidada_csv',
-        'total_en_conflicto',
-        'total_consolidada_dc',
+        # no hay cargas
+        ('00_sin_cargar', 'sin_cargar', 'sin cargar'),
+        # carga parcial única (no csv) o no coincidente
+        ('10_parcial_sin_consolidar', 'parcial_sin_consolidar', 'parcial sin consolidar'),
+        # no hay dos cargas mínimas coincidentes, pero una es de csv.
+        ('20_parcial_consolidada_csv', 'parcial_consolidada_csv', 'parcial consolidada csv'),
+        # cargas parcial divergentes sin consolidar
+        ('30_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial_en_conflicto'),
+        # carga parcial consolidada por multcarga
+        ('40_parcial_consolidada_dc', 'parcial_consolidada_dc', 'parcial_consolidada_dc'),
+        ('50_total_sin_consolidar', 'total_sin_consolidar', 'total_sin_consolidar'),
+        ('60_total_consolidada_csv', 'total_consolidada_csv', 'total_consolidada_csv'),
+        ('70_total_en_conflicto', 'total_en_conflicto', 'total_en_conflicto'),
+        ('80_total_consolidada_dc', 'total_consolidada_dc', 'total_consolidada_dc'),
     )
     status = StatusField(default='sin_cargar')
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
@@ -251,6 +264,9 @@ class MesaCategoria(models.Model):
         'Carga', related_name='es_testigo',
         null=True, blank=True, on_delete=models.SET_NULL
     )
+
+    # timestamp para dar un tiempo de guarda a la espera de una carga
+    taken = models.DateTimeField(null=True, editable=False)
 
     def firma_count(self):
         """
@@ -304,8 +320,10 @@ class Mesa(models.Model):
     )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
-    taken = models.DateTimeField(null=True, editable=False)
-    orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
+    orden_de_carga = models.FloatField(default=0, editable=False)
+
+    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
+
 
     def categoria_add(self, categoria):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
@@ -511,6 +529,9 @@ class Categoria(models.Model):
             'para esta categoria y no se muestran resultados'
         )
     )
+
+    requiere_cargas_parciales = models.BooleanField(default=False)
+    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
