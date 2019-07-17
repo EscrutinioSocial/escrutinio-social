@@ -21,7 +21,7 @@ build:
   script:
     - ./ci/build.sh
   only:
-    - develop
+    - setup-ci
   tags:
     - docker
 
@@ -54,7 +54,7 @@ pages:
       - public
     expire_in: 30 days
   only:
-    - develop
+    - setup-ci
 
 
 deploy:
