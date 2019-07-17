@@ -34,6 +34,9 @@ log-db:
 test: 
 	docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
 
+test-exec: 
+	docker-compose exec app pytest --cov=. --cov-report=html --cov-fail-under=52
+
 collectstatic:
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py collectstatic --noinput"
 
