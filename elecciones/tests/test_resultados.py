@@ -77,7 +77,6 @@ def test_total_electores_en_categoria(carta_marina):
 
 def test_electores_filtro_mesa(url_resultados, fiscal_client):
     mesa1 = MesaFactory(electores=120)
-    MesaFactory(electores=90)
     response = fiscal_client.get(url_resultados, {'mesa': mesa1.id})
     resultados = response.context['resultados']
     assert resultados['electores'] == 120
