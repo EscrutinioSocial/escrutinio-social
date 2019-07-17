@@ -198,7 +198,7 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         if self.filtros:
             context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.filtros], " y ")
         else:
-            context['para'] = 'el país'
+            context['para'] = 'todo el país'
 
         pk = self.kwargs.get('pk', 1)
         if pk == 1:

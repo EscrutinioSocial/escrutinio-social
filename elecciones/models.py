@@ -89,7 +89,7 @@ class Seccion(models.Model):
         )
     
     def nombre_completo(self):
-        return self.distrito.nombre_completo() + " - " + self.nombre
+        return f"{self.distrito.nombre_completo()} - {self.nombre}"
 
 
 class Circuito(models.Model):
