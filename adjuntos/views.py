@@ -1,28 +1,26 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
-from django.http import JsonResponse
-from django.urls import reverse
-from django.db import IntegrityError
-from django.views.generic.edit import CreateView, FormView
-from django.utils.decorators import method_decorator
-from elecciones.views import StaffOnlyMixing
-from django.contrib.auth.decorators import login_required
-from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib import messages
-from django.utils.functional import cached_property
 import base64
+
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
+from django.http import JsonResponse, HttpResponseForbidden
+from django.shortcuts import redirect, get_object_or_404
+from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
-from .models import Attachment, Identificacion
+from django.views.generic.edit import CreateView, FormView
+
+from adjuntos.csv_import import CSVImporter
 from .forms import (
     AgregarAttachmentsForm,
     IdentificacionForm,
     IdentificacionProblemaForm,
 )
-
-from adjuntos.csv_import import CSVImporter
 from .models import Attachment
-
+from .models import Identificacion
 
 
 class IdentificacionCreateView(CreateView):
@@ -189,8 +187,11 @@ class AgregarAdjuntosImportados(AgregarAdjuntos):
         super().__init__(template="agregar-adjuntos-csv", types='text/csv')
 
     @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.fiscal.esta_en_grupo('unidades basicas'):
+            return super().dispatch(request, *args, **kwargs)
+        return HttpResponseForbidden()
+
 
     def procesar_archivo(self, file):
         # validar la info del archivo

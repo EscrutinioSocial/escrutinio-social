@@ -29,15 +29,17 @@
             </li>
 
             <li>
-                <a href="{% url "agregar-adjuntos-csv" %}" class="collapsible-header" data-turbolinks="false">Cargar CSV<i class="material-icons">attachment</i></a>
-            </li>
-
-            <li>
                 <a href="{% url "agregar-adjuntos" %}" class="collapsible-header" data-turbolinks="false">Subir actas<i class="material-icons">cloud_upload</i></a>
             </li>
 
-
             <li></li>
+
+        {% endif  %}
+
+        {% if request.user.fiscal.esta_en_grupo_unidades_basicas %}
+            <li>
+                <a href="{% url "agregar-adjuntos-csv" %}" class="collapsible-header" data-turbolinks="false">Cargar CSV<i class="material-icons">attachment</i></a>
+            </li>
 
         {% endif  %}
 

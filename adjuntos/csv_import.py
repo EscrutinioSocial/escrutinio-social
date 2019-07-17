@@ -170,8 +170,8 @@ class CSVImporter:
                                     carga = carga_total
                                 voto = VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
                                 voto.save()
-                        else :
-                            raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente categoria {categoria_bd.nombre}.')
+                        else:
+                            raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente categoria: {categoria_bd.nombre}.')
                         # si todas las opciones fueron prioritarias entonces la carga es total, sino parcial
                         # TODO revisar esto de actualizar firma si es necesario para ambas cargas
                         #carga_parcial.actualizar_firma()
