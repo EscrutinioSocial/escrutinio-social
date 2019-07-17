@@ -15,7 +15,7 @@ services:
   app:
     container_name: escrutinio-social-app
     build: .
-#    command: python3 manage.py runserver 0.0.0.0:8000
+    command: ./runner.sh
     environment:
       #- DATABASE_URL=postgres://postgres@db/postgres
       - DB_NAME=db_name
