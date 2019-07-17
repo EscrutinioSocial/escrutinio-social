@@ -21,7 +21,7 @@ build:
   script:
     - ./ci/build.sh
   only:
-    - develop 
+    - setup-ci
   tags:
     - docker
 
