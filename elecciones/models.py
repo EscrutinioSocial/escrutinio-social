@@ -42,10 +42,13 @@ class Distrito(models.Model):
 
     class Meta:
         verbose_name = 'Distrito electoral'
-        verbose_name_plural = 'Distrito electorales'
+        verbose_name_plural = 'Distritos electorales'
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
+
+    def nombre_completo(self):
+        return self.nombre
 
 
 class Seccion(models.Model):
@@ -84,6 +87,9 @@ class Seccion(models.Model):
             lugar_votacion__circuito__seccion=self,
             categorias=categoria
         )
+    
+    def nombre_completo(self):
+        return f"{self.distrito.nombre_completo()} - {self.nombre}"
 
 
 class Circuito(models.Model):
@@ -131,6 +137,9 @@ class Circuito(models.Model):
             lugar_votacion__circuito=self,
             categorias=categoria
     )
+
+    def nombre_completo(self):
+        return self.seccion.nombre_completo() + " - " + self.nombre
 
 
 class LugarVotacion(models.Model):
@@ -222,6 +231,9 @@ class LugarVotacion(models.Model):
     def __str__(self):
         return f"{self.nombre} - {self.circuito}"
 
+    def nombre_completo(self):
+        return self.circuito.nombre_completo() + " - " + self.nombre
+
 
 class MesaCategoria(models.Model):
     """
@@ -274,6 +286,8 @@ class MesaCategoria(models.Model):
 
     class Meta:
         unique_together = ('mesa', 'categoria')
+        verbose_name = 'Mesa categoría'
+        verbose_name_plural = "Mesas Categorías"
 
     def actualizar_status(self, status, carga_testigo):
         self.status = status
@@ -385,6 +399,9 @@ class Mesa(models.Model):
 
     def __str__(self):
         return str(self.numero)
+
+    def nombre_completo(self):
+        return self.lugar_votacion.nombre_completo() + " - " + self.numero
 
 
 class Partido(models.Model):
