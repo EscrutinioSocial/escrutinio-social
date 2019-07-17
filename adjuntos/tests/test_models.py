@@ -22,10 +22,9 @@ def test_sin_identificar_excluye_taken(db):
     a1 = IdentificacionFactory(status='identificada').attachment
     a2 = IdentificacionFactory(status='spam').attachment
     a3 = IdentificacionFactory(status='spam').attachment
-    assert set(Attachment.sin_identificar()) == {a1, a2, a3}
-    a3.taken = timezone.now()
-    a3.save()
-    assert set(Attachment.sin_identificar()) == {a1, a2}
+    assert set(Attachment.sin_identificar_con_timeout()) == {a1, a2, a3}
+    a3.take()
+    assert set(Attachment.sin_identificar_con_timeout(wait=2)) == {a1, a2}
 
 
 def test_sin_identificar_excluye_otros_estados(db):

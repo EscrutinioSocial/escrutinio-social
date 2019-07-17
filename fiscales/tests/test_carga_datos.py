@@ -68,8 +68,7 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 200   # no hay actas
 
-    m2.taken = None
-    m2.save()
+    m2.release()
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
     assert response.url == reverse(

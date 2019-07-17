@@ -85,8 +85,7 @@ def test_con_carga_pendiente_excluye_taken(db):
     # Asocio el attach a la mesa.
     consumir_novedades_identificacion()
     assert set(Mesa.con_carga_pendiente()) == {m1, m2}
-    m2.taken = timezone.now()
-    m2.save()
+    m2.take()
     assert set(Mesa.con_carga_pendiente()) == {m1}
 
 
