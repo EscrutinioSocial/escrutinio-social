@@ -33,10 +33,10 @@ def siguiente_accion(request):
 
 
 def foto_a_identificar(fiscal):
-    attachments = Attachment.sin_identificar(0, fiscal)
+    attachments = Attachment.sin_identificar(fiscal)
     if attachments.exists():
         return attachments.order_by('?').first()
-    
+
     return None
 
 
@@ -69,16 +69,15 @@ class IdentificacionDeFoto():
         self.attachment = _attachment
 
     def ejecutar(self):
-        # se marca el adjunto
-        self.attachment.taken = timezone.now()
-        self.attachment.save(update_fields=['taken'])
-        # se realiza el redirect
+        # Se marca el adjunto
+        self.attachment.take()
+        # Se realiza el redirect
         return redirect('asignar-mesa', attachment_id=self.attachment.id)
 
 
 class CargaCategoriaEnActa():
     """
-    Accion sobre una mesa y una categoría:
+    Acción sobre una mesa y una categoría:
     estampa en la mesa el tiempo de "asignación" para que se excluya durante el periodo
     de guarda y redirige a la vista para la carga de la mesa/categoría
     """
@@ -91,10 +90,9 @@ class CargaCategoriaEnActa():
         self.categoria = _categoria
     
     def ejecutar(self):
-        # se marca que se inicia una carga
-        self.mesa.taken = timezone.now()
-        self.mesa.save(update_fields=['taken'])
-        # se realiza el redirect
+        # Se marca que se inicia una carga
+        self.mesa.take()
+        # Se realiza el redirect
         return redirect(
             'mesa-cargar-resultados',
             categoria_id=self.categoria.id,
@@ -104,7 +102,7 @@ class CargaCategoriaEnActa():
 
 class ConfirmacionCategoriaEnActa():
     """
-    Accion sobre una mesa y una categoría:
+    Acción sobre una mesa y una categoría:
     redirige a la vista para la carga de la mesa/categoría
     """
 

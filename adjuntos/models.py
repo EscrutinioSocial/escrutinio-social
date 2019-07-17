@@ -3,6 +3,7 @@ from functools import partial
 from datetime import timedelta
 from urllib.parse import quote_plus
 from django.utils import timezone
+from django.conf import settings
 from model_utils import Choices
 from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
@@ -126,6 +127,17 @@ class Attachment(TimeStampedModel):
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
+    def take(self):
+        self.taken = timezone.now()
+        self.save(update_fields=['taken'])
+
+    def release(self):
+        """ 
+        Libera una mesa, es lo contrario de taken().
+        """
+        self.taken = None
+        self.save(update_fields=['taken'])
+
     def save(self, *args, **kwargs):
         """
         Actualiza el hash de la imágen original asociada antes de guardar.
@@ -145,13 +157,22 @@ class Attachment(TimeStampedModel):
 
 
     @classmethod
-    def sin_identificar(cls, wait=2, fiscal_a_excluir=None):
+    def sin_identificar(cls, fiscal_a_excluir=None):
         """
         Devuelve un conjunto de Attachments que no tienen
-        identificación consolidada y no ha sido asignado
-        para clasificar en los últimos ``wait`` minutos
+        identificación consolidada y no han sido asignados
+        para clasificar en los últimos ``settings.ATTACHMENT_TAKE_WAIT_TIME`` minutos.
 
         Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
+        """
+        wait = settings.ATTACHMENT_TAKE_WAIT_TIME
+        return cls.sin_identificar_con_timeout(wait=wait, fiscal_a_excluir=fiscal_a_excluir)
+
+    @classmethod
+    def sin_identificar_con_timeout(cls, wait=2, fiscal_a_excluir=None):
+        """
+        Es la implementación de sin_identificar() que se expone sólo para poder
+        testear más fácilmente
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(

@@ -318,15 +318,27 @@ class Mesa(models.Model):
             ).exists():
                 return categoria
 
+    def take(self):
+        self.taken = timezone.now()
+        self.save(update_fields=['taken'])
+
+    def release(self):
+        """ 
+        Libera una mesa, es lo contrario de taken().
+        """
+        self.taken = None
+        self.save(update_fields=['taken'])
+
     @classmethod
-    def con_carga_pendiente(cls, wait=2):
+    def con_carga_pendiente(cls):
         """
         Una mesa cargable es aquella que
-           - no esté tomada dentro de los últimos `wait` minutos,
+           - no esté tomada dentro de los últimos `settings.MESA_TAKE_WAIT_TIME` minutos,
            - no esté marcada con problemas o todos su problemas estén resueltos,
            - esté identificada,
            - y que todas sus categorías estén consolidadas con doble carga total.
         """
+        wait = settings.MESA_TAKE_WAIT_TIME
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
             # Tiene que tener una imagen asociada.
