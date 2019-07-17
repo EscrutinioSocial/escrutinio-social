@@ -42,7 +42,12 @@ def subir_acta(request):
     En caso de éxito se devuelve el hash de la foto que puede 
     ser usado posteriomente para identificar el acta y cargar votos.
     """
-    return Response({'foto_digest': ''}, status=201)
+    serializer = ActaSerializer(data=request.data)
+    if serializer.is_valid():
+        attachment = serializer.save()
+        return Response(data=ActaSerializer(attachment).data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @swagger_auto_schema(

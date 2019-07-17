@@ -1,3 +1,4 @@
+import io
 import pytest
 from django.urls import reverse
 from rest_framework import status
@@ -5,6 +6,7 @@ from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 
 from elecciones.tests import factories
+from adjuntos.models import hash_file
 
 
 @pytest.fixture
@@ -16,16 +18,30 @@ def admin_client(admin_user):
     return client
     
 
-def test_subir_acta(admin_client):
+def test_subir_acta(admin_client, datadir):
     """
+    Prueba exitosa de subir la imagen de un acta.
     """
     url = reverse('actas')
-    data = {}
 
-    response = admin_client.post(url, data)
+    with open(datadir / 'acta.jpeg', 'rb') as foto:
+        response = admin_client.post(url, {'foto': foto})
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.data['foto_digest'] == ''
+    assert response.data['foto_digest'] == hash_file(open(datadir / 'acta.jpeg', 'rb'))
+    
+
+def test_subir_acta_invalid_ext(admin_client, datadir):
+    """
+    Prueba que solo se aceptan archivos de imagenes.
+    """
+    url = reverse('actas')
+
+    with open(datadir / 'acta.pdf', 'rb') as foto:
+        response = admin_client.post(url, {'foto': foto})
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.data['foto'][0].code == 'invalid_image'
     
 
 def test_identificar_acta(admin_client):

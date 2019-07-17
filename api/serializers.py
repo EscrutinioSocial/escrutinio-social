@@ -1,12 +1,22 @@
 from rest_framework import serializers
-from elecciones.models import (
-    Categoria, Opcion
-)
+
+from adjuntos.models import Attachment
+from elecciones.models import Categoria, Opcion
 from fiscales.models import Fiscal
 
 
 class ActaSerializer(serializers.Serializer):
-    foto = serializers.ImageField(help_text='La foto del acta')
+    foto = serializers.ImageField(help_text='La foto del acta', write_only=True)
+    foto_digest = serializers.CharField(read_only=True)
+
+    def save(self):
+        foto = self.validated_data['foto']
+
+        attachment = Attachment()
+        attachment.foto.save(foto.name, foto, save=False)
+        attachment.save()
+
+        return attachment
 
 
 class MesaSerializer(serializers.Serializer):
