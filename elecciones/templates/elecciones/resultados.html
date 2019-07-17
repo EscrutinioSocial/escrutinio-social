@@ -39,28 +39,42 @@
 
       {% for distrito in distritos %}
 
-      <li>
-        <a href="{{ request.path }}?distrito={{ distrito.id }}">{{ distrito }}</a>
-      </li>
-
-      {% for seccion in distrito.secciones.all %}
-
-      <li><a href="{{ request.path }}?seccion={{ seccion.id }}">&nbsp;&nbsp;{{ seccion }}</a></li>
-      <li class="no-padding">
-        <ul class="collapsible collapsible-accordion">
+      <ul class="no-padding collapsible collapsible-accordion">
           <li>
-            <a class="collapsible-header"><i class="material-icons">arrow_drop_down</i></a>
+            <a class="collapsible-header">
+                <i class="material-icons">arrow_drop_down</i>
+            </a>
+            <a href="{{ request.path }}?distrito={{ distrito.id }}">
+                {{ distrito }}
+            </a>
             <div class="collapsible-body">
-              <ul>
-                {% for circuito in seccion.circuito_set.all %}
-                    <li><a href="{{ request.path }}?circuito={{ circuito.id }}">{{ circuito.nombre }}</a></li>
+
+                {% for seccion in distrito.secciones.all %}
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header">
+                                <i class="material-icons">arrow_drop_down</i>
+                            </a>
+                            <a href="{{ request.path }}?seccion={{ seccion.id }}">
+                                &nbsp;&nbsp;{{ seccion }}
+                            </a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    {% for circuito in seccion.circuito_set.all %}
+                                       <li>
+                                            <a href="{{ request.path }}?circuito={{ circuito.id }}">
+                                                {{ circuito.nombre }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
                 {% endfor %}
-              </ul>
             </div>
           </li>
-        </ul>
-      </li>
-      {% endfor %}
+      </ul>
       {% endfor %}
 
 {% endblock %}
