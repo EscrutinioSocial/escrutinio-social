@@ -208,10 +208,11 @@ class Identificacion(TimeStampedModel):
     Es el modelo que guarda clasificaciones de actas para asociarlas a mesas
     """
     STATUS = Choices(
-        ('identificada',
+        'identificada',
         ('spam', 'La foto no es ni de un acta ni de un certificado.'),
         ('invalida', 'Falla alguna validación del sistema.'),
         ('ilegible', 'La foto es de un acta pero no la puedo leer.'),
+        ('mesa_tomada','El sistema no acepta la mesa de la que es esta foto.'),
         ('Falta imagen','Falta hoja del acta para cargar esta opción.')
         )
     #
