@@ -813,6 +813,78 @@
   }
 },
 {
+  "model": "elecciones.categoriaopcion",
+  "pk": 1,
+  "fields": {
+    "categoria": 1,
+    "opcion": 2,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 2,
+  "fields": {
+    "categoria": 1,
+    "opcion": 3,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 3,
+  "fields": {
+    "categoria": 1,
+    "opcion": 4,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 4,
+  "fields": {
+    "categoria": 1,
+    "opcion": 1,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 5,
+  "fields": {
+    "categoria": 2,
+    "opcion": 2,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 6,
+  "fields": {
+    "categoria": 2,
+    "opcion": 3,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 7,
+  "fields": {
+    "categoria": 2,
+    "opcion": 4,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 8,
+  "fields": {
+    "categoria": 2,
+    "opcion": 1,
+    "prioritaria": false
+  }
+},
+{
   "model": "elecciones.votomesareportado",
   "pk": 1,
   "fields": {
