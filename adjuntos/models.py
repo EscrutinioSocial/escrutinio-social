@@ -207,14 +207,11 @@ class Identificacion(TimeStampedModel):
     """
     Es el modelo que guarda clasificaciones de actas para asociarlas a mesas
     """
-    STATUS = Choices(
-        'identificada',
-        ('spam', 'La foto no es ni de un acta ni de un certificado.'),
-        ('invalida', 'Falla alguna validación del sistema.'),
-        ('ilegible', 'La foto es de un acta pero no la puedo leer.'),
-        ('mesa_tomada','El sistema no acepta la mesa de la que es esta foto.'),
-        ('Falta imagen','Falta hoja del acta para cargar esta opción.')
-        )
+    STATUS = [(v,s) for (v,s) in Attachment.STATUS if v not in
+              [ Attachment.STATUS.identificada
+              , Attachment.STATUS.sin_identificar
+              ]
+    ]
     #
     # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
     #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
@@ -222,7 +219,7 @@ class Identificacion(TimeStampedModel):
     # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
     # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
 
-    status = StatusField(choices_name='STATUS')
+    status = StatusField(choices_name='STATUS',choices=STATUS)
 
     SOURCES = Choices('web', 'csv', 'telegram')
     source = StatusField(choices_name='SOURCES', default=SOURCES.web)

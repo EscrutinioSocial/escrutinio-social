@@ -13,11 +13,8 @@ class IdentificacionProblemaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['status'].label = ''
         choices = self.fields['status'].choices
-        problems = [
-            (v, s) for (v, s) in choices if v is not Identificacion.STATUS.identificada
-        ]
         self.fields['status'] = forms.ChoiceField(widget=forms.RadioSelect,
-                                                  choices=problems,
+                                                  choices=choices,
                                                   label='')
 
 
