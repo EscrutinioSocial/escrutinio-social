@@ -27,7 +27,7 @@ else
     echo
     echo "Only deploy master or develop branch"
     echo
-    exit 2
+    #exit 2
 fi
 
 # Generating final manifest
