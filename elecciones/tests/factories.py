@@ -69,6 +69,10 @@ class CategoriaFactory(DjangoModelFactory):
                 categoria=self,
                 opcion=OpcionFactory(nombre='opc3', es_contable=True)
             )
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='opc4', es_contable=True)
+            )
 
 
 class CategoriaOpcionFactory(DjangoModelFactory):
