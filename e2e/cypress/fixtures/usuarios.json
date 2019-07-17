@@ -1,0 +1,14 @@
+{
+  "admin_username": "admin",
+  "admin_pass": "admin",
+  "FA_username": "admin",
+  "FA_pass": "admin",
+  "DE_username": "admin",
+  "DE_pass": "admin",
+  "DEUB_username": "admin",
+  "DEUB_pass": "admin",
+  "UV_username": "admin",
+  "UV_pass": "admin",
+  "invalido_username": "no_existe",
+  "invalido_pass": "no_existe"
+}

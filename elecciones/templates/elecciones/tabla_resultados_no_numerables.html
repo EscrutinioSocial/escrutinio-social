@@ -5,7 +5,7 @@
         {% if incluir_votos %}
             <td id="votos_{{ partido.id|default:partido|lower }}"> {{ votos.votos }}</td>
         {% endif %}
-        <td> {{ votos.porcentajeTotal }}%</td>
+        <td> {{ votos.porcentaje_total }}%</td>
         {% if resultados.proyectado %}
         	<td>  - -</td>
         {% endif %}

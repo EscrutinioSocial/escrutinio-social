@@ -69,6 +69,10 @@ class CategoriaFactory(DjangoModelFactory):
                 categoria=self,
                 opcion=OpcionFactory(nombre='opc3', es_contable=True)
             )
+            CategoriaOpcionFactory(
+                categoria=self,
+                opcion=OpcionFactory(nombre='opc4', es_contable=True)
+            )
 
 
 class CategoriaOpcionFactory(DjangoModelFactory):
@@ -120,7 +124,8 @@ class LugarVotacionFactory(DjangoModelFactory):
 class MesaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Mesa'
-    numero = factory.Sequence(lambda n: n + 1)
+    # 5 es un nro arbitrario para que no coincida con el id y salten potenciales errores.
+    numero = factory.Sequence(lambda n: n + 5)
     lugar_votacion = factory.SubFactory(LugarVotacionFactory)
     circuito = factory.LazyAttribute(lambda obj: obj.lugar_votacion.circuito)
     electores = 100

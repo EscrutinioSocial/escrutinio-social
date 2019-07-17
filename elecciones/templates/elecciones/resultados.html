@@ -101,27 +101,38 @@
                 ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
               </h4>
 
-
-
-              <table class="striped bordered">
+              <table class="bordered" id="tabla_resultados">
+		<colgroup>
+		  <col id="partido" />
+		  {% if incluir_votos %}
+		  <col id="voto_agrupacion"/>
+		  <col id="voto_partido"/>
+		  {% endif %}
+		  <col id="porc_agrupacion"/>
+		  <col id="porc_partido"/>
+		  {% if resultados.proyectado %}
+		  <col id="proyeccion"/>
+		  {% endif %}
+		</colgroup>
                   <thead>
                   <tr>
-                      <th>Partido</th>
-                      <th>Votos</th>
-                      <th>%</th>
-                      {% if resultados.proyectado %}
-                      <th>% proyectado <i class="small material-icons {% if resultados.proyeccion_incompleta  %}tooltipped" data-position="bottom" data-tooltip="Proyección incompleta. Faltan cargar datos en
-
+                    <th id="header_titulo" colspan="{%if incluir_votos %}3{%else%}5{%endif%}">Agrupaciones políticas/Listas</th>
+		  </tr>
+		  <tr>
+		    <th></th>
+		    <th id="header_votos" colspan="{%if incluir_votos %}2{%else%}4{%endif%}">Votos</th>
+                    {% if resultados.proyectado %}
+                    <th id="header_proyectado">% proyectado <i class="small material-icons {% if resultados.proyeccion_incompleta  %}tooltipped" data-position="bottom" data-tooltip="Proyección incompleta. Faltan cargar datos en
 {% for ag in resultados.proyeccion_incompleta %}{{ ag }} / {% endfor %}
 {% endif %}">warning</i> </th>
                       {% endif %}
-                  </tr>
+		  </tr>
                   </thead>
-
-                  {% with resultados.tabla_positivos as tabla %}
-                      {% include "elecciones/tabla_resultados_numerables.html" with responsive=True incluir_votos=True %}
-                  {% endwith %}
-
+		  <tbody>
+                    {% with resultados.tabla_positivos as tabla %}
+                    {% include "elecciones/tabla_resultados_numerables.html" with responsive=True incluir_votos=True %}
+                    {% endwith %}
+		  </tbody>
               </table>
 
               <table class="striped bordered" style="margin-top: 2em">
@@ -219,7 +230,19 @@ $(function() {
 
    $('.collapsible').collapsible();
 
+    $('.show_detail').click(function(){
+	let p = $(this).parent()[0];
+	let inf = $(this).children()[0];
+	if (inf.innerHTML === "expand_more")
+	    inf.innerHTML = "expand_less";
+	else
+	    inf.innerHTML = "expand_more";
+	let i = p.id;
+	$("."+i+"_detalle").toggle();
+   });
+
    {% if show_plot %}
+
 
    var data = [{
       y: {{ chart_values|safe }},
