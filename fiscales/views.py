@@ -363,8 +363,8 @@ def cargar_resultados(
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
-                # Libero el token sobre la mesa.
-                mesa.release()
+                # Libero el token sobre la mc
+                mesa_categoria.release()
             carga.actualizar_firma()
             messages.success(
                 request,

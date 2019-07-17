@@ -18,12 +18,12 @@ def siguiente_accion(request):
 
     if accion is None:
         foto = foto_a_identificar(request.user.fiscal)
-        if not (foto is None):
+        if foto is not None:
             accion = IdentificacionDeFoto(request, foto)
 
     if accion is None:
         mesa_y_categoria = mesa_y_categoria_a_cargar()
-        if not (mesa_y_categoria is None):
+        if mesa_y_categoria is not None:
             accion = CargaCategoriaEnActa(request, mesa_y_categoria['mesa'], mesa_y_categoria['categoria'])
 
     if accion is None:
@@ -36,11 +36,10 @@ def foto_a_identificar(fiscal):
     attachments = Attachment.sin_identificar(fiscal)
     if attachments.exists():
         return attachments.order_by('?').first()
-
     return None
 
 
-def mesa_y_categoria_a_cargar(): 
+def mesa_y_categoria_a_cargar():
     mesa_elegida = None
     categoria_elegida = None
     hay_mesas_posibles = True
@@ -88,7 +87,7 @@ class CargaCategoriaEnActa():
     def __init__(self, _request, _mesa, _categoria):
         self.mesa = _mesa
         self.categoria = _categoria
-    
+
     def ejecutar(self):
         # Se marca que se inicia una carga
         self.mesa.take()
@@ -125,7 +124,7 @@ class ConfirmacionCategoriaEnActa():
 
 class NoHayAccion():
     request = None
-    
+
     def __init__(self, _request):
         self.request = _request
 

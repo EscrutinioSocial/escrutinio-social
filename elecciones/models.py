@@ -12,7 +12,6 @@ from django.db.models import (
     Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef,
     Exists, Max, Value
 )
-from django.db.models.query import QuerySet
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from djgeojson.fields import PointField
@@ -20,7 +19,7 @@ from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.dispatch import receiver
-from django.db.models.signals import m2m_changed, post_save
+from django.db.models.signals import post_save
 from django.core.validators import MaxValueValidator
 from model_utils.fields import StatusField, MonitorField
 from model_utils.models import TimeStampedModel
@@ -93,7 +92,7 @@ class Seccion(models.Model):
             lugar_votacion__circuito__seccion=self,
             categorias=categoria
         )
-    
+
     def nombre_completo(self):
         return f"{self.distrito.nombre_completo()} - {self.nombre}"
 
@@ -123,19 +122,6 @@ class Circuito(models.Model):
 
     def resultados_url(self):
         return reverse('resultados-categoria') + f'?circuito={self.id}'
-
-    def proximo_orden_de_carga(self):
-        """
-        Busca el máximo orden de carga `n` en una mesa perteciente al circuito
-        (esté o no cargada) y devuelve `n + 1`.
-
-        Este nuevo orden de carga incrementado se asigna a la nueva mesa
-        clasificada en func:`asignar_orden_de_carga`
-        """
-        orden = Mesa.objects.filter(
-            lugar_votacion__circuito=self
-        ).aggregate(v=Max('orden_de_carga'))['v'] or 0
-        return orden + 1
 
     def mesas(self, categoria):
         """
@@ -237,10 +223,46 @@ class LugarVotacion(models.Model):
         return str(self.circuito.seccion)
 
     def __str__(self):
-        return f"{self.nombre} - {self.circuito}"
+        return f'{self.nombre} - {self.circuito}'
 
     def nombre_completo(self):
-        return self.circuito.nombre_completo() + " - " + self.nombre
+        return f'{self.circuito.nombre_completo()}  - {self.nombre}'
+
+
+class MesaCategoriaQuerySet(models.QuerySet):
+
+    def identificadas(self):
+        return self.filter(orden_de_carga__isnull=False)
+
+    def no_taken(self):
+        """
+        Filtra no esté tomada dentro de los últimos
+        `settings.MESA_TAKE_WAIT_TIME` minutos,
+        """
+        wait = settings.MESA_TAKE_WAIT_TIME
+        desde = timezone.now() - timedelta(minutes=wait)
+        return self.filter(
+            # No puede estar tomado o tiene que haber expirado el periodo de taken.
+            Q(taken__isnull=True) | Q(taken__lt=desde)
+        )
+
+    def sin_consolidar(self):
+        return self.exclude(
+            status=MesaCategoria.STATUS.total_consolidada_dc
+        )
+
+    def siguiente(self):
+        """
+        devuelve la siguiente mesacategoria en orden de prioridad
+        de carga
+        """
+        qs = self.identificadas().no_taken().sin_consolidar()
+        return qs.order_by(
+            'status',
+            'orden_de_carga',
+            'mesa__prioridad',
+        ).first()
+
 
 
 class MesaCategoria(models.Model):
@@ -251,6 +273,8 @@ class MesaCategoria(models.Model):
     Permite guardar el booleano que marca la carga de esa
     "columna" como confirmada.
     """
+    objects = MesaCategoriaQuerySet.as_manager()
+
     STATUS = Choices(
         # no hay cargas
         ('00_sin_cargar', 'sin_cargar', 'sin cargar'),
@@ -262,10 +286,10 @@ class MesaCategoria(models.Model):
         ('30_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial_en_conflicto'),
         # carga parcial consolidada por multcarga
         ('40_parcial_consolidada_dc', 'parcial_consolidada_dc', 'parcial_consolidada_dc'),
-        ('50_total_sin_consolidar', 'total_sin_consolidar', 'total_sin_consolidar'),
-        ('60_total_consolidada_csv', 'total_consolidada_csv', 'total_consolidada_csv'),
-        ('70_total_en_conflicto', 'total_en_conflicto', 'total_en_conflicto'),
-        ('80_total_consolidada_dc', 'total_consolidada_dc', 'total_consolidada_dc'),
+        ('50_total_sin_consolidar', 'total_sin_consolidar', 'total sin consolidar'),
+        ('60_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada csv'),
+        ('70_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
+        ('80_total_consolidada_dc', 'total_consolidada_dc', 'tota consolidada dc'),
     )
     status = StatusField(default='sin_cargar')
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
@@ -279,6 +303,42 @@ class MesaCategoria(models.Model):
 
     # timestamp para dar un tiempo de guarda a la espera de una carga
     taken = models.DateTimeField(null=True, editable=False)
+
+    # coeficiente que se define como la proporcion de mesas
+    # ya identificadas todavia sin consolidar al momento de identificar la
+    # mesa
+    orden_de_carga = models.FloatField(null=True, blank=True)
+
+    def take(self):
+        self.taken = timezone.now()
+        self.save(update_fields=['taken'])
+
+    def release(self):
+        """
+        Libera la mesa, es lo contrario de taken().
+        """
+        self.taken = None
+        self.save(update_fields=['taken'])
+
+    def actualizar_orden_de_carga(self):
+        """
+        Actualiza `self.orden_de_carga` como el producto entre
+        la proporcion de mesas ya identificadas todavia sin consolidar del circuito
+        al momento de identificar la mesa y la prioridad de la categoria
+        """
+        total_en_circuito = MesaCategoria.objects.filter(
+            categoria=self.categoria,
+            mesa__circuito=self.mesa.circuito
+        ).count()
+
+        encoladas = MesaCategoria.objects.exclude(
+            id=self.id
+        ).identificadas().sin_consolidar().filter(
+            categoria=self.categoria,
+            mesa__circuito=self.mesa.circuito
+        ).count()
+        self.orden_de_carga = (encoladas / total_en_circuito) * self.categoria.prioridad
+        self.save(update_fields=['orden_de_carga'])
 
     def firma_count(self):
         """
@@ -334,7 +394,6 @@ class Mesa(models.Model):
     )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
-    orden_de_carga = models.FloatField(default=0, editable=False)
 
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
@@ -349,56 +408,6 @@ class Mesa(models.Model):
                 mesa_categoria__categoria=categoria
             ).exists():
                 return categoria
-
-    def take(self):
-        self.taken = timezone.now()
-        self.save(update_fields=['taken'])
-
-    def release(self):
-        """ 
-        Libera una mesa, es lo contrario de taken().
-        """
-        self.taken = None
-        self.save(update_fields=['taken'])
-
-    @classmethod
-    def con_carga_pendiente(cls):
-        """
-        Una mesa cargable es aquella que
-           - no esté tomada dentro de los últimos `settings.MESA_TAKE_WAIT_TIME` minutos,
-           - no esté marcada con problemas o todos su problemas estén resueltos,
-           - esté identificada,
-           - y que todas sus categorías estén consolidadas con doble carga total.
-        """
-        wait = settings.MESA_TAKE_WAIT_TIME
-        desde = timezone.now() - timedelta(minutes=wait)
-        qs = cls.objects.filter(
-            # Tiene que tener una imagen asociada.
-            # Y si la tiene es porque está identificada.
-            attachments__isnull=False,
-        ).filter(
-            # No puede estar tomado o tiene que haber expirado el periodo de taken.
-            Q(taken__isnull=True) | Q(taken__lt=desde)
-        ).annotate(
-            # Cuántas categorías deben cargarse.
-            a_cargar=Count('categorias', filter=Q(categorias__activa=True)),
-            # Cuántas llegaron a doble carga total.
-            terminadas=Count('mesacategoria',
-                filter=Q(mesacategoria__status=MesaCategoria.STATUS.total_consolidada_dc))
-        ).filter(
-            # Me fijo si no llegaron a doble carga.
-            terminadas__lt=F('a_cargar')
-        ).annotate(
-            tiene_problemas=Exists(
-                Problema.objects.filter(
-                    Q(mesa__id=OuterRef('id')),
-                    ~Q(estado='resuelto')
-                )
-            )
-        ).filter(
-            tiene_problemas=False
-        ).distinct()
-        return qs
 
     def get_absolute_url(self):
         # TODO: Por ahora no hay una vista que muestre la carga de datos
@@ -588,7 +597,7 @@ class Categoria(models.Model):
         subniveles (escuela, mesa) se debe mostrar la categoria a
         Intentendente de La Matanza, pero no a intendente de San Isidro.
         """
-        if isinstance(mesas, QuerySet):
+        if isinstance(mesas, models.QuerySet):
             mesas_count = mesas.count()
         else:
             # si es lista

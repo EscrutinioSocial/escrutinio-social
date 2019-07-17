@@ -144,7 +144,7 @@ class MesaFactory(DjangoModelFactory):
 class MesaCategoriaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.MesaCategoria'
-        django_get_or_create = ('mesa', 'categoria')
+        # django_get_or_create = ('mesa', 'categoria')
     mesa = factory.SubFactory(MesaFactory)
     categoria = factory.SubFactory(CategoriaFactory, id=1)
 
