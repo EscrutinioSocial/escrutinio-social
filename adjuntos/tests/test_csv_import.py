@@ -4,7 +4,7 @@ import os
 from django.http import Http404
 
 from adjuntos.csv_import import ColumnasInvalidasError, CSVImporter, DatosInvalidosError
-from elecciones.models import Carga
+from elecciones.models import Carga, VotoMesaReportado
 from elecciones.tests.factories import (
     DistritoFactory,
     SeccionFactory,
@@ -114,7 +114,14 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, carga_inicial):
     assert len(carga_total) == totales
     for total in carga_total:
         assert total.origen == 'csv'
+    votos_carga_total = VotoMesaReportado.objects.filter(carga__in= carga_total).all()
+    # ya que hay dos opciones y 1 categoria no prioritaria
+    assert len(votos_carga_total) == 2
     carga_parcial = Carga.objects.filter(tipo=Carga.TIPOS.parcial).all()
-    assert len(carga_parcial) == len(CATEGORIAS) - totales
+    parciales = len(CATEGORIAS) - totales
+    assert len(carga_parcial) == parciales
     for parcial in carga_parcial:
         assert parcial.origen == 'csv'
+    votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in= carga_parcial).all()
+    # ya que hay dos opciones y 6 categorias prioritarias
+    assert len(votos_carga_parcial) == 12
