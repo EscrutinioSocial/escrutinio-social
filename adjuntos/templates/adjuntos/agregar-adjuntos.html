@@ -1,7 +1,7 @@
 {% extends "fiscales/base.html" %}
 {% load i18n material_form material_frontend %}
 
-{% block page_title %}Subir Adjuntos{% endblock %}
+{% block page_title %}Subir actas{% endblock %}
 
 {% block left-panel %}
       <div class="card">
@@ -9,7 +9,7 @@
         <div class="card-content">
 
             <div class="card-title">{% block card-title %}
-                Subir Adjuntos
+                Subir actas
             {% endblock card-title %}</div>
 
             <form action="{% url 'agregar-adjuntos' %}" method="post" enctype="multipart/form-data">
