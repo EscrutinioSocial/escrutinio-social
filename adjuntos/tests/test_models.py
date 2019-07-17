@@ -34,7 +34,6 @@ def test_sin_identificar_excluye_otros_estados(db):
     a = AttachmentFactory(status=Attachment.STATUS.sin_identificar)
     assert set(Attachment.sin_identificar()) == {a}
 
-
 def test_identificacion_status_count(db):
     a = AttachmentFactory()
     AttachmentFactory()    # no fecta
@@ -61,7 +60,6 @@ def test_identificacion_status_count(db):
         (m1.id, 'identificada'): 1,
     }
 
-
 def test_identificacion_consolidada(db):
     a = AttachmentFactory()
     m1 = MesaFactory()
@@ -72,5 +70,3 @@ def test_identificacion_consolidada(db):
     assert not i1.consolidada
     assert not i2.consolidada
     assert i3.consolidada
-
-

@@ -31,6 +31,12 @@ log-app:
 log-db:
 	docker-compose logs db
 
+test: 
+	docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
+
+test-exec: 
+	docker-compose exec app pytest --cov=. --cov-report=html --cov-fail-under=52
+
 collectstatic:
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py collectstatic --noinput"
 
@@ -39,6 +45,9 @@ create:
 
 migrate: up
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py migrate"
+
+makemigrations: up
+	docker exec escrutinio-social-app /bin/sh -c "python manage.py makemigrations"
 
 setup-dev-data: migrate
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py loaddata fixtures/dev_data.json"
@@ -57,7 +66,6 @@ crawl-resultados:
 
 crawl-resultados-up:
 	docker exec escrutinio-social-app /bin/sh -c "python simple-cors-http-server.py"
-
 
 
 # Small Makefile to ease up the execution of tests and operating the Devel env

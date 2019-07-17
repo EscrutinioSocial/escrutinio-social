@@ -6,6 +6,8 @@ variables:
 
 stages:
   - build
+  - test
+  - pages  
   - deploy
 
 build:
@@ -22,6 +24,38 @@ build:
     - develop
   tags:
     - docker
+
+test:
+  stage: test
+  image: 
+    name: docker/compose:1.24.0
+    entrypoint: [""]
+  services:
+    - docker:stable-dind
+  script:
+    - docker-compose build
+    - docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
+  coverage: "/Total coverage.+ (\\d+.\\d+%)/"
+  artifacts:
+    paths:
+      - htmlcov
+    expire_in: 1 days
+  tags:
+    - docker
+    
+pages:
+  stage: deploy
+  dependencies:
+    - test
+  script:
+    - mv htmlcov/ public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - develop
+
 
 deploy:
   stage: deploy
