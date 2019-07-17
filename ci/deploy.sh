@@ -27,8 +27,8 @@ else
     echo
     echo "Only deploy master or develop branch"
     echo
-    export ENVIRONMENT="DEV"
-    export ECS_CLUSTER="Convencer-Test"
+    export ENVIRONMENT="PROD"
+    export ECS_CLUSTER="ECS-PROD"
     #exit 2
 fi
 
