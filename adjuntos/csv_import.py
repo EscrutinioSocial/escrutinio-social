@@ -35,7 +35,7 @@ class DatosInvalidosError(CSVImportacionError):
 
 """
 Clase encargada de procesar un archivo CSV y validarlo
-Recibe  por parámetro el file o path al file y el usuario que sube el archivo
+Recibe por parámetro el file o path al file y el usuario que sube el archivo
 """
 
 
@@ -59,7 +59,7 @@ class CSVImporter:
             - Existencia de ciertas columnas
             - Columnas no duplicadas
             - Tipos de datos
-            - De negocio: que la mesa + circuito + seccion existan en la bd
+            - De negocio: que la mesa + circuito + sección + distrito existan en la bd
 
         """
         try:
@@ -96,7 +96,7 @@ class CSVImporter:
         Valida que el  número de mesa debe estar dentro del circuito y secccion indicados.
         Dichas validaciones se realizar revisando la info en la bd
         """
-        # Obtener todos los combos diferentes de: numero de mesa, circuito, seccion, distrito para validar
+        # Obtener todos los combos diferentes de: número de mesa, circuito, sección, distrito para validar
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         mesa_circuito_seccion_distrito = list(mesa for mesa, grupo in grupos_mesas)
 
@@ -113,13 +113,13 @@ class CSVImporter:
 
     def cargar_info(self):
         """
-        Carga la info del archivo csv en la base de datos.
-        Si hay errores, los reporta a traves de excepciones
+        Carga la info del archivo CSV en la base de datos.
+        Si hay errores, los reporta a través de excepciones.
         """
         fila_analizada = None
         fiscal = get_object_or_404(Fiscal, user=self.usuario)
         # se guardan los datos: El contenedor `carga` y los votos del archivo
-        # la carga es por mesa y categoria entonces nos conviene ir analizando grupos de mesas
+        # la carga es por mesa y categoría entonces nos conviene ir analizando grupos de mesas
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         columnas_categorias = [i[0] for i in COLUMNAS_DEFAULT if i[1]]
         try:
@@ -136,7 +136,7 @@ class CSVImporter:
                         # buscamos el nombre de la columna asociada a esta categoria
                         matcheos = [columna for columna in columnas_categorias if columna.lower()
                                         in categoria_bd.nombre.lower()]
-                        # se encontró la categoria de la mesa en el archivo
+                        # se encontró la categoría de la mesa en el archivo
                         if len(matcheos) != 0:
                             mesa_columna = matcheos[0]
                             # los votos son por partido así que debemos iterar por todas las filas
@@ -145,14 +145,14 @@ class CSVImporter:
                                 opcion = fila['nro de lista']
                                 fila_analizada = FilaCSVImporter(mesa[0], mesa[1], mesa[2], mesa[3])
                                 # buscamos este nro de lista dentro de las opciones asociadas a
-                                # esta categoria
+                                # esta categoría
                                 match_opcion = [una_opcion for una_opcion in categoria_bd.opciones.all()
                                                 if una_opcion.codigo and una_opcion.codigo.strip().lower()
                                                 == str(opcion).strip().lower()]
                                 opcion_bd = match_opcion[0] if len(match_opcion) > 0 else None
                                 if not opcion_bd:
                                     raise DatosInvalidosError(f'El número de lista {opcion} no fue '
-                                                              f'encontrado asociado la categoria '
+                                                              f'encontrado asociado la categoría '
                                                               f'{categoria_bd.nombre}, revise que sea el '
                                                               f'correcto.')
                                 opcion_categoria = opcion_bd.categoriaopcion_set\
@@ -179,7 +179,7 @@ class CSVImporter:
                                 voto.save()
                         else:
                             raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
-                                                      f'categoria: {categoria_bd.nombre}.')
+                                                      f'categoría: {categoria_bd.nombre}.')
 
         except IntegrityError as e:
             # fixme ver mejor forma de manejar estos errores
