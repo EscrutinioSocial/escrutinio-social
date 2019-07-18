@@ -59,12 +59,18 @@ INSTALLED_APPS = [
     'versatileimagefield',
     'darkroom',
 
+    # django-rest-framework
+    'rest_framework',
+    'drf_yasg',
+    
+
     # nuestras apps
     'elecciones',
     'fiscales',
     'adjuntos',
     'problemas',
-    'contacto'
+    'contacto',
+    'api'
 ]
 
 MIDDLEWARE = [
@@ -192,9 +198,31 @@ LEAFLET_CONFIG = {
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAdminUser',
+        'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication'
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
+}
+
+SWAGGER_SETTINGS = {
+    'PERSIST_AUTH': True,
+
+    'DEFAULT_INFO': 'api.urls.swagger_info',
+
+    'SECURITY_DEFINITIONS': {
+        'Basic': {
+            'type': 'basic'
+        },
+        'Bearer': {
+            'in': 'header',
+            'name': 'Authorization',
+            'type': 'apiKey',
+        }
+    }
 }
 
 ANYMAIL = {
@@ -246,14 +274,19 @@ CARACTERISTICA_TELEFONO_DEFAULT = '351'     # CORDOBA
 CARACTERISTICA_DEFAULT = '351'
 
 
-# por defecto no se muestra grafico en la página de resultados
+# Por defecto no se muestra gráfico en la página de resultados
 SHOW_PLOT = False
 
 MIN_COINCIDENCIAS_IDENTIFICACION = 2
 MIN_COINCIDENCIAS_CARGAS = 2
 
+# Tiempo en segundos que se espera entre
+# recálculo de consolidaciones de identificación y carga
+PAUSA_CONSOLIDACION = 15
+
+
 try:
-    from .local_settings import *
+    from .local_settings import *      # noqa
 except ImportError:
     pass
 

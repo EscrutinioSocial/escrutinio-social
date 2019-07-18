@@ -48,6 +48,7 @@ ESTRUCTURA = {
     Mesa: None
 }
 
+
 class StaffOnlyMixing:
     """
     Mixin para que sólo usuarios tipo "staff"
@@ -58,6 +59,7 @@ class StaffOnlyMixing:
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
+
 class VisualizadoresOnlyMixin:
     """
     Mixin para que sólo usuarios visualizadores
@@ -67,8 +69,9 @@ class VisualizadoresOnlyMixin:
     def dispatch(self, request, *args, **kwargs):
         if request.user.fiscal.esta_en_grupo('visualizadores'):
             return super().dispatch(request, *args, **kwargs)
-        
+
         return HttpResponseForbidden()
+
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):
     """
@@ -149,12 +152,11 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
                 kwargs['tipo'] = nivel
                 kwargs['listado'] = self.request.GET.getlist(nivel)
 
-        self.resultados = Resultados(kwargs, None) # Por ahora None
+        self.resultados = Resultados(kwargs, None)  # Por ahora None
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
-
 
     def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
         return self.resultados.status_filter(categoria, prefix)
@@ -172,14 +174,14 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         return self.resultados.electores(categoria)
 
     def get_resultados(self, categoria):
-        proyectado = (
-           self.request.method == "GET" and
-           self.request.GET.get('tipodesumarizacion', '1') == str(2) and
-           not self.filtros
-        )
+        # TODO, ¿dónde entra lo proyectado?
+        # proyectado = (
+        #    self.request.method == "GET" and
+        #    self.request.GET.get('tipodesumarizacion', '1') == str(2) and
+        #    not self.filtros
+        # )
 
-        resultados = self.resultados.get_resultados(categoria, proyectado)
-
+        resultados = self.resultados.get_resultados(categoria)
         result_piechart = None
         if settings.SHOW_PLOT:
             result_piechart = [{
@@ -194,12 +196,14 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tipos_sumarizacion'] = Resultados.get_tipos_sumarizacion()
-        context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
+        context['tipo_sumarizacion_seleccionado'] = self.request.GET.get(
+            'tipodesumarizacion', '1')
 
         if self.filtros:
-            context['para'] = get_text_list([getattr(o, 'nombre', o) for o in self.filtros], " y ")
+            context['para'] = get_text_list(
+                [objeto.nombre_completo() for objeto in self.filtros], " y ")
         else:
-            context['para'] = 'Córdoba'
+            context['para'] = 'todo el país'
 
         pk = self.kwargs.get('pk', 1)
         if pk == 1:

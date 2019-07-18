@@ -25,6 +25,9 @@ shell-app:
 shell-db:
 	docker exec --interactive --tty escrutinio-social-db /bin/bash
 
+manage:
+	docker exec --interactive --tty escrutinio-social-app python manage.py shell
+
 log-app:
 	docker-compose logs app
 
@@ -34,7 +37,6 @@ log-db:
 collectstatic:
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py collectstatic --noinput"
 
-
 test:
 	docker exec escrutinio-social-app /bin/sh -c "pytest"
 
@@ -43,6 +45,9 @@ create:
 
 migrate: up
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py migrate"
+
+makemigrations: up
+	docker exec escrutinio-social-app /bin/sh -c "python manage.py makemigrations"
 
 setup-dev-data: migrate
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py loaddata fixtures/dev_data.json"

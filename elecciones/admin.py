@@ -2,8 +2,8 @@ from django.contrib import admin
 from django.urls import reverse
 from django.db.models import Count
 from leaflet.admin import LeafletGeoAdmin
-from .models import (Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion,
-                        Categoria, VotoMesaReportado, MesaCategoria, Eleccion)
+from .models import (Distrito, Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion, CategoriaOpcion,
+                     Categoria, VotoMesaReportado, MesaCategoria, Eleccion)
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
 
@@ -58,6 +58,7 @@ def mostrar_en_mapa(modeladmin, request, queryset):
     mapa_url = reverse('mapa')
     return HttpResponseRedirect(f'{mapa_url}?ids={ids}')
 
+
 mostrar_en_mapa.short_description = "Mostrar seleccionadas en el mapa"
 
 
@@ -66,6 +67,7 @@ def mostrar_resultados_escuelas(modeladmin, request, queryset):
     ids = ",".join(selected)
     mapa_url = reverse('resultados_escuelas')
     return HttpResponseRedirect(f'{mapa_url}?ids={ids}')
+
 
 mostrar_resultados_escuelas.short_description = "Mostrar resultados de Escuelas seleccionadas"
 
@@ -77,6 +79,7 @@ def resultados_reportados(modeladmin, request, queryset):
     ids = "&".join(f'{name}={s}' for s in selected)
     res_url = reverse('resultados-categoria', args=[1])
     return HttpResponseRedirect(f'{res_url}?{ids}')
+
 
 resultados_reportados.short_description = "Ver Resultados"
 
@@ -116,13 +119,15 @@ def mostrar_resultados_mesas(modeladmin, request, queryset):
     mapa_url = reverse('resultados_mesas_ids')
     return HttpResponseRedirect(f'{mapa_url}?ids={ids}')
 
+
 mostrar_resultados_mesas.short_description = "Mostrar resultados de Mesas seleccionadas"
 
 
 class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     actions = [resultados_reportados]
     list_display = ('numero', 'lugar_votacion')
-    list_filter = (TieneResultados, 'es_testigo', 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito')
+    list_filter = (TieneResultados, 'es_testigo',
+                   'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito')
     search_fields = (
         'numero', 'lugar_votacion__nombre', 'lugar_votacion__direccion',
         'lugar_votacion__ciudad', 'lugar_votacion__barrio',
@@ -146,7 +151,6 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         )
         row_actions += super().get_row_actions(obj)
         return row_actions
-
 
 
 class PartidoAdmin(admin.ModelAdmin):
@@ -173,13 +177,22 @@ class CircuitoAdmin(admin.ModelAdmin):
     )
 
 
-class SeccionAdmin(admin.ModelAdmin):
+class DistritoAdmin(admin.ModelAdmin):
     search_fields = (
         'nombre', 'numero',
     )
 
+
+class SeccionAdmin(admin.ModelAdmin):
+    list_display = ['numero', 'nombre', 'distrito']
+
+    search_fields = (
+        'nombre', 'numero',
+    )
+
+
 class VotoMesaReportadoAdmin(admin.ModelAdmin):
-    list_display = ['carga', 'id', 'opcion', 'votos',]
+    list_display = ['carga', 'id', 'opcion', 'votos', ]
     list_display_links = list_display
     ordering = ['-id']
     list_filter = ('carga__mesa_categoria__categoria', 'opcion')
@@ -195,7 +208,8 @@ class OpcionAdmin(admin.ModelAdmin):
 
 
 class CategoriaAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'eleccion', 'eleccion__fecha', 'activa', 'color', 'back_color']
+    list_display = ['nombre', 'eleccion',
+                    'eleccion__fecha', 'activa', 'color', 'back_color']
     search_fields = ['nombre']
     list_filter = ['activa']
 
@@ -206,7 +220,14 @@ class CategoriaAdmin(admin.ModelAdmin):
     list_filter = ['activa']
 
 
+class CategoriaOpcionAdmin(admin.ModelAdmin):
+    list_display = ['categoria', 'opcion']
+    list_filter = ['categoria']
+    search_fields = ['categoria__nombre']
+
+
 admin.site.register(Eleccion)
+admin.site.register(Distrito, DistritoAdmin)
 admin.site.register(Seccion, SeccionAdmin)
 admin.site.register(Circuito, CircuitoAdmin)
 admin.site.register(Partido, PartidoAdmin)
@@ -216,3 +237,4 @@ admin.site.register(MesaCategoria, MesaCategoriaAdmin)
 admin.site.register(VotoMesaReportado, VotoMesaReportadoAdmin)
 admin.site.register(Opcion, OpcionAdmin)
 admin.site.register(Categoria, CategoriaAdmin)
+admin.site.register(CategoriaOpcion, CategoriaOpcionAdmin)

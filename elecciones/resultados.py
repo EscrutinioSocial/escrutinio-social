@@ -26,10 +26,12 @@ def porcentaje(numerador, denominador):
     Expresa la razón numerador/denominador como un string correspondiente
     al porcentaje con 2 dígitos decimales.
     Si no puede calcularse, devuelve '-'.
+
     """
     if denominador and denominador > 0:
         return f'{numerador*100/denominador:.2f}'
     return '-'
+
 
 class Resultados():
     """
@@ -45,7 +47,7 @@ class Resultados():
         'todas'
     )
 
-    def __init__(self, kwargs, tipo_de_agregacion, opciones_a_considerar):
+    def __init__(self, kwargs, tipo_de_agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas, opciones_a_considerar=OPCIONES_A_CONSIDERAR.todas):
         """
         El tipo de cómputo indica qué datos se tienen en cuenta y cuáles no.
         """
@@ -71,15 +73,15 @@ class Resultados():
         lookups = dict()
 
         # ['status'] == 'tc':
-        if self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga:
-            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
+        if self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga:
+            if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status'] = MesaCategoria.STATUS.total_consolidada_dc
             else:  # éste era pc
                 lookups[f'{prefix}status'] = MesaCategoria.STATUS.parcial_consolidada_dc
 
-        elif self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.solo_consolidados:  # no estaba
+        elif self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.solo_consolidados:  # no estaba
             # Doble carga y CSV.
-            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
+            if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status__in'] = (
                     MesaCategoria.STATUS.total_consolidada_dc,
                     MesaCategoria.STATUS.total_consolidada_csv,
@@ -91,8 +93,8 @@ class Resultados():
                 )
 
         # ['status'] == 'tsc':
-        elif self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.todas_las_cargas:
-            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
+        elif self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.todas_las_cargas:
+            if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status__in'] = (
                     MesaCategoria.STATUS.total_consolidada_dc,
                     MesaCategoria.STATUS.total_consolidada_csv,
@@ -126,11 +128,12 @@ class Resultados():
         ids_partidos = Partido.objects.filter(
             opciones__categorias__id=categoria.id
         ).distinct().values_list('id', flat=True)
+
+
         for id in ids_partidos:
             sum_por_partido[str(id)] = Sum(
                 Case(
                     When(
-                        opcion__partido__id=id,
                         carga__mesa_categoria__categoria=categoria,
                         carga__es_testigo__isnull=False,
                         then=F('votos'),
@@ -139,6 +142,19 @@ class Resultados():
                     ), output_field=IntegerField()
                 )
             )
+
+        # for id in Partido.objects.filter(
+        #     opciones__categorias__id=categoria.id
+        # ).distinct().values_list('id', flat=True):
+        #     sum_por_partido[str(id)] = qry(opcion__partido__id=id)
+
+        #     opciones = Opcion.objects.filter(
+        #         categorias__id=categoria.id,
+        #         partido_id=id
+        #     ).distinct().values_list('id','nombre')
+        #     opciones_por_partido[str(id)] = {
+        #         nom: qry(opcion__id=oid) for oid, nom in opciones
+        #     }
 
         ids_opciones_no_partidarias = Opcion.objects.filter(
             categorias__id=categoria.id,
@@ -179,7 +195,8 @@ class Resultados():
         elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.lugar_de_votacion:
             return LugarVotacion.objects.filter(id__in=self.ids_a_considerar)
 
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
+
+        elif nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
             return Mesa.objects.filter(id__in=self.ids_a_considerar)
 
     @lru_cache(128)
@@ -233,13 +250,35 @@ class Resultados():
 
         expanded_result = {}
         for k, v in c.votos.items():
-            porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
-            porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.total_positivos and isinstance(k, Partido) else '-'
+            if isinstance(v, dict):
+                d = v['detalle']
+                v = v['total']
+            else:
+                d = {}
+
+            porcentaje_total = porcentaje(v, c.total)
+            porcentaje_positivos = porcentaje(
+                v, c.positivos) if isinstance(k, Partido) else '-'
             expanded_result[k] = {
                 "votos": v,
-                "porcentajeTotal": porcentaje_total,
-                "porcentajePositivos": porcentaje_positivos
+                "detalle": d,
+                "porcentaje_total": porcentaje_total,
+                "porcentaje_positivos": porcentaje_positivos
             }
+
+            # if proyectado:
+            #     acumulador_positivos = 0
+            #     for ag in agrupaciones:
+            #         data = datos_ponderacion[ag]
+            #         if k in data["votos"] and data["positivos"]:
+            #             if isinstance(data['votos'][k], dict):
+            #                 v = data['votos'][k]['total']
+            #             else:
+            #                 v = data['votos'][k]
+            #             acumulador_positivos += data["electores"] * \
+            #                 v/data["positivos"]
+
+            #     expanded_result[k]["proyeccion"] = f'{acumulador_positivos*100/electores_pond:.2f}'
 
         # TODO permitir opciones positivas no asociadas a partido.
         tabla_positivos = OrderedDict(
@@ -255,7 +294,7 @@ class Resultados():
         tabla_no_positivos = {
             k: {
                 "votos": v,
-                "porcentajeTotal": f'{v*100/c.total:.2f}' if c.total else '-'
+                "porcentaje_total": porcentaje(v, c.total)
             } for k, v in tabla_no_positivos.items()
         }
 
@@ -268,11 +307,11 @@ class Resultados():
             'electores_en_mesas_escrutadas': c.electores_en_mesas_escrutadas,
             'votantes': c.total,
 
-            'proyectado': proyectado,
-            'proyeccion_incompleta': proyeccion_incompleta,
+            # 'proyectado': proyectado,
+            # 'proyeccion_incompleta': proyeccion_incompleta,
             'porcentaje_mesas_escrutadas': c.porcentaje_mesas_escrutadas,
-            'porcentaje_escrutado': f'{c.electores_en_mesas_escrutadas*100/c.electores:.2f}' if c.electores else '-',
-            'porcentaje_participacion': f'{c.total*100/c.electores_en_mesas_escrutadas:.2f}' if c.electores_en_mesas_escrutadas else '-',
+            'porcentaje_escrutado': porcentaje(c.electores_en_mesas_escrutadas, c.electores),
+            'porcentaje_participacion': porcentaje(c.total, c.electores_en_mesas_escrutadas),
             'total_mesas_escrutadas': c.total_mesas_escrutadas,
             'total_mesas': c.total_mesas
         }
@@ -333,10 +372,26 @@ class Resultados():
             **sum_por_partido
         )
 
-        votos_por_opcion = {Partido.objects.get(
-            id=k): v for k, v in votos_por_opcion.items() if v is not None}
+        #votos_por_opcion = {Partido.objects.get(
+        #   id=k): v for k, v in votos_por_opcion.items() if v is not None}
 
         # 3.2) Opciones no partidarias.
+
+        result = {
+            Partido.objects.get(id=k): {
+                'total': v,
+                'detalle': {
+                    op_nom: {
+                        'votos': op_votos if op_votos else "0",
+                        'porcentaje': porcentaje(op_votos, v)
+                    } for op_nom, op_votos in votos_reportados.aggregate(
+                        **opciones_por_partido[k]
+                    ).items()
+                }
+            } for k, v in result.items() if v is not None
+        }
+
+        # no positivos
         result_opc = reportados.aggregate(
             **sum_por_opcion_no_partidaria
         )
@@ -345,9 +400,12 @@ class Resultados():
         # Calculamos el total como la suma de todos los positivos y los
         # válidos no positivos.
         total_positivos = sum(result.values())
-        total = positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(
+        total = total_positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(
             nombre=k, es_contable=False, es_metadata=False).exists())
         votos_por_opcion.update(result_opc)
+        total_positivos = sum(result.values())
+        # positivos = sum([x['total'] for x in result.values()])
+
 
         return AttrDict({
             "total_mesas": total_mesas
@@ -366,9 +424,13 @@ class Resultados():
     def get_tipos_sumarizacion(cls):
         id = 0
         tipos_sumarizacion = []
-        for tipo_de_agregacion in TIPOS_DE_AGREGACIONES:
-            for opcion in OPCIONES_A_CONSIDERAR:
-                tipos_sumarizacion.append('pk': str(id), 'name': tipo_de_agregacion + '-' + opcion)
+
+        for tipo_de_agregacion in Resultados.TIPOS_DE_AGREGACIONES:
+            for opcion in Resultados.OPCIONES_A_CONSIDERAR:
+                tipos_sumarizacion.append({
+                    'pk': str(id),
+                    'name': f'{tipo_de_agregacion}-{opcion}'
+                })
 
         return tipos_sumarizacion
 
@@ -439,7 +501,8 @@ class Proyecciones(Resultados):
         expanded_result = {}
         for k, v in c.votos.items():
             porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
-            porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.positivos and isinstance(k, Partido) else '-'
+            porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.positivos and isinstance(
+                k, Partido) else '-'
             expanded_result[k] = {
                 "votos": v,
                 "porcentajeTotal": porcentaje_total,
@@ -449,9 +512,15 @@ class Proyecciones(Resultados):
                 acumulador_positivos = 0
                 for ag in agrupaciones:
                     data = datos_ponderacion[ag]
+<<<<<<< HEAD
                     if k in data["votos"] and data["total_positivos"]:
                         acumulador_positivos += data["electores"] * \
                             data["votos"][k] / data["positivos"]
+=======
+                    if k in data["votos"] and data["positivos"]:
+                        acumulador_positivos += data["electores"] * \
+                            data["votos"][k]/data["positivos"]
+>>>>>>> 93b8ba7f56e7dd5a7bad1551e3f15d5d628f84fa
 
                 expanded_result[k]["proyeccion"] = f'{acumulador_positivos*100/electores_pond:.2f}'
 

@@ -27,7 +27,8 @@ from model_utils import Choices
 from adjuntos.models import Attachment
 from problemas.models import Problema
 
-logger = logging.getLogger("e-va");
+logger = logging.getLogger("e-va")
+
 
 class Distrito(models.Model):
     """
@@ -42,10 +43,13 @@ class Distrito(models.Model):
 
     class Meta:
         verbose_name = 'Distrito electoral'
-        verbose_name_plural = 'Distrito electorales'
+        verbose_name_plural = 'Distritos electorales'
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
+
+    def nombre_completo(self):
+        return self.nombre
 
 
 class Seccion(models.Model):
@@ -85,6 +89,9 @@ class Seccion(models.Model):
             categorias=categoria
         )
 
+    def nombre_completo(self):
+        return f"{self.distrito.nombre_completo()} - {self.nombre}"
+
 
 class Circuito(models.Model):
     """
@@ -93,7 +100,8 @@ class Circuito(models.Model):
     Distrito -> Sección -> **Circuito** -> Lugar de votación -> Mesa
     """
     seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
-    localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
+    localidad_cabecera = models.CharField(
+        max_length=100, null=True, blank=True)
 
     numero = models.CharField(max_length=10)
     nombre = models.CharField(max_length=100)
@@ -130,7 +138,10 @@ class Circuito(models.Model):
         return Mesa.objects.filter(
             lugar_votacion__circuito=self,
             categorias=categoria
-    )
+        )
+
+    def nombre_completo(self):
+        return self.seccion.nombre_completo() + " - " + self.nombre
 
 
 class LugarVotacion(models.Model):
@@ -142,7 +153,8 @@ class LugarVotacion(models.Model):
     Distrito -> Sección -> Circuito -> **Lugar de votación** -> Mesa
     """
 
-    circuito = models.ForeignKey(Circuito, related_name='escuelas', on_delete=models.CASCADE)
+    circuito = models.ForeignKey(
+        Circuito, related_name='escuelas', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, blank=True)
@@ -203,7 +215,7 @@ class LugarVotacion(models.Model):
         return Mesa.objects.filter(
             lugar_votacion=self,
             categorias=categoria
-    )
+        )
 
     @property
     def mesas_actuales(self):
@@ -222,6 +234,9 @@ class LugarVotacion(models.Model):
     def __str__(self):
         return f"{self.nombre} - {self.circuito}"
 
+    def nombre_completo(self):
+        return self.circuito.nombre_completo() + " - " + self.nombre
+
 
 class MesaCategoria(models.Model):
     """
@@ -233,26 +248,31 @@ class MesaCategoria(models.Model):
     """
     STATUS = Choices(
         'sin_cargar',                   # no hay cargas
-        'parcial_sin_confirmar',        # carga minima unica o coincidente
-        'parcial_en_conflicto',         # cargas minimas divergentes sin consolidar
-        'parcial_confirmada',           # carga minima consolidada
-        'total_sin_confirmar',
+        # carga parcial única (no csv) o no coincidente
+        'parcial_sin_consolidar',
+        # no hay dos cargas mínimas coincidentes, pero una es de csv.
+        'parcial_consolidada_csv',
+        'parcial_en_conflicto',         # cargas parcial divergentes sin consolidar
+        'parcial_consolidada_dc',       # carga parcial consolidada por doble carga
+        'total_sin_consolidar',
+        'total_consolidada_csv',
         'total_en_conflicto',
-        'total_confirmada',
+        'total_consolidada_dc',
     )
     status = StatusField(default='sin_cargar')
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
 
-    # carga es representativa del estado actual
+    # Carga que es representativa del estado actual.
     carga_testigo = models.ForeignKey(
         'Carga', related_name='es_testigo',
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    def firma_count(self, exclude=None):
+    def firma_count(self):
         """
-        Devuelve un diccionario que agrupa por estado y firmas
+        Devuelve un diccionario que agrupa por tipo de carga y firmas.
+        Este método se usa para testing solamente.
         Por ejemplo::
 
             {'total': {
@@ -265,12 +285,19 @@ class MesaCategoria(models.Model):
         """
         qs = self.cargas.all()
         result = defaultdict(dict)
-        for item in qs.values('firma', 'status').annotate(total=Count('firma')):
-            result[item['status']][item['firma']] = item['total']
+        for item in qs.values('firma', 'tipo').annotate(total=Count('firma')):
+            result[item['tipo']][item['firma']] = item['total']
         return result
 
     class Meta:
         unique_together = ('mesa', 'categoria')
+        verbose_name = 'Mesa categoría'
+        verbose_name_plural = "Mesas Categorías"
+
+    def actualizar_status(self, status, carga_testigo):
+        self.status = status
+        self.carga_testigo = carga_testigo
+        self.save(update_fields=['status', 'carga_testigo'])
 
 
 class Mesa(models.Model):
@@ -289,7 +316,8 @@ class Mesa(models.Model):
     categorias = models.ManyToManyField('Categoria', through='MesaCategoria')
     numero = models.CharField(max_length=10)
     es_testigo = models.BooleanField(default=False)
-    circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
+    circuito = models.ForeignKey(
+        Circuito, null=True, on_delete=models.SET_NULL)
     lugar_votacion = models.ForeignKey(
         LugarVotacion, verbose_name='Lugar de votacion',
         null=True, related_name='mesas', on_delete=models.CASCADE
@@ -298,12 +326,6 @@ class Mesa(models.Model):
     electores = models.PositiveIntegerField(null=True, blank=True)
     taken = models.DateTimeField(null=True, editable=False)
     orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
-
-    # denormalizaciones
-    # lleva la cuenta de las categorías que se han cargado hasta el momento.
-    # ver receiver actualizar_categorias_cargadas_para_mesa()
-    cargadas = models.PositiveIntegerField(default=0, editable=False)
-    confirmadas = models.PositiveIntegerField(default=0, editable=False)
 
     def categoria_add(self, categoria):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
@@ -316,37 +338,32 @@ class Mesa(models.Model):
             ).exists():
                 return categoria
 
-    def marcar_todas_las_categorias_cargadas(self):
-        cantidad_categorias = self.categorias.filter(activa=True).count()
-        logger.debug(f'marcando {cantidad_categorias} como marcadas en mesa {self.numero}')
-        self.cargadas = cantidad_categorias
-        self.save(update_fields=['cargadas'])
-
-    def marcar_todas_las_categorias_confirmadas(self):
-        cantidad_categorias = self.cargadas
-        logger.debug(f'marcando {cantidad_categorias} como confirmadas en mesa {self.numero}')
-        self.confirmadas = cantidad_categorias
-        self.save(update_fields=['confirmadas'])
-
-
     @classmethod
     def con_carga_pendiente(cls, wait=2):
         """
         Una mesa cargable es aquella que
-           - no esté tomada dentro de los últimos `wait` minutos
-           - no esté marcada con problemas o todos su problemas estén resueltos
-           - y no tenga cargas consolidadas
+           - no esté tomada dentro de los últimos `wait` minutos,
+           - no esté marcada con problemas o todos su problemas estén resueltos,
+           - esté identificada,
+           - y que todas sus categorías estén consolidadas con doble carga total.
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
+            # Tiene que tener una imagen asociada.
+            # Y si la tiene es porque está identificada.
             attachments__isnull=False,
-            orden_de_carga__gte=1,
         ).filter(
+            # No puede estar tomado o tiene que haber expirado el periodo de taken.
             Q(taken__isnull=True) | Q(taken__lt=desde)
         ).annotate(
-            a_cargar=Count('categorias', filter=Q(categorias__activa=True))
+            # Cuántas categorías deben cargarse.
+            a_cargar=Count('categorias', filter=Q(categorias__activa=True)),
+            # Cuántas llegaron a doble carga total.
+            terminadas=Count('mesacategoria',
+                             filter=Q(mesacategoria__status=MesaCategoria.STATUS.total_consolidada_dc))
         ).filter(
-            cargadas__lt=F('a_cargar')
+            # Me fijo si no llegaron a doble carga.
+            terminadas__lt=F('a_cargar')
         ).annotate(
             tiene_problemas=Exists(
                 Problema.objects.filter(
@@ -358,7 +375,6 @@ class Mesa(models.Model):
             tiene_problemas=False
         ).distinct()
         return qs
-
 
     def get_absolute_url(self):
         # TODO: Por ahora no hay una vista que muestre la carga de datos
@@ -390,6 +406,9 @@ class Mesa(models.Model):
     def __str__(self):
         return str(self.numero)
 
+    def nombre_completo(self):
+        return self.lugar_votacion.nombre_completo() + " - " + self.numero
+
 
 class Partido(models.Model):
     """
@@ -397,7 +416,8 @@ class Partido(models.Model):
     """
     orden = models.PositiveIntegerField(help_text='Orden opcion')
     numero = models.PositiveIntegerField(null=True, blank=True)
-    codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True)
+    codigo = models.CharField(
+        max_length=10, help_text='Codigo de partido', null=True, blank=True)
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=30, default='')
     color = models.CharField(max_length=30, default='', blank=True)
@@ -451,7 +471,6 @@ class Opcion(models.Model):
         verbose_name_plural = 'Opciones'
         ordering = ['orden']
 
-
     @property
     def color(self):
         """
@@ -462,10 +481,10 @@ class Opcion(models.Model):
             return self.partido.color
         return '#FFFFFF'
 
-
     def __str__(self):
         if self.partido:
-            return f'{self.partido.codigo} - {self.nombre}' #  -- {self.partido.nombre_corto}
+            # -- {self.partido.nombre_corto}
+            return f'{self.partido.codigo} - {self.nombre}'
         return self.nombre
 
 
@@ -505,7 +524,8 @@ class Categoria(models.Model):
     Una categoría tiene habilitadas diferentes :py:meth:`opciones <Opcion>`
     que incluyen las partidarias (boletas) y blanco, nulo, etc.
     """
-    eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
+    eleccion = models.ForeignKey(
+        Eleccion, null=True, on_delete=models.SET_NULL)
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100)
     opciones = models.ManyToManyField(
@@ -599,33 +619,38 @@ class CategoriaOpcion(models.Model):
 
     class Meta:
         unique_together = ('categoria', 'opcion')
+        verbose_name = 'Categoría opción'
+        verbose_name_plural = "Categorías opciones"
+        ordering = ['categoria']
 
 
 class Carga(TimeStampedModel):
     """
     Es el contenedor de la carga de datos de un fiscal
-    Define todos los datos comunes (fecha, fiscal, mesa, categoria)
+    Define todos los datos comunes (fecha, fiscal, mesa, categoría)
     de una carga, y contiene un conjunto de objetos
     :class:`VotoMesaReportado`
-    para las opciones válidas en la mesa-categoria.
+    para las opciones válidas en la mesa-categoría.
     """
-    STATUS = Choices(
+    valida = models.BooleanField(null=False, default=True)
+    TIPOS = Choices(
         'falta_foto',
         'parcial',
         'total'
     )
     SOURCES = Choices('web', 'csv', 'telegram')
-    status = StatusField(null=True, blank=True)
-    origen = models.CharField(
-        max_length=50, choices=SOURCES, default='web'
-    )
+    tipo = models.CharField(
+        max_length=50, choices=TIPOS, null=True, blank=True)
+    origen = models.CharField(max_length=50, choices=SOURCES, default='web')
     mesa_categoria = models.ForeignKey(
         MesaCategoria, related_name='cargas', on_delete=models.CASCADE
     )
-    fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
+    fiscal = models.ForeignKey(
+        'fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
     firma = models.CharField(
         max_length=300, null=True, blank=True, editable=False
     )
+    procesada = models.BooleanField(default=False)
 
     @property
     def mesa(self):
@@ -635,15 +660,19 @@ class Carga(TimeStampedModel):
     def categoria(self):
         return self.mesa_categoria.categoria
 
-    def actualizar_firma(self):
+    def actualizar_firma(self, forzar=False):
         """
-        a partir del conjunto de reportes de la carga
+        A partir del conjunto de reportes de la carga
         se genera una firma como un string
             <id_opcion_A>-<votos_opcion_A>|<id_opcion_B>-<votos_opcion_B>...
 
         Si esta firma iguala o coincide con la de otras cargas
-        se marca consolidada
+        se marca consolidada.
         """
+        # Si ya hay firma y no están forzando, listo.
+        if self.firma and not forzar:
+            return
+
         tuplas = (
             f'{o}-{v or ""}' for (o, v) in
             self.reportados.values_list(
@@ -663,7 +692,8 @@ class VotoMesaReportado(models.Model):
     que define mesa y categoria, existe una instancia de este modelo
     para cada opción y su correspondiente cantidad de votos.
     """
-    carga = models.ForeignKey(Carga, related_name='reportados', on_delete=models.CASCADE)
+    carga = models.ForeignKey(
+        Carga, related_name='reportados', on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
 
     # es null cuando hay cargas parciales.
@@ -676,57 +706,6 @@ class VotoMesaReportado(models.Model):
         return f"{self.carga} - {self.opcion}: {self.votos}"
 
 
-@receiver(post_save, sender=Carga)
-def actualizar_categorias_cargadas_para_mesa(sender, instance=None, created=False, **kwargs):
-    """
-    Actualiza el contador de categorias ya cargadas para una mesa dada.
-    Se actualiza cada vez que se guarda una instancia de :class:`Carga`
-    """
-    mesa = instance.mesa_categoria.mesa
-    categorias_cargadas = Carga.objects.filter(
-        mesa_categoria__mesa=mesa
-    ).values('mesa_categoria__categoria').distinct().count()
-    if mesa.cargadas != categorias_cargadas:
-        mesa.cargadas = categorias_cargadas
-        mesa.save(update_fields=['cargadas'])
-
-
-@receiver(post_save, sender=Carga)
-def actualizar_estado_mesa_categoria(sender, instance=None, created=False, **kwargs):
-    if instance.id and instance.firma:
-        csv = instance.origen == 'csv'
-        total = instance.status == 'total'
-        mc = instance.mesa_categoria
-        firmas = mc.firma_count()
-        supera = firmas[instance.status][instance.firma] >= settings.MIN_COINCIDENCIAS_CARGAS
-
-        if supera:
-            mc.status = 'total_confirmada' if total else 'parcial_confirmada'
-            mc.carga_testigo = instance
-        elif len(firmas[instance.status]) == 1:
-            # la instancia es la unica de su status
-            mc.status = 'total_sin_confirmar' if total else 'parcial_sin_confirmar'
-            mc.carga_testigo = instance
-        else:
-            mc.status =  'total_en_conflicto' if total else 'parcial_en_conflicto'
-            mc.carga_testigo = None
-        mc.save(update_fields=['status', 'carga_testigo'])
-
-
-@receiver(post_save, sender=MesaCategoria)
-def actualizar_categorias_confirmadas_para_mesa(sender, instance=None, created=False, **kwargs):
-    """
-    Similar a :func:`actualizar_categorias_cargadas_para_mesa`,
-    actualiza el contador de categorias ya confirmadas para una mesa dada.
-    """
-    if instance.status == MesaCategoria.STATUS.total_confirmada:
-        mesa = instance.mesa
-        confirmadas = MesaCategoria.objects.filter(mesa=mesa, status='total_confirmada').count()
-        if mesa.confirmadas != confirmadas:
-            mesa.confirmadas = confirmadas
-            mesa.save(update_fields=['confirmadas'])
-
-
 @receiver(post_save, sender=Mesa)
 def actualizar_electores(sender, instance=None, created=False, **kwargs):
     """
@@ -736,7 +715,7 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
     if (instance.lugar_votacion is not None
-        and instance.lugar_votacion.circuito is not None):
+            and instance.lugar_votacion.circuito is not None):
         circuito = instance.lugar_votacion.circuito
         seccion = circuito.seccion
         distrito = seccion.distrito
@@ -761,5 +740,3 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
         ).aggregate(v=Sum('electores'))['v'] or 0
         distrito.electores = electores
         distrito.save(update_fields=['electores'])
-
-
