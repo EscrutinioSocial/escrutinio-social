@@ -167,6 +167,7 @@ class Attachment(TimeStampedModel):
         A partir del conjunto de identificaciones del attachment
         se devuelve una lista de tuplas
         (mesa_id, status, cantidad, cantidad que viene de csv).
+        Sólo cuenta las no invalidadas.
 
         Por ejemplo:
             [
@@ -181,7 +182,7 @@ class Attachment(TimeStampedModel):
         """
         from django.db.models import Sum, Value as V
         from django.db.models.functions import Coalesce
-        qs = self.identificaciones.all()
+        qs = self.identificaciones.filter(invalidada=False)
         cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
         result = []
         query = qs.values('mesa', 'status').annotate(
@@ -207,17 +208,8 @@ class Identificacion(TimeStampedModel):
     """
     STATUS = Choices(
         'identificada',
-        ('spam', 'Es SPAM'),
-        ('invalida', 'Es inválida'),
-        ('ilegible', 'No se entiende')
+        'problema'
     )
-    #
-    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
-    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
-    #     todos los datos de identificación.
-    # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
-    # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
-
     status = StatusField(choices_name='STATUS')
 
     SOURCES = Choices('web', 'csv', 'telegram')
@@ -233,7 +225,11 @@ class Identificacion(TimeStampedModel):
         Attachment, related_name='identificaciones', on_delete=models.CASCADE
     )
     procesada = models.BooleanField(default=False)
+    invalidada = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - Procesada: {self.procesada}'
+        return f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - procesada: {self.procesada} - invalidada: {self.invalidada}'
 
+    def invalidar(self):
+        self.invalidada = True
+        self.save(update_fields=['invalidada'])
