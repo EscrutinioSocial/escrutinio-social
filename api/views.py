@@ -1,3 +1,5 @@
+from django.shortcuts import get_object_or_404
+
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FileUploadParser, JSONParser
@@ -10,6 +12,9 @@ from .serializers import (
     VotoSerializer, ActaSerializer, MesaSerializer, CategoriaSerializer, OpcionSerializer,
     ListarCategoriasQuerySerializer, ListarOpcionesQuerySerializer
 )
+
+from adjuntos.models import Identificacion, Attachment
+from elecciones.models import Distrito, Seccion, Circuito, Mesa
 
 
 @swagger_auto_schema(
@@ -70,7 +75,29 @@ def identificar_acta(request, foto_digest):
 
     Establece la relación entre la foto del acta y una mesa de votación especifica.
     """
-    return Response({'mensaje': 'El acta fue identificada con éxito.'})
+    attachment = get_object_or_404(Attachment, foto_digest=foto_digest)
+    serializer = MesaSerializer(data=request.data)
+    if serializer.is_valid():
+        data = serializer.validated_data
+
+        distrito = get_object_or_404(Distrito, numero=data['codigo_distrito'])
+        seccion = get_object_or_404(Seccion, distrito=distrito, numero=data['codigo_seccion'])
+        circuito = get_object_or_404(Circuito, seccion=seccion, numero=data['codigo_circuito'])
+        mesa = get_object_or_404(Mesa, circuito=circuito, numero=data['codigo_mesa'])
+        
+        identificacion = Identificacion(
+            # No deberia ser 'api' ??
+            source='telegram',
+            status = Identificacion.STATUS.identificada,
+            attachment=attachment,
+            fiscal=request.user.fiscal,
+            mesa=mesa
+        )
+        identificacion.save()
+
+        return Response({'mensaje': 'El acta fue identificada con éxito.'})
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 @swagger_auto_schema(
