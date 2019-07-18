@@ -1,4 +1,5 @@
 import pandas as pd
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 
 from elecciones.models import Mesa, Carga, VotoMesaReportado
@@ -33,6 +34,10 @@ class DatosInvalidosError(CSVImportacionError):
     pass
 
 
+class PermisosInvalidosError(CSVImportacionError):
+    pass
+
+
 """
 Clase encargada de procesar un archivo CSV y validarlo
 Recibe por parámetro el file o path al file y el usuario que sube el archivo
@@ -45,6 +50,7 @@ class CSVImporter:
         self.archivo = archivo
         self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"])
         self.usuario = usuario
+        self.fiscal = None
         self.mesas = []
         self.mesas_matches = {}
 
@@ -63,14 +69,18 @@ class CSVImporter:
 
         """
         try:
+            self.validar_usuario()
             self.validar_columnas()
             self.validar_mesas()
+
+        except PermisosInvalidosError as e:
+            raise e
 
         except CSVImportacionError as e:
             raise e
         # para manejar cualquier otro tipo de error
         except Exception as e:
-            raise FormatoArchivoInvalidoError('No es un csv válido')
+            raise FormatoArchivoInvalidoError('No es un csv válido.')
 
     def validar_columnas(self):
         """
@@ -83,13 +93,13 @@ class CSVImporter:
         todas_las_columnas = all(elem in self.df.columns for elem in headers)
         if not todas_las_columnas:
             faltantes = [columna for columna in headers if columna not in self.df.columns]
-            raise ColumnasInvalidasError(f'Faltan las columnas: {faltantes} en el archivo')
+            raise ColumnasInvalidasError(f'Faltan las columnas: {faltantes} en el archivo.')
         # las columnas duplicadas en Panda se especifican como ‘X’, ‘X.1’, …’X.N’
         columnas_candidatas = [columna.replace('.1', '') for columna in self.df.columns
                                if columna.endswith('.1')]
         columnas_duplicadas = any(elem in columnas_candidatas for elem in headers)
         if columnas_duplicadas:
-            raise ColumnasInvalidasError('Hay columnas duplicadas en el archivo')
+            raise ColumnasInvalidasError('Hay columnas duplicadas en el archivo.')
 
     def validar_mesas(self):
         """
@@ -107,7 +117,7 @@ class CSVImporter:
             except Mesa.DoesNotExist:
                 raise DatosInvalidosError(
                     f'No existe mesa: {mesa[2]} en circuito: {mesa[1]}, sección: {mesa[0]} y '
-                    f'distrito: {mesa[3]}')
+                    f'distrito: {mesa[3]}.')
             self.mesas_matches[mesa] = match_mesa
             self.mesas.append(match_mesa)
 
@@ -117,7 +127,6 @@ class CSVImporter:
         Si hay errores, los reporta a través de excepciones.
         """
         fila_analizada = None
-        fiscal = get_object_or_404(Fiscal, user=self.usuario)
         # se guardan los datos: El contenedor `carga` y los votos del archivo
         # la carga es por mesa y categoría entonces nos conviene ir analizando grupos de mesas
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
@@ -135,7 +144,7 @@ class CSVImporter:
                         categoria_bd = mesa_categoria.categoria
                         # buscamos el nombre de la columna asociada a esta categoria
                         matcheos = [columna for columna in columnas_categorias if columna.lower()
-                                        in categoria_bd.nombre.lower()]
+                                    in categoria_bd.nombre.lower()]
                         # se encontró la categoría de la mesa en el archivo
                         if len(matcheos) != 0:
                             mesa_columna = matcheos[0]
@@ -155,7 +164,7 @@ class CSVImporter:
                                                               f'encontrado asociado la categoría '
                                                               f'{categoria_bd.nombre}, revise que sea el '
                                                               f'correcto.')
-                                opcion_categoria = opcion_bd.categoriaopcion_set\
+                                opcion_categoria = opcion_bd.categoriaopcion_set \
                                     .filter(categoria=categoria_bd).first()
                                 if opcion_categoria.prioritaria:
                                     if not carga_parcial:
@@ -163,7 +172,7 @@ class CSVImporter:
                                             tipo=Carga.TIPOS.parcial,
                                             origen=Carga.SOURCES.csv,
                                             mesa_categoria=mesa_categoria,
-                                            fiscal=fiscal
+                                            fiscal=self.fiscal
                                         )
                                     carga = carga_parcial
                                 else:
@@ -172,7 +181,7 @@ class CSVImporter:
                                             tipo=Carga.TIPOS.total,
                                             origen=Carga.SOURCES.csv,
                                             mesa_categoria=mesa_categoria,
-                                            fiscal=fiscal
+                                            fiscal=self.fiscal
                                         )
                                     carga = carga_total
                                 voto = VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
@@ -186,15 +195,24 @@ class CSVImporter:
             if 'votomesareportado_votos_check' in str(e):
                 raise DatosInvalidosError(
                     f'Los resultados deben ser números positivos. Revise las filas correspondientes '
-                    f'a {fila_analizada}')
+                    f'a {fila_analizada}.')
             raise DatosInvalidosError(f'Error al guardar los resultados. Revise las filas correspondientes '
-                                      f'a  {fila_analizada}')
+                                      f'a  {fila_analizada}.')
         except ValueError as e:
             raise DatosInvalidosError(
                 f'Revise que los datos de resultados sean numéricos. Revise las filas correspondientes '
-                f'a  {fila_analizada}')
+                f'a  {fila_analizada}.')
         except Exception as e:
             raise e
+
+    def validar_usuario(self):
+        try:
+            self.fiscal = get_object_or_404(Fiscal, user=self.usuario)
+        except Http404:
+            raise PermisosInvalidosError('Fiscal no encontrado.')
+        if not self.usuario or not self.usuario.fiscal.esta_en_grupo('unidades basicas'):
+            raise PermisosInvalidosError('Su usuario no tiene los permisos necesarios para realizar '
+                                         'esta acción.')
 
 
 class FilaCSVImporter:
