@@ -4,17 +4,15 @@ from elecciones.tests.factories import (
 )
 from django.urls import reverse
 from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
-import os
 from http import HTTPStatus
 from adjuntos.models import Attachment, Identificacion
-from adjuntos.consolidacion import consumir_novedades_identificacion
 
 def test_identificacion_create_view_get(fiscal_client):
     a = AttachmentFactory()
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
-    assert response.status_code == 200
-    assert a.foto.url in a.foto.url in response.content.decode('utf8')
-
+    fotoUrl = a.foto.thumbnail['960x'].url
+    assert response.status_code == HTTPStatus.OK
+    assert fotoUrl in response.content.decode('utf8')
 
 def test_identificacion_create_view_post(fiscal_client, admin_user):
     m1 = MesaFactory()
@@ -26,7 +24,7 @@ def test_identificacion_create_view_post(fiscal_client, admin_user):
         'distrito': m1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('asignar-mesa', args=[a.id]), data)
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('siguiente-accion')
     assert a.identificaciones.count() == 1
     i = a.identificaciones.first()
@@ -42,7 +40,9 @@ def test_identificacion_create_view_get__desde_unidad_basica(fiscal_client):
     a = AttachmentFactory()
     response = fiscal_client.get(reverse('asignar-mesa-ub', args=[a.id]))
     assert response.status_code == HTTPStatus.OK
-    assert a.foto.url in a.foto.url in response.content.decode('utf8')
+
+    foto_url = a.foto.thumbnail['960x'].url
+    assert foto_url in response.content.decode('utf8')
 
 def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client):
     mesa_1 = MesaFactory()

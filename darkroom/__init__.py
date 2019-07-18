@@ -4,5 +4,5 @@ cuando se clasifican actas
 
 Ver :func:`adjuntos.views.editar_foto`
 
-Referencia https://mattketmo.github.io/darkroomjs/
+Referencia https://ferclaverino.github.io/darkroomjs/
 """
