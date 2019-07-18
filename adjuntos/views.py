@@ -19,6 +19,7 @@ from .forms import (
     IdentificacionForm,
     IdentificacionProblemaForm,
 )
+from problemas.models.ReporteDeProblema
 
 
 class IdentificacionCreateView(CreateView):
@@ -82,10 +83,18 @@ class IdentificacionProblemaCreateView(IdentificacionCreateView):
     identificacion_creada = None
 
     def form_valid(self, form):
+        fiscal = self.request.user.fiscal
         identificacion = form.save(commit=False)
         identificacion.attachment = self.attachment
-        identificacion.fiscal = self.request.user.fiscal
+        identificacion.fiscal = fiscal
+        identificacion.status = Identificacion.status.problema
         identificacion.save()
+
+        # Creo el problema asociado.
+        tipo_de_problema = ReporteDeProblema.TIPOS_DE_PROBLEMA.spam # XXX Seleccionar el apropiado.
+        descripcion = None # Tomar input del usuario.
+        Problema.reportar_problema(fiscal, descripcion, tipo_de_problema, identificacion=identificacion)
+
         self.identificacion_creada = identificacion
         messages.info(
             self.request,
