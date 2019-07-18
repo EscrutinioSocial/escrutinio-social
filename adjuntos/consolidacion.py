@@ -122,11 +122,10 @@ def consolidar_identificaciones(attachment):
     """
 
     # Primero me quedo con todas las identificaciones para ese attachment.
-    # Formato: (mesa_id, status, cantidad)
+    # Formato: (mesa_id, status, cantidad, cantidad que viene de csv)
     # Ejemplo:
     #  [
-    #       (0, 'spam', 2),
-    #       (0, 'invalida', 1),
+    #       (0, 'problema', 2, 0),
     #       (1, 'identificada', 1),
     #       (2, 'identificada', 1),
     #  ]
@@ -142,6 +141,13 @@ def consolidar_identificaciones(attachment):
         ):
             mesa_id_consolidada = mesa_id
             break
+        elif (
+            status == Identificacion.STATUS.problema and
+                cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA
+        ):
+            # Marco el problema.
+            identificacion_con_problemas = ... me quedo con una de las que tiene estado problema ...
+            problema = Problema.confirmar_problema(identificacion=identificacion_con_problemas)
 
     if mesa_id_consolidada:
         # Consolidamos una mesa, ya sea por CSV o por coincidencia múltiple.
