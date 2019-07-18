@@ -180,12 +180,6 @@ class CSVImporter:
                         else:
                             raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
                                                       f'categoria: {categoria_bd.nombre}.')
-                        # si todas las opciones fueron prioritarias entonces la carga es total, sino parcial
-                        # TODO revisar esto de actualizar firma si es necesario para ambas cargas
-                        if carga_parcial:
-                            carga_parcial.actualizar_firma()
-                        if carga_total:
-                            carga_total.actualizar_firma()
 
         except IntegrityError as e:
             # fixme ver mejor forma de manejar estos errores
