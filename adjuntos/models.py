@@ -176,26 +176,26 @@ class Attachment(TimeStampedModel):
             qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
         return qs
 
-    def status_count(self):
+    def status_count(self, estado):
         """
         A partir del conjunto de identificaciones del attachment
-        se devuelve una lista de tuplas
-        (mesa_id, status, cantidad, cantidad que viene de csv).
+        que tienen el estado parámetro devuelve una lista de tuplas
+        (mesa_id, cantidad, cantidad que viene de csv).
         Sólo cuenta las no invalidadas.
 
-        Por ejemplo:
+        Cuando status == 'problema' el id de mesa es None
+
+        Por ejemplo (cuando estado == 'identificada'):
             [
-                (0, 'spam', 2, 0),
-                (0, 'invalida', 1, 0),
-                (1, 'identificada', 1, 0),
-                (2, 'identificada', 1, 1),
+                (3, 2, 0),
+                (4, 1, 1),
             ]
 
-        2 lo identificaron como spam, 1 como inválida,
-        1 a la mesa id=1, y otro a la mesa id=2, pero esa vino de un csv.
+        Hay 2 identificaciones para la mesa id==3 y 1 para la id==4, pero ésa 
+        tiene una identificación por CSV.
         """
 
-        qs = self.identificaciones.filter(invalidada=False)
+        qs = self.identificaciones.filter(status=estado, invalidada=False)
         cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
         result = []
         query = qs.values('mesa', 'status').annotate(
@@ -207,7 +207,7 @@ class Attachment(TimeStampedModel):
             )
         for item in query:
             result.append(
-                (item['mesa_o_0'], item['status'], item['total'], item['cuantos_csv'])
+                (item['mesa_o_0'], item['total'], item['cuantos_csv'])
             )
         return result
 

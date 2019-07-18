@@ -25,7 +25,7 @@ class ReporteDeProblema(TimeStampedModel):
     reportado_por = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
     descripcion = models.TextField(null=True, blank=True)
     es_reporte_fake = models.BooleanField(default=False) # Se completa desde el admin.
-    problema = models.ForeignKey('Problema', on_delete=models.CASCADE, related='reportes')
+    problema = models.ForeignKey('Problema', on_delete=models.CASCADE, related_name='reportes')
     identificacion = models.ForeignKey('adjuntos.Identificacion', null=True, related_name='problemas', on_delete=models.CASCADE)
     carga = models.ForeignKey('elecciones.Carga', null=True, related_name='problemas', on_delete=models.CASCADE)
 
