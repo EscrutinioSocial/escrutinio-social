@@ -3,7 +3,6 @@ import random
 from PIL import Image
 from io import BytesIO
 from django.contrib.auth.models import User
-from django.db.utils import IntegrityError
 from factory.django import DjangoModelFactory
 from faker import Faker
 
@@ -41,8 +40,7 @@ class CategoriaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Categoria'
         django_get_or_create = ('nombre',)
-    id = factory.Sequence(lambda n: n)
-    nombre = factory.LazyAttribute(lambda obj: f"elecciones.{obj.id}")
+    nombre = factory.Sequence(lambda n: f'elecciones{n + 1}')
     slug = factory.LazyAttribute(lambda obj: obj.nombre)
 
     @factory.post_generation
@@ -137,14 +135,18 @@ class MesaFactory(DjangoModelFactory):
             for categoria in extracted:
                 MesaCategoriaFactory(mesa=self, categoria=categoria)
         else:
-            MesaCategoriaFactory(mesa=self)
+            MesaCategoriaDefaultFactory(mesa=self)
 
 
 class MesaCategoriaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.MesaCategoria'
-        # django_get_or_create = ('mesa', 'categoria')
+        django_get_or_create = ('mesa', 'categoria')
     mesa = factory.SubFactory(MesaFactory)
+    categoria = factory.SubFactory(CategoriaFactory)
+
+
+class MesaCategoriaDefaultFactory(MesaCategoriaFactory):
     categoria = factory.SubFactory(CategoriaFactory, nombre='default')
 
 

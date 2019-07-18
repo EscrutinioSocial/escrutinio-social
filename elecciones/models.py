@@ -240,17 +240,20 @@ class MesaCategoriaQuerySet(models.QuerySet):
             )
         )
 
+    def con_carga_pendiente(self):
+        return self.identificadas().no_taken().sin_consolidar()
+
     def siguiente(self):
         """
         devuelve la siguiente mesacategoria en orden de prioridad
         de carga
         """
-        qs = self.identificadas().no_taken().sin_consolidar()
-        return qs.order_by(
+        return self.con_carga_pendiente().order_by(
             'status',
             'categoria__prioridad',
             'orden_de_carga',
             'mesa__prioridad',
+            'id'
         ).first()
 
 
@@ -270,17 +273,17 @@ class MesaCategoria(models.Model):
         # carga parcial única (no csv) o no coincidente
         ('10_parcial_sin_consolidar', 'parcial_sin_consolidar', 'parcial sin consolidar'),
         # no hay dos cargas mínimas coincidentes, pero una es de csv.
-        ('20_parcial_consolidada_csv', 'parcial_consolidada_csv', 'parcial consolidada csv'),
         # cargas parcial divergentes sin consolidar
-        ('30_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial_en_conflicto'),
-        # carga parcial consolidada por multcarga
+        ('20_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial_en_conflicto'),
+        ('30_parcial_consolidada_csv', 'parcial_consolidada_csv', 'parcial consolidada csv'),
+        # carga parcial consolidada por multicarga
         ('40_parcial_consolidada_dc', 'parcial_consolidada_dc', 'parcial_consolidada_dc'),
         ('50_total_sin_consolidar', 'total_sin_consolidar', 'total sin consolidar'),
-        ('60_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada csv'),
-        ('70_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
+        ('60_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
+        ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada csv'),
         ('80_total_consolidada_dc', 'total_consolidada_dc', 'tota consolidada dc'),
     )
-    status = StatusField(default='sin_cargar')
+    status = StatusField(default=STATUS.sin_cargar)
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
 
@@ -318,9 +321,9 @@ class MesaCategoria(models.Model):
             mesa__circuito=self.mesa.circuito
         )
         total = en_circuito.count()
-        incremento = 1 / total
-        maximo = en_circuito.aggregate(v=Max('orden_de_carga'))['v'] or 0
-        self.orden_de_carga = maximo + incremento
+        incremento = round(1 / total, 2)
+        maximo_actual = en_circuito.aggregate(v=Max('orden_de_carga'))['v'] or 0
+        self.orden_de_carga = maximo_actual + incremento
         self.save(update_fields=['orden_de_carga'])
 
     def firma_count(self):
@@ -382,14 +385,6 @@ class Mesa(models.Model):
 
     def categoria_add(self, categoria):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
-
-    def siguiente_categoria_sin_carga(self):
-        for categoria in self.categorias.filter(activa=True).order_by('id'):
-            if not Carga.objects.filter(
-                mesa_categoria__mesa=self,
-                mesa_categoria__categoria=categoria
-            ).exists():
-                return categoria
 
     def get_absolute_url(self):
         # TODO: Por ahora no hay una vista que muestre la carga de datos

@@ -1,8 +1,7 @@
 from django.shortcuts import redirect, render
-from django.utils import timezone
 
 from adjuntos.models import Attachment
-from elecciones.models import Mesa
+from elecciones.models import MesaCategoria
 
 
 def siguiente_accion(request):
@@ -22,9 +21,9 @@ def siguiente_accion(request):
             accion = IdentificacionDeFoto(request, foto)
 
     if accion is None:
-        mesa_y_categoria = mesa_y_categoria_a_cargar()
-        if mesa_y_categoria is not None:
-            accion = CargaCategoriaEnActa(request, mesa_y_categoria['mesa'], mesa_y_categoria['categoria'])
+        mesacategoria = MesaCategoria.objects.siguiente()
+        if mesacategoria:
+            accion = CargaCategoriaEnActa(request, mesacategoria)
 
     if accion is None:
         accion = NoHayAccion(request)
@@ -37,24 +36,6 @@ def foto_a_identificar(fiscal):
     if attachments.exists():
         return attachments.order_by('?').first()
     return None
-
-
-def mesa_y_categoria_a_cargar():
-    mesa_elegida = None
-    categoria_elegida = None
-    hay_mesas_posibles = True
-    while (mesa_elegida is None) and hay_mesas_posibles:
-        mesas = Mesa.con_carga_pendiente().order_by(
-            'orden_de_carga', '-lugar_votacion__circuito__electores'
-        )
-        hay_mesas_posibles = mesas.exists()
-        if hay_mesas_posibles:
-            mesa_elegida = mesas[0]
-            categoria_elegida = mesa_elegida.siguiente_categoria_sin_carga()
-            if categoria_elegida is None:
-                mesa_elegida = None
-
-    return None if (mesa_elegida is None) else { 'mesa': mesa_elegida, 'categoria': categoria_elegida }
 
 
 class IdentificacionDeFoto():
@@ -76,54 +57,26 @@ class IdentificacionDeFoto():
 
 class CargaCategoriaEnActa():
     """
-    Acción sobre una mesa y una categoría:
+    Acción sobre una mesa-categoría:
     estampa en la mesa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para la carga de la mesa/categoría
+    de guarda y redirige a la vista para la carga de la mesa/categoría dependiendo
+    de la configuracion de la categoria
     """
 
-    mesa = None
-    categoria = None
-
-    def __init__(self, _request, _mesa, _categoria):
-        self.mesa = _mesa
-        self.categoria = _categoria
+    def __init__(self, _request, mc):
+        self.mc = mc
 
     def ejecutar(self):
         # Se marca que se inicia una carga
-        self.mesa.take()
-        # Se realiza el redirect
-        return redirect(
-            'mesa-cargar-resultados',
-            categoria_id=self.categoria.id,
-            mesa_numero=self.mesa.numero
-        )
-
-
-class ConfirmacionCategoriaEnActa():
-    """
-    Acción sobre una mesa y una categoría:
-    redirige a la vista para la carga de la mesa/categoría
-    """
-
-    mesa = None
-    categoria = None
-
-    def __init__(self, _request, _mesa, _categoria):
-        self.mesa = _mesa
-        self.categoria = _categoria
-
-    def ejecutar(self):
-        # se realiza el redirect
-        return redirect(
-            'chequear-resultado-mesa',
-            categoria_id=self.categoria.id,
-            mesa_numero=self.mesa.numero
-        )
-
+        self.mc.take()
+        if (self.mc.categoria.requiere_cargas_parciales and
+                self.mc.status != MesaCategoria.STATUS.parcial_consolidada_dc):
+            # solo si la categoria requiere parciales y las parciales no estan consolidada
+            return redirect('mesa-cargar-resultados-parciales', mesacategoria_id=self.mc.id)
+        return redirect('mesa-cargar-resultados', mesacategoria_id=self.mc.id)
 
 
 class NoHayAccion():
-    request = None
 
     def __init__(self, _request):
         self.request = _request

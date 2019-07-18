@@ -10,9 +10,11 @@ urlpatterns = [
 
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
     url('^acta/$', views.realizar_siguiente_accion, name='siguiente-accion'),
-    url('^acta/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
+
+    url('^acta/(?P<mesacategoria_id>\d+)$',
         views.cargar_resultados, name='mesa-cargar-resultados'),
-    url('^acta-parcial/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
+
+    url('^acta-parcial/(?P<mesacategoria_id>\d+)$',
         views.cargar_resultados, {'tipo': 'parcial'}, name='mesa-cargar-resultados-parciales'),
 
     url('^mesa/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',

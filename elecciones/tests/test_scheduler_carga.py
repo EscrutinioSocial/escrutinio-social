@@ -1,13 +1,18 @@
+import pytest
 from pytest import approx
+from datetime import timedelta
+from django.utils import timezone
 from elecciones.tests.factories import (
     AttachmentFactory,
     MesaCategoriaFactory,
+    MesaCategoriaDefaultFactory,
     CategoriaFactory,
     IdentificacionFactory,
     CircuitoFactory,
     MesaFactory
 )
-from elecciones.models import MesaCategoria
+from elecciones.models import MesaCategoria, Mesa
+from adjuntos.consolidacion import consumir_novedades_identificacion
 
 
 def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
@@ -96,9 +101,59 @@ def test_siguiente_prioriza_mesa(db):
     assert MesaCategoria.objects.siguiente() is None
 
 
-def test_orden_de_carga(db):
+def test_actualizar_orden_de_carga(db):
     c = CircuitoFactory()
     MesaFactory.create_batch(10, circuito=c)
     for i, mc in enumerate(MesaCategoria.objects.defer('orden_de_carga').all(), 1):
         mc.actualizar_orden_de_carga()
         assert mc.orden_de_carga == approx(0.1 * i)
+
+
+def test_identificadas_excluye_sin_orden(db):
+    mc1 = MesaCategoriaFactory()
+    mc2 = MesaCategoriaFactory(orden_de_carga=0.1)
+    assert mc1.orden_de_carga is None
+    assert mc1 not in MesaCategoria.objects.identificadas()
+    assert mc2 in MesaCategoria.objects.identificadas()
+
+
+def test_no_taken_incluye_taken_nulo(db):
+    mc1 = MesaCategoriaDefaultFactory()
+    mc2 = MesaCategoriaDefaultFactory()
+    assert mc1.taken is None
+    assert mc2.taken is None
+    assert set(MesaCategoria.objects.no_taken()) == {mc1, mc2}
+    mc2.take()
+    assert mc2.taken is not None
+    assert set(MesaCategoria.objects.no_taken()) == {mc1}
+
+
+def test_no_taken_incluye_taken_vencido(db):
+    now = timezone.now()
+    mc1 = MesaCategoriaFactory(taken=now)
+    mc2 = MesaCategoriaFactory(taken=now - timedelta(minutes=3))
+    assert mc1.taken is not None
+    assert mc2.taken is not None
+    assert mc1 not in MesaCategoria.objects.no_taken()
+    assert mc2 in MesaCategoria.objects.no_taken()
+
+
+@pytest.mark.skip('Criterios de exclusion relacionados a problemas no implementado')
+def test_con_carga_pendiente_excluye_si_tiene_problema_no_resuelto(db):
+    m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    ProblemaFactory(mesa=m1)
+    consumir_novedades_identificacion()
+    assert set(Mesa.con_carga_pendiente()) == {m2}
+
+
+@pytest.mark.skip('Criterios de exclusion relacionados a problemas no implementado')
+def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
+    m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    ProblemaFactory(mesa=m1, estado='resuelto')
+    consumir_novedades_identificacion()
+    assert set(Mesa.con_carga_pendiente()) == {m1, m2}
+    # nuevo problema
+    ProblemaFactory(mesa=m1)
+    assert set(Mesa.con_carga_pendiente()) == {m2}

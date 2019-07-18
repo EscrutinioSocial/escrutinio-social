@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     # django-rest-framework
     'rest_framework',
     'drf_yasg',
-    
+
 
     # nuestras apps
     'elecciones',
@@ -285,8 +285,8 @@ MIN_COINCIDENCIAS_CARGAS = 2
 PAUSA_CONSOLIDACION = 15
 
 # Tiempos de 'taken', para adjuntos y para mesas.
-ATTACHMENT_TAKE_WAIT_TIME = 0 # En minutos
-MESA_TAKE_WAIT_TIME = 2 # En minutos
+ATTACHMENT_TAKE_WAIT_TIME = 0   # En minutos
+MESA_TAKE_WAIT_TIME = 2         # En minutos
 
 try:
     from .local_settings import *      # noqa

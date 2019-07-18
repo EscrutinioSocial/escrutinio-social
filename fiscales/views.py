@@ -286,22 +286,17 @@ def realizar_siguiente_accion(request):
     return siguiente_accion(request).ejecutar()
 
 
-
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def cargar_resultados(
-    request, categoria_id, mesa_numero, tipo='total', carga_id=None
-):
+def cargar_resultados(request, mesacategoria_id, tipo='total', carga_id=None):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
     mesa_categoria = get_object_or_404(
         MesaCategoria,
-        categoria_id=categoria_id,
-        mesa__numero=mesa_numero
+        id=mesacategoria_id
     )
-
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
