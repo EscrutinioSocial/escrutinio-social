@@ -1,3 +1,4 @@
+import pytest
 from django.urls import reverse
 from elecciones.tests.factories import (
     VotoMesaReportadoFactory,
@@ -73,6 +74,24 @@ def test_cargar_resultados_redirige(db, fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
     assert response.url == reverse('carga-total', args=[m2c2.id])
+
+
+@pytest.mark.parametrize('status, parcial', [
+    (MesaCategoria.STATUS.sin_cargar, True),
+    (MesaCategoria.STATUS.parcial_sin_consolidar, True),
+    (MesaCategoria.STATUS.parcial_en_conflicto, True),
+    (MesaCategoria.STATUS.parcial_consolidada_csv, True),      # ASK: hace falta si es csv?
+    (MesaCategoria.STATUS.parcial_consolidada_dc, False),
+    (MesaCategoria.STATUS.total_sin_consolidar, False),
+    (MesaCategoria.STATUS.total_en_conflicto, False),
+    (MesaCategoria.STATUS.total_consolidada_csv, False),
+])
+def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client, status, parcial):
+    c1 = CategoriaFactory(requiere_cargas_parciales=True)
+    m1c1 = MesaCategoriaFactory(categoria=c1, orden_de_carga=0.1, status=status)
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == 302
+    assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
 
 
 def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client):
