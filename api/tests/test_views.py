@@ -11,6 +11,9 @@ from adjuntos.models import hash_file
 
 @pytest.fixture
 def admin_client(admin_user):
+    """
+    Cliente con el header Bearer <token> y autenticado como admin
+    """
     factories.FiscalFactory(user=admin_user)
 
     client = APIClient()
@@ -23,7 +26,7 @@ def admin_client(admin_user):
 @pytest.fixture()
 def carta_marina(db):
     """
-    1 distrito, 2 secciones con 2 circuitos y 2 mesas por circuito
+    1 distrito, 1 secciones, 1 circuito, 1 mesa
     """
     s = factories.SeccionFactory()
     c = factories.CircuitoFactory(seccion=s)
