@@ -7,6 +7,7 @@ from rest_framework.authtoken.models import Token
 
 from elecciones.tests import factories
 from adjuntos.models import hash_file
+from elecciones.models import Mesa, Opcion
 
 
 @pytest.fixture
@@ -74,32 +75,43 @@ def test_identificar_acta(admin_client, carta_marina):
         'codigo_mesa': '1'
     }
 
-    response = admin_client.put(url, data)
+    response = admin_client.put(url, data, format='json')
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.data['mensaje'] == 'El acta fue identificada con éxito.'
 
     assert len(attachment.identificaciones.all()) == 1
-    assert attachment.identificaciones.all()[0].mesa.numero == '1'
-    assert attachment.identificaciones.all()[0].mesa.circuito.numero == '1'
-    assert attachment.identificaciones.all()[0].mesa.circuito.seccion.numero == 1
-    assert attachment.identificaciones.all()[0].mesa.circuito.seccion.distrito.numero == 1
+
+    identificacion = attachment.identificaciones.all()[0]
+
+    assert response.data['id'] == identificacion.mesa.id
+    
+    assert identificacion.mesa.numero == '1'
+    assert identificacion.mesa.circuito.numero == '1'
+    assert identificacion.mesa.circuito.seccion.numero == 1
+    assert identificacion.mesa.circuito.seccion.distrito.numero == 1
 
 
 def test_identificar_acta_not_found(admin_client):
     """
     """
     url = reverse('identificar-acta', kwargs={'foto_digest': '90554e1d519e0fc665fab042d7499'})
-    response = admin_client.put(url)
+    response = admin_client.put(url, format='json')
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_cargar_votos(admin_client):
+def test_cargar_votos(admin_client, carta_marina):
     """
     """
-    url = reverse('cargar-votos', kwargs={'foto_digest': '90554e1d519e0fc665fab042d7499'})
-    data = {}
+    mesa = Mesa.objects.get(numero=1)
+    url = reverse('cargar-votos', kwargs={'id_mesa': mesa.id})
+
+    opcion = Opcion.objects.get(nombre='blanco')
+    data = [{
+        'categoria': 1,
+        'opcion': opcion.id,
+        'votos': 100
+    }]
 
     response = admin_client.post(url, data, format='json')
 

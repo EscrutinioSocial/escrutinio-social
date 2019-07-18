@@ -27,10 +27,10 @@ class MesaSerializer(serializers.Serializer):
 
 
 class VotoSerializer(serializers.Serializer):
-    id_categoria = serializers.PrimaryKeyRelatedField(
+    categoria = serializers.PrimaryKeyRelatedField(
         queryset=Categoria.objects.all()
     )
-    id_opcion = serializers.PrimaryKeyRelatedField(
+    opcion = serializers.PrimaryKeyRelatedField(
         queryset=Opcion.objects.all()
     )
     votos = serializers.IntegerField(

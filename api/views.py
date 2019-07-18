@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.response import Response
@@ -14,7 +15,10 @@ from .serializers import (
 )
 
 from adjuntos.models import Identificacion, Attachment
-from elecciones.models import Distrito, Seccion, Circuito, Mesa
+from elecciones.models import (
+    Distrito, Seccion, Circuito, Mesa, 
+    MesaCategoria, CategoriaOpcion, Carga, VotoMesaReportado
+)
 
 
 @swagger_auto_schema(
@@ -45,7 +49,7 @@ def subir_acta(request):
     Permite subir la foto de un acta sin identificar.
 
     En caso de éxito se devuelve el hash de la foto que puede 
-    ser usado posteriomente para identificar el acta y cargar votos.
+    ser usado posteriomente para identificar el acta.
     """
     serializer = ActaSerializer(data=request.data)
     if serializer.is_valid():
@@ -61,9 +65,21 @@ def subir_acta(request):
     responses={
         status.HTTP_200_OK: openapi.Response(
             description='El acta fue identificada con éxito.',
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'id': openapi.Schema(
+                        type=openapi.TYPE_INTEGER,
+                        description='El ID de la mesa de votación con la que se identificó el acta'
+                    )
+                }
+            ),
+        ),
+        status.HTTP_400_BAD_REQUEST: openapi.Response(
+            description='Errores de validación.',
         ),
         status.HTTP_404_NOT_FOUND: openapi.Response(
-            description='No se existe la mesa de votación.',
+            description='No existe la mesa de votación.',
         ),
     },
     tags=['Actas']
@@ -74,6 +90,8 @@ def identificar_acta(request, foto_digest):
     Permite identificar la foto de un acta.
 
     Establece la relación entre la foto del acta y una mesa de votación especifica.
+    En caso de éxito se devuelve el `id_mesa` que puede ser usado posteriormente para
+    cargar los votos.
     """
     attachment = get_object_or_404(Attachment, foto_digest=foto_digest)
     serializer = MesaSerializer(data=request.data)
@@ -88,14 +106,14 @@ def identificar_acta(request, foto_digest):
         identificacion = Identificacion(
             # No deberia ser 'api' ??
             source='telegram',
-            status = Identificacion.STATUS.identificada,
+            status=Identificacion.STATUS.identificada,
             attachment=attachment,
             fiscal=request.user.fiscal,
             mesa=mesa
         )
         identificacion.save()
 
-        return Response({'mensaje': 'El acta fue identificada con éxito.'})
+        return Response({'id': mesa.id})
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -107,23 +125,54 @@ def identificar_acta(request, foto_digest):
         status.HTTP_201_CREATED: openapi.Response(
             description='Se cargaron los votos con éxito.',
         ),
+        status.HTTP_400_BAD_REQUEST: openapi.Response(
+            description='Errores de validación.',
+        ),
         status.HTTP_404_NOT_FOUND: openapi.Response(
-            description='No se encontraron alguna opción y/o categoría.',
-        ),
-        status.HTTP_409_CONFLICT: openapi.Response(
-            description='El acta todavía no fue identificada.',
-        ),
+            description='No existe la mesa de votación.',
+        )
     },
     tags=['Actas']
 )
 @api_view(['POST'],)
-def cargar_votos(request, foto_digest):
+def cargar_votos(request, id_mesa):
     """
-    Permite cargar votos para un acta previamente identificada.
+    Permite cargar votos para una mesa de votación especifica.
 
-    La lista de votos debe contener al mebnos todas las opciones prioritarias.
+    La lista de votos debe contener al menos todas las opciones prioritarias.
     """
-    return Response({"mensaje": "Se cargaron los votos con éxito."}, status=201)
+    mesa = get_object_or_404(Mesa, id=id_mesa)
+    serializer = VotoSerializer(data=request.data, many=True)
+    if serializer.is_valid():
+        data = serializer.validated_data
+
+        # TODO: Validar que estan al menos todas las opciones prioritarias
+        with transaction.atomic():
+            for votos in data:
+                mesa_categoria = get_object_or_404(
+                    MesaCategoria, 
+                    mesa=mesa,
+                    categoria=votos['categoria']
+                )
+                categoria_opcion = get_object_or_404(
+                    CategoriaOpcion, 
+                    categoria=votos['categoria'],
+                    opcion=votos['opcion']
+                )
+
+                voto_mesa_reportado = VotoMesaReportado(
+                    carga=Carga(
+                        origen='telegram',
+                        mesa_categoria=mesa_categoria, 
+                        fiscal=request.user.fiscal
+                    ),
+                    opcion=categoria_opcion.opcion,
+                    votos=votos['votos']
+                )
+
+        return Response({"mensaje": "Se cargaron los votos con éxito."}, status=201)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 @swagger_auto_schema(
