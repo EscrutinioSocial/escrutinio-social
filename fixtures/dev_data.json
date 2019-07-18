@@ -1,50 +1,10 @@
 [
 {
-  "model": "auth.group",
-  "pk": 1,
-  "fields": {
-    "name": "validadores",
-    "permissions": []
-  }
-},
-{
-  "model": "auth.group",
-  "pk": 2,
-  "fields": {
-    "name": "unidades basicas",
-    "permissions": []
-  }
-},
-{
-  "model": "auth.group",
-  "pk": 3,
-  "fields": {
-    "name": "visualizadores",
-    "permissions": []
-  }
-},
-{
-  "model": "auth.group",
-  "pk": 4,
-  "fields": {
-    "name": "supervisores",
-    "permissions": []
-  }
-},
-{
-  "model": "auth.group",
-  "pk": 5,
-  "fields": {
-    "name": "fiscales con acceso al bot",
-    "permissions": []
-  }
-},
-{
   "model": "auth.user",
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-07-13T14:36:53Z",
+    "last_login": "2019-07-08T20:55:08.469Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -52,114 +12,8 @@
     "email": "",
     "is_staff": true,
     "is_active": true,
-    "date_joined": "2019-06-12T18:23:00Z",
-    "groups": [
-      1,
-      2,
-      3,
-      4,
-      5
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 2,
-  "fields": {
-    "password": "pbkdf2_sha256$150000$MCyT0PHympML$ozN9x9bRkbuYtAwO0KAXfeLDDryz26/u60jVELkvPPg=",
-    "last_login": "2019-07-13T14:33:01.393Z",
-    "is_superuser": false,
-    "username": "validador",
-    "first_name": "Usuario",
-    "last_name": "Validador",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2019-07-13T12:23:00Z",
-    "groups": [
-      1
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 3,
-  "fields": {
-    "password": "pbkdf2_sha256$150000$FtdqVrjIqV7m$JvpnVkXW84uUVBJLvC1Q9zfkv1gF4UuYMrz6c7ta+qQ=",
-    "last_login": "2019-07-13T14:18:35.867Z",
-    "is_superuser": false,
-    "username": "ub",
-    "first_name": "Usuario",
-    "last_name": "Unidad B\u00e1sica",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2019-07-13T12:27:07Z",
-    "groups": [
-      2
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 4,
-  "fields": {
-    "password": "pbkdf2_sha256$150000$j07EhLfLIg9y$HxEUB4/5rvcRwf2RWvpnN1xbtXv9t0ZgNI4M3R0QNC0=",
-    "last_login": "2019-07-13T14:18:45.389Z",
-    "is_superuser": false,
-    "username": "visualizador",
-    "first_name": "Usuario",
-    "last_name": "Visualizador",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2019-07-13T12:27:38Z",
-    "groups": [
-      3
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 5,
-  "fields": {
-    "password": "pbkdf2_sha256$150000$tLigreVtpSyH$qkvNA/4g145PB7HdDogIHedydw/KvUa1L2uYZivgw9s=",
-    "last_login": null,
-    "is_superuser": false,
-    "username": "supervisor",
-    "first_name": "Usuario",
-    "last_name": "Supervisor",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2019-07-13T12:30:33Z",
-    "groups": [
-      4
-    ],
-    "user_permissions": []
-  }
-},
-{
-  "model": "auth.user",
-  "pk": 6,
-  "fields": {
-    "password": "pbkdf2_sha256$150000$FQwdIOV1ks4j$xGzYZk1n9QiBHnOt5KRGZaY85db7R+xBwnXcEdlKEbI=",
-    "last_login": null,
-    "is_superuser": false,
-    "username": "fiscalbot",
-    "first_name": "Fiscal",
-    "last_name": "Bot",
-    "email": "",
-    "is_staff": false,
-    "is_active": true,
-    "date_joined": "2019-07-13T12:31:35Z",
-    "groups": [
-      5
-    ],
+    "date_joined": "2019-06-12T18:23:00.331Z",
+    "groups": [],
     "user_permissions": []
   }
 },
@@ -179,87 +33,13 @@
   }
 },
 {
-  "model": "fiscales.fiscal",
-  "pk": 2,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "3e3f001f-9798-4a6c-8b2c-0334b0b80938",
-    "email_confirmado": false,
-    "apellido": "Validador",
-    "nombres": "Usuario",
-    "tipo_dni": "DNI",
-    "dni": "00000000",
-    "user": 2
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 3,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "a16facb7-c992-4546-88fc-78fda4a9e16f",
-    "email_confirmado": false,
-    "apellido": "Fiscal",
-    "nombres": "Bot",
-    "tipo_dni": "DNI",
-    "dni": "00000001",
-    "user": 6
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 4,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "967e7cdb-cfd7-4818-a6bd-8fc6149d5c23",
-    "email_confirmado": false,
-    "apellido": "Usuario",
-    "nombres": "Supervisor",
-    "tipo_dni": "DNI",
-    "dni": "00000002",
-    "user": 5
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 5,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "221fe3b8-d83e-4bca-b6f3-a2584e3170d4",
-    "email_confirmado": false,
-    "apellido": "Usuario",
-    "nombres": "Visualizador",
-    "tipo_dni": "DNI",
-    "dni": "00000003",
-    "user": 4
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 6,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "ed7b0ee7-75da-4250-b3e5-f19c8af04982",
-    "email_confirmado": false,
-    "apellido": "Usuario",
-    "nombres": "Unidad B\u00e1sica",
-    "tipo_dni": "DNI",
-    "dni": "00000004",
-    "user": 3
-  }
-},
-{
   "model": "elecciones.distrito",
   "pk": 1,
   "fields": {
     "numero": 1,
     "nombre": "Distrito \u00fanico",
-    "electores": 800
+    "electores": 0,
+    "prioridad": 0
   }
 },
 {
@@ -270,7 +50,8 @@
     "numero": 1,
     "nombre": "Secci\u00f3n 1",
     "electores": 440,
-    "proyeccion_ponderada": false
+    "proyeccion_ponderada": false,
+    "prioridad": 0
   }
 },
 {
@@ -281,7 +62,8 @@
     "numero": 2,
     "nombre": "Secci\u00f3n 2",
     "electores": 360,
-    "proyeccion_ponderada": false
+    "proyeccion_ponderada": false,
+    "prioridad": 0
   }
 },
 {
@@ -292,7 +74,8 @@
     "localidad_cabecera": null,
     "numero": "1",
     "nombre": "Circuito 1.1",
-    "electores": 200
+    "electores": 200,
+    "prioridad": 0
   }
 },
 {
@@ -303,7 +86,8 @@
     "localidad_cabecera": null,
     "numero": "2",
     "nombre": "Circuito 1.2",
-    "electores": 240
+    "electores": 240,
+    "prioridad": 0
   }
 },
 {
@@ -314,7 +98,8 @@
     "localidad_cabecera": null,
     "numero": "3",
     "nombre": "Circuito 2.3",
-    "electores": 180
+    "electores": 180,
+    "prioridad": 0
   }
 },
 {
@@ -325,7 +110,8 @@
     "localidad_cabecera": null,
     "numero": "4",
     "nombre": "Circuito 2.4",
-    "electores": 180
+    "electores": 180,
+    "prioridad": 0
   }
 },
 {
@@ -471,7 +257,9 @@
     "status": "sin_cargar",
     "mesa": 1,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -481,7 +269,9 @@
     "status": "sin_cargar",
     "mesa": 2,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -491,7 +281,9 @@
     "status": "sin_cargar",
     "mesa": 3,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -501,7 +293,9 @@
     "status": "sin_cargar",
     "mesa": 4,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -511,7 +305,9 @@
     "status": "sin_cargar",
     "mesa": 5,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -521,7 +317,9 @@
     "status": "sin_cargar",
     "mesa": 6,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -531,7 +329,9 @@
     "status": "sin_cargar",
     "mesa": 7,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -541,7 +341,9 @@
     "status": "sin_cargar",
     "mesa": 8,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -551,7 +353,9 @@
     "status": "sin_cargar",
     "mesa": 8,
     "categoria": 2,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -561,7 +365,9 @@
     "status": "sin_cargar",
     "mesa": 7,
     "categoria": 2,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -574,8 +380,7 @@
     "lugar_votacion": 1,
     "url": "",
     "electores": 100,
-    "taken": "2019-07-04T19:51:18.215Z",
-    "orden_de_carga": 1
+    "prioridad": 0
   }
 },
 {
@@ -588,8 +393,7 @@
     "lugar_votacion": 2,
     "url": "",
     "electores": 100,
-    "taken": "2019-07-04T19:51:27.310Z",
-    "orden_de_carga": 2
+    "prioridad": 0
   }
 },
 {
@@ -602,8 +406,7 @@
     "lugar_votacion": 3,
     "url": "",
     "electores": 120,
-    "taken": "2019-07-08T22:52:59.693Z",
-    "orden_de_carga": 2
+    "prioridad": 0
   }
 },
 {
@@ -616,8 +419,7 @@
     "lugar_votacion": 4,
     "url": "",
     "electores": 120,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -630,8 +432,7 @@
     "lugar_votacion": 5,
     "url": "",
     "electores": 90,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -644,8 +445,7 @@
     "lugar_votacion": 6,
     "url": "",
     "electores": 90,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -658,8 +458,7 @@
     "lugar_votacion": 7,
     "url": "",
     "electores": 90,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -672,8 +471,7 @@
     "lugar_votacion": 8,
     "url": "",
     "electores": 90,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -784,7 +582,9 @@
     "nombre": "elecciones-1",
     "color": "black",
     "back_color": "white",
-    "activa": true
+    "activa": true,
+    "requiere_cargas_parciales": false,
+    "prioridad": 0
   }
 },
 {
@@ -796,7 +596,9 @@
     "nombre": "Int circuito 2",
     "color": "black",
     "back_color": "white",
-    "activa": true
+    "activa": true,
+    "requiere_cargas_parciales": false,
+    "prioridad": 0
   }
 },
 {
@@ -805,83 +607,13 @@
   "fields": {
     "created": "2019-07-04T19:51:27.212Z",
     "modified": "2019-07-04T19:51:27.212Z",
-    "tipo": "falta_foto",
+    "valida": true,
+    "tipo": null,
     "origen": "web",
     "mesa_categoria": 1,
     "fiscal": 1,
-    "firma": null
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 1,
-  "fields": {
-    "categoria": 1,
-    "opcion": 2,
-    "prioritaria": true
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 2,
-  "fields": {
-    "categoria": 1,
-    "opcion": 3,
-    "prioritaria": false
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 3,
-  "fields": {
-    "categoria": 1,
-    "opcion": 4,
-    "prioritaria": true
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 4,
-  "fields": {
-    "categoria": 1,
-    "opcion": 1,
-    "prioritaria": true
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 5,
-  "fields": {
-    "categoria": 2,
-    "opcion": 2,
-    "prioritaria": false
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 6,
-  "fields": {
-    "categoria": 2,
-    "opcion": 3,
-    "prioritaria": false
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 7,
-  "fields": {
-    "categoria": 2,
-    "opcion": 4,
-    "prioritaria": false
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 8,
-  "fields": {
-    "categoria": 2,
-    "opcion": 1,
-    "prioritaria": false
+    "firma": null,
+    "procesada": false
   }
 },
 {
