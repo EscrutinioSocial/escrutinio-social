@@ -39,9 +39,8 @@ class OpcionFactory(DjangoModelFactory):
 class CategoriaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Categoria'
-        django_get_or_create = ('id',)
-    id = factory.Sequence(lambda n: n)
-    nombre = factory.LazyAttribute(lambda obj: f"elecciones.{obj.id}")
+        django_get_or_create = ('nombre',)
+    nombre = factory.Sequence(lambda n: f'elecciones{n + 1}')
     slug = factory.LazyAttribute(lambda obj: obj.nombre)
 
     @factory.post_generation
@@ -79,7 +78,7 @@ class CategoriaOpcionFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.CategoriaOpcion'
         django_get_or_create = ('categoria', 'opcion')
-    categoria = factory.SubFactory(CategoriaFactory, id=1)
+    categoria = factory.SubFactory(CategoriaFactory, nombre='default')
     opcion = factory.SubFactory(OpcionFactory)
 
 
@@ -146,7 +145,7 @@ class MesaCategoriaFactory(DjangoModelFactory):
         model = 'elecciones.MesaCategoria'
         django_get_or_create = ('mesa', 'categoria')
     mesa = factory.SubFactory(MesaFactory)
-    categoria = factory.SubFactory(CategoriaFactory, id=1)
+    categoria = factory.SubFactory(CategoriaFactory, nombre='default')
 
 
 class FiscalFactory(DjangoModelFactory):

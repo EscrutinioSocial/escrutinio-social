@@ -60,7 +60,8 @@ def fiscal_client(db, admin_user, setup_groups, client):
 
 @pytest.fixture()
 def url_resultados(carta_marina):
-    return reverse('resultados-categoria', args=[1])
+    c = CategoriaFactory(nombre='default')
+    return reverse('resultados-categoria', args=[c.id])
 
 
 def test_total_electores_en_categoria(carta_marina):
@@ -213,8 +214,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados['electores'] == 800
 
 
-def test_resultados_proyectados(fiscal_client):
-    url_resultados = reverse('resultados-categoria', args=[1])
+def test_resultados_proyectados(fiscal_client, url_resultados):
     # se crean 3 secciones electorales
     s1, s2, s3 = SeccionFactory.create_batch(3)
     # s1 1000 votantes    # La matanza! :D
@@ -514,6 +514,7 @@ def test_orden_para_circuito(db):
 
 def test_elegir_acta(carta_marina, fiscal_client):
     m1, m2, *_ = carta_marina
+    id_default = CategoriaFactory(nombre='default').id
 
     IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv, mesa=m1)
     IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv, mesa=m2)
@@ -521,10 +522,10 @@ def test_elegir_acta(carta_marina, fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
 
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=(1, m1.numero))
+    assert response.url == reverse('mesa-cargar-resultados', args=(id_default, m1.numero))
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=(1, m2.numero))
+    assert response.url == reverse('mesa-cargar-resultados', args=(id_default, m2.numero))
 
 
 def test_resultados_no_positivos(fiscal_client):
