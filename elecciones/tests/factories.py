@@ -110,14 +110,12 @@ class CircuitoFactory(DjangoModelFactory):
     nombre = factory.LazyAttribute(lambda obj: f"Circuito {obj.seccion.numero}.{obj.numero}")
 
 
-
 class LugarVotacionFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.LugarVotacion'
     circuito = factory.SubFactory(CircuitoFactory)
     nombre = factory.Sequence(lambda n: f"Escuela {n}")
     direccion = 'direccion'
-
 
 
 class MesaFactory(DjangoModelFactory):
@@ -137,7 +135,7 @@ class MesaFactory(DjangoModelFactory):
             for categoria in extracted:
                 MesaCategoriaFactory(mesa=self, categoria=categoria)
         else:
-            MesaCategoriaFactory(mesa=self)
+            MesaCategoriaFactory(mesa=self, categoria__nombre='default')
 
 
 class MesaCategoriaFactory(DjangoModelFactory):
@@ -145,7 +143,7 @@ class MesaCategoriaFactory(DjangoModelFactory):
         model = 'elecciones.MesaCategoria'
         django_get_or_create = ('mesa', 'categoria')
     mesa = factory.SubFactory(MesaFactory)
-    categoria = factory.SubFactory(CategoriaFactory, nombre='default')
+    categoria = factory.SubFactory(CategoriaFactory)
 
 
 class FiscalFactory(DjangoModelFactory):

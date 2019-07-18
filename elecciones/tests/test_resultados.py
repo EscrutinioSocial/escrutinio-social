@@ -66,13 +66,13 @@ def url_resultados(carta_marina):
 
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
-    # nota: el factory de mesa indirectamente crea la categoria con id=1 que es actual()
+    # implicitamente está creada la categoria default que tiene todo el padron
+    assert Categoria.objects.get().electores == 800
     e2 = CategoriaFactory()
     m1, m2 = carta_marina[:2]
     m1.categoria_add(e2)
     m2.categoria_add(e2)
 
-    assert Categoria.objects.first().electores == 800
     assert e2.electores == 200
 
 
