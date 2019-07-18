@@ -5,7 +5,6 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 
 from fancy_cache import cache_page
-from rest_framework import routers
 
 from material.frontend import urls as frontend_urls
 

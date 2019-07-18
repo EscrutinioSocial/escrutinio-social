@@ -6,6 +6,7 @@ como elegir acta a clasificar / a cargar / validar
 from io import StringIO
 import sys
 from django.core import serializers
+from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse, reverse_lazy
@@ -62,7 +63,7 @@ from django.conf import settings
 # es para que alguien no se "cuelgue" y quede un acta sin cargar.
 WAITING_FOR = 2
 
-NO_PERMISSION_REDIRECT = '/permission-denied/'
+NO_PERMISSION_REDIRECT = 'permission-denied'
 
 
 @login_required
@@ -85,7 +86,7 @@ def choice_home(request):
 
 
 def permission_denied(request):
-    return PermissionDenied
+    raise PermissionDenied()
 
 
 class BaseFiscal(LoginRequiredMixin, DetailView):
