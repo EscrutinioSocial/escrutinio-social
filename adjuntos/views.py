@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.http import JsonResponse
+from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.db import IntegrityError
 from django.views.generic.edit import CreateView, FormView
+from django.views.generic.base import View
 from django.utils.decorators import method_decorator
 from elecciones.views import StaffOnlyMixing
 from django.contrib.auth.decorators import login_required
@@ -19,6 +21,7 @@ from .forms import (
     IdentificacionForm,
     IdentificacionProblemaForm,
 )
+from adjuntos.consolidacion import consolidar_identificaciones
 
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
 MENSAJE_SOLO_UN_ACTA = 'Se debe subir una sola acta'
@@ -89,17 +92,10 @@ class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
 
     def form_valid(self, form):
         identificacion = form.save(commit=False)
-        identificacion.status = Identificacion.STATUS.identificada
-        #como viene desde una UB, marcamos la identificación como consolidada (el receiver/trigger hará su magia luego)
-        identificacion.consolidada = True
-        identificacion.fiscal = self.request.user.fiscal
-        identificacion.attachment = self.attachment
-        identificacion.save()
-        messages.info(
-            self.request,
-            f'Identificada mesa Nº {identificacion.mesa} - Circuito {identificacion.mesa.circuito}',
-        )
-        return super().form_valid(form)
+        super().form_valid(form)
+        #como viene desde una UB, consolidamos el attachment y ya le pasamos la mesa
+        consolidar_identificaciones(identificacion.attachment, identificacion.mesa.id)
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class IdentificacionProblemaCreateView(IdentificacionCreateView):

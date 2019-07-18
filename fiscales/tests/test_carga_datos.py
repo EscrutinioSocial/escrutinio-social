@@ -42,16 +42,17 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
         status='identificada',
         source=Identificacion.SOURCES.csv,
     ).mesa
+    
     consumir_novedades_identificacion()
 
     response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
 
     # como m1 queda en periodo de "taken" (aunque no se haya ocupado aún)
     # se pasa a la siguiente mesa
     response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m2.numero])
 
     # se carga esa categoría.
@@ -72,7 +73,7 @@ def test_elegir_acta_mesas_redirige(db, fiscal_client):
     m2.taken = None
     m2.save()
     response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse(
         'mesa-cargar-resultados', args=[e2.id, m2.numero]
     )
@@ -123,13 +124,13 @@ def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
     assert c3.electores == 600
 
     response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m2.numero])
     response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m3.numero])
     response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
 
 
@@ -145,7 +146,7 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     ).mesa
     consumir_novedades_identificacion()
     response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
     # formset para categoria e1 arranca en blanco
     url = response.url
@@ -155,20 +156,14 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     assert formset[0].initial == {'opcion': o}
     assert formset[1].initial == {'opcion': o2}
 
+
+    tupla_opciones_electores = [(o.id, m1.electores // 2), (o2.id, m1.electores // 2)]
+    request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
     # response = fiscal_client.get(url)
-    response = fiscal_client.post(url, {
-        'form-0-opcion': str(o.id),
-        'form-0-votos': str(m1.electores // 2),
-        'form-1-opcion': str(o2.id),
-        'form-1-votos': str(m1.electores // 2),
-        'form-TOTAL_FORMS': '2',
-        'form-INITIAL_FORMS': '0',
-        'form-MIN_NUM_FORMS': '2',
-        'form-MAX_NUM_FORMS': '1000',
-    })
+    response = fiscal_client.post(url, request_data)
     carga = Carga.objects.get()  # sólo hay una carga
     assert carga.tipo == Carga.TIPOS.total
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('siguiente-accion')
     # en rigor, aca habria que probar que
     # aparece la siguiente categoria de la misma acta
@@ -193,9 +188,34 @@ def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
     #     'form-MIN_NUM_FORMS': '1',
     #     'form-MAX_NUM_FORMS': '1000',
     # })
-    # assert response.status_code == 302
+    # assert response.status_code == HTTPStatus.FOUND
     # assert response.url == reverse('post-cargar-resultados', args=[m1.numero, e2.nombre])
 
+
+
+def _construir_request_data_para_carga_de_resultados(tuplas_opcion_electores):
+    """
+    Métodito que sirve para ahorrarnos el tema este crear el diccionario para la data del request
+    al momento de cargar resultados.
+
+    Se puede hacer más parametrizable.
+
+    Las tuplas opcion_electores tienen que tener (opcion_id, cant_electores)
+    """
+
+    request_data = {}
+    index = 0
+    for tupla in tuplas_opcion_electores:
+        key = f'form-{index}-opcion'
+        request_data[key] = str(tupla[0])
+        key = f'form-{index}-votos'
+        request_data[key] = str(tupla[1])
+        index = index + 1
+    request_data['form-TOTAL_FORMS'] = str(len(tuplas_opcion_electores))
+    request_data['form-INITIAL_FORMS'] = '0'
+    request_data['form-MIN_NUM_FORMS'] = '2'
+    request_data['form-MAX_NUM_FORMS'] = '1000'
+    return request_data
 
 def test_formset_en_carga_parcial(db, fiscal_client):
     c = CategoriaFactory()
@@ -270,10 +290,26 @@ def test_detalle_mesa_categoria(db, fiscal_client):
     assert list(response.context['reportados']) == [votos1, votos2, votos3]
 
 
+
 def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(fiscal_client):
+    """
+    Es un test desaconsejadamente largo, pero me sirvió para entender el escenario.
+    Se hace un recorrido por la carga de dos categorías desde una UB.
+
+    Cuando se llama a procesar-acta-mesa, cuando va por GET, es para cargar el template carga-ub.html.
+    Cuando se le pega con POST, va a cargar un resultado.
+
+    Cuando ya no tiene más categorías para cargar, te devuelve a agregar-adjunto-ub
+
+    """
     circuito = CircuitoFactory()
     categoria_1 = CategoriaFactory()
     categoria_2 = CategoriaFactory()
+    opcion1 = CategoriaOpcionFactory(categoria=categoria_1, prioritaria=True).opcion
+    opcion2 = CategoriaOpcionFactory(categoria=categoria_1, prioritaria=False).opcion
+
+    opcion3 = CategoriaOpcionFactory(categoria=categoria_2, prioritaria=True).opcion
+    opcion4 = CategoriaOpcionFactory(categoria=categoria_2, prioritaria=False).opcion
 
     nombre_categoria = "Un nombre especifico"
     categoria_1.nombre = nombre_categoria
@@ -282,8 +318,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(fiscal_client):
     mesa1 = IdentificacionFactory(
         mesa__categorias=[categoria_1, categoria_2],
         mesa__lugar_votacion__circuito=circuito,
-        status='identificada',
-        consolidada=True,
+        status='identificada'
     ).mesa
 
     response = fiscal_client.get(reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa1.id}))
@@ -293,7 +328,40 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(fiscal_client):
     assert "/clasificar-actas/ub/agregar" in str(response.content)  
     #como es por id el order by del método que devuelve siguiente categoria, debería ser categoria_1
     assert nombre_categoria in str(response.content)
+    
+    tupla_opciones_electores = [(opcion1.id, mesa1.electores // 2), (opcion2.id, mesa1.electores // 2)]
+    request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
+    
+    url_carga_resultados = response.context['request'].get_full_path()
 
+    response = fiscal_client.post(url_carga_resultados, request_data)
+    
+    #tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa    
+    carga = Carga.objects.get() 
+
+    assert carga.tipo == Carga.TIPOS.total
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa1.id})
+
+    tupla_opciones_electores = [(opcion3.id, mesa1.electores // 2), (opcion4.id, mesa1.electores // 2)]
+
+    response = fiscal_client.post(url_carga_resultados, request_data)
+
+    consumir_novedades_y_actualizar_objetos([carga.mesa_categoria])
+
+    #ya no tiene más categorías, debe dirigirnos a subir-adjunto
+    cargas = Carga.objects.all()
+    assert 2 == len(cargas)
+    assert carga.tipo == Carga.TIPOS.total
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa1.id})
+
+    response = fiscal_client.post(url_carga_resultados)
+
+    #la mesa no tiene más categorías, nos devuelve a la pantalla de carga de adjuntos
+    assert response.url == reverse('agregar-adjuntos-ub')
+
+    
 
 def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
     mesa_id_inexistente = 673162312
