@@ -1,31 +1,19 @@
-import os
 import logging
 
-from itertools import chain
 from collections import defaultdict
 from datetime import timedelta
 from django.utils import timezone
-from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
-from django.db.models import (
-    Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef,
-    Exists, Max, Value
-)
-from django.db.models.functions import Coalesce
+from django.db.models import Sum, Q, Count, Max
 from django.conf import settings
 from djgeojson.fields import PointField
-from django.template.loader import render_to_string
-from django.utils.safestring import mark_safe
-from django.utils.text import slugify
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.core.validators import MaxValueValidator
-from model_utils.fields import StatusField, MonitorField
+from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
 from model_utils import Choices
-from adjuntos.models import Attachment
-from problemas.models import Problema
 
 logger = logging.getLogger("e-va")
 
@@ -41,7 +29,6 @@ class Distrito(models.Model):
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
-
 
     class Meta:
         verbose_name = 'Distrito electoral'
@@ -74,7 +61,6 @@ class Seccion(models.Model):
         )
     )
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
-
 
     class Meta:
         ordering = ('numero',)
@@ -111,7 +97,6 @@ class Circuito(models.Model):
     electores = models.PositiveIntegerField(default=0)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
-
     class Meta:
         verbose_name = 'Circuito electoral'
         verbose_name_plural = 'Circuitos electorales'
@@ -130,10 +115,10 @@ class Circuito(models.Model):
         return Mesa.objects.filter(
             lugar_votacion__circuito=self,
             categorias=categoria
-    )
+        )
 
     def nombre_completo(self):
-        return self.seccion.nombre_completo() + " - " + self.nombre
+        return f'{self.seccion.nombre_completo()} - {self.nombre}'
 
 
 class LugarVotacion(models.Model):
@@ -206,7 +191,7 @@ class LugarVotacion(models.Model):
         return Mesa.objects.filter(
             lugar_votacion=self,
             categorias=categoria
-    )
+        )
 
     @property
     def mesas_actuales(self):
@@ -263,10 +248,10 @@ class MesaCategoriaQuerySet(models.QuerySet):
         qs = self.identificadas().no_taken().sin_consolidar()
         return qs.order_by(
             'status',
+            'categoria__prioridad',
             'orden_de_carga',
             'mesa__prioridad',
         ).first()
-
 
 
 class MesaCategoria(models.Model):
@@ -326,19 +311,16 @@ class MesaCategoria(models.Model):
 
     def actualizar_orden_de_carga(self):
         """
-        Actualiza `self.orden_de_carga` en funcion de la prioridad
-        de la categoria y la propocion de mesas encoladas en el circuito
+        Actualiza `self.orden_de_carga` como una proporcion de mesas
         """
-        total_en_circuito = MesaCategoria.objects.filter(
+        en_circuito = MesaCategoria.objects.filter(
             categoria=self.categoria,
             mesa__circuito=self.mesa.circuito
-        ).count()
-        encoladas = MesaCategoria.objects.identificadas().sin_consolidar().filter(
-            categoria=self.categoria,
-            mesa__circuito=self.mesa.circuito
-        ).count()
-        prioridad = self.categoria.prioridad
-        self.orden_de_carga = (encoladas / total_en_circuito ) * (prioridad + 0.5)
+        )
+        total = en_circuito.count()
+        incremento = 1 / total
+        maximo = en_circuito.aggregate(v=Max('orden_de_carga'))['v'] or 0
+        self.orden_de_carga = maximo + incremento
         self.save(update_fields=['orden_de_carga'])
 
     def firma_count(self):
@@ -397,7 +379,6 @@ class Mesa(models.Model):
     electores = models.PositiveIntegerField(null=True, blank=True)
 
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
-
 
     def categoria_add(self, categoria):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
@@ -504,7 +485,6 @@ class Opcion(models.Model):
         verbose_name_plural = 'Opciones'
         ordering = ['orden']
 
-
     @property
     def color(self):
         """
@@ -515,10 +495,9 @@ class Opcion(models.Model):
             return self.partido.color
         return '#FFFFFF'
 
-
     def __str__(self):
         if self.partido:
-            return f'{self.partido.codigo} - {self.nombre}' #  -- {self.partido.nombre_corto}
+            return f'{self.partido.codigo} - {self.nombre}'     # {self.partido.nombre_corto}
         return self.nombre
 
 
@@ -675,7 +654,6 @@ class Carga(TimeStampedModel):
     )
     procesada = models.BooleanField(default=False)
 
-
     @property
     def mesa(self):
         return self.mesa_categoria.mesa
@@ -737,8 +715,8 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
 
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
-    if (instance.lugar_votacion is not None
-        and instance.lugar_votacion.circuito is not None):
+    if (instance.lugar_votacion is not None and
+            instance.lugar_votacion.circuito is not None):
         circuito = instance.lugar_votacion.circuito
         seccion = circuito.seccion
         distrito = seccion.distrito
