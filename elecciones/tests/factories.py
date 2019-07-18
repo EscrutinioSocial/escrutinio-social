@@ -111,14 +111,12 @@ class CircuitoFactory(DjangoModelFactory):
     nombre = factory.LazyAttribute(lambda obj: f"Circuito {obj.seccion.numero}.{obj.numero}")
 
 
-
 class LugarVotacionFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.LugarVotacion'
     circuito = factory.SubFactory(CircuitoFactory)
     nombre = factory.Sequence(lambda n: f"Escuela {n}")
     direccion = 'direccion'
-
 
 
 class MesaFactory(DjangoModelFactory):

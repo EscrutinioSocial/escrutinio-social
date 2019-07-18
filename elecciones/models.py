@@ -248,7 +248,11 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def sin_consolidar(self):
         return self.exclude(
-            status=MesaCategoria.STATUS.total_consolidada_dc
+            status__in=(
+                MesaCategoria.STATUS.total_consolidada_dc,
+                # TODO revisar si hay que exluir CSV
+                # MesaCategoria.STATUS.total_consolidada_csv
+            )
         )
 
     def siguiente(self):
@@ -322,22 +326,19 @@ class MesaCategoria(models.Model):
 
     def actualizar_orden_de_carga(self):
         """
-        Actualiza `self.orden_de_carga` como el producto entre
-        la proporcion de mesas ya identificadas todavia sin consolidar del circuito
-        al momento de identificar la mesa y la prioridad de la categoria
+        Actualiza `self.orden_de_carga` en funcion de la prioridad
+        de la categoria y la propocion de mesas encoladas en el circuito
         """
         total_en_circuito = MesaCategoria.objects.filter(
             categoria=self.categoria,
             mesa__circuito=self.mesa.circuito
         ).count()
-
-        encoladas = MesaCategoria.objects.exclude(
-            id=self.id
-        ).identificadas().sin_consolidar().filter(
+        encoladas = MesaCategoria.objects.identificadas().sin_consolidar().filter(
             categoria=self.categoria,
             mesa__circuito=self.mesa.circuito
         ).count()
-        self.orden_de_carga = (encoladas / total_en_circuito) * self.categoria.prioridad
+        prioridad = self.categoria.prioridad
+        self.orden_de_carga = (encoladas / total_en_circuito ) * (prioridad + 0.5)
         self.save(update_fields=['orden_de_carga'])
 
     def firma_count(self):

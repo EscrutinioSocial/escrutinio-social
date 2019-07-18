@@ -125,11 +125,11 @@ def test_con_carga_pendiente_incluye_mesa_con_categoria_sin_cargar(db):
 
     # mesa 2 ya se cargó (doble carga), se excluirá
     categoria = m2.categorias.first()
-    c2 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=categoria, 
+    c2 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=categoria,
         tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(carga=c2, opcion=categoria.opciones.first(), votos=10)
     VotoMesaReportadoFactory(carga=c2, opcion=categoria.opciones.last(), votos=12)
-    c3 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=categoria, 
+    c3 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=categoria,
         tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(carga=c3, opcion=categoria.opciones.first(), votos=10)
     VotoMesaReportadoFactory(carga=c3, opcion=categoria.opciones.last(), votos=12)
