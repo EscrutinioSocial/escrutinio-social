@@ -72,8 +72,8 @@ class CargaCategoriaEnActa():
         if (self.mc.categoria.requiere_cargas_parciales and
                 self.mc.status != MesaCategoria.STATUS.parcial_consolidada_dc):
             # solo si la categoria requiere parciales y las parciales no estan consolidada
-            return redirect('mesa-cargar-resultados-parciales', mesacategoria_id=self.mc.id)
-        return redirect('mesa-cargar-resultados', mesacategoria_id=self.mc.id)
+            return redirect('carga-parcial', mesacategoria_id=self.mc.id)
+        return redirect('carga-total', mesacategoria_id=self.mc.id)
 
 
 class NoHayAccion():

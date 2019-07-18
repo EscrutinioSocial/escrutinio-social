@@ -521,10 +521,10 @@ def test_siguiente_accion_cargar_acta(fiscal_client):
     consumir_novedades_identificacion()
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=(mc1.id,))
+    assert response.url == reverse('carga-total', args=(mc1.id,))
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=(mc2.id,))
+    assert response.url == reverse('carga-total', args=(mc2.id,))
 
 
 def test_resultados_no_positivos(fiscal_client):

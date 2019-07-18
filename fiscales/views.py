@@ -67,13 +67,6 @@ NO_PERMISSION_REDIRECT = '/permission-denied/'
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def carga_simultanea(request, mesa, categoria):
-    categoria_para_mostrar = categoria.replace("_", " ")
-    return render(request, 'fiscales/carga-simultanea.html', {'mesa': mesa, 'categoria': categoria_para_mostrar})
-
-
-@login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def post_reportar_problema(request, mesa):
     return render(request, 'fiscales/post-reportar-problema.html', {'mesa': mesa})
 
@@ -90,10 +83,12 @@ def choice_home(request):
     user = request.user
     if not user.is_authenticated:
         return redirect('login')
+    fiscal = get_object_or_404(Fiscal, user=request.user)
+    if fiscal.esta_en_grupo('validadores'):
+        return redirect('siguiente-accion')
 
-    es_fiscal = Fiscal.objects.filter(user=request.user).exists()
-
-    return redirect('siguiente-accion') if user.fiscal.esta_en_grupo('validadores') else render(request, 'fiscales/base.html')
+    # FIXME qué se supone que hace esto?
+    return render(request, 'fiscales/base.html')
 
 
 def permission_denied(request):
@@ -288,7 +283,7 @@ def realizar_siguiente_accion(request):
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def cargar_resultados(request, mesacategoria_id, tipo='total', carga_id=None):
+def carga(request, mesacategoria_id, tipo='total', carga_id=None):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
@@ -361,13 +356,14 @@ def cargar_resultados(request, mesacategoria_id, tipo='total', carga_id=None):
                 # Libero el token sobre la mc
                 mesa_categoria.release()
             carga.actualizar_firma()
-            messages.success(
-                request,
-                f'Guardada categoría {categoria} para {mesa}')
-        except IntegrityError as e:
-            # hubo otra carga previa.
+            messages.success(request, f'Guardada categoría {categoria} para {mesa}')
+        except Exception as e:
+            # este catch estaba desde cuando no podia haber multiples cargas para una
+            # misma mesa-categoria
+            # ahora no podria darte IntegrityError porque esta vista sólo crea objetos
+            # y ya no hay constraint.
+            # Lo dejo por si queremos canalizar algun otro tipo de excepcion
             capture_exception(e)
-            return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
 
         return redirect('siguiente-accion')
 

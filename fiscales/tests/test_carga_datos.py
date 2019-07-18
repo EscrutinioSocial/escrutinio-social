@@ -48,7 +48,7 @@ def test_cargar_resultados_redirige(db, fiscal_client):
 
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[m1c1.id])
+    assert response.url == reverse('carga-total', args=[m1c1.id])
 
     # como m1c1 queda en periodo de "taken" (aunque no se haya ocupado aún)
     # se pasa a la siguiente mesacategoria
@@ -56,13 +56,13 @@ def test_cargar_resultados_redirige(db, fiscal_client):
 
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[m2c1.id])
+    assert response.url == reverse('carga-total', args=[m2c1.id])
 
     # ahora la tercera
     m2c2 = MesaCategoria.objects.get(mesa=m2, categoria=c2)
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[m2c2.id])
+    assert response.url == reverse('carga-total', args=[m2c2.id])
 
     # ya no hay actas (todas en taken)
     response = fiscal_client.get(reverse('siguiente-accion'))
@@ -72,7 +72,7 @@ def test_cargar_resultados_redirige(db, fiscal_client):
     m2c2.release()
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[m2c2.id])
+    assert response.url == reverse('carga-total', args=[m2c2.id])
 
 
 def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client):
@@ -83,7 +83,7 @@ def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client):
     CategoriaOpcionFactory(categoria=c, prioritaria=False).opcion
     mc = MesaCategoriaFactory(categoria=c)
     parciales = reverse(
-        'mesa-cargar-resultados-parciales', args=[mc.id]
+        'carga-parcial', args=[mc.id]
     )
     response = fiscal_client.get(parciales)
     assert len(response.context['formset']) == 1
@@ -98,7 +98,7 @@ def test_formset_en_carga_total_muestra_todos(db, fiscal_client):
     o2 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=False).opcion
     mc = MesaCategoriaFactory(categoria=c)
     totales = reverse(
-        'mesa-cargar-resultados', args=[mc.id]
+        'carga-total', args=[mc.id]
     )
     response = fiscal_client.get(totales)
     assert len(response.context['formset']) == 2
