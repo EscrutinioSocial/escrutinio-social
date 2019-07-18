@@ -19,7 +19,7 @@ from .forms import (
     IdentificacionForm,
     IdentificacionProblemaForm,
 )
-from problemas.models.ReporteDeProblema
+from problemas.models import ReporteDeProblema
 
 
 class IdentificacionCreateView(CreateView):

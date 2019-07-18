@@ -117,33 +117,18 @@ def consolidar_identificaciones(attachment):
     y lo asocia a la mesa identificada o a ninguna, si no quedó identificado.
     """
 
-    # Primero me quedo con todas las identificaciones para ese attachment.
-    # Formato: (mesa_id, status, cantidad, cantidad que viene de csv)
-    # Ejemplo:
-    #  [
-    #       (0, 'problema', 2, 0),
-    #       (1, 'identificada', 1),
-    #       (2, 'identificada', 1),
-    #  ]
-    status_count = attachment.status_count()
+    # Primero me quedo con todas las identificaciones para ese attachment
+    # que correspondan con una identificación y no con un problema.
+    status_count = attachment.status_count(Identificacion.STATUS.identificada)
 
     mesa_id_consolidada = None
-    for mesa_id, status, cantidad, cuantos_csv in status_count:
+    for mesa_id, cantidad, cuantos_csv in status_count:
         if (
-            status == Identificacion.STATUS.identificada and (
-                cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or
+            cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or
                 cuantos_csv > 0
-            )
         ):
             mesa_id_consolidada = mesa_id
             break
-        elif (
-            status == Identificacion.STATUS.problema and
-                cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA
-        ):
-            # Marco el problema.
-            identificacion_con_problemas = ... me quedo con una de las que tiene estado problema ...
-            problema = Problema.confirmar_problema(identificacion=identificacion_con_problemas)
 
     if mesa_id_consolidada:
         # Consolidamos una mesa, ya sea por CSV o por multicoincidencia.
@@ -169,6 +154,16 @@ def consolidar_identificaciones(attachment):
         status_attachment = Attachment.STATUS.sin_identificar
         mesa_attachment = None
         testigo = None
+
+        # Si no logramos consolidar una identificación vemos si hay un reporte de problemas.
+        status_count = attachment.status_count(Identificacion.STATUS.problema)
+        for mesa_id, cantidad, cuantos_csv in status_count:
+            if cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA:
+                # Tomo como "muestra" alguna de las que tienen problemas.
+                identificacion_con_problemas = attachment.identificaciones.filter(
+                    status=Identificacion.STATUS.problema).first()
+                # Confirmo el problema porque varios reportaron problemas.
+                problema = Problema.confirmar_problema(identificacion=identificacion_con_problemas)
 
     # Identifico el attachment.
     # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.

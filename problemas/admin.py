@@ -19,8 +19,8 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         return f'<a href="/admin/elecciones/mesa/?numero={o.mesa.numero}"">{o.mesa}</a>'
     mesa_.allow_tags = True
 
-    list_display = ('problema', mesa_, 'descripcion', 'reportado_por', 'estado')
-    list_filter = ('problema', 'estado')
+    list_display = (mesa_, 'estado')
+    list_filter = ('estado',)
     search_fields = (
         'mesa__numero',
     )
