@@ -29,6 +29,7 @@ from problemas.models import Problema
 
 logger = logging.getLogger("e-va")
 
+
 class Distrito(models.Model):
     """
     Define el distrito o circunscripción electoral. Es la subdivisión más
@@ -87,7 +88,7 @@ class Seccion(models.Model):
             lugar_votacion__circuito__seccion=self,
             categorias=categoria
         )
-    
+
     def nombre_completo(self):
         return f"{self.distrito.nombre_completo()} - {self.nombre}"
 
@@ -99,7 +100,8 @@ class Circuito(models.Model):
     Distrito -> Sección -> **Circuito** -> Lugar de votación -> Mesa
     """
     seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
-    localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
+    localidad_cabecera = models.CharField(
+        max_length=100, null=True, blank=True)
 
     numero = models.CharField(max_length=10)
     nombre = models.CharField(max_length=100)
@@ -136,7 +138,7 @@ class Circuito(models.Model):
         return Mesa.objects.filter(
             lugar_votacion__circuito=self,
             categorias=categoria
-    )
+        )
 
     def nombre_completo(self):
         return self.seccion.nombre_completo() + " - " + self.nombre
@@ -151,7 +153,8 @@ class LugarVotacion(models.Model):
     Distrito -> Sección -> Circuito -> **Lugar de votación** -> Mesa
     """
 
-    circuito = models.ForeignKey(Circuito, related_name='escuelas', on_delete=models.CASCADE)
+    circuito = models.ForeignKey(
+        Circuito, related_name='escuelas', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, blank=True)
@@ -212,7 +215,7 @@ class LugarVotacion(models.Model):
         return Mesa.objects.filter(
             lugar_votacion=self,
             categorias=categoria
-    )
+        )
 
     @property
     def mesas_actuales(self):
@@ -245,8 +248,10 @@ class MesaCategoria(models.Model):
     """
     STATUS = Choices(
         'sin_cargar',                   # no hay cargas
-        'parcial_sin_consolidar',       # carga parcial única (no csv) o no coincidente
-        'parcial_consolidada_csv',      # no hay dos cargas mínimas coincidentes, pero una es de csv.
+        # carga parcial única (no csv) o no coincidente
+        'parcial_sin_consolidar',
+        # no hay dos cargas mínimas coincidentes, pero una es de csv.
+        'parcial_consolidada_csv',
         'parcial_en_conflicto',         # cargas parcial divergentes sin consolidar
         'parcial_consolidada_dc',       # carga parcial consolidada por doble carga
         'total_sin_consolidar',
@@ -311,7 +316,8 @@ class Mesa(models.Model):
     categorias = models.ManyToManyField('Categoria', through='MesaCategoria')
     numero = models.CharField(max_length=10)
     es_testigo = models.BooleanField(default=False)
-    circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
+    circuito = models.ForeignKey(
+        Circuito, null=True, on_delete=models.SET_NULL)
     lugar_votacion = models.ForeignKey(
         LugarVotacion, verbose_name='Lugar de votacion',
         null=True, related_name='mesas', on_delete=models.CASCADE
@@ -354,7 +360,7 @@ class Mesa(models.Model):
             a_cargar=Count('categorias', filter=Q(categorias__activa=True)),
             # Cuántas llegaron a doble carga total.
             terminadas=Count('mesacategoria',
-                filter=Q(mesacategoria__status=MesaCategoria.STATUS.total_consolidada_dc))
+                             filter=Q(mesacategoria__status=MesaCategoria.STATUS.total_consolidada_dc))
         ).filter(
             # Me fijo si no llegaron a doble carga.
             terminadas__lt=F('a_cargar')
@@ -410,7 +416,8 @@ class Partido(models.Model):
     """
     orden = models.PositiveIntegerField(help_text='Orden opcion')
     numero = models.PositiveIntegerField(null=True, blank=True)
-    codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True)
+    codigo = models.CharField(
+        max_length=10, help_text='Codigo de partido', null=True, blank=True)
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=30, default='')
     color = models.CharField(max_length=30, default='', blank=True)
@@ -464,7 +471,6 @@ class Opcion(models.Model):
         verbose_name_plural = 'Opciones'
         ordering = ['orden']
 
-
     @property
     def color(self):
         """
@@ -475,10 +481,10 @@ class Opcion(models.Model):
             return self.partido.color
         return '#FFFFFF'
 
-
     def __str__(self):
         if self.partido:
-            return f'{self.partido.codigo} - {self.nombre}' #  -- {self.partido.nombre_corto}
+            # -- {self.partido.nombre_corto}
+            return f'{self.partido.codigo} - {self.nombre}'
         return self.nombre
 
 
@@ -510,7 +516,8 @@ class Categoria(models.Model):
     Una categoría tiene habilitadas diferentes :py:meth:`opciones <Opcion>`
     que incluyen las partidarias (boletas) y blanco, nulo, etc.
     """
-    eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
+    eleccion = models.ForeignKey(
+        Eleccion, null=True, on_delete=models.SET_NULL)
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100)
     opciones = models.ManyToManyField(
@@ -604,6 +611,9 @@ class CategoriaOpcion(models.Model):
 
     class Meta:
         unique_together = ('categoria', 'opcion')
+        verbose_name = 'Categoría opción'
+        verbose_name_plural = "Categorías opciones"
+        ordering = ['categoria']
 
 
 class Carga(TimeStampedModel):
@@ -621,17 +631,18 @@ class Carga(TimeStampedModel):
         'total'
     )
     SOURCES = Choices('web', 'csv', 'telegram')
-    tipo = models.CharField(max_length=50, choices=TIPOS, null=True, blank=True)
+    tipo = models.CharField(
+        max_length=50, choices=TIPOS, null=True, blank=True)
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
     mesa_categoria = models.ForeignKey(
         MesaCategoria, related_name='cargas', on_delete=models.CASCADE
     )
-    fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
+    fiscal = models.ForeignKey(
+        'fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
     firma = models.CharField(
         max_length=300, null=True, blank=True, editable=False
     )
     procesada = models.BooleanField(default=False)
-
 
     @property
     def mesa(self):
@@ -673,7 +684,8 @@ class VotoMesaReportado(models.Model):
     que define mesa y categoria, existe una instancia de este modelo
     para cada opción y su correspondiente cantidad de votos.
     """
-    carga = models.ForeignKey(Carga, related_name='reportados', on_delete=models.CASCADE)
+    carga = models.ForeignKey(
+        Carga, related_name='reportados', on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
 
     # es null cuando hay cargas parciales.
@@ -695,7 +707,7 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
     if (instance.lugar_votacion is not None
-        and instance.lugar_votacion.circuito is not None):
+            and instance.lugar_votacion.circuito is not None):
         circuito = instance.lugar_votacion.circuito
         seccion = circuito.seccion
         distrito = seccion.distrito
