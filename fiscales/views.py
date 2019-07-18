@@ -66,12 +66,6 @@ NO_PERMISSION_REDIRECT = '/permission-denied/'
 
 
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def post_reportar_problema(request, mesa):
-    return render(request, 'fiscales/post-reportar-problema.html', {'mesa': mesa})
-
-
-@login_required
 def bienvenido(request):
     return render(request, 'fiscales/bienvenido.html')
 
@@ -87,12 +81,12 @@ def choice_home(request):
     if fiscal.esta_en_grupo('validadores'):
         return redirect('siguiente-accion')
 
-    # FIXME qué se supone que hace esto?
-    return render(request, 'fiscales/base.html')
+    return redirect('bienvenido')
 
 
 def permission_denied(request):
     return PermissionDenied
+
 
 class BaseFiscal(LoginRequiredMixin, DetailView):
     model = Fiscal

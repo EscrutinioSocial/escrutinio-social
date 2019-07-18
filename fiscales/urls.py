@@ -21,6 +21,5 @@ urlpatterns = [
     url('^mis-datos/password$', views.CambiarPassword.as_view(), name='cambiar-password'),
     url('^_confirmar/(?P<fiscal_id>\d+)$', views.confirmar_fiscal, name='confirmar-fiscal'),
 
-    url(r'^post-reportar-problema/(?P<mesa>\w+)$', views.post_reportar_problema, name="post-reportar-problema"),
     url(r'^bienvenido$', views.bienvenido, name="bienvenido"),
 ]
