@@ -19,7 +19,7 @@ from .forms import (
     IdentificacionForm,
     IdentificacionProblemaForm,
 )
-from problemas.models import ReporteDeProblema
+from problemas.models import Problema, ReporteDeProblema
 
 
 class IdentificacionCreateView(CreateView):
@@ -87,7 +87,7 @@ class IdentificacionProblemaCreateView(IdentificacionCreateView):
         identificacion = form.save(commit=False)
         identificacion.attachment = self.attachment
         identificacion.fiscal = fiscal
-        identificacion.status = Identificacion.status.problema
+        identificacion.status = Identificacion.STATUS.problema
         identificacion.save()
 
         # Creo el problema asociado.

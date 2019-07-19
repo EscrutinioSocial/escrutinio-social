@@ -39,14 +39,14 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     m1 = MesaFactory()
     a = AttachmentFactory()
     data = {
-        'status': 'spam',
+        'status': 'problema',
     }
     response = fiscal_client.post(reverse('asignar-problema', args=[a.id]), data)
     assert response.status_code == 302
     assert response.url == reverse('siguiente-accion')
     assert a.identificaciones.count() == 1
     i = a.identificaciones.first()
-    assert i.status == 'spam'
+    assert i.status == 'problema'
     assert i.fiscal == admin_user.fiscal
     assert i.mesa is None
     # mesa no tiene attach aun

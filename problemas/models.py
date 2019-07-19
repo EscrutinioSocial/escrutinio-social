@@ -22,18 +22,19 @@ class ReporteDeProblema(TimeStampedModel):
 
     tipo_de_problema = models.CharField(max_length=100, null=True, blank=True, choices=TIPOS_DE_PROBLEMA)
 
-    reportado_por = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
     descripcion = models.TextField(null=True, blank=True)
     es_reporte_fake = models.BooleanField(default=False) # Se completa desde el admin.
     problema = models.ForeignKey('Problema', on_delete=models.CASCADE, related_name='reportes')
     identificacion = models.ForeignKey('adjuntos.Identificacion', null=True, related_name='problemas', on_delete=models.CASCADE)
     carga = models.ForeignKey('elecciones.Carga', null=True, related_name='problemas', on_delete=models.CASCADE)
+    reportado_por = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)    
+
 
 
 class Problema(TimeStampedModel):
     ESTADOS = Choices(
         'potencial', # Todavía no se confirmó que exista de verdad.
-        'pendiente'
+        'pendiente',
         'en_curso',
         'resuelto',
     )
@@ -60,18 +61,18 @@ class Problema(TimeStampedModel):
             mesa=mesa, attachment=attachment
         ).exclude(
             # Puede haber tenido otros problemas previos.
-            estado=ESTADOS.resuelto
+            estado=cls.ESTADOS.resuelto
         ).first()
 
         problema.confirmar()
 
 
     def confirmar(self):
-        self.estado = ESTADOS.pendiente
+        self.estado = self.ESTADOS.pendiente
         self.save(update_fields=['estado'])
 
     def resolver(self):
-        self.estado = ESTADOS.resuelto
+        self.estado = self.ESTADOS.resuelto
         self.save(update_fields=['estado'])
 
         for reporte in self.reportes.all():
@@ -96,14 +97,14 @@ class Problema(TimeStampedModel):
         problema = Problema.objects.filter(
             mesa=mesa, attachment=attachment
         ).exclude(
-            estado=ESTADOS.resuelto
-        )
+            estado=cls.ESTADOS.resuelto
+        ).first()
 
         if not problema:
             # Lo creo
             problema = Problema.objects.create(
                 mesa=mesa, attachment=attachment,
-                estado=ESTADOS.potencial
+                estado=cls.ESTADOS.potencial
             )
 
         reporte = ReporteDeProblema.objects.create(

@@ -4,9 +4,12 @@ from elecciones.tests.factories import (
     AttachmentFactory,
     MesaFactory,
     IdentificacionFactory,
+    ProblemaFactory,
+    FiscalFactory
 )
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
+from problemas.models import ReporteDeProblema, Problema
 
 
 def test_attachment_unico(db):
@@ -40,37 +43,48 @@ def test_identificacion_status_count(db):
     m1 = MesaFactory()
     m2 = MesaFactory()
     IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
-    IdentificacionFactory(attachment=a, status='spam', mesa=None)
-    IdentificacionFactory(attachment=a, status='spam', mesa=None)
+    IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    IdentificacionFactory(attachment=a, status='problema', mesa=None)
     IdentificacionFactory(attachment=a, status='invalida', mesa=None)
 
     # un estado excepcional, pero eventualmente posible?
-    IdentificacionFactory(attachment=a, status='spam', mesa=m1)
+    IdentificacionFactory(attachment=a, status='problema', mesa=m1)
 
     IdentificacionFactory(attachment=a, status='identificada', mesa=m2)
 
-    result = a.status_count()
+    result = a.status_count(Identificacion.STATUS.identificada)
     assert sorted(result) == sorted([
-        (0, 'spam', 2, 0),
-        (0, 'invalida', 1, 0),
-        (m1.id, 'identificada', 1, 0),
-        (m2.id, 'identificada', 1, 0),
-        (m1.id, 'spam', 1, 0)
+        (m1.id, 1, 0),
+        (m2.id, 1, 0),
     ])
 
+    result = a.status_count(Identificacion.STATUS.problema)
+    assert sorted(result) == sorted([
+        (0, 2, 0),
+        (m1.id, 1, 0)
+    ])
 
 def test_identificacion_consolidada_ninguno(db):
     a = AttachmentFactory()
     m1 = MesaFactory()
     IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
-    IdentificacionFactory(attachment=a, status='spam', mesa=None)
-    IdentificacionFactory(attachment=a, status='spam', mesa=None)
+
+    i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    f = FiscalFactory()
+    Problema.reportar_problema(f, 'reporte 1', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, identificacion=i1)
+    assert i1.problemas.first().problema.estado == Problema.ESTADOS.potencial
+
+    i2 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    Problema.reportar_problema(f, 'reporte 1', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, identificacion=i2)
 
     assert a.identificacion_testigo is None
 
     cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 3
     consumir_novedades_identificacion()
+    assert i1.problemas.first().problema.estado == Problema.ESTADOS.pendiente
 
     cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 0
@@ -82,8 +96,8 @@ def test_identificacion_consolidada_alguna(db):
     a = AttachmentFactory()
     m1 = MesaFactory()
     i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
-    IdentificacionFactory(attachment=a, status='spam', mesa=None)
-    IdentificacionFactory(attachment=a, status='spam', mesa=None)
+    IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    IdentificacionFactory(attachment=a, status='problema', mesa=None)
     IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
 
     assert a.identificacion_testigo is None
