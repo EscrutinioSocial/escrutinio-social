@@ -9,6 +9,7 @@ from model_utils.models import TimeStampedModel
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.dispatch import receiver
+from django.db.models import Sum
 from django.db.models.signals import post_save, pre_delete
 from elecciones.models import Mesa, LugarVotacion, Categoria
 from django.contrib.contenttypes.models import ContentType
@@ -16,6 +17,8 @@ from contacto.models import DatoDeContacto
 from model_utils.fields import StatusField
 from model_utils import Choices
 from django.contrib.auth.models import Group
+
+from antitrolling.models import EventoScoringTroll
 
 TOTAL = 'Total General'
 
@@ -94,6 +97,15 @@ class Fiscal(models.Model):
     @property
     def esta_en_grupo_unidades_basicas(self):
         return self.esta_en_grupo('unidades basicas')
+        
+    def scoring_troll(self):
+        return self.eventos_scoring_troll.aggregate(v=Sum('variacion'))['v'] or 0
+
+    def marcar_como_troll(self):
+        self.troll = True
+        self.save(update_fields=['troll'])
+
+
 
 
 @receiver(post_save, sender=Fiscal)
