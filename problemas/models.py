@@ -68,14 +68,34 @@ class Problema(TimeStampedModel):
 
         problema.confirmar()
 
+    @classmethod
+    def resolver_problema_falta_hoja(cls, identificacion):
+        """
+        Este método debe ser ejecutado cuando llega un nuevo attachment. Su función es marcar como resuelto un problema de falta de hoja.
+        """
+        attachment = identificacion.attachment
+        problema = cls.objects.filter(
+            attachment=attachment
+        ).exclude(
+            # Me quedo con los problemas abiertos.
+            estado=cls.ESTADOS.potencial
+        ).filter(
+            # Tienen algún reporte de que falta foto.
+            reportes__tipo_de_problema__in=[ReporteDeProblema.TIPOS_DE_PROBLEMA.falta_foto]
+        ).first()
+
+        if problema:
+            problema.resolver(resuelto_por)
+
 
     def confirmar(self):
         self.estado = self.ESTADOS.pendiente
         self.save(update_fields=['estado'])
 
-    def resolver(self):
+    def resolver(self, resuelto_por):
         self.estado = self.ESTADOS.resuelto
-        self.save(update_fields=['estado'])
+        self.resuelto_por = resuelto_por
+        self.save(update_fields=['estado', 'resuelto_por'])
 
         for reporte in self.reportes.all():
             # Invalido todas las identificaciones asociadas al problema.
