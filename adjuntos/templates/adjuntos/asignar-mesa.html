@@ -58,7 +58,6 @@ $(document).ready(function() {
   var container = $('.darkroom-container');
   if (container.length) {
     $('html, body').css('overflowY', 'hidden');
-    console.log($(window).height())
     var darkroomHeight = $(window).height() - container.offset().top - 50;
     container.height(darkroomHeight);
   }
