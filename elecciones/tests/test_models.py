@@ -1,20 +1,16 @@
-from datetime import timedelta
 from .factories import (
     VotoMesaReportadoFactory,
     CategoriaFactory,
     AttachmentFactory,
     MesaFactory,
     MesaCategoriaFactory,
-    ProblemaFactory,
     CargaFactory,
     IdentificacionFactory,
-    CategoriaFactory,
     CategoriaOpcionFactory,
     OpcionFactory,
 )
-from elecciones.models import Mesa, MesaCategoria, Categoria
-from django.utils import timezone
-from adjuntos.consolidacion import *
+from elecciones.models import MesaCategoria, Categoria, Identificacion, Carga
+from adjuntos.consolidacion import consumir_novedades_carga, consumir_novedades_identificacion
 
 
 def consumir_novedades_y_actualizar_objetos(lista=None):

@@ -1,19 +1,19 @@
 import logging
-
-from collections import defaultdict
 from datetime import timedelta
-from django.utils import timezone
-from django.urls import reverse
-from django.db import models
-from django.db.models import Sum, Q, Count, Max
+from collections import defaultdict
+
 from django.conf import settings
-from djgeojson.fields import PointField
-from django.dispatch import receiver
-from django.db.models.signals import post_save
 from django.core.validators import MaxValueValidator
+from django.db import Q, models
+from django.db.models import Max, Sum, Count
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.urls import reverse
+from django.utils import timezone
+from djgeojson.fields import PointField
+from model_utils import Choices
 from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
-from model_utils import Choices
 
 logger = logging.getLogger("e-va")
 
@@ -217,12 +217,16 @@ class LugarVotacion(models.Model):
 class MesaCategoriaQuerySet(models.QuerySet):
 
     def identificadas(self):
+        """
+        filtra instancias que tengan orden de carga definido
+        (que se produce cuando hay un primer attachment consolidado)
+        """
         return self.filter(orden_de_carga__isnull=False)
 
     def no_taken(self):
         """
         Filtra no esté tomada dentro de los últimos
-        `settings.MESA_TAKE_WAIT_TIME` minutos,
+        ``settings.MESA_TAKE_WAIT_TIME`` minutos,
         """
         wait = settings.MESA_TAKE_WAIT_TIME
         desde = timezone.now() - timedelta(minutes=wait)
@@ -232,13 +236,10 @@ class MesaCategoriaQuerySet(models.QuerySet):
         )
 
     def sin_consolidar(self):
-        return self.exclude(
-            status__in=(
-                MesaCategoria.STATUS.total_consolidada_dc,
-                # TODO revisar si hay que exluir CSV
-                # MesaCategoria.STATUS.total_consolidada_csv
-            )
-        )
+        """
+        Excluye las instancias no consolidadas con doble carga.
+        """
+        return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
 
     def con_carga_pendiente(self):
         return self.identificadas().no_taken().sin_consolidar()
