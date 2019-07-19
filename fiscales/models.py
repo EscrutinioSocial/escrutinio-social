@@ -45,7 +45,6 @@ class Fiscal(models.Model):
                     blank=True, related_name='fiscal',
                     on_delete=models.SET_NULL)
 
-
     class Meta:
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'),)

@@ -1,18 +1,21 @@
+import pytest
 from django.urls import reverse
 from elecciones.tests.factories import (
     VotoMesaReportadoFactory,
     CategoriaFactory,
     MesaFactory,
+    MesaCategoriaFactory,
     OpcionFactory,
     CircuitoFactory,
     CategoriaOpcionFactory,
     CargaFactory,
     IdentificacionFactory,
 )
-from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
+from elecciones.tests.test_resultados import fiscal_client, setup_groups    # noqa
 from elecciones.models import Mesa, VotoMesaReportado, Carga, MesaCategoria
-from elecciones.tests.test_resultados import fiscal_client          # noqa
-from adjuntos.consolidacion import *
+from adjuntos.models import Identificacion
+from adjuntos.consolidacion import consumir_novedades_identificacion
+
 from elecciones.tests.test_models import consumir_novedades_y_actualizar_objetos
 
 
@@ -21,188 +24,85 @@ def test_elegir_acta_sin_mesas(fiscal_client):
     assert 'No hay actas para cargar por el momento' in response.content.decode('utf8')
 
 
-def test_elegir_acta_mesas_redirige(db, fiscal_client):
+def test_cargar_resultados_redirige(db, fiscal_client):
     assert Mesa.objects.count() == 0
     assert VotoMesaReportado.objects.count() == 0
-    c = CircuitoFactory(id = 100001)
-    e1 = CategoriaFactory()
-    e2 = CategoriaFactory()
-
-    m1 = IdentificacionFactory(
-        mesa__categorias=[e1],
-        mesa__lugar_votacion__circuito=c,
+    circuito = CircuitoFactory()
+    c1 = CategoriaFactory()
+    c2 = CategoriaFactory()
+    m1 = MesaFactory(categorias=[c1], lugar_votacion__circuito=circuito)
+    IdentificacionFactory(
+        mesa=m1,
         status='identificada',
         source=Identificacion.SOURCES.csv,
-    ).mesa
-    e2 = CategoriaFactory()
-    m2 = IdentificacionFactory(
-        mesa__categorias=[e1, e2],
-        mesa__lugar_votacion__circuito=c,
+    )
+    m2 = MesaFactory(categorias=[c1, c2], lugar_votacion__circuito=circuito)
+    assert MesaCategoria.objects.count() == 3
+    IdentificacionFactory(
+        mesa=m2,
         status='identificada',
         source=Identificacion.SOURCES.csv,
-    ).mesa
+    )
     consumir_novedades_identificacion()
 
+    m1c1 = MesaCategoria.objects.get(mesa=m1, categoria=c1)
+
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
+    assert response.url == reverse('carga-total', args=[m1c1.id])
 
-    # como m1 queda en periodo de "taken" (aunque no se haya ocupado aún)
-    # se pasa a la siguiente mesa
+    # como m1c1 queda en periodo de "taken" (aunque no se haya ocupado aún)
+    # se pasa a la siguiente mesacategoria
+    m2c1 = MesaCategoria.objects.get(mesa=m2, categoria=c1)
+
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m2.numero])
+    assert response.url == reverse('carga-total', args=[m2c1.id])
 
-    # se carga esa categoría.
-    VotoMesaReportadoFactory(
-        carga__mesa_categoria__mesa=m2,
-        carga__mesa_categoria__categoria=e1,
-        opcion=e1.opciones.first(),
-        votos=1
-    )
+    # ahora la tercera
+    m2c2 = MesaCategoria.objects.get(mesa=m2, categoria=c2)
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == 302
+    assert response.url == reverse('carga-total', args=[m2c2.id])
 
-
-    # FIX ME . El periodo de taken deberia ser *por categoria*.
-    # en este escenario donde esta lockeado la mesa para la categoria 1, pero no se está
-    # cargando la mesa 2, un dataentry queda idle
+    # ya no hay actas (todas en taken)
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 200   # no hay actas
 
-    m2.taken = None
-    m2.save()
+    # se libera una. pero no se alcanza a completar
+    m2c2.release()
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse(
-        'mesa-cargar-resultados', args=[e2.id, m2.numero]
-    )
+    assert response.url == reverse('carga-total', args=[m2c2.id])
 
 
-
-def test_elegir_acta_prioriza_por_tamaño_circuito(db, fiscal_client):
-    e1 = CategoriaFactory()
-
-    m1 = IdentificacionFactory(
-        mesa__categorias=[e1],
-        status='identificada',
-        source=Identificacion.SOURCES.csv,
-    ).mesa
-    m2 = IdentificacionFactory(
-        mesa__categorias=[e1],
-        status='identificada',
-        source=Identificacion.SOURCES.csv,
-    ).mesa
-    m3 = IdentificacionFactory(
-        mesa__categorias=[e1],
-        status='identificada',
-        source=Identificacion.SOURCES.csv,
-    ).mesa
-    consumir_novedades_identificacion()
-    # creo otras mesas asociadas a los circuitos
-    c1 = m1.lugar_votacion.circuito
-    c2 = m2.lugar_votacion.circuito
-    c3 = m3.lugar_votacion.circuito
-
-    MesaFactory.create_batch(
-        3,
-        categorias=[e1],
-        lugar_votacion__circuito=c1
-    )
-    MesaFactory.create_batch(
-        10,
-        categorias=[e1],
-        lugar_votacion__circuito=c2
-    )
-    MesaFactory.create_batch(
-        5,
-        categorias=[e1],
-        lugar_votacion__circuito=c3
-    )
-    assert c1.electores == 400
-    assert c2.electores == 1100
-    assert c3.electores == 600
-
+@pytest.mark.parametrize('status, parcial', [
+    (MesaCategoria.STATUS.sin_cargar, True),
+    (MesaCategoria.STATUS.parcial_sin_consolidar, True),
+    (MesaCategoria.STATUS.parcial_en_conflicto, True),
+    (MesaCategoria.STATUS.parcial_consolidada_csv, True),      # ASK: hace falta si es csv?
+    (MesaCategoria.STATUS.parcial_consolidada_dc, False),
+    (MesaCategoria.STATUS.total_sin_consolidar, False),
+    (MesaCategoria.STATUS.total_en_conflicto, False),
+    (MesaCategoria.STATUS.total_consolidada_csv, False),
+])
+def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client, status, parcial):
+    c1 = CategoriaFactory(requiere_cargas_parciales=True)
+    m1c1 = MesaCategoriaFactory(categoria=c1, orden_de_carga=0.1, status=status)
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m2.numero])
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m3.numero])
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
+    assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
 
 
-def test_carga_mesa_redirige_a_siguiente(db, fiscal_client):
-    o = OpcionFactory(es_contable=True)
-    o2 = OpcionFactory(es_contable=False)
-    e1 = CategoriaFactory(opciones=[o, o2])
-    e2 = CategoriaFactory(opciones=[o])
-    m1 = IdentificacionFactory(
-        mesa__categorias=[e1, e2],
-        status='identificada',
-        source=Identificacion.SOURCES.csv,
-    ).mesa
-    consumir_novedades_identificacion()
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=[e1.id, m1.numero])
-    # formset para categoria e1 arranca en blanco
-    url = response.url
-    response = fiscal_client.get(response.url)
-    formset = response.context['formset']
-    assert len(formset) == 2
-    assert formset[0].initial == {'opcion': o}
-    assert formset[1].initial == {'opcion': o2}
-
-    # response = fiscal_client.get(url)
-    response = fiscal_client.post(url, {
-        'form-0-opcion': str(o.id),
-        'form-0-votos': str(m1.electores // 2),
-        'form-1-opcion': str(o2.id),
-        'form-1-votos': str(m1.electores // 2),
-        'form-TOTAL_FORMS': '2',
-        'form-INITIAL_FORMS': '0',
-        'form-MIN_NUM_FORMS': '2',
-        'form-MAX_NUM_FORMS': '1000',
-    })
-    carga = Carga.objects.get()  # sólo hay una carga
-    assert carga.tipo == Carga.TIPOS.total
-    assert response.status_code == 302
-    assert response.url == reverse('siguiente-accion')
-    # en rigor, aca habria que probar que
-    # aparece la siguiente categoria de la misma acta
-    # igualmente esta logica debería cambiar en breve
-    # por la misma razon, el resto del test no tiene sentido
-    # Carlos Lombardi, 2019.7.9
-
-    # el form de la nueva categoria e2 está en blanco
-    # url = response.url
-    # response = fiscal_client.get(response.url)
-    # formset = response.context['formset']
-    # assert len(formset) == 1
-    # assert formset[0].initial == {'opcion': o}
-
-    # # si completamos y es valido, no quedan
-    # # categorias por cargar y pide otra acta
-    # response = fiscal_client.post(url, {
-    #     'form-0-opcion': str(o.id),
-    #     'form-0-votos': str(m1.electores),
-    #     'form-TOTAL_FORMS': '1',
-    #     'form-INITIAL_FORMS': '0',
-    #     'form-MIN_NUM_FORMS': '1',
-    #     'form-MAX_NUM_FORMS': '1000',
-    # })
-    # assert response.status_code == 302
-    # assert response.url == reverse('post-cargar-resultados', args=[m1.numero, e2.nombre])
-
-
-def test_formset_en_carga_parcial(db, fiscal_client):
+def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client):
     c = CategoriaFactory()
     o = CategoriaOpcionFactory(categoria=c, prioritaria=True).opcion
-    o2 = CategoriaOpcionFactory(categoria=c, prioritaria=False).opcion
-    m = MesaFactory(categorias=[c])
+
+    # la opcion 2 no se muestr
+    CategoriaOpcionFactory(categoria=c, prioritaria=False).opcion
+    mc = MesaCategoriaFactory(categoria=c)
     parciales = reverse(
-        'mesa-cargar-resultados-parciales', args=[c.id, m.numero]
+        'carga-parcial', args=[mc.id]
     )
     response = fiscal_client.get(parciales)
     assert len(response.context['formset']) == 1
@@ -211,13 +111,13 @@ def test_formset_en_carga_parcial(db, fiscal_client):
     ]
 
 
-def test_formset_en_carga_total(db, fiscal_client):
+def test_formset_en_carga_total_muestra_todos(db, fiscal_client):
     c = CategoriaFactory(id=100, opciones=[])
     o = CategoriaOpcionFactory(categoria=c, opcion__orden=3, prioritaria=True).opcion
     o2 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=False).opcion
-    m = MesaFactory(categorias=[c])
+    mc = MesaCategoriaFactory(categoria=c)
     totales = reverse(
-        'mesa-cargar-resultados', args=[c.id, m.numero]
+        'carga-total', args=[mc.id]
     )
     response = fiscal_client.get(totales)
     assert len(response.context['formset']) == 2

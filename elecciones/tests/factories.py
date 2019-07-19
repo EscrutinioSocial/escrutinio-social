@@ -135,7 +135,7 @@ class MesaFactory(DjangoModelFactory):
             for categoria in extracted:
                 MesaCategoriaFactory(mesa=self, categoria=categoria)
         else:
-            MesaCategoriaFactory(mesa=self, categoria__nombre='default')
+            MesaCategoriaDefaultFactory(mesa=self)
 
 
 class MesaCategoriaFactory(DjangoModelFactory):
@@ -144,6 +144,10 @@ class MesaCategoriaFactory(DjangoModelFactory):
         django_get_or_create = ('mesa', 'categoria')
     mesa = factory.SubFactory(MesaFactory)
     categoria = factory.SubFactory(CategoriaFactory)
+
+
+class MesaCategoriaDefaultFactory(MesaCategoriaFactory):
+    categoria = factory.SubFactory(CategoriaFactory, nombre='default')
 
 
 class FiscalFactory(DjangoModelFactory):
