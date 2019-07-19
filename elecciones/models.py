@@ -381,7 +381,7 @@ class Mesa(models.Model):
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
 
-    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
+    prioridad = models.PositiveIntegerField(default=0)
 
     def categoria_add(self, categoria):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)

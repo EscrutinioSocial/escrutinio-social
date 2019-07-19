@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='mesa',
             name='prioridad',
-            field=models.PositiveIntegerField(default=0, validators=[django.core.validators.MaxValueValidator(9)]),
+            field=models.PositiveIntegerField(default=0),
         ),
         migrations.AddField(
             model_name='mesacategoria',
