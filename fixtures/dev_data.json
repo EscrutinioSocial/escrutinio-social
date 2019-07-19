@@ -592,6 +592,102 @@
   }
 },
 {
+  "model": "elecciones.mesacategoria",
+  "pk": 11,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 1,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 12,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 2,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 13,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 3,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 14,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 4,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 15,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 5,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 16,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 6,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 17,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 7,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 18,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 8,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
   "model": "elecciones.mesa",
   "pk": 1,
   "fields": {
