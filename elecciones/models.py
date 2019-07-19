@@ -623,6 +623,10 @@ class CategoriaOpcion(models.Model):
     class Meta:
         unique_together = ('categoria', 'opcion')
 
+    def __str__(self):
+        prioritaria = ' (es prioritaria)' if self.prioritaria else ''
+        return f'{self.categoria} - {self.opcion} {prioritaria}'
+
 
 class Carga(TimeStampedModel):
     """
