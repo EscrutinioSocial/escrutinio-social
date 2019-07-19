@@ -308,7 +308,7 @@ class MesaCategoria(models.Model):
 
     def release(self):
         """
-        Libera la mesa, es lo contrario de taken().
+        Libera la mesa, es lo contrario de take().
         """
         self.taken = None
         self.save(update_fields=['taken'])
