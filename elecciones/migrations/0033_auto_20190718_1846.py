@@ -58,7 +58,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='mesacategoria',
             name='orden_de_carga',
-            field=models.FloatField(blank=True, null=True),
+            field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name='mesacategoria',

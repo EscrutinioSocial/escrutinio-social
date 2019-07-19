@@ -1,5 +1,4 @@
 import pytest
-from pytest import approx
 from datetime import timedelta
 from django.utils import timezone
 from elecciones.tests.factories import (
@@ -101,12 +100,13 @@ def test_siguiente_prioriza_mesa(db):
     assert MesaCategoria.objects.siguiente() is None
 
 
-def test_actualizar_orden_de_carga(db):
+@pytest.mark.parametrize('total', [10, 40])
+def test_actualizar_orden_de_carga(db, total):
     c = CircuitoFactory()
-    MesaFactory.create_batch(10, circuito=c)
+    MesaFactory.create_batch(total, circuito=c)
     for i, mc in enumerate(MesaCategoria.objects.defer('orden_de_carga').all(), 1):
         mc.actualizar_orden_de_carga()
-        assert mc.orden_de_carga == approx(0.1 * i)
+        assert mc.orden_de_carga == int(round(i/total, 2) * 100)
 
 
 def test_identificadas_excluye_sin_orden(db):

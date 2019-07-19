@@ -297,10 +297,10 @@ class MesaCategoria(models.Model):
     # timestamp para dar un tiempo de guarda a la espera de una carga
     taken = models.DateTimeField(null=True, editable=False)
 
-    # coeficiente que se define como la proporcion de mesas
+    # entero que se define como el procentaje (redondeado) de mesas
     # ya identificadas todavia sin consolidar al momento de identificar la
     # mesa
-    orden_de_carga = models.FloatField(null=True, blank=True)
+    orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
 
     def take(self):
         self.taken = timezone.now()
@@ -322,9 +322,8 @@ class MesaCategoria(models.Model):
             mesa__circuito=self.mesa.circuito
         )
         total = en_circuito.count()
-        incremento = round(1 / total, 2)
-        maximo_actual = en_circuito.aggregate(v=Max('orden_de_carga'))['v'] or 0
-        self.orden_de_carga = maximo_actual + incremento
+        identificadas = en_circuito.identificadas().count()
+        self.orden_de_carga = int(round((identificadas + 1) / total, 2) * 100)
         self.save(update_fields=['orden_de_carga'])
 
     def firma_count(self):
