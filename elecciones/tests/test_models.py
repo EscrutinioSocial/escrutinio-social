@@ -9,7 +9,8 @@ from .factories import (
     CategoriaOpcionFactory,
     OpcionFactory,
 )
-from elecciones.models import MesaCategoria, Categoria, Identificacion, Carga
+from elecciones.models import MesaCategoria, Categoria, Carga
+from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga, consumir_novedades_identificacion
 
 
@@ -171,6 +172,16 @@ def test_mc_status_total_desde_mc_sin_carga(db):
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mc.carga_testigo == c2 or mc.carga_testigo == c1
+
+
+def test_total_consolidada_multi_carga_con_minimo_1(db, settings):
+    settings.MIN_COINCIDENCIAS_CARGAS = 1
+    mc = MesaCategoriaFactory()
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    c1 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert mc.carga_testigo == c1
 
 
 def test_mc_status_carga_total_desde_mc_parcial(db):

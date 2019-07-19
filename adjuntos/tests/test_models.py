@@ -5,7 +5,6 @@ from elecciones.tests.factories import (
     MesaFactory,
     IdentificacionFactory,
 )
-from django.utils import timezone
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
 
@@ -96,6 +95,18 @@ def test_identificacion_consolidada_alguna(db):
     cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 0
 
+    a.refresh_from_db()
+    assert a.identificacion_testigo == i1
+    assert a.mesa == m1
+    assert a.status == Attachment.STATUS.identificada
+
+
+def test_identificacion_consolidada_con_minimo_1(db, settings):
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
+    a = AttachmentFactory()
+    m1 = MesaFactory()
+    i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+    consumir_novedades_identificacion()
     a.refresh_from_db()
     assert a.identificacion_testigo == i1
     assert a.mesa == m1

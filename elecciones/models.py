@@ -4,8 +4,8 @@ from collections import defaultdict
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator
-from django.db import Q, models
-from django.db.models import Max, Sum, Count
+from django.db import models
+from django.db.models import Max, Sum, Count, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
