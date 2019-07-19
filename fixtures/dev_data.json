@@ -254,7 +254,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 1,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 1,
     "categoria": 1,
     "carga_testigo": null,
@@ -266,7 +266,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 2,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 2,
     "categoria": 1,
     "carga_testigo": null,
@@ -278,7 +278,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 3,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 3,
     "categoria": 1,
     "carga_testigo": null,
@@ -290,7 +290,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 4,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 4,
     "categoria": 1,
     "carga_testigo": null,
@@ -302,7 +302,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 5,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 5,
     "categoria": 1,
     "carga_testigo": null,
@@ -314,7 +314,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 6,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 6,
     "categoria": 1,
     "carga_testigo": null,
@@ -326,7 +326,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 7,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 7,
     "categoria": 1,
     "carga_testigo": null,
@@ -338,7 +338,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 8,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 8,
     "categoria": 1,
     "carga_testigo": null,
@@ -350,7 +350,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 9,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 8,
     "categoria": 2,
     "carga_testigo": null,
@@ -362,7 +362,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 10,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 7,
     "categoria": 2,
     "carga_testigo": null,

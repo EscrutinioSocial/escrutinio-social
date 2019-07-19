@@ -5,6 +5,16 @@ from django.db import migrations, models
 import model_utils.fields
 
 
+def update_status(apps, schema_editor):
+    MesaCategoria = apps.get_model("elecciones", "MesaCategoria")
+    MesaCategoria.objects.filter(status='sin_cargar').update(status='00_sin_cargar')
+
+
+def revert_status(apps, schema_editor):
+    MesaCategoria = apps.get_model("elecciones", "MesaCategoria")
+    MesaCategoria.objects.filter(status='00_sin_cargar').update(status='sin_cargar')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -65,4 +75,5 @@ class Migration(migrations.Migration):
             name='status',
             field=model_utils.fields.StatusField(choices=[(0, 'dummy')], default='00_sin_cargar', max_length=100, no_check_for_status=True),
         ),
+        migrations.RunPython(update_status, revert_status),
     ]
