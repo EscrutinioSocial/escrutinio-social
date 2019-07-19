@@ -40,6 +40,7 @@ class Fiscal(models.Model):
     tipo_dni = models.CharField(choices=TIPO_DNI, max_length=3, default='DNI')
     dni = models.CharField(max_length=15, blank=True, null=True)
     datos_de_contacto = GenericRelation('contacto.DatoDeContacto', related_query_name='fiscales')
+    troll = models.BooleanField(null=False, default=False)
     user = models.OneToOneField(
         'auth.User', null=True, blank=True, related_name='fiscal', on_delete=models.SET_NULL
     )
