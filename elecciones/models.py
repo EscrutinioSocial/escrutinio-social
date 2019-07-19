@@ -235,14 +235,20 @@ class MesaCategoriaQuerySet(models.QuerySet):
             Q(taken__isnull=True) | Q(taken__lt=desde)
         )
 
-    def sin_consolidar(self):
+    def sin_problemas(self):
+        """
+        Excluye las instancias que tengan problemas.
+        """
+        return self.exclude(status=MesaCategoria.STATUS.con_problemas)
+
+    def sin_consolidar_por_doble_carga(self):
         """
         Excluye las instancias no consolidadas con doble carga.
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
 
     def con_carga_pendiente(self):
-        return self.identificadas().no_taken().sin_consolidar()
+        return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
     def siguiente(self):
         """
@@ -283,6 +289,8 @@ class MesaCategoria(models.Model):
         ('60_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
         ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada csv'),
         ('80_total_consolidada_dc', 'total_consolidada_dc', 'tota consolidada dc'),
+        # No siguen en la carga.
+        ('90_con_problemas', 'con_problemas', 'con problemas')
     )
     status = StatusField(default=STATUS.sin_cargar)
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
@@ -530,16 +538,16 @@ class Categoria(models.Model):
     opciones = models.ManyToManyField(
         Opcion, through='CategoriaOpcion', related_name='categorias')
     color = models.CharField(
-        max_length=10, default='black', help_text='Color para css (Ej: red o #FF0000)'
+        max_length=10, default='black', help_text='Color para CSS (ej, red o #FF0000)'
     )
     back_color = models.CharField(
-        max_length=10, default='white', help_text='Color para css (red o #FF0000)'
+        max_length=10, default='white', help_text='Color para CSS (ej, red o #FF0000)'
     )
     activa = models.BooleanField(
         default=True,
         help_text=(
             'Si no está activa, no se cargan datos '
-            'para esta categoria y no se muestran resultados'
+            'para esta categoría y no se muestran resultados'
         )
     )
 
@@ -635,15 +643,17 @@ class Carga(TimeStampedModel):
     :class:`VotoMesaReportado`
     para las opciones válidas en la mesa-categoría.
     """
-    valida = models.BooleanField(null=False, default=True)
+    invalidada = models.BooleanField(null=False, default=False)
     TIPOS = Choices(
-        'falta_foto',
+        'problema',
         'parcial',
         'total'
     )
-    SOURCES = Choices('web', 'csv', 'telegram')
     tipo = models.CharField(max_length=50, choices=TIPOS, null=True, blank=True)
+
+    SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
+
     mesa_categoria = models.ForeignKey(
         MesaCategoria, related_name='cargas', on_delete=models.CASCADE
     )
@@ -656,6 +666,10 @@ class Carga(TimeStampedModel):
     @property
     def mesa(self):
         return self.mesa_categoria.mesa
+
+    def invalidar(self):
+        self.invalidada = True
+        self.save(update_fields=['invalidada'])
 
     @property
     def categoria(self):

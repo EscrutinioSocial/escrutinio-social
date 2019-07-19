@@ -33,7 +33,6 @@ from .models import (
     Partido,
     Opcion,
     VotoMesaReportado,
-    Carga,
     LugarVotacion,
     MesaCategoria,
     Mesa,
@@ -67,7 +66,7 @@ class VisualizadoresOnlyMixin:
     def dispatch(self, request, *args, **kwargs):
         if request.user.fiscal.esta_en_grupo('visualizadores'):
             return super().dispatch(request, *args, **kwargs)
-        
+
         return HttpResponseForbidden()
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):

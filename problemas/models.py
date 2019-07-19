@@ -12,13 +12,15 @@ class ReporteDeProblema(TimeStampedModel):
     TIPOS_DE_PROBLEMA = Choices(
         ('spam', 'Es SPAM'),
         ('invalida', 'Es inválida'),
-        ('ilegible', 'No se entiende')
+        ('ilegible', 'No se entiende'),
+        ('falta_foto', 'La parte que es necesario cargar no está entre las fotos presentes')
     )
     # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
     #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
     #     todos los datos de identificación.
     # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
     # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
+    # Falta foto: la parte que es necesario cargar no está entre las fotos presentes.
 
     tipo_de_problema = models.CharField(max_length=100, null=True, blank=True, choices=TIPOS_DE_PROBLEMA)
 
@@ -34,18 +36,18 @@ class ReporteDeProblema(TimeStampedModel):
 class Problema(TimeStampedModel):
     ESTADOS = Choices(
         'potencial', # Todavía no se confirmó que exista de verdad.
-        'pendiente',
-        'en_curso',
+        'pendiente', # Confirmado y no se resolvió aún.
+        'en_curso',  # Ídem anterior pero ya fue visto.
         'resuelto',
     )
 
     # O bien tiene un attach o una mesa.
-    attachment = models.ForeignKey('adjuntos.Attachment', null=True, related_name='problemas', on_delete=models.CASCADE)
-    mesa = models.ForeignKey('elecciones.Mesa', null=True, related_name='problemas', on_delete=models.CASCADE)
+    attachment = models.ForeignKey('adjuntos.Attachment', null=True, blank=True, related_name='problemas', on_delete=models.CASCADE)
+    mesa = models.ForeignKey('elecciones.Mesa', null=True, blank=True, related_name='problemas', on_delete=models.CASCADE)
 
     estado = models.CharField(max_length=100, null=True, blank=True, choices=ESTADOS)
     resuelto_por = models.ForeignKey(
-        'auth.User', null=True, on_delete=models.SET_NULL
+        'auth.User', null=True, blank=True, on_delete=models.SET_NULL
     )
 
     @classmethod

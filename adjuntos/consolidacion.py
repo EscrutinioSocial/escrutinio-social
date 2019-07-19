@@ -69,6 +69,12 @@ def consolidar_cargas_por_tipo(cargas, tipo):
 
     return status_resultante, carga_testigo_resultante
 
+def consolidar_cargas_con_problemas(cargas_que_reportan_problemas, status_hasta_el_momento, carga_testigo_hasta_el_momento):
+    if not cargas_que_reportan_problemas.count() > settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA:
+        return status_hasta_el_momento, carga_testigo_hasta_el_momento
+
+    # Tiene problemas.
+    return Carga.STATUS.cargas_con_problemas, None
 
 def consolidar_cargas(mesa_categoria):
     """
@@ -80,7 +86,7 @@ def consolidar_cargas(mesa_categoria):
     carga_testigo_resultante = None
 
     # Obtengo todas las cargas actualmente válidas para mesa_categoria.
-    cargas = mesa_categoria.cargas.filter(valida=True)
+    cargas = mesa_categoria.cargas.filter(invalidada=False)
 
     # Si no hay cargas, no sigo.
     if cargas.count() == 0:
@@ -101,12 +107,22 @@ def consolidar_cargas(mesa_categoria):
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
 
-    # Por último analizo las parciales.
+    # Analizo las parciales.
     cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
     if cargas_parciales.count() > 0:
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_por_tipo(cargas_parciales, Carga.TIPOS.parcial)
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        return
+
+    # Por último me fijo si es un problema.
+    cargas_que_reportan_problemas = cargas.filter(tipo=Carga.TIPOS.problema)
+    if cargas_que_reportan_problemas.count() > 0:
+        status_resultante, carga_testigo_resultante = \
+            consolidar_cargas_con_problemas(cargas_que_reportan_problemas,
+                status_resultante, carga_testigo_resultante)
+    
+    mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
 
 
 def consolidar_identificaciones(attachment):
