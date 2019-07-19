@@ -155,7 +155,7 @@ class AgregarAdjuntos(FormView):
                     messages.warning(self.request, f'{f.name} ya existe en el sistema' )
 
             if c:
-                messages.success(self.request, f'Subiste {c} imagenes de actas. Gracias!')
+                messages.success(self.request, f'Subiste {c} imágenes de actas. Gracias!')
             return redirect('agregar-adjuntos')
         else:
             return self.form_invalid(form)

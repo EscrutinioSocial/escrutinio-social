@@ -308,7 +308,7 @@ class MesaCategoria(models.Model):
 
     def release(self):
         """
-        Libera la mesa, es lo contrario de taken().
+        Libera la mesa, es lo contrario de take().
         """
         self.taken = None
         self.save(update_fields=['taken'])
@@ -621,6 +621,10 @@ class CategoriaOpcion(models.Model):
 
     class Meta:
         unique_together = ('categoria', 'opcion')
+
+    def __str__(self):
+        prioritaria = ' (es prioritaria)' if self.prioritaria else ''
+        return f'{self.categoria} - {self.opcion} {prioritaria}'
 
 
 class Carga(TimeStampedModel):

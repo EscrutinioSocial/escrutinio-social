@@ -126,7 +126,7 @@ class Attachment(TimeStampedModel):
 
     def release(self):
         """
-        Libera una mesa, es lo contrario de taken().
+        Libera una mesa, es lo contrario de take().
         """
         self.taken = None
         self.save(update_fields=['taken'])
