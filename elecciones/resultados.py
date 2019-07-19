@@ -195,7 +195,7 @@ class Resultados():
             categorias__id=categoria.id,
             partido__isnull=True,
             es_metadata=False
-        ).values_list('nombre', 'id')
+        ).values_list('id', flat=True)
 
         sum_por_opcion = {}
         for id in ids_opciones:
@@ -208,73 +208,12 @@ class Resultados():
 
         return self.votos_reportados(categoria, mesas).aggregate(**sum_por_opcion)
 
-    def votos_positivos(self, categoria, mesas):
-        """
-        Dada una categoría, devuelve una tabla de resultados con la cantidad de 
-        votos por cada partido político.
-
-        Se utilizan expresiones condicionales. Referencia
-        https://docs.djangoproject.com/en/2.2/ref/models/conditional-expressions/
-        """
-
-        ids_partidos = Partido.objects.filter(
-            opciones__categorias__id=categoria.id).distinct().values_list('id', flat=True)
-
-        sum_por_partido = {}
-        for id in ids_partidos:
-            sum_por_partido[str(id)] = Sum(
-                Case(
-                    When(opcion__id=id, then=F('votos')),
-                    default=Value(0),
-                    output_field=IntegerField()
-                )
-            )
-
-        return self.votos_reportados(categoria, mesas).aggregate(**sum_por_partido)
-
-    def votos_no_positivos(self, categoria, mesas):
-        """
-        Dada una categoría, devuelve una tabla de resultados con la cantidad de 
-        votos por cada una de las opciones no positivas.
-
-        Se utilizan expresiones condicionales. Referencia
-        https://docs.djangoproject.com/en/2.2/ref/models/conditional-expressions/
-        """
-        ids_opciones_no_partidarias = Opcion.objects.filter(
-            categorias__id=categoria.id,
-            partido__isnull=True,
-            es_metadata=False
-        ).values_list('nombre', 'id')
-
-        sum_por_opcion_no_partidaria = {}
-        for nombre, id in ids_opciones_no_partidarias:
-            sum_por_opcion_no_partidaria[nombre] = Sum(
-                Case(
-                    When(
-                        opcion__id=id,
-                        then=F('votos'),
-                        **self.cargas_a_considerar_status_filter(categoria)
-                    ), output_field=IntegerField()
-                )
-            )
-
-        # Me quedo con los votos reportados pertenecientes a las "cargas testigo"
-        # # de las mesas que corresponden de acuerdo a los parámetros y la categoría.
-        votos_reportados = VotoMesaReportado.objects.filter(
-            carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
-            carga__es_testigo__isnull=False,
-            **self.cargas_a_considerar_status_filter(categoria)
-        )
-
-        return votos_reportados.aggregate(**sum_por_opcion_no_partidaria)
-
     def calcular(self, categoria, mesas):
         """
         Implementa los cómputos esenciales de la categoría para las mesas dadas.
         Se invoca una vez para el cálculo de resultados y N veces para los proyectados.
 
         Devuelve
-
             electores: cantidad de electores en las mesas válidas de la categoría
             electores_en_mesas_escrutadas: cantidad de electores en las mesas que efectivamente fueron escrutadas
             porcentaje_mesas_escrutadas:
@@ -322,7 +261,7 @@ class Resultados():
         for partido, votos_por_opcion in votos_por_partido.items():
             total_partido = sum(votos_por_opcion.values())
             votos_positivos[partido] = {
-                'total': total_partido,
+                'votos': total_partido,
                 'detalle': {
                     opcion: {
                         'votos': votos,
@@ -333,30 +272,9 @@ class Resultados():
 
         total_positivos = sum(votos['total'] for votos in votos_positivos.values())
 
-        # 3.2) Opciones no partidarias.
-        votos_no_positivos = self.votos_no_positivos(categoria, mesas)
-        # result_opc = {k: v for k, v in result_opc.items() if v is not None}
-
         # Calculamos el total como la suma de todos los positivos y los válidos no positivos.
         total = total_positivos + sum(votos_no_positivos.values())
-        votos_no_positivos_con_porcentajes = {
-            op_nom: {
-                'votos': op_votos if op_votos else "0",
-                'porcentaje': porcentaje(op_votos, total)
-            } for op_nom, op_votos in votos_no_positivos.items()
-        }
 
-        votos_no_positivos_con_porcentajes = {
-            Partido.objects.get(id=k): {
-                'total': v,
-                'detalle': {
-                    'opcion-fake': {
-                        'votos': v,  # op_votos if op_votos else "0",
-                        'porcentaje': porcentaje(v, v)
-                    }  # for op_nom, op_votos in votos_no_positivos.items()
-                }
-            } for k, v in votos_no_positivos.items() if v is not None
-        }
         return AttrDict({
             "total_mesas": total_mesas,
             "total_mesas_escrutadas": total_mesas_escrutadas,
@@ -365,8 +283,8 @@ class Resultados():
             "electores": electores,
             "electores_en_mesas_escrutadas": electores_en_mesas_escrutadas,
 
-            "votos": votos_positivos_con_porcentajes,
-            "votos_no_positivos": votos_no_positivos_con_porcentajes,
+            "votos": votos_positivos,
+            "votos_no_positivos": votos_no_positivos,
             "total_positivos": total_positivos,
             "total": total,
         })
@@ -376,28 +294,14 @@ class Resultados():
         Realiza la contabilidad para la categoría, invocando al método
         ``calcular``.
         """
-        resultados = {}
-
         mesas = self.mesas(categoria)
+        resultados = self.calcular(categoria, mesas)
 
-        c = self.calcular(categoria, mesas)
-
-        expanded_result = {}
-        for k, v in c.votos.items():
-            if isinstance(v, dict):
-                d = v['detalle']
-                v = v['total']
-            else:
-                d = {}
-
-            porcentaje_total = porcentaje(v, c.total)
-            porcentaje_positivos = porcentaje(v, c.positivos) if isinstance(k, Partido) else '-'
-            expanded_result[k] = {
-                "votos": v,
-                "detalle": d,
-                "porcentaje_total": porcentaje_total,
-                "porcentaje_positivos": porcentaje_positivos
-            }
+        for data in resultados.votos.values():
+            data.update({
+                "porcentaje_total": porcentaje(data.votos, resultados.total),
+                "porcentaje_positivos": porcentaje(data.votos, resultados.positivos)
+            })
 
             # if proyectado:
             #     acumulador_positivos = 0
@@ -416,39 +320,37 @@ class Resultados():
         # TODO permitir opciones positivas no asociadas a partido.
         tabla_positivos = OrderedDict(
             sorted(
-                [(k, v) for k, v in expanded_result.items()
-                 if isinstance(k, Partido)],
-                key=lambda x: float(x[1]["votos"]), reverse=True
+                resultados.votos.items(),
+                key=lambda partido: float(partido[1]["votos"]),
+                reverse=True
             )
         )
-        tabla_no_positivos = {
-            k: v for k, v in c.votos.items() if not isinstance(k, Partido)}
-        tabla_no_positivos["Positivos"] = c.positivos
-        tabla_no_positivos = {
-            k: {
-                "votos": v,
-                "porcentaje_total": porcentaje(v, c.total)
-            } for k, v in tabla_no_positivos.items()
-        }
 
-        resultados = {
+        tabla_no_positivos = {
+            nombre_opcion: {
+                "votos": votos,
+                "porcentaje_total": porcentaje(votos, resultados.total)
+            } for nombre_opcion, votos in resultados.votos_no_positivos.items()
+        }
+        tabla_no_positivos["Positivos"] = resultados.total_positivos
+
+        return {
             'tabla_positivos': tabla_positivos,
             'tabla_no_positivos': tabla_no_positivos,
 
-            'electores': c.electores,
-            'positivos': c.positivos,
-            'electores_en_mesas_escrutadas': c.electores_en_mesas_escrutadas,
-            'votantes': c.total,
+            'electores': resultados.electores,
+            'positivos': resultados.total_positivos,
+            'electores_en_mesas_escrutadas': resultados.electores_en_mesas_escrutadas,
+            'votantes': resultados.total,
 
             # 'proyectado': proyectado,
             # 'proyeccion_incompleta': proyeccion_incompleta,
-            'porcentaje_mesas_escrutadas': c.porcentaje_mesas_escrutadas,
-            'porcentaje_escrutado': porcentaje(c.electores_en_mesas_escrutadas, c.electores),
-            'porcentaje_participacion': porcentaje(c.total, c.electores_en_mesas_escrutadas),
-            'total_mesas_escrutadas': c.total_mesas_escrutadas,
-            'total_mesas': c.total_mesas
+            'porcentaje_mesas_escrutadas': resultados.porcentaje_mesas_escrutadas,
+            'porcentaje_escrutado': porcentaje(resultados.electores_en_mesas_escrutadas, resultados.electores),
+            'porcentaje_participacion': porcentaje(resultados.total, resultados.electores_en_mesas_escrutadas),
+            'total_mesas_escrutadas': resultados.total_mesas_escrutadas,
+            'total_mesas': resultados.total_mesas
         }
-        return resultados
 
     @classmethod
     def get_tipos_sumarizacion(cls):

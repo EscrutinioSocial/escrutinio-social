@@ -196,8 +196,7 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tipos_sumarizacion'] = Resultados.get_tipos_sumarizacion()
-        context['tipo_sumarizacion_seleccionado'] = self.request.GET.get(
-            'tipodesumarizacion', '1')
+        context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
 
         if self.filtros:
             context['para'] = get_text_list(
