@@ -95,6 +95,10 @@ class Problema(TimeStampedModel):
         self.estado = self.ESTADOS.pendiente
         self.save(update_fields=['estado'])
 
+    def aceptar(self):
+        self.estado = self.ESTADOS.en_curso
+        self.save(update_fields=['estado'])
+
     def resolver(self, resuelto_por):
         self.resolver_con_estado(self.ESTADOS.resuelto, resuelto_por)
 

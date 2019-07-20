@@ -4,8 +4,12 @@ from django.contrib import messages
 from .models import Problema
 from elecciones.views import StaffOnlyMixing
 from elecciones.models import Mesa
+from django.contrib.auth.decorators import user_passes_test, login_required
 
+NO_PERMISSION_REDIRECT = 'permission-denied'
 
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 class ProblemaCreate(StaffOnlyMixing, CreateView):
     model = Problema
     template_name = "problemas/problema.html"
@@ -27,29 +31,26 @@ class ProblemaCreate(StaffOnlyMixing, CreateView):
         messages.success(self.request, 'El problema fue reportado. Gracias.')
         return redirect('siguiente-accion')
 
-class ProblemaResolve(StaffOnlyMixing, CreateView):
-    http_method_names = ['post']
-    identificacion_creada = None
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('supervisores'), login_url=NO_PERMISSION_REDIRECT)
+def cambiar_estado_problema(request, problema_id, nuevo_estado):
+    problema = get_object_or_404(Problema, id=problema_id)
 
-    def form_valid(self, form):
-        fiscal = self.request.user.fiscal
-        identificacion = form.save(commit=False)
-        identificacion.attachment = self.attachment
-        identificacion.fiscal = fiscal
-        identificacion.status = Identificacion.STATUS.problema
-        identificacion.save()
+    if nuevo_estado == Problema.ESTADOS.en_curso:
+        problema.aceptar()
+    elif nuevo_estado == Problema.ESTADOS.resuelto:
+        problema.resolver(request.user)
+    elif nuevo_estado == Problema.ESTADOS.descartado:
+        problema.descartar(request.user)
 
-        # XXX TOdo mal.
+    mensaje = {
+        Problema.ESTADOS.en_curso: 'confirmado',
+        Problema.ESTADOS.resuelto: 'resuelto',
+        Problema.ESTADOS.descartado: 'descartado'
+    }
 
-        # Creo el problema asociado.
-        tipo_de_problema = ReporteDeProblema.TIPOS_DE_PROBLEMA.spam # XXX Seleccionar el apropiado.
-        descripcion = None # Tomar input del usuario.
-        Problema.reportar_problema(fiscal, descripcion, tipo_de_problema, identificacion=identificacion)
-
-        self.identificacion_creada = identificacion
-        messages.info(
-            self.request,
-            f'Guardado como "{identificacion.get_status_display()}"',
-        )
-        return redirect(self.get_success_url())
-
+    messages.info(
+        request,
+        f'Problema {problema.id} {mensaje[nuevo_estado]}.',
+    )
+    return redirect('admin:problemas_problema_changelist')

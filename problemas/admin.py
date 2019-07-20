@@ -24,12 +24,14 @@ class ConsolidatedInline(admin.StackedInline):
 class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def mesa_(o):
-        return format_html(f'<a href="/admin/elecciones/mesa/?id={o.mesa.id}">{o.mesa}</a>')
+        if o.mesa:
+            return format_html(f'<a href="/admin/elecciones/mesa/?id={o.mesa.id}">{o.mesa}</a>')
     mesa_.allow_tags = True
     mesa_.short_description = "Nro de mesa"
 
     def attachment_(o):
-        return format_html(f'<a href="/admin/adjuntos/attachment/?id={o.attachment.id}">{o.attachment}</a>')
+        if o.attachment:
+            return format_html(f'<a href="/admin/adjuntos/attachment/?id={o.attachment.id}">{o.attachment}</a>')
     attachment_.allow_tags = True
     attachment_.short_description = "Attachment"
 
@@ -40,13 +42,18 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     def get_row_actions(self, obj):
         row_actions = []
         row_actions.append({
-            'label': 'Confirmar',
-            'url': reverse('confirmar-problema', args=[obj.id]),
+            'label': 'Aceptar',
+            'url': reverse('cambiar-estado-problema', args=[obj.id, Problema.ESTADOS.en_curso]),
+            'enabled': True
+        })
+        row_actions.append({
+            'label': 'Resolver',
+            'url': reverse('cambiar-estado-problema', args=[obj.id, Problema.ESTADOS.resuelto]),
             'enabled': True
         })
         row_actions.append({
             'label': 'Descartar',
-            'url': reverse('descartar-problema', args=[obj.id]),
+            'url': reverse('cambiar-estado-problema', args=[obj.id, Problema.ESTADOS.descartado]),
             'enabled': True
         })
 
