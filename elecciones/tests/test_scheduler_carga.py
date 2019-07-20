@@ -12,6 +12,7 @@ from elecciones.tests.factories import (
 )
 from elecciones.models import MesaCategoria, Mesa
 from adjuntos.consolidacion import consumir_novedades_identificacion
+from problemas.models import Problema, ReporteDeProblema
 
 
 def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
@@ -136,24 +137,3 @@ def test_no_taken_incluye_taken_vencido(db):
     assert mc2.taken is not None
     assert mc1 not in MesaCategoria.objects.no_taken()
     assert mc2 in MesaCategoria.objects.no_taken()
-
-
-@pytest.mark.skip('Criterios de exclusion relacionados a problemas no implementado')
-def test_con_carga_pendiente_excluye_si_tiene_problema_no_resuelto(db):
-    m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
-    m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
-    ProblemaFactory(mesa=m1)
-    consumir_novedades_identificacion()
-    assert set(Mesa.con_carga_pendiente()) == {m2}
-
-
-@pytest.mark.skip('Criterios de exclusion relacionados a problemas no implementado')
-def test_con_carga_pendiente_incluye_si_tiene_problema_resuelto(db):
-    m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
-    m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
-    ProblemaFactory(mesa=m1, estado='resuelto')
-    consumir_novedades_identificacion()
-    assert set(Mesa.con_carga_pendiente()) == {m1, m2}
-    # nuevo problema
-    ProblemaFactory(mesa=m1)
-    assert set(Mesa.con_carga_pendiente()) == {m2}

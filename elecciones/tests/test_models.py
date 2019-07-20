@@ -10,7 +10,7 @@ from .factories import (
     OpcionFactory,
     FiscalFactory,
 )
-from elecciones.models import MesaCategoria, Categoria, Carga
+from elecciones.models import MesaCategoria, Categoria, Carga, Mesa
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga, consumir_novedades_identificacion
 from problemas.models import Problema, ReporteDeProblema
@@ -254,7 +254,14 @@ def test_mc_status_total_csv_desde_mc_sin_carga(db):
     assert mc.carga_testigo == c2 or mc.carga_testigo == c1
 
 def test_carga_con_problemas(db):
-    mc = MesaCategoriaFactory()
+    # Identifico una mesa.
+    mesa = MesaFactory()
+    a = AttachmentFactory()
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+
+    consumir_novedades_identificacion()
+    mc = MesaCategoriaFactory(mesa=mesa, categoria=mesa.categorias.first())
     assert mc.status == MesaCategoria.STATUS.sin_cargar
     c1 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
     consumir_novedades_y_actualizar_objetos([mc])
@@ -270,6 +277,9 @@ def test_carga_con_problemas(db):
     assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mc.carga_testigo == c1
     assert c2.problemas.first().problema.estado == Problema.ESTADOS.potencial
+
+    # Está entre las pendientes.
+    assert mc in MesaCategoria.objects.con_carga_pendiente()
 
     c3 = CargaFactory(mesa_categoria=mc, tipo='problema')
     Problema.reportar_problema(FiscalFactory(), 'reporte 2', 
@@ -287,6 +297,9 @@ def test_carga_con_problemas(db):
     problema = c2.problemas.first().problema
     assert problema.estado == Problema.ESTADOS.pendiente
 
+    # No está entre las pendientes.
+    assert mc not in MesaCategoria.objects.con_carga_pendiente()
+
     # Lo resolvemos.
     problema.resolver(FiscalFactory().user)
 
@@ -302,6 +315,9 @@ def test_carga_con_problemas(db):
     # El problema se solucionó también en la MesaCategoria.
     assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mc.carga_testigo == c1
+
+    # Está entre las pendientes.
+    assert mc in MesaCategoria.objects.con_carga_pendiente()
 
     # Se mete otra carga y se consolida.
     c4 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')

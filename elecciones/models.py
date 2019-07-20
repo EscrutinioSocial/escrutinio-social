@@ -218,14 +218,14 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def identificadas(self):
         """
-        filtra instancias que tengan orden de carga definido
-        (que se produce cuando hay un primer attachment consolidado)
+        Filtra instancias que tengan orden de carga definido
+        (que se produce cuando hay un primer attachment consolidado).
         """
         return self.filter(orden_de_carga__isnull=False)
 
     def no_taken(self):
         """
-        Filtra no esté tomada dentro de los últimos
+        Filtra que no esté tomada dentro de los últimos
         ``settings.MESA_TAKE_WAIT_TIME`` minutos,
         """
         wait = settings.MESA_TAKE_WAIT_TIME
@@ -252,8 +252,8 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def siguiente(self):
         """
-        devuelve la siguiente mesacategoria en orden de prioridad
-        de carga
+        Devuelve la siguiente MesaCategoria en orden de prioridad
+        de carga.
         """
         return self.con_carga_pendiente().order_by(
             'status',

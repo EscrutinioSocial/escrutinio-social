@@ -239,11 +239,10 @@ def consumir_novedades():
 @receiver(post_save, sender=Attachment)
 def actualizar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     if instance.mesa and instance.identificacion_testigo:
-        # TO DO: evaluar si un nuevo attachment para una mesa ya identificada
-        # (es decir, con orden de carga ya definido) deberia volver a actualizar
+        # Un nuevo attachment para una mesa ya identificada
+        # (es decir, con orden de carga ya definido) la vuelve a actualizar.
         a_actualizar = MesaCategoria.objects.filter(
-            mesa=instance.mesa,
-            orden_de_carga__isnull=True
+            mesa=instance.mesa
         )
         for mc in a_actualizar:
             mc.actualizar_orden_de_carga()

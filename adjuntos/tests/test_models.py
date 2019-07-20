@@ -138,6 +138,9 @@ def test_ciclo_de_vida_problemas_resolver(db):
     m1 = MesaFactory()
     IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
 
+    # Está pendiente.
+    assert a in Attachment.sin_identificar()
+
     i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
     f = FiscalFactory()
     Problema.reportar_problema(f, 'reporte 1', 
@@ -158,6 +161,9 @@ def test_ciclo_de_vida_problemas_resolver(db):
     assert a.status == Attachment.STATUS.problema
     problema = i1.problemas.first().problema
     assert problema.estado == Problema.ESTADOS.pendiente
+
+    # El attach no está entre los pendientes.
+    assert a not in Attachment.sin_identificar()
 
     problema.resolver(FiscalFactory().user)
 
