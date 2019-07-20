@@ -73,7 +73,11 @@ def consolidar_cargas_con_problemas(cargas_que_reportan_problemas, status_hasta_
     if not cargas_que_reportan_problemas.count() > settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA:
         return status_hasta_el_momento, carga_testigo_hasta_el_momento
 
-    # Tiene problemas.
+    # Tomo como "muestra" alguna de las que tienen problemas.
+    carga_con_problema = cargas_que_reportan_problemas.first()
+    # Confirmo el problema porque varios reportaron problemas.
+    problema = Problema.confirmar_problema(carga=carga_con_problema)
+
     return Carga.STATUS.cargas_con_problemas, None
 
 def consolidar_cargas(mesa_categoria):
@@ -165,6 +169,10 @@ def consolidar_identificaciones(attachment):
         # Identifico el attachment.
         status_attachment = testigo.status
         mesa_attachment = testigo.mesa
+
+        # Si tenía asociado un problema de "falta hoja", se soluciona automáticamente
+        # porque se agregó un attachment.
+        Problema.resolver_problema_falta_hoja(identificacion=testigo)
 
         # TODO - para reportar trolls
         # sumar 200 a scoring de los usuarios que identificaron el acta diferente
