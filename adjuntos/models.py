@@ -88,9 +88,7 @@ class Attachment(TimeStampedModel):
         'identificada',
         ('spam', 'La foto no es ni de un acta ni de un certificado.'),
         ('invalida', 'Falla alguna validación del sistema.'),
-        ('ilegible', 'La foto es de un acta pero no la puedo leer.'),
-        ('mesa_tomada','El sistema no acepta la mesa de la que es esta foto.'),
-        ('Falta imagen','Falta hoja del acta para cargar esta opción.')
+        ('ilegible', 'La foto es de un acta pero no la puedo leer.')
         )
     status = StatusField(default=STATUS.sin_identificar)
     mesa = models.ForeignKey(
