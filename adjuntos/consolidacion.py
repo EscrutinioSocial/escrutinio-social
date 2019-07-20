@@ -69,16 +69,14 @@ def consolidar_cargas_por_tipo(cargas, tipo):
 
     return status_resultante, carga_testigo_resultante
 
-def consolidar_cargas_con_problemas(cargas_que_reportan_problemas, status_hasta_el_momento, carga_testigo_hasta_el_momento):
-    if not cargas_que_reportan_problemas.count() > settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA:
-        return status_hasta_el_momento, carga_testigo_hasta_el_momento
+def consolidar_cargas_con_problemas(cargas_que_reportan_problemas):
 
     # Tomo como "muestra" alguna de las que tienen problemas.
     carga_con_problema = cargas_que_reportan_problemas.first()
     # Confirmo el problema porque varios reportaron problemas.
     problema = Problema.confirmar_problema(carga=carga_con_problema)
 
-    return Carga.STATUS.cargas_con_problemas, None
+    return MesaCategoria.STATUS.con_problemas, None
 
 def consolidar_cargas(mesa_categoria):
     """
@@ -97,7 +95,17 @@ def consolidar_cargas(mesa_categoria):
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
 
-    # Hay cargas. A continuación voy probando los distintos status de mayor a menor.
+    # Hay cargas.
+
+    # Me fijo si es un problema.
+    cargas_que_reportan_problemas = cargas.filter(tipo=Carga.TIPOS.problema)
+    if cargas_que_reportan_problemas.count() >= settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA:
+        status_resultante, carga_testigo_resultante = \
+            consolidar_cargas_con_problemas(cargas_que_reportan_problemas)
+        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        return
+
+    # A continuación voy probando los distintos status de mayor a menor.
 
     # Primero les actualizo la firma.
     for carga in cargas:
@@ -116,16 +124,7 @@ def consolidar_cargas(mesa_categoria):
     if cargas_parciales.count() > 0:
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_por_tipo(cargas_parciales, Carga.TIPOS.parcial)
-        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
-        return
 
-    # Por último me fijo si es un problema.
-    cargas_que_reportan_problemas = cargas.filter(tipo=Carga.TIPOS.problema)
-    if cargas_que_reportan_problemas.count() > 0:
-        status_resultante, carga_testigo_resultante = \
-            consolidar_cargas_con_problemas(cargas_que_reportan_problemas,
-                status_resultante, carga_testigo_resultante)
-    
     mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
 
 
@@ -172,7 +171,7 @@ def consolidar_identificaciones(attachment):
 
         # Si tenía asociado un problema de "falta hoja", se soluciona automáticamente
         # porque se agregó un attachment.
-        Problema.resolver_problema_falta_hoja(identificacion=testigo)
+        Problema.resolver_problema_falta_hoja(mesa_attachment)
 
         # TODO - para reportar trolls
         # sumar 200 a scoring de los usuarios que identificaron el acta diferente

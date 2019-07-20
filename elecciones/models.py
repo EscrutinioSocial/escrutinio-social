@@ -669,7 +669,8 @@ class Carga(TimeStampedModel):
 
     def invalidar(self):
         self.invalidada = True
-        self.save(update_fields=['invalidada'])
+        self.procesada = False
+        self.save(update_fields=['invalidada', 'procesada'])
 
     @property
     def categoria(self):
@@ -698,7 +699,8 @@ class Carga(TimeStampedModel):
         self.save(update_fields=['firma'])
 
     def __str__(self):
-        return f'carga de {self.mesa} / {self.categoria} por {self.fiscal}'
+        str_invalidada = ' (invalidada) ' if self.invalidada else ' '
+        return f'carga{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'
 
 
 class VotoMesaReportado(models.Model):

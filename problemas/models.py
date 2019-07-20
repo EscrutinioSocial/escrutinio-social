@@ -70,14 +70,13 @@ class Problema(TimeStampedModel):
         problema.confirmar()
 
     @classmethod
-    def resolver_problema_falta_hoja(cls, identificacion):
+    def resolver_problema_falta_hoja(cls, mesa):
         """
         Este método debe ser ejecutado cuando llega un nuevo attachment.
         Su función es marcar como resuelto un problema de falta de hoja.
         """
-        attachment = identificacion.attachment
         problema = cls.objects.filter(
-            attachment=attachment
+            mesa=mesa
         ).exclude(
             # Me quedo con los problemas abiertos.
             estado__in=[cls.ESTADOS.resuelto, cls.ESTADOS.descartado]
@@ -87,7 +86,7 @@ class Problema(TimeStampedModel):
         ).first()
 
         if problema:
-            problema.resolver(resuelto_por)
+            problema.resolver(None) # Pongo None como quien lo resolvió.
 
 
     def confirmar(self):

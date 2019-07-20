@@ -8,11 +8,12 @@ from .factories import (
     IdentificacionFactory,
     CategoriaOpcionFactory,
     OpcionFactory,
+    FiscalFactory,
 )
 from elecciones.models import MesaCategoria, Categoria, Carga
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga, consumir_novedades_identificacion
-
+from problemas.models import Problema, ReporteDeProblema
 
 def consumir_novedades_y_actualizar_objetos(lista=None):
     consumir_novedades_carga()
@@ -251,3 +252,99 @@ def test_mc_status_total_csv_desde_mc_sin_carga(db):
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mc.carga_testigo == c2 or mc.carga_testigo == c1
+
+def test_carga_con_problemas(db):
+    mc = MesaCategoriaFactory()
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    c1 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
+
+    c2 = CargaFactory(mesa_categoria=mc, tipo='problema')
+    Problema.reportar_problema(FiscalFactory(), 'reporte 1', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, carga=c2)
+    consumir_novedades_y_actualizar_objetos([mc])
+
+    # Sigue sin ser un problema.
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
+    assert c2.problemas.first().problema.estado == Problema.ESTADOS.potencial
+
+    c3 = CargaFactory(mesa_categoria=mc, tipo='problema')
+    Problema.reportar_problema(FiscalFactory(), 'reporte 2', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, carga=c3)
+    consumir_novedades_y_actualizar_objetos([mc])
+
+    c2.refresh_from_db()
+    c3.refresh_from_db()
+    assert c2.invalidada == False
+    assert c3.invalidada == False
+
+    # Ahora sí hay un problema.
+    assert mc.status == MesaCategoria.STATUS.con_problemas
+    assert mc.carga_testigo is None
+    problema = c2.problemas.first().problema
+    assert problema.estado == Problema.ESTADOS.pendiente
+
+    # Lo resolvemos.
+    problema.resolver(FiscalFactory().user)
+
+    assert problema.estado == Problema.ESTADOS.resuelto
+    c1.refresh_from_db()
+    c2.refresh_from_db()
+    c3.refresh_from_db()
+    assert c1.invalidada == False
+    assert c2.invalidada == True
+    assert c3.invalidada == True
+
+    consumir_novedades_y_actualizar_objetos([mc])
+    # El problema se solucionó también en la MesaCategoria.
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
+
+    # Se mete otra carga y se consolida.
+    c4 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert mc.carga_testigo == c4 or mc.carga_testigo == c1
+
+def test_problema_falta_foto(db):
+    mc = MesaCategoriaFactory()
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    c1 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
+
+    c2 = CargaFactory(mesa_categoria=mc, tipo='problema')
+    Problema.reportar_problema(FiscalFactory(), 'falta foto!', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.falta_foto, carga=c2)
+    c3 = CargaFactory(mesa_categoria=mc, tipo='problema')
+    Problema.reportar_problema(FiscalFactory(), 'spam!', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, carga=c2)
+    consumir_novedades_y_actualizar_objetos([mc])
+
+    # Ahora sí hay un problema.
+    assert mc.status == MesaCategoria.STATUS.con_problemas
+    assert mc.carga_testigo is None
+    problema = c2.problemas.first().problema
+    assert problema.estado == Problema.ESTADOS.pendiente
+
+    # Llega un nuevo attachment.
+    a = AttachmentFactory()
+    mesa = mc.mesa
+    # Lo asocio a la misma mesa.
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+
+    consumir_novedades_identificacion()
+    consumir_novedades_y_actualizar_objetos([mc])
+
+    # El problema se solucionó.
+    problema.refresh_from_db()
+    assert problema.estado == Problema.ESTADOS.resuelto
+
+    # La mesa está vigente de nuevo.
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
