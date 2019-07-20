@@ -2,66 +2,52 @@
 define las vistas relacionadas a tareas que realizan los fiscales
 como elegir acta a clasificar / a cargar / validar
 """
-
-from io import StringIO
-import sys
-from django.core import serializers
 from django.core.exceptions import PermissionDenied
-from django.http import Http404, HttpResponseForbidden, HttpResponse, JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
-from django.views.generic.edit import UpdateView, CreateView, FormView
+from django.views.generic.edit import UpdateView
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
-from django.core.management import call_command
-from django.utils import timezone
-from datetime import timedelta
-from django.utils.safestring import mark_safe
-from django.db import IntegrityError, transaction
-from django.db.models import Q
+from django.db import transaction
 from annoying.functions import get_object_or_None
-from contacto.forms import MinimoContactoInlineFormset
 from .models import Fiscal
 from elecciones.models import (
-    Mesa, Categoria, MesaCategoria, VotoMesaReportado, Carga, Circuito, LugarVotacion, Seccion
+    Mesa,
+    Carga,
+    Seccion,
+    Circuito,
+    Categoria,
+    MesaCategoria,
+    VotoMesaReportado
 )
-from .acciones import ( siguiente_accion )
+from .acciones import siguiente_accion
 
-
-from django.utils.decorators import method_decorator
-from datetime import timedelta
-from django.utils import timezone
 from formtools.wizard.views import SessionWizardView
 from django.template.loader import render_to_string
 from html2text import html2text
 from django.core.mail import send_mail
-from django.contrib.admin.views.decorators import staff_member_required
-from django import forms
 from sentry_sdk import capture_exception
 from .forms import (
     MisDatosForm,
-    FiscalFormSimple,
     votomesareportadoformset_factory,
     QuieroSerFiscal1,
     QuieroSerFiscal2,
-    QuieroSerFiscal3,
     QuieroSerFiscal4,
     ElegirFiscal,
     FiscalxDNI,
 )
 from contacto.views import ConContactosMixin
-from adjuntos.models import Attachment
 from django.conf import settings
 
 
 # tiempo maximo en minutos que se mantiene la asignacion de un acta hasta ser reasignada
 # es para que alguien no se "cuelgue" y quede un acta sin cargar.
-WAITING_FOR = 2
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
@@ -129,51 +115,9 @@ class QuieroSerFiscal(SessionWizardView):
                 'nombre': fiscal.nombres,
                 'apellido': fiscal.apellido,
                 'telefono': fiscal.telefonos[0] if fiscal.telefonos else '',
-                # 'disponibilidad': fiscal.disponibilidad,
-                # 'movilidad': fiscal.movilidad,
-                # 'seccion': fiscal.escuelas[0].circuito.seccion if fiscal.escuelas else None
             }
-        # elif step == '2' and fiscal:
-        #     seccion = self.get_cleaned_data_for_step('1')['seccion']
-        #     seccion_original = fiscal.escuelas[0].circuito.seccion if fiscal.escuelas else None
-
-        #     if seccion_original and seccion == seccion_original:
-        #         circuito = fiscal.escuelas[0].circuito
-        #     else:
-        #         circuito = None
-
-        #     return {
-        #         'circuito': circuito
-        #     }
-        # elif step == '3' and fiscal:
-        #     circuito = self.get_cleaned_data_for_step('2')['circuito']
-        #     circuito_original = fiscal.escuelas[0].circuito if fiscal.escuelas else None
-
-        #     if circuito_original and circuito == circuito_original:
-        #         escuela = fiscal.escuelas[0]
-        #     else:
-        #         escuela = None
-
-        #     return {
-        #         'escuela': escuela
-        #     }
 
         return self.initial_dict.get(step, {})
-
-    # def get_form(self, step=None, data=None, files=None):
-    #     form = super().get_form(step, data, files)
-
-    #     # determine the step if not given
-    #     if step is None:
-    #         step = self.steps.current
-
-    #     if step == '2':
-    #         seccion = self.get_cleaned_data_for_step('1')['seccion']
-    #         form.fields['circuito'].queryset = Circuito.objects.filter(seccion=seccion)
-    #     elif step == '3':
-    #         circuito = self.get_cleaned_data_for_step('2')['circuito']
-    #         form.fields['escuela'].queryset = LugarVotacion.objects.filter(circuito=circuito)
-    #     return form
 
     def done(self, form_list, **kwargs):
         data = self.get_all_cleaned_data()
@@ -199,12 +143,15 @@ class QuieroSerFiscal(SessionWizardView):
         fiscal.user.set_password(data['new_password1'])
         fiscal.user.save()
 
-        body_html = render_to_string('fiscales/email.html',
-                                        {'fiscal': fiscal,
-                                        'email': settings.DEFAULT_FROM_EMAIL,
-                                        'cell_call': settings.DEFAULT_CEL_CALL,
-                                        'cell_local': settings.DEFAULT_CEL_LOCAL,
-                                        'site_url': settings.FULL_SITE_URL})
+        body_html = render_to_string(
+            'fiscales/email.html', {
+                'fiscal': fiscal,
+                'email': settings.DEFAULT_FROM_EMAIL,
+                'cell_call': settings.DEFAULT_CEL_CALL,
+                'cell_local': settings.DEFAULT_CEL_LOCAL,
+                'site_url': settings.FULL_SITE_URL
+            }
+        )
         body_text = html2text(body_html)
 
         send_mail(
