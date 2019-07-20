@@ -27,18 +27,20 @@ class ReporteDeProblema(TimeStampedModel):
     descripcion = models.TextField(null=True, blank=True)
     es_reporte_fake = models.BooleanField(default=False) # Se completa desde el admin.
     problema = models.ForeignKey('Problema', on_delete=models.CASCADE, related_name='reportes')
-    identificacion = models.ForeignKey('adjuntos.Identificacion', null=True, related_name='problemas', on_delete=models.CASCADE)
-    carga = models.ForeignKey('elecciones.Carga', null=True, related_name='problemas', on_delete=models.CASCADE)
-    reportado_por = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)    
+    identificacion = models.ForeignKey('adjuntos.Identificacion', null=True, blank=True, related_name='problemas', on_delete=models.CASCADE)
+    carga = models.ForeignKey('elecciones.Carga', null=True, blank=True, related_name='problemas', on_delete=models.CASCADE)
+    reportado_por = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE) 
 
+    def __str__(self):
+        return f'{self.tipo_de_problema}: {self.descripcion} (vía {self.reportado_por})'   
 
 
 class Problema(TimeStampedModel):
     ESTADOS = Choices(
-        'potencial',  # Todavía no se confirmó que exista de verdad.
-        'descartado', # No era realmente un problema, se usa para antitrolling.
-        'pendiente',  # Confirmado y no se resolvió aún.
-        'en_curso',   # Ídem anterior pero ya fue visto.
+        'potencial',                # Todavía no se confirmó que exista de verdad.
+        'descartado',               # No era realmente un problema, se usa para antitrolling.
+        'pendiente',                # Confirmado y no se resolvió aún.
+        ('en_curso', 'en curso'),    # Ídem anterior pero ya fue visto.
         'resuelto',
     )
 

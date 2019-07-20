@@ -26,3 +26,30 @@ class ProblemaCreate(StaffOnlyMixing, CreateView):
         problema.save()
         messages.success(self.request, 'El problema fue reportado. Gracias.')
         return redirect('siguiente-accion')
+
+class ProblemaResolve(StaffOnlyMixing, CreateView):
+    http_method_names = ['post']
+    identificacion_creada = None
+
+    def form_valid(self, form):
+        fiscal = self.request.user.fiscal
+        identificacion = form.save(commit=False)
+        identificacion.attachment = self.attachment
+        identificacion.fiscal = fiscal
+        identificacion.status = Identificacion.STATUS.problema
+        identificacion.save()
+
+        # XXX TOdo mal.
+
+        # Creo el problema asociado.
+        tipo_de_problema = ReporteDeProblema.TIPOS_DE_PROBLEMA.spam # XXX Seleccionar el apropiado.
+        descripcion = None # Tomar input del usuario.
+        Problema.reportar_problema(fiscal, descripcion, tipo_de_problema, identificacion=identificacion)
+
+        self.identificacion_creada = identificacion
+        messages.info(
+            self.request,
+            f'Guardado como "{identificacion.get_status_display()}"',
+        )
+        return redirect(self.get_success_url())
+
