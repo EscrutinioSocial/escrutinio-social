@@ -272,7 +272,6 @@ def carga(request, mesacategoria_id, tipo='total'):
                     first_autofoco = True
                     form.fields['votos'].widget.attrs['autofocus'] = True
 
-
             # todos los campos son requeridos
             form.fields['votos'].required = True
 
