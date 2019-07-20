@@ -80,9 +80,7 @@ class Attachment(TimeStampedModel):
     STATUS = Choices(
         ('sin_identificar', 'sin identificar'),
         'identificada',
-        'spam',
-        'invalida',
-        'ilegible',
+        'problema',
     )
     status = StatusField(default=STATUS.sin_identificar)
     mesa = models.ForeignKey(

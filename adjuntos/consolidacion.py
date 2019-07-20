@@ -182,6 +182,7 @@ def consolidar_identificaciones(attachment):
                     status=Identificacion.STATUS.problema).first()
                 # Confirmo el problema porque varios reportaron problemas.
                 problema = Problema.confirmar_problema(identificacion=identificacion_con_problemas)
+                status_attachment = Attachment.STATUS.problema
 
     # Identifico el attachment.
     # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.

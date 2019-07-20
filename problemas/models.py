@@ -72,7 +72,8 @@ class Problema(TimeStampedModel):
     @classmethod
     def resolver_problema_falta_hoja(cls, identificacion):
         """
-        Este método debe ser ejecutado cuando llega un nuevo attachment. Su función es marcar como resuelto un problema de falta de hoja.
+        Este método debe ser ejecutado cuando llega un nuevo attachment.
+        Su función es marcar como resuelto un problema de falta de hoja.
         """
         attachment = identificacion.attachment
         problema = cls.objects.filter(
@@ -97,7 +98,7 @@ class Problema(TimeStampedModel):
         self.resolver_con_estado(self.ESTADOS.resuelto, resuelto_por)
 
     def descartar(self, resuelto_por):
-        self.resolver_con_estado(self.ESTADOS.descartar, resuelto_por)
+        self.resolver_con_estado(self.ESTADOS.descartado, resuelto_por)
 
     def resolver_con_estado(self, estado, resuelto_por):
         self.estado = estado

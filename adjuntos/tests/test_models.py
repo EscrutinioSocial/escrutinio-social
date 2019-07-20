@@ -76,7 +76,7 @@ def test_identificacion_consolidada_ninguno(db):
     assert i1.problemas.first().problema.estado == Problema.ESTADOS.potencial
 
     i2 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
-    Problema.reportar_problema(f, 'reporte 1', 
+    Problema.reportar_problema(f, 'reporte 2', 
         ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, identificacion=i2)
 
     assert a.identificacion_testigo is None
@@ -84,6 +84,8 @@ def test_identificacion_consolidada_ninguno(db):
     cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 3
     consumir_novedades_identificacion()
+
+    # Se consolidó un problema.
     assert i1.problemas.first().problema.estado == Problema.ESTADOS.pendiente
 
     cant_novedades = Identificacion.objects.filter(procesada=False).count()
@@ -97,7 +99,9 @@ def test_identificacion_consolidada_alguna(db):
     m1 = MesaFactory()
     i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
     IdentificacionFactory(attachment=a, status='problema', mesa=None)
-    IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    i2 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    Problema.reportar_problema(FiscalFactory(), 'reporte 1', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, identificacion=i2)
     IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
 
     assert a.identificacion_testigo is None
@@ -105,6 +109,9 @@ def test_identificacion_consolidada_alguna(db):
     cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 4
     consumir_novedades_identificacion()
+
+    # No se consolidó el problema.
+    assert i2.problemas.first().problema.estado == Problema.ESTADOS.potencial
 
     cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 0
@@ -125,3 +132,93 @@ def test_identificacion_consolidada_con_minimo_1(db, settings):
     assert a.identificacion_testigo == i1
     assert a.mesa == m1
     assert a.status == Attachment.STATUS.identificada
+
+def test_ciclo_de_vida_problemas_resolver(db):
+    a = AttachmentFactory()
+    m1 = MesaFactory()
+    IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+
+    i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    f = FiscalFactory()
+    Problema.reportar_problema(f, 'reporte 1', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, identificacion=i1)
+    assert i1.problemas.first().problema.estado == Problema.ESTADOS.potencial
+
+    i2 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    Problema.reportar_problema(f, 'reporte 2', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, identificacion=i2)
+
+    assert i1.invalidada == False
+    assert i2.invalidada == False
+
+    consumir_novedades_identificacion()
+
+    # Se consolidó un problema.
+    a.refresh_from_db()
+    assert a.status == Attachment.STATUS.problema
+    problema = i1.problemas.first().problema
+    assert problema.estado == Problema.ESTADOS.pendiente
+
+    problema.resolver(FiscalFactory().user)
+
+    assert problema.estado == Problema.ESTADOS.resuelto
+
+    i1.refresh_from_db()
+    i2.refresh_from_db()
+    # Las identificaciones están invalidadas.
+    assert i1.invalidada == True
+    assert i2.invalidada == True
+
+    consumir_novedades_identificacion()
+
+    # Se agrega una nueva identificación y se consolida.
+    IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+    consumir_novedades_identificacion()
+    a.refresh_from_db()
+    assert a.status == Attachment.STATUS.identificada
+    assert a.mesa == m1
+
+def test_ciclo_de_vida_problemas_descartar(db):
+    a = AttachmentFactory()
+    m1 = MesaFactory()
+    IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+
+    i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    f = FiscalFactory()
+    Problema.reportar_problema(f, 'reporte 1', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, identificacion=i1)
+    assert i1.problemas.first().problema.estado == Problema.ESTADOS.potencial
+
+    i2 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
+    Problema.reportar_problema(f, 'reporte 2', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, identificacion=i2)
+
+    assert i1.invalidada == False
+    assert i2.invalidada == False
+
+    consumir_novedades_identificacion()
+
+    # Se consolidó un problema.
+    a.refresh_from_db()
+    assert a.status == Attachment.STATUS.problema
+    problema = i1.problemas.first().problema
+    assert problema.estado == Problema.ESTADOS.pendiente
+
+    problema.descartar(FiscalFactory().user)
+
+    assert problema.estado == Problema.ESTADOS.descartado
+
+    i1.refresh_from_db()
+    i2.refresh_from_db()
+    # Las identificaciones están invalidadas.
+    assert i1.invalidada == True
+    assert i2.invalidada == True
+
+    consumir_novedades_identificacion()
+
+    # Se agrega una nueva identificación y se consolida.
+    IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+    consumir_novedades_identificacion()
+    a.refresh_from_db()
+    assert a.status == Attachment.STATUS.identificada
+    assert a.mesa == m1
