@@ -191,11 +191,7 @@ class Resultados():
         https://docs.djangoproject.com/en/2.2/ref/models/conditional-expressions/
         """
 
-        ids_opciones = Opcion.objects.filter(
-            categorias__id=categoria.id,
-            partido__isnull=True,
-            es_metadata=False
-        ).values_list('id', flat=True)
+        ids_opciones = Opcion.objects.filter(categorias__id=categoria.id).values_list('id', flat=True)
 
         sum_por_opcion = {}
         for id in ids_opciones:
@@ -251,7 +247,7 @@ class Resultados():
             opcion = Opcion.objects.get(id=id_opcion)
             if opcion.partido:
                 # 3.1 Opciones partidarias se agrupan con otras opciones del mismo partido.
-                votos_por_partido.setdefault(opcion.partido, {})[opcion] = {votos}
+                votos_por_partido.setdefault(opcion.partido, {})[opcion] = votos
             else:
                 # 3.2 Opciones no partidarias se agrupan con otras opciones del mismo partido.
                 votos_no_positivos[opcion.nombre] = votos
@@ -270,7 +266,7 @@ class Resultados():
                 }
             }
 
-        total_positivos = sum(votos['total'] for votos in votos_positivos.values())
+        total_positivos = sum(votos['votos'] for votos in votos_positivos.values())
 
         # Calculamos el total como la suma de todos los positivos y los válidos no positivos.
         total = total_positivos + sum(votos_no_positivos.values())
