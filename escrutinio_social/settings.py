@@ -285,7 +285,7 @@ MIN_COINCIDENCIAS_CARGAS = 2
 PAUSA_CONSOLIDACION = 15
 
 # Tiempos de 'taken', para adjuntos y para mesas.
-ATTACHMENT_TAKE_WAIT_TIME = 0   # En minutos
+ATTACHMENT_TAKE_WAIT_TIME = 1   # En minutos
 MESA_TAKE_WAIT_TIME = 2         # En minutos
 
 try:
