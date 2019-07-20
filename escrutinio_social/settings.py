@@ -96,7 +96,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # 'elecciones.context_processors.contadores'
+                #'elecciones.context_processors.contadores'
             ],
         },
     },
@@ -109,18 +109,27 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # Sobreescribir en local_settings.py si se instala localmente.
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': 'db_name',
+#        'USER': 'postgres',
+#        'PASSWORD': '',
+#        'HOST': 'localhost' if os.environ.get('TRAVIS') == 'true' else 'db',
+#        'PORT': '',
+#    }
+#}
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'db_name',
-        'USER': 'postgres',
-        'PASSWORD': '',
-        'HOST': 'localhost' if os.environ.get('TRAVIS') == 'true' else 'db',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASS'),
+        'HOST': os.environ.get('DB_HOST'),
         'PORT': '',
     }
 }
-
-
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -143,7 +152,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
-LANGUAGE_CODE = 'en' #'es-ar'
+LANGUAGE_CODE = 'es-ar'
 
 TIME_ZONE = 'America/Argentina/Cordoba'
 
@@ -274,7 +283,7 @@ CARACTERISTICA_TELEFONO_DEFAULT = '351'     # CORDOBA
 CARACTERISTICA_DEFAULT = '351'
 
 
-# Por defecto no se muestra gráfico en la página de resultados
+# Por defecto no se muestra gráfico en la página de resultados.
 SHOW_PLOT = False
 
 MIN_COINCIDENCIAS_IDENTIFICACION = 2
