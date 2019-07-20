@@ -4,34 +4,14 @@ from django.conf import settings
 
 from antitrolling.models import (
     EventoScoringTroll, CambioEstadoTroll,
-    aumentar_scoring_troll_identificacion, efecto_scoring_troll_asociacion_attachment
+    aumentar_scoring_troll_identificacion
 )
 
 from elecciones.tests.factories import (
-    UserFactory, FiscalFactory, 
-    MesaFactory, AttachmentFactory, IdentificacionFactory
+    MesaFactory, AttachmentFactory
 )
 
-
-def nuevo_fiscal():
-    usuario = UserFactory()
-    fiscal = FiscalFactory(user=usuario)
-    return fiscal
-
-def identificar(attach, mesa, fiscal):
-    return IdentificacionFactory(
-        status='identificada',
-        attachment=attach,
-        mesa=mesa,
-        fiscal=fiscal
-    )
-
-def reportar_problema_attachment(attach, fiscal):
-    return IdentificacionFactory(
-        status='problema',
-        attachment=attach,
-        fiscal=fiscal
-    )
+from utils_para_test import nuevo_fiscal, identificar, reportar_problema_attachment
 
 
 @pytest.mark.django_db
@@ -128,40 +108,4 @@ def test_aumentar_scrolling():
     assert fiscal1.troll == True
     assert fiscal2.troll == False
 
-
-@pytest.mark.django_db
-def test_efecto_consolidar_asociacion_attachment():
-    """
-    Se comprueba que el efecto de afectar el scoring de troll a partir de la asociacion 
-    de un Attachment a una Mesa sea el correcto.
-    O sea, que se aumente el scoring de los fiscales que hicieron identificaciones distintas
-    a la aceptada, y que no aumente el scoring de los fiscales que hicieron la identificacion aceptada.
-    """
-
-    settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 180
-    fiscal1 = nuevo_fiscal()
-    fiscal2 = nuevo_fiscal()
-    fiscal3 = nuevo_fiscal()
-    fiscal4 = nuevo_fiscal()
-    mesa1 = MesaFactory()
-    mesa2 = MesaFactory()
-    attach = AttachmentFactory()
-    # los cuatro fiscales hacen una identificacion sobre el mismo attachment
-    # los fiscales 1 y 2 hacen la identificacion que se va a aceptar, a la mesa 1
-    # el fiscal 3 identifica a una mesa distinta
-    # el fiscal 4 reporta un problema
-    identificar(attach, mesa1, fiscal1)
-    identificar(attach, mesa1, fiscal2)
-    identificar(attach, mesa2, fiscal3)
-    reportar_problema_attachment(attach, fiscal4)
-
-    # se espera que se generen dos eventos, para los fiscales 3 y 4 que identificaron distinto
-    # a la mesa que se indica como asociada al attachment
-    cantidad_eventos_antes = EventoScoringTroll.objects.count()
-    efecto_scoring_troll_asociacion_attachment(attach, mesa1)
-    assert EventoScoringTroll.objects.count() == cantidad_eventos_antes + 2
-    assert fiscal1.scoring_troll() == 0
-    assert fiscal2.scoring_troll() == 0
-    assert fiscal3.scoring_troll() == 180
-    assert fiscal4.scoring_troll() == 180
 

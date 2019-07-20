@@ -6,7 +6,7 @@ from django.db.models import Subquery, Count
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from problemas.models import Problema
-from antitrolling.models import efecto_scoring_troll_asociacion_attachment
+from antitrolling.efecto import efecto_scoring_troll_asociacion_attachment
 
 
 

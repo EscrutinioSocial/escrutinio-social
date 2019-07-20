@@ -5,7 +5,7 @@ from model_utils import Choices
 from model_utils.fields import StatusField
 
 from elecciones.models import MesaCategoria
-from adjuntos.models import Attachment, Identificacion
+from adjuntos.models import Attachment
 
 
 class EventoScoringTroll(TimeStampedModel):
@@ -72,21 +72,6 @@ class CambioEstadoTroll(TimeStampedModel):
 
 
 ## Funciones para manejo de scoring troll
-
-def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
-    """
-    Realizar las actualizaciones de scoring troll que correspondan
-    a partir de que se confirma la asignacion de mesa a un attachment 
-    """
-
-    ## para cada identificacion del attachment que no coincida en mesa, aumentar el scoring troll del fiscal que la hizo
-    for identificacion in attachment.identificaciones.filter(invalidada=False):
-        if ((identificacion.status != Identificacion.STATUS.identificada) or (identificacion.mesa != mesa)):
-            aumentar_scoring_troll_identificacion(
-                settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA, identificacion
-            )
-
-
 
 def aumentar_scoring_troll_identificacion(variacion, identificacion):
     """
