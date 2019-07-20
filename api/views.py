@@ -17,7 +17,7 @@ from .serializers import (
 from adjuntos.models import Identificacion, Attachment
 from elecciones.models import (
     Distrito, Seccion, Circuito, Mesa, 
-    MesaCategoria, CategoriaOpcion, Carga, VotoMesaReportado
+    MesaCategoria, CategoriaOpcion, Categoria, Carga, VotoMesaReportado
 )
 
 
@@ -192,7 +192,17 @@ def listar_categorias(request):
     Por defecto se listan sólo categorias principales y secundarias (`prioridad=2`).
     Las categorias se ordenan primero por prioridad ascendente y luego alfabeticamente.
     """
-    return Response([])
+    serializer = ListarCategoriasQuerySerializer(data=request.query_params)
+    if serializer.is_valid():
+        data = serializer.validated_data
+        categorias = Categoria.objects.filter(
+            prioridad__lte=data['prioridad']
+        ).order_by(
+            'prioridad', 'nombre'
+        )
+        return Response(CategoriaSerializer(categorias, many=True).data)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 @swagger_auto_schema(
@@ -211,4 +221,10 @@ def listar_opciones(request, id_categoria):
     Por defecto se listan sólo las opciones prioritarias (`solo_prioritarias=true`).
     Las opciones se ordenan de forma ascendente según el campo orden (orden en la boleta).
     """
-    return Response([])
+    c = get_object_or_404(Categoria, id=id_categoria)
+    serializer = ListarOpcionesQuerySerializer(data=request.query_params)
+    if serializer.is_valid():
+        opciones = c.opciones_actuales(**serializer.validated_data)
+        return Response(OpcionSerializer(opciones, many=True).data)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 
 from elecciones.tests import factories
 from adjuntos.models import hash_file
-from elecciones.models import Mesa, Opcion, Categoria
+from elecciones.models import Mesa, Opcion, Categoria, CategoriaOpcion
 
 
 @pytest.fixture
@@ -112,19 +112,85 @@ def test_cargar_votos(admin_client):
     assert response.data['mensaje'] == 'Se cargaron los votos con éxito.'
 
 
-def test_listar_categorias(admin_client):
+def test_listar_categorias_default(admin_client):
     url = reverse('categorias')
     
+    pv = factories.CategoriaFactory(prioridad=1)
+    gv = factories.CategoriaFactory(prioridad=2)
+    dn = factories.CategoriaFactory(prioridad=3)
+
     response = admin_client.get(url, format='json')
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.data == []
+    assert len(response.data) == 2
+    assert [cat['id'] for cat in response.data] == [pv.id, gv.id]
 
 
-def test_listar_opciones(admin_client):
-    url = reverse('opciones', kwargs={'id_categoria': 1})
+def test_listar_categorias_con_prioridad(admin_client):
+    url = reverse('categorias')
+    
+    pv = factories.CategoriaFactory(prioridad=1)
+    gv = factories.CategoriaFactory(prioridad=2)
+    dn = factories.CategoriaFactory(prioridad=3)
+    lp = factories.CategoriaFactory(prioridad=4)
+
+    response = admin_client.get(url, data={'prioridad': 3}, format='json')
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data) == 3
+    assert [
+        (cat['id'], cat['nombre']) for cat in response.data
+    ] == [
+        (pv.id, pv.nombre),
+        (gv.id, gv.nombre),
+        (dn.id, dn.nombre)
+    ]
+    
+
+def test_listar_opciones_default(admin_client):
+    o2 = factories.OpcionFactory(orden=3)
+    o3 = factories.OpcionFactory(orden=2)
+    
+    c = factories.CategoriaFactory(opciones=[o2, o3])
+    
+    o1 = factories.CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True).opcion
+    o4 = factories.CategoriaOpcionFactory(categoria=c, opcion__orden=4, prioritaria=True).opcion
+
+    url = reverse('opciones', kwargs={'id_categoria': c.id})
     
     response = admin_client.get(url, format='json')
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.data == []
+    assert len(response.data) == 2
+    assert [
+        (opc['id'], opc['nombre']) for opc in response.data
+    ] == [
+        (o1.id, o1.nombre),
+        (o4.id, o4.nombre)
+    ]
+
+def test_listar_opciones_todas(admin_client):
+    o2 = factories.OpcionFactory(orden=3)
+    o3 = factories.OpcionFactory(orden=2)
+    
+    c = factories.CategoriaFactory(opciones=[o2, o3])
+    
+    o1 = factories.CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True).opcion
+    o4 = factories.CategoriaOpcionFactory(categoria=c, opcion__orden=4, prioritaria=True).opcion
+
+    url = reverse('opciones', kwargs={'id_categoria': c.id})
+    
+    response = admin_client.get(url, data={'solo_prioritarias': False}, format='json')
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data) == 4
+    assert [
+        (opc['id'], opc['nombre']) for opc in response.data
+    ] == [
+        (o1.id, o1.nombre),
+        (o3.id, o3.nombre),
+        (o2.id, o2.nombre),
+        (o4.id, o4.nombre),
+    ]
+
+
