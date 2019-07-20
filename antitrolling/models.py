@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from model_utils.models import TimeStampedModel
 from model_utils import Choices
@@ -5,7 +6,7 @@ from model_utils.fields import StatusField
 
 from elecciones.models import MesaCategoria
 from adjuntos.models import Attachment, Identificacion
-from fiscales.models import Fiscal
+
 
 class EventoScoringTroll(TimeStampedModel):
     """
@@ -33,10 +34,10 @@ class EventoScoringTroll(TimeStampedModel):
     automatico = models.BooleanField(default=True)
 
     "referencia al usuario que tomó la decisión de cambiar un scoring troll para eventos manuales; None para eventos automaticos"
-    actor = models.ForeignKey(Fiscal, null=True, on_delete=models.SET_NULL)
+    actor = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
 
     "referencia al data entry cuyo scoring troll cambia como consecuencia de este evento"
-    fiscal_afectado = models.ForeignKey(Fiscal, null=False, related_name='eventos_scoring_troll', on_delete=models.DELETE)
+    fiscal_afectado = models.ForeignKey('fiscales.Fiscal', null=False, related_name='eventos_scoring_troll', on_delete=models.CASCADE)
 
     "cuánto varía el scoring troll del fiscal afectado."
     "Valores positivos para aumento de scoring, valores positivos para disminución"
@@ -57,13 +58,13 @@ class CambioEstadoTroll(TimeStampedModel):
 
     "referencia al usuario que tomó la decisión de cambiar el status de troll de un fiscal;" 
     "None si el cambio de status se dispara en forma automática"
-    actor = models.ForeignKey(Fiscal, null=True, on_delete=models.SET_NULL)
+    actor = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
 
     "referencia al evento por el cual un fiscal cambia su status de troll"
-    evento_disparador = models.ForeignKey(EventoScoringTroll, null=False, on_delete=models.DELETE)
+    evento_disparador = models.ForeignKey(EventoScoringTroll, null=False, on_delete=models.CASCADE)
 
     "referencia al fiscal que cambia su status de troll"
-    fiscal_afectado = models.ForeignKey(Fiscal, null=False, on_delete=models.DELETE)
+    fiscal_afectado = models.ForeignKey('fiscales.Fiscal', null=False, related_name='cambios_estado_troll', on_delete=models.CASCADE)
 
     "True si el fiscal afectado pasa a ser considerado troll, False si deja de ser considerado troll"
     troll = models.BooleanField(default=True)
@@ -72,7 +73,7 @@ class CambioEstadoTroll(TimeStampedModel):
 
 ## Funciones para manejo de scoring troll
 
-def variacion_scoring_troll_identificacion_consolidada(attachment, mesa):
+def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
     """
     Realizar las actualizaciones de scoring troll que correspondan
     a partir de que se confirma la asignacion de mesa a un attachment 
@@ -82,16 +83,17 @@ def variacion_scoring_troll_identificacion_consolidada(attachment, mesa):
     for identificacion in attachment.identificaciones.filter(invalidada=False):
         if ((identificacion.status != Identificacion.STATUS.identificada) or (identificacion.mesa != mesa)):
             aumentar_scoring_troll_identificacion(
-                identificacion.fiscal, settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA, identificacion
+                settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA, identificacion
             )
 
 
 
-def aumentar_scoring_troll_identificacion(fiscal, variacion, identificacion):
+def aumentar_scoring_troll_identificacion(variacion, identificacion):
     """
     Aumenta el scoring troll de un fiscal por motivos relacionados con una identificacion. Si corresponde, marcar al fiscal como troll.
     """
 
+    fiscal = identificacion.fiscal
     scoring_anterior = fiscal.scoring_troll()
     nuevo_evento = EventoScoringTroll.objects.create(
         motivo=EventoScoringTroll.MOTIVO.identificacion_attachment_distinta_a_confirmada,
@@ -106,15 +108,15 @@ def aumentar_scoring_troll_identificacion(fiscal, variacion, identificacion):
 
 
 
-def marcar_fiscal_troll(fiscal, evento_disparador)
+def marcar_fiscal_troll(fiscal, evento_disparador):
     """
     Se marca a un fiscal como troll
     """
 
     CambioEstadoTroll.objects.create(
-        automatico=True
-        evento_disparador=evento_disparador
-        fiscal_afectado=fiscal
+        automatico=True,
+        evento_disparador=evento_disparador,
+        fiscal_afectado=fiscal,
         troll=True
     )
     fiscal.marcar_como_troll()

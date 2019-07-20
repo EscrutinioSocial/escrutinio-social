@@ -6,7 +6,7 @@ from django.db.models import Subquery, Count
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from problemas.models import Problema
-from antitrolling.models import variacion_scoring_troll_identificacion_consolidada
+from antitrolling.models import efecto_scoring_troll_asociacion_attachment
 
 
 
@@ -173,9 +173,8 @@ def consolidar_identificaciones(attachment):
         # porque se agregó un attachment.
         Problema.resolver_problema_falta_hoja(mesa_attachment)
 
-        # TODO - para reportar trolls
-        # sumar 200 a scoring de los usuarios que identificaron el acta diferente
-        variacion_scoring_troll_identificacion_consolidada(attachment, mesa_attachment)
+        # aumentar el scoring de los usuarios que identificaron el acta diferente
+        efecto_scoring_troll_asociacion_attachment(attachment, mesa_attachment)
 
     else:
         status_attachment = Attachment.STATUS.sin_identificar

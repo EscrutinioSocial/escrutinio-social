@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'adjuntos',
     'problemas',
     'contacto',
+    'antitrolling',
     'api'
 ]
 
