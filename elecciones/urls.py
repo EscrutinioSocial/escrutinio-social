@@ -3,7 +3,7 @@ from django.conf.urls import url
 from . import views, data_views
 from fancy_cache import cache_page
 from django.contrib.auth.decorators import login_required
-from elecciones.resultados import Resultados
+from elecciones.resultados import Sumarizador
 
 cached = cache_page(300)
 
@@ -29,8 +29,8 @@ urlpatterns = [
         '^resultados-totales-sin-confirmar/(?P<pk>\d+)?$',
         views.ResultadosCategoria.as_view(),
         {
-            'opciones_a_considerar': Resultados.OPCIONES_A_CONSIDERAR.todas,
-            'tipo_de_agregacion': Resultados.TIPOS_DE_AGREGACIONES.todas_las_cargas
+            'opciones_a_considerar': Sumarizador.OPCIONES_A_CONSIDERAR.todas,
+            'tipo_de_agregacion': Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas
         },
 
         name='resultados-totales-sin-confirmar'

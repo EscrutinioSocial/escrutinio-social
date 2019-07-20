@@ -34,7 +34,7 @@ def porcentaje(numerador, denominador):
     return '-'
 
 
-class Resultados():
+class Sumarizador():
     """
     Esta clase encapsula el cómputo de resultados.
     """
@@ -291,12 +291,35 @@ class Resultados():
         ``calcular``.
         """
         mesas = self.mesas(categoria)
-        resultados = self.calcular(categoria, mesas)
+        return Resultados(self.calcular(categoria, mesas))
+
+
+    @classmethod
+    def get_tipos_sumarizacion(cls):
+        id = 0
+        tipos_sumarizacion = []
+
+        for tipo_de_agregacion in Sumarizador.TIPOS_DE_AGREGACIONES:
+            for opcion in Sumarizador.OPCIONES_A_CONSIDERAR:
+                tipos_sumarizacion.append({
+                    'pk': str(id),
+                    'name': f'{tipo_de_agregacion}-{opcion}'
+                })
+
+        return tipos_sumarizacion
+
+
+class Resultados():
+    """
+    Esta clase contiene los resultados
+    """
+    def __init__(self, resultados):
+        self.resultados = resultados
 
         for data in resultados.votos.values():
             data.update({
-                "porcentaje_total": porcentaje(data.votos, resultados.total),
-                "porcentaje_positivos": porcentaje(data.votos, resultados.positivos)
+                "porcentaje_total": porcentaje(data["votos"], resultados.total),
+                "porcentaje_positivos": porcentaje(data["votos"], resultados.total_positivos)
             })
 
             # if proyectado:
@@ -313,57 +336,60 @@ class Resultados():
 
             #     expanded_result[k]["proyeccion"] = f'{acumulador_positivos*100/electores_pond:.2f}'
 
-        # TODO permitir opciones positivas no asociadas a partido.
-        tabla_positivos = OrderedDict(
+    def tabla_positivos(self):
+        return OrderedDict(
             sorted(
-                resultados.votos.items(),
+                self.resultados.votos.items(),
                 key=lambda partido: float(partido[1]["votos"]),
                 reverse=True
             )
         )
 
+    def tabla_no_positivos(self):
         tabla_no_positivos = {
             nombre_opcion: {
                 "votos": votos,
-                "porcentaje_total": porcentaje(votos, resultados.total)
-            } for nombre_opcion, votos in resultados.votos_no_positivos.items()
+                "porcentaje_total": porcentaje(votos, self.resultados.total)
+            } for nombre_opcion, votos in self.resultados.votos_no_positivos.items()
         }
-        tabla_no_positivos["Positivos"] = resultados.total_positivos
-
-        return {
-            'tabla_positivos': tabla_positivos,
-            'tabla_no_positivos': tabla_no_positivos,
-
-            'electores': resultados.electores,
-            'positivos': resultados.total_positivos,
-            'electores_en_mesas_escrutadas': resultados.electores_en_mesas_escrutadas,
-            'votantes': resultados.total,
-
-            # 'proyectado': proyectado,
-            # 'proyeccion_incompleta': proyeccion_incompleta,
-            'porcentaje_mesas_escrutadas': resultados.porcentaje_mesas_escrutadas,
-            'porcentaje_escrutado': porcentaje(resultados.electores_en_mesas_escrutadas, resultados.electores),
-            'porcentaje_participacion': porcentaje(resultados.total, resultados.electores_en_mesas_escrutadas),
-            'total_mesas_escrutadas': resultados.total_mesas_escrutadas,
-            'total_mesas': resultados.total_mesas
+        tabla_no_positivos["Positivos"] = {
+            "votos": self.resultados.total_positivos,
+            "porcentaje_total": porcentaje(self.resultados.total_positivos, self.resultados.total)
         }
 
-    @classmethod
-    def get_tipos_sumarizacion(cls):
-        id = 0
-        tipos_sumarizacion = []
+        return tabla_no_positivos
 
-        for tipo_de_agregacion in Resultados.TIPOS_DE_AGREGACIONES:
-            for opcion in Resultados.OPCIONES_A_CONSIDERAR:
-                tipos_sumarizacion.append({
-                    'pk': str(id),
-                    'name': f'{tipo_de_agregacion}-{opcion}'
-                })
+    def electores(self):
+        return self. resultados.electores
 
-        return tipos_sumarizacion
+    def positivos(self):
+        return self.resultados.total_positivos
+
+    def electores_en_mesas_escrutadas(self):
+        return self.resultados.electores_en_mesas_escrutadas
+    
+    def votantes(self):
+        return self.resultados.total
+
+    def porcentaje_mesas_escrutadas(self):
+        return self.resultados.porcentaje_mesas_escrutadas
+
+    def porcentaje_escrutado(self):
+        return porcentaje(self.resultados.electores_en_mesas_escrutadas, self.resultados.electores)
+
+    def porcentaje_participacion(self):
+        return porcentaje(self.resultados.total, self.resultados.electores_en_mesas_escrutadas)
+
+    def total_mesas_escrutadas(self):
+        return self.resultados.total_mesas_escrutadas
+
+    def total_mesas(self):
+        return self.resultados.total_mesas
 
 
-class Proyecciones(Resultados):
+
+
+class Proyecciones(Sumarizador):
     """
     Esta clase encapsula el cómputo de proyecciones.
     """

@@ -38,7 +38,7 @@ from .models import (
     MesaCategoria,
     Mesa,
 )
-from .resultados import Resultados
+from .resultados import Sumarizador
 
 ESTRUCTURA = {
     None: Seccion,
@@ -152,26 +152,26 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
                 kwargs['tipo'] = nivel
                 kwargs['listado'] = self.request.GET.getlist(nivel)
 
-        self.resultados = Resultados(kwargs, None)  # Por ahora None
+        self.sumarizador = Sumarizador(kwargs, None)  # Por ahora None
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
 
     def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
-        return self.resultados.status_filter(categoria, prefix)
+        return self.sumarizador.status_filter(categoria, prefix)
 
     @property
     def filtros(self):
-        return self.resultados.filtros
+        return self.sumarizador.filtros
 
     @lru_cache(128)
     def mesas(self, categoria):
-        return self.resultados.mesas(categoria)
+        return self.sumarizador.mesas(categoria)
 
     @lru_cache(128)
     def electores(self, categoria):
-        return self.resultados.electores(categoria)
+        return self.sumarizador.electores(categoria)
 
     def get_resultados(self, categoria):
         # TODO, ¿dónde entra lo proyectado?
@@ -180,22 +180,18 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         #    self.request.GET.get('tipodesumarizacion', '1') == str(2) and
         #    not self.filtros
         # )
+        return self.sumarizador.get_resultados(categoria)
 
-        resultados = self.resultados.get_resultados(categoria)
-        result_piechart = None
-        if settings.SHOW_PLOT:
-            result_piechart = [{
-                'key': str(k),
-                'y': v["votos"],
-                'color': k.color if not isinstance(k, str) else '#CCCCCC'
-            } for k, v in resultados['tabla_positivos'].items()]
-
-        resultados['result_piechart'] = result_piechart
-        return resultados
+    def get_result_piechart(self, resultados):
+        return [{
+            'key': str(k),
+            'y': v["votos"],
+            'color': k.color if not isinstance(k, str) else '#CCCCCC'
+        } for k, v in resultados['tabla_positivos'].items()]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tipos_sumarizacion'] = Resultados.get_tipos_sumarizacion()
+        context['tipos_sumarizacion'] = Sumarizador.get_tipos_sumarizacion()
         context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
 
         if self.filtros:
@@ -212,8 +208,11 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['categoria_id'] = categoria.id
         context['resultados'] = self.get_resultados(categoria)
         context['show_plot'] = settings.SHOW_PLOT
+
+        # TODO esto no está probado
         if settings.SHOW_PLOT:
-            chart = context['resultados']['result_piechart']
+            chart = self.get_result_piechart(resultados)
+            context['result_piechart'] = chart
             context['chart_values'] = [v['y'] for v in chart]
             context['chart_keys'] = [v['key'] for v in chart]
             context['chart_colors'] = [v['color'] for v in chart]
