@@ -1,33 +1,22 @@
-import os
 import logging
-
-from itertools import chain
-from collections import defaultdict
 from datetime import timedelta
-from django.utils import timezone
-from django.contrib.auth.models import User
-from django.urls import reverse
-from django.db import models
-from django.db.models import (
-    Sum, IntegerField, Case, Value, When, F, Q, Count, OuterRef,
-    Exists, Max, Value
-)
-from django.db.models.query import QuerySet
-from django.db.models.functions import Coalesce
+from collections import defaultdict
+
 from django.conf import settings
-from djgeojson.fields import PointField
-from django.template.loader import render_to_string
-from django.utils.safestring import mark_safe
-from django.utils.text import slugify
+from django.core.validators import MaxValueValidator
+from django.db import models
+from django.db.models import Max, Sum, Count, Q
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db.models.signals import m2m_changed, post_save
-from model_utils.fields import StatusField, MonitorField
-from model_utils.models import TimeStampedModel
+from django.urls import reverse
+from django.utils import timezone
+from djgeojson.fields import PointField
 from model_utils import Choices
-from adjuntos.models import Attachment
-from problemas.models import Problema
+from model_utils.fields import StatusField
+from model_utils.models import TimeStampedModel
 
 logger = logging.getLogger("e-va")
+
 
 class Distrito(models.Model):
     """
@@ -39,6 +28,7 @@ class Distrito(models.Model):
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
+    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
     class Meta:
         verbose_name = 'Distrito electoral'
@@ -70,6 +60,7 @@ class Seccion(models.Model):
             'por circuitos para esta sección'
         )
     )
+    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
     class Meta:
         ordering = ('numero',)
@@ -87,7 +78,7 @@ class Seccion(models.Model):
             lugar_votacion__circuito__seccion=self,
             categorias=categoria
         )
-    
+
     def nombre_completo(self):
         return f"{self.distrito.nombre_completo()} - {self.nombre}"
 
@@ -104,6 +95,7 @@ class Circuito(models.Model):
     numero = models.CharField(max_length=10)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
+    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
     class Meta:
         verbose_name = 'Circuito electoral'
@@ -116,19 +108,6 @@ class Circuito(models.Model):
     def resultados_url(self):
         return reverse('resultados-categoria') + f'?circuito={self.id}'
 
-    def proximo_orden_de_carga(self):
-        """
-        Busca el máximo orden de carga `n` en una mesa perteciente al circuito
-        (esté o no cargada) y devuelve `n + 1`.
-
-        Este nuevo orden de carga incrementado se asigna a la nueva mesa
-        clasificada en func:`asignar_orden_de_carga`
-        """
-        orden = Mesa.objects.filter(
-            lugar_votacion__circuito=self
-        ).aggregate(v=Max('orden_de_carga'))['v'] or 0
-        return orden + 1
-
     def mesas(self, categoria):
         """
         Devuelve las mesas asociadas a este circuito para una categoría dada
@@ -136,10 +115,10 @@ class Circuito(models.Model):
         return Mesa.objects.filter(
             lugar_votacion__circuito=self,
             categorias=categoria
-    )
+        )
 
     def nombre_completo(self):
-        return self.seccion.nombre_completo() + " - " + self.nombre
+        return f'{self.seccion.nombre_completo()} - {self.nombre}'
 
 
 class LugarVotacion(models.Model):
@@ -212,7 +191,7 @@ class LugarVotacion(models.Model):
         return Mesa.objects.filter(
             lugar_votacion=self,
             categorias=categoria
-    )
+        )
 
     @property
     def mesas_actuales(self):
@@ -229,10 +208,54 @@ class LugarVotacion(models.Model):
         return str(self.circuito.seccion)
 
     def __str__(self):
-        return f"{self.nombre} - {self.circuito}"
+        return f'{self.nombre} - {self.circuito}'
 
     def nombre_completo(self):
-        return self.circuito.nombre_completo() + " - " + self.nombre
+        return f'{self.circuito.nombre_completo()}  - {self.nombre}'
+
+
+class MesaCategoriaQuerySet(models.QuerySet):
+
+    def identificadas(self):
+        """
+        filtra instancias que tengan orden de carga definido
+        (que se produce cuando hay un primer attachment consolidado)
+        """
+        return self.filter(orden_de_carga__isnull=False)
+
+    def no_taken(self):
+        """
+        Filtra no esté tomada dentro de los últimos
+        ``settings.MESA_TAKE_WAIT_TIME`` minutos,
+        """
+        wait = settings.MESA_TAKE_WAIT_TIME
+        desde = timezone.now() - timedelta(minutes=wait)
+        return self.filter(
+            # No puede estar tomado o tiene que haber expirado el periodo de taken.
+            Q(taken__isnull=True) | Q(taken__lt=desde)
+        )
+
+    def sin_consolidar(self):
+        """
+        Excluye las instancias no consolidadas con doble carga.
+        """
+        return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
+
+    def con_carga_pendiente(self):
+        return self.identificadas().no_taken().sin_consolidar()
+
+    def siguiente(self):
+        """
+        devuelve la siguiente mesacategoria en orden de prioridad
+        de carga
+        """
+        return self.con_carga_pendiente().order_by(
+            'status',
+            'categoria__prioridad',
+            'orden_de_carga',
+            'mesa__prioridad',
+            'id'
+        ).first()
 
 
 class MesaCategoria(models.Model):
@@ -243,18 +266,25 @@ class MesaCategoria(models.Model):
     Permite guardar el booleano que marca la carga de esa
     "columna" como confirmada.
     """
+    objects = MesaCategoriaQuerySet.as_manager()
+
     STATUS = Choices(
-        'sin_cargar',                   # no hay cargas
-        'parcial_sin_consolidar',       # carga parcial única (no csv) o no coincidente
-        'parcial_consolidada_csv',      # no hay dos cargas mínimas coincidentes, pero una es de csv.
-        'parcial_en_conflicto',         # cargas parcial divergentes sin consolidar
-        'parcial_consolidada_dc',       # carga parcial consolidada por doble carga
-        'total_sin_consolidar',
-        'total_consolidada_csv',
-        'total_en_conflicto',
-        'total_consolidada_dc',
+        # no hay cargas
+        ('00_sin_cargar', 'sin_cargar', 'sin cargar'),
+        # carga parcial única (no csv) o no coincidente
+        ('10_parcial_sin_consolidar', 'parcial_sin_consolidar', 'parcial sin consolidar'),
+        # no hay dos cargas mínimas coincidentes, pero una es de csv.
+        # cargas parcial divergentes sin consolidar
+        ('20_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial_en_conflicto'),
+        ('30_parcial_consolidada_csv', 'parcial_consolidada_csv', 'parcial consolidada csv'),
+        # carga parcial consolidada por multicarga
+        ('40_parcial_consolidada_dc', 'parcial_consolidada_dc', 'parcial_consolidada_dc'),
+        ('50_total_sin_consolidar', 'total_sin_consolidar', 'total sin consolidar'),
+        ('60_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
+        ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada csv'),
+        ('80_total_consolidada_dc', 'total_consolidada_dc', 'tota consolidada dc'),
     )
-    status = StatusField(default='sin_cargar')
+    status = StatusField(default=STATUS.sin_cargar)
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
 
@@ -263,6 +293,38 @@ class MesaCategoria(models.Model):
         'Carga', related_name='es_testigo',
         null=True, blank=True, on_delete=models.SET_NULL
     )
+
+    # timestamp para dar un tiempo de guarda a la espera de una carga
+    taken = models.DateTimeField(null=True, editable=False)
+
+    # entero que se define como el procentaje (redondeado) de mesas
+    # ya identificadas todavia sin consolidar al momento de identificar la
+    # mesa
+    orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
+
+    def take(self):
+        self.taken = timezone.now()
+        self.save(update_fields=['taken'])
+
+    def release(self):
+        """
+        Libera la mesa, es lo contrario de take().
+        """
+        self.taken = None
+        self.save(update_fields=['taken'])
+
+    def actualizar_orden_de_carga(self):
+        """
+        Actualiza `self.orden_de_carga` como una proporcion de mesas
+        """
+        en_circuito = MesaCategoria.objects.filter(
+            categoria=self.categoria,
+            mesa__circuito=self.mesa.circuito
+        )
+        total = en_circuito.count()
+        identificadas = en_circuito.identificadas().count()
+        self.orden_de_carga = int(round((identificadas + 1) / total, 2) * 100)
+        self.save(update_fields=['orden_de_carga'])
 
     def firma_count(self):
         """
@@ -318,19 +380,11 @@ class Mesa(models.Model):
     )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
-    taken = models.DateTimeField(null=True, editable=False)
-    orden_de_carga = models.PositiveIntegerField(default=0, editable=False)
+
+    prioridad = models.PositiveIntegerField(default=0)
 
     def categoria_add(self, categoria):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
-
-    def siguiente_categoria_sin_carga(self):
-        for categoria in self.categorias.filter(activa=True).order_by('id'):
-            if not Carga.objects.filter(
-                mesa_categoria__mesa=self,
-                mesa_categoria__categoria=categoria
-            ).exists():
-                return categoria
 
     @classmethod
     def obtener_mesa_en_circuito_seccion_distrito(cls, mesa, circuito, seccion, distrito):
@@ -344,44 +398,6 @@ class Mesa(models.Model):
             circuito__seccion__distrito__numero=distrito
         )
         return qs.get()
-
-    @classmethod
-    def con_carga_pendiente(cls, wait=2):
-        """
-        Una mesa cargable es aquella que
-           - no esté tomada dentro de los últimos `wait` minutos,
-           - no esté marcada con problemas o todos su problemas estén resueltos,
-           - esté identificada,
-           - y que todas sus categorías estén consolidadas con doble carga total.
-        """
-        desde = timezone.now() - timedelta(minutes=wait)
-        qs = cls.objects.filter(
-            # Tiene que tener una imagen asociada.
-            # Y si la tiene es porque está identificada.
-            attachments__isnull=False,
-        ).filter(
-            # No puede estar tomado o tiene que haber expirado el periodo de taken.
-            Q(taken__isnull=True) | Q(taken__lt=desde)
-        ).annotate(
-            # Cuántas categorías deben cargarse.
-            a_cargar=Count('categorias', filter=Q(categorias__activa=True)),
-            # Cuántas llegaron a doble carga total.
-            terminadas=Count('mesacategoria',
-                filter=Q(mesacategoria__status=MesaCategoria.STATUS.total_consolidada_dc))
-        ).filter(
-            # Me fijo si no llegaron a doble carga.
-            terminadas__lt=F('a_cargar')
-        ).annotate(
-            tiene_problemas=Exists(
-                Problema.objects.filter(
-                    Q(mesa__id=OuterRef('id')),
-                    ~Q(estado='resuelto')
-                )
-            )
-        ).filter(
-            tiene_problemas=False
-        ).distinct()
-        return qs
 
     def get_absolute_url(self):
         # TODO: Por ahora no hay una vista que muestre la carga de datos
@@ -478,7 +494,6 @@ class Opcion(models.Model):
         verbose_name_plural = 'Opciones'
         ordering = ['orden']
 
-
     @property
     def color(self):
         """
@@ -489,10 +504,9 @@ class Opcion(models.Model):
             return self.partido.color
         return '#FFFFFF'
 
-
     def __str__(self):
         if self.partido:
-            return f'{self.partido.codigo} - {self.nombre}' #  -- {self.partido.nombre_corto}
+            return f'{self.partido.codigo} - {self.nombre}'     # {self.partido.nombre_corto}
         return self.nombre
 
 
@@ -543,6 +557,9 @@ class Categoria(models.Model):
         )
     )
 
+    requiere_cargas_parciales = models.BooleanField(default=False)
+    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
+
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
 
@@ -569,7 +586,7 @@ class Categoria(models.Model):
         subniveles (escuela, mesa) se debe mostrar la categoria a
         Intentendente de La Matanza, pero no a intendente de San Isidro.
         """
-        if isinstance(mesas, QuerySet):
+        if isinstance(mesas, models.QuerySet):
             mesas_count = mesas.count()
         else:
             # si es lista
@@ -619,6 +636,10 @@ class CategoriaOpcion(models.Model):
     class Meta:
         unique_together = ('categoria', 'opcion')
 
+    def __str__(self):
+        prioritaria = ' (es prioritaria)' if self.prioritaria else ''
+        return f'{self.categoria} - {self.opcion} {prioritaria}'
+
 
 class Carga(TimeStampedModel):
     """
@@ -645,7 +666,6 @@ class Carga(TimeStampedModel):
         max_length=300, null=True, blank=True, editable=False
     )
     procesada = models.BooleanField(default=False)
-
 
     @property
     def mesa(self):
@@ -708,8 +728,8 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
 
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
-    if (instance.lugar_votacion is not None
-        and instance.lugar_votacion.circuito is not None):
+    if (instance.lugar_votacion is not None and
+            instance.lugar_votacion.circuito is not None):
         circuito = instance.lugar_votacion.circuito
         seccion = circuito.seccion
         distrito = seccion.distrito

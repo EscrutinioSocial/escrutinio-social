@@ -78,7 +78,7 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     m = MesaFactory(numero='4012', lugar_votacion__circuito=c1, electores=100, circuito=c1)
     o2 = OpcionFactory(orden=3, codigo='A')
     o3 = OpcionFactory(orden=2, codigo='B')
-    c = CategoriaFactory(opciones=[o2, o3], nombre='Presidente y vice')
+    c = CategoriaFactory(opciones=[o2, o3], nombre='Otra categoria')
     CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True)
     MesaCategoriaFactory(mesa=m, categoria=c)
     with pytest.raises(DatosInvalidosError) as e:

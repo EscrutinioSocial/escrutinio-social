@@ -171,7 +171,7 @@ class AgregarAdjuntos(FormView):
             return self.form_invalid(form)
 
     def mostrar_mensaje_archivos_cargados(self, c):
-        messages.success(self.request, f'Subiste {c} imagenes de actas. Gracias!')
+        messages.success(self.request, f'Subiste {c} imágenes de actas. Gracias!')
 
     def mostrar_mensaje_tipo_archivo_invalido(self, f):
         messages.warning(self.request, f'{f.name} ignorado. No es una imagen')
