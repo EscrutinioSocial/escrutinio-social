@@ -66,7 +66,7 @@ class IdentificacionCreateView(CreateView):
 
     def form_valid(self, form):
         identificacion = form.save(commit=False)
-        identificacion.status = Identificacion.STATUS.identificada
+        identificacion.status = Attachment.STATUS.identificada
         identificacion.fiscal = self.request.user.fiscal
         identificacion.attachment = self.attachment
         identificacion.save()
@@ -86,8 +86,14 @@ class IdentificacionProblemaCreateView(IdentificacionCreateView):
         fiscal = self.request.user.fiscal
         identificacion = form.save(commit=False)
         identificacion.attachment = self.attachment
+<<<<<<< HEAD
         identificacion.fiscal = fiscal
         identificacion.status = Identificacion.STATUS.problema
+=======
+        identificacion.fiscal = self.request.user.fiscal
+        identificacion.attachment.status = identificacion.status
+        identificacion.attachment.save()
+>>>>>>> 34-agregar-la-posibilidad-de-reportar-problemas-en-las-imagenes
         identificacion.save()
 
         # Creo el problema asociado.
@@ -98,7 +104,8 @@ class IdentificacionProblemaCreateView(IdentificacionCreateView):
         self.identificacion_creada = identificacion
         messages.info(
             self.request,
-            f'Guardado como "{identificacion.get_status_display()}"',
+            f'Gracias por el reporte. Ahora pasamos a la siguiente acta.',
+            extra_tags="problema"
         )
         return redirect(self.get_success_url())
 

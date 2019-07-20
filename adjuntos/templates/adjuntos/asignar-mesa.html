@@ -10,9 +10,16 @@
 
 {% block extrahead %}
 <style type="text/css">
-
 .content {
   padding-bottom: 0px;
+}
+
+.alert-problema {
+    background-color: black;
+}
+
+.darkroom-image-container {
+  overflow: auto;
 }
 
 .left-panel {
@@ -32,12 +39,18 @@
 
 .right-panel {
   flex-basis: 70%;
-  min-width: 300px;
+  min-width: 350px;
   margin-left: 0.375rem;
-  margin-right: 0.375rem; }
-  .right-panel > .card {
-    margin-bottom: 0.5rem; }
+  margin-right: 0.375rem;
+}
+.right-panel > .card {
+    margin-bottom: 0.5rem;
+}
 
+#btn-problema {
+    padding-right: 1em;
+    padding-left: 1em;
+}
 
 @media only screen and (max-width: 993px) {
   .left-panel {
@@ -86,10 +99,12 @@ $(document).ready(function() {
         <div class="card-action">
             {% block card-action %}
             <div class="right-align">
-
                <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
                   Guardar
                </button>
+               <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
+                  Problema
+	       </a>
             </div>
             {% endblock card-action %}
         </div>
@@ -99,26 +114,22 @@ $(document).ready(function() {
 
   {% block extra_form %}
 
-<div class="card">
-       <form method="POST" action="{% url 'asignar-problema' attachment.id %}" enctype="multipart/form-data">
+  <div class="modal" id="modal-problem">
+    <form method="POST" action="{% url 'asignar-problema' attachment.id %}" enctype="multipart/form-data" id="problema-imagen">
+      <div class="modal-content">
+      <h4>Reportar problema con imágen</h4>
         {% csrf_token %}
-        <div class="card-content">
-
-            <div class="card-title">¿Hay un problema?</div>
-                  {% form form=form_problema %}
-                  {% endform %}
-            </div>
-
-        <div class="card-action">
-            <div class="right-align">
-               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="7">
-                  Reportar
-               </button>
-            </div>
-        </div>
-
-       </form>
+        {% form form=form_problema %}
+	{% endform %}
+      <div class="modal-footer" style="padding-right: 5%;" >
+	<a href="#!" class="modal-close waves-effect waves-green btn-flat">Volver</a>
+	<button class="btn waves-effect waves-light btn white-text red" type="submit" tabindex="7">
+          Reportar
+      </button>
     </div>
+    </div>
+    </form>
+  </div>
 
   {% endblock extra_form %}
 
@@ -162,8 +173,11 @@ $(document).ready(function() {
 {% block messages %}
 {{ block.super }}
 <script type="text/javascript">
-$(document).ready(function(){
-  $('#id_status_container').attr('tabindex', 6);
-});
+  $(document).ready(function(){
+      $('#id_status_container').attr('tabindex', 6);
+  });
+  $(document).ready(function(){
+      $('.modal').modal();
+  });
 </script>
 {% endblock messages %}
