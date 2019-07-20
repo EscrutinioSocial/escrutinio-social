@@ -1164,7 +1164,7 @@
   "fields": {
     "created": "2019-07-04T19:51:27.212Z",
     "modified": "2019-07-04T19:51:27.212Z",
-    "valida": true,
+    "invalidada": false,
     "tipo": "falta_foto",
     "origen": "web",
     "mesa_categoria": 1,
