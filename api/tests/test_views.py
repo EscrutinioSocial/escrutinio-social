@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 
 from elecciones.tests import factories
 from adjuntos.models import hash_file
-from elecciones.models import Mesa, Opcion
+from elecciones.models import Mesa, Opcion, Categoria
 
 
 @pytest.fixture
@@ -22,16 +22,6 @@ def admin_client(admin_user):
     client.credentials(HTTP_AUTHORIZATION='Bearer ' + response.data['access'])
 
     return client
-
-
-@pytest.fixture()
-def carta_marina(db):
-    """
-    1 distrito, 1 secciones, 1 circuito, 1 mesa
-    """
-    s = factories.SeccionFactory()
-    c = factories.CircuitoFactory(seccion=s)
-    m = factories.MesaFactory(numero=1, lugar_votacion__circuito=c, electores=100)
 
 
 def test_subir_acta(admin_client, datadir):
@@ -60,35 +50,38 @@ def test_subir_acta_invalid_ext(admin_client, datadir):
     assert response.data['foto'][0].code == 'invalid_image'
 
 
-def test_identificar_acta(admin_client, carta_marina):
+def test_identificar_acta(admin_client):
     """
     """
-    attachment = factories.AttachmentFactory()
+    mesa = factories.MesaFactory()
 
-    assert len(attachment.identificaciones.all()) == 0
+    codigo_distrito = mesa.circuito.seccion.distrito.numero
+    codigo_seccion = mesa.circuito.seccion.numero
+    codigo_circuito = mesa.circuito.numero
+    codigo_mesa = mesa.numero
+
+    attachment = factories.AttachmentFactory()
+    assert attachment.identificaciones.count() == 0
 
     url = reverse('identificar-acta', kwargs={'foto_digest': attachment.foto_digest})
     data = {
-        'codigo_distrito': 1,
-        'codigo_seccion': 1,
-        'codigo_circuito': '1',
-        'codigo_mesa': '1'
+        'codigo_distrito': codigo_distrito,
+        'codigo_seccion': codigo_seccion,
+        'codigo_circuito': codigo_circuito,
+        'codigo_mesa': codigo_mesa
     }
 
     response = admin_client.put(url, data, format='json')
-
     assert response.status_code == status.HTTP_200_OK
+    assert attachment.identificaciones.count() == 1
 
-    assert len(attachment.identificaciones.all()) == 1
-
-    identificacion = attachment.identificaciones.all()[0]
+    identificacion = attachment.identificaciones.first()
 
     assert response.data['id'] == identificacion.mesa.id
-    
-    assert identificacion.mesa.numero == '1'
-    assert identificacion.mesa.circuito.numero == '1'
-    assert identificacion.mesa.circuito.seccion.numero == 1
-    assert identificacion.mesa.circuito.seccion.distrito.numero == 1
+    assert identificacion.mesa.numero == codigo_mesa
+    assert identificacion.mesa.circuito.numero == codigo_circuito
+    assert identificacion.mesa.circuito.seccion.numero == codigo_seccion
+    assert identificacion.mesa.circuito.seccion.distrito.numero == codigo_distrito
 
 
 def test_identificar_acta_not_found(admin_client):
@@ -100,16 +93,16 @@ def test_identificar_acta_not_found(admin_client):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_cargar_votos(admin_client, carta_marina):
+def test_cargar_votos(admin_client):
     """
     """
-    mesa = Mesa.objects.get(numero=1)
+    mesa = factories.MesaFactory()
     url = reverse('cargar-votos', kwargs={'id_mesa': mesa.id})
 
-    opcion = Opcion.objects.get(nombre='blanco')
+    categoria_opcion = factories.CategoriaOpcionFactory()
     data = [{
-        'categoria': 1,
-        'opcion': opcion.id,
+        'categoria': categoria_opcion.categoria.id,
+        'opcion': categoria_opcion.opcion.id,
         'votos': 100
     }]
 

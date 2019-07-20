@@ -106,7 +106,7 @@ class CircuitoFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Circuito'
     seccion = factory.SubFactory(SeccionFactory)
-    numero = factory.Sequence(lambda n: n + 1)
+    numero = factory.Sequence(lambda n: str(n + 1))
     nombre = factory.LazyAttribute(lambda obj: f"Circuito {obj.seccion.numero}.{obj.numero}")
 
 
@@ -122,7 +122,7 @@ class MesaFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Mesa'
     # 5 es un nro arbitrario para que no coincida con el id y salten potenciales errores.
-    numero = factory.Sequence(lambda n: n + 5)
+    numero = factory.Sequence(lambda n: str(n + 5))
     lugar_votacion = factory.SubFactory(LugarVotacionFactory)
     circuito = factory.LazyAttribute(lambda obj: obj.lugar_votacion.circuito)
     electores = 100
