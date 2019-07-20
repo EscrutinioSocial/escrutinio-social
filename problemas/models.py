@@ -35,9 +35,10 @@ class ReporteDeProblema(TimeStampedModel):
 
 class Problema(TimeStampedModel):
     ESTADOS = Choices(
-        'potencial', # Todavía no se confirmó que exista de verdad.
-        'pendiente', # Confirmado y no se resolvió aún.
-        'en_curso',  # Ídem anterior pero ya fue visto.
+        'potencial',  # Todavía no se confirmó que exista de verdad.
+        'descartado', # No era realmente un problema, se usa para antitrolling.
+        'pendiente',  # Confirmado y no se resolvió aún.
+        'en_curso',   # Ídem anterior pero ya fue visto.
         'resuelto',
     )
 
@@ -63,7 +64,7 @@ class Problema(TimeStampedModel):
             mesa=mesa, attachment=attachment
         ).exclude(
             # Puede haber tenido otros problemas previos.
-            estado=cls.ESTADOS.resuelto
+            estado__in=[cls.ESTADOS.resuelto, cls.ESTADOS.descartado]
         ).first()
 
         problema.confirmar()
@@ -78,7 +79,7 @@ class Problema(TimeStampedModel):
             attachment=attachment
         ).exclude(
             # Me quedo con los problemas abiertos.
-            estado=cls.ESTADOS.potencial
+            estado__in=[cls.ESTADOS.resuelto, cls.ESTADOS.descartado]
         ).filter(
             # Tienen algún reporte de que falta foto.
             reportes__tipo_de_problema__in=[ReporteDeProblema.TIPOS_DE_PROBLEMA.falta_foto]
@@ -93,7 +94,13 @@ class Problema(TimeStampedModel):
         self.save(update_fields=['estado'])
 
     def resolver(self, resuelto_por):
-        self.estado = self.ESTADOS.resuelto
+        self.resolver_con_estado(self.ESTADOS.resuelto, resuelto_por)
+
+    def descartar(self, resuelto_por):
+        self.resolver_con_estado(self.ESTADOS.descartar, resuelto_por)
+
+    def resolver_con_estado(self, estado, resuelto_por):
+        self.estado = estado
         self.resuelto_por = resuelto_por
         self.save(update_fields=['estado', 'resuelto_por'])
 
