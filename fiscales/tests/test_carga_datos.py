@@ -1,18 +1,18 @@
 import pytest
 from django.urls import reverse
 from elecciones.tests.factories import (
-    VotoMesaReportadoFactory,
-    CategoriaFactory,
-    MesaFactory,
-    MesaCategoriaFactory,
-    OpcionFactory,
-    CircuitoFactory,
-    CategoriaOpcionFactory,
     CargaFactory,
+    CategoriaFactory,
+    CategoriaOpcionFactory,
+    CircuitoFactory,
     IdentificacionFactory,
+    MesaCategoriaFactory,
+    MesaFactory,
+    OpcionFactory,
+    VotoMesaReportadoFactory,
 )
 from elecciones.tests.test_resultados import fiscal_client, setup_groups    # noqa
-from elecciones.models import Mesa, VotoMesaReportado, Carga, MesaCategoria
+from elecciones.models import Carga, MesaCategoria
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
 
@@ -24,29 +24,25 @@ def test_elegir_acta_sin_mesas(fiscal_client):
     assert 'No hay actas para cargar por el momento' in response.content.decode('utf8')
 
 
-def test_cargar_resultados_redirige(db, fiscal_client):
-    assert Mesa.objects.count() == 0
-    assert VotoMesaReportado.objects.count() == 0
-    circuito = CircuitoFactory()
+def test_siguiente_redirige_a_cargar_resultados(db, fiscal_client):
     c1 = CategoriaFactory()
     c2 = CategoriaFactory()
-    m1 = MesaFactory(categorias=[c1], lugar_votacion__circuito=circuito)
+    m1 = MesaFactory(categorias=[c1])
     IdentificacionFactory(
         mesa=m1,
         status='identificada',
         source=Identificacion.SOURCES.csv,
     )
-    m2 = MesaFactory(categorias=[c1, c2], lugar_votacion__circuito=circuito)
+    m2 = MesaFactory(categorias=[c1, c2])
     assert MesaCategoria.objects.count() == 3
     IdentificacionFactory(
         mesa=m2,
         status='identificada',
         source=Identificacion.SOURCES.csv,
     )
+    # ambas consolidadas via csv
     consumir_novedades_identificacion()
-
     m1c1 = MesaCategoria.objects.get(mesa=m1, categoria=c1)
-
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
     assert response.url == reverse('carga-total', args=[m1c1.id])

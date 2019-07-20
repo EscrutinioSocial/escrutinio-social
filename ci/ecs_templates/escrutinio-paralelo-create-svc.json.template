@@ -1,0 +1,13 @@
+{
+    "cluster": "Convencer-Test",
+    "serviceName": "escrutinio-paralelo",
+    "taskDefinition": "escrutinio-paralelo-task:2",
+    "loadBalancers": [
+        {
+            "targetGroupArn": "arn:aws:elasticloadbalancing:sa-east-1:927223451584:targetgroup/ecs-TG/7d63938488594352",
+            "containerName": "escrutinio-paralelo",
+            "containerPort": 8000
+        }
+    ],
+    "desiredCount": 1
+}
