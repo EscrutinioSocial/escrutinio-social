@@ -1,0 +1,6 @@
+{
+    "cluster": "${ECS_CLUSTER}",
+    "service": "escrutinio-paralelo",
+    "taskDefinition": "escrutinio-paralelo-task:2",
+    "desiredCount": 1
+}

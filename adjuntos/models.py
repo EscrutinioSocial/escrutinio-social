@@ -6,18 +6,12 @@ from django.utils import timezone
 from model_utils import Choices
 from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
-from django.db.models import (
-    OuterRef, Exists, Count
-)
-
+from django.db.models import Count, Value
+from django.db.models.functions import Coalesce
 from django.db.models import Q
 from django.db import models
-from django.dispatch import receiver
-from django.db.models.signals import post_save
 import hashlib
-from model_utils import Choices
 from versatileimagefield.fields import VersatileImageField
-import json
 
 
 def hash_file(file, block_size=65536):
@@ -126,6 +120,17 @@ class Attachment(TimeStampedModel):
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
+    def take(self):
+        self.taken = timezone.now()
+        self.save(update_fields=['taken'])
+
+    def release(self):
+        """
+        Libera una mesa, es lo contrario de take().
+        """
+        self.taken = None
+        self.save(update_fields=['taken'])
+
     def save(self, *args, **kwargs):
         """
         Actualiza el hash de la imágen original asociada antes de guardar.
@@ -145,13 +150,22 @@ class Attachment(TimeStampedModel):
 
 
     @classmethod
-    def sin_identificar(cls, wait=2, fiscal_a_excluir=None):
+    def sin_identificar(cls, fiscal_a_excluir=None):
         """
         Devuelve un conjunto de Attachments que no tienen
-        identificación consolidada y no ha sido asignado
-        para clasificar en los últimos ``wait`` minutos
+        identificación consolidada y no han sido asignados
+        para clasificar en los últimos ``settings.ATTACHMENT_TAKE_WAIT_TIME`` minutos.
 
         Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
+        """
+        wait = settings.ATTACHMENT_TAKE_WAIT_TIME
+        return cls.sin_identificar_con_timeout(wait=wait, fiscal_a_excluir=fiscal_a_excluir)
+
+    @classmethod
+    def sin_identificar_con_timeout(cls, wait=2, fiscal_a_excluir=None):
+        """
+        Es la implementación de sin_identificar() que se expone sólo para poder
+        testear más fácilmente
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
@@ -179,13 +193,11 @@ class Attachment(TimeStampedModel):
         2 lo identificaron como spam, 1 como inválida,
         1 a la mesa id=1, y otro a la mesa id=2, pero esa vino de un csv.
         """
-        from django.db.models import Sum, Value as V
-        from django.db.models.functions import Coalesce
         qs = self.identificaciones.all()
         cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
         result = []
         query = qs.values('mesa', 'status').annotate(
-                mesa_o_0=Coalesce('mesa', V(0)) # Esto es para facilitar el testing.
+                mesa_o_0=Coalesce('mesa', Value(0))     # Esto es para facilitar el testing.
             ).annotate(
                 total=Count('status')
             ).annotate(
