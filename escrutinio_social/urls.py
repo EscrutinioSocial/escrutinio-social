@@ -37,7 +37,6 @@ urlpatterns = [
 
     url(r'^elecciones/', include(elecciones_urls)),
     url(r'^clasificar-actas/', include('adjuntos.urls')),
-    url('^reportar-problema/(?P<mesa_numero>\d+)$', ProblemaCreate.as_view(), name='reportar-problema'),
 
     url(r'^api/', include(api_urls)),
     url(r'^problemas/', include(problemas_urls))

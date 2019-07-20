@@ -59,10 +59,6 @@ from adjuntos.models import Attachment
 from django.conf import settings
 
 
-# tiempo maximo en minutos que se mantiene la asignacion de un acta hasta ser reasignada
-# es para que alguien no se "cuelgue" y quede un acta sin cargar.
-WAITING_FOR = 2
-
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
 
