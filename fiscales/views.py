@@ -39,7 +39,6 @@ from .forms import (
     QuieroSerFiscal1,
     QuieroSerFiscal2,
     QuieroSerFiscal4,
-    ElegirFiscal,
     FiscalxDNI,
 )
 from contacto.views import ConContactosMixin
@@ -225,7 +224,7 @@ def realizar_siguiente_accion(request):
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def carga(request, mesacategoria_id, tipo='total', carga_id=None):
+def carga(request, mesacategoria_id, tipo='total'):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
@@ -237,36 +236,50 @@ def carga(request, mesacategoria_id, tipo='total', carga_id=None):
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
-    if carga_id:
-        carga = get_object_or_404(
-            Carga, id=carga_id, carga__mesa_categoria=mesa_categoria
-        )
+    opciones = categoria.opciones_actuales(solo_prioritarias)
+
+    if tipo == 'total' and mesa_categoria.status == MesaCategoria.STATUS.parcial_consolidada_dc:
+        # una carga total con parcial consolidada reutiliza los datos ya cargados
+        carga = mesa_categoria.carga_testigo
+        votos_para_opcion = dict(carga.opcion_votos())
     else:
         carga = None
+        votos_para_opcion = {}
 
     VotoMesaReportadoFormset = votomesareportadoformset_factory(
-        min_num=categoria.opciones_actuales(solo_prioritarias).count()
+        min_num=opciones.count()
     )
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
         # se podria hacer "disabled" pero ese caso quita el valor del
         # cleaned_data y luego lo exige por ser requerido.
-        for i, (opcion, form) in enumerate(zip(categoria.opciones_actuales(solo_prioritarias), formset), 1):
+        first_autofoco = None
+        for i, (opcion, form) in enumerate(zip(opciones, formset), 1):
             form.fields['opcion'].choices = [(opcion.id, str(opcion))]
 
             # esto hace que la navegacion mediante Tabs priorice los inputs de "votos"
             # por sobre los combo de "opcion"
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
-            form.fields['votos'].widget.attrs['tabindex'] = i
 
+            if carga and votos_para_opcion.get(opcion.id):
+                # los campos previamente cargados son solo lectura
+                form.fields['votos'].widget.attrs['readonly'] = True
+            else:
+                form.fields['votos'].widget.attrs['tabindex'] = i
+
+                if not first_autofoco:
+                    first_autofoco = True
+                    form.fields['votos'].widget.attrs['autofocus'] = True
+
+
+            # todos los campos son requeridos
             form.fields['votos'].required = True
-            if i == 1:
-                form.fields['votos'].widget.attrs['autofocus'] = True
+
     data = request.POST if request.method == 'POST' else None
 
-    qs = VotoMesaReportado.objects.filter(carga=carga) if carga else VotoMesaReportado.objects.none()
-    initial = [{'opcion': o} for o in categoria.opciones_actuales(solo_prioritarias)]
+    qs = VotoMesaReportado.objects.none()
+    initial = [{'opcion': o, 'votos': votos_para_opcion.get(o.id)} for o in opciones]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
     fix_opciones(formset)
     is_valid = False
