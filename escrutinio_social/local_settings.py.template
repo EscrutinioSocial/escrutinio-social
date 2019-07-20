@@ -1,16 +1,16 @@
 ALLOWED_HOSTS = ['tusitio.com']
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'carreros',
-        'USER': 'carreros',
-        'PASSWORD': '**********',
-        'HOST': 'localhost', # the missing piece of the puzzle
-        'PORT': '', #
-    }
-}
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': 'carreros',
+#        'USER': 'carreros',
+#        'PASSWORD': '**********',
+#        'HOST': 'localhost', # the missing piece of the puzzle
+#        'PORT': '', #
+#    }
+#}
 
 DEFAULT_FROM_EMAIL = "algo@email.com"         # if you don't already have this in settings
 DEFAULT_CEL_CALL = '+54 9 351 XXXXXX'

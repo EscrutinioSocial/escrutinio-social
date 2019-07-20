@@ -6,6 +6,7 @@ como elegir acta a clasificar / a cargar / validar
 from io import StringIO
 import sys
 from django.core import serializers
+from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse, reverse_lazy
@@ -62,20 +63,7 @@ from django.conf import settings
 # es para que alguien no se "cuelgue" y quede un acta sin cargar.
 WAITING_FOR = 2
 
-NO_PERMISSION_REDIRECT = '/permission-denied/'
-
-
-@login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def carga_simultanea(request, mesa, categoria):
-    categoria_para_mostrar = categoria.replace("_", " ")
-    return render(request, 'fiscales/carga-simultanea.html', {'mesa': mesa, 'categoria': categoria_para_mostrar})
-
-
-@login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def post_reportar_problema(request, mesa):
-    return render(request, 'fiscales/post-reportar-problema.html', {'mesa': mesa})
+NO_PERMISSION_REDIRECT = 'permission-denied'
 
 
 @login_required
@@ -90,14 +78,16 @@ def choice_home(request):
     user = request.user
     if not user.is_authenticated:
         return redirect('login')
+    fiscal = get_object_or_404(Fiscal, user=request.user)
+    if fiscal.esta_en_grupo('validadores'):
+        return redirect('siguiente-accion')
 
-    es_fiscal = Fiscal.objects.filter(user=request.user).exists()
-
-    return redirect('siguiente-accion') if user.fiscal.esta_en_grupo('validadores') else render(request, 'fiscales/base.html')
+    return redirect('bienvenido')
 
 
 def permission_denied(request):
-    return PermissionDenied
+    raise PermissionDenied()
+
 
 class BaseFiscal(LoginRequiredMixin, DetailView):
     model = Fiscal
@@ -285,36 +275,32 @@ def realizar_siguiente_accion(request):
     """
     return siguiente_accion(request).ejecutar()
 
+
+
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
-def cargar_resultados_mesa_desde_ub(request, mesa_id, tipo='total'):
+def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
-    categoria = mesa_existente.siguiente_categoria_sin_carga()
-    mesa_existente.taken = timezone.now()
-    mesa_existente.save(update_fields=['taken'])
-       
-    #si categoríá no es None, cargamos resultados
-    if categoria is not None:
-        return cargar_resultados(request, categoria.id, mesa_existente.numero, desde_ub=True)
-        #si es None, lo llevamos a subir un adjunto    
-    return redirect('agregar-adjuntos-ub')   
+    mesacategoria = MesaCategoria.objects.siguiente_de_la_mesa(mesa_existente)
+    
+    if mesacategoria :
+        mesacategoria.take()
+        return carga(request, mesacategoria.id, desde_ub=True)
 
-
+    # si es None, lo llevamos a subir un adjunto
+    return redirect('agregar-adjuntos-ub')
+    
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores') or u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
-def cargar_resultados(
-    request, categoria_id, mesa_numero, tipo='total', carga_id=None, desde_ub = False
-):
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
+def carga(request, mesacategoria_id, tipo='total', carga_id=None, desde_ub=False):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
     mesa_categoria = get_object_or_404(
         MesaCategoria,
-        categoria_id=categoria_id,
-        mesa__numero=mesa_numero
+        id=mesacategoria_id
     )
-
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
@@ -353,6 +339,7 @@ def cargar_resultados(
     is_valid = False
     if qs:
         formset.convert_warnings = True  # monkepatch
+
     if request.method == 'POST' or qs:
         is_valid = formset.is_valid()
 
@@ -375,20 +362,17 @@ def cargar_resultados(
                     vmr = form.save(commit=False)
                     vmr.carga = carga
                     vmr.save()
-                # libero el token sobre la mesa
-                mesa.taken = None
-                mesa.save(update_fields=['taken'])
+                # Libero el token sobre la mc
+                mesa_categoria.release()
             carga.actualizar_firma()
-            messages.success(
-                request,
-                f'Guardada categoría {categoria} para {mesa}')
-        except IntegrityError as e:
-            # hubo otra carga previa.
+            messages.success(request, f'Guardada categoría {categoria} para {mesa}')
+        except Exception as e:
+            # este catch estaba desde cuando no podia haber multiples cargas para una
+            # misma mesa-categoria
+            # ahora no podria darte IntegrityError porque esta vista sólo crea objetos
+            # y ya no hay constraint.
+            # Lo dejo por si queremos canalizar algun otro tipo de excepcion
             capture_exception(e)
-            return redirect('carga-simultanea', mesa=mesa.numero, categoria=categoria.nombre.replace(" ", "_"))
-
-        #si está en medio de la carga desde la unidad básica, vuelve a procesar-acta para que le tire la próxima categoría
-        #si es un validador, va a siguiente-accion
         redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
         return redirect(redirect_to)
 

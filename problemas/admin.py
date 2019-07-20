@@ -12,7 +12,6 @@ def marcar_resuelto(modeladmin, request, queryset):
 marcar_resuelto.short_description = "Marcar como resueltos"
 
 
-
 class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def mesa_(o):
@@ -24,17 +23,5 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     search_fields = (
         'mesa__numero',
     )
-
-    def get_row_actions(self, obj):
-        row_actions = []
-
-        for e in obj.mesa.categoria.all():
-            row_actions.append({
-                'label': f'Editar/Cargar {e}',
-                'url': reverse('mesa-cargar-resultados', args=[e.id, obj.mesa.numero]),
-                'enabled': True
-            })
-        row_actions += super().get_row_actions(obj)
-        return row_actions
 
 admin.site.register(Problema, ProblemaAdmin)
