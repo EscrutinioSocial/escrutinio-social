@@ -125,12 +125,11 @@ def test_formset_en_carga_total_muestra_todos(db, fiscal_client):
         (o.id, str(o))
     ]
 
-@pytest.mark.skip(reason="Tema de una factory. Solo falla cuando se corren todos los tests, no solo los de este archivo.")
 def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, settings):
     # solo una carga, para simplificar el setup
     settings.MIN_COINCIDENCIAS_CARGAS = 1
 
-    c = CategoriaFactory(id=100, opciones=[])
+    c = CategoriaFactory(id=25000, opciones=[])
     # notar que el orden no coincide con el id
 
     o1 = CategoriaOpcionFactory(categoria=c, opcion__orden=3, prioritaria=True).opcion
