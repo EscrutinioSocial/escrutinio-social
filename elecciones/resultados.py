@@ -115,7 +115,7 @@ class Resultados():
         for nombre, id in Opcion.objects.filter(
             categorias__id=categoria.id,
             partido__isnull=True,
-            es_metadata=False
+            tipo=Opcion.TIPOS.no_positivo
         ).values_list('nombre', 'id'):
             otras_opciones[nombre] = qry(opcion__id=id)
 
@@ -213,7 +213,6 @@ class Resultados():
         resultados parciales de cada subdistrito para luego realizar la ponderación.
         """
         lookups = Q()
-        lookups2 = Q()
         resultados = {}
 
         if self.filtros:
@@ -221,19 +220,15 @@ class Resultados():
 
             if tipo == 'seccion':
                 lookups = Q(mesa__lugar_votacion__circuito__seccion__in=self.filtros)
-                lookups2 = Q(lugar_votacion__circuito__seccion__in=self.filtros)
 
             elif tipo == 'circuito':
                 lookups = Q(mesa__lugar_votacion__circuito__in=self.filtros)
-                lookups2 = Q(lugar_votacion__circuito__in=self.filtros)
 
             elif tipo == 'lugarvotacion':
                 lookups = Q(mesa__lugar_votacion__in=self.filtros)
-                lookups2 = Q(lugar_votacion__in=self.filtros)
 
             elif tipo == 'mesa':
                 lookups = Q(mesa__id__in=self.filtros)
-                lookups2 = Q(id__in=self.filtros)
 
         mesas = self.mesas(categoria)
 
@@ -262,7 +257,7 @@ class Resultados():
 
         expanded_result = {}
         for k, v in c.votos.items():
-            if isinstance(v,dict):
+            if isinstance(v, dict):
                 d = v['detalle']
                 v = v['total']
             else:
@@ -281,13 +276,13 @@ class Resultados():
                 for ag in agrupaciones:
                     data = datos_ponderacion[ag]
                     if k in data["votos"] and data["positivos"]:
-                        if isinstance(data['votos'][k],dict):
+                        if isinstance(data['votos'][k], dict):
                             v = data['votos'][k]['total']
                         else:
                             v = data['votos'][k]
                         acumulador_positivos += data["electores"]*v/data["positivos"]
 
-                expanded_result[k]["proyeccion"] = f'{acumulador_positivos*100/electores_pond:.2f}'
+                expanded_result[k]["proyeccion"] = porcentaje(acumulador_positivos, electores_pond)
 
         # TODO permitir opciones positivas no asociadas a partido.
         tabla_positivos = OrderedDict(
@@ -302,7 +297,7 @@ class Resultados():
             k: {
                 "votos": v,
                 "porcentaje_total": porcentaje(v, c.total)
-            } for k, v in  tabla_no_positivos.items()
+            } for k, v in tabla_no_positivos.items()
         }
         result_piechart = None
 
@@ -315,7 +310,6 @@ class Resultados():
             'positivos': c.positivos,
             'escrutados': c.escrutados,
             'votantes': c.total,
-
             'proyectado': proyectado,
             'proyeccion_incompleta': proyeccion_incompleta,
             'porcentaje_mesas_escrutadas': c.porcentaje_mesas_escrutadas,
@@ -376,7 +370,7 @@ class Resultados():
                     op_nom: {
                         'votos': op_votos if op_votos else "0",
                         'porcentaje': porcentaje(op_votos, v)
-                    } for op_nom,op_votos in reportados.aggregate(
+                    } for op_nom, op_votos in reportados.aggregate(
                             **opciones_por_partido[k]
                     ).items()
                 }
@@ -392,7 +386,10 @@ class Resultados():
         # calculamos el total como la suma de todos los positivos y los
         # validos no positivos.
         positivos = sum([x['total'] for x in result.values()])
-        total = positivos + sum(v for k, v in result_opc.items() if Opcion.objects.filter(nombre=k, es_contable=False, es_metadata=False).exists())
+        total = positivos + sum(
+            v for (k, v) in result_opc.items()
+            if Opcion.objects.filter(nombre=k, tipo=Opcion.TIPOS.no_positivo).exists()
+        )
         result.update(result_opc)
 
         return AttrDict({

@@ -218,7 +218,6 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
 
-
     assert resultados['votantes'] == 215
     assert resultados['electores'] == 800
 
@@ -320,7 +319,7 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
 
 def test_resultados_proyectados_simple(fiscal_client):
     s1, s2 = SeccionFactory.create_batch(2)
-    o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
+    o1, o2 = OpcionFactory.create_batch(2)
     e1 = CategoriaFactory(opciones=[o1, o2])
 
     m1, *_ = MesaFactory.create_batch(3, categorias=[e1], lugar_votacion__circuito__seccion=s1, electores=200)
@@ -350,10 +349,8 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     s1 = SeccionFactory(proyeccion_ponderada=True)
     c1, c2 = CircuitoFactory.create_batch(2, seccion=s1)
     c3 = CircuitoFactory()
-    s2 = c2.seccion
 
-
-    o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
+    o1, o2 = OpcionFactory.create_batch(2)
     e1 = CategoriaFactory(opciones=[o1, o2])
 
     ms1, ms2, ms3 = (
@@ -528,8 +525,8 @@ def test_siguiente_accion_cargar_acta(fiscal_client):
 
 
 def test_resultados_no_positivos(fiscal_client):
-    o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
-    o3 = OpcionFactory(nombre='blanco', partido=None, es_contable=False)
+    o1, o2 = OpcionFactory.create_batch(2)
+    o3 = OpcionFactory(nombre='blanco', partido=None, tipo='no_positivo')
     e1 = CategoriaFactory(opciones=[o1, o2, o3])
 
     m1 = MesaFactory(categorias=[e1], electores=200)
@@ -550,9 +547,9 @@ def test_resultados_no_positivos(fiscal_client):
 
 def test_resultados_excluye_metadata(fiscal_client):
     s1, s2 = SeccionFactory.create_batch(2)
-    o1, o2 = OpcionFactory.create_batch(2, es_contable=True)
-    o3 = OpcionFactory(partido=None, es_contable=False)
-    o4 = OpcionFactory(nombre='TOTAL', partido=None, es_contable=False, es_metadata=True)
+    o1, o2 = OpcionFactory.create_batch(2)
+    o3 = OpcionFactory(partido=None, tipo='no_positivo')
+    o4 = OpcionFactory(nombre='TOTAL', partido=None, tipo='metadata')
     e1 = CategoriaFactory(opciones=[o1, o2, o3, o4])
 
     m1, *_ = MesaFactory.create_batch(3, categorias=[e1], lugar_votacion__circuito__seccion=s1, electores=200)
