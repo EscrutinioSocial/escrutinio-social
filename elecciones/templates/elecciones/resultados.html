@@ -39,187 +39,172 @@
  {% endblock %}
 
 {% block sidenav_items %}
+<li><a href="{% url "resultados-categoria" primera_categoria %}">Todo</a></li>
 
-      <li><a href="{% url "resultados-categoria" primera_categoria %}">Todo</a></li>
-
-      {% for distrito in distritos %}
-
-      <ul class="no-padding collapsible collapsible-accordion">
-          <li id="distrito-{{distrito.id}}">
-            <a class="collapsible-header">
-                <i class="material-icons">arrow_drop_down</i>
-            </a>
-            <a href="{{ request.path }}?distrito={{ distrito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
-                {{ distrito }}
-            </a>
-            <div class="collapsible-body">
-
-                {% for seccion in distrito.secciones.all %}
-                    <ul class="collapsible collapsible-accordion">
-                        <li id="seccion-{{seccion.id}}">
-                            <a class="collapsible-header">
-                                <i class="material-icons">arrow_drop_down</i>
-                            </a>
-                            <a href="{{ request.path }}?seccion={{ seccion.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
-                                &nbsp;&nbsp;{{ seccion }}
-                            </a>
-                            <div class="collapsible-body">
-                                <ul>
-                                    {% for circuito in seccion.circuito_set.all %}
-                                       <li id="circuito-{{circuito.id}}">
-                                            <a href="{{ request.path }}?circuito={{ circuito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
-                                                {{ circuito.nombre }}
-                                            </a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </li>
-                    </ul>
-                {% endfor %}
-            </div>
-          </li>
-      </ul>
-      {% endfor %}
-
+{% for distrito in distritos %}
+<ul class="no-padding collapsible collapsible-accordion">
+    <li id="distrito-{{distrito.id}}">
+        <a class="collapsible-header">
+            <i class="material-icons">arrow_drop_down</i>
+        </a>
+        <a href="{{ request.path }}?distrito={{ distrito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+            {{ distrito }}
+        </a>
+        <div class="collapsible-body">
+            {% for seccion in distrito.secciones.all %}
+            <ul class="collapsible collapsible-accordion">
+                <li id="seccion-{{seccion.id}}">
+                    <a class="collapsible-header">
+                        <i class="material-icons">arrow_drop_down</i>
+                    </a>
+                    <a href="{{ request.path }}?seccion={{ seccion.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                        &nbsp;&nbsp;{{ seccion }}
+                    </a>
+                    <div class="collapsible-body">
+                        <ul>
+                        {% for circuito in seccion.circuito_set.all %}
+                            <li id="circuito-{{circuito.id}}">
+                                <a href="{{ request.path }}?circuito={{ circuito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                                    {{ circuito.nombre }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+            {% endfor %}
+        </div>
+    </li>
+</ul>
+{% endfor %}
 {% endblock %}
 
-
-
 {% block left-panel %}
-    <ul class="tabs">
+<ul class="tabs">
+    {% for categoria in categorias %}
+    <li class="tab col s3" >
+        <a target="_self" href="{{categoria.get_absolute_url}}?{{ request.GET.urlencode }}" {% if categoria.id == object.id %}class="active"{% endif %}>{{ categoria.nombre }}</a>
+    </li>
+    {% endfor %}
+</ul>
+<div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
+    <div class="card-content" id="frame{{categoria.id}}">
+    {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
 
-        {% for categoria in categorias %}
-        <li class="tab col s3" >
-            <a target="_self" href="{{categoria.get_absolute_url}}?{{ request.GET.urlencode }}" {% if categoria.id == object.id %}class="active"{% endif %}>{{ categoria.nombre }}</a>
-        </li>
-        {% endfor %}
-    </ul>
+        <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
+            ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
+        </h4>
 
-
-        <div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
-            <div class="card-content" id="frame{{categoria.id}}">
-              {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
-
-              <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
-                ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
-              </h4>
-
-              <table class="bordered" id="tabla_resultados">
-		<colgroup>
-		  <col id="partido" />
-		  {% if incluir_votos %}
-		  <col id="voto_agrupacion"/>
-		  <col id="voto_partido"/>
-		  {% endif %}
-		  <col id="porc_agrupacion"/>
-		  <col id="porc_partido"/>
-		  {% if resultados.proyectado %}
-		  <col id="proyeccion"/>
-		  {% endif %}
-		</colgroup>
-                  <thead>
-                  <tr>
+        <table class="bordered" id="tabla_resultados">
+            <colgroup>
+                <col id="partido" />
+                {% if incluir_votos %}
+                <col id="voto_agrupacion"/>
+                <col id="voto_partido"/>
+          		  {% endif %}
+          		  <col id="porc_agrupacion"/>
+          		  <col id="porc_partido"/>
+          		  {% if resultados.proyectado %}
+          		  <col id="proyeccion"/>
+          		  {% endif %}
+            </colgroup>
+            <thead>
+                <tr>
                     <th id="header_titulo" colspan="{%if incluir_votos %}3{%else%}5{%endif%}">Agrupaciones políticas/Listas</th>
-		  </tr>
-		  <tr>
-		    <th></th>
-		    <th id="header_votos" colspan="{%if incluir_votos %}2{%else%}4{%endif%}">Votos</th>
+                </tr>
+                <tr>
+        		        <th></th>
+        		        <th id="header_votos" colspan="{%if incluir_votos %}2{%else%}4{%endif%}">Votos</th>
                     {% if resultados.proyectado %}
-                    <th id="header_proyectado">% proyectado <i class="small material-icons {% if resultados.proyeccion_incompleta  %}tooltipped" data-position="bottom" data-tooltip="Proyección incompleta. Faltan cargar datos en
-{% for ag in resultados.proyeccion_incompleta %}{{ ag }} / {% endfor %}
-{% endif %}">warning</i> </th>
-                      {% endif %}
-		  </tr>
-                  </thead>
-		  <tbody>
-                    {% with resultados.tabla_positivos as tabla %}
-                    {% include "elecciones/tabla_resultados_numerables.html" with responsive=True incluir_votos=True %}
-                    {% endwith %}
-		  </tbody>
-              </table>
+                    <th id="header_proyectado">
+                        % proyectado
+                        <i class="small material-icons {% if resultados.proyeccion_incompleta  %}tooltipped"
+                           data-position="bottom"
+                           data-tooltip="Proyección incompleta. Faltan cargar datos en {% for ag in resultados.proyeccion_incompleta %}{{ ag }} / {% endfor %}{% endif %}">
+                           warning
+                        </i>
+                    </th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% with resultados.tabla_positivos as tabla %}
+                {% include "elecciones/tabla_resultados_numerables.html" with responsive=True incluir_votos=True %}
+                {% endwith %}
+            </tbody>
+        </table>
 
-              <table class="striped bordered" style="margin-top: 2em">
-                  <thead>
-                  <tr>
-                      <th>Totales</th>
-                      <th>Cantidad</th>
-                      <th>%</th>
-                  </tr>
-                  </thead>
+        <table class="striped bordered" style="margin-top: 2em">
+            <thead>
+                <tr>
+                    <th>Totales</th>
+                    <th>Cantidad</th>
+                    <th>%</th>
+                </tr>
+            </thead>
 
-                  {% with resultados.tabla_no_positivos as tabla %}
-                      {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True incluir_votos=True %}
-                  {% endwith %}
-              </table>
+            {% with resultados.tabla_no_positivos as tabla %}
+                {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True incluir_votos=True %}
+            {% endwith %}
+        </table>
 
-
-              {% if show_plot %}
-                <div id="columnchart-{{object.id}}"></div>
-              {% endif %}
-
-
-              {% else %}
-
-              <h5>Aún no hay mesas escrutadas en {{para}}</h5>
-
-              {% endif %}
-
-            </div>
-        </div>
+        {% if show_plot %}
+            <div id="columnchart-{{object.id}}"></div>
+        {% endif %}
 
 
+    {% else %}
+        <h5>Aún no hay mesas escrutadas en {{para}}</h5>
+    {% endif %}
+    </div>
+</div>
 {% endblock %}
 
 {% block right-panel %}
- <div class="card">
+<div class="card">
     <div id="metadata" class="card-content">
-      <table class="borderless" style="font-size: 0.9em">
-          <tr>
-              <th title="Electores"><i class="small material-icons">people_outline</i>Electores</th>
-          </tr>
-          <tr>
-              <td title="Electores">{{ resultados.electores}} </td>
-          </tr>
-          <tr>
-              <th title="Escrutados"><i class="small material-icons">person_outline</i>Escrutados</th>
-          </tr>
-          <tr>
-              <td title="Escrutados">{{ resultados.electores_en_mesas_escrutadas }} </td>
-          </tr>
-          <tr>
-              <th title="% Escrutado"><i class="small material-icons">trending_up</i>% Escrutado</th>
-          </tr>
-          <tr>
-              <td title="% Escrutado">{{ resultados.porcentaje_escrutado}} %</td>
-          </tr>
-          <tr>
-              <th title="Votantes"><i class="small material-icons">person</i>Votantes</th>
-          </tr>
-          <tr>
-              <td title="Votantes">{{ resultados.votantes }} </td>
-          </tr>
-          <tr>
-              <th title="Positivos"><i class="small material-icons">person_add</i>Positivos</th>
-          </tr>
-          <tr>
-              <td title="Positivos">{{ resultados.positivos}}</td>
-          </tr>
-          <tr>
-              <th title="% Participación"><i class="small material-icons">timeline</i>% Participacion</th>
-          </tr>
-          <tr>
+        <table class="borderless" style="font-size: 0.9em">
+            <tr>
+                <th title="Electores"><i class="small material-icons">people_outline</i>Electores</th>
+            </tr>
+            <tr>
+                <td title="Electores">{{ resultados.electores}} </td>
+            </tr>
+            <tr>
+                <th title="Escrutados"><i class="small material-icons">person_outline</i>Escrutados</th>
+            </tr>
+            <tr>
+                <td title="Escrutados">{{ resultados.electores_en_mesas_escrutadas }} </td>
+            </tr>
+            <tr>
+                <th title="% Escrutado"><i class="small material-icons">trending_up</i>% Escrutado</th>
+            </tr>
+            <tr>
+                <td title="% Escrutado">{{ resultados.porcentaje_escrutado}} %</td>
+            </tr>
+            <tr>
+                <th title="Votantes"><i class="small material-icons">person</i>Votantes</th>
+            </tr>
+            <tr>
+                <td title="Votantes">{{ resultados.votantes }} </td>
+            </tr>
+            <tr>
+                <th title="Positivos"><i class="small material-icons">person_add</i>Positivos</th>
+            </tr>
+            <tr>
+                <td title="Positivos">{{ resultados.positivos}}</td>
+            </tr>
+            <tr>
+                <th title="% Participación"><i class="small material-icons">timeline</i>% Participacion</th>
+            </tr>
+            <tr>
               <td title="% Participación">{{ resultados.porcentaje_participacion}} %</td>
-          </tr>
-      </table>
+            </tr>
+        </table>
     </div>
 </div>
-
-
-
 {% endblock right-panel %}
-
-
 
 {% block messages %}
 {{ block.super }}
@@ -241,7 +226,7 @@ function abrirArbolDistritoSeccionCircuito() {
   var $distrito;
   var $seccion;
   var $circuito;
-  
+
   if (searchParams.has('distrito')) {
     $distrito = $('#distrito-' + searchParams.get('distrito'));
   }
