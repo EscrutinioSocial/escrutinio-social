@@ -1,0 +1,68 @@
+variables:
+  CONTAINER_IMAGE: '927223451584.dkr.ecr.sa-east-1.amazonaws.com/escrutinio-paralelo:latest' 
+  REGION: "sa-east-1"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+
+stages:
+  - build
+  - test
+  - pages  
+  - deploy
+
+build:
+  stage: build
+  image: docker:stable
+  services:
+    - docker:stable-dind
+  before_script:
+    - apk -uv add --no-cache groff bash jq less git py-pip
+    - pip install --no-cache-dir awscli
+  script:
+    - ./ci/build.sh
+  only:
+    - develop 
+  tags:
+    - docker
+
+test:
+  stage: test
+  image: 
+    name: docker/compose:1.24.0
+    entrypoint: [""]
+  services:
+    - docker:stable-dind
+  script:
+    - docker-compose build
+    - docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
+  coverage: "/Total coverage.+ (\\d+.\\d+%)/"
+  artifacts:
+    paths:
+      - htmlcov
+    expire_in: 1 days
+  tags:
+    - docker
+    
+pages:
+  stage: deploy
+  dependencies:
+    - test
+  script:
+    - mv htmlcov/ public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - develop
+
+
+deploy:
+  stage: deploy
+  image: b4ck3r/aws-cli:latest 
+  script:
+    - ./ci/deploy.sh
+  only:
+    - develop 
+  tags:
+    - docker

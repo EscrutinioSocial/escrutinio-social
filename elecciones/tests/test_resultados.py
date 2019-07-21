@@ -1,12 +1,9 @@
-import json
 import pytest
-from django.db.models import Sum
 from django.urls import reverse
 from django.contrib.auth.models import Group
 from elecciones.models import (
-    Categoria, Mesa, Distrito, Circuito, Seccion, MesaCategoria,
+    Categoria, MesaCategoria, Carga
 )
-from elecciones.views import ResultadosCategoria
 from .factories import (
     UserFactory,
     CategoriaFactory,
@@ -16,12 +13,13 @@ from .factories import (
     OpcionFactory,
     CircuitoFactory,
     MesaFactory,
-    AttachmentFactory,
+    MesaCategoriaFactory,
     IdentificacionFactory,
     VotoMesaReportadoFactory,
     CargaFactory,
 )
-from adjuntos.consolidacion import *
+from adjuntos.models import Identificacion
+from adjuntos.consolidacion import consumir_novedades_identificacion
 from .test_models import consumir_novedades_y_actualizar_objetos
 
 
@@ -44,11 +42,20 @@ def carta_marina(db):
         MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90)
     )
 
+
 @pytest.fixture()
 def setup_groups(db, admin_user):
-    for nombre in ['validadores', 'unidades basicas', 'visualizadores', 'supervisores', 'fiscales con acceso al bot']:
+    groups = [
+        'validadores',
+        'unidades basicas',
+        'visualizadores',
+        'supervisores',
+        'fiscales con acceso al bot'
+    ]
+    for nombre in groups:
         g = Group.objects.create(name=nombre)
         admin_user.groups.add(g)
+
 
 @pytest.fixture()
 def fiscal_client(db, admin_user, setup_groups, client):
@@ -60,18 +67,19 @@ def fiscal_client(db, admin_user, setup_groups, client):
 
 @pytest.fixture()
 def url_resultados(carta_marina):
-    return reverse('resultados-categoria', args=[1])
+    c = CategoriaFactory(nombre='default')
+    return reverse('resultados-categoria', args=[c.id])
 
 
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
-    # nota: el factory de mesa indirectamente crea la categoria con id=1 que es actual()
+    # implicitamente está creada la categoria default que tiene todo el padron
+    assert Categoria.objects.get().electores == 800
     e2 = CategoriaFactory()
     m1, m2 = carta_marina[:2]
     m1.categoria_add(e2)
     m2.categoria_add(e2)
 
-    assert Categoria.objects.first().electores == 800
     assert e2.electores == 200
 
 
@@ -144,15 +152,17 @@ def test_electores_sin_filtro(url_resultados, fiscal_client):
 def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # resultados para mesa 1
     m1, _, m3, *_ = carta_marina
-    categoria = m1.categorias.get()
+    categoria = m1.categorias.get()     # sólo default
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
     # la opción 4 pasa a ser del mismo partido que la 1
     o4.partido = o1.partido
     o4.save()
     blanco = categoria.opciones.get(nombre='blanco')
-    c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=categoria)
-    c2 = CargaFactory(mesa_categoria__mesa=m3, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=categoria)
+    mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
+    mc3 = MesaCategoria.objects.get(mesa=m3, categoria=categoria)
+    c1 = CargaFactory(mesa_categoria=mc1, tipo=Carga.TIPOS.parcial)
+    c2 = CargaFactory(mesa_categoria=mc3, tipo=Carga.TIPOS.parcial)
     consumir_novedades_y_actualizar_objetos([m1, m3])
 
     VotoMesaReportadoFactory(carga=c1, opcion=o1, votos=20)
@@ -213,8 +223,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados['electores'] == 800
 
 
-def test_resultados_proyectados(fiscal_client):
-    url_resultados = reverse('resultados-categoria', args=[1])
+def test_resultados_proyectados(fiscal_client, url_resultados):
     # se crean 3 secciones electorales
     s1, s2, s3 = SeccionFactory.create_batch(3)
     # s1 1000 votantes    # La matanza! :D
@@ -238,13 +247,12 @@ def test_resultados_proyectados(fiscal_client):
     m1 = ms1[0]
     m3 = ms3[0]
 
-    categoria = Categoria.objects.first()
+    categoria = Categoria.objects.get()
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
     blanco = categoria.opciones.get(nombre='blanco')
 
     # simulo que van entrandom resultados en las mesas 1 (la primera de la seccion 1) y 3 (la primera de la seccion 3)
-
     # Resultados de la mesa 1: 120 votos en la mesa 1 para el partido 1, 80 para el 2, 0 para el 3 y en blanco
     c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=categoria)
     consumir_novedades_y_actualizar_objetos([m1])
@@ -504,27 +512,19 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     assert resultados['total_mesas_escrutadas'] == 2
 
 
-def test_orden_para_circuito(db):
-    c1 = CircuitoFactory()  # sin mesas
-    assert c1.proximo_orden_de_carga() == 1
-    MesaFactory(lugar_votacion__circuito=c1)
-    MesaFactory(lugar_votacion__circuito=c1, orden_de_carga=3)
-    assert c1.proximo_orden_de_carga() == 4
-
-
-def test_elegir_acta(carta_marina, fiscal_client):
-    m1, m2, *_ = carta_marina
-
-    IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv, mesa=m1)
-    IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv, mesa=m2)
+def test_siguiente_accion_cargar_acta(fiscal_client):
+    c = CategoriaFactory(nombre='default')
+    m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
+    mc1 = MesaCategoriaFactory(mesa=m1, categoria=c)
+    mc2 = MesaCategoriaFactory(mesa=m2, categoria=c)
     consumir_novedades_identificacion()
     response = fiscal_client.get(reverse('siguiente-accion'))
-
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=(1, m1.numero))
+    assert response.url == reverse('carga-total', args=(mc1.id,))
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
-    assert response.url == reverse('mesa-cargar-resultados', args=(1, m2.numero))
+    assert response.url == reverse('carga-total', args=(mc2.id,))
 
 
 def test_resultados_no_positivos(fiscal_client):
@@ -545,7 +545,7 @@ def test_resultados_no_positivos(fiscal_client):
     no_positivos = response.context['resultados']['tabla_no_positivos']
 
     assert no_positivos['blanco'] == {'porcentaje_total': '10.00', 'votos': 10}
-    assert no_positivos['Positivos']['votos'] == 90
+    assert no_positivos['positivos']['votos'] == 90
 
 
 def test_resultados_excluye_metadata(fiscal_client):
@@ -579,7 +579,7 @@ def test_resultados_excluye_metadata(fiscal_client):
 
     assert positivos[o1.partido]['votos'] == 150
     assert positivos[o2.partido]['votos'] == 150
-    assert no_positivos['Positivos']['votos'] == 300
+    assert no_positivos['positivos']['votos'] == 300
 
     assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
@@ -587,7 +587,7 @@ def test_resultados_excluye_metadata(fiscal_client):
     assert positivos[o2.partido]['proyeccion'] == '41.67'
 
     assert no_positivos[o3.nombre] == {'porcentaje_total': '6.25', 'votos': 20}
-    assert list(no_positivos.keys()) == [o3.nombre, 'Positivos']
+    assert list(no_positivos.keys()) == [o3.nombre, 'positivos']
 
 
 def test_actualizar_electores(carta_marina):

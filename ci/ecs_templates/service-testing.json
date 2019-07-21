@@ -1,0 +1,6 @@
+{
+    "cluster": "Convencer-Test",
+    "service": "escrutinio-paralelo",
+    "taskDefinition": "escrutinio-paralelo-task:2",
+    "desiredCount": 1
+}

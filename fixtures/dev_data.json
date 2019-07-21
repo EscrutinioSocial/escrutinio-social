@@ -44,7 +44,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-07-13T14:36:53Z",
+    "last_login": "2019-07-21T15:00:19.850Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -259,7 +259,8 @@
   "fields": {
     "numero": 1,
     "nombre": "Distrito \u00fanico",
-    "electores": 800
+    "electores": 800,
+    "prioridad": 0
   }
 },
 {
@@ -270,7 +271,8 @@
     "numero": 1,
     "nombre": "Secci\u00f3n 1",
     "electores": 440,
-    "proyeccion_ponderada": false
+    "proyeccion_ponderada": false,
+    "prioridad": 0
   }
 },
 {
@@ -281,7 +283,8 @@
     "numero": 2,
     "nombre": "Secci\u00f3n 2",
     "electores": 360,
-    "proyeccion_ponderada": false
+    "proyeccion_ponderada": false,
+    "prioridad": 0
   }
 },
 {
@@ -292,7 +295,8 @@
     "localidad_cabecera": null,
     "numero": "1",
     "nombre": "Circuito 1.1",
-    "electores": 200
+    "electores": 200,
+    "prioridad": 0
   }
 },
 {
@@ -303,7 +307,8 @@
     "localidad_cabecera": null,
     "numero": "2",
     "nombre": "Circuito 1.2",
-    "electores": 240
+    "electores": 240,
+    "prioridad": 0
   }
 },
 {
@@ -314,7 +319,8 @@
     "localidad_cabecera": null,
     "numero": "3",
     "nombre": "Circuito 2.3",
-    "electores": 180
+    "electores": 180,
+    "prioridad": 0
   }
 },
 {
@@ -325,7 +331,8 @@
     "localidad_cabecera": null,
     "numero": "4",
     "nombre": "Circuito 2.4",
-    "electores": 180
+    "electores": 180,
+    "prioridad": 0
   }
 },
 {
@@ -468,100 +475,216 @@
   "model": "elecciones.mesacategoria",
   "pk": 1,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 1,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": 1,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 2,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 2,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 3,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 3,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 4,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 4,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 5,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 5,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 6,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 6,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 7,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 7,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 8,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 8,
     "categoria": 1,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 9,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 8,
     "categoria": 2,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 10,
   "fields": {
-    "status": "sin_cargar",
+    "status": "00_sin_cargar",
     "mesa": 7,
     "categoria": 2,
-    "carga_testigo": null
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 11,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 1,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 12,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 2,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 13,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 3,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 14,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 4,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 15,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 5,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 16,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 6,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 17,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 7,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 18,
+  "fields": {
+    "status": "00_sin_cargar",
+    "mesa": 8,
+    "categoria": 3,
+    "carga_testigo": null,
+    "taken": null,
+    "orden_de_carga": null
   }
 },
 {
@@ -574,8 +697,7 @@
     "lugar_votacion": 1,
     "url": "",
     "electores": 100,
-    "taken": "2019-07-04T19:51:18.215Z",
-    "orden_de_carga": 1
+    "prioridad": 0
   }
 },
 {
@@ -588,8 +710,7 @@
     "lugar_votacion": 2,
     "url": "",
     "electores": 100,
-    "taken": "2019-07-04T19:51:27.310Z",
-    "orden_de_carga": 2
+    "prioridad": 0
   }
 },
 {
@@ -602,8 +723,7 @@
     "lugar_votacion": 3,
     "url": "",
     "electores": 120,
-    "taken": "2019-07-08T22:52:59.693Z",
-    "orden_de_carga": 2
+    "prioridad": 0
   }
 },
 {
@@ -616,8 +736,7 @@
     "lugar_votacion": 4,
     "url": "",
     "electores": 120,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -630,8 +749,7 @@
     "lugar_votacion": 5,
     "url": "",
     "electores": 90,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -644,8 +762,7 @@
     "lugar_votacion": 6,
     "url": "",
     "electores": 90,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -658,8 +775,7 @@
     "lugar_votacion": 7,
     "url": "",
     "electores": 90,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -672,8 +788,7 @@
     "lugar_votacion": 8,
     "url": "",
     "electores": 90,
-    "taken": null,
-    "orden_de_carga": 0
+    "prioridad": 0
   }
 },
 {
@@ -681,10 +796,10 @@
   "pk": 1,
   "fields": {
     "orden": 1,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 1",
-    "nombre_corto": "",
+    "numero": 176,
+    "codigo": "FdT - 176",
+    "nombre": "Frente de Todos",
+    "nombre_corto": "FdT",
     "color": "",
     "referencia": ""
   }
@@ -694,10 +809,10 @@
   "pk": 2,
   "fields": {
     "orden": 2,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 2",
-    "nombre_corto": "",
+    "numero": 325,
+    "codigo": "325 - JpC",
+    "nombre": "Juntos por el Cambio",
+    "nombre_corto": "JpC",
     "color": "",
     "referencia": ""
   }
@@ -707,10 +822,10 @@
   "pk": 3,
   "fields": {
     "orden": 3,
-    "numero": null,
-    "codigo": null,
-    "nombre": "Partido 3",
-    "nombre_corto": "",
+    "numero": 543,
+    "codigo": "C2019",
+    "nombre": "Consenso 2019",
+    "nombre_corto": "C2019",
     "color": "",
     "referencia": ""
   }
@@ -719,12 +834,12 @@
   "model": "elecciones.opcion",
   "pk": 1,
   "fields": {
-    "nombre": "blanco",
+    "nombre": "Votos en blanco",
     "nombre_corto": "blanco",
     "partido": null,
     "orden": 10,
     "es_contable": false,
-    "es_metadata": false,
+    "es_metadata": true,
     "codigo_dne": null
   }
 },
@@ -732,8 +847,8 @@
   "model": "elecciones.opcion",
   "pk": 2,
   "fields": {
-    "nombre": "opc1",
-    "nombre_corto": "",
+    "nombre": "Fern\u00e1ndez-Fern\u00e1ndez",
+    "nombre_corto": "FF",
     "partido": 1,
     "orden": 2,
     "es_contable": true,
@@ -745,8 +860,8 @@
   "model": "elecciones.opcion",
   "pk": 3,
   "fields": {
-    "nombre": "opc2",
-    "nombre_corto": "",
+    "nombre": "Macri-Pichetto",
+    "nombre_corto": "MP",
     "partido": 2,
     "orden": 3,
     "es_contable": true,
@@ -758,10 +873,101 @@
   "model": "elecciones.opcion",
   "pk": 4,
   "fields": {
-    "nombre": "opc3",
-    "nombre_corto": "",
+    "nombre": "Lavagna-Urtubey",
+    "nombre_corto": "LU",
     "partido": 3,
     "orden": 4,
+    "es_contable": true,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 5,
+  "fields": {
+    "nombre": "Votos nulos",
+    "nombre_corto": "nulos",
+    "partido": null,
+    "orden": 11,
+    "es_contable": false,
+    "es_metadata": true,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 6,
+  "fields": {
+    "nombre": "Kicilof-Magario",
+    "nombre_corto": "KM",
+    "partido": 1,
+    "orden": 1,
+    "es_contable": true,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 7,
+  "fields": {
+    "nombre": "Vidal-Salvador",
+    "nombre_corto": "VS",
+    "partido": 2,
+    "orden": 2,
+    "es_contable": true,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 8,
+  "fields": {
+    "nombre": "Bucca",
+    "nombre_corto": "B",
+    "partido": 3,
+    "orden": 3,
+    "es_contable": true,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 9,
+  "fields": {
+    "nombre": "Massa",
+    "nombre_corto": "Massa",
+    "partido": 1,
+    "orden": 1,
+    "es_contable": true,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 10,
+  "fields": {
+    "nombre": "Ritondo",
+    "nombre_corto": "Ritondo",
+    "partido": 2,
+    "orden": 2,
+    "es_contable": true,
+    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 11,
+  "fields": {
+    "nombre": "Cama\u00f1o",
+    "nombre_corto": "Cama\u00f1o",
+    "partido": 3,
+    "orden": 3,
     "es_contable": true,
     "es_metadata": false,
     "codigo_dne": null
@@ -779,12 +985,14 @@
   "model": "elecciones.categoria",
   "pk": 1,
   "fields": {
-    "eleccion": null,
-    "slug": "elecciones-1",
-    "nombre": "elecciones-1",
+    "eleccion": 1,
+    "slug": "presi",
+    "nombre": "Presidente y vice",
     "color": "black",
     "back_color": "white",
-    "activa": true
+    "activa": true,
+    "requiere_cargas_parciales": true,
+    "prioridad": 0
   }
 },
 {
@@ -792,24 +1000,27 @@
   "pk": 2,
   "fields": {
     "eleccion": 1,
-    "slug": "int-circuito-2",
-    "nombre": "Int circuito 2",
+    "slug": "gobernador-pba",
+    "nombre": "Gobernador y vice",
     "color": "black",
     "back_color": "white",
-    "activa": true
+    "activa": true,
+    "requiere_cargas_parciales": true,
+    "prioridad": 0
   }
 },
 {
-  "model": "elecciones.carga",
-  "pk": 1,
+  "model": "elecciones.categoria",
+  "pk": 3,
   "fields": {
-    "created": "2019-07-04T19:51:27.212Z",
-    "modified": "2019-07-04T19:51:27.212Z",
-    "tipo": "falta_foto",
-    "origen": "web",
-    "mesa_categoria": 1,
-    "fiscal": 1,
-    "firma": null
+    "eleccion": 1,
+    "slug": "diputados-nacionales",
+    "nombre": "Diputados Nacionales",
+    "color": "black",
+    "back_color": "white",
+    "activa": true,
+    "requiere_cargas_parciales": false,
+    "prioridad": 0
   }
 },
 {
@@ -827,7 +1038,7 @@
   "fields": {
     "categoria": 1,
     "opcion": 3,
-    "prioritaria": false
+    "prioritaria": true
   }
 },
 {
@@ -836,7 +1047,7 @@
   "fields": {
     "categoria": 1,
     "opcion": 4,
-    "prioritaria": true
+    "prioritaria": false
   }
 },
 {
@@ -850,38 +1061,116 @@
 },
 {
   "model": "elecciones.categoriaopcion",
-  "pk": 5,
-  "fields": {
-    "categoria": 2,
-    "opcion": 2,
-    "prioritaria": false
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 6,
-  "fields": {
-    "categoria": 2,
-    "opcion": 3,
-    "prioritaria": false
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
-  "pk": 7,
-  "fields": {
-    "categoria": 2,
-    "opcion": 4,
-    "prioritaria": false
-  }
-},
-{
-  "model": "elecciones.categoriaopcion",
   "pk": 8,
   "fields": {
     "categoria": 2,
     "opcion": 1,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 9,
+  "fields": {
+    "categoria": 1,
+    "opcion": 5,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 10,
+  "fields": {
+    "categoria": 2,
+    "opcion": 5,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 11,
+  "fields": {
+    "categoria": 2,
+    "opcion": 6,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 12,
+  "fields": {
+    "categoria": 2,
+    "opcion": 7,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 13,
+  "fields": {
+    "categoria": 2,
+    "opcion": 8,
     "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 14,
+  "fields": {
+    "categoria": 3,
+    "opcion": 1,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 15,
+  "fields": {
+    "categoria": 3,
+    "opcion": 5,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 16,
+  "fields": {
+    "categoria": 3,
+    "opcion": 9,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 17,
+  "fields": {
+    "categoria": 3,
+    "opcion": 10,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 18,
+  "fields": {
+    "categoria": 3,
+    "opcion": 11,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.carga",
+  "pk": 1,
+  "fields": {
+    "created": "2019-07-04T19:51:27.212Z",
+    "modified": "2019-07-21T15:33:59.169Z",
+    "valida": true,
+    "tipo": "falta_foto",
+    "origen": "web",
+    "mesa_categoria": 1,
+    "fiscal": 1,
+    "firma": null,
+    "procesada": false
   }
 },
 {
@@ -918,6 +1207,15 @@
     "carga": 1,
     "opcion": 1,
     "votos": 10
+  }
+},
+{
+  "model": "elecciones.votomesareportado",
+  "pk": 5,
+  "fields": {
+    "carga": 1,
+    "opcion": 5,
+    "votos": 1
   }
 }
 ]
