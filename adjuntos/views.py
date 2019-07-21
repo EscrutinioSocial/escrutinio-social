@@ -90,7 +90,6 @@ class ReporteDeProblemaCreateView(CreateView):
 
 
     def form_invalid(self,form):
-        print("FORM INVALIDO")
         messages.info(
             self.request,
             f'No se registró el reporte. Corroborá haber elegido una opción.',

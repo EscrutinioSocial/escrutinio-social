@@ -250,7 +250,6 @@ def carga(request, mesacategoria_id, tipo='total'):
     VotoMesaReportadoFormset = votomesareportadoformset_factory(
         min_num=opciones.count()
     )
-    # XXX Crear la carga con el problema asociado si corresponde.
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
