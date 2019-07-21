@@ -1,24 +1,8 @@
 from django import forms
 from .models import Identificacion
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
-
-
-class IdentificacionProblemaForm(forms.ModelForm):
-
-    class Meta:
-        model = Identificacion
-        fields = ['status']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['status'].label = ''
-        choices = self.fields['status'].choices
-        self.fields['status'] = forms.ChoiceField(widget=forms.RadioSelect,
-                                                  choices=choices,
-                                                  label='')
-
-
-
+from problemas.models import ReporteDeProblema
+# from problemas.forms import IdentificacionProblemaForm
 
 class IdentificacionForm(forms.ModelForm):
     """
@@ -41,18 +25,10 @@ class IdentificacionForm(forms.ModelForm):
             kwargs['initial']['distrito'] = distrito = seccion.distrito
         super().__init__(*args, **kwargs)
         self.fields['distrito'].widget.attrs['autofocus'] = True
-        if instance and instance.mesa:
-            # si el attach ya estaba clasificado, limitamos los queryset a los
-            # de su jerarquia, tal como queda al ir definiendo en cascada.
-            self.fields['seccion'].queryset = Seccion.objects.filter(distrito=distrito)
-            self.fields['circuito'].queryset = Circuito.objects.filter(seccion=seccion)
-            self.fields['mesa'].queryset = Mesa.objects.filter(lugar_votacion__circuito=circuito)
-        else:
-            # si aun no está clasificado, entonces seccion circuito y empiezan sin opciones
-            # y se agregan dinamicamente via ajax cuando se va eligiendo el correspondiente ancestro
-            self.fields['seccion'].choices = (('', '---------'),)
-            self.fields['circuito'].choices = (('', '---------'),)
-            self.fields['mesa'].choices = (('', '---------'),)
+        self.fields['seccion'].choices = (('', '---------'),)
+        self.fields['seccion'].label = 'Sección'
+        self.fields['circuito'].choices = (('', '---------'),)
+        self.fields['mesa'].choices = (('', '---------'),)
 
     def clean(self):
         cleaned_data = super().clean()

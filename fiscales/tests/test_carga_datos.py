@@ -14,7 +14,7 @@ from elecciones.tests.factories import (
 from elecciones.tests.test_resultados import fiscal_client, setup_groups    # noqa
 from elecciones.models import Carga, MesaCategoria
 from adjuntos.models import Identificacion
-from adjuntos.consolidacion import consumir_novedades_identificacion
+from adjuntos.consolidacion import consumir_novedades_identificacion, consumir_novedades_carga
 
 from elecciones.tests.test_models import consumir_novedades_y_actualizar_objetos
 
@@ -121,6 +121,56 @@ def test_formset_en_carga_total_muestra_todos(db, fiscal_client):
         (o2.id, str(o2)),
         (o.id, str(o))
     ]
+
+
+def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, settings):
+    # solo una carga, para simplificar el setup
+    settings.MIN_COINCIDENCIAS_CARGAS = 1
+
+    c = CategoriaFactory(id=100, opciones=[])
+    # notar que el orden no coincide con el id
+
+    o1 = CategoriaOpcionFactory(categoria=c, opcion__orden=3, prioritaria=True).opcion
+    o2 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=False).opcion
+    o3 = CategoriaOpcionFactory(categoria=c, opcion__orden=2, prioritaria=False).opcion
+    o4 = CategoriaOpcionFactory(categoria=c, opcion__orden=4, prioritaria=True).opcion
+
+    mc = MesaCategoriaFactory(categoria=c)
+
+    # se carga parcialente, la opcion prioritaira "o"
+    carga = CargaFactory(mesa_categoria=mc, tipo='parcial')
+    VotoMesaReportadoFactory(carga=carga, opcion=o1, votos=10)
+    VotoMesaReportadoFactory(carga=carga, opcion=o4, votos=3)
+
+    # consolidamos.
+    consumir_novedades_carga()
+    mc.refresh_from_db()
+    assert mc.status == MesaCategoria.STATUS.parcial_consolidada_dc
+    assert mc.carga_testigo == carga
+    assert set(carga.opcion_votos()) == {(o1.id, 10), (o4.id, 3)}
+
+    # ahora pedimos la carga total
+    totales = reverse(
+        'carga-total', args=[mc.id]
+    )
+    response = fiscal_client.get(totales)
+
+    # tenemos las tres opciones en orden
+    assert len(response.context['formset']) == 4
+    assert response.context['formset'][0].initial['opcion'] == o2
+    assert response.context['formset'][1].initial['opcion'] == o3
+    assert response.context['formset'][2].initial['opcion'] == o1
+    assert response.context['formset'][3].initial['opcion'] == o4
+
+    # y los valores de los votos
+    assert response.context['formset'][0].initial['votos'] is None
+    assert response.context['formset'][1].initial['votos'] is None
+    assert response.context['formset'][2].initial['votos'] == 10
+    assert response.context['formset'][3].initial['votos'] == 3
+
+    # el valor previo es readonly
+    assert response.context['formset'][2].fields['votos'].widget.attrs['readonly'] is True
+    assert response.context['formset'][3].fields['votos'].widget.attrs['readonly'] is True
 
 
 def test_detalle_mesa_categoria(db, fiscal_client):

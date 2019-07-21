@@ -17,10 +17,9 @@ from .models import Attachment, Identificacion
 from .forms import (
     AgregarAttachmentsForm,
     IdentificacionForm,
-    IdentificacionProblemaForm,
 )
 from problemas.models import Problema, ReporteDeProblema
-
+from problemas.forms import IdentificacionDeProblemaForm
 
 class IdentificacionCreateView(CreateView):
     """
@@ -39,7 +38,6 @@ class IdentificacionCreateView(CreateView):
         return response
 
     def get_success_url(self):
-        #result = get_operation_result(self)
         return reverse('siguiente-accion')
 
     def identificacion(self):
@@ -61,7 +59,9 @@ class IdentificacionCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['attachment'] = self.attachment
-        context['form_problema'] = IdentificacionProblemaForm()
+        context['recibir_problema'] = 'asignar-problema'
+        context['dato_id'] = self.attachment.id
+        context['form_problema'] = IdentificacionDeProblemaForm()
         return context
 
     def form_valid(self, form):
@@ -72,45 +72,61 @@ class IdentificacionCreateView(CreateView):
         identificacion.save()
         messages.info(
             self.request,
-            f'Identificada mesa Nº {identificacion.mesa} - Circuito {identificacion.mesa.circuito}',
+            f'Identificada mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito}',
         )
         return super().form_valid(form)
 
 
-class IdentificacionProblemaCreateView(IdentificacionCreateView):
+class ReporteDeProblemaCreateView(CreateView):
     http_method_names = ['post']
-    form_class = IdentificacionProblemaForm
-    identificacion_creada = None
+    form_class = IdentificacionDeProblemaForm
+    template_name = "problemas/problema.html"
+
+    @cached_property
+    def attachment(self):
+        return get_object_or_404(
+            Attachment, id=self.kwargs['attachment_id']
+        )
+
+
+    def form_invalid(self,form):
+        print("FORM INVALIDO")
+        messages.info(
+            self.request,
+            f'No se registró el reporte. Corroborá haber elegido una opción.',
+            extra_tags="problema"
+        )
+        return redirect('siguiente-accion')
+
 
     def form_valid(self, form):
         fiscal = self.request.user.fiscal
         identificacion = form.save(commit=False)
         identificacion.attachment = self.attachment
-<<<<<<< HEAD
         identificacion.fiscal = fiscal
         identificacion.status = Identificacion.STATUS.problema
-=======
-        identificacion.fiscal = self.request.user.fiscal
-        identificacion.attachment.status = identificacion.status
-        identificacion.attachment.save()
->>>>>>> 34-agregar-la-posibilidad-de-reportar-problemas-en-las-imagenes
-        identificacion.save()
+        # Lo falso grabo para quedarme con la data de sus campos.
+        reporte_de_problema = form.save(commit=False)
+        tipo_de_problema = reporte_de_problema.tipo_de_problema
+        descripcion = reporte_de_problema.descripcion
+
+        # Creo la identificación.
+        identificacion = Identificacion.objects.create(
+            status=Identificacion.STATUS.problema,
+            fiscal=fiscal,
+            mesa=None,
+            attachment=self.attachment
+        )
 
         # Creo el problema asociado.
-        tipo_de_problema = ReporteDeProblema.TIPOS_DE_PROBLEMA.spam # XXX Seleccionar el apropiado.
-        descripcion = None # Tomar input del usuario.
         Problema.reportar_problema(fiscal, descripcion, tipo_de_problema, identificacion=identificacion)
 
-        self.identificacion_creada = identificacion
         messages.info(
             self.request,
             f'Gracias por el reporte. Ahora pasamos a la siguiente acta.',
             extra_tags="problema"
         )
-        return redirect(self.get_success_url())
-
-    def identificacion(self):
-        return self.identificacion_creada
+        return redirect('siguiente-accion')
 
 
 @staff_member_required

@@ -28,6 +28,7 @@ $(document).ready(function(){
       hasError.first().children('input').focus();
     }
     {% endif %}
+    $('.modal').modal();
 
 });
 </script>
@@ -50,17 +51,16 @@ $(document).ready(function(){
 {% block card-content %}
     <div class="card-title"> Mesa {{ object.numero }}
         <b style='background-color: {{ categoria.back_color }}; color: {{ categoria.color }}'>{{ categoria }}</b>
-
-    <a class="waves-effect waves-light btn-flat right-align" href="{% url "reportar-problema" object.numero %}" >¿Problemas?</a></div>
-
+    </div>
+    <form method="POST">
     {{ formset.management_form }}
     {% for form in formset %}
         {% form %}{% endform %}
     {% endfor %}
+    </form>
 {% endblock card-content %}
 
 {% block card-action %}
-
 
         <div class="row">
 
@@ -68,7 +68,10 @@ $(document).ready(function(){
                 <div class="right-align">
                     <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="30">
                       Guardar
-                   </button>
+                    </button>
+		    <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
+                      Problema
+		    </a>
                 </div>
             </div>
 
@@ -81,6 +84,9 @@ $(document).ready(function(){
 
 
     </div>
+
+{% include "problemas/problema.html" %}
+
 {% endblock card-action %}
 
 {% block right-panel %}

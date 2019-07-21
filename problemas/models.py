@@ -10,10 +10,10 @@ class ReporteDeProblema(TimeStampedModel):
     """
 
     TIPOS_DE_PROBLEMA = Choices(
-        ('spam', 'Es SPAM'),
-        ('invalida', 'Es inválida'),
-        ('ilegible', 'No se entiende'),
-        ('falta_foto', 'La parte que es necesario cargar no está entre las fotos presentes')
+        ('spam', 'La foto no es ni de un acta ni de un certificado. Parece subida maliciosamente.'),
+        ('invalida', 'Falla alguna validación del sistema que no debería fallar.'),
+        ('ilegible', 'La foto es de un acta pero no la puedo leer con claridad.'),
+        ('falta_foto', 'La parte que es necesario cargar no está entre las fotos presentes.')
     )
     # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
     #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
@@ -22,7 +22,10 @@ class ReporteDeProblema(TimeStampedModel):
     # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
     # Falta foto: la parte que es necesario cargar no está entre las fotos presentes.
 
-    tipo_de_problema = models.CharField(max_length=100, null=True, blank=True, choices=TIPOS_DE_PROBLEMA)
+    tipo_de_problema = models.CharField(max_length=100, null=True, blank=False,
+                                        choices=TIPOS_DE_PROBLEMA,
+                                        default=TIPOS_DE_PROBLEMA.ilegible
+                                        )
 
     descripcion = models.TextField(null=True, blank=True)
     es_reporte_fake = models.BooleanField(default=False) # Se completa desde el admin.

@@ -14,10 +14,6 @@
   padding-bottom: 0px;
 }
 
-.alert-problema {
-    background-color: black;
-}
-
 .darkroom-image-container {
   overflow: auto;
 }
@@ -47,10 +43,6 @@
     margin-bottom: 0.5rem;
 }
 
-#btn-problema {
-    padding-right: 1em;
-    padding-left: 1em;
-}
 
 @media only screen and (max-width: 993px) {
   .left-panel {
@@ -112,27 +104,7 @@ $(document).ready(function() {
        </form>
     </div>
 
-  {% block extra_form %}
-
-  <div class="modal" id="modal-problem">
-    <form method="POST" action="{% url 'asignar-problema' attachment.id %}" enctype="multipart/form-data" id="problema-imagen">
-      <div class="modal-content">
-      <h4>Reportar problema con imágen</h4>
-        {% csrf_token %}
-        {% form form=form_problema %}
-	{% endform %}
-      <div class="modal-footer" style="padding-right: 5%;" >
-	<a href="#!" class="modal-close waves-effect waves-green btn-flat">Volver</a>
-	<button class="btn waves-effect waves-light btn white-text red" type="submit" tabindex="7">
-          Reportar
-      </button>
-    </div>
-    </div>
-    </form>
-  </div>
-
-  {% endblock extra_form %}
-
+{% include "problemas/problema.html" %}
 
 {% endblock left-panel %}
 
@@ -175,8 +147,6 @@ $(document).ready(function() {
 <script type="text/javascript">
   $(document).ready(function(){
       $('#id_status_container').attr('tabindex', 6);
-  });
-  $(document).ready(function(){
       $('.modal').modal();
   });
 </script>

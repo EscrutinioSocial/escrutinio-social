@@ -422,7 +422,8 @@ class Mesa(models.Model):
         return fotos
 
     def __str__(self):
-        return f'nro {self.numero} - circ. {self.circuito}'
+        #return f'nro {self.numero} - circ. {self.circuito}'
+        return f'{self.numero}'
 
     def nombre_completo(self):
         return self.lugar_votacion.nombre_completo() + " - " + self.numero
@@ -688,15 +689,13 @@ class Carga(TimeStampedModel):
         # Si ya hay firma y no están forzando, listo.
         if self.firma and not forzar:
             return
-
-        tuplas = (
-            f'{o}-{v or ""}' for (o, v) in
-            self.reportados.values_list(
-                'opcion', 'votos'
-            ).order_by('opcion__orden')
-        )
+        tuplas = (f'{o}-{v or ""}' for (o, v) in self.opcion_votos().order_by('opcion__orden'))
         self.firma = '|'.join(tuplas)
         self.save(update_fields=['firma'])
+
+    def opcion_votos(self):
+        """devuelve una lista de los votos para cada opcion"""
+        return self.reportados.values_list('opcion', 'votos')
 
     def __str__(self):
         str_invalidada = ' (invalidada) ' if self.invalidada else ' '

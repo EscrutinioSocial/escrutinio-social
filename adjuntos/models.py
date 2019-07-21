@@ -221,7 +221,6 @@ class Identificacion(TimeStampedModel):
         'identificada',
         'problema'
     )
-    status = StatusField(choices_name='STATUS')
     #
     # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
     #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
@@ -230,7 +229,7 @@ class Identificacion(TimeStampedModel):
     # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
 
     status = StatusField(choices_name='STATUS',choices=STATUS)
->>>>>>> 34-agregar-la-posibilidad-de-reportar-problemas-en-las-imagenes
+
 
     SOURCES = Choices('web', 'csv', 'telegram')
     source = StatusField(choices_name='SOURCES', default=SOURCES.web)

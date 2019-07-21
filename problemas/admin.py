@@ -17,7 +17,7 @@ class ProblemaForm(forms.ModelForm):
         model = Problema
         exclude = []
 
-class ConsolidatedInline(admin.StackedInline):
+class ReporteDeProblemaInline(admin.StackedInline):
     model = ReporteDeProblema
     extra = 0
 
@@ -36,7 +36,7 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     attachment_.short_description = "Attachment"
 
     def descripciones(o):
-        reportes = "<br>".join(o.reportes.all())
+        reportes = "<br>".join([str(reporte) for reporte in o.reportes.all()])
         return reportes
 
     def get_row_actions(self, obj):
@@ -65,7 +65,7 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     search_fields = (
         'mesa__numero',
     )
-    inlines = [ConsolidatedInline]
+    inlines = [ReporteDeProblemaInline]
     ordering = ['id']
 
 admin.site.register(Problema, ProblemaAdmin)
