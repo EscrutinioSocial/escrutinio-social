@@ -27,9 +27,7 @@ else
     echo
     echo "Only deploy master or develop branch"
     echo
-    export ENVIRONMENT="DEV"
-    export ECS_CLUSTER="Convencer-Test"
-    #exit 2
+    exit 2
 fi
 
 # Generating final manifest
