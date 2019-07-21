@@ -113,7 +113,7 @@ def aumentar_scoring_troll_carga(variacion, carga, motivo):
         marcar_fiscal_troll(fiscal, nuevo_evento)
 
 
-def crear_evento_marca_explicita_como_troll(fiscal, actor)
+def crear_evento_marca_explicita_como_troll(fiscal, actor):
     """
     Se crea, registra y devuelve un EventoScoringTroll que indica que un usuario (el 'actor')
     indica explícitamente que un fiscal debe ser considerado troll
@@ -130,19 +130,27 @@ def crear_evento_marca_explicita_como_troll(fiscal, actor)
 
 
 
-def ajustar_scoring_troll(fiscal, nuevo_scoring, actor, motivo):
+def registrar_fiscal_no_es_troll(fiscal, nuevo_scoring, actor):
     """
     Un usuario (el 'actor') determina que un fiscal que estaba señalado como troll
     debe perder esa característica, asignándole un nuevo scoring troll.
     """
 
-    # Alcanza con generar un nuevo EventoScoringTroll
-    EventoScoringTroll.objects.create(
-        motivo=motivo,
+    # nuevo EventoScoringTroll
+    nuevo_evento = EventoScoringTroll.objects.create(
+        motivo=EventoScoringTroll.MOTIVO.remocion_marca_troll,
         automatico=False,
         actor=actor,
         fiscal_afectado=fiscal,
         variacion=nuevo_scoring - fiscal.scoring_troll()
+    )
+    # nuevo CambioEstadoTroll 
+    CambioEstadoTroll.objects.create(
+        automatico=nuevo_evento.automatico,
+        evento_disparador=nuevo_evento,
+        actor=nuevo_evento.actor,
+        fiscal_afectado=fiscal,
+        troll=False
     )
 
 
@@ -153,8 +161,9 @@ def marcar_fiscal_troll(fiscal, evento_disparador):
     """
 
     CambioEstadoTroll.objects.create(
-        automatico=evento.automatico,
+        automatico=evento_disparador.automatico,
         evento_disparador=evento_disparador,
+        actor=evento_disparador.actor,
         fiscal_afectado=fiscal,
         troll=True
     )

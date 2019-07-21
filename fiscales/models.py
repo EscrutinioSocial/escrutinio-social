@@ -18,7 +18,9 @@ from model_utils.fields import StatusField
 from model_utils import Choices
 from django.contrib.auth.models import Group
 
-from antitrolling.models import ajustar_scoring_troll, marcar_fiscal_troll, EventoScoringTroll
+from antitrolling.models import (
+    registrar_fiscal_no_es_troll, marcar_fiscal_troll, EventoScoringTroll, crear_evento_marca_explicita_como_troll
+)
 from antitrolling.efecto import efecto_determinacion_fiscal_troll
 
 TOTAL = 'Total General'
@@ -112,10 +114,10 @@ class Fiscal(models.Model):
         efecto_determinacion_fiscal_troll(self)
 
     def quitar_marca_troll(self, actor, nuevo_scoring):
+        era_troll = self.troll
         self.troll = False
         self.save(update_fields=['troll'])
-        ajustar_scoring_troll(self, nuevo_scoring, actor, EventoScoringTroll.MOTIVO.remocion_marca_troll)
-
+        registrar_fiscal_no_es_troll(self, nuevo_scoring, actor)
 
 
 

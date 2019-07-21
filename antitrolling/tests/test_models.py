@@ -18,11 +18,60 @@ from .utils_para_test import (
 )
 
 
-def test_marcar_troll(db):
+def test_aplicar_marca_troll(db):
     fiscal = nuevo_fiscal()
     assert fiscal.troll == False
-    fiscal.marcar_como_troll()
+    fiscal.aplicar_marca_troll()
     assert fiscal.troll == True
+
+
+def test_quitar_marca_troll(db):
+    settings.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 300
+    
+    fiscal = nuevo_fiscal()
+    usuario_experto = nuevo_fiscal()
+    assert fiscal.troll == False
+
+    # aumento el scoring x identificacion, para forzarlo a pasar a troll por scoring
+    attach = AttachmentFactory()
+    identi = reportar_problema_attachment(attach, fiscal)
+    aumentar_scoring_troll_identificacion(400, identi)
+    assert fiscal.troll == True
+
+    # le saco la marca troll dejandolo en 150
+    fiscal.quitar_marca_troll(usuario_experto, 150)
+
+    # reviso status troll, scoring troll, y eventos
+    assert fiscal.troll == False
+    assert fiscal.scoring_troll() == 150
+    eventos = list(fiscal.eventos_scoring_troll.order_by('created').all())
+    assert len(eventos) == 2
+    primer_evento = eventos[0]
+    assert primer_evento.motivo == EventoScoringTroll.MOTIVO.identificacion_attachment_distinta_a_confirmada
+    assert primer_evento.automatico == True
+    assert primer_evento.actor is None
+    assert primer_evento.fiscal_afectado == fiscal
+    assert primer_evento.variacion == 400
+    segundo_evento = eventos[1]
+    assert segundo_evento.motivo == EventoScoringTroll.MOTIVO.remocion_marca_troll
+    assert segundo_evento.automatico == False
+    assert segundo_evento.actor == usuario_experto
+    assert segundo_evento.fiscal_afectado == fiscal
+    assert segundo_evento.variacion == -250
+
+    # reviso cambios de estado
+    cambios_estado = list(fiscal.cambios_estado_troll.order_by('created').all())
+    assert len(cambios_estado) == 2
+    primer_cambio_estado = cambios_estado[0]
+    assert primer_cambio_estado.automatico == True
+    assert primer_cambio_estado.actor is None
+    assert primer_cambio_estado.evento_disparador == primer_evento
+    assert primer_cambio_estado.troll == True
+    segundo_cambio_estado = cambios_estado[1]
+    assert segundo_cambio_estado.automatico == False
+    assert segundo_cambio_estado.actor == usuario_experto
+    assert segundo_cambio_estado.evento_disparador == segundo_evento
+    assert segundo_cambio_estado.troll == False
 
 
 def test_registro_evento_scoring_identificacion(db):
@@ -135,3 +184,30 @@ def test_aumentar_scrolling(db):
     assert fiscal2.troll == False
 
 
+def test_marcar_explicitamente_como_troll(db):
+    """
+    Se comprueba que al marcar explicitamente a un fiscal como troll, el efecto sea el esperado
+    """
+
+    fiscal = nuevo_fiscal()
+    usuario_experto = nuevo_fiscal()
+    assert fiscal.troll == False
+
+    fiscal.marcar_como_troll(usuario_experto)
+    assert fiscal.troll == True
+    assert fiscal.scoring_troll() == 0
+    eventos = list(fiscal.eventos_scoring_troll.order_by('created').all())
+    assert len(eventos) == 1
+    primer_evento = eventos[0]
+    assert primer_evento.motivo == EventoScoringTroll.MOTIVO.marca_explicita_troll
+    assert primer_evento.automatico == False
+    assert primer_evento.actor == usuario_experto
+    assert primer_evento.fiscal_afectado == fiscal
+    assert primer_evento.variacion == 0
+    cambios_estado = list(fiscal.cambios_estado_troll.order_by('created').all())
+    assert len(cambios_estado) == 1
+    cambio_estado = cambios_estado[0]
+    assert cambio_estado.automatico == False
+    assert cambio_estado.actor == usuario_experto
+    assert cambio_estado.evento_disparador == primer_evento
+    assert cambio_estado.troll == True

@@ -1,8 +1,8 @@
 from django.conf import settings
 from adjuntos.models import Identificacion
 
-from elecciones.models import Carga, Identificacion
-from adjuntos.consolidacion import consolidar_cargas, consolidar_identificaciones
+from elecciones.models import Carga
+from adjuntos.models import Identificacion
 from .models import (
     aumentar_scoring_troll_identificacion, aumentar_scoring_troll_carga,
     EventoScoringTroll
@@ -71,7 +71,7 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
 
 
 
-def efecto_determinacion_fiscal_troll(fiscal)
+def efecto_determinacion_fiscal_troll(fiscal):
     """
     Acciones que se desencadenan a partir de que se determina que un fiscal es troll.
     La determinación puede ser automática o manual.
