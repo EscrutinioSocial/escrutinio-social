@@ -705,9 +705,13 @@ class Carga(TimeStampedModel):
     SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
 
-    mesa_categoria = models.ForeignKey(MesaCategoria, related_name='cargas', on_delete=models.CASCADE)
-    fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
-    firma = models.CharField(max_length=300, null=True, blank=True, editable=False)
+    mesa_categoria = models.ForeignKey(
+        MesaCategoria, related_name='cargas', on_delete=models.CASCADE
+    )
+    fiscal = models.ForeignKey('fiscales.Fiscal', on_delete=models.SET_NULL)
+    firma = models.CharField(
+        max_length=300, null=True, blank=True, editable=False
+    )
     procesada = models.BooleanField(default=False)
 
     @property

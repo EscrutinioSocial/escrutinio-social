@@ -12,10 +12,11 @@ from elecciones.tests.factories import (
     MesaFactory, AttachmentFactory
 )
 
-from utils_para_test import (
+from .utils_para_test import (
   nuevo_fiscal, identificar, reportar_problema_attachment,
   nueva_categoria, nueva_carga
 )
+
 
 
 @pytest.mark.django_db

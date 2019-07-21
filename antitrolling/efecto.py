@@ -55,7 +55,7 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
             aumentar_scoring_troll_carga(
                 diferencia, carga, EventoScoringTroll.MOTIVO.carga_valores_distintos_a_confirmados
             )
-        elif (carga.tipo == Carga.TIPOS.falta_foto):
+        elif (carga.tipo == Carga.TIPOS.problema):
             aumentar_scoring_troll_carga(
                 settings.SCORING_TROLL_FALTA_FOTO_MESA_CATEGORIA_CON_CARGA_CONFIRMADA, 
                 carga, 

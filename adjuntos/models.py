@@ -235,7 +235,7 @@ class Identificacion(TimeStampedModel):
     source = StatusField(choices_name='SOURCES', default=SOURCES.web)
 
     fiscal = models.ForeignKey(
-        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
+        'fiscales.Fiscal', blank=True, on_delete=models.SET_NULL
     )
     mesa = models.ForeignKey(
         'elecciones.Mesa',  null=True, blank=True, on_delete=models.SET_NULL
