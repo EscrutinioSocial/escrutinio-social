@@ -18,16 +18,14 @@ from .utils_para_test import (
 )
 
 
-@pytest.mark.django_db
-def test_marcar_troll():
+def test_marcar_troll(db):
     fiscal = nuevo_fiscal()
     assert fiscal.troll == False
     fiscal.marcar_como_troll()
     assert fiscal.troll == True
 
 
-@pytest.mark.django_db
-def test_registro_evento_scoring_identificacion():
+def test_registro_evento_scoring_identificacion(db):
     """
     Se comprueba que un EventoScoringTroll se genere con los valores correctos.
     """
@@ -51,8 +49,7 @@ def test_registro_evento_scoring_identificacion():
 
 
 
-@pytest.mark.django_db
-def test_registro_evento_scoring_carga():
+def test_registro_evento_scoring_carga(db):
     """
     Se comprueba que un EventoScoringTroll se genere con los valores correctos.
     """
@@ -78,8 +75,7 @@ def test_registro_evento_scoring_carga():
 
 
 
-@pytest.mark.django_db
-def test_registro_cambio_estado_troll():
+def test_registro_cambio_estado_troll(db):
     """
     Se comprueba que un CambioEstadoTroll se genere con los valores correctos.
     """
@@ -105,8 +101,7 @@ def test_registro_cambio_estado_troll():
 
 
 
-@pytest.mark.django_db
-def test_aumentar_scrolling():
+def test_aumentar_scrolling(db):
     """
     Se comprueba que al disparar eventos de aumento de scoring, el efecto sea el esperado
     """

@@ -19,8 +19,7 @@ from .utils_para_test import (
 
 
 
-@pytest.mark.django_db
-def test_efecto_consolidar_asociacion_attachment():
+def test_efecto_consolidar_asociacion_attachment(db):
     """
     Se comprueba que el efecto de afectar el scoring de troll a partir de la asociacion 
     de un Attachment a una Mesa sea el correcto.
@@ -56,8 +55,7 @@ def test_efecto_consolidar_asociacion_attachment():
     assert fiscal4.scoring_troll() == 180
 
 
-@pytest.mark.django_db
-def test_diferencia_opciones():
+def test_diferencia_opciones(db):
     # creo fiscales
     fiscal_1 = nuevo_fiscal()
     fiscal_2 = nuevo_fiscal()
@@ -77,8 +75,7 @@ def test_diferencia_opciones():
     assert diferencia_opciones(carga_1, carga_2) == 4
 
 
-@pytest.mark.django_db
-def test_efecto_confirmar_carga_mesa_categoria():
+def test_efecto_confirmar_carga_mesa_categoria(db):
     """
     Se comprueba que el efecto de afectar el scoring de troll 
     a partir de la confirmacion de la carga de una mesa_categoria sea el correcto.
