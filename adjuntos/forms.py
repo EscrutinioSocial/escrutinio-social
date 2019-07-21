@@ -1,22 +1,26 @@
 from django import forms
 from .models import Identificacion
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
+from problemas.models import ReporteDeProblema
 
 
-class IdentificacionProblemaForm(forms.ModelForm):
+class ReporteDeProblemaForm(forms.ModelForm):
 
     class Meta:
-        model = Identificacion
-        fields = ['status']
+        model = ReporteDeProblema
+        fields = ['tipo_de_problema', 'descripcion']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['status'].label = ''
-        choices = self.fields['status'].choices
-        self.fields['status'].choices = [
-            (v, s) for (v, s) in choices if v != Identificacion.STATUS.identificada
+        self.fields['tipo_de_problema'].label = ''
+        choices = self.fields['tipo_de_problema'].choices
+        self.fields['tipo_de_problema'].choices = [
+            (v, s) for (v, s) in choices
         ]
-        self.fields['status'].tabindex = 6
+        self.fields['tipo_de_problema'].tabindex = 6
+
+        self.fields['descripcion'].label = 'Descripción'
+        self.fields['descripcion'].tabindex = 7
 
 
 class IdentificacionForm(forms.ModelForm):

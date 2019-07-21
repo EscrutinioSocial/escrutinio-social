@@ -36,7 +36,7 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     attachment_.short_description = "Attachment"
 
     def descripciones(o):
-        reportes = "<br>".join(o.reportes.all())
+        reportes = "<br>".join([str(reporte) for reporte in o.reportes.all()])
         return reportes
 
     def get_row_actions(self, obj):
