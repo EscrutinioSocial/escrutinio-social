@@ -40,6 +40,8 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     a = AttachmentFactory()
     data = {
         'status': 'problema',
+        'tipo_de_problema': 'invalida',
+        'descripcion': 'Un problema'
     }
     response = fiscal_client.post(reverse('asignar-problema', args=[a.id]), data)
     assert response.status_code == 302
