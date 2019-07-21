@@ -614,6 +614,9 @@ class Categoria(models.Model):
 
 
 class CategoriaOpcion(models.Model):
+    class Meta:
+        verbose_name = 'Asociación Categoría-Opción'
+        verbose_name_plural = 'Asociaciones Categoría-Opción'
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     opcion = models.ForeignKey('Opcion', on_delete=models.CASCADE)
     prioritaria = models.BooleanField(default=False)
