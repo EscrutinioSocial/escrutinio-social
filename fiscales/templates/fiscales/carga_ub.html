@@ -1,0 +1,28 @@
+{% extends "fiscales/carga.html" %}
+
+
+{% block card-action %}
+
+<div class="row">
+
+    
+    <div class="col s12">
+        <div class="right-align">
+            <a class="btn waves-effect waves-light btn brown lighten-2 white-text" href="{% url 'agregar-adjuntos-ub' %}">
+                Subir otra acta
+                <i class="material-icons right">cloud_upload</i>
+            </a>
+            <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="30">
+              Guardar
+           </button>
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+    <div class="col s12">
+    </div>
+</div>
+</div>
+{% endblock card-action %}

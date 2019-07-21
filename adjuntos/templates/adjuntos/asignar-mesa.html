@@ -86,16 +86,18 @@ $(document).ready(function() {
         <div class="card-action">
             {% block card-action %}
             <div class="right-align">
-
-               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
+                {% block asignar-mesa-actions %}
+                <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
                   Guardar
                </button>
+               {% endblock asignar-mesa-actions %}
             </div>
             {% endblock card-action %}
         </div>
 
        </form>
     </div>
+
 
   {% block extra_form %}
 

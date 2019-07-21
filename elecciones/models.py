@@ -257,6 +257,19 @@ class MesaCategoriaQuerySet(models.QuerySet):
             'id'
         ).first()
 
+    def siguiente_de_la_mesa(self, mesa_existente):
+        """
+        devuelve la siguiente mesacategoria en orden de prioridad
+        de carga
+        """
+        return self.con_carga_pendiente().filter(mesa=mesa_existente).order_by(
+            'status',
+            'categoria__prioridad',
+            'orden_de_carga',
+            'mesa__prioridad',
+            'id'
+        ).first()
+
 
 class MesaCategoria(models.Model):
     """

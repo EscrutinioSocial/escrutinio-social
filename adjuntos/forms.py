@@ -75,12 +75,22 @@ class IdentificacionForm(forms.ModelForm):
 
 
 class AgregarAttachmentsForm(forms.Form):
+
     """
     Form para subir uno o más archivos para ser asociados a instancias de
     :py:class:`adjuntos.Attachment`
+
+    Se le puede pasar por kwargs si el form acepta multiples archivos o uno solo
     """
 
     file_field = forms.FileField(
         label="Archivo/s",
-        widget=forms.ClearableFileInput(attrs={'multiple': True})
+        widget=forms.ClearableFileInput()
     )
+
+    def __init__(self, *args, **kwargs):
+        es_multiple = kwargs.pop('es_multiple') if 'es_multiple' in kwargs else True
+        super().__init__(*args, **kwargs)
+        self.fields['file_field'].widget.attrs.update({'multiple': es_multiple})
+        
+
