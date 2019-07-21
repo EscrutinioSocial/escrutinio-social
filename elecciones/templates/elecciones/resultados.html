@@ -240,6 +240,8 @@ function abrirArbolDistritoSeccionCircuito() {
   var searchParams = new URLSearchParams(location.search);
   var $distrito;
   var $seccion;
+  var $circuito;
+  
   if (searchParams.has('distrito')) {
     $distrito = $('#distrito-' + searchParams.get('distrito'));
   }
