@@ -362,7 +362,7 @@ class Resultados():
         return tabla_no_positivos
 
     def electores(self):
-        return self. resultados.electores
+        return self.resultados.electores
 
     def positivos(self):
         return self.resultados.total_positivos
