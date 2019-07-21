@@ -708,7 +708,7 @@ class Carga(TimeStampedModel):
     mesa_categoria = models.ForeignKey(
         MesaCategoria, related_name='cargas', on_delete=models.CASCADE
     )
-    fiscal = models.ForeignKey('fiscales.Fiscal', on_delete=models.SET_NULL)
+    fiscal = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
     firma = models.CharField(
         max_length=300, null=True, blank=True, editable=False
     )

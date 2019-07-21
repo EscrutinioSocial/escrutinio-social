@@ -18,7 +18,7 @@ class EventoScoringTroll(TimeStampedModel):
 
     MOTIVO = Choices(
         ('carga_valores_distintos_a_confirmados', 'Carga valores distintos a los confirmados'),
-        ('indica_falta_foto_mesa_categoria_confirmada', 'Indica "falta foto" para una mesa/categoría con carga confirmada'),
+        ('indica_problema_mesa_categoria_confirmada', 'Indica "problema" para una mesa/categoría con carga confirmada'),
         ('identificacion_attachment_distinta_a_confirmada', 'Identifica un attachment de una forma distinta a la confirmada'),
         ('remocion_marca_troll', 'Se remueve la marca de troll a un fiscal'),
     )

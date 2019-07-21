@@ -57,9 +57,9 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
             )
         elif (carga.tipo == Carga.TIPOS.problema):
             aumentar_scoring_troll_carga(
-                settings.SCORING_TROLL_FALTA_FOTO_MESA_CATEGORIA_CON_CARGA_CONFIRMADA, 
+                settings.SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA, 
                 carga, 
-                EventoScoringTroll.MOTIVO.indica_falta_foto_mesa_categoria_confirmada
+                EventoScoringTroll.MOTIVO.indica_problema_mesa_categoria_confirmada
             )
             carga.invalidada = True
             carga.save(update_fields=['invalidada'])

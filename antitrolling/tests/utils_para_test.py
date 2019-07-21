@@ -38,3 +38,9 @@ def nueva_carga(mesa_categoria, fiscal, votos_opciones):
   for opcionConVotos in zip(mesa_categoria.categoria.opciones.order_by('nombre'), votos_opciones):
     VotoMesaReportadoFactory(carga=carga, opcion=opcionConVotos[0], votos=opcionConVotos[1])
   return carga
+
+
+def reportar_problema_mesa_categoria(mesa_categoria, fiscal):
+    return CargaFactory(
+        mesa_categoria=mesa_categoria, fiscal=fiscal, tipo=Carga.TIPOS.problema
+    )
