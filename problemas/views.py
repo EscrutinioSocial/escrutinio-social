@@ -8,8 +8,6 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
-@login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 class ProblemaCreate(StaffOnlyMixing, CreateView):
     model = Problema
     template_name = "problemas/problema.html"
