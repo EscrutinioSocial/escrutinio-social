@@ -111,7 +111,7 @@ def consolidar_cargas(mesa_categoria):
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
 
 
-def consolidar_identificaciones(attachment, mesa_id_consolidada = None):
+def consolidar_identificaciones(attachment):
     """
     Consolida todas las identificaciones del Attachment parámetro.
     Deja una como testigo, si están dadas las condiciones.
@@ -119,10 +119,6 @@ def consolidar_identificaciones(attachment, mesa_id_consolidada = None):
 
     En cualquier caso adecúa el estado de identificación del attach parámetro
     y lo asocia a la mesa identificada o a ninguna, si no quedó identificado.
-
-    El mesa_id_consolidada viene distinto a None en el flujo de carga desde Unidades Básicas, que
-    no es necesario consolidar la identificación con MIN_COINCIDENCIAS_IDENTIFICACION
-
     """
 
     # Primero me quedo con todas las identificaciones para ese attachment.
@@ -136,19 +132,19 @@ def consolidar_identificaciones(attachment, mesa_id_consolidada = None):
     #  ]
     status_count = attachment.status_count()
 
-    if mesa_id_consolidada is None:
-        for mesa_id, status, cantidad, cuantos_csv in status_count:
-            if (
-                status == Identificacion.STATUS.identificada and (
-                    cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or
-                    cuantos_csv > 0
-                )
-            ):
-                mesa_id_consolidada = mesa_id
-                break
+    mesa_id_consolidada = None
+    for mesa_id, status, cantidad, cuantos_csv in status_count:
+        if (
+            status == Identificacion.STATUS.identificada and (
+                cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or
+                cuantos_csv > 0
+            )
+        ):
+            mesa_id_consolidada = mesa_id
+            break
 
     if mesa_id_consolidada:
-        # Consolidamos una mesa, ya sea por CSV, por multicoincidencia o viene cargada desde una UB
+        # Consolidamos una mesa, ya sea por CSV o por coincidencia múltiple.
 
         identificaciones_correctas = attachment.identificaciones.filter(
             mesa_id=mesa_id_consolidada, status=Identificacion.STATUS.identificada

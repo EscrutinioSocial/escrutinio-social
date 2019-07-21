@@ -63,10 +63,10 @@ def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client):
     assert attachment.identificaciones.count() == 1
     assert attachment.status == Attachment.STATUS.identificada
     
-
     identificacion = attachment.identificaciones.first()
     assert attachment.identificacion_testigo == identificacion
     assert identificacion.status == Identificacion.STATUS.identificada
+    assert identificacion.source == Identificacion.SOURCES.csv
     assert identificacion.mesa == mesa_1
     # la identificacion está consolidada, por lo tanto ya existe en la mesa
     assert mesa_1.attachments.exists()
