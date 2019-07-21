@@ -282,7 +282,6 @@ def realizar_siguiente_accion(request):
 def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
     mesacategoria = MesaCategoria.objects.siguiente_de_la_mesa(mesa_existente)
-    
     if mesacategoria :
         mesacategoria.take()
         return carga(request, mesacategoria.id, desde_ub=True)

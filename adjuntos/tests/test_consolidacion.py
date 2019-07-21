@@ -1,5 +1,4 @@
 from elecciones.tests.factories import (
-    AttachmentFactory,
     MesaFactory,
     IdentificacionFactory,
 )
@@ -10,8 +9,12 @@ from adjuntos.models import Attachment
 from adjuntos.consolidacion import consolidar_identificaciones
 
 def test_consolidacion__con_mesa_id(db):
+    """
+    Este test ataca el caso donde a la consolidacion de la identificación ya le pasamos un mesa_id.
+    Esto se puede dar en cargas desde una Unidad Básica
+    """
     mesa1 = MesaFactory()
-    identificacion = IdentificacionFactory(status=Identificacion.STATUS.identificada, mesa= mesa1)
+    identificacion = IdentificacionFactory(status=Identificacion.STATUS.identificada, mesa=mesa1)
     attachment = identificacion.attachment
 
     assert attachment.identificacion_testigo is None
