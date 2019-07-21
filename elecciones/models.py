@@ -422,7 +422,8 @@ class Mesa(models.Model):
         return fotos
 
     def __str__(self):
-        return f'nro {self.numero} - circ. {self.circuito}'
+        #return f'nro {self.numero} - circ. {self.circuito}'
+        return f'{self.numero}'
 
     def nombre_completo(self):
         return self.lugar_votacion.nombre_completo() + " - " + self.numero

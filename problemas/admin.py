@@ -17,7 +17,7 @@ class ProblemaForm(forms.ModelForm):
         model = Problema
         exclude = []
 
-class ConsolidatedInline(admin.StackedInline):
+class ReporteDeProblemaInline(admin.StackedInline):
     model = ReporteDeProblema
     extra = 0
 
@@ -65,7 +65,7 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     search_fields = (
         'mesa__numero',
     )
-    inlines = [ConsolidatedInline]
+    inlines = [ReporteDeProblemaInline]
     ordering = ['id']
 
 admin.site.register(Problema, ProblemaAdmin)

@@ -44,18 +44,10 @@ class IdentificacionForm(forms.ModelForm):
             kwargs['initial']['distrito'] = distrito = seccion.distrito
         super().__init__(*args, **kwargs)
         self.fields['distrito'].widget.attrs['autofocus'] = True
-        if instance and instance.mesa:
-            # si el attach ya estaba clasificado, limitamos los queryset a los
-            # de su jerarquia, tal como queda al ir definiendo en cascada.
-            self.fields['seccion'].queryset = Seccion.objects.filter(distrito=distrito)
-            self.fields['circuito'].queryset = Circuito.objects.filter(seccion=seccion)
-            self.fields['mesa'].queryset = Mesa.objects.filter(lugar_votacion__circuito=circuito)
-        else:
-            # si aun no está clasificado, entonces seccion circuito y empiezan sin opciones
-            # y se agregan dinamicamente via ajax cuando se va eligiendo el correspondiente ancestro
-            self.fields['seccion'].choices = (('', '---------'),)
-            self.fields['circuito'].choices = (('', '---------'),)
-            self.fields['mesa'].choices = (('', '---------'),)
+        self.fields['seccion'].choices = (('', '---------'),)
+        self.fields['seccion'].label = 'Sección'
+        self.fields['circuito'].choices = (('', '---------'),)
+        self.fields['mesa'].choices = (('', '---------'),)
 
     def clean(self):
         cleaned_data = super().clean()
