@@ -28,6 +28,7 @@ urlpatterns = [
     url(
         '^resultados-totales-sin-confirmar/(?P<pk>\d+)?$',
         views.ResultadosCategoria.as_view(),
+        # TODO: revisar
         {
             'opciones_a_considerar': Sumarizador.OPCIONES_A_CONSIDERAR.todas,
             'tipo_de_agregacion': Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas
@@ -43,6 +44,8 @@ urlpatterns = [
     ),
 
     url(r'^resultados-parciales-(?P<slug_categoria>[\w-]+).(?P<filetype>csv|xls)$',
+        # TODO resultado_parcial_categoria no existe en la view
+        # que deberiamos hacer?
         data_views.resultado_parcial_categoria, name='resultado-parcial-categoria'),
 
     # url(r'^fiscal_mesa/', views.fiscal_mesa, name='fiscal_mesa'),
