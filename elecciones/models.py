@@ -139,7 +139,7 @@ class LugarVotacion(models.Model):
     # electores es una denormalización. debe coincidir con la sumatoria de
     # los electores de cada mesa de la escuela
     electores = models.PositiveIntegerField(null=True, blank=True)
-    geom = PointField(null=True)
+    geom = PointField(null=True, blank=True)
 
     # A veces, al importar datos, se realizan distintas iteraciones para geolocalizar
     # escuelas. Estos campos sirven para cuantificar la calidad y poder filtrar para
