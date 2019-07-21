@@ -93,8 +93,9 @@ class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
     def form_valid(self, form):
         identificacion = form.save(commit=False)
         identificacion.source = Identificacion.SOURCES.csv
+        identificacion.fiscal = self.request.user.fiscal
         super().form_valid(form)
-        #como viene desde una UB, consolidamos el attachment y ya le pasamos la mesa
+        # Como viene desde una UB, consolidamos el attachment y ya le pasamos la mesa
         consolidar_identificaciones(identificacion.attachment)
         return HttpResponseRedirect(self.get_success_url())
 
