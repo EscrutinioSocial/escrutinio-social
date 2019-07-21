@@ -180,7 +180,9 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         #    self.request.GET.get('tipodesumarizacion', '1') == str(2) and
         #    not self.filtros
         # )
-        return self.sumarizador.get_resultados(categoria)
+        # TODO quitar return [] y hacer andar el sumarizador
+        # return self.sumarizador.get_resultados(categoria)
+        return []
 
     def get_result_piechart(self, resultados):
         return [{
@@ -191,8 +193,10 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tipos_sumarizacion'] = Sumarizador.get_tipos_sumarizacion()
-        context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
+        context['tipos_de_agregaciones'] = Sumarizador.TIPOS_DE_AGREGACIONES
+        context['tipos_de_agregaciones_seleccionado'] = self.request.GET.get('tipoDeAgregacion', '1')
+        context['opciones_a_considerar'] = Sumarizador.OPCIONES_A_CONSIDERAR
+        context['opciones_a_considerar_seleccionado'] = self.request.GET.get('opcionaConsiderar', '1')
 
         if self.filtros:
             context['para'] = get_text_list(
