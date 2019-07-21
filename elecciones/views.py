@@ -204,9 +204,9 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         else:
             context['para'] = 'todo el país'
 
-        pk = self.kwargs.get('pk', 1)
-        if pk == 1:
-            pk == Categoria.objects.first().id
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            pk = Categoria.objects.first().id
         categoria = get_object_or_404(Categoria, id=pk)
         context['object'] = categoria
         context['categoria_id'] = categoria.id
