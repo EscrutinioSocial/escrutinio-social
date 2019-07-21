@@ -297,6 +297,20 @@ PAUSA_CONSOLIDACION = 15
 ATTACHMENT_TAKE_WAIT_TIME = 1   # En minutos
 MESA_TAKE_WAIT_TIME = 2         # En minutos
 
+
+# las siguientes constantes definen los criterios de filtro
+# para obtener aquellos instancas que se utilizan en el cálculo de resultados
+# o en validaciones de carga, etc.
+# por ejemplo:
+#
+# blanco = Opcion.objects.get(**OPCION_BLANCOS)
+OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco'}
+OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos'}
+OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos'}
+OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres'}
+
+
+
 try:
     from .local_settings import *      # noqa
 except ImportError:
