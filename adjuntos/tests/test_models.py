@@ -5,7 +5,6 @@ from elecciones.tests.factories import (
     MesaFactory,
     IdentificacionFactory,
 )
-from django.utils import timezone
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
 
@@ -22,10 +21,9 @@ def test_sin_identificar_excluye_taken(db):
     a1 = IdentificacionFactory(status='identificada').attachment
     a2 = IdentificacionFactory(status='spam').attachment
     a3 = IdentificacionFactory(status='spam').attachment
-    assert set(Attachment.sin_identificar()) == {a1, a2, a3}
-    a3.taken = timezone.now()
-    a3.save()
-    assert set(Attachment.sin_identificar()) == {a1, a2}
+    assert set(Attachment.sin_identificar_con_timeout()) == {a1, a2, a3}
+    a3.take()
+    assert set(Attachment.sin_identificar_con_timeout(wait=2)) == {a1, a2}
 
 
 def test_sin_identificar_excluye_otros_estados(db):
@@ -97,6 +95,18 @@ def test_identificacion_consolidada_alguna(db):
     cant_novedades = Identificacion.objects.filter(procesada=False).count()
     assert cant_novedades == 0
 
+    a.refresh_from_db()
+    assert a.identificacion_testigo == i1
+    assert a.mesa == m1
+    assert a.status == Attachment.STATUS.identificada
+
+
+def test_identificacion_consolidada_con_minimo_1(db, settings):
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
+    a = AttachmentFactory()
+    m1 = MesaFactory()
+    i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+    consumir_novedades_identificacion()
     a.refresh_from_db()
     assert a.identificacion_testigo == i1
     assert a.mesa == m1

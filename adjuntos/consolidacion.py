@@ -3,6 +3,10 @@ from adjuntos.models import Attachment, Identificacion
 from elecciones.models import Carga, MesaCategoria
 from django.db import transaction
 from django.db.models import Subquery, Count
+from django.dispatch import receiver
+from django.db.models.signals import post_save
+
+
 
 
 def consolidar_cargas_por_tipo(cargas, tipo):
@@ -140,7 +144,7 @@ def consolidar_identificaciones(attachment):
             break
 
     if mesa_id_consolidada:
-        # Consolidamos una mesa, ya sea por CSV o por multicoincidencia.
+        # Consolidamos una mesa, ya sea por CSV o por coincidencia múltiple.
 
         identificaciones_correctas = attachment.identificaciones.filter(
             mesa_id=mesa_id_consolidada, status=Identificacion.STATUS.identificada
@@ -183,7 +187,7 @@ def consumir_novedades_identificacion():
     ).distinct()
     for attachment in attachments_con_novedades:
         consolidar_identificaciones(attachment)
-    procesadas =  a_procesar.update(procesada=True)
+    procesadas = a_procesar.update(procesada=True)
     return procesadas
 
 
@@ -207,3 +211,16 @@ def consumir_novedades():
         consumir_novedades_identificacion(),
         consumir_novedades_carga()
     )
+
+
+@receiver(post_save, sender=Attachment)
+def actualizar_orden_de_carga(sender, instance=None, created=False, **kwargs):
+    if instance.mesa and instance.identificacion_testigo:
+        # TO DO: evaluar si un nuevo attachment para una mesa ya identificada
+        # (es decir, con orden de carga ya definido) deberia volver a actualizar
+        a_actualizar = MesaCategoria.objects.filter(
+            mesa=instance.mesa,
+            orden_de_carga__isnull=True
+        )
+        for mc in a_actualizar:
+            mc.actualizar_orden_de_carga()

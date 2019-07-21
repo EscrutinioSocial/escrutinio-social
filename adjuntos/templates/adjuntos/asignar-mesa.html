@@ -15,10 +15,6 @@
   padding-bottom: 0px;
 }
 
-.darkroom-image-container {
-  overflow: auto;
-}
-
 .left-panel {
 
   flex-basis: 30%;
@@ -58,10 +54,12 @@
 </style>
 <script type="text/javascript">
 $(document).ready(function() {
-  var container = $('.darkroom-image-container');
+  // Actualizar el alto de la foto a lo disponible
+  var container = $('.darkroom-container');
   if (container.length) {
-    container.height($("main").height() - 200);
     $('html, body').css('overflowY', 'hidden');
+    var darkroomHeight = $(window).height() - container.offset().top - 50;
+    container.height(darkroomHeight);
   }
 });
 </script>
@@ -137,15 +135,12 @@ $(document).ready(function() {
 
 {% block right-panel %}
     <div class="acta card">
+        <div class="card-content">
+            <img id="target" src="{{ attachment.foto.thumbnail.960x.url }}">
 
-        <div class="card-content" >
-           <a href="{{ attachment.foto.url }}" target="new">ampliar</a>
-           <img id="target" class="responsive-img" src="{{ attachment.foto.thumbnail.960x.url }}">
-
-          <script src="{% static 'js/fabric.js' %}"></script>
-          <script src="{% static 'js/darkroom.js' %}"></script>
-
-          <script>
+            <script src="{% static 'js/fabric.js' %}"></script>
+            <script src="{% static 'js/darkroom.js' %}"></script>
+            <script>
             new Darkroom('#target', {
               plugins: {
                 save: {
@@ -159,11 +154,8 @@ $(document).ready(function() {
                 }
               }
             });
-          </script>
+            </script>
         </div>
-
-
-
     </div>
 {% endblock right-panel %}
 
