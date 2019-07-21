@@ -451,13 +451,13 @@ class Opcion(models.Model):
 
     Más de una opción puede estar asociada al mismo partido,
     (por ejemplo varias listas de un espacio en una PASO)
-    pero actualmente sus votos se computan agregados
+    pero actualmente sus votos se computan agregados.
 
-    ver :issue:`48`
     """
-    # tipos positivos son las opciones contables (asociadas a partidos)
-    # tipos no positivos son blanco, nulos, etc
-    # metada son campos extras como "total de votos" "total de sobres", etc.
+    # Tipos positivos son las opciones contables (asociadas a partidos).
+    # Tipos no positivos son blanco, nulos, etc
+    # Metada son campos extras como "total de votos", "total de sobres", etc.
+    # que son únicos por mesa (no están en cada categoría).
     TIPOS = Choices('positivo', 'no_positivo', 'metadata')
     tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
 
@@ -517,7 +517,7 @@ class Eleccion(models.Model):
 
 class Categoria(models.Model):
     """
-    Representa una categoria electiva, es decir, una "columna" del acta.
+    Representa una categoría electiva, es decir, una "columna" del acta.
     Por ejemplo: Presidente y Vicepresidente, Intendente de La Matanza, etc)
 
     Una categoría tiene habilitadas diferentes :py:meth:`opciones <Opcion>`
@@ -529,16 +529,16 @@ class Categoria(models.Model):
     opciones = models.ManyToManyField(
         Opcion, through='CategoriaOpcion', related_name='categorias')
     color = models.CharField(
-        max_length=10, default='black', help_text='Color para css (Ej: red o #FF0000)'
+        max_length=10, default='black', help_text='Color para CSS (ej, red o #FF0000)'
     )
     back_color = models.CharField(
-        max_length=10, default='white', help_text='Color para css (red o #FF0000)'
+        max_length=10, default='white', help_text='Color para CSS (ej, red o #FF0000)'
     )
     activa = models.BooleanField(
         default=True,
         help_text=(
             'Si no está activa, no se cargan datos '
-            'para esta categoria y no se muestran resultados'
+            'para esta categoría y no se muestran resultados.'
         )
     )
 
@@ -550,9 +550,9 @@ class Categoria(models.Model):
 
     def opciones_actuales(self, solo_prioritarias=False):
         """
-        Devuelve las opciones asociadas a la categoria en el orden dado
+        Devuelve las opciones asociadas a la categoría en el orden dado
         Determina el orden de la filas a cargar, tal como se definen
-        en el acta
+        en el acta.
         """
         qs = self.opciones.all()
         if solo_prioritarias:
@@ -562,13 +562,13 @@ class Categoria(models.Model):
     @classmethod
     def para_mesas(cls, mesas):
         """
-        Devuelve el conjunto de categorias que son comunes a todas
-        las mesas dadas
+        Devuelve el conjunto de categorías que son comunes a todas
+        las mesas dadas.
 
         Por ejemplo, permite mostrar links válidos a las distintas
-        categorias para una sección o circuito.
+        categorías para una sección o circuito.
         Por ejemplo, si filtramos el circuito 1J o cualquiera se sus
-        subniveles (escuela, mesa) se debe mostrar la categoria a
+        subniveles (escuela, mesa) se debe mostrar la categoría a
         Intentendente de La Matanza, pero no a intendente de San Isidro.
         """
         if isinstance(mesas, models.QuerySet):
@@ -577,14 +577,14 @@ class Categoria(models.Model):
             # si es lista
             mesas_count = len(mesas)
 
-        # el primer filtro devuelve categorias activas que esten
+        # El primer filtro devuelve categorías activas que esten
         # relacionadas a una o más mesas, pero no necesariamente a todas
         qs = cls.objects.filter(
             activa=True,
             mesa__in=mesas
         )
 
-        # para garantizar que son categorias asociadas a **todas** las mesas
+        # Para garantizar que son categorías asociadas a **todas** las mesas
         # anotamos la cuenta y la comparamos con la cantidad de mesas del conjunto
         qs = qs.annotate(
             num_mesas=Count('mesa')

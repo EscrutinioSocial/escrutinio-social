@@ -838,8 +838,7 @@
     "nombre_corto": "blanco",
     "partido": null,
     "orden": 10,
-    "es_contable": false,
-    "es_metadata": true,
+    "tipo": "no_positivo",
     "codigo_dne": null
   }
 },
@@ -851,8 +850,6 @@
     "nombre_corto": "FF",
     "partido": 1,
     "orden": 2,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -864,8 +861,6 @@
     "nombre_corto": "MP",
     "partido": 2,
     "orden": 3,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -877,8 +872,6 @@
     "nombre_corto": "LU",
     "partido": 3,
     "orden": 4,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -890,8 +883,7 @@
     "nombre_corto": "nulos",
     "partido": null,
     "orden": 11,
-    "es_contable": false,
-    "es_metadata": true,
+    "tipo": "no_positivo",
     "codigo_dne": null
   }
 },
@@ -903,8 +895,6 @@
     "nombre_corto": "KM",
     "partido": 1,
     "orden": 1,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -916,8 +906,6 @@
     "nombre_corto": "VS",
     "partido": 2,
     "orden": 2,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -929,8 +917,6 @@
     "nombre_corto": "B",
     "partido": 3,
     "orden": 3,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -942,8 +928,6 @@
     "nombre_corto": "Massa",
     "partido": 1,
     "orden": 1,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -955,8 +939,6 @@
     "nombre_corto": "Ritondo",
     "partido": 2,
     "orden": 2,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -968,8 +950,6 @@
     "nombre_corto": "Cama\u00f1o",
     "partido": 3,
     "orden": 3,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
