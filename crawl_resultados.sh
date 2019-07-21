@@ -23,7 +23,14 @@ $WGET_BIN \
 DJANGO_TOKEN="csrfmiddlewaretoken=$(grep csrftoken $COOKIES | sed 's/^.*csrftoken\s*//')"
 
 # Bajamos el sitio.
-$WGET_BIN --page-requisites --recursive --level=100 --convert-links --html-extension --restrict-file-names=windows --no-parent --no-host-directories --directory-prefix=${dir_resultado} --span-hosts ${BASE_URI}/elecciones/resultados-parciales-sin-confirmar/
+tipoDeAgregacion=$1
+opcionaConsiderar=$2
+url=/elecciones/resultados/
+if [ ! -z "$tipoDeAgregacion" ] && [ ! -z "$opcionaConsiderar" ]; then
+    url="$url?tipoDeAgregacion=$tipoDeAgregacion&opcionaConsiderar=$opcionaConsiderar"
+fi
+echo "url: $url"
+$WGET_BIN --page-requisites --recursive --level=100 --convert-links --html-extension --restrict-file-names=windows --no-parent --no-host-directories --directory-prefix=${dir_resultado} --span-hosts ${BASE_URI}${url}
 
 
 echo "Reemplazando..."
