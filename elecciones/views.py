@@ -194,11 +194,9 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tipos_de_agregaciones'] = Sumarizador.TIPOS_DE_AGREGACIONES
-        # TODO setear valor default
-        context['tipos_de_agregaciones_seleccionado'] = self.request.GET.get('tipoDeAgregacion', '1')
+        context['tipos_de_agregaciones_seleccionado'] = self.request.GET.get('tipoDeAgregacion', 'todas_las_cargas')
         context['opciones_a_considerar'] = Sumarizador.OPCIONES_A_CONSIDERAR
-        # TODO setear valor default
-        context['opciones_a_considerar_seleccionado'] = self.request.GET.get('opcionaConsiderar', '1')
+        context['opciones_a_considerar_seleccionado'] = self.request.GET.get('opcionaConsiderar', 'prioritarias')
 
         if self.filtros:
             context['para'] = get_text_list(
