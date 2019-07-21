@@ -14,7 +14,7 @@ urlpatterns = [
         views.EscuelaDetailView.as_view(), name='detalle_escuela'),
     url('^mapa/$', login_required(cached(views.Mapa.as_view())), name='mapa'),
     url(
-        '^resultados-parciales-sin-confirmar/(?P<pk>\d+)?$',
+        '^resultados/(?P<pk>\d+)?$',
         views.ResultadosCategoria.as_view(),
         {'status': 'psc'},
         name='resultados-categoria'
@@ -29,8 +29,8 @@ urlpatterns = [
         '^resultados-totales-sin-confirmar/(?P<pk>\d+)?$',
         views.ResultadosCategoria.as_view(),
         {
-            'opciones_a_considerar': Sumarizador.OPCIONES_A_CONSIDERAR.todas,
-            'tipo_de_agregacion': Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas
+            'opcionaConsiderar': Sumarizador.OPCIONES_A_CONSIDERAR.todas,
+            'tipoDeAgregacion': Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas
         },
 
         name='resultados-totales-sin-confirmar'
@@ -43,6 +43,8 @@ urlpatterns = [
     ),
 
     url(r'^resultados-parciales-(?P<slug_categoria>[\w-]+).(?P<filetype>csv|xls)$',
+        # TODO resultado_parcial_categoria no existe en la view
+        # que deberiamos hacer?
         data_views.resultado_parcial_categoria, name='resultado-parcial-categoria'),
 
     # url(r'^fiscal_mesa/', views.fiscal_mesa, name='fiscal_mesa'),

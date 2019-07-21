@@ -23,7 +23,14 @@ $WGET_BIN \
 DJANGO_TOKEN="csrfmiddlewaretoken=$(grep csrftoken $COOKIES | sed 's/^.*csrftoken\s*//')"
 
 # Bajamos el sitio.
-$WGET_BIN --page-requisites --recursive --level=100 --convert-links --html-extension --restrict-file-names=windows --no-parent --no-host-directories --directory-prefix=${dir_resultado} --span-hosts ${BASE_URI}/elecciones/resultados/1
+tipoDeAgregacion=$1
+opcionaConsiderar=$2
+url=/elecciones/resultados/
+if [ ! -z "$tipoDeAgregacion" ] && [ ! -z "$opcionaConsiderar" ]; then
+    url="$url?tipoDeAgregacion=$tipoDeAgregacion&opcionaConsiderar=$opcionaConsiderar"
+fi
+echo "url: $url"
+$WGET_BIN --page-requisites --recursive --level=100 --convert-links --html-extension --restrict-file-names=windows --no-parent --no-host-directories --directory-prefix=${dir_resultado} --span-hosts ${BASE_URI}${url}
 
 
 echo "Reemplazando..."
@@ -32,4 +39,4 @@ echo "Reemplazando..."
 find ${dir_resultado} -type f -name "*.html*" -exec sed -i -e 's/http:\/\/localhost:8000//g' -e '/href="\/login\/"/d' -e '/href="\/logout\/"/d' {} +
 
 # Sacamos el desplegable de tipo de sumarización.
-find ${dir_resultado} -type f -name "*.html*" -exec sed -i "s/id='tipodesumarizacion'/id='tipodesumarizacion' style='display:none'/g" {} +
+find ${dir_resultado} -type f -name "*.html*" -exec sed -i "s/class=\"filtros\"/class=\"filtros\" style='display:none'/g" {} +

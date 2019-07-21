@@ -152,7 +152,7 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
                 kwargs['tipo'] = nivel
                 kwargs['listado'] = self.request.GET.getlist(nivel)
 
-        self.sumarizador = Sumarizador(kwargs, None)  # Por ahora None
+        self.sumarizador = Sumarizador(kwargs, self.get_tipo_de_agregacion(), self.get_opciones_a_considerar())
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):
@@ -182,6 +182,14 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         # )
         return self.sumarizador.get_resultados(categoria)
 
+    def get_tipo_de_agregacion(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('tipoDeAgregacion', Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas)
+
+    def get_opciones_a_considerar(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
+
     def get_result_piechart(self, resultados):
         return [{
             'key': str(k),
@@ -191,8 +199,10 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tipos_sumarizacion'] = Sumarizador.get_tipos_sumarizacion()
-        context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
+        context['tipos_de_agregaciones'] = Sumarizador.TIPOS_DE_AGREGACIONES
+        context['tipos_de_agregaciones_seleccionado'] = self.get_tipo_de_agregacion()
+        context['opciones_a_considerar'] = Sumarizador.OPCIONES_A_CONSIDERAR
+        context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
 
         if self.filtros:
             context['para'] = get_text_list(
@@ -200,9 +210,9 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         else:
             context['para'] = 'todo el país'
 
-        pk = self.kwargs.get('pk', 1)
-        if pk == 1:
-            pk == Categoria.objects.first().id
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            pk = Categoria.objects.first().id
         categoria = get_object_or_404(Categoria, id=pk)
         context['object'] = categoria
         context['categoria_id'] = categoria.id

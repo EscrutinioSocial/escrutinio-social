@@ -183,7 +183,7 @@ class Sumarizador():
 
     def votos_por_opcion(self, categoria, mesas):
         """
-        Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de 
+        Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de
         votos por cada una de las opciones posibles (partidarias o no)
 
         Se utilizan expresiones condicionales. Referencia
@@ -320,7 +320,7 @@ class Resultados():
     def tabla_positivos(self):
         """
         Devuelve toda la información sobre los votos positivos para mostrar.
-        Para cada partido incluye: 
+        Para cada partido incluye:
             - votos: total de votos del partido
             - detalle: los votos de cada opción dentro del partido (recordar que es una PASO).
                 Para cada opción incluye:
@@ -381,7 +381,7 @@ class Resultados():
 
     def electores_en_mesas_escrutadas(self):
         return self.resultados.electores_en_mesas_escrutadas
-    
+
     def porcentaje_mesas_escrutadas(self):
         return self.resultados.porcentaje_mesas_escrutadas
 
