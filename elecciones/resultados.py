@@ -162,7 +162,7 @@ class Sumarizador():
     @lru_cache(128)
     def electores(self, categoria):
         """
-        Devuelve ecalcularl número de electores para :meth:`~.mesas`
+        Devuelve el número de electores para :meth:`~.mesas`
 
         TODO: convertir esto en un método de ``MesaManager``
         """
