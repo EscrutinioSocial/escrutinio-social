@@ -20,7 +20,7 @@ from elecciones.tests.factories import (
     UserFactory)
 
 PATH_ARCHIVOS_TEST = os.path.dirname(os.path.abspath(__file__)) + '/archivos/'
-CATEGORIAS = [('Presidente y vice,Gobernador y vice', True),
+CATEGORIAS = [('Presidente y vice', True), ('Gobernador y vice', True),
               ('Intendentes, Concejales y Consejeros Escolares', False), ('Legisladores Provinciales', True),
               ('Senadores Nacionales', True), ('Diputados Nacionales', True),
               ('Senadores Provinciales', True), ('Diputados Provinciales', True)]
@@ -78,9 +78,12 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     m = MesaFactory(numero='4012', lugar_votacion__circuito=c1, electores=100, circuito=c1)
     o2 = OpcionFactory(orden=3, codigo='A')
     o3 = OpcionFactory(orden=2, codigo='B')
-    c = CategoriaFactory(opciones=[o2, o3], nombre='Otra categoria')
+    votos = OpcionFactory(orden=0, codigo='0', nombre_corto="total_votos", tipo='metadata')
+    sobres = OpcionFactory(orden=1, codigo='0', nombre_corto="sobres", tipo='metadata')
+    c = CategoriaFactory(opciones=[o2, o3, votos, sobres], nombre='Otra categoria')
     CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True)
     MesaCategoriaFactory(mesa=m, categoria=c)
+
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_negativos.csv', usr_unidad_basica).procesar()
     assert 'Faltan datos en el archivo de la siguiente categoría' in str(e.value)
@@ -91,6 +94,9 @@ def carga_inicial(db):
     d1 = DistritoFactory(numero=1)
     s1 = SeccionFactory(numero=50, distrito=d1)
     circ = CircuitoFactory(numero='2', seccion=s1)
+    # crear las opciones para votos y sobres
+    votos = OpcionFactory(orden=0, codigo='0', nombre_corto="total_votos", tipo='metadata')
+    sobres = OpcionFactory(orden=1, codigo='0', nombre_corto="sobres", tipo='metadata')
     o1 = OpcionFactory(orden=3, codigo='A')
     o2 = OpcionFactory(orden=2, codigo='B')
     categorias = []
@@ -99,6 +105,9 @@ def carga_inicial(db):
         categorias.append(categoria_bd)
         CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=categoria[1], opcion=o1)
         CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=categoria[1], opcion=o2)
+        if categoria[0] == 'Presidente y vice':
+            CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=True, opcion=votos)
+            CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=True, opcion=sobres)
     MesaFactory(numero='4012', lugar_votacion__circuito=circ, electores=100, circuito=circ,
                 categorias=categorias)
 
@@ -131,5 +140,26 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica
     for parcial in carga_parcial:
         assert parcial.origen == 'csv'
     votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=carga_parcial).all()
-    # ya que hay dos opciones y 6 categorias prioritarias
-    assert len(votos_carga_parcial) == 12
+    # ya que hay dos opciones y 7 categorias prioritarias
+    assert len(votos_carga_parcial) == 14
+
+
+def test_procesar_csv_informacion_valida_con_metadata_genera_resultados(db, usr_unidad_basica,
+                                                                        carga_inicial):
+    CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_metadata_ok.csv', usr_unidad_basica).procesar()
+    carga_total = Carga.objects.filter(tipo=Carga.TIPOS.total).all()
+    totales = len([categoria for categoria in CATEGORIAS if not categoria[1]])
+    assert len(carga_total) == totales
+    for total in carga_total:
+        assert total.origen == 'csv'
+    votos_carga_total = VotoMesaReportado.objects.filter(carga__in=carga_total).all()
+    # ya que hay dos opciones y 1 categoria no prioritaria
+    assert len(votos_carga_total) == 2
+    carga_parcial = Carga.objects.filter(tipo=Carga.TIPOS.parcial).all()
+    parciales = len(CATEGORIAS) - totales
+    assert len(carga_parcial) == parciales
+    for parcial in carga_parcial:
+        assert parcial.origen == 'csv'
+    votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=carga_parcial).all()
+    # ya que hay dos opciones y 7 categorias prioritarias y 2 opciones de metadata
+    assert len(votos_carga_parcial) == 16

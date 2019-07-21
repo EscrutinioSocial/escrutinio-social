@@ -2,11 +2,14 @@ import pandas as pd
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 
-from elecciones.models import Mesa, Carga, VotoMesaReportado
+from elecciones.models import Mesa, Carga, VotoMesaReportado, Opcion
 from django.db import transaction
 from django.db.utils import IntegrityError
+
+from escrutinio_social.settings import OPCION_TOTAL_SOBRES, OPCION_TOTAL_VOTOS
 from fiscales.models import Fiscal
 
+# primer dato: nombre de la columna, segundo: si es parte de una categoria o no
 COLUMNAS_DEFAULT = [('seccion', False), ('distrito', False), ('circuito', False), ('nro de mesa', False),
                     ('nro de lista', False), ('presidente y vice', True), ('gobernador y vice', True),
                     ('senadores nacionales', True), ('diputados nacionales', True),
@@ -53,6 +56,8 @@ class CSVImporter:
         self.fiscal = None
         self.mesas = []
         self.mesas_matches = {}
+        self.carga_total = None
+        self.carga_parcial = None
 
     def procesar(self):
         self.validar()
@@ -131,6 +136,11 @@ class CSVImporter:
         # la carga es por mesa y categoría entonces nos conviene ir analizando grupos de mesas
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         columnas_categorias = [i[0] for i in COLUMNAS_DEFAULT if i[1]]
+        # se obtienen las opciones correspondientes a metadata
+        opcion_sobres = Opcion.objects.get(**OPCION_TOTAL_SOBRES)
+        opcion_votos = Opcion.objects.get(**OPCION_TOTAL_VOTOS)
+        categoria_sobres = opcion_sobres.categoriaopcion_set.first()
+        categoria_votos = opcion_votos.categoriaopcion_set.first()
         try:
             with transaction.atomic():
 
@@ -139,9 +149,13 @@ class CSVImporter:
                     mesa_bd = self.mesas_matches[mesa]
                     # Analizo por categoria-mesa, y por cada categoria-mesa, todos los partidos posibles
                     for mesa_categoria in mesa_bd.mesacategoria_set.all():
-                        carga_total = None
-                        carga_parcial = None
+                        self.carga_total = None
+                        self.carga_parcial = None
                         categoria_bd = mesa_categoria.categoria
+                        # si justo estamos analizando la columna que matchea con la categoria de las
+                        # opciones de tipo metadata
+                        analizar_sobres = categoria_sobres.categoria == categoria_bd
+                        analizar_electores = categoria_votos.categoria == categoria_bd
                         # buscamos el nombre de la columna asociada a esta categoria
                         matcheos = [columna for columna in columnas_categorias if columna.lower()
                                     in categoria_bd.nombre.lower()]
@@ -150,42 +164,36 @@ class CSVImporter:
                             mesa_columna = matcheos[0]
                             # los votos son por partido así que debemos iterar por todas las filas
                             for indice, fila in grupos.iterrows():
-                                cantidad_votos = fila[mesa_columna]
                                 opcion = fila['nro de lista']
                                 fila_analizada = FilaCSVImporter(mesa[0], mesa[1], mesa[2], mesa[3])
-                                # buscamos este nro de lista dentro de las opciones asociadas a
-                                # esta categoría
-                                match_opcion = [una_opcion for una_opcion in categoria_bd.opciones.all()
-                                                if una_opcion.codigo and una_opcion.codigo.strip().lower()
-                                                == str(opcion).strip().lower()]
-                                opcion_bd = match_opcion[0] if len(match_opcion) > 0 else None
-                                if not opcion_bd:
-                                    raise DatosInvalidosError(f'El número de lista {opcion} no fue '
-                                                              f'encontrado asociado la categoría '
-                                                              f'{categoria_bd.nombre}, revise que sea el '
-                                                              f'correcto.')
-                                opcion_categoria = opcion_bd.categoriaopcion_set \
-                                    .filter(categoria=categoria_bd).first()
-                                if opcion_categoria.prioritaria:
-                                    if not carga_parcial:
-                                        carga_parcial = Carga.objects.create(
-                                            tipo=Carga.TIPOS.parcial,
-                                            origen=Carga.SOURCES.csv,
-                                            mesa_categoria=mesa_categoria,
-                                            fiscal=self.fiscal
-                                        )
-                                    carga = carga_parcial
+                                # primero chequeamos si esta fila corresponde a metadata verificando el
+                                # numero de lista que está en cero cuando se trata de metadata
+                                if str(opcion) == '0':
+                                    if analizar_electores:
+                                        cantidad_electores = fila['cantidad de electores del padron']
+                                        self.cargar_votos(cantidad_electores, categoria_votos,
+                                                          mesa_categoria, opcion_votos)
+                                    if analizar_sobres:
+                                        cantidad_sobres = fila['cantidad de sobres en la urna']
+                                        self.cargar_votos(cantidad_sobres, categoria_sobres, mesa_categoria,
+                                                          opcion_sobres)
                                 else:
-                                    if not carga_total:
-                                        carga_total = Carga.objects.create(
-                                            tipo=Carga.TIPOS.total,
-                                            origen=Carga.SOURCES.csv,
-                                            mesa_categoria=mesa_categoria,
-                                            fiscal=self.fiscal
-                                        )
-                                    carga = carga_total
-                                voto = VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
-                                voto.save()
+                                    cantidad_votos = fila[mesa_columna]
+                                    # buscamos este nro de lista dentro de las opciones asociadas a
+                                    # esta categoría
+                                    match_opcion = [una_opcion for una_opcion in categoria_bd.opciones.all()
+                                                    if una_opcion.codigo and una_opcion.codigo.strip().lower()
+                                                    == str(opcion).strip().lower()]
+                                    opcion_bd = match_opcion[0] if len(match_opcion) > 0 else None
+                                    if not opcion_bd:
+                                        raise DatosInvalidosError(f'El número de lista {opcion} no fue '
+                                                                  f'encontrado asociado la categoría '
+                                                                  f'{categoria_bd.nombre}, revise que sea '
+                                                                  f'el correcto.')
+                                    opcion_categoria = opcion_bd.categoriaopcion_set.\
+                                        filter(categoria=categoria_bd).first()
+                                    self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
+                                                      opcion_bd)
                         else:
                             raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
                                                       f'categoría: {categoria_bd.nombre}.')
@@ -204,6 +212,29 @@ class CSVImporter:
                 f'a  {fila_analizada}.')
         except Exception as e:
             raise e
+
+    def cargar_votos(self, cantidad_votos, opcion_categoria, mesa_categoria,
+                     opcion_bd):
+        if opcion_categoria.prioritaria:
+            if not self.carga_parcial:
+                self.carga_parcial = Carga.objects.create(
+                    tipo=Carga.TIPOS.parcial,
+                    origen=Carga.SOURCES.csv,
+                    mesa_categoria=mesa_categoria,
+                    fiscal=self.fiscal
+                )
+            carga = self.carga_parcial
+        else:
+            if not self.carga_total:
+                self.carga_total = Carga.objects.create(
+                    tipo=Carga.TIPOS.total,
+                    origen=Carga.SOURCES.csv,
+                    mesa_categoria=mesa_categoria,
+                    fiscal=self.fiscal
+                )
+            carga = self.carga_total
+        voto = VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
+        voto.save()
 
     def validar_usuario(self):
         try:

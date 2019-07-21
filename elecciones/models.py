@@ -476,6 +476,7 @@ class Opcion(models.Model):
 
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
+    # el código de opción corresponde con el Nro de Lista en los archivos csv
     codigo = models.CharField(max_length=10, help_text='Codigo de opción', null=True, blank=True)
     partido = models.ForeignKey(
         Partido, null=True, on_delete=models.SET_NULL, blank=True, related_name='opciones'
