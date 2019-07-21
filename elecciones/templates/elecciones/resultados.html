@@ -4,17 +4,28 @@
 
 {% block title %}Resultados{% endblock %}
 
-{% block page_title %}
-
-    <h5>Resultados para {{para|default:para}}</h5>
-    <form id="formulariotipodesumarizacion" method="get">
-        <select id='tipodesumarizacion' name='tipodesumarizacion' class="browser-default selector-tipo-sumarizacion">
-            {% for tipo_sumarizacion in tipos_sumarizacion %}
-                <option value="{{ tipo_sumarizacion.pk }}" {% if tipo_sumarizacion_seleccionado == tipo_sumarizacion.pk %}selected{% endif %}>{{ tipo_sumarizacion.name }}</option>
-            {% endfor %}
-        </select>
-    </form>
-
+{% block page_title %}Resultados para {{para|default:para}}{% endblock %}
+{% block breadcrumbs %}
+<nav class="filtros">
+  <div class="row">
+    <div class="col s5">
+      <label>Tipo de agregación</label>
+      <select id='tipoDeAgregacion' name='tipoDeAgregacion' class="browser-default">
+          {% for value, descripcion in tipos_de_agregaciones %}
+              <option value="{{ value }}" {% if tipos_de_agregaciones_seleccionado == value %}selected{% endif %}>{{ descripcion }}</option>
+          {% endfor %}
+      </select>
+    </div>
+    <div class="col s5">
+      <label>Opción a considerar</label>
+      <select id='opcionaConsiderar' name='opcionaConsiderar' class="browser-default">
+          {% for value, descripcion in opciones_a_considerar %}
+              <option value="{{ value }}" {% if opciones_a_considerar_seleccionado == value %}selected{% endif %}>{{ descripcion }}</option>
+          {% endfor %}
+      </select>
+    </div>
+  </div>
+</nav>
 {% endblock %}
 
  {% block head %}
@@ -24,12 +35,13 @@
     {% endif %}
     <link href="/static/elecciones/resultados.css" rel="stylesheet" type="text/css">
     <script>
-        $( document ).ready(function() {
-            $( "#tipodesumarizacion" ).change(function() {
-                $( "#formulariotipodesumarizacion" ).submit();
-            });
+    $(document).ready(function() {
+        $('.filtros select').change(function(value) {
+          var $select = $(this);
+          // TODO cambiar url
+          console.log($select.attr('name'), $select.val());
         });
-        
+    });
     </script>
  {% endblock %}
 
