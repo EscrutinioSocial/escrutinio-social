@@ -163,7 +163,7 @@ class Sumarizador():
     @lru_cache(128)
     def electores(self, categoria):
         """
-        Devuelve el número de electores para :meth:`~.mesas`
+        Devuelve ecalcularl número de electores para :meth:`~.mesas`
 
         TODO: convertir esto en un método de ``MesaManager``
         """
@@ -184,7 +184,7 @@ class Sumarizador():
 
     def votos_por_opcion(self, categoria, mesas):
         """
-        Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de 
+        Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de
         votos por cada una de las opciones posibles (partidarias o no)
 
         Se utilizan expresiones condicionales. Referencia
@@ -255,7 +255,8 @@ class Sumarizador():
         # 3.3 Sumarizar y calcular porcentajes intra-opciones partidarias (recordar que es una PASO)
         votos_positivos = {}
         for partido, votos_por_opcion in votos_por_partido.items():
-            total_partido = sum(votos_por_opcion.values())
+            # filtramos los item con valor None
+            total_partido = sum(filter(None, votos_por_opcion.values()))
             votos_positivos[partido] = {
                 'votos': total_partido,
                 'detalle': {
@@ -269,7 +270,8 @@ class Sumarizador():
         total_positivos = sum(votos['votos'] for votos in votos_positivos.values())
 
         # Calculamos el total como la suma de todos los positivos y los válidos no positivos.
-        total = total_positivos + sum(votos_no_positivos.values())
+        # filtramos los item con valor None
+        total = total_positivos + sum(filter(None, votos_no_positivos.values()))
 
         return AttrDict({
             "total_mesas": total_mesas,
@@ -367,7 +369,7 @@ class Resultados():
 
     def electores_en_mesas_escrutadas(self):
         return self.resultados.electores_en_mesas_escrutadas
-    
+
     def votantes(self):
         return self.resultados.total
 

@@ -216,7 +216,7 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         categoria = get_object_or_404(Categoria, id=pk)
         context['object'] = categoria
         context['categoria_id'] = categoria.id
-        # context['resultados'] = self.get_resultados(categoria)
+        context['resultados'] = self.get_resultados(categoria)
         context['show_plot'] = settings.SHOW_PLOT
 
         # TODO esto no está probado
