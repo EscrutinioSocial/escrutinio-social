@@ -44,7 +44,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-07-19T12:49:15.582Z",
+    "last_login": "2019-07-21T15:00:19.850Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -478,7 +478,7 @@
     "status": "00_sin_cargar",
     "mesa": 1,
     "categoria": 1,
-    "carga_testigo": null,
+    "carga_testigo": 1,
     "taken": null,
     "orden_de_carga": null
   }
@@ -1163,7 +1163,7 @@
   "pk": 1,
   "fields": {
     "created": "2019-07-04T19:51:27.212Z",
-    "modified": "2019-07-04T19:51:27.212Z",
+    "modified": "2019-07-21T15:33:59.169Z",
     "valida": true,
     "tipo": "falta_foto",
     "origen": "web",
@@ -1207,6 +1207,15 @@
     "carga": 1,
     "opcion": 1,
     "votos": 10
+  }
+},
+{
+  "model": "elecciones.votomesareportado",
+  "pk": 5,
+  "fields": {
+    "carga": 1,
+    "opcion": 5,
+    "votos": 1
   }
 }
 ]

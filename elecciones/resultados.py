@@ -249,7 +249,8 @@ class Sumarizador():
                 votos_positivos.setdefault(opcion.partido, {})[opcion] = votos
             else:
                 # 3.2 Opciones no partidarias se agrupan con otras opciones del mismo partido.
-                votos_no_positivos[opcion.nombre] = votos
+                # TODO ¿Puede realmente pasar que no vengan las opciones completas?
+                votos_no_positivos[opcion.nombre] = votos if votos else 0
 
         return AttrDict({
             "total_mesas": total_mesas,
@@ -299,14 +300,14 @@ class Resultados():
         """
         Devuelve el total de votos positivos de la mesa, sumando los votos de cada una de las opciones de cada partido.
         """
-        return sum(sum(opciones_partido.values()) for opciones_partido in self.resultados.votos_positivos.values())
+        return sum(sum(votos for votos in opciones_partido.values() if votos) for opciones_partido in self.resultados.votos_positivos.values())
 
     @lru_cache(128)
     def total_no_positivos(self):
         """
         Devuelve el total de votos no positivos de la mesa, sumando los votos a cada opción no partidaria.
         """
-        return sum(self.resultados.votos_no_positivos.values())
+        return sum(votos for votos in self.resultados.votos_no_positivos.values())
 
     @lru_cache(128)
     def votantes(self):
@@ -343,9 +344,6 @@ class Resultados():
                 }
             }
 
-        print(votos_positivos)
-
-
         return OrderedDict(
             sorted(
                 votos_positivos.items(),
@@ -362,13 +360,16 @@ class Resultados():
         Incluye a todos los positivos agrupados como una única opción adicional.
         También incluye porcentajes calculados sobre el total de votos de la mesa.
         """
+        # TODO Falta un criterio de ordenamiento para las opciones no positivas.
         tabla_no_positivos = {
             nombre_opcion: {
                 "votos": votos,
                 "porcentaje_total": porcentaje(votos, self.votantes())
             } for nombre_opcion, votos in self.resultados.votos_no_positivos.items()
         }
-        tabla_no_positivos["positivos"] = {
+
+        # Esta key es especial porque la vista la muestra directamente en pantalla.
+        tabla_no_positivos["Votos Positivos"] = {
             "votos": self.total_positivos(),
             "porcentaje_total": porcentaje(self.total_positivos(), self.votantes())
         }
