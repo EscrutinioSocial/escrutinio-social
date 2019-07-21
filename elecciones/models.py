@@ -380,7 +380,6 @@ class Mesa(models.Model):
     )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
-
     prioridad = models.PositiveIntegerField(default=0)
 
     def categoria_add(self, categoria):
@@ -412,6 +411,21 @@ class Mesa(models.Model):
                 fotos.append((f'Foto {i} (editada)', a.foto_edited))
             fotos.append((f'Foto {i} (original)', a.foto))
         return fotos
+
+    def metadata(self):
+        """
+        Las opciones metadatas comunes a las distintas categorias de la misma mesa
+        reusan el valor reportado. Se cargan hasta que se consolide en alguna categoria
+        y las siguientes cargas reusaran sus valores reportados.
+
+        Este metodo devuelve la lista de tuplas de (opcion metadata, numero)
+        para alguna de las cargas consolidadas testigo de la mesa.
+        """
+        return VotoMesaReportado.objects.filter(
+            opcion__tipo=Opcion.TIPOS.metadata,
+            carga__mesa_categoria__mesa=self,
+            carga__mesa_categoria__status=MesaCategoria.STATUS.total_consolidada_dc
+        ).distinct().values_list('opcion', 'votos')
 
     def __str__(self):
         return str(self.numero)
@@ -662,11 +676,7 @@ class Carga(TimeStampedModel):
 
     def actualizar_firma(self, forzar=False):
         """
-        A partir del conjunto de reportes de la carga
-        se genera una firma como un string
-            <id_opcion_A>-<votos_opcion_A>|<id_opcion_B>-<votos_opcion_B>...
-
-        Si esta firma iguala o coincide con la de otras cargas
+        A partir del conjunto de reportes f iguala o coincide con la de otras cargas
         se marca consolidada.
         """
         # Si ya hay firma y no están forzando, listo.

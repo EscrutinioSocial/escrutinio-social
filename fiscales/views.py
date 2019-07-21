@@ -241,7 +241,7 @@ def carga(request, mesacategoria_id, tipo='total'):
     # este diccionario es el que contiene informacion "pre completada"
     # de una carga. si una opcion está en este dict, el campo se inicializará
     # con su clave.
-    votos_para_opcion = {}
+    votos_para_opcion = dict(mesa.metadata())
     if tipo == 'total' and mesa_categoria.status == MesaCategoria.STATUS.parcial_consolidada_dc:
         # una carga total con parcial consolidada reutiliza los datos ya cargados
         votos_para_opcion.update(
@@ -267,7 +267,8 @@ def carga(request, mesacategoria_id, tipo='total'):
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
 
             if votos_para_opcion.get(opcion.id):
-                # los campos previamente cargados son solo lectura
+                # los campos que ya conocemos (metadata o cargas parciales consolidadas)
+                # los marcamos como sólo lectura
                 form.fields['votos'].widget.attrs['readonly'] = True
             else:
                 form.fields['votos'].widget.attrs['tabindex'] = i
