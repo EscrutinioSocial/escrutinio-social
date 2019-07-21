@@ -174,7 +174,7 @@ def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, sett
 
 
 def test_detalle_mesa_categoria(db, fiscal_client):
-    opcs = OpcionFactory.create_batch(3, es_contable=True)
+    opcs = OpcionFactory.create_batch(3)
     e1 = CategoriaFactory(opciones=opcs)
     e2 = CategoriaFactory(opciones=opcs)
     mesa = MesaFactory(categorias=[e1, e2])
