@@ -4,14 +4,18 @@ from django.conf import settings
 
 from antitrolling.models import (
     EventoScoringTroll, CambioEstadoTroll,
-    aumentar_scoring_troll_identificacion
+    aumentar_scoring_troll_identificacion, aumentar_scoring_troll_carga
 )
+from elecciones.models import MesaCategoria
 
 from elecciones.tests.factories import (
     MesaFactory, AttachmentFactory
 )
 
-from utils_para_test import nuevo_fiscal, identificar, reportar_problema_attachment
+from utils_para_test import (
+    nuevo_fiscal, identificar, reportar_problema_attachment,
+    nueva_categoria, nueva_carga
+)
 
 
 @pytest.mark.django_db
@@ -44,6 +48,33 @@ def test_registro_evento_scoring_identificacion():
     assert evento.actor is None
     assert evento.fiscal_afectado == fiscal
     assert evento.variacion == 100
+
+
+
+@pytest.mark.django_db
+def test_registro_evento_scoring_carga():
+    """
+    Se comprueba que un EventoScoringTroll se genere con los valores correctos.
+    """
+
+    # creo escenario
+    fiscal = nuevo_fiscal()
+    categoria = nueva_categoria(["o1", "o2", "o3"])
+    mesa = MesaFactory(categorias=[categoria])
+    mesa_categoria = MesaCategoria.objects.filter(mesa=mesa).first()
+    carga = nueva_carga(mesa_categoria, fiscal, [30, 20, 10])
+
+    assert fiscal.eventos_scoring_troll.count() == 0
+    aumentar_scoring_troll_carga(42, carga, EventoScoringTroll.MOTIVO.carga_valores_distintos_a_confirmados)
+    assert fiscal.eventos_scoring_troll.count() == 1
+    evento = fiscal.eventos_scoring_troll.first()
+    assert evento.motivo == EventoScoringTroll.MOTIVO.carga_valores_distintos_a_confirmados
+    assert evento.mesa_categoria == mesa_categoria
+    assert evento.attachment is None
+    assert evento.automatico == True
+    assert evento.actor is None
+    assert evento.fiscal_afectado == fiscal
+    assert evento.variacion == 42
 
 
 

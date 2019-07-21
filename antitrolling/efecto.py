@@ -1,7 +1,11 @@
 from django.conf import settings
 from adjuntos.models import Identificacion
 
-from .models import aumentar_scoring_troll_identificacion
+from elecciones.models import Carga
+from .models import (
+    aumentar_scoring_troll_identificacion, aumentar_scoring_troll_carga,
+    EventoScoringTroll
+)
 
 
 def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
@@ -40,3 +44,24 @@ def diferencia_opciones(carga_1, carga_2):
         diferencia += voto_2.votos
     
     return diferencia
+
+
+
+def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
+    testigo = mesa_categoria.carga_testigo
+    for carga in mesa_categoria.cargas.filter(invalidada=False):
+        if (carga.tipo == testigo.tipo and carga.firma != testigo.firma):
+            diferencia = diferencia_opciones(carga, testigo)
+            aumentar_scoring_troll_carga(
+                diferencia, carga, EventoScoringTroll.MOTIVO.carga_valores_distintos_a_confirmados
+            )
+        elif (carga.tipo == Carga.TIPOS.falta_foto):
+            aumentar_scoring_troll_carga(
+                settings.SCORING_TROLL_FALTA_FOTO_MESA_CATEGORIA_CON_CARGA_CONFIRMADA, 
+                carga, 
+                EventoScoringTroll.MOTIVO.indica_falta_foto_mesa_categoria_confirmada
+            )
+            carga.invalidada = True
+            carga.save(update_fields=['invalidada'])
+
+

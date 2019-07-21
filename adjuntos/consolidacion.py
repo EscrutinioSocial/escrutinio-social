@@ -6,7 +6,9 @@ from django.db.models import Subquery, Count
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from problemas.models import Problema
-from antitrolling.efecto import efecto_scoring_troll_asociacion_attachment
+from antitrolling.efecto import (
+    efecto_scoring_troll_asociacion_attachment, efecto_scoring_troll_confirmacion_carga
+)
 
 
 
@@ -122,6 +124,8 @@ def consolidar_cargas(mesa_categoria):
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_por_tipo(cargas_totales, Carga.TIPOS.total)
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        if (status_resultante == MesaCategoria.STATUS.total_consolidada_dc):
+            efecto_scoring_troll_confirmacion_carga(mesa_categoria)
         return
 
     # Analizo las parciales.
@@ -129,8 +133,9 @@ def consolidar_cargas(mesa_categoria):
     if cargas_parciales.count() > 0:
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_por_tipo(cargas_parciales, Carga.TIPOS.parcial)
-
-    mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        if (status_resultante == MesaCategoria.STATUS.parcial_consolidada_dc):
+            efecto_scoring_troll_confirmacion_carga(mesa_categoria)
 
 
 def consolidar_identificaciones(attachment):

@@ -18,6 +18,7 @@ class EventoScoringTroll(TimeStampedModel):
 
     MOTIVO = Choices(
         ('carga_valores_distintos_a_confirmados', 'Carga valores distintos a los confirmados'),
+        ('indica_falta_foto_mesa_categoria_confirmada', 'Indica "falta foto" para una mesa/categoría con carga confirmada'),
         ('identificacion_attachment_distinta_a_confirmada', 'Identifica un attachment de una forma distinta a la confirmada'),
         ('remocion_marca_troll', 'Se remueve la marca de troll a un fiscal'),
     )
@@ -83,6 +84,25 @@ def aumentar_scoring_troll_identificacion(variacion, identificacion):
     nuevo_evento = EventoScoringTroll.objects.create(
         motivo=EventoScoringTroll.MOTIVO.identificacion_attachment_distinta_a_confirmada,
         attachment=identificacion.attachment,
+        automatico=True,
+        fiscal_afectado=fiscal,
+        variacion=variacion
+    )
+    scoring_actualizado = scoring_anterior + variacion
+    if (scoring_actualizado >= settings.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL):
+        marcar_fiscal_troll(fiscal, nuevo_evento)
+
+
+def aumentar_scoring_troll_carga(variacion, carga, motivo):
+    """
+    Aumenta el scoring troll de un fiscal por motivos relacionados con una carga. Si corresponde, marcar al fiscal como troll.
+    """
+
+    fiscal = carga.fiscal
+    scoring_anterior = fiscal.scoring_troll()
+    nuevo_evento = EventoScoringTroll.objects.create(
+        motivo=motivo,
+        mesa_categoria=carga.mesa_categoria,
         automatico=True,
         fiscal_afectado=fiscal,
         variacion=variacion
