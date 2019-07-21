@@ -545,7 +545,7 @@ def test_resultados_no_positivos(fiscal_client):
     no_positivos = response.context['resultados']['tabla_no_positivos']
 
     assert no_positivos['blanco'] == {'porcentaje_total': '10.00', 'votos': 10}
-    assert no_positivos['Positivos']['votos'] == 90
+    assert no_positivos['positivos']['votos'] == 90
 
 
 def test_resultados_excluye_metadata(fiscal_client):
@@ -579,7 +579,7 @@ def test_resultados_excluye_metadata(fiscal_client):
 
     assert positivos[o1.partido]['votos'] == 150
     assert positivos[o2.partido]['votos'] == 150
-    assert no_positivos['Positivos']['votos'] == 300
+    assert no_positivos['positivos']['votos'] == 300
 
     assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
@@ -587,7 +587,7 @@ def test_resultados_excluye_metadata(fiscal_client):
     assert positivos[o2.partido]['proyeccion'] == '41.67'
 
     assert no_positivos[o3.nombre] == {'porcentaje_total': '6.25', 'votos': 20}
-    assert list(no_positivos.keys()) == [o3.nombre, 'Positivos']
+    assert list(no_positivos.keys()) == [o3.nombre, 'positivos']
 
 
 def test_actualizar_electores(carta_marina):
