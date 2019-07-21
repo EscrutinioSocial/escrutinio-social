@@ -455,6 +455,11 @@ class Opcion(models.Model):
 
     ver :issue:`48`
     """
+    # tipos positivos son las opciones contables (asociadas a partidos)
+    # tipos no positivos son blanco, nulos, etc
+    # metada son campos extras como "total de votos" "total de sobres", etc.
+    TIPOS = Choices('positivo', 'no_positivo', 'metadata')
+    tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
 
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
@@ -463,12 +468,6 @@ class Opcion(models.Model):
     )   # blanco, / recurrido / etc
     orden = models.PositiveIntegerField(
         help_text='Orden en la boleta', null=True, blank=True)
-    es_contable = models.BooleanField(default=True)
-
-    es_metadata = models.BooleanField(
-        default=False,
-        help_text="para campos que son tipo 'Total positivo, o Total votos'"
-    )
 
     codigo_dne = models.PositiveIntegerField(
         null=True, blank=True,
