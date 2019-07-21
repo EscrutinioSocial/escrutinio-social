@@ -100,7 +100,7 @@ def test_electores_filtro_mesa_multiple_categoria(fiscal_client):
 
     response = fiscal_client.get(url, {'mesa': mesa1.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 120
+    assert resultados.electores() == 120
     assert b'<td title="Electores">120 </td>' in response.content
 
 
@@ -109,9 +109,9 @@ def test_electores_filtro_escuela(url_resultados, fiscal_client):
     MesaFactory(electores=120, lugar_votacion=e)
     MesaFactory(electores=80, lugar_votacion=e)
     MesaFactory(electores=90)
-    response = fiscal_client.get(url_resultados, {'lugarvotacion': e.id})
+    response = fiscal_client.get(url_resultados, {'lugar_de_votacion': e.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 200
+    assert resultados.electores() == 200
     assert b'<td title="Electores">200 </td>' in response.content
 
 
@@ -120,7 +120,7 @@ def test_electores_filtro_circuito(url_resultados, fiscal_client):
     MesaFactory(electores=90)
     response = fiscal_client.get(url_resultados, {'circuito': mesa1.lugar_votacion.circuito.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 120
+    assert resultados.electores() == 120
     assert b'<td title="Electores">120 </td>' in response.content
 
 
@@ -129,7 +129,7 @@ def test_electores_filtro_seccion(url_resultados, fiscal_client):
     MesaFactory(electores=90)
     response = fiscal_client.get(url_resultados, {'seccion': mesa1.lugar_votacion.circuito.seccion.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 120
+    assert resultados.electores() == 120
     assert b'<td title="Electores">120 </td>' in response.content
 
 
@@ -138,14 +138,14 @@ def test_electores_filtro_distrito(url_resultados, fiscal_client):
     m2 = MesaFactory(electores=90, lugar_votacion__circuito__seccion__distrito__nombre='otro')
     response = fiscal_client.get(url_resultados, {'distrito': m2.lugar_votacion.circuito.seccion.distrito.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 90
+    assert resultados.electores() == 90
     assert b'<td title="Electores">90 </td>' in response.content
 
 
 def test_electores_sin_filtro(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados)
     resultados = response.context['resultados']
-    assert resultados['electores'] == 800
+    assert resultados.electores() == 800
     assert b'<td title="Electores">800 </td>' in response.content
 
 
@@ -220,7 +220,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
 
     assert resultados['votantes'] == 215
-    assert resultados['electores'] == 800
+    assert resultados.electores() == 800
 
 
 def test_resultados_proyectados(fiscal_client, url_resultados):
