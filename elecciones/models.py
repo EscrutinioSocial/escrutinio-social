@@ -139,7 +139,7 @@ class LugarVotacion(models.Model):
     # electores es una denormalización. debe coincidir con la sumatoria de
     # los electores de cada mesa de la escuela
     electores = models.PositiveIntegerField(null=True, blank=True)
-    geom = PointField(null=True)
+    geom = PointField(null=True, blank=True)
 
     # A veces, al importar datos, se realizan distintas iteraciones para geolocalizar
     # escuelas. Estos campos sirven para cuantificar la calidad y poder filtrar para
@@ -460,10 +460,15 @@ class Opcion(models.Model):
 
     Más de una opción puede estar asociada al mismo partido,
     (por ejemplo varias listas de un espacio en una PASO)
-    pero actualmente sus votos se computan agregados
+    pero actualmente sus votos se computan agregados.
 
-    ver :issue:`48`
     """
+    # Tipos positivos son las opciones contables (asociadas a partidos).
+    # Tipos no positivos son blanco, nulos, etc
+    # Metada son campos extras como "total de votos", "total de sobres", etc.
+    # que son únicos por mesa (no están en cada categoría).
+    TIPOS = Choices('positivo', 'no_positivo', 'metadata')
+    tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
 
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
@@ -472,12 +477,6 @@ class Opcion(models.Model):
     )   # blanco, / recurrido / etc
     orden = models.PositiveIntegerField(
         help_text='Orden en la boleta', null=True, blank=True)
-    es_contable = models.BooleanField(default=True)
-
-    es_metadata = models.BooleanField(
-        default=False,
-        help_text="para campos que son tipo 'Total positivo, o Total votos'"
-    )
 
     codigo_dne = models.PositiveIntegerField(
         null=True, blank=True,
@@ -527,7 +526,7 @@ class Eleccion(models.Model):
 
 class Categoria(models.Model):
     """
-    Representa una categoria electiva, es decir, una "columna" del acta.
+    Representa una categoría electiva, es decir, una "columna" del acta.
     Por ejemplo: Presidente y Vicepresidente, Intendente de La Matanza, etc)
 
     Una categoría tiene habilitadas diferentes :py:meth:`opciones <Opcion>`
@@ -548,7 +547,7 @@ class Categoria(models.Model):
         default=True,
         help_text=(
             'Si no está activa, no se cargan datos '
-            'para esta categoría y no se muestran resultados'
+            'para esta categoría y no se muestran resultados.'
         )
     )
 
@@ -560,9 +559,9 @@ class Categoria(models.Model):
 
     def opciones_actuales(self, solo_prioritarias=False):
         """
-        Devuelve las opciones asociadas a la categoria en el orden dado
+        Devuelve las opciones asociadas a la categoría en el orden dado
         Determina el orden de la filas a cargar, tal como se definen
-        en el acta
+        en el acta.
         """
         qs = self.opciones.all()
         if solo_prioritarias:
@@ -572,13 +571,13 @@ class Categoria(models.Model):
     @classmethod
     def para_mesas(cls, mesas):
         """
-        Devuelve el conjunto de categorias que son comunes a todas
-        las mesas dadas
+        Devuelve el conjunto de categorías que son comunes a todas
+        las mesas dadas.
 
         Por ejemplo, permite mostrar links válidos a las distintas
-        categorias para una sección o circuito.
+        categorías para una sección o circuito.
         Por ejemplo, si filtramos el circuito 1J o cualquiera se sus
-        subniveles (escuela, mesa) se debe mostrar la categoria a
+        subniveles (escuela, mesa) se debe mostrar la categoría a
         Intentendente de La Matanza, pero no a intendente de San Isidro.
         """
         if isinstance(mesas, models.QuerySet):
@@ -587,14 +586,14 @@ class Categoria(models.Model):
             # si es lista
             mesas_count = len(mesas)
 
-        # el primer filtro devuelve categorias activas que esten
+        # El primer filtro devuelve categorías activas que esten
         # relacionadas a una o más mesas, pero no necesariamente a todas
         qs = cls.objects.filter(
             activa=True,
             mesa__in=mesas
         )
 
-        # para garantizar que son categorias asociadas a **todas** las mesas
+        # Para garantizar que son categorías asociadas a **todas** las mesas
         # anotamos la cuenta y la comparamos con la cantidad de mesas del conjunto
         qs = qs.annotate(
             num_mesas=Count('mesa')
@@ -624,6 +623,9 @@ class Categoria(models.Model):
 
 
 class CategoriaOpcion(models.Model):
+    class Meta:
+        verbose_name = 'Asociación Categoría-Opción'
+        verbose_name_plural = 'Asociaciones Categoría-Opción'
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     opcion = models.ForeignKey('Opcion', on_delete=models.CASCADE)
     prioritaria = models.BooleanField(default=False)
