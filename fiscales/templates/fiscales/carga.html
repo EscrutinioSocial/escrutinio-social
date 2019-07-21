@@ -35,10 +35,6 @@ $(document).ready(function(){
 {% endblock js %}
 
 
-  {% block extra_form %}
-  {% endblock extra_form %}
-
-
 {% block breadcrumbs_items %}
 <a href="{{ object.get_absolute_url }}">{{ object }}</a>
 <a class="active">Acta</a>
@@ -55,13 +51,13 @@ $(document).ready(function(){
     <form method="POST">
     {{ formset.management_form }}
     {% for form in formset %}
-        {% form %}{% endform %}
+    {% form %}{% endform %}
     {% endfor %}
     </form>
 {% endblock card-content %}
 
-{% block card-action %}
-
+    {% block card-action %}
+    {% if recibir_problema %}
         <div class="row">
 
             <div class="col s12">
@@ -81,11 +77,10 @@ $(document).ready(function(){
             <div class="col s12">
             </div>
         </div>
-
+	{% endif %}
 
     </div>
 
-{% include "problemas/problema.html" %}
 
 {% endblock card-action %}
 

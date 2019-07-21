@@ -104,15 +104,16 @@ $(document).ready(function() {
        </form>
     </div>
 
+{% if recibir_problema %}
 {% include "problemas/problema.html" %}
+{% endif %}
 
 {% endblock left-panel %}
 
 {% block head %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'css/darkroom.css' %}" />
-
- {% endblock %}
+{% endblock %}
 
 
 

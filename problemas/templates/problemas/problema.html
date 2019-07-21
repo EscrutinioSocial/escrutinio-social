@@ -14,22 +14,21 @@
 
 {% block extra_form %}
 
-{% if recibir_problema %}
-    <div class="modal" id="modal-problem">
-      <form method="POST" action="{% url recibir_problema dato_id %}" enctype="multipart/form-data" id="problema-imagen">
-        <div class="modal-content">
-          <h4>Reportar problema en la imagen</h4>
-          {% csrf_token %}
-          {% form form=form_problema %}
-          {% endform %}
-          <div class="modal-footer" style="padding-right: 5%;" >
-            <a href="#!" class="modal-close waves-effect waves-green btn-flat">Volver</a>
-            <button class="btn waves-effect waves-light btn white-text red" type="submit" tabindex="7">
-              Reportar
-            </button>
-          </div>
-        </div>
-      </form>
+<div class="modal" id="modal-problem">
+  <form method="POST" action="{% url recibir_problema dato_id %}" enctype="multipart/form-data" id="problema-imagen">
+    <div class="modal-content">
+      <h4>Reportar problema en la imagen</h4>
+      {% csrf_token %}
+      {% form form=form_problema %}
+      {% endform %}
+      <div class="modal-footer" style="padding-right: 5%;" >
+        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Volver</a>
+        <button class="btn waves-effect waves-light btn white-text red" type="submit" tabindex="7">
+          Reportar
+        </button>
+      </div>
     </div>
-{% endif %}
+  </form>
+</div>
+
 {% endblock extra_form %}
