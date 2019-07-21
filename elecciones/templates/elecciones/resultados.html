@@ -246,59 +246,57 @@ function abrirArbolDistritoSeccionCircuito() {
 }
 
 $(document).ready(function() {
+  $('tabs').tabs();
+  $('.tooltipped').tooltip();
+  $('.collapsible').collapsible();
 
-   $('tabs').tabs();
-
-   $('.tooltipped').tooltip();
-
-   $('.collapsible').collapsible();
-
-    $('.show_detail').click(function(){
-	let p = $(this).parent()[0];
-	let inf = $(this).children()[0];
-	if (inf.innerHTML === "expand_more")
-	    inf.innerHTML = "expand_less";
-	else
+  $('.show_detail').click(function(){
+    let p = $(this).parent()[0];
+	  let inf = $(this).children()[0];
+	  if (inf.innerHTML === "expand_more")
+	   inf.innerHTML = "expand_less";
+	  else
 	    inf.innerHTML = "expand_more";
-	let i = p.id;
-	$("."+i+"_detalle").toggle();
-   });
+    let i = p.id;
+	  $("."+i+"_detalle").toggle();
+  });
 
-   {% if show_plot %}
+  {% if show_plot %}
+  var data = [{
+    y: {{ chart_values|safe }},
+    x: {{ chart_keys|safe }},
+    text: {{ chart_values|safe }},  // mostrar los numeros en las barras
+    textposition: 'auto',
+    opacity: 0.6,
+    type: 'bar',
+    marker: {
+      color: 'rgb(200,48,107)',
+      line: {
+        color: 'rgb(8,48,107)',
+        width: 1.5,
+      }
+    }
+  }];
 
+  var layout = {
+    height: 600,
+    width: 1200,
+    xaxis: {
+      tickangle: 15,
+      tickfont: {size: 9}
+    }
+  };
 
-   var data = [{
-      y: {{ chart_values|safe }},
-      x: {{ chart_keys|safe }},
-      text: {{ chart_values|safe }},  // mostrar los numeros en las barras
-      textposition: 'auto',
-      opacity: 0.6,
-      type: 'bar',
-      marker: {color: 'rgb(200,48,107)',
-                line: {
-                      color: 'rgb(8,48,107)',
-                      width: 1.5,
-                }
-              }
-    }];
+  Plotly.newPlot('columnchart-{{categoria_id}}', data, layout);
+  {% endif %}
 
-    var layout = {height: 600,
-                    width: 1200,
-                    xaxis: {tickangle: 15,
-                            tickfont: {size: 9}
-                            }
-                    };
+  // Navega cuando se seleccina tipo de agregacion u opcion
+  $('.filtros select').change(aplicarSumarizacion);
 
-    Plotly.newPlot('columnchart-{{categoria_id}}', data, layout);
-    {% endif %}
-
-    // Navega cuando se seleccina tipo de agregacion u opcion
-    $('.filtros select').change(aplicarSumarizacion);
-
-    // Abre el arbol de distrito, seccion, cirtuito segun la urlencode
-    // TODO arreglar el timeout
-    // se agrego para que los items queden seleccionados cuando se aplica tipo de agregacion y opciones
-    setTimeout(abrirArbolDistritoSeccionCircuito, 100)
+  // Abre el arbol de distrito, seccion, cirtuito segun la urlencode
+  // TODO arreglar el timeout
+  // se agrego para que los items queden seleccionados cuando se aplica tipo de agregacion y opciones
+  setTimeout(abrirArbolDistritoSeccionCircuito, 100)
 });
 </script>
 
