@@ -28,10 +28,9 @@ urlpatterns = [
     url(
         '^resultados-totales-sin-confirmar/(?P<pk>\d+)?$',
         views.ResultadosCategoria.as_view(),
-        # TODO: revisar
         {
-            'opciones_a_considerar': Sumarizador.OPCIONES_A_CONSIDERAR.todas,
-            'tipo_de_agregacion': Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas
+            'opcionaConsiderar': Sumarizador.OPCIONES_A_CONSIDERAR.todas,
+            'tipoDeAgregacion': Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas
         },
 
         name='resultados-totales-sin-confirmar'
