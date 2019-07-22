@@ -198,7 +198,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert positivos[o3.partido]['votos'] == 40 + 50
     assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'  # (40 + 50) / total_positivos
     assert positivos[o2.partido]['votos'] == 30 + 40
-    assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'  #  (30 + 40) / total_positivos
+    assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'  # (30 + 40) / total_positivos
     assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
     assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'  # (20 + 5 + 10 + 20) / total_positivos
 
@@ -275,7 +275,7 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     # o2 (partido 2): 80 + 121 = 201 votos
     # sin proyeccion va ganando o2 por 2 votos
     response = fiscal_client.get(url_resultados)
-    positivos = response.context['resultados']['tabla_positivos']
+    positivos = response.context['resultados'].tabla_positivos()
     assert list(positivos.keys()) == [o2.partido, o1.partido, o3.partido]
 
     # cuentas
@@ -289,7 +289,7 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
 
     # cuando se proyecta, o1 gana porque va ganando en s1 que es la mas populosa
     response = fiscal_client.get(url_resultados + '?tipodesumarizacion=2')
-    positivos = response.context['resultados']['tabla_positivos']
+    positivos = response.context['resultados'].tabla_positivos()
     assert list(positivos.keys()) == [o1.partido, o2.partido, o3.partido]
 
     # la contabilidad absoluta es la misma
@@ -337,7 +337,7 @@ def test_resultados_proyectados_simple(fiscal_client):
 
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
 
-    positivos = response.context['resultados']['tabla_positivos']
+    positivos = response.context['resultados'].tabla_positivos()
     assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o1.partido]['proyeccion'] == '58.33'
@@ -376,7 +376,7 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
     consumir_novedades_y_actualizar_objetos()
 
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
-    positivos = response.context['resultados']['tabla_positivos']
+    positivos = response.context['resultados'].tabla_positivos()
 
     assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
@@ -388,7 +388,7 @@ def test_resultados_proyectados_usa_circuito(fiscal_client):
 
     # proyeccion sin ponderar circuitos
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
-    positivos = response.context['resultados']['tabla_positivos']
+    positivos = response.context['resultados'].tabla_positivos()
 
     assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
@@ -412,13 +412,13 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
 
     response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
     resultados = response.context['resultados']
-    assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
-    assert resultados['total_mesas_escrutadas'] == 1
+    assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
+    assert resultados.total_mesas_escrutadas() == 1
 
     response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
     resultados = response.context['resultados']
-    assert 'blanco' not in resultados['tabla_no_positivos']
-    assert resultados['total_mesas_escrutadas'] == 0
+    assert 'blanco' not in resultados.tabla_no_positivos()
+    assert resultados.total_mesas_escrutadas() == 0
 
     c2 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria, tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=20)
@@ -432,13 +432,13 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
 
     response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
     resultados = response.context['resultados']
-    assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
-    assert resultados['total_mesas_escrutadas'] == 1
+    assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
+    assert resultados.total_mesas_escrutadas() == 1
 
     response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
     resultados = response.context['resultados']
-    assert resultados['tabla_no_positivos']['blanco']['votos'] == 20
-    assert resultados['total_mesas_escrutadas'] == 1
+    assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
+    assert resultados.total_mesas_escrutadas() == 1
 
 
 def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
