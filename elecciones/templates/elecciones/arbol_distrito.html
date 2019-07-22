@@ -21,14 +21,14 @@
                     </div>
                     <div class="collapsible-body">
                         {% with seccion_politica.secciones.all as secciones %}
-                        {% include "elecciones/arbol_seccion.html" %}
+                        {% include "elecciones/arbol_seccion.html" with incluir_seccion_politica=True %}
                         {% endwith %}
                     </div>
                 </li>
             </ul>
             {% endfor %}
             {% with distrito.secciones.all as secciones %}
-            {% include "elecciones/arbol_seccion.html" %}
+            {% include "elecciones/arbol_seccion.html" with incluir_seccion_politica=False %}
             {% endwith %}
         </div>
     </li>

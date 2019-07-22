@@ -1,4 +1,5 @@
 {% for seccion in secciones %}
+{% if incluir_seccion_politica and seccion.seccion_politica or not incluir_seccion_politica and not seccion.seccion_politica %}
 <ul class="collapsible collapsible-accordion">
     <li id="seccion-{{seccion.id}}">
         <div class="collapsible-header">
@@ -20,4 +21,5 @@
         </div>
     </li>
 </ul>
+{% endif %}
 {% endfor %}
