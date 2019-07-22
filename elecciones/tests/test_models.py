@@ -10,7 +10,7 @@ from .factories import (
     OpcionFactory,
     FiscalFactory,
 )
-from elecciones.models import MesaCategoria, Categoria, Carga, Mesa
+from elecciones.models import MesaCategoria, Categoria, Carga, Opcion
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga, consumir_novedades_identificacion
 from problemas.models import Problema, ReporteDeProblema
@@ -364,3 +364,49 @@ def test_problema_falta_foto(db):
     # La mesa está vigente de nuevo.
     assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mc.carga_testigo == c1
+
+def test_metadata_de_mesa(db, settings):
+    settings.MIN_COINCIDENCIAS_CARGAS = 1
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
+    o2 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
+    o3 = OpcionFactory()    # opcion comun
+    # 2 categorias
+    c1 = CategoriaFactory(opciones=[o1, o3])
+    c2 = CategoriaFactory(opciones=[o1, o2, o3])
+
+    # misma mesa
+    mc1 = MesaCategoriaFactory(categoria=c1)
+    mesa = mc1.mesa
+
+    mc2 = MesaCategoriaFactory(categoria=c2, mesa=mesa)
+
+    # carga categoria 1
+    carga1 = CargaFactory(mesa_categoria=mc1, tipo='total')
+    VotoMesaReportadoFactory(carga=carga1, opcion=o1, votos=10)
+    VotoMesaReportadoFactory(carga=carga1, opcion=o3, votos=54)
+
+    # como aun no hay cargas consolidadas, no hay metadata
+    assert set(mesa.metadata()) == set()
+    consumir_novedades_carga()
+
+    # una vez consolidada, la mesa ya tiene metadatos accesibles
+    mc1.refresh_from_db()
+    assert mc1.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert set(mesa.metadata()) == {(o1.id, 10)}
+
+    # carga 2 para otra categoria. tiene una metadata extra
+    carga2 = CargaFactory(mesa_categoria=mc2, tipo='total')
+    VotoMesaReportadoFactory(carga=carga2, opcion=o1, votos=10)
+    VotoMesaReportadoFactory(carga=carga2, opcion=o2, votos=0)
+    VotoMesaReportadoFactory(carga=carga2, opcion=o3, votos=54)
+
+    consumir_novedades_carga()
+    assert set(mesa.metadata()) == {(o1.id, 10), (o2.id, 0)}
+
+    # reportes de metadata a otra mesa no afectan
+    VotoMesaReportadoFactory(
+        carga__mesa_categoria__status=MesaCategoria.STATUS.total_consolidada_dc,
+        opcion=o1, votos=14
+    )
+    assert set(mesa.metadata()) == {(o1.id, 10), (o2.id, 0)}
+
