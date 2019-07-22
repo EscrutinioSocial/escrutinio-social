@@ -119,6 +119,9 @@ class Sumarizador():
         if self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.distrito:
             return Distrito.objects.filter(id__in=self.ids_a_considerar)
 
+        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion_politica:
+            return SeccionPolitica.objects.filter(id__in=self.ids_a_considerar)
+
         elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion:
             return Seccion.objects.filter(id__in=self.ids_a_considerar)
 
@@ -143,7 +146,10 @@ class Sumarizador():
             if self.filtros.model is Distrito:
                 lookups = Q(lugar_votacion__circuito__seccion__distrito__in=self.filtros)
 
-            if self.filtros.model is Seccion:
+            if self.filtros.model is SeccionPolitica:
+                lookups = Q(lugar_votacion__circuito__seccion__seccion_politica__in=self.filtros)
+
+            elif self.filtros.model is Seccion:
                 lookups = Q(lugar_votacion__circuito__seccion__in=self.filtros)
 
             elif self.filtros.model is Circuito:

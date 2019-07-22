@@ -40,6 +40,34 @@ class Distrito(models.Model):
     def nombre_completo(self):
         return self.nombre
 
+class SeccionPolitica(models.Model):
+    """
+    Define la sección política, que es una agrupación de nuestras secciones electorales,
+    que se usa con fines políticos y para mostrar resultados.
+
+    En términos políticos, en especial para la PBA, nuestra Sección es un Municipio
+    (eg, "La Matanza"), y esta sección política es "la tercera sección electoral".
+
+    Distrito -> **Sección política** -> Sección -> Circuito -> Lugar de votación -> Mesa
+    """
+    distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE, related_name='secciones_politicas')
+    numero = models.PositiveIntegerField(null=True)
+    nombre = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ('numero', )
+        verbose_name = 'Sección política'
+        verbose_name_plural = 'Secciones políticas'
+
+    def __str__(self):
+        return f"{self.numero} - {self.nombre}"
+
+    def mesas(self, categoria):
+        return Mesa.objects.filter(lugar_votacion__circuito__seccion_politica=self, categorias=categoria)
+
+    def nombre_completo(self):
+        return f"{self.distrito.nombre_completo()} - {self.nombre}"
+
 
 class Seccion(models.Model):
     """
@@ -48,6 +76,9 @@ class Seccion(models.Model):
     Distrito -> **Sección** -> Circuito -> Lugar de votación -> Mesa
     """
     distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE, related_name='secciones')
+    seccion_politica = models.ForeignKey(SeccionPolitica, null=True, blank=True,
+        on_delete=models.CASCADE, related_name='secciones'
+    )
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
@@ -535,7 +566,7 @@ class Eleccion(models.Model):
     fecha = models.DateTimeField()
     nombre = models.CharField(max_length=100)
     # Se usan para referencia en otros lugares, no aquí.
-    NIVELES_AGREGACION = Choices('distrito', 'seccion', 'circuito', 'lugar_de_votacion', 'mesa')
+    NIVELES_AGREGACION = Choices('distrito', 'seccion_politica', 'seccion', 'circuito', 'lugar_de_votacion', 'mesa')
 
     def __str__(self):
         return f'{self.nombre}'
