@@ -147,12 +147,14 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     template_name = "elecciones/resultados.html"
 
     def get(self, request, *args, **kwargs):
-        for nivel in ['mesa', 'lugarvotacion', 'circuito', 'seccion', 'distrito']:
+        nivel_de_agregacion = None
+        ids_a_considerar=None
+        for nivel in ['mesa', 'lugar_de_votacion', 'circuito', 'seccion', 'distrito']:
             if nivel in self.request.GET:
-                kwargs['tipo'] = nivel
-                kwargs['listado'] = self.request.GET.getlist(nivel)
+                nivel_de_agregacion = nivel
+                ids_a_considerar = self.request.GET.getlist(nivel)
 
-        self.sumarizador = Sumarizador(kwargs, self.get_tipo_de_agregacion(), self.get_opciones_a_considerar())
+        self.sumarizador = Sumarizador(self.get_tipo_de_agregacion(), self.get_opciones_a_considerar(), nivel_de_agregacion, ids_a_considerar)
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):

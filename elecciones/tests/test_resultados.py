@@ -87,7 +87,7 @@ def test_electores_filtro_mesa(url_resultados, fiscal_client):
     mesa1 = MesaFactory(electores=120)
     response = fiscal_client.get(url_resultados, {'mesa': mesa1.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 120
+    assert resultados.electores() == 120
     assert b'<td title="Electores">120 </td>' in response.content
 
 
@@ -100,7 +100,7 @@ def test_electores_filtro_mesa_multiple_categoria(fiscal_client):
 
     response = fiscal_client.get(url, {'mesa': mesa1.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 120
+    assert resultados.electores() == 120
     assert b'<td title="Electores">120 </td>' in response.content
 
 
@@ -109,9 +109,9 @@ def test_electores_filtro_escuela(url_resultados, fiscal_client):
     MesaFactory(electores=120, lugar_votacion=e)
     MesaFactory(electores=80, lugar_votacion=e)
     MesaFactory(electores=90)
-    response = fiscal_client.get(url_resultados, {'lugarvotacion': e.id})
+    response = fiscal_client.get(url_resultados, {'lugar_de_votacion': e.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 200
+    assert resultados.electores() == 200
     assert b'<td title="Electores">200 </td>' in response.content
 
 
@@ -120,7 +120,7 @@ def test_electores_filtro_circuito(url_resultados, fiscal_client):
     MesaFactory(electores=90)
     response = fiscal_client.get(url_resultados, {'circuito': mesa1.lugar_votacion.circuito.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 120
+    assert resultados.electores() == 120
     assert b'<td title="Electores">120 </td>' in response.content
 
 
@@ -129,7 +129,7 @@ def test_electores_filtro_seccion(url_resultados, fiscal_client):
     MesaFactory(electores=90)
     response = fiscal_client.get(url_resultados, {'seccion': mesa1.lugar_votacion.circuito.seccion.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 120
+    assert resultados.electores() == 120
     assert b'<td title="Electores">120 </td>' in response.content
 
 
@@ -138,14 +138,14 @@ def test_electores_filtro_distrito(url_resultados, fiscal_client):
     m2 = MesaFactory(electores=90, lugar_votacion__circuito__seccion__distrito__nombre='otro')
     response = fiscal_client.get(url_resultados, {'distrito': m2.lugar_votacion.circuito.seccion.distrito.id})
     resultados = response.context['resultados']
-    assert resultados['electores'] == 90
+    assert resultados.electores() == 90
     assert b'<td title="Electores">90 </td>' in response.content
 
 
 def test_electores_sin_filtro(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados)
     resultados = response.context['resultados']
-    assert resultados['electores'] == 800
+    assert resultados.electores() == 800
     assert b'<td title="Electores">800 </td>' in response.content
 
 
@@ -187,14 +187,14 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     response = fiscal_client.get(url_resultados)
     resultados = response.context['resultados']
-    positivos = resultados['tabla_positivos']
+    positivos = resultados.tabla_positivos()
 
-    assert resultados['porcentaje_mesas_escrutadas'] == '25.00'     # 2 de 8
+    assert resultados.porcentaje_mesas_escrutadas() == '25.00'     # 2 de 8
 
     # se ordena de acuerdo al que va ganando
     assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
 
-    total_positivos = resultados['positivos']
+    total_positivos = resultados.positivos()
 
     assert total_positivos == 215  # 20 + 5 + 30 + 40 + 20 + 10 + 40 + 50
 
@@ -219,8 +219,8 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
 
 
-    assert resultados['votantes'] == 215
-    assert resultados['electores'] == 800
+    assert resultados.votantes() == 215
+    assert resultados.electores() == 800
 
 
 def test_resultados_proyectados(fiscal_client, url_resultados):
