@@ -38,17 +38,16 @@ class Sumarizador():
     """
     Esta clase encapsula el cómputo de resultados.
     """
-    TIPOS_DE_AGREGACIONES = Choices(
-        'todas_las_cargas',
-        'solo_consolidados',
-        'solo_consolidados_doble_carga'
-    )
-    OPCIONES_A_CONSIDERAR = Choices(
-        'prioritarias',
-        'todas'
-    )
+    TIPOS_DE_AGREGACIONES = Choices('todas_las_cargas', 'solo_consolidados', 'solo_consolidados_doble_carga')
+    OPCIONES_A_CONSIDERAR = Choices('prioritarias', 'todas')
 
-    def __init__(self, tipo_de_agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas, opciones_a_considerar=OPCIONES_A_CONSIDERAR.todas, nivel_de_agregacion=None, ids_a_considerar=None):
+    def __init__(
+        self,
+        tipo_de_agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas,
+        opciones_a_considerar=OPCIONES_A_CONSIDERAR.todas,
+        nivel_de_agregacion=None,
+        ids_a_considerar=None
+    ):
         """
         El tipo de cómputo indica qué datos se tienen en cuenta y cuáles no.
         Las opciones a considerar, lo que su nombre indica (si sólo las prioritarias o todas).
@@ -142,8 +141,7 @@ class Sumarizador():
         meta = {}
         if self.filtros:
             if self.filtros.model is Distrito:
-                lookups = Q(
-                    lugar_votacion__circuito__seccion__distrito__in=self.filtros)
+                lookups = Q(lugar_votacion__circuito__seccion__distrito__in=self.filtros)
 
             if self.filtros.model is Seccion:
                 lookups = Q(lugar_votacion__circuito__seccion__in=self.filtros)
@@ -175,6 +173,7 @@ class Sumarizador():
         Me quedo con los votos reportados pertenecientes a las "cargas testigo"
         de las mesas que corresponden de acuerdo a los parámetros y la categoría.
         """
+        print(self.cargas_a_considerar_status_filter(categoria))
         return VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
             carga__es_testigo__isnull=False,
@@ -194,12 +193,8 @@ class Sumarizador():
 
         sum_por_opcion = {}
         for id in ids_opciones:
-            sum_por_opcion[str(id)] = Sum(
-                Case(
-                    When(opcion__id=id, then=F('votos')),
-                    output_field=IntegerField()
-                )
-            )
+            sum_por_opcion[str(id)
+                           ] = Sum(Case(When(opcion__id=id, then=F('votos')), output_field=IntegerField()))
 
         return self.votos_reportados(categoria, mesas).aggregate(**sum_por_opcion)
 
@@ -256,10 +251,8 @@ class Sumarizador():
             "total_mesas": total_mesas,
             "total_mesas_escrutadas": total_mesas_escrutadas,
             "porcentaje_mesas_escrutadas": porcentaje_mesas_escrutadas,
-
             "electores": electores,
             "electores_en_mesas_escrutadas": electores_en_mesas_escrutadas,
-
             "votos_positivos": votos_positivos,
             "votos_no_positivos": votos_no_positivos,
         })
@@ -272,7 +265,6 @@ class Sumarizador():
         mesas = self.mesas(categoria)
         return Resultados(self.calcular(categoria, mesas))
 
-
     @classmethod
     def get_tipos_sumarizacion(cls):
         id = 0
@@ -280,10 +272,7 @@ class Sumarizador():
 
         for tipo_de_agregacion in Sumarizador.TIPOS_DE_AGREGACIONES:
             for opcion in Sumarizador.OPCIONES_A_CONSIDERAR:
-                tipos_sumarizacion.append({
-                    'pk': str(id),
-                    'name': f'{tipo_de_agregacion}-{opcion}'
-                })
+                tipos_sumarizacion.append({'pk': str(id), 'name': f'{tipo_de_agregacion}-{opcion}'})
 
         return tipos_sumarizacion
 
@@ -292,6 +281,7 @@ class Resultados():
     """
     Esta clase contiene los resultados
     """
+
     def __init__(self, resultados):
         self.resultados = resultados
 
@@ -300,7 +290,10 @@ class Resultados():
         """
         Devuelve el total de votos positivos de la mesa, sumando los votos de cada una de las opciones de cada partido.
         """
-        return sum(sum(votos for votos in opciones_partido.values() if votos) for opciones_partido in self.resultados.votos_positivos.values())
+        return sum(
+            sum(votos for votos in opciones_partido.values() if votos)
+            for opciones_partido in self.resultados.votos_positivos.values()
+        )
 
     @lru_cache(128)
     def total_no_positivos(self):
@@ -340,18 +333,14 @@ class Resultados():
                         'porcentaje': porcentaje(votos_opcion, total_partido),
                         'porcentaje_positivos': porcentaje(votos_opcion, self.total_positivos()),
                         'porcentaje_total': porcentaje(votos_opcion, self.votantes()),
-                    } for opcion, votos_opcion in votos_por_opcion.items()
+                    }
+                    for opcion, votos_opcion in votos_por_opcion.items()
                 }
             }
 
         return OrderedDict(
-            sorted(
-                votos_positivos.items(),
-                key=lambda partido: float(partido[1]["votos"]),
-                reverse=True
-            )
+            sorted(votos_positivos.items(), key=lambda partido: float(partido[1]["votos"]), reverse=True)
         )
-
 
     @lru_cache(128)
     def tabla_no_positivos(self):
@@ -365,7 +354,8 @@ class Resultados():
             nombre_opcion: {
                 "votos": votos,
                 "porcentaje_total": porcentaje(votos, self.votantes())
-            } for nombre_opcion, votos in self.resultados.votos_no_positivos.items()
+            }
+            for nombre_opcion, votos in self.resultados.votos_no_positivos.items()
         }
 
         # Esta key es especial porque la vista la muestra directamente en pantalla.
@@ -397,6 +387,7 @@ class Resultados():
     def total_mesas(self):
         return self.resultados.total_mesas
 
+
 class Proyecciones(Sumarizador):
     """
     Esta clase encapsula el cómputo de proyecciones.
@@ -418,10 +409,8 @@ class Proyecciones(Sumarizador):
 
         if self.filtros:
             if self.nivel_de_agregacion == 'seccion':
-                lookups = Q(
-                    mesa__lugar_votacion__circuito__seccion__in=self.filtros)
-                lookups2 = Q(
-                    lugar_votacion__circuito__seccion__in=self.filtros)
+                lookups = Q(mesa__lugar_votacion__circuito__seccion__in=self.filtros)
+                lookups2 = Q(lugar_votacion__circuito__seccion__in=self.filtros)
 
             elif self.nivel_de_agregacion == 'circuito':
                 lookups = Q(mesa__lugar_votacion__circuito__in=self.filtros)
@@ -464,7 +453,8 @@ class Proyecciones(Sumarizador):
         for k, v in c.votos.items():
             porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
             porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.positivos and isinstance(
-                k, Partido) else '-'
+                k, Partido
+            ) else '-'
             expanded_result[k] = {
                 "votos": v,
                 "porcentajeTotal": porcentaje_total,
@@ -482,20 +472,18 @@ class Proyecciones(Sumarizador):
 
         # TODO permitir opciones positivas no asociadas a partido.
         tabla_positivos = OrderedDict(
-            sorted(
-                [(k, v) for k, v in expanded_result.items()
-                 if isinstance(k, Partido)],
-                key=lambda x: float(x[1]["proyeccion" if proyectado else "votos"]), reverse=True
-            )
+            sorted([(k, v) for k, v in expanded_result.items() if isinstance(k, Partido)],
+                   key=lambda x: float(x[1]["proyeccion" if proyectado else "votos"]),
+                   reverse=True)
         )
-        tabla_no_positivos = {
-            k: v for k, v in c.votos.items() if not isinstance(k, Partido)}
+        tabla_no_positivos = {k: v for k, v in c.votos.items() if not isinstance(k, Partido)}
         tabla_no_positivos["positivos"] = c.positivos
         tabla_no_positivos = {
             k: {
                 "votos": v,
                 "porcentajeTotal": f'{v*100/c.total:.2f}' if c.total else '-'
-            } for k, v in tabla_no_positivos.items()
+            }
+            for k, v in tabla_no_positivos.items()
         }
         result_piechart = None
 
@@ -503,17 +491,18 @@ class Proyecciones(Sumarizador):
             'tabla_positivos': tabla_positivos,
             'tabla_no_positivos': tabla_no_positivos,
             'result_piechart': result_piechart,
-
             'electores': c.electores,
             'total_positivos': c.total_positivos,
             'electores_en_mesas_escrutadas': c.electores_en_mesas_escrutadas,
             'votantes': c.total,
-
             'proyectado': proyectado,
             'proyeccion_incompleta': proyeccion_incompleta,
             'porcentaje_mesas_escrutadas': c.porcentaje_mesas_escrutadas,
-            'porcentaje_escrutado': f'{c.electores_en_mesas_escrutadas*100/c.electores:.2f}' if c.electores else '-',
-            'porcentaje_participacion': f'{c.total*100/c.electores_en_mesas_escrutadas:.2f}' if c.electores_en_mesas_escrutadas else '-',
+            'porcentaje_escrutado':
+                f'{c.electores_en_mesas_escrutadas*100/c.electores:.2f}' if c.electores else '-',
+            'porcentaje_participacion':
+                f'{c.total*100/c.electores_en_mesas_escrutadas:.2f}'
+                if c.electores_en_mesas_escrutadas else '-',
             'total_mesas_escrutadas': c.total_mesas_escrutadas,
             'total_mesas': c.total_mesas
         }

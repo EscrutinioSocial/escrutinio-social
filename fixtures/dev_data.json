@@ -475,7 +475,7 @@
   "model": "elecciones.mesacategoria",
   "pk": 1,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "10_parcial_sin_consolidar",
     "mesa": 1,
     "categoria": 1,
     "carga_testigo": 1,
