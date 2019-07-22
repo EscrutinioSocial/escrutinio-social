@@ -40,7 +40,6 @@ from .forms import (
     QuieroSerFiscal1,
     QuieroSerFiscal2,
     QuieroSerFiscal4,
-    FiscalxDNI,
 )
 from contacto.views import ConContactosMixin
 from problemas.models import Problema, ReporteDeProblema
@@ -366,7 +365,7 @@ class ReporteDeProblemaCreateView(CreateView):
         )
         return redirect('siguiente-accion')
 
-    def form_valid(self, form):            
+    def form_valid(self, form):
         fiscal = self.request.user.fiscal
         carga = form.save(commit=False)
         carga.fiscal = fiscal
