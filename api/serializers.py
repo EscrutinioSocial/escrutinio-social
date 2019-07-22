@@ -2,7 +2,6 @@ from rest_framework import serializers
 
 from adjuntos.models import Attachment
 from elecciones.models import Categoria, Opcion
-from fiscales.models import Fiscal
 
 
 class ActaSerializer(serializers.Serializer):
@@ -27,15 +26,10 @@ class MesaSerializer(serializers.Serializer):
 
 
 class VotoSerializer(serializers.Serializer):
-    categoria = serializers.PrimaryKeyRelatedField(
-        queryset=Categoria.objects.all()
-    )
-    opcion = serializers.PrimaryKeyRelatedField(
-        queryset=Opcion.objects.all()
-    )
-    votos = serializers.IntegerField(
-        min_value=0
-    )
+    categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
+    opcion = serializers.PrimaryKeyRelatedField(queryset=Opcion.objects.all())
+    votos = serializers.IntegerField(min_value=0)
+
 
 class ListarCategoriasQuerySerializer(serializers.Serializer):
     prioridad = serializers.IntegerField(default=2)
