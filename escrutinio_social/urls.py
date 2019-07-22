@@ -10,6 +10,8 @@ from material.frontend import urls as frontend_urls
 
 from elecciones import urls as elecciones_urls
 
+from problemas import urls as problemas_urls
+
 from fiscales import urls as fiscales_urls
 from fiscales.views import choice_home, permission_denied, QuieroSerFiscal, confirmar_email
 from fiscales.forms import AuthenticationFormCustomError
@@ -35,9 +37,9 @@ urlpatterns = [
 
     url(r'^elecciones/', include(elecciones_urls)),
     url(r'^clasificar-actas/', include('adjuntos.urls')),
-    url('^reportar-problema/(?P<mesa_numero>\d+)$', ProblemaCreate.as_view(), name='reportar-problema'),
 
-    url(r'^api/', include(api_urls))
+    url(r'^api/', include(api_urls)),
+    url(r'^problemas/', include(problemas_urls))
 ]
 
 if settings.DEBUG:

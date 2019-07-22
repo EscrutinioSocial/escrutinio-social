@@ -218,14 +218,14 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def identificadas(self):
         """
-        filtra instancias que tengan orden de carga definido
-        (que se produce cuando hay un primer attachment consolidado)
+        Filtra instancias que tengan orden de carga definido
+        (que se produce cuando hay un primer attachment consolidado).
         """
         return self.filter(orden_de_carga__isnull=False)
 
     def no_taken(self):
         """
-        Filtra no esté tomada dentro de los últimos
+        Filtra que no esté tomada dentro de los últimos
         ``settings.MESA_TAKE_WAIT_TIME`` minutos,
         """
         wait = settings.MESA_TAKE_WAIT_TIME
@@ -235,19 +235,25 @@ class MesaCategoriaQuerySet(models.QuerySet):
             Q(taken__isnull=True) | Q(taken__lt=desde)
         )
 
-    def sin_consolidar(self):
+    def sin_problemas(self):
+        """
+        Excluye las instancias que tengan problemas.
+        """
+        return self.exclude(status=MesaCategoria.STATUS.con_problemas)
+
+    def sin_consolidar_por_doble_carga(self):
         """
         Excluye las instancias no consolidadas con doble carga.
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
 
     def con_carga_pendiente(self):
-        return self.identificadas().no_taken().sin_consolidar()
+        return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
     def siguiente(self):
         """
-        devuelve la siguiente mesacategoria en orden de prioridad
-        de carga
+        Devuelve la siguiente MesaCategoria en orden de prioridad
+        de carga.
         """
         return self.con_carga_pendiente().order_by(
             'status',
@@ -296,6 +302,8 @@ class MesaCategoria(models.Model):
         ('60_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
         ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada csv'),
         ('80_total_consolidada_dc', 'total_consolidada_dc', 'tota consolidada dc'),
+        # No siguen en la carga.
+        ('90_con_problemas', 'con_problemas', 'con problemas')
     )
     status = StatusField(default=STATUS.sin_cargar)
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
@@ -455,7 +463,8 @@ class Mesa(models.Model):
         ).distinct().values_list('opcion', 'votos')
 
     def __str__(self):
-        return str(self.numero)
+        #return f'nro {self.numero} - circ. {self.circuito}'
+        return f'{self.numero}'
 
     def nombre_completo(self):
         return self.lugar_votacion.nombre_completo() + " - " + self.numero
@@ -680,15 +689,17 @@ class Carga(TimeStampedModel):
     :class:`VotoMesaReportado`
     para las opciones válidas en la mesa-categoría.
     """
-    valida = models.BooleanField(null=False, default=True)
+    invalidada = models.BooleanField(null=False, default=False)
     TIPOS = Choices(
-        'falta_foto',
+        'problema',
         'parcial',
         'total'
     )
-    SOURCES = Choices('web', 'csv', 'telegram')
     tipo = models.CharField(max_length=50, choices=TIPOS, null=True, blank=True)
+
+    SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
+
     mesa_categoria = models.ForeignKey(
         MesaCategoria, related_name='cargas', on_delete=models.CASCADE
     )
@@ -701,6 +712,11 @@ class Carga(TimeStampedModel):
     @property
     def mesa(self):
         return self.mesa_categoria.mesa
+
+    def invalidar(self):
+        self.invalidada = True
+        self.procesada = False
+        self.save(update_fields=['invalidada', 'procesada'])
 
     @property
     def categoria(self):
@@ -727,7 +743,8 @@ class Carga(TimeStampedModel):
         return self.reportados.values_list('opcion', 'votos')
 
     def __str__(self):
-        return f'carga de {self.mesa} / {self.categoria} por {self.fiscal}'
+        str_invalidada = ' (invalidada) ' if self.invalidada else ' '
+        return f'carga{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'
 
 
 class VotoMesaReportado(models.Model):

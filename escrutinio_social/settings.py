@@ -288,6 +288,8 @@ SHOW_PLOT = False
 
 MIN_COINCIDENCIAS_IDENTIFICACION = 2
 MIN_COINCIDENCIAS_CARGAS = 2
+MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
+MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
 # Tiempo en segundos que se espera entre
 # recálculo de consolidaciones de identificación y carga

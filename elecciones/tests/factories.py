@@ -203,5 +203,6 @@ class ProblemaFactory(DjangoModelFactory):
 
     reportado_por = factory.SubFactory(FiscalFactory)
     mesa = factory.SubFactory(MesaFactory)
-    estado = 'pendiente'
+    attachment = factory.SubFactory(AttachmentFactory)
+    estado = 'potencial'
 

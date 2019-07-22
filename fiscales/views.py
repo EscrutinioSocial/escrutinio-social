@@ -9,12 +9,13 @@ from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
-from django.views.generic.edit import UpdateView
+from django.views.generic.edit import UpdateView, CreateView
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
+from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
 from .models import Fiscal
 from elecciones.models import (
@@ -42,11 +43,11 @@ from .forms import (
     FiscalxDNI,
 )
 from contacto.views import ConContactosMixin
+from problemas.models import Problema, ReporteDeProblema
+from problemas.forms import IdentificacionDeProblemaForm
+
 from django.conf import settings
 
-
-# tiempo maximo en minutos que se mantiene la asignacion de un acta hasta ser reasignada
-# es para que alguien no se "cuelgue" y quede un acta sin cargar.
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
@@ -339,9 +340,59 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             'formset': formset,
             'categoria': categoria,
             'object': mesa,
-            'is_valid': is_valid or request.method == 'GET'
+            'is_valid': is_valid or request.method == 'GET',
+            'recibir_problema': 'problema',
+            'dato_id': mesa_categoria.id,
+            'form_problema': IdentificacionDeProblemaForm()
         }
     )
+
+class ReporteDeProblemaCreateView(CreateView):
+    http_method_names = ['post']
+    form_class = IdentificacionDeProblemaForm
+    template_name = "problemas/problema.html"
+
+    @cached_property
+    def mesa_categoria(self):
+        return get_object_or_404(
+            MesaCategoria, id=self.kwargs['mesacategoria_id']
+        )
+
+    def form_invalid(self, form):
+        messages.info(
+            self.request,
+            f'No se registró el reporte. Corroborá haber elegido una opción.',
+            extra_tags="problema"
+        )
+        return redirect('siguiente-accion')
+
+    def form_valid(self, form):            
+        fiscal = self.request.user.fiscal
+        carga = form.save(commit=False)
+        carga.fiscal = fiscal
+        carga.status = Carga.TIPOS.problema
+        # Lo falso grabo para quedarme con la data de sus campos.
+        reporte_de_problema = form.save(commit=False)
+        tipo_de_problema = reporte_de_problema.tipo_de_problema
+        descripcion = reporte_de_problema.descripcion
+
+        # Creo la identificación.
+        carga = Carga.objects.create(
+            tipo=Carga.TIPOS.problema,
+            fiscal=fiscal,
+            mesa_categoria=self.mesa_categoria
+        )
+
+        # Creo el problema asociado.
+        Problema.reportar_problema(fiscal, descripcion, tipo_de_problema, carga=carga)
+
+        messages.info(
+            self.request,
+            f'Gracias por el reporte. Ahora pasamos a la siguiente acta.',
+            extra_tags="problema"
+        )
+        return redirect('siguiente-accion')
+
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)

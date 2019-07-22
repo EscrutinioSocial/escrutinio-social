@@ -10,9 +10,12 @@
 
 {% block extrahead %}
 <style type="text/css">
-
 .content {
   padding-bottom: 0px;
+}
+
+.darkroom-image-container {
+  overflow: auto;
 }
 
 .left-panel {
@@ -32,11 +35,13 @@
 
 .right-panel {
   flex-basis: 70%;
-  min-width: 300px;
+  min-width: 350px;
   margin-left: 0.375rem;
-  margin-right: 0.375rem; }
-  .right-panel > .card {
-    margin-bottom: 0.5rem; }
+  margin-right: 0.375rem;
+}
+.right-panel > .card {
+    margin-bottom: 0.5rem;
+}
 
 
 @media only screen and (max-width: 993px) {
@@ -86,11 +91,12 @@ $(document).ready(function() {
         <div class="card-action">
             {% block card-action %}
             <div class="right-align">
-                {% block asignar-mesa-actions %}
-                <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
+               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
                   Guardar
                </button>
-               {% endblock asignar-mesa-actions %}
+               <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
+                  Problema
+	       </a>
             </div>
             {% endblock card-action %}
         </div>
@@ -98,40 +104,16 @@ $(document).ready(function() {
        </form>
     </div>
 
-
-  {% block extra_form %}
-
-<div class="card">
-       <form method="POST" action="{% url 'asignar-problema' attachment.id %}" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="card-content">
-
-            <div class="card-title">¿Hay un problema?</div>
-                  {% form form=form_problema %}
-                  {% endform %}
-            </div>
-
-        <div class="card-action">
-            <div class="right-align">
-               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="7">
-                  Reportar
-               </button>
-            </div>
-        </div>
-
-       </form>
-    </div>
-
-  {% endblock extra_form %}
-
+{% if recibir_problema %}
+{% include "problemas/problema.html" %}
+{% endif %}
 
 {% endblock left-panel %}
 
 {% block head %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'css/darkroom.css' %}" />
-
- {% endblock %}
+{% endblock %}
 
 
 
@@ -164,8 +146,9 @@ $(document).ready(function() {
 {% block messages %}
 {{ block.super }}
 <script type="text/javascript">
-$(document).ready(function(){
-  $('#id_status_container').attr('tabindex', 6);
-});
+  $(document).ready(function(){
+      $('#id_status_container').attr('tabindex', 6);
+      $('.modal').modal();
+  });
 </script>
 {% endblock messages %}
