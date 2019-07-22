@@ -8,9 +8,8 @@ from .forms import FiscalForm
 from contacto.admin import ContactoAdminInline
 from django_admin_row_actions import AdminRowActionsMixin
 from django.contrib.admin.filters import DateFieldListFilter
-
-
-
+from antitrolling.models import EventoScoringTroll
+from functools import lru_cache
 
 class FechaIsNull(DateFieldListFilter):
     def __init__(self, field, request, params, model, model_admin, field_path):
@@ -45,7 +44,10 @@ def hacer_staff(modeladmin, request, queryset):
 
 hacer_staff.short_description = "Hacer staff (dataentry)"
 
-
+class EventoScoringTrollInline(admin.StackedInline):
+    model = EventoScoringTroll
+    extra = 0
+    fk_name = "fiscal_afectado"
 
 class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     actions = [hacer_staff]
@@ -69,12 +71,22 @@ class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
                     'method': 'POST',
                 }
             )
+        label_troll = 'troll' if not obj.troll else 'no troll'
+        row_actions.append(
+            {
+                'label': f'Marcar como {label_troll}',
+                'url': reverse('cambiar-status-troll', args=(obj.id, not obj.troll)),
+                'enabled': True
+            }
+        )
+
 
         row_actions += super().get_row_actions(obj)
         return row_actions
 
-    def telefonos(o):
-        return ' / '.join(o.telefonos)
+    @lru_cache(128)
+    def scoring_troll(o):
+        return o.scoring_troll()
 
 
     def es_staff(o):
@@ -82,11 +94,12 @@ class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     es_staff.boolean = True
 
     form = FiscalForm
-    list_display = ('__str__', 'dni', es_staff, telefonos)
+    list_display = ('__str__', 'dni', es_staff, 'troll', scoring_troll)
     search_fields = ('apellido', 'nombres', 'dni',)
     list_display_links = ('__str__',)
-    list_filter = (EsStaffFilter, 'estado')
+    list_filter = (EsStaffFilter, 'estado', 'troll')
     inlines = [
+        EventoScoringTrollInline,
         ContactoAdminInline,
     ]
 
