@@ -40,10 +40,9 @@ from .forms import (
     QuieroSerFiscal1,
     QuieroSerFiscal2,
     QuieroSerFiscal4,
-    FiscalxDNI,
 )
 from contacto.views import ConContactosMixin
-from problemas.models import Problema, ReporteDeProblema
+from problemas.models import Problema
 from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
@@ -197,7 +196,6 @@ def confirmar_email(request, uuid):
     )
 
 
-
 class MisDatos(BaseFiscal):
     template_name = "fiscales/mis-datos.html"
 
@@ -223,21 +221,21 @@ def realizar_siguiente_accion(request):
     return siguiente_accion(request).ejecutar()
 
 
-
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
 def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
     mesacategoria = MesaCategoria.objects.siguiente_de_la_mesa(mesa_existente)
-    if mesacategoria :
+    if mesacategoria:
         mesacategoria.take()
         return carga(request, mesacategoria.id, desde_ub=True)
 
     # si es None, lo llevamos a subir un adjunto
     return redirect('agregar-adjuntos-ub')
 
+
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
+@user_passes_test(lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')), login_url=NO_PERMISSION_REDIRECT)
 def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
@@ -315,10 +313,12 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     tipo=tipo,
                     fiscal=fiscal,
                 )
+                reportados = []
                 for form in formset:
                     vmr = form.save(commit=False)
                     vmr.carga = carga
-                    vmr.save()
+                    reportados.append(vmr)
+                VotoMesaReportado.objects.bulk_create(reportados)
                 # Libero el token sobre la mc
                 mesa_categoria.release()
             carga.actualizar_firma()
@@ -366,7 +366,7 @@ class ReporteDeProblemaCreateView(CreateView):
         )
         return redirect('siguiente-accion')
 
-    def form_valid(self, form):            
+    def form_valid(self, form):
         fiscal = self.request.user.fiscal
         carga = form.save(commit=False)
         carga.fiscal = fiscal
@@ -419,7 +419,6 @@ def detalle_mesa_categoria(request, categoria_id, mesa_numero, carga_id=None):
             'categoria': categoria
         }
     )
-
 
 
 class CambiarPassword(PasswordChangeView):

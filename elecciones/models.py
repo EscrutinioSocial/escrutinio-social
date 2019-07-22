@@ -388,6 +388,19 @@ class Mesa(models.Model):
     def categoria_add(self, categoria):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
 
+    @classmethod
+    def obtener_mesa_en_circuito_seccion_distrito(cls, mesa, circuito, seccion, distrito):
+        """
+        Valida si existe una mesa con dicho codigo en el circuito y seccion indicados
+        """
+        qs = cls.objects.filter(
+            numero=mesa,
+            circuito__numero=circuito,
+            circuito__seccion__numero=seccion,
+            circuito__seccion__distrito__numero=distrito
+        )
+        return qs.get()
+
     def get_absolute_url(self):
         # TODO: Por ahora no hay una vista que muestre la carga de datos
         # para todas las categorias de una mesa
@@ -478,6 +491,8 @@ class Opcion(models.Model):
 
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
+    # el código de opción corresponde con el Nro de Lista en los archivos csv
+    codigo = models.CharField(max_length=10, help_text='Codigo de opción', null=True, blank=True)
     partido = models.ForeignKey(
         Partido, null=True, on_delete=models.SET_NULL, blank=True, related_name='opciones'
     )  # blanco, / recurrido / etc
