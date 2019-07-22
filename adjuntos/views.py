@@ -250,7 +250,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         return kwargs
 
 
-class AgregarAdjuntosImportados(AgregarAdjuntos):
+class AgregarAdjuntosCSV(AgregarAdjuntos):
     """
     Permite subir un archivo CSV, valida que posea todas las columnas necesarias y que los datos sean
     Válidos. Si las validaciones resultan OK, crear la información correspondiente en la base de datos:
