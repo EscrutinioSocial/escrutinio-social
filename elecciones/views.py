@@ -147,8 +147,8 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         nivel_de_agregacion = None
-        ids_a_considerar=None
-        for nivel in ['mesa', 'lugar_de_votacion', 'circuito', 'seccion', 'distrito']:
+        ids_a_considerar = None
+        for nivel in ['mesa', 'lugar_de_votacion', 'circuito', 'seccion', 'seccion_politica', 'distrito']:
             if nivel in self.request.GET:
                 nivel_de_agregacion = nivel
                 ids_a_considerar = self.request.GET.getlist(nivel)
