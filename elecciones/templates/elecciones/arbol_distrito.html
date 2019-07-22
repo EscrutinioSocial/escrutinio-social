@@ -36,47 +36,36 @@
 {% endfor %}
 
 <script type="text/javascript">
-function aplicarSumarizacion() {
-  var $select = $(this);
-  var filterName = $select.attr('name');
-  var filterValue = $select.val();
-
-  var searchParams = new URLSearchParams(location.search);
-  searchParams.set(filterName, filterValue);
-  var navToUrl = location.pathname + '?' + searchParams.toString();
-  $(location).attr('href', navToUrl);
-};
-
 function abrirArbolDistritoSeccionCircuito() {
   var searchParams = new URLSearchParams(location.search);
-  var $distrito;
-  var $seccion;
-  var $circuito;
+  var $hoja;
 
   if (searchParams.has('distrito')) {
-    $distrito = $('#distrito-' + searchParams.get('distrito'));
+    $hoja = $('#distrito-' + searchParams.get('distrito'));
+  }
+  if (searchParams.has('seccion_politica')) {
+    $hoja = $('#seccion_politica-' + searchParams.get('seccion_politica'));
   }
   if (searchParams.has('seccion')) {
-    $seccion = $('#seccion-' + searchParams.get('seccion'));
-    $distrito = $seccion.parents('li').first();
+    $hoja = $('#seccion-' + searchParams.get('seccion'));
   }
   if (searchParams.has('circuito')) {
-    $circuito = $('#circuito-' + searchParams.get('circuito'));
-    $seccion = $circuito.parents('li').first();
-    $distrito = $seccion.parents('li').first();
+    $hoja = $('#circuito-' + searchParams.get('circuito'));
   }
-
-  if ($distrito) $distrito.find('a i').first().click();
-  if ($seccion) $seccion.find('a i').first().click();
-  if ($circuito) $circuito.find('a i').first().click();
+  $hoja.find('.collapsible-header i').first().click();
+  $hoja.addClass('selected');
+  $hoja.parents('li').each(function (index) {
+    $(this).find('.collapsible-header i').first().click();
+  })
 }
 
 $(document).ready(function() {
   $('.collapsible').collapsible();
 
-  // Abre el arbol de distrito, seccion, cirtuito segun la urlencode
+  // Abre el arbol de distrito, seccion, cirtuito segun la url
   // TODO arreglar el timeout
   // se agrego para que los items queden seleccionados cuando se aplica tipo de agregacion y opciones
-  setTimeout(abrirArbolDistritoSeccionCircuito, 100)
+  // setTimeout(abrirArbolDistritoSeccionCircuito, 100)
+  abrirArbolDistritoSeccionCircuito()
 });
 </script>

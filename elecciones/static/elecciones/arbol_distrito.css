@@ -1,3 +1,11 @@
+.arbol-distrito li.active {
+  background-color: inherit !important;
+}
+
+.arbol-distrito li.selected {
+  background-color: rgba(0,0,0,.05);
+}
+
 .arbol-distrito .collapsible-body li .collapsible-header i {
   padding-left: 0px;
   margin-left: 15px;
@@ -6,10 +14,6 @@
 .arbol-distrito .collapsible-body li .collapsible-header a {
   margin-left: 0px;
   padding-left: 0px;
-}
-
-.arbol-distrito .collapsible-body li .collapsible-body li.active {
-  background-color: rgba(0,0,0,.05);
 }
 
 .arbol-distrito .collapsible-body li .collapsible-body li a {

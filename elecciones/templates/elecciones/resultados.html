@@ -173,6 +173,17 @@
 {{ block.super }}
 
 <script type="text/javascript">
+function aplicarSumarizacion() {
+  var $select = $(this);
+  var filterName = $select.attr('name');
+  var filterValue = $select.val();
+
+  var searchParams = new URLSearchParams(location.search);
+  searchParams.set(filterName, filterValue);
+  var navToUrl = location.pathname + '?' + searchParams.toString();
+  $(location).attr('href', navToUrl);
+};
+
 $(document).ready(function() {
   $('tabs').tabs();
   $('.tooltipped').tooltip();
