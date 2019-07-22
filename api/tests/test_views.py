@@ -106,9 +106,9 @@ def test_cargar_votos(admin_client):
     opcion_1 = factories.OpcionFactory()
     opcion_2 = factories.OpcionFactory()
 
-    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1)
-    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2)
-    factories.CategoriaOpcionFactory(categoria=categoria_2, opcion=opcion_1)
+    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1, prioritaria=True)
+    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2, prioritaria=True)
+    factories.CategoriaOpcionFactory(categoria=categoria_2, opcion=opcion_1, prioritaria=True)
 
     data = [{
         'categoria': categoria_1.id,
@@ -127,6 +127,7 @@ def test_cargar_votos(admin_client):
     response = admin_client.post(url, data, format='json')
 
     assert response.status_code == status.HTTP_201_CREATED
+    assert response.data['mensaje'] == 'Se cargaron los votos con éxito.'
 
     assert Carga.objects.count() == 2
     assert mesa_categoria_1.cargas.count() == 1
@@ -139,7 +140,37 @@ def test_cargar_votos(admin_client):
 
     assert list(mesa_categoria_2.cargas.first().opcion_votos()) == [(opcion_1.id, 10)]
 
-    assert response.data['mensaje'] == 'Se cargaron los votos con éxito.'
+
+def test_cargar_votos_faltan_prioritarias(admin_client):
+    """
+    """
+    mesa = factories.MesaFactory()
+    url = reverse('cargar-votos', kwargs={'id_mesa': mesa.id})
+
+    categoria_1 = factories.CategoriaFactory()
+    categoria_2 = factories.CategoriaFactory()
+
+    opcion_1 = factories.OpcionFactory()
+    opcion_2 = factories.OpcionFactory()
+
+    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1, prioritaria=True)
+    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2, prioritaria=True)
+    factories.CategoriaOpcionFactory(categoria=categoria_2, opcion=opcion_1, prioritaria=True)
+
+    data = [{
+        'categoria': categoria_1.id,
+        'opcion': opcion_1.id,
+        'votos': 100
+    }, {
+        'categoria': categoria_2.id,
+        'opcion': opcion_1.id,
+        'votos': 10
+    }]
+
+    response = admin_client.post(url, data, format='json')
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.data['non_field_errors'][0].code == 'invalid'
 
 
 def test_listar_categorias_default(admin_client):

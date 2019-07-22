@@ -129,7 +129,7 @@ def identificar_acta(request, foto_digest):
 
 @swagger_auto_schema(
     method='post',
-    request_body=VotoSerializer(many=True),
+    request_body=VotoSerializer(many=True, allow_empty=False),
     responses={
         status.HTTP_201_CREATED: openapi.Response(description='Se cargaron los votos con éxito.', ),
         status.HTTP_400_BAD_REQUEST: openapi.Response(description='Errores de validación.', ),
@@ -147,11 +147,10 @@ def cargar_votos(request, id_mesa):
     La lista de votos debe contener al menos todas las opciones prioritarias.
     """
     mesa = get_object_or_404(Mesa, id=id_mesa)
-    serializer = VotoSerializer(data=request.data, many=True)
+    serializer = VotoSerializer(data=request.data, many=True, allow_empty=False)
     if serializer.is_valid():
         data = serializer.validated_data
 
-        # TODO: Validar que estan al menos todas las opciones prioritarias
         with transaction.atomic():
             for votos in data:
                 mesa_categoria = get_object_or_404(MesaCategoria, mesa=mesa, categoria=votos['categoria'])
