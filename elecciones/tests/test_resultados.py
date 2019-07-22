@@ -542,7 +542,7 @@ def test_resultados_no_positivos(fiscal_client):
 
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]))
     assert o3.nombre in response.content.decode('utf8')
-    no_positivos = response.context['resultados']['tabla_no_positivos']
+    no_positivos = response.context['resultados'].tabla_no_positivos()
 
     assert no_positivos['blanco'] == {'porcentaje_total': '10.00', 'votos': 10}
     assert no_positivos['positivos']['votos'] == 90
@@ -585,7 +585,7 @@ def test_resultados_excluye_metadata(fiscal_client):
     assert positivos[o2.partido]['detalle'][o2]['porcentaje_positivos'] == '50.00'
     assert positivos[o1.partido]['proyeccion'] == '58.33'
     assert positivos[o2.partido]['proyeccion'] == '41.67'
-    
+
     assert no_positivos[o3.nombre] == {'porcentaje_total': '6.25', 'votos': 20}
     assert list(no_positivos.keys()) == [o3.nombre, 'Votos Positivos']
 
