@@ -573,21 +573,21 @@ def test_resultados_excluye_metadata(fiscal_client):
     consumir_novedades_y_actualizar_objetos()
 
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
-
-    positivos = response.context['resultados']['tabla_positivos']
-    no_positivos = response.context['resultados']['tabla_no_positivos']
+    resultados = response.context['resultados']
+    positivos = resultados.tabla_positivos()
+    no_positivos = resultados.tabla_no_positivos()
 
     assert positivos[o1.partido]['votos'] == 150
     assert positivos[o2.partido]['votos'] == 150
-    assert no_positivos['positivos']['votos'] == 300
+    assert no_positivos['Votos Positivos']['votos'] == 300
 
-    assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
-    assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
+    assert positivos[o1.partido]['detalle'][o1]['porcentaje_positivos'] == '50.00'
+    assert positivos[o2.partido]['detalle'][o2]['porcentaje_positivos'] == '50.00'
     assert positivos[o1.partido]['proyeccion'] == '58.33'
     assert positivos[o2.partido]['proyeccion'] == '41.67'
-
+    
     assert no_positivos[o3.nombre] == {'porcentaje_total': '6.25', 'votos': 20}
-    assert list(no_positivos.keys()) == [o3.nombre, 'positivos']
+    assert list(no_positivos.keys()) == [o3.nombre, 'Votos Positivos']
 
 
 def test_actualizar_electores(carta_marina):
