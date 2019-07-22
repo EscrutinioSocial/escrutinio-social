@@ -38,10 +38,12 @@
 
         {% if request.user.fiscal.esta_en_grupo_unidades_basicas %}
             <li>
+                <a href="{% url "agregar-adjuntos-ub" %}" class="collapsible-header" data-turbolinks="false">Subir actas desde UB<i class="material-icons">cloud_upload</i></a>
+            </li>
+            <li>
                 <a href="{% url "agregar-adjuntos-csv" %}" class="collapsible-header" data-turbolinks="false">Cargar CSV<i class="material-icons">attachment</i></a>
             </li>
-
-        {% endif  %}
+        {% endif %}
 
         {% if request.user.fiscal.esta_en_grupo_validadores %}
             {% url 'siguiente-accion' as url %}

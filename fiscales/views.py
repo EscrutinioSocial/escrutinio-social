@@ -222,9 +222,22 @@ def realizar_siguiente_accion(request):
     return siguiente_accion(request).ejecutar()
 
 
+
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
+def cargar_desde_ub(request, mesa_id, tipo='total'):
+    mesa_existente = get_object_or_404(Mesa, id=mesa_id)
+    mesacategoria = MesaCategoria.objects.siguiente_de_la_mesa(mesa_existente)
+    if mesacategoria :
+        mesacategoria.take()
+        return carga(request, mesacategoria.id, desde_ub=True)
+
+    # si es None, lo llevamos a subir un adjunto
+    return redirect('agregar-adjuntos-ub')
+
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def carga(request, mesacategoria_id, tipo='total'):
+def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
@@ -318,12 +331,13 @@ def carga(request, mesacategoria_id, tipo='total'):
             # y ya no hay constraint.
             # Lo dejo por si queremos canalizar algun otro tipo de excepcion
             capture_exception(e)
-
-        return redirect('siguiente-accion')
+        redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+        return redirect(redirect_to)
 
     # Llega hasta acá si hubo error.
+    template_carga = 'carga.html' if not desde_ub else 'carga_ub.html'
     return render(
-        request, "fiscales/carga.html", {
+        request, "fiscales/" + template_carga, {
             'formset': formset,
             'categoria': categoria,
             'object': mesa,

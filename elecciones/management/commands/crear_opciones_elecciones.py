@@ -28,8 +28,7 @@ class Command(BaseCommand):
         op.nombre_corto = 'Total positivos'
         op.orden = last_orden
         op.obligatorio = True
-        op.es_contable = False
-        op.es_metadata = True
+        op.tipo = Opcion.TIPOS.metadata
         op.save()
 
         last_orden += 10
@@ -61,8 +60,7 @@ class Command(BaseCommand):
         op.nombre_corto = 'Total escrutados'
         op.orden = last_orden
         op.obligatorio = True
-        op.es_contable = False
-        op.es_metadata = True
+        op.tipo = Opcion.TIPOS.metadata
         op.save()
 
         self.stdout.write(self.style.WARNING('Conectando las opciones a las categorias'))

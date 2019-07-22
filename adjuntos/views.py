@@ -5,6 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
+from django.http import HttpResponseRedirect
 from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse
@@ -13,14 +14,17 @@ from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView, FormView
 
+from adjuntos.consolidacion import consolidar_identificaciones
 from adjuntos.csv_import import CSVImporter
 from .forms import (
     AgregarAttachmentsForm,
     IdentificacionForm,
     IdentificacionProblemaForm,
 )
-from .models import Attachment
-from .models import Identificacion
+from .models import Attachment, Identificacion
+
+MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
+MENSAJE_SOLO_UN_ACTA = 'Se debe subir una sola acta'
 
 
 class IdentificacionCreateView(CreateView):
@@ -40,7 +44,7 @@ class IdentificacionCreateView(CreateView):
         return response
 
     def get_success_url(self):
-        #result = get_operation_result(self)
+        # result = get_operation_result(self)
         return reverse('siguiente-accion')
 
     def identificacion(self):
@@ -78,6 +82,24 @@ class IdentificacionCreateView(CreateView):
         return super().form_valid(form)
 
 
+class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
+    template_name = "adjuntos/asignar-mesa-ub.html"
+
+    def get_success_url(self):
+        identificacion = self.object
+        mesa_id = identificacion.mesa.id
+        return reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_id})
+
+    def form_valid(self, form):
+        identificacion = form.save(commit=False)
+        identificacion.source = Identificacion.SOURCES.csv
+        identificacion.fiscal = self.request.user.fiscal
+        super().form_valid(form)
+        # Como viene desde una UB, consolidamos el attachment y ya le pasamos la mesa
+        consolidar_identificaciones(identificacion.attachment)
+        return HttpResponseRedirect(self.get_success_url())
+
+
 class IdentificacionProblemaCreateView(IdentificacionCreateView):
     http_method_names = ['post']
     form_class = IdentificacionProblemaForm
@@ -113,7 +135,8 @@ def editar_foto(request, attachment_id):
         data = request.POST['data']
         file_format, imgstr = data.split(';base64,')
         extension = file_format.split('/')[-1]
-        attachment.foto_edited = ContentFile(base64.b64decode(imgstr), name=f'edited_{attachment_id}.{extension}')
+        attachment.foto_edited = ContentFile(base64.b64decode(imgstr),
+                                             name=f'edited_{attachment_id}.{extension}')
         attachment.save(update_fields=['foto_edited'])
         return JsonResponse({'message': 'Imagen guardada'})
     return JsonResponse({'message': 'No se pudo guardar la imagen'})
@@ -122,69 +145,124 @@ def editar_foto(request, attachment_id):
 class AgregarAdjuntos(FormView):
     """
     Permite subir una o más imágenes, generando instancias de ``Attachment``
-    Si una imagen ya existe en el sistema, se excluye con un mensaje de error
+    Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
 
     """
-
-    def __init__(self, template="agregar-adjuntos", types=('image/jpeg', 'image/png'), **kwargs):
+    def __init__(self, types=('image/jpeg', 'image/png'), **kwargs):
         super().__init__(**kwargs)
-        self.form_class = AgregarAttachmentsForm
-        self.template = template
-        self.template_name = 'adjuntos/' + template + '.html'
         self.types = types
 
-    success_url = 'agregada'
+    form_class = AgregarAttachmentsForm
+    template_name = 'adjuntos/agregar-adjuntos.html'
+    agregar_adjuntos_url = 'agregar-adjuntos'
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def procesar_archivo(self, file):
-        try:
-            instance = Attachment(
-                mimetype=file.content_type
-            )
-            instance.foto.save(file.name, file, save=False)
-            instance.save()
-            return 1
-        except IntegrityError:
-            messages.warning(self.request, f'{file.name} ya existe en el sistema')
-            return 0
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['url_to_post'] = self.get_url_to_post()
+        return context
+
+
+    def get_url_to_post(self):
+        return self.agregar_adjuntos_url
 
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
         if form.is_valid():
-            c = 0
-            for f in files:
-                if f.content_type not in self.types:
-                    self.mostrar_mensaje_tipo_archivo_invalido(f)
-                    continue
-                c += self.procesar_archivo(f)
+            contador_fotos = 0
+            for file in files:
+                instance = self.procesar_adjunto(file)
+                if instance is not None:
+                    contador_fotos = contador_fotos + 1
+            if contador_fotos:
+                self.mostrar_mensaje_archivos_cargados(contador_fotos)
+            return redirect(self.agregar_adjuntos_url)
 
-            if c:
-                self.mostrar_mensaje_archivos_cargados(c)
-            return redirect(self.template)
-        else:
-            return self.form_invalid(form)
+        return self.form_invalid(form)
 
-    def mostrar_mensaje_archivos_cargados(self, c):
-        messages.success(self.request, f'Subiste {c} imágenes de actas. Gracias!')
 
-    def mostrar_mensaje_tipo_archivo_invalido(self, f):
-        messages.warning(self.request, f'{f.name} ignorado. No es una imagen')
+    def procesar_adjunto(self, adjunto):
+        if adjunto.content_type not in self.types:
+            self.mostrar_mensaje_tipo_archivo_invalido(adjunto.name)
+            return None
+        return self.cargar_informacion_adjunto(adjunto)
+
+    def cargar_informacion_adjunto(self, adjunto):
+        try:
+            instance = Attachment(
+                mimetype=adjunto.content_type
+            )
+            instance.foto.save(adjunto.name, adjunto, save=False)
+            instance.save()
+            return instance
+        except IntegrityError:
+            messages.warning(self.request, f'{adjunto.name} ya existe en el sistema')
+        return None
+
+    def mostrar_mensaje_archivos_cargados(self, contador):
+        messages.success(self.request, f'Subiste {contador} imágenes de actas. Gracias!')
+
+    def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
+        messages.warning(self.request, f'{nombre_archivo} ignorado. No es una imagen')
+
+class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
+    """
+    Permite subir una imagen, genera la instancia de Attachment y debería redirigir al flujo de
+    asignación de mesa -> carga de datos pp -> carga de datos secundarios , etc
+
+    Si una imagen ya existe en el sistema, se exluye con un mensaje de error
+    via `messages` framework.
+
+    """
+
+    form_class = AgregarAttachmentsForm
+
+    def get_url_to_post(self):
+        return 'agregar-adjuntos-ub'
+
+    def post(self, request, *args, **kwargs):
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        files = request.FILES.getlist('file_field')
+        #no debiese poder cargarse por la ui dos imágenes, aunque es mejor poder chequear esto
+        if len(files) > 1:
+            form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
+
+        if form.is_valid():
+            file = files[0]
+            instance = self.procesar_adjunto(file)
+            if instance is not None:
+                messages.success(self.request, 'Subiste el acta correctamente.')
+                return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
+
+            form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
+        return self.form_invalid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'es_multiple': False})
+        return kwargs
 
 
 class AgregarAdjuntosImportados(AgregarAdjuntos):
     """
-    Permite subir un csv y validar la info que contiene
+    Permite subir un archivo CSV, valida que posea todas las columnas necesarias y que los datos sean
+    Válidos. Si las validaciones resultan OK, crear la información correspondiente en la base de datos:
+    Cargas totales, parciales e instancias de votos.
 
     """
+    form_class = AgregarAttachmentsForm
+    template_name = 'adjuntos/agregar-adjuntos-csv.html'
+    agregar_adjuntos_url = 'agregar-adjuntos-csv'
 
     def __init__(self):
-        super().__init__(template="agregar-adjuntos-csv", types='text/csv')
+        super().__init__(types='text/csv')
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
@@ -192,18 +270,17 @@ class AgregarAdjuntosImportados(AgregarAdjuntos):
             return super().dispatch(request, *args, **kwargs)
         return HttpResponseForbidden()
 
-
-    def procesar_archivo(self, file):
+    def cargar_informacion_adjunto(self, adjunto):
         # validar la info del archivo
         try:
-            CSVImporter(file, self.request.user).procesar()
-            return 1
+            CSVImporter(adjunto, self.request.user).procesar()
+            return 'success'
         except Exception as e:
-            messages.error(self.request, f'{file.name} ignorado. {str(e)}')
-        return 0
+            messages.error(self.request, f'{adjunto.name} ignorado. {str(e)}')
+        return None
 
     def mostrar_mensaje_tipo_archivo_invalido(self, f):
         messages.warning(self.request, f'{f.name} ignorado. No es un archivo CSV')
 
     def mostrar_mensaje_archivos_cargados(self, c):
-        messages.success(self.request, f'Subiste {c} archivos de actas. Gracias!')
+        messages.success(self.request, f'Subiste {c} archivos CSV. Gracias!')

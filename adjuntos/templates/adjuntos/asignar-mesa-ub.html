@@ -1,0 +1,15 @@
+{% extends "adjuntos/asignar-mesa.html" %}
+
+
+{% block extra_form %}
+{% endblock extra_form %}
+
+{% block asignar-mesa-actions %}
+<a class="btn waves-effect waves-light btn brown lighten-2 white-text" href="{% url 'agregar-adjuntos-ub' %}">
+    Subir otra acta
+    <i class="material-icons right">cloud_upload</i>
+</a>
+<button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="{{ button_tabindex }}">
+    Cargar datos
+</button>
+{% endblock asignar-mesa-actions %}
