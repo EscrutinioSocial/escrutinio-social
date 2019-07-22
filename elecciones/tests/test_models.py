@@ -1,3 +1,5 @@
+import pytest
+
 from .factories import (
     VotoMesaReportadoFactory,
     CategoriaFactory,
@@ -8,9 +10,12 @@ from .factories import (
     IdentificacionFactory,
     CategoriaOpcionFactory,
     OpcionFactory,
+    SeccionFactory,
+    CircuitoFactory,
+    DistritoFactory,
     FiscalFactory,
 )
-from elecciones.models import MesaCategoria, Categoria, Carga, Opcion
+from elecciones.models import Mesa, MesaCategoria, Categoria, Carga, Opcion
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga, consumir_novedades_identificacion
 from problemas.models import Problema, ReporteDeProblema
@@ -364,6 +369,23 @@ def test_problema_falta_foto(db):
     # La mesa está vigente de nuevo.
     assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mc.carga_testigo == c1
+
+def test_obtener_mesa_por_distrito_circuito_seccion_nro_no_encontrada(db):
+    with pytest.raises(Mesa.DoesNotExist):
+        Mesa.obtener_mesa_en_circuito_seccion_distrito(10, 10, 10, 10)
+
+
+def test_obtener_mesa_por_distrito_circuito_seccion_nro_encontrada(db):
+    d1 = DistritoFactory(numero=1)
+    s1 = SeccionFactory(numero=50, distrito=d1)
+    c1 = CircuitoFactory(numero=2, seccion=s1)
+    MesaFactory(numero=4012, lugar_votacion__circuito=c1, electores=100, circuito=c1)
+    mesa = Mesa.obtener_mesa_en_circuito_seccion_distrito(4012, 2, 50, 1)
+    assert mesa.numero == '4012'
+    assert mesa.circuito.numero == '2'
+    assert mesa.circuito.seccion.numero == 50
+    assert mesa.circuito.seccion.distrito.numero == 1
+
 
 def test_metadata_de_mesa(db, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1

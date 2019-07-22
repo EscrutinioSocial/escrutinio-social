@@ -36,3 +36,4 @@ pyexcel==0.5.13
 djangorestframework==3.9.4
 drf-yasg[validation]==1.16.0
 djangorestframework_simplejwt==4.3.0
+pandas==0.24.2

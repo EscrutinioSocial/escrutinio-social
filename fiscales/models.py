@@ -17,7 +17,6 @@ from model_utils.fields import StatusField
 from model_utils import Choices
 from django.contrib.auth.models import Group
 
-
 TOTAL = 'Total General'
 
 
@@ -41,13 +40,13 @@ class Fiscal(models.Model):
     tipo_dni = models.CharField(choices=TIPO_DNI, max_length=3, default='DNI')
     dni = models.CharField(max_length=15, blank=True, null=True)
     datos_de_contacto = GenericRelation('contacto.DatoDeContacto', related_query_name='fiscales')
-    user = models.OneToOneField('auth.User', null=True,
-                    blank=True, related_name='fiscal',
-                    on_delete=models.SET_NULL)
+    user = models.OneToOneField(
+        'auth.User', null=True, blank=True, related_name='fiscal', on_delete=models.SET_NULL
+    )
 
     class Meta:
         verbose_name_plural = 'Fiscales'
-        unique_together = (('tipo_dni', 'dni'),)
+        unique_together = (('tipo_dni', 'dni'), )
 
     def agregar_dato_de_contacto(self, tipo, valor):
         type_ = ContentType.objects.get_for_model(self)
@@ -72,6 +71,16 @@ class Fiscal(models.Model):
 
         return grupo in self.user.groups.all()
 
+    def esta_en_algun_grupo(self, nombres_grupos):
+        for nombre in nombres_grupos:
+            try:
+                grupo = Group.objects.get(name=nombre)
+                if grupo in self.user.groups.all():
+                    return True
+            except Group.DoesNotExist:
+                continue
+        return False
+
     # Especializaciones para usar desde los templates.
     @property
     def esta_en_grupo_validadores(self):
@@ -84,6 +93,7 @@ class Fiscal(models.Model):
     @property
     def esta_en_grupo_unidades_basicas(self):
         return self.esta_en_grupo('unidades basicas')
+
 
 @receiver(post_save, sender=Fiscal)
 def crear_user_para_fiscal(sender, instance=None, created=False, **kwargs):
@@ -105,7 +115,6 @@ def crear_user_para_fiscal(sender, instance=None, created=False, **kwargs):
         user.save()
         instance.user = user
         instance.save(update_fields=['user'])
-
 
 
 @receiver(pre_delete, sender=Fiscal)

@@ -3,7 +3,7 @@
 
 {% block breadcrumbs_items %}
 <a href="{{ object.get_absolute_url }}">{{ object }}</a>
-<a class="active">Cargar foto del Acta</a>
+<a class="active">{% block page_subtitle %}Cargar foto del Acta{% endblock %}</a>
 {% endblock %}
 
 {% block page_title %}Cargar foto del Acta{% endblock %}
