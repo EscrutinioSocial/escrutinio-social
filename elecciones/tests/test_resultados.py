@@ -413,12 +413,15 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert mc.carga_testigo == c1
     assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
 
-    response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
+    # TODO se actualizaron las urls a lo que entiendo es lo esperado
+    # response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
+    response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas')
     resultados = response.context['resultados']
     assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
-    response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
+    # response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
+    response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas')
     resultados = response.context['resultados']
     assert 'blanco' not in resultados.tabla_no_positivos()
     assert resultados.total_mesas_escrutadas() == 0
@@ -433,12 +436,14 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert mc.carga_testigo == c1
     assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
 
-    response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
+    # response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
+    response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas')
     resultados = response.context['resultados']
     assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
-    response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
+    # response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
+    response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas')
     resultados = response.context['resultados']
     assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
