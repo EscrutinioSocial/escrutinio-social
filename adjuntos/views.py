@@ -60,9 +60,7 @@ class IdentificacionCreateView(CreateView):
 
     @cached_property
     def attachment(self):
-        return get_object_or_404(
-            Attachment, id=self.kwargs['attachment_id']
-        )
+        return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -100,7 +98,8 @@ class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
         super().form_valid(form)
         # Como viene desde una UB, consolidamos el attachment y ya le pasamos la mesa
         consolidar_identificaciones(identificacion.attachment)
-        return HttpResponseRedirect(self.get_success_url())
+        return redirect(self.get_success_url())
+
 
 class ReporteDeProblemaCreateView(CreateView):
     http_method_names = ['post']
@@ -109,19 +108,15 @@ class ReporteDeProblemaCreateView(CreateView):
 
     @cached_property
     def attachment(self):
-        return get_object_or_404(
-            Attachment, id=self.kwargs['attachment_id']
-        )
+        return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
 
-
-    def form_invalid(self,form):
+    def form_invalid(self, form):
         messages.info(
             self.request,
             f'No se registró el reporte. Corroborá haber elegido una opción.',
             extra_tags="problema"
         )
         return redirect('siguiente-accion')
-
 
     def form_valid(self, form):
         fiscal = self.request.user.fiscal
@@ -136,10 +131,7 @@ class ReporteDeProblemaCreateView(CreateView):
 
         # Creo la identificación.
         identificacion = Identificacion.objects.create(
-            status=Identificacion.STATUS.problema,
-            fiscal=fiscal,
-            mesa=None,
-            attachment=self.attachment
+            status=Identificacion.STATUS.problema, fiscal=fiscal, mesa=None, attachment=self.attachment
         )
 
         # Creo el problema asociado.
@@ -167,8 +159,9 @@ def editar_foto(request, attachment_id):
         data = request.POST['data']
         file_format, imgstr = data.split(';base64,')
         extension = file_format.split('/')[-1]
-        attachment.foto_edited = ContentFile(base64.b64decode(imgstr),
-                                             name=f'edited_{attachment_id}.{extension}')
+        attachment.foto_edited = ContentFile(
+            base64.b64decode(imgstr), name=f'edited_{attachment_id}.{extension}'
+        )
         attachment.save(update_fields=['foto_edited'])
         return JsonResponse({'message': 'Imagen guardada'})
     return JsonResponse({'message': 'No se pudo guardar la imagen'})
@@ -179,7 +172,6 @@ class AgregarAdjuntos(FormView):
     Permite subir una o más imágenes, generando instancias de ``Attachment``
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
-
     """
     def __init__(self, types=('image/jpeg', 'image/png'), **kwargs):
         super().__init__(**kwargs)
@@ -187,7 +179,7 @@ class AgregarAdjuntos(FormView):
 
     form_class = AgregarAttachmentsForm
     template_name = 'adjuntos/agregar-adjuntos.html'
-    agregar_adjuntos_url = 'agregar-adjuntos'
+    url_to_post = 'agregar-adjuntos'
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -195,12 +187,8 @@ class AgregarAdjuntos(FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['url_to_post'] = self.get_url_to_post()
+        context['url_to_post'] = reverse(self.url_to_post)
         return context
-
-
-    def get_url_to_post(self):
-        return self.agregar_adjuntos_url
 
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
@@ -214,10 +202,9 @@ class AgregarAdjuntos(FormView):
                     contador_fotos = contador_fotos + 1
             if contador_fotos:
                 self.mostrar_mensaje_archivos_cargados(contador_fotos)
-            return redirect(self.agregar_adjuntos_url)
+            return redirect(reverse(self.url_to_post))
 
         return self.form_invalid(form)
-
 
     def procesar_adjunto(self, adjunto):
         if adjunto.content_type not in self.types:
@@ -227,9 +214,7 @@ class AgregarAdjuntos(FormView):
 
     def cargar_informacion_adjunto(self, adjunto):
         try:
-            instance = Attachment(
-                mimetype=adjunto.content_type
-            )
+            instance = Attachment(mimetype=adjunto.content_type)
             instance.foto.save(adjunto.name, adjunto, save=False)
             instance.save()
             return instance
@@ -243,6 +228,7 @@ class AgregarAdjuntos(FormView):
     def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
         messages.warning(self.request, f'{nombre_archivo} ignorado. No es una imagen')
 
+
 class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     """
     Permite subir una imagen, genera la instancia de Attachment y debería redirigir al flujo de
@@ -250,13 +236,10 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
 
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
-
     """
 
     form_class = AgregarAttachmentsForm
-
-    def get_url_to_post(self):
-        return 'agregar-adjuntos-ub'
+    url_to_post = 'agregar-adjuntos-ub'
 
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
@@ -280,7 +263,6 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         kwargs = super().get_form_kwargs()
         kwargs.update({'es_multiple': False})
         return kwargs
-
 
 class AgregarAdjuntosCSV(AgregarAdjuntos):
     """
