@@ -8,11 +8,12 @@ from .factories import (
     IdentificacionFactory,
     CategoriaOpcionFactory,
     OpcionFactory,
+    FiscalFactory,
 )
-from elecciones.models import MesaCategoria, Categoria, Carga
+from elecciones.models import MesaCategoria, Categoria, Carga, Opcion
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga, consumir_novedades_identificacion
-
+from problemas.models import Problema, ReporteDeProblema
 
 def consumir_novedades_y_actualizar_objetos(lista=None):
     consumir_novedades_carga()
@@ -251,3 +252,161 @@ def test_mc_status_total_csv_desde_mc_sin_carga(db):
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mc.carga_testigo == c2 or mc.carga_testigo == c1
+
+def test_carga_con_problemas(db):
+    # Identifico una mesa.
+    mesa = MesaFactory()
+    a = AttachmentFactory()
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+
+    consumir_novedades_identificacion()
+    mc = MesaCategoriaFactory(mesa=mesa, categoria=mesa.categorias.first())
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    c1 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
+
+    c2 = CargaFactory(mesa_categoria=mc, tipo='problema')
+    Problema.reportar_problema(FiscalFactory(), 'reporte 1', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, carga=c2)
+    consumir_novedades_y_actualizar_objetos([mc])
+
+    # Sigue sin ser un problema.
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
+    assert c2.problemas.first().problema.estado == Problema.ESTADOS.potencial
+
+    # Está entre las pendientes.
+    assert mc in MesaCategoria.objects.con_carga_pendiente()
+
+    c3 = CargaFactory(mesa_categoria=mc, tipo='problema')
+    Problema.reportar_problema(FiscalFactory(), 'reporte 2', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, carga=c3)
+    consumir_novedades_y_actualizar_objetos([mc])
+
+    c2.refresh_from_db()
+    c3.refresh_from_db()
+    assert c2.invalidada == False
+    assert c3.invalidada == False
+
+    # Ahora sí hay un problema.
+    assert mc.status == MesaCategoria.STATUS.con_problemas
+    assert mc.carga_testigo is None
+    problema = c2.problemas.first().problema
+    assert problema.estado == Problema.ESTADOS.pendiente
+
+    # No está entre las pendientes.
+    assert mc not in MesaCategoria.objects.con_carga_pendiente()
+
+    # Lo resolvemos.
+    problema.resolver(FiscalFactory().user)
+
+    assert problema.estado == Problema.ESTADOS.resuelto
+    c1.refresh_from_db()
+    c2.refresh_from_db()
+    c3.refresh_from_db()
+    assert c1.invalidada == False
+    assert c2.invalidada == True
+    assert c3.invalidada == True
+
+    consumir_novedades_y_actualizar_objetos([mc])
+    # El problema se solucionó también en la MesaCategoria.
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
+
+    # Está entre las pendientes.
+    assert mc in MesaCategoria.objects.con_carga_pendiente()
+
+    # Se mete otra carga y se consolida.
+    c4 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert mc.carga_testigo == c4 or mc.carga_testigo == c1
+
+def test_problema_falta_foto(db):
+    mc = MesaCategoriaFactory()
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    c1 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
+
+    c2 = CargaFactory(mesa_categoria=mc, tipo='problema')
+    Problema.reportar_problema(FiscalFactory(), 'falta foto!', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.falta_foto, carga=c2)
+    c3 = CargaFactory(mesa_categoria=mc, tipo='problema')
+    Problema.reportar_problema(FiscalFactory(), 'spam!', 
+        ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, carga=c2)
+    consumir_novedades_y_actualizar_objetos([mc])
+
+    # Ahora sí hay un problema.
+    assert mc.status == MesaCategoria.STATUS.con_problemas
+    assert mc.carga_testigo is None
+    problema = c2.problemas.first().problema
+    assert problema.estado == Problema.ESTADOS.pendiente
+
+    # Llega un nuevo attachment.
+    a = AttachmentFactory()
+    mesa = mc.mesa
+    # Lo asocio a la misma mesa.
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+
+    consumir_novedades_identificacion()
+    consumir_novedades_y_actualizar_objetos([mc])
+
+    # El problema se solucionó.
+    problema.refresh_from_db()
+    assert problema.estado == Problema.ESTADOS.resuelto
+
+    # La mesa está vigente de nuevo.
+    assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mc.carga_testigo == c1
+
+def test_metadata_de_mesa(db, settings):
+    settings.MIN_COINCIDENCIAS_CARGAS = 1
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
+    o2 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
+    o3 = OpcionFactory()    # opcion comun
+    # 2 categorias
+    c1 = CategoriaFactory(opciones=[o1, o3])
+    c2 = CategoriaFactory(opciones=[o1, o2, o3])
+
+    # misma mesa
+    mc1 = MesaCategoriaFactory(categoria=c1)
+    mesa = mc1.mesa
+
+    mc2 = MesaCategoriaFactory(categoria=c2, mesa=mesa)
+
+    # carga categoria 1
+    carga1 = CargaFactory(mesa_categoria=mc1, tipo='total')
+    VotoMesaReportadoFactory(carga=carga1, opcion=o1, votos=10)
+    VotoMesaReportadoFactory(carga=carga1, opcion=o3, votos=54)
+
+    # como aun no hay cargas consolidadas, no hay metadata
+    assert set(mesa.metadata()) == set()
+    consumir_novedades_carga()
+
+    # una vez consolidada, la mesa ya tiene metadatos accesibles
+    mc1.refresh_from_db()
+    assert mc1.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert set(mesa.metadata()) == {(o1.id, 10)}
+
+    # carga 2 para otra categoria. tiene una metadata extra
+    carga2 = CargaFactory(mesa_categoria=mc2, tipo='total')
+    VotoMesaReportadoFactory(carga=carga2, opcion=o1, votos=10)
+    VotoMesaReportadoFactory(carga=carga2, opcion=o2, votos=0)
+    VotoMesaReportadoFactory(carga=carga2, opcion=o3, votos=54)
+
+    consumir_novedades_carga()
+    assert set(mesa.metadata()) == {(o1.id, 10), (o2.id, 0)}
+
+    # reportes de metadata a otra mesa no afectan
+    VotoMesaReportadoFactory(
+        carga__mesa_categoria__status=MesaCategoria.STATUS.total_consolidada_dc,
+        opcion=o1, votos=14
+    )
+    assert set(mesa.metadata()) == {(o1.id, 10), (o2.id, 0)}
+

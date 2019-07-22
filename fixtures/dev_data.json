@@ -44,7 +44,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-07-19T12:49:15.582Z",
+    "last_login": "2019-07-21T20:48:01.158Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -834,12 +834,11 @@
   "model": "elecciones.opcion",
   "pk": 1,
   "fields": {
+    "tipo": "no_positivo",
     "nombre": "Votos en blanco",
     "nombre_corto": "blanco",
     "partido": null,
     "orden": 10,
-    "es_contable": false,
-    "es_metadata": true,
     "codigo_dne": null
   }
 },
@@ -847,12 +846,11 @@
   "model": "elecciones.opcion",
   "pk": 2,
   "fields": {
+    "tipo": "positivo",
     "nombre": "Fern\u00e1ndez-Fern\u00e1ndez",
     "nombre_corto": "FF",
     "partido": 1,
     "orden": 2,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -860,12 +858,11 @@
   "model": "elecciones.opcion",
   "pk": 3,
   "fields": {
+    "tipo": "positivo",
     "nombre": "Macri-Pichetto",
     "nombre_corto": "MP",
     "partido": 2,
     "orden": 3,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -873,12 +870,11 @@
   "model": "elecciones.opcion",
   "pk": 4,
   "fields": {
+    "tipo": "positivo",
     "nombre": "Lavagna-Urtubey",
     "nombre_corto": "LU",
     "partido": 3,
     "orden": 4,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -886,12 +882,11 @@
   "model": "elecciones.opcion",
   "pk": 5,
   "fields": {
+    "tipo": "no_positivo",
     "nombre": "Votos nulos",
     "nombre_corto": "nulos",
     "partido": null,
     "orden": 11,
-    "es_contable": false,
-    "es_metadata": true,
     "codigo_dne": null
   }
 },
@@ -899,12 +894,11 @@
   "model": "elecciones.opcion",
   "pk": 6,
   "fields": {
+    "tipo": "positivo",
     "nombre": "Kicilof-Magario",
     "nombre_corto": "KM",
     "partido": 1,
     "orden": 1,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -912,12 +906,11 @@
   "model": "elecciones.opcion",
   "pk": 7,
   "fields": {
+    "tipo": "positivo",
     "nombre": "Vidal-Salvador",
     "nombre_corto": "VS",
     "partido": 2,
     "orden": 2,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -925,12 +918,11 @@
   "model": "elecciones.opcion",
   "pk": 8,
   "fields": {
+    "tipo": "positivo",
     "nombre": "Bucca",
     "nombre_corto": "B",
     "partido": 3,
     "orden": 3,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -938,12 +930,11 @@
   "model": "elecciones.opcion",
   "pk": 9,
   "fields": {
+    "tipo": "positivo",
     "nombre": "Massa",
     "nombre_corto": "Massa",
     "partido": 1,
     "orden": 1,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -951,12 +942,11 @@
   "model": "elecciones.opcion",
   "pk": 10,
   "fields": {
+    "tipo": "positivo",
     "nombre": "Ritondo",
     "nombre_corto": "Ritondo",
     "partido": 2,
     "orden": 2,
-    "es_contable": true,
-    "es_metadata": false,
     "codigo_dne": null
   }
 },
@@ -964,12 +954,35 @@
   "model": "elecciones.opcion",
   "pk": 11,
   "fields": {
+    "tipo": "positivo",
     "nombre": "Cama\u00f1o",
     "nombre_corto": "Cama\u00f1o",
     "partido": 3,
     "orden": 3,
-    "es_contable": true,
-    "es_metadata": false,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 12,
+  "fields": {
+    "tipo": "metadata",
+    "nombre": "Total de votos",
+    "nombre_corto": "total_votos",
+    "partido": null,
+    "orden": 100,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 13,
+  "fields": {
+    "tipo": "metadata",
+    "nombre": "Total de sobres",
+    "nombre_corto": "sobres",
+    "partido": null,
+    "orden": 101,
     "codigo_dne": null
   }
 },
@@ -1159,18 +1172,36 @@
   }
 },
 {
+  "model": "elecciones.categoriaopcion",
+  "pk": 19,
+  "fields": {
+    "categoria": 1,
+    "opcion": 12,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 20,
+  "fields": {
+    "categoria": 1,
+    "opcion": 13,
+    "prioritaria": false
+  }
+},
+{
   "model": "elecciones.carga",
   "pk": 1,
   "fields": {
     "created": "2019-07-04T19:51:27.212Z",
     "modified": "2019-07-04T19:51:27.212Z",
-    "valida": true,
+    "invalidada": false,
     "tipo": "falta_foto",
     "origen": "web",
     "mesa_categoria": 1,
     "fiscal": 1,
-    "firma": null,
-    "procesada": false
+    "firma": "2-10|3-20|4-30|1-10",
+    "procesada": true
   }
 },
 {

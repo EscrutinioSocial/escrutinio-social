@@ -1,11 +1,9 @@
 from functools import partial
 from django import forms
-from django.forms.models import modelform_factory
 from django.forms import modelformset_factory, BaseModelFormSet
-from django.utils.safestring import mark_safe
-from material import Layout, Row, Fieldset
+from material import Layout, Row
 from .models import Fiscal
-from elecciones.models import Mesa, VotoMesaReportado, Categoria, LugarVotacion, Circuito, Seccion
+from elecciones.models import VotoMesaReportado, Categoria, Opcion
 from localflavor.ar.forms import ARDNIField
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
@@ -14,17 +12,12 @@ from contacto.forms import validar_telefono
 import phonenumbers
 
 
-OPCION_CANTIDAD_DE_SOBRES = 22
-OPCION_HAN_VOTADO = 21
-OPCION_DIFERENCIA = 23
-OPCION_TOTAL_VOTOS = 20
-
-LINK = 'Si tenés dudas consultá el <a href="https://www.padron.gob.ar" target="_blank">padrón</a>'
-
-
 class AuthenticationFormCustomError(AuthenticationForm):
     error_messages = {
-        'invalid_login': "Por favor introduzca un nombre de usuario y una contraseña correctos. Prueba tu DNI o teléfono sin puntos, guiones ni espacios",
+        'invalid_login': (
+            'Por favor introduzca un nombre de usuario y una contraseña correctos. '
+            'Prueba tu DNI o teléfono sin puntos, guiones ni espacios.'
+        ),
         'inactive': _("This account is inactive."),
     }
 
@@ -36,7 +29,7 @@ class AuthenticationFormCustomError(AuthenticationForm):
 def opciones_actuales():
     try:
         return Categoria.opciones_actuales().count()
-    except:
+    except Exception:
         return 0
 
 
@@ -73,18 +66,8 @@ class CustomModelChoiceField(forms.ModelChoiceField):
         return obj.label_from_instance
 
 
-class ElegirFiscal(forms.Form):
-    fiscal = CustomModelChoiceField(
-        label='Elegir fiscal',
-        queryset=Fiscal.objects.none(),   # seteado dinamicamente
-        widget=forms.RadioSelect,
-        empty_label=None
-    )
-
-
 class FiscalxDNI(forms.ModelForm):
     dni = ARDNIField(required=True)
-
 
 
 class FiscalForm(forms.ModelForm):
@@ -104,7 +87,6 @@ class QuieroSerFiscal1(forms.Form):
     layout = Layout('dni',
                     Row('email', 'email2'))
 
-
     def clean(self):
         cleaned_data = super().clean()
         email = cleaned_data.get('email')
@@ -120,29 +102,11 @@ class QuieroSerFiscal2(forms.ModelForm):
     telefono = forms.CharField(
         label='Teléfono', help_text='Preferentemente celular')
 
+    layout = Layout(Row('nombre', 'apellido'), 'telefono',)
 
-    # movilidad = forms.BooleanField(
-    #     label='¿Tenés Movilidad propia?', required=False,
-    #     help_text='Marcá la casilla si tenés cómo movilizarte el día de la elección'
-    # )
-    # seccion = forms.ModelChoiceField(label='Sección electoral', queryset=Seccion.objects.all(),
-    #     help_text=mark_safe(f'Sección/departamento donde votás y/o preferís fiscalizar. {LINK}'),
-    #     required=False
-    # )
-
-    layout = Layout(Row('nombre', 'apellido'),
-                    'telefono',
-                    # Row('movilidad', 'disponibilidad'),
-                    # Fieldset('¿Dónde votás?',
-                    #         'seccion')
-                    )
     class Meta:
         model = Fiscal
-        fields = [
-            'nombre', 'apellido', 'telefono',
-            # 'movilidad', 'disponibilidad', 'seccion'
-        ]
-
+        fields = ['nombre', 'apellido', 'telefono']
 
     def clean_telefono(self):
         valor = self.cleaned_data['telefono']
@@ -153,22 +117,10 @@ class QuieroSerFiscal2(forms.ModelForm):
         return valor
 
 
-class QuieroSerFiscal3(forms.Form):
-    circuito = forms.ModelChoiceField(queryset=Circuito.objects.all(),
-        help_text=mark_safe(f'Circuito/zona donde votás y/o preferís fiscalizar. {LINK}'),
-        required=False
-    )
-
-
 class QuieroSerFiscal4(forms.Form):
     error_messages = {
         'password_mismatch': _("The two password fields didn't match."),
     }
-
-    # escuela = forms.ModelChoiceField(queryset=LugarVotacion.objects.all(),
-    #    help_text=mark_safe(f'Escuela donde votás y/o preferís fiscalizar. {LINK}'),
-    #    required=False
-    # )
     new_password1 = forms.CharField(
         label=_("New password"),
         widget=forms.PasswordInput,
@@ -221,7 +173,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         total = 0
         form_opcion_total = None
         for form in self.forms:
-            if not form.cleaned_data.get('opcion').es_metadata:
+            if not form.cleaned_data.get('opcion').tipo == Opcion.TIPOS.metadata:
                 suma += form.cleaned_data.get('votos') or 0
 
         # if suma > positivos:
@@ -233,9 +185,12 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
 
         errors = []
         if suma > self.mesa.electores:
-            errors.append(f'El total de votos no puede ser mayor a la cantidad de electores de la mesa: {self.mesa.electores}')
+            errors.append(
+                'El total de votos no puede ser mayor a la '
+                f'cantidad de electores de la mesa: {self.mesa.electores}'
+            )
 
-        if errors :
+        if errors:
             form.add_error('votos', ValidationError(errors))
 
 
@@ -247,4 +202,3 @@ votomesareportadoformset_factory = partial(
     extra=0,
     can_delete=False
 )
-

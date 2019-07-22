@@ -139,7 +139,7 @@ class LugarVotacion(models.Model):
     # electores es una denormalización. debe coincidir con la sumatoria de
     # los electores de cada mesa de la escuela
     electores = models.PositiveIntegerField(null=True, blank=True)
-    geom = PointField(null=True)
+    geom = PointField(null=True, blank=True)
 
     # A veces, al importar datos, se realizan distintas iteraciones para geolocalizar
     # escuelas. Estos campos sirven para cuantificar la calidad y poder filtrar para
@@ -218,14 +218,14 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def identificadas(self):
         """
-        filtra instancias que tengan orden de carga definido
-        (que se produce cuando hay un primer attachment consolidado)
+        Filtra instancias que tengan orden de carga definido
+        (que se produce cuando hay un primer attachment consolidado).
         """
         return self.filter(orden_de_carga__isnull=False)
 
     def no_taken(self):
         """
-        Filtra no esté tomada dentro de los últimos
+        Filtra que no esté tomada dentro de los últimos
         ``settings.MESA_TAKE_WAIT_TIME`` minutos,
         """
         wait = settings.MESA_TAKE_WAIT_TIME
@@ -235,21 +235,40 @@ class MesaCategoriaQuerySet(models.QuerySet):
             Q(taken__isnull=True) | Q(taken__lt=desde)
         )
 
-    def sin_consolidar(self):
+    def sin_problemas(self):
+        """
+        Excluye las instancias que tengan problemas.
+        """
+        return self.exclude(status=MesaCategoria.STATUS.con_problemas)
+
+    def sin_consolidar_por_doble_carga(self):
         """
         Excluye las instancias no consolidadas con doble carga.
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
 
     def con_carga_pendiente(self):
-        return self.identificadas().no_taken().sin_consolidar()
+        return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
     def siguiente(self):
+        """
+        Devuelve la siguiente MesaCategoria en orden de prioridad
+        de carga.
+        """
+        return self.con_carga_pendiente().order_by(
+            'status',
+            'categoria__prioridad',
+            'orden_de_carga',
+            'mesa__prioridad',
+            'id'
+        ).first()
+
+    def siguiente_de_la_mesa(self, mesa_existente):
         """
         devuelve la siguiente mesacategoria en orden de prioridad
         de carga
         """
-        return self.con_carga_pendiente().order_by(
+        return self.con_carga_pendiente().filter(mesa=mesa_existente).order_by(
             'status',
             'categoria__prioridad',
             'orden_de_carga',
@@ -283,6 +302,8 @@ class MesaCategoria(models.Model):
         ('60_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
         ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada csv'),
         ('80_total_consolidada_dc', 'total_consolidada_dc', 'tota consolidada dc'),
+        # No siguen en la carga.
+        ('90_con_problemas', 'con_problemas', 'con problemas')
     )
     status = StatusField(default=STATUS.sin_cargar)
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
@@ -380,7 +401,6 @@ class Mesa(models.Model):
     )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
-
     prioridad = models.PositiveIntegerField(default=0)
 
     def categoria_add(self, categoria):
@@ -413,8 +433,25 @@ class Mesa(models.Model):
             fotos.append((f'Foto {i} (original)', a.foto))
         return fotos
 
+    def metadata(self):
+        """
+        Las opciones metadatas comunes a las distintas categorías de la misma mesa
+        reúsan el valor reportado. Se cargan hasta que se consolide en alguna categoría
+        y las siguientes cargas reusarán sus valores reportados.
+
+        Este método devuelve la lista de tuplas de (opción metadata, número)
+        para alguna de las cargas consolidadas testigo de la mesa. El número
+        es la cantidad de "votos".
+        """
+        return VotoMesaReportado.objects.filter(
+            opcion__tipo=Opcion.TIPOS.metadata,
+            carga__mesa_categoria__mesa=self,
+            carga__mesa_categoria__status=MesaCategoria.STATUS.total_consolidada_dc
+        ).distinct().values_list('opcion', 'votos')
+
     def __str__(self):
-        return str(self.numero)
+        #return f'nro {self.numero} - circ. {self.circuito}'
+        return f'{self.numero}'
 
     def nombre_completo(self):
         return self.lugar_votacion.nombre_completo() + " - " + self.numero
@@ -451,10 +488,15 @@ class Opcion(models.Model):
 
     Más de una opción puede estar asociada al mismo partido,
     (por ejemplo varias listas de un espacio en una PASO)
-    pero actualmente sus votos se computan agregados
+    pero actualmente sus votos se computan agregados.
 
-    ver :issue:`48`
     """
+    # Tipos positivos son las opciones contables (asociadas a partidos).
+    # Tipos no positivos son blanco, nulos, etc
+    # Metada son campos extras como "total de votos", "total de sobres", etc.
+    # que son únicos por mesa (no están en cada categoría).
+    TIPOS = Choices('positivo', 'no_positivo', 'metadata')
+    tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
 
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
@@ -463,12 +505,6 @@ class Opcion(models.Model):
     )   # blanco, / recurrido / etc
     orden = models.PositiveIntegerField(
         help_text='Orden en la boleta', null=True, blank=True)
-    es_contable = models.BooleanField(default=True)
-
-    es_metadata = models.BooleanField(
-        default=False,
-        help_text="para campos que son tipo 'Total positivo, o Total votos'"
-    )
 
     codigo_dne = models.PositiveIntegerField(
         null=True, blank=True,
@@ -518,7 +554,7 @@ class Eleccion(models.Model):
 
 class Categoria(models.Model):
     """
-    Representa una categoria electiva, es decir, una "columna" del acta.
+    Representa una categoría electiva, es decir, una "columna" del acta.
     Por ejemplo: Presidente y Vicepresidente, Intendente de La Matanza, etc)
 
     Una categoría tiene habilitadas diferentes :py:meth:`opciones <Opcion>`
@@ -530,16 +566,16 @@ class Categoria(models.Model):
     opciones = models.ManyToManyField(
         Opcion, through='CategoriaOpcion', related_name='categorias')
     color = models.CharField(
-        max_length=10, default='black', help_text='Color para css (Ej: red o #FF0000)'
+        max_length=10, default='black', help_text='Color para CSS (ej, red o #FF0000)'
     )
     back_color = models.CharField(
-        max_length=10, default='white', help_text='Color para css (red o #FF0000)'
+        max_length=10, default='white', help_text='Color para CSS (ej, red o #FF0000)'
     )
     activa = models.BooleanField(
         default=True,
         help_text=(
             'Si no está activa, no se cargan datos '
-            'para esta categoria y no se muestran resultados'
+            'para esta categoría y no se muestran resultados.'
         )
     )
 
@@ -551,9 +587,9 @@ class Categoria(models.Model):
 
     def opciones_actuales(self, solo_prioritarias=False):
         """
-        Devuelve las opciones asociadas a la categoria en el orden dado
+        Devuelve las opciones asociadas a la categoría en el orden dado
         Determina el orden de la filas a cargar, tal como se definen
-        en el acta
+        en el acta.
         """
         qs = self.opciones.all()
         if solo_prioritarias:
@@ -563,13 +599,13 @@ class Categoria(models.Model):
     @classmethod
     def para_mesas(cls, mesas):
         """
-        Devuelve el conjunto de categorias que son comunes a todas
-        las mesas dadas
+        Devuelve el conjunto de categorías que son comunes a todas
+        las mesas dadas.
 
         Por ejemplo, permite mostrar links válidos a las distintas
-        categorias para una sección o circuito.
+        categorías para una sección o circuito.
         Por ejemplo, si filtramos el circuito 1J o cualquiera se sus
-        subniveles (escuela, mesa) se debe mostrar la categoria a
+        subniveles (escuela, mesa) se debe mostrar la categoría a
         Intentendente de La Matanza, pero no a intendente de San Isidro.
         """
         if isinstance(mesas, models.QuerySet):
@@ -578,14 +614,14 @@ class Categoria(models.Model):
             # si es lista
             mesas_count = len(mesas)
 
-        # el primer filtro devuelve categorias activas que esten
+        # El primer filtro devuelve categorías activas que esten
         # relacionadas a una o más mesas, pero no necesariamente a todas
         qs = cls.objects.filter(
             activa=True,
             mesa__in=mesas
         )
 
-        # para garantizar que son categorias asociadas a **todas** las mesas
+        # Para garantizar que son categorías asociadas a **todas** las mesas
         # anotamos la cuenta y la comparamos con la cantidad de mesas del conjunto
         qs = qs.annotate(
             num_mesas=Count('mesa')
@@ -615,6 +651,9 @@ class Categoria(models.Model):
 
 
 class CategoriaOpcion(models.Model):
+    class Meta:
+        verbose_name = 'Asociación Categoría-Opción'
+        verbose_name_plural = 'Asociaciones Categoría-Opción'
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     opcion = models.ForeignKey('Opcion', on_delete=models.CASCADE)
     prioritaria = models.BooleanField(default=False)
@@ -635,15 +674,17 @@ class Carga(TimeStampedModel):
     :class:`VotoMesaReportado`
     para las opciones válidas en la mesa-categoría.
     """
-    valida = models.BooleanField(null=False, default=True)
+    invalidada = models.BooleanField(null=False, default=False)
     TIPOS = Choices(
-        'falta_foto',
+        'problema',
         'parcial',
         'total'
     )
-    SOURCES = Choices('web', 'csv', 'telegram')
     tipo = models.CharField(max_length=50, choices=TIPOS, null=True, blank=True)
+
+    SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
+
     mesa_categoria = models.ForeignKey(
         MesaCategoria, related_name='cargas', on_delete=models.CASCADE
     )
@@ -656,6 +697,11 @@ class Carga(TimeStampedModel):
     @property
     def mesa(self):
         return self.mesa_categoria.mesa
+
+    def invalidar(self):
+        self.invalidada = True
+        self.procesada = False
+        self.save(update_fields=['invalidada', 'procesada'])
 
     @property
     def categoria(self):
@@ -673,18 +719,17 @@ class Carga(TimeStampedModel):
         # Si ya hay firma y no están forzando, listo.
         if self.firma and not forzar:
             return
-
-        tuplas = (
-            f'{o}-{v or ""}' for (o, v) in
-            self.reportados.values_list(
-                'opcion', 'votos'
-            ).order_by('opcion__orden')
-        )
+        tuplas = (f'{o}-{v or ""}' for (o, v) in self.opcion_votos().order_by('opcion__orden'))
         self.firma = '|'.join(tuplas)
         self.save(update_fields=['firma'])
 
+    def opcion_votos(self):
+        """devuelve una lista de los votos para cada opcion"""
+        return self.reportados.values_list('opcion', 'votos')
+
     def __str__(self):
-        return f'carga de {self.mesa} / {self.categoria} por {self.fiscal}'
+        str_invalidada = ' (invalidada) ' if self.invalidada else ' '
+        return f'carga{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'
 
 
 class VotoMesaReportado(models.Model):

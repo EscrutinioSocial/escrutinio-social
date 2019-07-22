@@ -1,46 +1,34 @@
-{% extends "adjuntos/asignar-mesa.html" %}
 {% load i18n material_form material_frontend staticfiles %}
 
-{% block breadcrumbs_items %}
-<a href="{{ mesa.get_absolute_url }}">{{ mesa }}</a>
-<a class="active">Problema</a>
-{% endblock %}
+{% block extrahead %}
+<style type="text/css">
+.alert-problema {
+    background-color: black;
+}
+#btn-problema {
+    padding-right: 1em;
+    padding-left: 1em;
+}
+</style>
+{% endblock extrahead %}
 
+{% block extra_form %}
 
-{% block page_title %}Reportar un problema{% endblock %}
-
-{% block left-panel %}
-
-    <div class="card">
-       <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="card-content">
-
-            <div class="card-title"> Reportar un problema con la mesa Nº {{ mesa.numero }}</div>
-
-          {% block card-content %}
-
-                  {% form %}
-                  {% endform %}
-            </div>
-          {% endblock card-content %}
-
-
-        <div class="card-action">
-            {% block card-action %}
-            <div class="right-align">
-
-               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="{{ button_tabindex }}">
-                  Enviar
-               </button>
-            </div>
-            {% endblock card-action %}
-        </div>
-
-       </form>
-
+<div class="modal" id="modal-problem">
+  <form method="POST" action="{% url recibir_problema dato_id %}" enctype="multipart/form-data" id="problema-imagen">
+    <div class="modal-content">
+      <h4>Reportar problema en la imagen</h4>
+      {% csrf_token %}
+      {% form form=form_problema %}
+      {% endform %}
+      <div class="modal-footer" style="padding-right: 5%;" >
+        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Volver</a>
+        <button class="btn waves-effect waves-light btn white-text red" type="submit" tabindex="7">
+          Reportar
+        </button>
+      </div>
     </div>
-{% endblock left-panel %}
+  </form>
+</div>
 
-{% block right-panel %}
-{% endblock right-panel %}
+{% endblock extra_form %}

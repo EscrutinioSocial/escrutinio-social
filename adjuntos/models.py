@@ -80,9 +80,7 @@ class Attachment(TimeStampedModel):
     STATUS = Choices(
         ('sin_identificar', 'sin identificar'),
         'identificada',
-        'spam',
-        'invalida',
-        'ilegible',
+        'problema',
     )
     status = StatusField(default=STATUS.sin_identificar)
     mesa = models.ForeignKey(
@@ -176,24 +174,26 @@ class Attachment(TimeStampedModel):
             qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
         return qs
 
-    def status_count(self):
+    def status_count(self, estado):
         """
         A partir del conjunto de identificaciones del attachment
-        se devuelve una lista de tuplas
-        (mesa_id, status, cantidad, cantidad que viene de csv).
+        que tienen el estado parámetro devuelve una lista de tuplas
+        (mesa_id, cantidad, cantidad que viene de csv).
+        Sólo cuenta las no invalidadas.
 
-        Por ejemplo:
+        Cuando status == 'problema' el id de mesa es None
+
+        Por ejemplo (cuando estado == 'identificada'):
             [
-                (0, 'spam', 2, 0),
-                (0, 'invalida', 1, 0),
-                (1, 'identificada', 1, 0),
-                (2, 'identificada', 1, 1),
+                (3, 2, 0),
+                (4, 1, 1),
             ]
 
-        2 lo identificaron como spam, 1 como inválida,
-        1 a la mesa id=1, y otro a la mesa id=2, pero esa vino de un csv.
+        Hay 2 identificaciones para la mesa id==3 y 1 para la id==4, pero ésa 
+        tiene una identificación por CSV.
         """
-        qs = self.identificaciones.all()
+
+        qs = self.identificaciones.filter(status=estado, invalidada=False)
         cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
         result = []
         query = qs.values('mesa', 'status').annotate(
@@ -205,7 +205,7 @@ class Attachment(TimeStampedModel):
             )
         for item in query:
             result.append(
-                (item['mesa_o_0'], item['status'], item['total'], item['cuantos_csv'])
+                (item['mesa_o_0'], item['total'], item['cuantos_csv'])
             )
         return result
 
@@ -219,9 +219,7 @@ class Identificacion(TimeStampedModel):
     """
     STATUS = Choices(
         'identificada',
-        ('spam', 'Es SPAM'),
-        ('invalida', 'Es inválida'),
-        ('ilegible', 'No se entiende')
+        'problema'
     )
     #
     # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
@@ -230,7 +228,8 @@ class Identificacion(TimeStampedModel):
     # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
     # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
 
-    status = StatusField(choices_name='STATUS')
+    status = StatusField(choices_name='STATUS',choices=STATUS)
+
 
     SOURCES = Choices('web', 'csv', 'telegram')
     source = StatusField(choices_name='SOURCES', default=SOURCES.web)
@@ -245,7 +244,11 @@ class Identificacion(TimeStampedModel):
         Attachment, related_name='identificaciones', on_delete=models.CASCADE
     )
     procesada = models.BooleanField(default=False)
+    invalidada = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - Procesada: {self.procesada}'
+        return f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - procesada: {self.procesada} - invalidada: {self.invalidada}'
 
+    def invalidar(self):
+        self.invalidada = True
+        self.save(update_fields=['invalidada'])
