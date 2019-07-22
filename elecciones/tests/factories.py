@@ -54,23 +54,23 @@ class CategoriaFactory(DjangoModelFactory):
         else:
             CategoriaOpcionFactory(
                 categoria=self,
-                opcion=OpcionFactory(nombre='blanco', partido=None, es_contable=False)
+                opcion=OpcionFactory(nombre='blanco', partido=None, tipo='no_positivo')
             )
             CategoriaOpcionFactory(
                 categoria=self,
-                opcion=OpcionFactory(nombre='opc1', es_contable=True)
+                opcion=OpcionFactory(nombre='opc1')
             )
             CategoriaOpcionFactory(
                 categoria=self,
-                opcion=OpcionFactory(nombre='opc2', es_contable=True)
+                opcion=OpcionFactory(nombre='opc2')
             )
             CategoriaOpcionFactory(
                 categoria=self,
-                opcion=OpcionFactory(nombre='opc3', es_contable=True)
+                opcion=OpcionFactory(nombre='opc3')
             )
             CategoriaOpcionFactory(
                 categoria=self,
-                opcion=OpcionFactory(nombre='opc4', es_contable=True)
+                opcion=OpcionFactory(nombre='opc4')
             )
 
 
@@ -203,5 +203,6 @@ class ProblemaFactory(DjangoModelFactory):
 
     reportado_por = factory.SubFactory(FiscalFactory)
     mesa = factory.SubFactory(MesaFactory)
-    estado = 'pendiente'
+    attachment = factory.SubFactory(AttachmentFactory)
+    estado = 'potencial'
 

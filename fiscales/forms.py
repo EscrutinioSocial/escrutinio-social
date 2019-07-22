@@ -3,7 +3,7 @@ from django import forms
 from django.forms import modelformset_factory, BaseModelFormSet
 from material import Layout, Row
 from .models import Fiscal
-from elecciones.models import VotoMesaReportado, Categoria
+from elecciones.models import VotoMesaReportado, Categoria, Opcion
 from localflavor.ar.forms import ARDNIField
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
@@ -173,7 +173,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         total = 0
         form_opcion_total = None
         for form in self.forms:
-            if not form.cleaned_data.get('opcion').es_metadata:
+            if not form.cleaned_data.get('opcion').tipo == Opcion.TIPOS.metadata:
                 suma += form.cleaned_data.get('votos') or 0
 
         # if suma > positivos:

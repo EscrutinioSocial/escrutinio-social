@@ -33,7 +33,6 @@ from .models import (
     Partido,
     Opcion,
     VotoMesaReportado,
-    Carga,
     LugarVotacion,
     MesaCategoria,
     Mesa,

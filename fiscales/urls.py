@@ -2,7 +2,6 @@
 from django.conf.urls import url
 from . import views
 
-
 urlpatterns = [
     url('^_autocomplete/s$', views.SeccionListView.as_view(), name='autocomplete-seccion'),
     url('^_autocomplete/c$', views.CircuitoListView.as_view(), name='autocomplete-circuito'),
@@ -11,9 +10,12 @@ urlpatterns = [
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
     url('^siguiente/$', views.realizar_siguiente_accion, name='siguiente-accion'),
 
+    url('^ub/carga/(?P<mesa_id>\d+)$', views.cargar_desde_ub, name='procesar-acta-mesa'),
     url('^carga/(?P<mesacategoria_id>\d+)$', views.carga, name='carga-total'),
     url('^carga-parcial/(?P<mesacategoria_id>\d+)$', views.carga, {'tipo': 'parcial'}, name='carga-parcial'),
+    url(r'^carga/(?P<mesacategoria_id>\d+)/problema$', views.ReporteDeProblemaCreateView.as_view(), name='problema'),
 
+    
     url('^mesa/(?P<categoria_id>\d+)/(?P<mesa_numero>\d+)$',
          views.detalle_mesa_categoria, name='detalle-mesa-categoria'),
 

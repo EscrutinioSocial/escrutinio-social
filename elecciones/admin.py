@@ -1,9 +1,10 @@
 from django.contrib import admin
 from django.urls import reverse
-from django.db.models import Count
 from leaflet.admin import LeafletGeoAdmin
-from .models import (Distrito, Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion, CategoriaOpcion,
-                     Categoria, VotoMesaReportado, MesaCategoria, Eleccion)
+from .models import (
+    Distrito, Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion, CategoriaOpcion, Categoria,
+    VotoMesaReportado, MesaCategoria, Eleccion
+)
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
 
@@ -90,25 +91,21 @@ class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
         return o.circuito.seccion.numero
 
     list_display = (
-        'nombre', 'direccion', 'ciudad', 'circuito', sección,
-        'mesas_desde_hasta', 'electores', 'estado_geolocalizacion'
+        'nombre', 'direccion', 'ciudad', 'circuito', sección, 'mesas_desde_hasta', 'electores',
+        'estado_geolocalizacion'
     )
-    list_display_links = ('nombre',)
+    list_display_links = ('nombre', )
     list_filter = (HasLatLongListFilter, 'circuito__seccion', 'circuito')
-    search_fields = (
-        'nombre', 'direccion', 'ciudad', 'barrio', 'mesas__numero'
-    )
+    search_fields = ('nombre', 'direccion', 'ciudad', 'barrio', 'mesas__numero')
     show_full_result_count = False
     actions = [mostrar_en_mapa, resultados_reportados]
 
     def get_row_actions(self, obj):
-        row_actions = [
-            {
-                'label': 'Mesas',
-                'url': reverse('admin:elecciones_mesa_changelist') + f'?lugar_votacion__id={obj.id}',
-                'enabled': True,
-            }
-        ]
+        row_actions = [{
+            'label': 'Mesas',
+            'url': reverse('admin:elecciones_mesa_changelist') + f'?lugar_votacion__id={obj.id}',
+            'enabled': True,
+        }]
         row_actions += super().get_row_actions(obj)
         return row_actions
 
@@ -126,11 +123,15 @@ mostrar_resultados_mesas.short_description = "Mostrar resultados de Mesas selecc
 class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     actions = [resultados_reportados]
     list_display = ('numero', 'lugar_votacion')
-    list_filter = (TieneResultados, 'es_testigo',
-                   'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito')
+    list_filter = (
+        TieneResultados, 'es_testigo', 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito'
+    )
     search_fields = (
-        'numero', 'lugar_votacion__nombre', 'lugar_votacion__direccion',
-        'lugar_votacion__ciudad', 'lugar_votacion__barrio',
+        'numero',
+        'lugar_votacion__nombre',
+        'lugar_votacion__direccion',
+        'lugar_votacion__ciudad',
+        'lugar_votacion__barrio',
     )
 
     def get_row_actions(self, obj):
@@ -138,17 +139,15 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         for e in obj.categorias.all():
             row_actions.append({
                 'label': f'Ver resultados {e}',
-                'url': reverse('resultados-categoria', args=(e.id,)) + f'?mesa={obj.id}',
+                'url': reverse('resultados-categoria', args=(e.id, )) + f'?mesa={obj.id}',
                 'enabled': True
             })
 
-        row_actions.append(
-            {
-                'label': 'Escuela',
-                'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
-                'enabled': True,
-            }
-        )
+        row_actions.append({
+            'label': 'Escuela',
+            'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
+            'enabled': True,
+        })
         row_actions += super().get_row_actions(obj)
         return row_actions
 
@@ -160,26 +159,23 @@ class PartidoAdmin(admin.ModelAdmin):
 
 class MesaCategoriaAdmin(admin.ModelAdmin):
     list_display = ('mesa', 'categoria', 'status')
-    list_filter = [
-        'status',
-        'categoria',
-        'mesa__circuito',
-        'mesa__circuito__seccion'
-    ]
+    list_filter = ['status', 'categoria', 'mesa__circuito', 'mesa__circuito__seccion']
 
 
 class CircuitoAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'seccion')
     list_display_links = list_display
-    list_filter = ('seccion',)
+    list_filter = ('seccion', )
     search_fields = (
-        'nombre', 'numero',
+        'nombre',
+        'numero',
     )
 
 
 class DistritoAdmin(admin.ModelAdmin):
     search_fields = (
-        'nombre', 'numero',
+        'nombre',
+        'numero',
     )
 
 
@@ -187,18 +183,23 @@ class SeccionAdmin(admin.ModelAdmin):
     list_display = ['numero', 'nombre', 'distrito']
 
     search_fields = (
-        'nombre', 'numero',
+        'nombre',
+        'numero',
     )
 
 
 class VotoMesaReportadoAdmin(admin.ModelAdmin):
-    list_display = ['carga', 'id', 'opcion', 'votos', ]
+    list_display = [
+        'carga',
+        'id',
+        'opcion',
+        'votos',
+    ]
     list_display_links = list_display
     ordering = ['-id']
     list_filter = ('carga__mesa_categoria__categoria', 'opcion')
     search_fields = [
-        'fiscal__nombre',
-        'carga__mesa_categoria__mesa__numero',
+        'fiscal__nombre', 'carga__mesa_categoria__mesa__numero',
         'carga__mesa_categoria__mesa__lugar_votacion__nombre'
     ]
 
@@ -208,22 +209,14 @@ class OpcionAdmin(admin.ModelAdmin):
 
 
 class CategoriaAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'eleccion',
-                    'eleccion__fecha', 'activa', 'color', 'back_color']
-    search_fields = ['nombre']
-    list_filter = ['activa']
-
-
-class CategoriaAdmin(admin.ModelAdmin):
     list_display = ['nombre', 'activa', 'color', 'back_color']
     search_fields = ['nombre']
     list_filter = ['activa']
 
 
 class CategoriaOpcionAdmin(admin.ModelAdmin):
-    list_display = ['categoria', 'opcion']
-    list_filter = ['categoria']
-    search_fields = ['categoria__nombre']
+    search_fields = ['categoria__nombre', 'opcion__nombre']
+    ordering = ['categoria__nombre', 'opcion__orden']
 
 
 admin.site.register(Eleccion)

@@ -403,26 +403,21 @@ class Proyecciones(Sumarizador):
         resultados parciales de cada subdistrito para luego realizar la ponderación.
         """
         lookups = Q()
-        lookups2 = Q()
         resultados = {}
         proyectado = True
 
         if self.filtros:
             if self.nivel_de_agregacion == 'seccion':
                 lookups = Q(mesa__lugar_votacion__circuito__seccion__in=self.filtros)
-                lookups2 = Q(lugar_votacion__circuito__seccion__in=self.filtros)
 
             elif self.nivel_de_agregacion == 'circuito':
                 lookups = Q(mesa__lugar_votacion__circuito__in=self.filtros)
-                lookups2 = Q(lugar_votacion__circuito__in=self.filtros)
 
             elif self.nivel_de_agregacion == 'lugarvotacion':
                 lookups = Q(mesa__lugar_votacion__in=self.filtros)
-                lookups2 = Q(lugar_votacion__in=self.filtros)
 
             elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
                 lookups = Q(mesa__id__in=self.filtros)
-                lookups2 = Q(id__in=self.filtros)
 
         mesas = self.mesas(categoria)
 
@@ -468,7 +463,7 @@ class Proyecciones(Sumarizador):
                         acumulador_positivos += data["electores"] * \
                             data["votos"][k]/data["positivos"]
 
-                expanded_result[k]["proyeccion"] = f'{acumulador_positivos*100/electores_pond:.2f}'
+                expanded_result[k]["proyeccion"] = porcentaje(acumulador_positivos, electores_pond)
 
         # TODO permitir opciones positivas no asociadas a partido.
         tabla_positivos = OrderedDict(

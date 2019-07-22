@@ -5,9 +5,7 @@ from django.db import transaction
 from django.db.models import Subquery, Count
 from django.dispatch import receiver
 from django.db.models.signals import post_save
-
-
-
+from problemas.models import Problema
 
 def consolidar_cargas_por_tipo(cargas, tipo):
     """
@@ -71,6 +69,14 @@ def consolidar_cargas_por_tipo(cargas, tipo):
 
     return status_resultante, carga_testigo_resultante
 
+def consolidar_cargas_con_problemas(cargas_que_reportan_problemas):
+
+    # Tomo como "muestra" alguna de las que tienen problemas.
+    carga_con_problema = cargas_que_reportan_problemas.first()
+    # Confirmo el problema porque varios reportaron problemas.
+    problema = Problema.confirmar_problema(carga=carga_con_problema)
+
+    return MesaCategoria.STATUS.con_problemas, None
 
 def consolidar_cargas(mesa_categoria):
     """
@@ -82,14 +88,24 @@ def consolidar_cargas(mesa_categoria):
     carga_testigo_resultante = None
 
     # Obtengo todas las cargas actualmente válidas para mesa_categoria.
-    cargas = mesa_categoria.cargas.filter(valida=True)
+    cargas = mesa_categoria.cargas.filter(invalidada=False)
 
     # Si no hay cargas, no sigo.
     if cargas.count() == 0:
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
 
-    # Hay cargas. A continuación voy probando los distintos status de mayor a menor.
+    # Hay cargas.
+
+    # Me fijo si es un problema.
+    cargas_que_reportan_problemas = cargas.filter(tipo=Carga.TIPOS.problema)
+    if cargas_que_reportan_problemas.count() >= settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA:
+        status_resultante, carga_testigo_resultante = \
+            consolidar_cargas_con_problemas(cargas_que_reportan_problemas)
+        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+        return
+
+    # A continuación voy probando los distintos status de mayor a menor.
 
     # Primero les actualizo la firma.
     for carga in cargas:
@@ -103,12 +119,13 @@ def consolidar_cargas(mesa_categoria):
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
 
-    # Por último analizo las parciales.
+    # Analizo las parciales.
     cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
     if cargas_parciales.count() > 0:
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_por_tipo(cargas_parciales, Carga.TIPOS.parcial)
-        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+
+    mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
 
 
 def consolidar_identificaciones(attachment):
@@ -121,24 +138,15 @@ def consolidar_identificaciones(attachment):
     y lo asocia a la mesa identificada o a ninguna, si no quedó identificado.
     """
 
-    # Primero me quedo con todas las identificaciones para ese attachment.
-    # Formato: (mesa_id, status, cantidad)
-    # Ejemplo:
-    #  [
-    #       (0, 'spam', 2),
-    #       (0, 'invalida', 1),
-    #       (1, 'identificada', 1),
-    #       (2, 'identificada', 1),
-    #  ]
-    status_count = attachment.status_count()
+    # Primero me quedo con todas las identificaciones para ese attachment
+    # que correspondan con una identificación y no con un problema.
+    status_count = attachment.status_count(Identificacion.STATUS.identificada)
 
     mesa_id_consolidada = None
-    for mesa_id, status, cantidad, cuantos_csv in status_count:
+    for mesa_id, cantidad, cuantos_csv in status_count:
         if (
-            status == Identificacion.STATUS.identificada and (
-                cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or
+            cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or
                 cuantos_csv > 0
-            )
         ):
             mesa_id_consolidada = mesa_id
             break
@@ -161,12 +169,27 @@ def consolidar_identificaciones(attachment):
         status_attachment = testigo.status
         mesa_attachment = testigo.mesa
 
+        # Si tenía asociado un problema de "falta hoja", se soluciona automáticamente
+        # porque se agregó un attachment.
+        Problema.resolver_problema_falta_hoja(mesa_attachment)
+
         # TODO - para reportar trolls
         # sumar 200 a scoring de los usuarios que identificaron el acta diferente
     else:
         status_attachment = Attachment.STATUS.sin_identificar
         mesa_attachment = None
         testigo = None
+
+        # Si no logramos consolidar una identificación vemos si hay un reporte de problemas.
+        status_count = attachment.status_count(Identificacion.STATUS.problema)
+        for mesa_id, cantidad, cuantos_csv in status_count:
+            if cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA:
+                # Tomo como "muestra" alguna de las que tienen problemas.
+                identificacion_con_problemas = attachment.identificaciones.filter(
+                    status=Identificacion.STATUS.problema).first()
+                # Confirmo el problema porque varios reportaron problemas.
+                problema = Problema.confirmar_problema(identificacion=identificacion_con_problemas)
+                status_attachment = Attachment.STATUS.problema
 
     # Identifico el attachment.
     # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
@@ -216,11 +239,10 @@ def consumir_novedades():
 @receiver(post_save, sender=Attachment)
 def actualizar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     if instance.mesa and instance.identificacion_testigo:
-        # TO DO: evaluar si un nuevo attachment para una mesa ya identificada
-        # (es decir, con orden de carga ya definido) deberia volver a actualizar
+        # Un nuevo attachment para una mesa ya identificada
+        # (es decir, con orden de carga ya definido) la vuelve a actualizar.
         a_actualizar = MesaCategoria.objects.filter(
-            mesa=instance.mesa,
-            orden_de_carga__isnull=True
+            mesa=instance.mesa
         )
         for mc in a_actualizar:
             mc.actualizar_orden_de_carga()
