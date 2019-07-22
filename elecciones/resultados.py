@@ -331,7 +331,7 @@ class Resultados():
         """
         votos_positivos = {}
         for partido, votos_por_opcion in self.resultados.votos_positivos.items():
-            total_partido = sum(votos_por_opcion.values())
+            total_partido = sum(filter(None, votos_por_opcion.values()))
             votos_positivos[partido] = {
                 'votos': total_partido,
                 'detalle': {

@@ -187,14 +187,14 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     response = fiscal_client.get(url_resultados)
     resultados = response.context['resultados']
-    positivos = resultados['tabla_positivos']
+    positivos = resultados.tabla_positivos()
 
-    assert resultados['porcentaje_mesas_escrutadas'] == '25.00'     # 2 de 8
+    assert resultados.porcentaje_mesas_escrutadas() == '25.00'     # 2 de 8
 
     # se ordena de acuerdo al que va ganando
     assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
 
-    total_positivos = resultados['positivos']
+    total_positivos = resultados.positivos()
 
     assert total_positivos == 215  # 20 + 5 + 30 + 40 + 20 + 10 + 40 + 50
 
@@ -219,7 +219,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
 
 
-    assert resultados['votantes'] == 215
+    assert resultados.votantes() == 215
     assert resultados.electores() == 800
 
 
