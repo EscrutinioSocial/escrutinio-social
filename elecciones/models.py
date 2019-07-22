@@ -427,12 +427,13 @@ class Mesa(models.Model):
 
     def metadata(self):
         """
-        Las opciones metadatas comunes a las distintas categorias de la misma mesa
-        reusan el valor reportado. Se cargan hasta que se consolide en alguna categoria
-        y las siguientes cargas reusaran sus valores reportados.
+        Las opciones metadatas comunes a las distintas categorías de la misma mesa
+        reúsan el valor reportado. Se cargan hasta que se consolide en alguna categoría
+        y las siguientes cargas reusarán sus valores reportados.
 
-        Este metodo devuelve la lista de tuplas de (opcion metadata, numero)
-        para alguna de las cargas consolidadas testigo de la mesa.
+        Este método devuelve la lista de tuplas de (opción metadata, número)
+        para alguna de las cargas consolidadas testigo de la mesa. El número
+        es la cantidad de "votos".
         """
         return VotoMesaReportado.objects.filter(
             opcion__tipo=Opcion.TIPOS.metadata,
@@ -692,7 +693,11 @@ class Carga(TimeStampedModel):
 
     def actualizar_firma(self, forzar=False):
         """
-        A partir del conjunto de reportes f iguala o coincide con la de otras cargas
+        A partir del conjunto de reportes de la carga
+        se genera una firma como un string
+            <id_opcion_A>-<votos_opcion_A>|<id_opcion_B>-<votos_opcion_B>...
+
+        Si esta firma iguala o coincide con la de otras cargas
         se marca consolidada.
         """
         # Si ya hay firma y no están forzando, listo.
