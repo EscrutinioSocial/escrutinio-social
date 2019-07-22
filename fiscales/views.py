@@ -42,7 +42,7 @@ from .forms import (
     QuieroSerFiscal4,
 )
 from contacto.views import ConContactosMixin
-from problemas.models import Problema, ReporteDeProblema
+from problemas.models import Problema
 from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
@@ -196,7 +196,6 @@ def confirmar_email(request, uuid):
     )
 
 
-
 class MisDatos(BaseFiscal):
     template_name = "fiscales/mis-datos.html"
 
@@ -236,7 +235,7 @@ def cargar_desde_ub(request, mesa_id, tipo='total'):
 
 
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
+@user_passes_test(lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')), login_url=NO_PERMISSION_REDIRECT)
 def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
@@ -420,7 +419,6 @@ def detalle_mesa_categoria(request, categoria_id, mesa_numero, carga_id=None):
             'categoria': categoria
         }
     )
-
 
 
 class CambiarPassword(PasswordChangeView):
