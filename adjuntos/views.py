@@ -273,7 +273,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
     """
     form_class = AgregarAttachmentsForm
     template_name = 'adjuntos/agregar-adjuntos-csv.html'
-    agregar_adjuntos_url = 'agregar-adjuntos-csv'
+    url_to_post = 'agregar-adjuntos-csv'
 
     def __init__(self):
         super().__init__(types='text/csv')
