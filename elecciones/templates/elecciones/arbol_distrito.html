@@ -52,11 +52,14 @@ function abrirArbolDistritoSeccionCircuito() {
   if (searchParams.has('circuito')) {
     $hoja = $('#circuito-' + searchParams.get('circuito'));
   }
-  $hoja.find('.collapsible-header i').first().click();
-  $hoja.addClass('selected');
-  $hoja.parents('li').each(function (index) {
-    $(this).find('.collapsible-header i').first().click();
-  })
+  if ($hoja) {
+    $hoja.parents('li').each(function (index) {
+      $(this).find('.collapsible-header i').first().click();
+    })
+    $hoja.find('.collapsible-header i').first().click();
+    $hoja.removeClass('active');
+    $hoja.addClass('selected');
+  }
 }
 
 $(document).ready(function() {
