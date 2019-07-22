@@ -19,8 +19,8 @@ class ActaSerializer(serializers.Serializer):
 
 
 class MesaSerializer(serializers.Serializer):
-    codigo_distrito = serializers.IntegerField()
-    codigo_seccion = serializers.IntegerField()
+    codigo_distrito = serializers.CharField()
+    codigo_seccion = serializers.CharField()
     codigo_circuito = serializers.CharField()
     codigo_mesa = serializers.CharField()
 
