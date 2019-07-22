@@ -1,0 +1,82 @@
+<li><a href="{% url "resultados-categoria" primera_categoria %}">Todo</a></li>
+
+{% for distrito in distritos %}
+<ul class="arbol-distrito collapsible collapsible-accordion">
+    <li id="distrito-{{distrito.id}}">
+        <div class="collapsible-header">
+            <i class="material-icons">arrow_drop_down</i>
+            <a href="{{ request.path }}?distrito={{ distrito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                {{ distrito }}
+            </a>
+        </div>
+        <div class="collapsible-body">
+            {% for seccion_politica in distrito.secciones_politicas.all %}
+            <ul class="collapsible collapsible-accordion">
+                <li id="seccion_politica-{{seccion_politica.id}}">
+                    <div class="collapsible-header">
+                        <i class="material-icons">arrow_drop_down</i>
+                        <a href="{{ request.path }}?seccion_politica={{ seccion_politica.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                            {{ seccion_politica }}
+                        </a>
+                    </div>
+                    <div class="collapsible-body">
+                        {% with seccion_politica.secciones.all as secciones %}
+                        {% include "elecciones/arbol_seccion.html" %}
+                        {% endwith %}
+                    </div>
+                </li>
+            </ul>
+            {% endfor %}
+            {% with distrito.secciones.all as secciones %}
+            {% include "elecciones/arbol_seccion.html" %}
+            {% endwith %}
+        </div>
+    </li>
+</ul>
+{% endfor %}
+
+<script type="text/javascript">
+function aplicarSumarizacion() {
+  var $select = $(this);
+  var filterName = $select.attr('name');
+  var filterValue = $select.val();
+
+  var searchParams = new URLSearchParams(location.search);
+  searchParams.set(filterName, filterValue);
+  var navToUrl = location.pathname + '?' + searchParams.toString();
+  $(location).attr('href', navToUrl);
+};
+
+function abrirArbolDistritoSeccionCircuito() {
+  var searchParams = new URLSearchParams(location.search);
+  var $distrito;
+  var $seccion;
+  var $circuito;
+
+  if (searchParams.has('distrito')) {
+    $distrito = $('#distrito-' + searchParams.get('distrito'));
+  }
+  if (searchParams.has('seccion')) {
+    $seccion = $('#seccion-' + searchParams.get('seccion'));
+    $distrito = $seccion.parents('li').first();
+  }
+  if (searchParams.has('circuito')) {
+    $circuito = $('#circuito-' + searchParams.get('circuito'));
+    $seccion = $circuito.parents('li').first();
+    $distrito = $seccion.parents('li').first();
+  }
+
+  if ($distrito) $distrito.find('a i').first().click();
+  if ($seccion) $seccion.find('a i').first().click();
+  if ($circuito) $circuito.find('a i').first().click();
+}
+
+$(document).ready(function() {
+  $('.collapsible').collapsible();
+
+  // Abre el arbol de distrito, seccion, cirtuito segun la urlencode
+  // TODO arreglar el timeout
+  // se agrego para que los items queden seleccionados cuando se aplica tipo de agregacion y opciones
+  setTimeout(abrirArbolDistritoSeccionCircuito, 100)
+});
+</script>

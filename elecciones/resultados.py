@@ -9,6 +9,7 @@ from django.db.models import Q, F, Sum, Count, Subquery, Sum, IntegerField, Case
 from .models import (
     Eleccion,
     Distrito,
+    SeccionPolitica,
     Seccion,
     Circuito,
     Categoria,
