@@ -314,10 +314,12 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     tipo=tipo,
                     fiscal=fiscal,
                 )
+                reportados = []
                 for form in formset:
                     vmr = form.save(commit=False)
                     vmr.carga = carga
-                    vmr.save()
+                    reportados.append(vmr)
+                VotoMesaReportado.objects.bulk_create(reportados)
                 # Libero el token sobre la mc
                 mesa_categoria.release()
             carga.actualizar_firma()
