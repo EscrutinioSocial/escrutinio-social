@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from leaflet.admin import LeafletGeoAdmin
 from .models import (
-    Distrito, Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion, CategoriaOpcion, Categoria,
+    Distrito, SeccionPolitica, Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion, CategoriaOpcion, Categoria,
     VotoMesaReportado, MesaCategoria, Eleccion
 )
 from django.http import HttpResponseRedirect
@@ -179,8 +179,17 @@ class DistritoAdmin(admin.ModelAdmin):
     )
 
 
-class SeccionAdmin(admin.ModelAdmin):
+class SeccionPoliticaAdmin(admin.ModelAdmin):
     list_display = ['numero', 'nombre', 'distrito']
+
+    search_fields = (
+        'nombre',
+        'numero',
+    )
+
+
+class SeccionAdmin(admin.ModelAdmin):
+    list_display = ['numero', 'nombre', 'distrito', 'seccion_politica']
 
     search_fields = (
         'nombre',
@@ -221,6 +230,7 @@ class CategoriaOpcionAdmin(admin.ModelAdmin):
 
 admin.site.register(Eleccion)
 admin.site.register(Distrito, DistritoAdmin)
+admin.site.register(SeccionPolitica, SeccionPoliticaAdmin)
 admin.site.register(Seccion, SeccionAdmin)
 admin.site.register(Circuito, CircuitoAdmin)
 admin.site.register(Partido, PartidoAdmin)
