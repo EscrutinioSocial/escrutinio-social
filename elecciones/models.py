@@ -393,7 +393,6 @@ class Mesa(models.Model):
     )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
-
     prioridad = models.PositiveIntegerField(default=0)
 
     def categoria_add(self, categoria):
@@ -438,6 +437,22 @@ class Mesa(models.Model):
                 fotos.append((f'Foto {i} (editada)', a.foto_edited))
             fotos.append((f'Foto {i} (original)', a.foto))
         return fotos
+
+    def metadata(self):
+        """
+        Las opciones metadatas comunes a las distintas categorías de la misma mesa
+        reúsan el valor reportado. Se cargan hasta que se consolide en alguna categoría
+        y las siguientes cargas reusarán sus valores reportados.
+
+        Este método devuelve la lista de tuplas de (opción metadata, número)
+        para alguna de las cargas consolidadas testigo de la mesa. El número
+        es la cantidad de "votos".
+        """
+        return VotoMesaReportado.objects.filter(
+            opcion__tipo=Opcion.TIPOS.metadata,
+            carga__mesa_categoria__mesa=self,
+            carga__mesa_categoria__status=MesaCategoria.STATUS.total_consolidada_dc
+        ).distinct().values_list('opcion', 'votos')
 
     def __str__(self):
         return str(self.numero)

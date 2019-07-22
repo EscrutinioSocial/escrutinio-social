@@ -15,7 +15,7 @@ from elecciones.tests.factories import (
     VotoMesaReportadoFactory,
 )
 from elecciones.tests.test_resultados import fiscal_client, setup_groups    # noqa
-from elecciones.models import Carga, MesaCategoria
+from elecciones.models import Carga, MesaCategoria, Opcion
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion, consumir_novedades_carga
 
@@ -173,6 +173,31 @@ def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, sett
     # el valor previo es readonly
     assert response.context['formset'][2].fields['votos'].widget.attrs['readonly'] is True
     assert response.context['formset'][3].fields['votos'].widget.attrs['readonly'] is True
+
+
+def test_formset_reusa_metadata(db, fiscal_client):
+    # hay una categoria con una opcion metadata ya consolidada
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, orden=1)
+    cat1 = CategoriaFactory(opciones=[o1])
+    mc = MesaCategoriaFactory(categoria=cat1, status=MesaCategoria.STATUS.total_consolidada_dc)
+    carga = CargaFactory(mesa_categoria=mc, tipo='identificada')
+    VotoMesaReportadoFactory(carga=carga, opcion=o1, votos=10)
+
+    # otra categoria incluye la misma metadata.
+    o2 = OpcionFactory(orden=2)
+    cat2 = CategoriaFactory(opciones=[o1, o2])
+    mc2 = MesaCategoriaFactory(categoria=cat2, mesa=mc.mesa)
+
+    response = fiscal_client.get(reverse('carga-total', args=[mc2.id]))
+    assert len(response.context['formset']) == 2
+    assert response.context['formset'][0].initial['opcion'] == o1
+    assert response.context['formset'][1].initial['opcion'] == o2
+
+    # y los valores de los votos
+    assert response.context['formset'][0].initial['votos'] == 10
+    assert response.context['formset'][0].fields['votos'].widget.attrs['readonly'] is True
+
+    assert response.context['formset'][1].initial['votos'] is None
 
 
 def test_detalle_mesa_categoria(db, fiscal_client):
