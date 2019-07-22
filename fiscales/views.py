@@ -242,23 +242,27 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
-    mesa_categoria = get_object_or_404(
-        MesaCategoria,
-        id=mesacategoria_id
-    )
+    mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
+    # en carga parcial sólo se cargan opciones prioritarias
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
+
+    # tenemos la lista de opciones ordenadas como la lista
     opciones = categoria.opciones_actuales(solo_prioritarias)
 
+    # este diccionario es el que contiene informacion "pre completada"
+    # de una carga. si una opcion está en este dict, el campo se inicializará
+    # con su clave.
+    votos_para_opcion = dict(mesa.metadata())
     if tipo == 'total' and mesa_categoria.status == MesaCategoria.STATUS.parcial_consolidada_dc:
         # una carga total con parcial consolidada reutiliza los datos ya cargados
-        carga = mesa_categoria.carga_testigo
-        votos_para_opcion = dict(carga.opcion_votos())
-    else:
-        carga = None
-        votos_para_opcion = {}
+        votos_para_opcion.update(
+            dict(mesa_categoria.carga_testigo.opcion_votos())
+        )
 
+    # obtenemos la clase para el formset seteando tantas filas como opciones
+    # existen. Como extra=0, el formset tiene un tamaño fijo
     VotoMesaReportadoFormset = votomesareportadoformset_factory(
         min_num=opciones.count()
     )
@@ -275,8 +279,9 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             # por sobre los combo de "opcion"
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
 
-            if carga and votos_para_opcion.get(opcion.id):
-                # los campos previamente cargados son solo lectura
+            if votos_para_opcion.get(opcion.id):
+                # los campos que ya conocemos (metadata o cargas parciales consolidadas)
+                # los marcamos como sólo lectura
                 form.fields['votos'].widget.attrs['readonly'] = True
             else:
                 form.fields['votos'].widget.attrs['tabindex'] = i
@@ -294,28 +299,21 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     initial = [{'opcion': o, 'votos': votos_para_opcion.get(o.id)} for o in opciones]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
     fix_opciones(formset)
-    is_valid = False
-    if qs:
-        formset.convert_warnings = True  # monkepatch
 
-    if request.method == 'POST' or qs:
+    is_valid = False
+    if request.method == 'POST':
         is_valid = formset.is_valid()
 
     if is_valid:
-
         try:
             with transaction.atomic():
                 # se guardan los datos. El contenedor `carga`
                 # y los votos del formset asociados.
-                if carga:
-                    carga.fiscal = fiscal
-                    carga.save()
-                else:
-                    carga = Carga.objects.create(
-                        mesa_categoria=mesa_categoria,
-                        tipo=tipo,
-                        fiscal=fiscal,
-                    )
+                carga = Carga.objects.create(
+                    mesa_categoria=mesa_categoria,
+                    tipo=tipo,
+                    fiscal=fiscal,
+                )
                 for form in formset:
                     vmr = form.save(commit=False)
                     vmr.carga = carga
