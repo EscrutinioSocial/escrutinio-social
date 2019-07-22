@@ -455,7 +455,10 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     c1.actualizar_firma()
     consumir_novedades_y_actualizar_objetos()
 
+    # TODO dependiendo de lo que se quiera la url podria ser algo como por ejemplo:
+    # response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias')
     response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
+
     resultados = response.context['resultados']
     # la carga está en status sin_confirmar
     assert 'blanco' not in resultados.tabla_no_positivos()
