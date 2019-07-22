@@ -230,7 +230,7 @@ def test_detalle_mesa_categoria(db, fiscal_client):
     )
 
     # a otra carga
-    vm = VotoMesaReportadoFactory(
+    VotoMesaReportadoFactory(
         opcion=opcs[2],
         votos=1
     )
@@ -243,7 +243,7 @@ def test_detalle_mesa_categoria(db, fiscal_client):
     assert list(response.context['reportados']) == [votos1, votos2, votos3]
 
 
-def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(fiscal_client):
+def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(db, fiscal_client, django_assert_num_queries):
     """
     Es un test desaconsejadamente largo, pero me sirvió para entender el escenario.
     Se hace un recorrido por la carga de dos categorías desde una UB.
@@ -279,7 +279,8 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(fiscal_client):
     opcion3 = categoria_2.opciones_actuales().get(nombre="opc1")
     opcion4 = categoria_2.opciones_actuales().get(nombre="opc2")
 
-    response = fiscal_client.get(reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id}))
+    url_carga = reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+    response = fiscal_client.get(url_carga)
 
     assert response.status_code == HTTPStatus.OK
     # nos aseguramos que haya cargado el template específico para UB
@@ -290,9 +291,8 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(fiscal_client):
     tupla_opciones_electores = [(opcion1.id, mesa.electores // 2), (opcion2.id, mesa.electores // 2)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
 
-    url_carga_resultados = response.context['request'].get_full_path()
-
-    response = fiscal_client.post(url_carga_resultados, request_data)
+    with django_assert_num_queries(30):
+        response = fiscal_client.post(url_carga, request_data)
 
     # tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
     carga = Carga.objects.get()
@@ -303,7 +303,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(fiscal_client):
 
     tupla_opciones_electores = [(opcion3.id, mesa.electores // 2), (opcion4.id, mesa.electores // 2)]
 
-    response = fiscal_client.post(url_carga_resultados, request_data)
+    response = fiscal_client.post(url_carga, request_data)
 
     consumir_novedades_y_actualizar_objetos([carga.mesa_categoria])
 
@@ -314,7 +314,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(fiscal_client):
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
 
-    response = fiscal_client.post(url_carga_resultados)
+    response = fiscal_client.post(url_carga)
 
     # la mesa no tiene más categorías, nos devuelve a la pantalla de carga de adjuntos
     assert response.url == reverse('agregar-adjuntos-ub')
