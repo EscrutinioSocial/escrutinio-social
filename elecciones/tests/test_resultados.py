@@ -220,6 +220,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.electores() == 800
 
 
+@pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
     # se crean 3 secciones electorales
     s1, s2, s3 = SeccionFactory.create_batch(3)
@@ -315,6 +316,7 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     assert positivos[o2.partido]['proyeccion'] == '43.42'
 
 
+@pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados_simple(fiscal_client):
     s1, s2 = SeccionFactory.create_batch(2)
     o1, o2 = OpcionFactory.create_batch(2)
@@ -344,6 +346,7 @@ def test_resultados_proyectados_simple(fiscal_client):
     assert positivos[o2.partido]['proyeccion'] == '41.67'
 
 
+@pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados_usa_circuito(fiscal_client):
     # 2 secciones. 1 ponderada con 2 circuitos
     s1 = SeccionFactory(proyeccion_ponderada=True)
@@ -524,6 +527,7 @@ def test_resultados_no_positivos(fiscal_client):
     consumir_novedades_y_actualizar_objetos()
 
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]))
+
     assert o3.nombre in response.content.decode('utf8')
     no_positivos = response.context['resultados'].tabla_no_positivos()
 
@@ -568,8 +572,9 @@ def test_resultados_excluye_metadata(fiscal_client):
 
     assert positivos[o1.partido]['detalle'][o1]['porcentaje_positivos'] == '50.00'
     assert positivos[o2.partido]['detalle'][o2]['porcentaje_positivos'] == '50.00'
-    assert positivos[o1.partido]['proyeccion'] == '58.33'
-    assert positivos[o2.partido]['proyeccion'] == '41.67'
+    # TODO proyecciones sera re escrito
+    # assert positivos[o1.partido]['proyeccion'] == '58.33'
+    # assert positivos[o2.partido]['proyeccion'] == '41.67'
 
     assert no_positivos[o3.nombre] == {'porcentaje_total': '6.25', 'votos': 20}
     assert list(no_positivos.keys()) == [o3.nombre, 'Votos Positivos']
