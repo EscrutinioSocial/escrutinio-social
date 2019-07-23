@@ -288,27 +288,34 @@ class Resultados():
         obtiene la opción de total
         """
         if self.opciones_a_considerar == Sumarizador.OPCIONES_A_CONSIDERAR.todas:
-            total = sum(
+            total_positivos = sum(
                 sum(votos for votos in opciones_partido.values() if votos)
                 for opciones_partido in self.resultados.votos_positivos.values()
             )
         else:
             nombre_corto_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre_corto']
             total = self.resultados.votos_no_positivos[nombre_corto_opcion_total]
+            total_no_positivos = self.total_no_positivos()
+            total_positivos = total - total_no_positivos
 
-        return total
+        return total_positivos
 
     @lru_cache(128)
     def total_no_positivos(self):
         """
-        Devuelve el total de votos no positivos de la mesa, sumando los votos a cada opción no partidaria.
+        Devuelve el total de votos no positivos, sumando los votos a cada opción no partidaria
+        y excluyendo la opción que corresponde a totales (como el total de votantes o de sobres).
         """
-        return sum(votos for votos in self.resultados.votos_no_positivos.values())
+        nombre_corto_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre_corto']
+        nombre_corto_opcion_sobres = settings.OPCION_TOTAL_SOBRES['nombre_corto']
+        return sum(votos for opcion, votos in self.resultados.votos_no_positivos.items()
+                        if opcion != nombre_corto_opcion_total and opcion != nombre_corto_opcion_sobres
+        )
 
     @lru_cache(128)
     def votantes(self):
         """
-        Total de personas que votaron de la mesa
+        Total de personas que votaron.
         """
         return self.total_positivos() + self.total_no_positivos()
 
@@ -322,8 +329,8 @@ class Resultados():
                 Para cada opción incluye:
                     - votos: cantidad de votos para esta opción.
                     - porcentaje: porcentaje sobre el total del del partido.
-                    - porcentaje_positivos: porsentaje sobre el total de votos positivos.
-                    - porcentaje_total: porcentaje sobre el total de votos de la mesa.
+                    - porcentaje_positivos: porcentaje sobre el total de votos positivos.
+                    - porcentaje_total: porcentaje sobre el total de votos.
         """
         votos_positivos = {}
         for partido, votos_por_opcion in self.resultados.votos_positivos.items():

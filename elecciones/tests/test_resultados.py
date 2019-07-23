@@ -205,17 +205,19 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     total_positivos = resultados.total_positivos()
 
-    assert total_positivos == 220  # 20 + 5 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+    assert total_positivos == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
 
     # cuentas
     assert positivos[o3.partido]['votos'] == 40 + 50
-    assert positivos[o3.partido]['porcentaje_positivos'] == '40.91'  # (40 + 50) / total_positivos
+    assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'  # (40 + 50) / total_positivos
     assert positivos[o2.partido]['votos'] == 30 + 40
-    assert positivos[o2.partido]['porcentaje_positivos'] == '31.82'  # (30 + 40) / total_positivos
+    assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'  # (30 + 40) / total_positivos
     assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
-    assert positivos[o1.partido]['porcentaje_positivos'] == '25.00'  # (20 + 5 + 10 + 20) / total_positivos
+    assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'  # (20 + 5 + 10 + 20) / total_positivos
 
     # todos los positivos suman 100
+    print(positivos.values())
+    import ipdb; ipdb.set_trace()
     assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
 
     # votos de partido 1 son iguales a los de o1 + o4
@@ -229,9 +231,8 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
 
-    assert resultados.votantes() == 215
+    assert resultados.votantes() == 220
     assert resultados.electores() == 800
-
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
