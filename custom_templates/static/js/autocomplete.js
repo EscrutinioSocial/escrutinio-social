@@ -1,5 +1,3 @@
-<script>
-// TODO usar autocomplete.js
 function getValuesMapForOption($option) {
   var valuesMap = {};
   $option.filter(function() {
@@ -83,39 +81,3 @@ function buildAutocomplete(fieldId, dataUrl, childAutocomplete) {
   });
   return autocomplete;
 }
-
-function buildDistritoAutocomplete(childAutocomplete) {
-  var autocomplete = buildAutocomplete('id_distrito', null, childAutocomplete);
-  autocomplete.valuesMap = getValuesMapForOption($('#id_distrito option'));
-  autocomplete.component.updateData(getAutocompleteData(autocomplete.valuesMap));
-  return autocomplete;
-}
-
-$(document).ready(function() {
-  var mesaAutocomplete = buildAutocomplete('id_mesa', '{% url 'autocomplete-mesa' %}', null);
-  var circuitoAutocomplete = buildAutocomplete('id_circuito', '{% url 'autocomplete-circuito' %}', mesaAutocomplete);
-  var seccionAutocomplete = buildAutocomplete('id_seccion', '{% url 'autocomplete-seccion' %}', circuitoAutocomplete);
-  var distritoAutocomplete = buildDistritoAutocomplete(seccionAutocomplete);
-
-  $('#id_distrito-autocomplete').focus();
-
-  // Borrar los <select generados por django
-  $('.remove').remove();
-});
-</script>
-{{ form.non_field_errors }}
-{% for field in form %}
-    <div class="input-field col s12">
-      {{ field.errors }}
-      <i class="material-icons prefix">textsms</i>
-      <input type="hidden" id="{{field.auto_id}}" name="{{field.html_name}}">
-      <input type="text" id="{{field.auto_id}}-autocomplete" name="{{field.html_name}}-autocomplete" class="autocomplete" tabindex="{{forloop.counter}}" autocomplete="off" required>
-      <label for="{{field.auto_id}}-autocomplete">{{field.label}}</label>
-      {% if field.help_text %}
-      <p class="help">{{ field.help_text|safe }}</p>
-      {% endif %}
-      <div class="remove">
-        {{ field }}
-      </div>
-    </div>
-{% endfor %}

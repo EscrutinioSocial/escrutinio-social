@@ -89,19 +89,20 @@ class QuieroSerFiscalForm(forms.Form):
     dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
     telefono = forms.CharField(label='Teléfono', help_text='Preferentemente celular')
 
-    # distrito = forms.ChoiceField(
-    #     required=True,
-    #     label='Provincia',
-    #     choices=[(o.id, str(o)) for o in Distrito.objects.all().order_by('numero')]
-    # )
     distrito = forms.ModelChoiceField(
         required=True,
         label='Provincia',
         queryset=Distrito.objects.all().order_by('numero')
     )
 
-    seccion = forms.CharField(required=True, label="Departamento")
-
+    seccion_autocomplete = forms.CharField(label="Departamento",
+                                           widget=forms.TextInput(attrs={
+                                               'class': 'autocomplete',
+                                               'id': 'seccion-autocomplete',
+                                               'autocomplete': 'off',
+                                               'required': True,
+                                           }))
+    seccion = forms.CharField(widget=forms.HiddenInput(attrs={'id': 'seccion', 'name': 'seccion'}))
     referido_por_nombres = forms.CharField(required=False, label="Referido por", max_length=100)
     referido_por_codigo = forms.CharField(
         required=False,
@@ -127,7 +128,7 @@ class QuieroSerFiscalForm(forms.Form):
             Row('email', 'email_confirmacion'),
             Row('password', 'password_confirmacion'),
             'telefono',
-            Row('distrito', 'seccion')
+            Row('distrito', 'seccion_autocomplete')
         ),
         Fieldset(
             'Referencia',

@@ -99,9 +99,10 @@ class QuieroSerFiscal(FormView):
         fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
         fiscal.nombres = data['nombres']
         fiscal.apellido = data['apellido']
-        fiscal.seccion = data['seccion']
+        fiscal.seccion_id = data['seccion']
         fiscal.referido_por_nombres = data['referido_por_nombres']
-        fiscal.referido_por_codigo = data['referido_por_codigo']
+        if data['referido_por_codigo']:
+            fiscal.referido_por_codigo = data['referido_por_codigo']
         fiscal.save()
         fiscal.agregar_dato_de_contacto('teléfono', data['telefono'])
         fiscal.agregar_dato_de_contacto('email', data['email'])
@@ -417,7 +418,7 @@ def confirmar_fiscal(request, fiscal_id):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-class AutocompleteBaseListView(LoginRequiredMixin, ListView):
+class AutocompleteBaseListView(ListView):
 
     def get(self, request, *args, **kwargs):
         data = {'options': [{'value': o.id, 'text': str(o)} for o in self.get_queryset()]}
