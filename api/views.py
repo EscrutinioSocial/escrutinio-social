@@ -113,8 +113,7 @@ def identificar_acta(request, foto_digest):
         mesa = get_object_or_404(Mesa, circuito=circuito, numero=data['codigo_mesa'])
 
         identificacion = Identificacion(
-            # No deberia ser 'api' ??
-            source='telegram',
+            source=Identificacion.SOURCES.telegram,
             status=Identificacion.STATUS.identificada,
             attachment=attachment,
             fiscal=request.user.fiscal,
@@ -159,7 +158,9 @@ def cargar_votos(request, id_mesa):
                 )
 
                 carga, created = Carga.objects.get_or_create(
-                    origen='telegram', mesa_categoria=mesa_categoria, fiscal=request.user.fiscal
+                    # Sabemos que el bot va a mandar sólo cargas parciales.
+                    tipo=Carga.TIPOS.parcial, origen=Carga.SOURCES.telegram,
+                    mesa_categoria=mesa_categoria, fiscal=request.user.fiscal
                 )
                 VotoMesaReportado.objects.create(
                     carga=carga,
