@@ -25,8 +25,8 @@ shell-app:
 shell-db:
 	docker exec --interactive --tty escrutinio-social-db /bin/bash
 
-manage:
-	docker exec --interactive --tty escrutinio-social-app python manage.py shell
+shell_plus:
+	docker exec --interactive --tty escrutinio-social-app python manage.py shell_plus
 
 log-app:
 	docker-compose logs app
