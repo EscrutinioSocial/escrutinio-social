@@ -217,7 +217,7 @@ def consolidar_identificaciones(attachment):
         for mc in MesaCategoria.objects.filter(mesa=mesa_anterior):
             mc.orden_de_carga = None
             mc.save(update_fields=['orden_de_carga'])
-            for carga in mc.cargas:
+            for carga in mc.cargas.all():
                 carga.invalidar()
 
 
@@ -225,12 +225,16 @@ def consolidar_identificaciones(attachment):
 @transaction.atomic
 def consumir_novedades_identificacion():
     a_procesar = Identificacion.objects.select_for_update().filter(procesada=False)
+    ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+
     attachments_con_novedades = Attachment.objects.filter(
         identificaciones__in=Subquery(a_procesar.values('id'))
     ).distinct()
     for attachment in attachments_con_novedades:
         consolidar_identificaciones(attachment)
-    procesadas = a_procesar.update(procesada=True)
+
+    # Todas procesadas
+    procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
 
 
@@ -238,7 +242,6 @@ def consumir_novedades_identificacion():
 def consumir_novedades_carga():
     a_procesar = Carga.objects.select_for_update().filter(procesada=False)
     ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
-    print(ids_a_procesar)
 
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
         cargas__in=Subquery(a_procesar.values('id'))

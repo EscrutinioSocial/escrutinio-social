@@ -16,7 +16,7 @@ def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
     """
 
     ## para cada identificacion del attachment que no coincida en mesa, aumentar el scoring troll del fiscal que la hizo
-    for identificacion in attachment.identificaciones.filter(invalidada=False, procesada=False):
+    for identificacion in attachment.identificaciones.filter(invalidada=False):
         if ((identificacion.status != Identificacion.STATUS.identificada) or (identificacion.mesa != mesa)):
             aumentar_scoring_troll_identificacion(
                 settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA, identificacion
