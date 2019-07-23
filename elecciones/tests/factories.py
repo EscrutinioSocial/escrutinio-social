@@ -5,6 +5,7 @@ from io import BytesIO
 from django.contrib.auth.models import User
 from factory.django import DjangoModelFactory
 from faker import Faker
+from django.conf import settings
 
 fake = Faker('es_ES')
 
@@ -58,9 +59,15 @@ class CategoriaFactory(DjangoModelFactory):
             for opcion in extracted:
                 CategoriaOpcionFactory(categoria=self, opcion=opcion)
         else:
-            # TODO Usar info tomada de settings.py
+            nombre_corto_blanco = settings.OPCION_BLANCOS['nombre_corto']
+            tipo_blanco = settings.OPCION_BLANCOS['tipo']
             CategoriaOpcionFactory(
-                categoria=self, opcion=OpcionFactory(nombre='blanco', partido=None, tipo='no_positivo')
+                categoria=self, opcion=OpcionFactory(nombre=nombre_corto_blanco, partido=None, tipo=tipo_blanco)
+            )
+            nombre_corto_total = settings.OPCION_TOTAL_VOTOS['nombre_corto']
+            tipo_total = settings.OPCION_TOTAL_VOTOS['tipo']
+            CategoriaOpcionFactory(
+                categoria=self, opcion=OpcionFactory(nombre=nombre_corto_total, partido=None, tipo=tipo_total)
             )
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc1'))
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc2'))

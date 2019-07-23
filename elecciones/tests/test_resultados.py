@@ -156,8 +156,14 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     o4.partido = o1.partido
     o4.save()
 
-    # TODO Usar info tomada de settings.py
-    blanco = categoria.opciones.get(nombre='blanco', tipo=Opcion.TIPOS.no_positivo)
+    nombre_corto_blanco = settings.OPCION_BLANCOS['nombre_corto']
+    tipo_blanco = settings.OPCION_BLANCOS['tipo']
+    blanco = categoria.opciones.get(nombre=nombre_corto_blanco, tipo=tipo_blanco)
+
+    nombre_corto_total = settings.OPCION_TOTAL_VOTOS['nombre_corto']
+    tipo_total = settings.OPCION_TOTAL_VOTOS['tipo']
+    total = categoria.opciones.get(nombre=nombre_corto_total, tipo=tipo_total)
+
     mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
     mc3 = MesaCategoria.objects.get(mesa=m3, categoria=categoria)
     c1 = CargaFactory(mesa_categoria=mc1, tipo=Carga.TIPOS.parcial)
@@ -170,7 +176,8 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     VotoMesaReportadoFactory(carga=c1, opcion=o4, votos=5)
 
     # votaron 95/100 personas
-    VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=0)
+    VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=5)
+    VotoMesaReportadoFactory(carga=c1, opcion=total, votos=100)
 
     VotoMesaReportadoFactory(carga=c2, opcion=o1, votos=10)
     VotoMesaReportadoFactory(carga=c2, opcion=o2, votos=40)
@@ -179,6 +186,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     # votaron 120/120 personas
     VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=0)
+    VotoMesaReportadoFactory(carga=c2, opcion=total, votos=120)
     c1.actualizar_firma()
     c2.actualizar_firma()
     assert c1.es_testigo.exists()
@@ -197,15 +205,15 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     total_positivos = resultados.total_positivos()
 
-    assert total_positivos == 215  # 20 + 5 + 30 + 40 + 20 + 10 + 40 + 50
+    assert total_positivos == 220  # 20 + 5 + 30 + 40 + 5 + 20 + 10 + 40 + 50
 
     # cuentas
     assert positivos[o3.partido]['votos'] == 40 + 50
-    assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'  # (40 + 50) / total_positivos
+    assert positivos[o3.partido]['porcentaje_positivos'] == '40.91'  # (40 + 50) / total_positivos
     assert positivos[o2.partido]['votos'] == 30 + 40
-    assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'  # (30 + 40) / total_positivos
+    assert positivos[o2.partido]['porcentaje_positivos'] == '31.82'  # (30 + 40) / total_positivos
     assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
-    assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'  # (20 + 5 + 10 + 20) / total_positivos
+    assert positivos[o1.partido]['porcentaje_positivos'] == '25.00'  # (20 + 5 + 10 + 20) / total_positivos
 
     # todos los positivos suman 100
     assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
