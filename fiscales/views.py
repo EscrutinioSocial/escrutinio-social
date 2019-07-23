@@ -91,8 +91,8 @@ class QuieroSerFiscal(FormView):
 
     title = "Quiero ser fiscal"
     template_name = 'fiscales/quiero-ser-fiscal.html'
-    model = Fiscal
     form_class = QuieroSerFiscalForm
+    success_url = reverse_lazy('quiero-ser-fiscal-gracias')
 
     def get_form_initial(self, step):
         if step != '0':
@@ -116,35 +116,21 @@ class QuieroSerFiscal(FormView):
         return self.initial_dict.get(step, {})
 
     def form_valid(self, form):
-        if form.is_valid():
-            nuevo_fiscal = form.save(commit=False)
-            nuevo_fiscal.save()
-        return super().form_valid(form)
-
-    def done(self, form_list, **kwargs):
-        data = self.get_all_cleaned_data()
-        dni = data['dni']
-        email = data['email']
-        fiscal = (get_object_or_None(Fiscal, dni=dni) or
-                  get_object_or_None(Fiscal,
-                                     datos_de_contacto__valor=email,
-                                     datos_de_contacto__tipo='email'))
-        if fiscal:
-            fiscal.estado = 'AUTOCONFIRMADO'
-        else:
-            fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=dni)
-
-        fiscal.dni = dni
+        data = form.cleaned_data
+        fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
         fiscal.nombres = data['nombre']
         fiscal.apellido = data['apellido']
-        # fiscal.escuela_donde_vota = data['escuela']
         fiscal.save()
         fiscal.agregar_dato_de_contacto('teléfono', data['telefono'])
-        fiscal.agregar_dato_de_contacto('email', email)
-
-        fiscal.user.set_password(data['new_password1'])
+        fiscal.agregar_dato_de_contacto('email', data['email'])
+        fiscal.user.set_password(data['password'])
         fiscal.user.save()
 
+        self.sendMail(fiscal, data['email'])
+
+        return super().form_valid(form)
+
+    def sendMail(self, fiscal, email):
         body_html = render_to_string(
             'fiscales/email.html', {
                 'fiscal': fiscal,
@@ -165,11 +151,9 @@ class QuieroSerFiscal(FormView):
             html_message=body_html
         )
 
-        return render(self.request, 'formtools/wizard/wizard_done.html', {
-            'fiscal': fiscal, 'email': settings.DEFAULT_FROM_EMAIL,
-            'cell_call': settings.DEFAULT_CEL_CALL, 'cell_local': settings.DEFAULT_CEL_LOCAL,
-            'site_url': settings.FULL_SITE_URL
-        })
+
+def quiero_ser_fiscal_gracias(request,):
+    return render(request, 'fiscales/quiero-ser-fiscal-gracias.html')
 
 
 def confirmar_email(request, uuid):
@@ -351,6 +335,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
         }
     )
 
+
 class ReporteDeProblemaCreateView(CreateView):
     http_method_names = ['post']
     form_class = IdentificacionDeProblemaForm
@@ -479,4 +464,3 @@ class MesaListView(AutocompleteBaseListView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(lugar_votacion__circuito__id=self.request.GET['parent_id'])
-

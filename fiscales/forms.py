@@ -82,12 +82,11 @@ class FiscalForm(forms.ModelForm):
 
 
 class QuieroSerFiscalForm(forms.Form):
-
     email = forms.EmailField(required=True)
     email_confirmacion = forms.EmailField(required=True, label="Confirmar email")
     nombre = forms.CharField(required=True, label="Nombre")
-    nombre_apellido = forms.CharField(required=True, label="Apellido")
-    nombre_dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
+    apellido = forms.CharField(required=True, label="Apellido")
+    dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
     telefono = forms.CharField(label='Teléfono', help_text='Preferentemente celular')
 
     referencia_lugar_provincia = forms.ChoiceField(choices=PROVINCE_CHOICES, label='Provincia')
@@ -117,7 +116,7 @@ class QuieroSerFiscalForm(forms.Form):
 
     layout = Layout(
         Fieldset(
-            'Datos personales', Row('nombre', 'nombre_apellido', 'nombre_dni'),
+            'Datos personales', Row('nombre', 'apellido', 'dni'),
             Row('email', 'email_confirmacion'), Row('password', 'password_confirmacion'), 'telefono'
         ),
         Fieldset(

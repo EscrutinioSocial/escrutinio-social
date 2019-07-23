@@ -13,7 +13,7 @@ from elecciones import urls as elecciones_urls
 from problemas import urls as problemas_urls
 
 from fiscales import urls as fiscales_urls
-from fiscales.views import choice_home, permission_denied, QuieroSerFiscal, confirmar_email
+from fiscales.views import choice_home, permission_denied, QuieroSerFiscal, quiero_ser_fiscal_gracias, confirmar_email
 from fiscales.forms import AuthenticationFormCustomError
 
 from problemas.views import ProblemaCreate
@@ -26,6 +26,7 @@ urlpatterns = [
     url(r'^$', choice_home, name="home"),
     url(r'^permission-denied$', permission_denied, name='permission-denied'),
     url(r'^quiero-ser-fiscal/$', QuieroSerFiscal.as_view(), name='quiero-ser-fiscal'),
+    url(r'^gracias/$', quiero_ser_fiscal_gracias, name='quiero-ser-fiscal-gracias'),
     url(r'^quiero-ser-fiscal/confirmar-email/(?P<uuid>[0-9a-f-]+)$', confirmar_email, name='confirmar-email'),
     url(r'^login/$', auth_views.LoginView.as_view(authentication_form=AuthenticationFormCustomError), name='login'),
 
