@@ -1,11 +1,15 @@
-.selector-tipo-sumarizacion {
-    font-size: 50%;
-    height: 2em;
+nav.topbar .brand-logo {
+  font-size: 1.5rem;
 }
 
-nav.topbar .brand-logo {
-    display: flex;
-    justify-content: space-between;
+.filtros {
+  line-height: 1.5;
+  height: 80px;
+}
+
+.filtros label {
+  color: white;
+  font-weight: 100;
 }
 
 table tbody.resultado_detalle{
@@ -37,9 +41,9 @@ tr.partido > td {
     font-weight: bold;
 }
 
-tr.partido > td.dato { 
+tr.partido > td.dato {
      text-align: right;
-} 
+}
 
 /* Datos para opciones. */
 tr.fila_detalle {
@@ -53,4 +57,3 @@ td.opcion {
 tr.fila_detalle > td.dato {
     text-align: right;
 }
-

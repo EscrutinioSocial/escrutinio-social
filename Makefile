@@ -25,16 +25,19 @@ shell-app:
 shell-db:
 	docker exec --interactive --tty escrutinio-social-db /bin/bash
 
+shell_plus:
+	docker exec --interactive --tty escrutinio-social-app python manage.py shell_plus
+
 log-app:
 	docker-compose logs app
 
 log-db:
 	docker-compose logs db
 
-test: 
+test:
 	docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
 
-test-exec: 
+test-exec:
 	docker-compose exec app pytest --cov=. --cov-report=html --cov-fail-under=52
 
 collectstatic:
@@ -53,13 +56,13 @@ setup-dev-data: migrate
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py loaddata fixtures/dev_data.json"
 
 dump-dev-data:
-	python manage.py dumpdata auth.Group auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json
+	docker exec escrutinio-social-app /bin/sh -c "python manage.py dumpdata auth.Group auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json"
 
 update-models-diagram:
 	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
 
 crawl-resultados:
-	docker exec escrutinio-social-app /bin/sh -c "./crawl_resultados.sh"
+	docker exec escrutinio-social-app /bin/sh -c "./crawl_resultados.sh $(tipoDeAgregacion) $(opcionaConsiderar)"
 
 crawl-resultados-up:
 	docker exec escrutinio-social-app /bin/sh -c "python simple-cors-http-server.py"
@@ -87,7 +90,7 @@ test-e2e-headless:
 #list: ## List what is running of the Development environment
 #	@docker-compose ps
 #
-#build: ## Build the containers of the Development environment not using the cache 
+#build: ## Build the containers of the Development environment not using the cache
 #	@docker-compose build --no-cache
 #
 #run: ## Bring the whole development environment UP
@@ -97,7 +100,7 @@ test-e2e-headless:
 #	@docker-compose down --rmi local -v
 #
 #stop: ## Stop the whole development thingy
-#	@docker-compose down 
+#	@docker-compose down
 #
 #rm: ## Just an alias of the previous one (stop)
 #	stop
@@ -106,12 +109,12 @@ test-e2e-headless:
 #	@docker-compose down --rmi local
 #
 #push: ## Logging in to the ECR and push the Image to it. Usage: make push image=927223451584.dkr.ecr.sa-east-1.amazonaws.com/image_name
-#	@eval $$(aws ecr get-login --no-include-email) 
+#	@eval $$(aws ecr get-login --no-include-email)
 #	@docker push $(image)
 #
 #list_tasks_definitions: ## List the tasks defined in the Cluster
 #	@echo "Listing tasks defined in the Cluster"
-#	@aws ecs list-task-definitions 
+#	@aws ecs list-task-definitions
 #
 #list_tasks: ## List tasks running on the Cluster
 #	@echo "Listing running tasks"

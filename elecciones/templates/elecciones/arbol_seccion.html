@@ -1,0 +1,25 @@
+{% for seccion in secciones %}
+{% if incluir_seccion_politica and seccion.seccion_politica or not incluir_seccion_politica and not seccion.seccion_politica %}
+<ul class="collapsible collapsible-accordion">
+    <li id="seccion-{{seccion.id}}">
+        <div class="collapsible-header">
+            <i class="material-icons">arrow_drop_down</i>
+            <a href="{{ request.path }}?seccion={{ seccion.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                {{ seccion }}
+            </a>
+        </div>
+        <div class="collapsible-body">
+            <ul>
+            {% for circuito in seccion.circuito_set.all %}
+                <li id="circuito-{{circuito.id}}">
+                    <a href="{{ request.path }}?circuito={{ circuito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                        {{ circuito.nombre }}
+                    </a>
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+    </li>
+</ul>
+{% endif %}
+{% endfor %}

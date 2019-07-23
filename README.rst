@@ -51,19 +51,4 @@ Ver `Test <./test.md>`__
 Visualizaciones
 -----------
 
-Para generar las visualizaciones estáticas hacer:
-```
-$ make collectstatic
-$ make crawl-resultados
-```
-
-Para ver las visualizaciones:
-```
-$ make crawl-resultados-up
-```
-y navegar a: http://localhost:8080/crawl-resultados/elecciones/resultados/1.html
-
-Para deployar las visualizaciones en S3:
-* copiar la carpeta static
-* copiar la carpeta crawl-resultados
-* habilitar cors (para que pueda cargar las fonts): https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html
+Ver `Visualizaciones <./visualizaciones.md>`__

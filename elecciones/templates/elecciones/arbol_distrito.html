@@ -1,0 +1,71 @@
+<li><a href="{% url "resultados-categoria" primera_categoria %}">Todo</a></li>
+
+{% for distrito in distritos %}
+<ul class="arbol-distrito collapsible collapsible-accordion">
+    <li id="distrito-{{distrito.id}}">
+        <div class="collapsible-header">
+            <i class="material-icons">arrow_drop_down</i>
+            <a href="{{ request.path }}?distrito={{ distrito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                {{ distrito }}
+            </a>
+        </div>
+        <div class="collapsible-body">
+            {% for seccion_politica in distrito.secciones_politicas.all %}
+            <ul class="collapsible collapsible-accordion">
+                <li id="seccion_politica-{{seccion_politica.id}}">
+                    <div class="collapsible-header">
+                        <i class="material-icons">arrow_drop_down</i>
+                        <a href="{{ request.path }}?seccion_politica={{ seccion_politica.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                            {{ seccion_politica }}
+                        </a>
+                    </div>
+                    <div class="collapsible-body">
+                        {% with seccion_politica.secciones.all as secciones %}
+                        {% include "elecciones/arbol_seccion.html" with incluir_seccion_politica=True %}
+                        {% endwith %}
+                    </div>
+                </li>
+            </ul>
+            {% endfor %}
+            {% with distrito.secciones.all as secciones %}
+            {% include "elecciones/arbol_seccion.html" with incluir_seccion_politica=False %}
+            {% endwith %}
+        </div>
+    </li>
+</ul>
+{% endfor %}
+
+<script type="text/javascript">
+function abrirArbolDistritoSeccionCircuito() {
+  var searchParams = new URLSearchParams(location.search);
+  var $hoja;
+
+  if (searchParams.has('distrito')) {
+    $hoja = $('#distrito-' + searchParams.get('distrito'));
+  }
+  if (searchParams.has('seccion_politica')) {
+    $hoja = $('#seccion_politica-' + searchParams.get('seccion_politica'));
+  }
+  if (searchParams.has('seccion')) {
+    $hoja = $('#seccion-' + searchParams.get('seccion'));
+  }
+  if (searchParams.has('circuito')) {
+    $hoja = $('#circuito-' + searchParams.get('circuito'));
+  }
+  if ($hoja) {
+    $hoja.parents('li').each(function (index) {
+      $(this).find('.collapsible-header i').first().click();
+    })
+    $hoja.find('.collapsible-header i').first().click();
+    $hoja.removeClass('active');
+    $hoja.addClass('selected');
+  }
+}
+
+$(document).ready(function() {
+  $('.collapsible').collapsible();
+
+  // Abre el arbol de distrito, seccion, cirtuito segun la url
+  abrirArbolDistritoSeccionCircuito()
+});
+</script>

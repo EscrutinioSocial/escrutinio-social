@@ -37,15 +37,10 @@ from .models import (
     MesaCategoria,
     Mesa,
 )
-from .resultados import Resultados
+from .resultados import Sumarizador
 
-ESTRUCTURA = {
-    None: Seccion,
-    Seccion: Circuito,
-    Circuito: LugarVotacion,
-    LugarVotacion: Mesa,
-    Mesa: None
-}
+ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
+
 
 class StaffOnlyMixing:
     """
@@ -56,6 +51,7 @@ class StaffOnlyMixing:
     @method_decorator(staff_member_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
+
 
 class VisualizadoresOnlyMixin:
     """
@@ -68,6 +64,7 @@ class VisualizadoresOnlyMixin:
             return super().dispatch(request, *args, **kwargs)
 
         return HttpResponseForbidden()
+
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):
     """
@@ -84,7 +81,7 @@ class LugaresVotacionGeoJSON(GeoJSONLayerView):
     """
 
     model = LugarVotacion
-    properties = ('id', 'color')    # 'popup_html',)
+    properties = ('id', 'color')  # 'popup_html',)
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -143,72 +140,86 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     template_name = "elecciones/resultados.html"
 
     def get(self, request, *args, **kwargs):
-        for nivel in ['mesa', 'lugarvotacion', 'circuito', 'seccion', 'distrito']:
+        nivel_de_agregacion = None
+        ids_a_considerar = None
+        for nivel in ['mesa', 'lugar_de_votacion', 'circuito', 'seccion', 'seccion_politica', 'distrito']:
             if nivel in self.request.GET:
-                kwargs['tipo'] = nivel
-                kwargs['listado'] = self.request.GET.getlist(nivel)
+                nivel_de_agregacion = nivel
+                ids_a_considerar = self.request.GET.getlist(nivel)
 
-        self.resultados = Resultados(kwargs, None) # Por ahora None
+        self.sumarizador = Sumarizador(
+            self.get_tipo_de_agregacion(), self.get_opciones_a_considerar(), nivel_de_agregacion,
+            ids_a_considerar
+        )
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
 
-
     def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
-        return self.resultados.status_filter(categoria, prefix)
+        return self.sumarizador.status_filter(categoria, prefix)
 
     @property
     def filtros(self):
-        return self.resultados.filtros
+        return self.sumarizador.filtros
 
     @lru_cache(128)
     def mesas(self, categoria):
-        return self.resultados.mesas(categoria)
+        return self.sumarizador.mesas(categoria)
 
     @lru_cache(128)
     def electores(self, categoria):
-        return self.resultados.electores(categoria)
+        return self.sumarizador.electores(categoria)
 
     def get_resultados(self, categoria):
-        proyectado = (
-           self.request.method == "GET" and
-           self.request.GET.get('tipodesumarizacion', '1') == str(2) and
-           not self.filtros
-        )
+        # TODO, ¿dónde entra lo proyectado?
+        # proyectado = (
+        #    self.request.method == "GET" and
+        #    self.request.GET.get('tipodesumarizacion', '1') == str(2) and
+        #    not self.filtros
+        # )
+        return self.sumarizador.get_resultados(categoria)
 
-        resultados = self.resultados.get_resultados(categoria, proyectado)
-        result_piechart = None
-        if settings.SHOW_PLOT:
-            result_piechart = [{
-                'key': str(k),
-                'y': v["votos"],
-                'color': k.color if not isinstance(k, str) else '#CCCCCC'
-            } for k, v in resultados['tabla_positivos'].items()]
+    def get_tipo_de_agregacion(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('tipoDeAgregacion', Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas)
 
-        resultados['result_piechart'] = result_piechart
-        return resultados
+    def get_opciones_a_considerar(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
+
+    def get_result_piechart(self, resultados):
+        return [{
+            'key': str(k),
+            'y': v["votos"],
+            'color': k.color if not isinstance(k, str) else '#CCCCCC'
+        } for k, v in resultados['tabla_positivos'].items()]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tipos_sumarizacion'] = Resultados.get_tipos_sumarizacion()
-        context['tipo_sumarizacion_seleccionado'] = self.request.GET.get('tipodesumarizacion', '1')
+        context['tipos_de_agregaciones'] = Sumarizador.TIPOS_DE_AGREGACIONES
+        context['tipos_de_agregaciones_seleccionado'] = self.get_tipo_de_agregacion()
+        context['opciones_a_considerar'] = Sumarizador.OPCIONES_A_CONSIDERAR
+        context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
 
         if self.filtros:
             context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.filtros], " y ")
         else:
             context['para'] = 'todo el país'
 
-        pk = self.kwargs.get('pk', 1)
-        if pk == 1:
-            pk == Categoria.objects.first().id
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            pk = Categoria.objects.first().id
         categoria = get_object_or_404(Categoria, id=pk)
         context['object'] = categoria
         context['categoria_id'] = categoria.id
         context['resultados'] = self.get_resultados(categoria)
         context['show_plot'] = settings.SHOW_PLOT
+
+        # TODO esto no está probado
         if settings.SHOW_PLOT:
-            chart = context['resultados']['result_piechart']
+            chart = self.get_result_piechart(resultados)
+            context['result_piechart'] = chart
             context['chart_values'] = [v['y'] for v in chart]
             context['chart_keys'] = [v['key'] for v in chart]
             context['chart_colors'] = [v['color'] for v in chart]
