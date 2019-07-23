@@ -84,16 +84,16 @@ class FiscalForm(forms.ModelForm):
 class QuieroSerFiscalForm(forms.Form):
     email = forms.EmailField(required=True)
     email_confirmacion = forms.EmailField(required=True, label="Confirmar email")
-    nombre = forms.CharField(required=True, label="Nombre")
-    apellido = forms.CharField(required=True, label="Apellido")
+    apellido = forms.CharField(required=True, label="Apellido", max_length=50)
+    nombres = forms.CharField(required=True, label="Nombres", max_length=100)
     dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
     telefono = forms.CharField(label='Teléfono', help_text='Preferentemente celular')
 
-    distrito = forms.ChoiceField(choices=PROVINCE_CHOICES, label='Provincia')
-    seccion = forms.CharField(label="Departamento")
+    distrito = forms.ChoiceField(required=True, choices=PROVINCE_CHOICES, label='Provincia')
+    seccion = forms.CharField(required=True, label="Departamento")
 
-    referido_por = forms.CharField(required=False, label="Referido por")
-    referido_codigo = forms.CharField(
+    referido_por_nombres = forms.CharField(required=False, label="Referido por", max_length=100)
+    referido_por_codigo = forms.CharField(
         required=False,
         label="Código de referencia",
         help_text="Si no sabes qué es, dejalo en blanco"
@@ -113,15 +113,15 @@ class QuieroSerFiscalForm(forms.Form):
     layout = Layout(
         Fieldset(
             'Datos personales',
-            Row('nombre', 'apellido', 'dni'),
+            Row('nombres', 'apellido', 'dni'),
             Row('email', 'email_confirmacion'),
             Row('password', 'password_confirmacion'),
             'telefono',
-            Row('distrito', 'seccion'),
+            Row('distrito', 'seccion')
         ),
         Fieldset(
             'Referencia',
-            Row('referido_por', 'referido_codigo')
+            Row('referido_por_nombres', 'referido_por_codigo')
         )
     )
 

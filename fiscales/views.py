@@ -97,8 +97,11 @@ class QuieroSerFiscal(FormView):
     def form_valid(self, form):
         data = form.cleaned_data
         fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
-        fiscal.nombres = data['nombre']
+        fiscal.nombres = data['nombres']
         fiscal.apellido = data['apellido']
+        fiscal.seccion = data['seccion']
+        fiscal.referido_por_nombres = data['referido_por_nombres']
+        fiscal.referido_por_codigo = data['referido_por_codigo']
         fiscal.save()
         fiscal.agregar_dato_de_contacto('teléfono', data['telefono'])
         fiscal.agregar_dato_de_contacto('email', data['email'])
