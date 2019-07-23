@@ -25,7 +25,7 @@ class Distrito(models.Model):
 
     **Distrito** -> Sección -> Circuito -> Lugar de votación -> Mesa
     """
-    numero = models.PositiveIntegerField(null=True)
+    numero = models.CharField(null=True, max_length=10)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
@@ -77,10 +77,10 @@ class Seccion(models.Model):
     Distrito -> **Sección** -> Circuito -> Lugar de votación -> Mesa
     """
     distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE, related_name='secciones')
-    seccion_politica = models.ForeignKey(SeccionPolitica, null=True, blank=True,
-                                         on_delete=models.CASCADE, related_name='secciones'
-                                         )
-    numero = models.PositiveIntegerField(null=True)
+    seccion_politica = models.ForeignKey(
+        SeccionPolitica, null=True, blank=True, on_delete=models.CASCADE, related_name='secciones'
+    )
+    numero = models.CharField(null=True, max_length=10)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     proyeccion_ponderada = models.BooleanField(
@@ -570,7 +570,9 @@ class Eleccion(models.Model):
     fecha = models.DateTimeField()
     nombre = models.CharField(max_length=100)
     # Se usan para referencia en otros lugares, no aquí.
-    NIVELES_AGREGACION = Choices('distrito', 'seccion_politica', 'seccion', 'circuito', 'lugar_de_votacion', 'mesa')
+    NIVELES_AGREGACION = Choices(
+        'distrito', 'seccion_politica', 'seccion', 'circuito', 'lugar_de_votacion', 'mesa'
+    )
 
     def __str__(self):
         return f'{self.nombre}'
@@ -669,19 +671,14 @@ class Categoria(models.Model):
 
 
 class CategoriaOpcion(models.Model):
-
-    class Meta:
-        verbose_name = 'Asociación Categoría-Opción'
-        verbose_name_plural = 'Asociaciones Categoría-Opción'
-
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     opcion = models.ForeignKey('Opcion', on_delete=models.CASCADE)
     prioritaria = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('categoria', 'opcion')
-        verbose_name = 'Categoría opción'
-        verbose_name_plural = "Categorías opciones"
+        verbose_name = 'Asociación Categoría-Opción'
+        verbose_name_plural = 'Asociaciones Categoría-Opción'
         ordering = ['categoria']
 
     def __str__(self):
