@@ -163,10 +163,19 @@ def test_efecto_marcar_fiscal_como_troll(db):
     carga_2_2_4 = nueva_carga(mesa_categoria_2_2, fiscal_4, [30, 20, 10])
     mesa_categoria_3_1 = MesaCategoria.objects.filter(mesa=mesa_3, categoria=categoria_1).first()
     carga_3_1_2 = nueva_carga(mesa_categoria_3_1, fiscal_2, [30, 20, 10])
-    carga_2_2_4 = nueva_carga(mesa_categoria_3_1, fiscal_4, [30, 20, 10])
+    carga_3_1_4 = nueva_carga(mesa_categoria_3_1, fiscal_4, [30, 20, 10])
 
-    assert not(any(map(lambda ident : ident.invalidada, Identificacion.objects.all())))
-    assert not(any(map(lambda carga: carga.invalidada, Carga.objects.all())))
+    assert Identificacion.objects.filter(invalidada=True).count() == 0
+    assert Carga.objects.filter(invalidada=True).count() == 0
+    assert Identificacion.objects.filter(fiscal=fiscal_1).count() == 2
+    assert Carga.objects.filter(fiscal=fiscal_1).count() == 3
 
+    # hacemos una marca explicita de troll, tienen que quedar invalidadas las cargas e identificaciones que hizo,
+    # y ninguna mas
+    fiscal_1.marcar_como_troll(fiscal_4)
+    assert Identificacion.objects.filter(invalidada=True).count() == 2
+    assert Carga.objects.filter(invalidada=True).count() == 3
+    assert all(map(lambda ident : ident.invalidada, Identificacion.objects.filter(fiscal=fiscal_1).all()))
+    assert all(map(lambda carga : carga.invalidada, Carga.objects.filter(fiscal=fiscal_1).all()))
 
     

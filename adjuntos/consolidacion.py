@@ -237,6 +237,8 @@ def consumir_novedades_identificacion():
 @transaction.atomic
 def consumir_novedades_carga():
     a_procesar = Carga.objects.select_for_update().filter(procesada=False)
+    ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+    print(ids_a_procesar)
 
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
         cargas__in=Subquery(a_procesar.values('id'))
@@ -245,7 +247,7 @@ def consumir_novedades_carga():
         consolidar_cargas(mesa_categoria_con_novedades)
 
     # Todas procesadas
-    procesadas = a_procesar.update(procesada=True)
+    procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
 
 

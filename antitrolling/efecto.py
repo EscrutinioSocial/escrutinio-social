@@ -56,7 +56,7 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
     """
 
     testigo = mesa_categoria.carga_testigo
-    for carga in mesa_categoria.cargas.filter(invalidada=False, procesada=False):
+    for carga in mesa_categoria.cargas.filter(invalidada=False):
         if (carga.tipo == testigo.tipo and carga.firma != testigo.firma):
             diferencia = diferencia_opciones(carga, testigo)
             aumentar_scoring_troll_carga(
