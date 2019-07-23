@@ -747,6 +747,15 @@ class Carga(TimeStampedModel):
         """ Devuelve una lista de los votos para cada opción. """
         return self.reportados.values_list('opcion', 'votos')
 
+    def save(self, *args, **kwargs):
+        """
+        si el fiscal es troll, la carga nace invalidada y ya procesada
+        """
+        if self.id is None and self.fiscal is not None and self.fiscal.troll:
+            self.invalidada = True
+            self.procesada = True
+        super().save(*args, **kwargs)
+
     def __str__(self):
         str_invalidada = ' (invalidada) ' if self.invalidada else ' '
         return f'carga{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'

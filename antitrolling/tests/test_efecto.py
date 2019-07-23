@@ -3,7 +3,8 @@ import pytest
 from django.conf import settings
 
 from elecciones.models import MesaCategoria, Carga
-from adjuntos.models import Identificacion
+from adjuntos.models import Identificacion, Attachment
+from adjuntos.consolidacion import consumir_novedades
 from antitrolling.efecto import (
   efecto_scoring_troll_asociacion_attachment, efecto_scoring_troll_confirmacion_carga,
   diferencia_opciones
@@ -179,3 +180,45 @@ def test_efecto_marcar_fiscal_como_troll(db):
     assert all(map(lambda carga : carga.invalidada, Carga.objects.filter(fiscal=fiscal_1).all()))
 
     
+def test_efecto_de_ser_troll(db):
+    """
+    Se comprueba que las cargas e identificaciones que realiza un fiscal 
+    luego de ser detectado como troll, nacen invalidadas y procesadas.
+    """
+
+    # escenario
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+    categoria = nueva_categoria(["o1", "o2", "o3"])
+    mesa = MesaFactory(categorias=[categoria])
+    mesa_categoria = MesaCategoria.objects.filter(mesa=mesa).first()
+    attach_1 = AttachmentFactory()
+    attach_2 = AttachmentFactory()
+
+    # marco al fiscal_1 como troll
+    fiscal_1.marcar_como_troll(fiscal_2)
+
+    # despues, una carga, una identificacion y un reporte de problema cada uno
+    ident_1 = identificar(attach_1, mesa, fiscal_1)
+    ident_2 = identificar(attach_1, mesa, fiscal_2)
+    problema_1 = reportar_problema_attachment(attach_2, fiscal_1)
+    problema_2 = reportar_problema_attachment(attach_2, fiscal_2)
+    carga_1 = nueva_carga(mesa_categoria, fiscal_1, [30, 20, 10])
+    carga_2 = nueva_carga(mesa_categoria, fiscal_2, [30, 20, 10])
+
+    # las cargas e identificaciones que hizo el fiscal 1 estan invalidadas y procesadas,
+    # las que hizo el fiscal 2 no
+    for accion in [ident_1, problema_1, carga_1]:
+      assert accion.invalidada
+      assert accion.procesada
+    for accion in [ident_2, problema_2, carga_2]:
+      assert not accion.invalidada
+      assert not accion.procesada
+
+    # consolido cargas e identificaciones. Ni el attachment ni la mesa_categoria deberian estar consolidados.
+    consumir_novedades()
+    for db_object in [mesa_categoria, attach_1, attach_2]:
+      db_object.refresh_from_db()
+    assert mesa_categoria.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert attach_1.status == Attachment.STATUS.sin_identificar
+    assert attach_2.status == Attachment.STATUS.sin_identificar

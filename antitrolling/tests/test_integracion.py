@@ -143,7 +143,7 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db):
 
     assert Carga.objects.filter(procesada=False).count() == 9
     assert Carga.objects.filter(invalidada=True).count() == 0
-    assert fiscal_1.troll == False
+    assert not fiscal_1.troll 
 
     # hasta aca: (1,1), (1,2) y (2,1) consolidadas, (2,2) en conflicto, fiscal_1 tiene 20 de scoring troll
     consumir_novedades_carga()
@@ -152,7 +152,7 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db):
         assert mesa_categoria.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2_2.status == MesaCategoria.STATUS.total_en_conflicto
     assert fiscal_1.scoring_troll() == 20
-    assert fiscal_1.troll == False
+    assert not fiscal_1.troll 
     assert Carga.objects.filter(procesada=False).count() == 0
     assert Carga.objects.filter(invalidada=True).count() == 0
 
@@ -164,7 +164,7 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db):
     consumir_novedades_carga()
     refrescar_data()
     assert mesa_categoria_2_2.status == MesaCategoria.STATUS.total_consolidada_dc
-    assert fiscal_1.troll == True
+    assert fiscal_1.troll
     assert fiscal_1.scoring_troll() == 60
     assert Carga.objects.filter(invalidada=True).count() == 3
     assert Carga.objects.filter(procesada=False).count() == 3
@@ -241,7 +241,7 @@ def test_cargas_troll_no_consolidadas(db):
 
     assert Carga.objects.filter(procesada=False).count() == 14
     assert Carga.objects.filter(invalidada=True).count() == 0
-    assert fiscal_1.troll == False
+    assert not fiscal_1.troll 
 
     # hasta aca: (1,1) consolidada; (3,2) y (4,1) sin consolidar; (1,2), (2,1), (2,2), (3,1) en conflicto
     # fiscal_1 tiene 20 de scoring troll
@@ -255,7 +255,7 @@ def test_cargas_troll_no_consolidadas(db):
     assert mesa_categoria_3_2.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mesa_categoria_4_1.status == MesaCategoria.STATUS.total_sin_consolidar
     assert fiscal_1.scoring_troll() == 20
-    assert fiscal_1.troll == False
+    assert not fiscal_1.troll 
     assert Carga.objects.filter(procesada=False).count() == 0
     assert Carga.objects.filter(invalidada=True).count() == 0
 
@@ -267,7 +267,7 @@ def test_cargas_troll_no_consolidadas(db):
     consumir_novedades_carga()
     refrescar_data()
     assert mesa_categoria_2_2.status == MesaCategoria.STATUS.total_consolidada_dc
-    assert fiscal_1.troll == True
+    assert fiscal_1.troll 
     assert fiscal_1.scoring_troll() == 60
     assert Carga.objects.filter(invalidada=True).count() == 5
     assert Carga.objects.filter(procesada=False).count() == 5
@@ -362,7 +362,7 @@ def test_identificaciones_troll(db):
     assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2.carga_testigo is not None
     assert mesa_categoria_2.orden_de_carga is not None
-    assert fiscal_1.troll == False
+    assert not fiscal_1.troll 
     assert Identificacion.objects.filter(procesada=False).count() == 0
     assert Identificacion.objects.filter(invalidada=True).count() == 0
     assert Carga.objects.filter(procesada=False).count() == 0
@@ -384,7 +384,7 @@ def test_identificaciones_troll(db):
     assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2.carga_testigo is not None
     assert mesa_categoria_2.orden_de_carga is not None
-    assert fiscal_1.troll == True
+    assert fiscal_1.troll 
     assert Identificacion.objects.filter(procesada=False).count() == 3
     assert Identificacion.objects.filter(invalidada=True).count() == 3
     assert all(map(lambda ident: ident.invalidada, Identificacion.objects.filter(fiscal=fiscal_1).all()))
@@ -405,7 +405,7 @@ def test_identificaciones_troll(db):
     assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2.carga_testigo is not None
     assert mesa_categoria_2.orden_de_carga is not None
-    assert fiscal_1.troll == True
+    assert fiscal_1.troll 
     assert Identificacion.objects.filter(procesada=False).count() == 0
     assert Identificacion.objects.filter(invalidada=True).count() == 3
     assert Carga.objects.filter(procesada=False).count() == 2
@@ -422,7 +422,7 @@ def test_identificaciones_troll(db):
     assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2.carga_testigo is not None
     assert mesa_categoria_2.orden_de_carga is not None
-    assert fiscal_1.troll == True
+    assert fiscal_1.troll 
     assert Identificacion.objects.filter(procesada=False).count() == 0
     assert Identificacion.objects.filter(invalidada=True).count() == 3
     assert Carga.objects.filter(procesada=False).count() == 0

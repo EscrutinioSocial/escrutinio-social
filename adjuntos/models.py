@@ -251,3 +251,12 @@ class Identificacion(TimeStampedModel):
         self.invalidada = True
         self.procesada = False
         self.save(update_fields=['invalidada', 'procesada'])
+
+    def save(self, *args, **kwargs):
+        """
+        si el fiscal es troll, la identificacion nace invalidada y ya procesada
+        """
+        if self.id is None and self.fiscal is not None and self.fiscal.troll:
+            self.invalidada = True
+            self.procesada = True
+        super().save(*args, **kwargs)
