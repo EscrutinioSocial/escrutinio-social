@@ -70,7 +70,6 @@ function setAutocompleteFromDistrito(seccionAutocomplete) {
 }
 
 $(document).ready(function(){
-  debugger;
   var seccionAutocomplete = buildAutocomplete('seccion', '{% url 'autocomplete-seccion' %}');
   setAutocompleteFromDistrito(seccionAutocomplete);
 });
