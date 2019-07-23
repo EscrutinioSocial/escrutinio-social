@@ -5,7 +5,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.core.validators import MaxValueValidator
 from django.db import models
-from django.db.models import Max, Sum, Count, Q
+from django.db.models import Sum, Count, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -25,7 +25,7 @@ class Distrito(models.Model):
 
     **Distrito** -> Sección -> Circuito -> Lugar de votación -> Mesa
     """
-    numero = models.PositiveIntegerField(null=True)
+    numero = models.CharField(null=True, max_length=10)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
@@ -50,7 +50,7 @@ class Seccion(models.Model):
     distrito = models.ForeignKey(
         Distrito, on_delete=models.CASCADE, related_name='secciones'
     )
-    numero = models.PositiveIntegerField(null=True)
+    numero = models.CharField(null=True, max_length=10)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     proyeccion_ponderada = models.BooleanField(
@@ -463,7 +463,7 @@ class Mesa(models.Model):
         ).distinct().values_list('opcion', 'votos')
 
     def __str__(self):
-        #return f'nro {self.numero} - circ. {self.circuito}'
+        # return f'nro {self.numero} - circ. {self.circuito}'
         return f'{self.numero}'
 
     def nombre_completo(self):
@@ -666,15 +666,14 @@ class Categoria(models.Model):
 
 
 class CategoriaOpcion(models.Model):
-    class Meta:
-        verbose_name = 'Asociación Categoría-Opción'
-        verbose_name_plural = 'Asociaciones Categoría-Opción'
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     opcion = models.ForeignKey('Opcion', on_delete=models.CASCADE)
     prioritaria = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('categoria', 'opcion')
+        verbose_name = 'Asociación Categoría-Opción'
+        verbose_name_plural = 'Asociaciones Categoría-Opción'
 
     def __str__(self):
         prioritaria = ' (es prioritaria)' if self.prioritaria else ''

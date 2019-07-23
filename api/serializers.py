@@ -1,12 +1,22 @@
+from collections import defaultdict
 from rest_framework import serializers
-from elecciones.models import (
-    Categoria, Opcion
-)
-from fiscales.models import Fiscal
+
+from adjuntos.models import Attachment
+from elecciones.models import Categoria, Opcion
 
 
 class ActaSerializer(serializers.Serializer):
-    foto = serializers.ImageField(help_text='La foto del acta')
+    foto = serializers.ImageField(help_text='La foto del acta', write_only=True)
+    foto_digest = serializers.CharField(read_only=True)
+
+    def save(self):
+        foto = self.validated_data['foto']
+
+        attachment = Attachment()
+        attachment.foto.save(foto.name, foto, save=False)
+        attachment.save()
+
+        return attachment
 
 
 class MesaSerializer(serializers.Serializer):
@@ -16,16 +26,31 @@ class MesaSerializer(serializers.Serializer):
     codigo_mesa = serializers.CharField()
 
 
+class VotosListSerializer(serializers.ListSerializer):
+    def validate(self, data):
+        opciones = defaultdict(list)
+        for votos in data:
+            opciones[votos['categoria']].append(votos['opcion'])
+
+        for categoria, opciones in opciones.items():
+            prioritarias = categoria.opciones_actuales(solo_prioritarias=True)
+            faltantes = [opc for opc in prioritarias if opc not in opciones]
+            if faltantes:
+                raise serializers.ValidationError(
+                    'Se deben cargar todas las opciones prioritarias para cada categoría.'
+                )
+
+        return data
+
+
 class VotoSerializer(serializers.Serializer):
-    id_categoria = serializers.PrimaryKeyRelatedField(
-        queryset=Categoria.objects.all()
-    )
-    id_opcion = serializers.PrimaryKeyRelatedField(
-        queryset=Opcion.objects.all()
-    )
-    votos = serializers.IntegerField(
-        min_value=0
-    )
+    categoria = serializers.PrimaryKeyRelatedField(queryset=Categoria.objects.all())
+    opcion = serializers.PrimaryKeyRelatedField(queryset=Opcion.objects.all())
+    votos = serializers.IntegerField(min_value=0)
+
+    class Meta:
+        list_serializer_class = VotosListSerializer
+
 
 class ListarCategoriasQuerySerializer(serializers.Serializer):
     prioridad = serializers.IntegerField(default=2)
