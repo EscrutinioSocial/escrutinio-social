@@ -9,7 +9,7 @@ from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
-from django.views.generic.edit import UpdateView, CreateView
+from django.views.generic.edit import UpdateView, CreateView, FormView
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -29,7 +29,6 @@ from elecciones.models import (
 )
 from .acciones import siguiente_accion
 
-from formtools.wizard.views import SessionWizardView
 from django.template.loader import render_to_string
 from html2text import html2text
 from django.core.mail import send_mail
@@ -37,9 +36,7 @@ from sentry_sdk import capture_exception
 from .forms import (
     MisDatosForm,
     votomesareportadoformset_factory,
-    QuieroSerFiscal1,
-    QuieroSerFiscal2,
-    QuieroSerFiscal4,
+    QuieroSerFiscalForm,
 )
 from contacto.views import ConContactosMixin
 from problemas.models import Problema
@@ -47,6 +44,7 @@ from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
 
+from material import Layout, Row, LayoutMixin
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
@@ -89,13 +87,12 @@ class BaseFiscal(LoginRequiredMixin, DetailView):
             raise Http404('no está registrado como fiscal')
 
 
-class QuieroSerFiscal(SessionWizardView):
-    form_list = [
-        QuieroSerFiscal1,
-        QuieroSerFiscal2,
-        #  QuieroSerFiscal3,
-        QuieroSerFiscal4
-    ]
+class QuieroSerFiscal(FormView):
+
+    title = "Quiero ser fiscal"
+    template_name = 'fiscales/quiero-ser-fiscal.html'
+    model = Fiscal
+    form_class = QuieroSerFiscalForm
 
     def get_form_initial(self, step):
         if step != '0':
@@ -117,6 +114,12 @@ class QuieroSerFiscal(SessionWizardView):
             }
 
         return self.initial_dict.get(step, {})
+
+    def form_valid(self, form):
+        if form.is_valid():
+            nuevo_fiscal = form.save(commit=False)
+            nuevo_fiscal.save()
+        return super().form_valid(form)
 
     def done(self, form_list, **kwargs):
         data = self.get_all_cleaned_data()

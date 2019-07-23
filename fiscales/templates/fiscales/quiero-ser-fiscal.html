@@ -1,0 +1,36 @@
+{% extends "fiscales/base.html" %}
+{% load i18n material_form material_frontend %}
+
+{% block page_title %}Quiero ser fiscal{% endblock %}
+
+{% block left-panel %}
+<div class="card">
+
+    <div class="card-content">
+
+        <div class="card-title">
+            {% block card-title %}Necesitamos algunos datos{% endblock card-title %}
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {# FIXME django-material desactiva el atributo multiple del filefield #}
+            {# {% form  %}{% endform %} #}
+            {% form %}
+            {% part form.nombre prefix %}<i class="material-icons prefix">account_box</i>{% endpart %}
+            {% part form.email prefix %}<i class="material-icons prefix">email</i>{% endpart %}
+            {% part form.password prefix %}<i class="material-icons prefix">lock</i>{% endpart %}
+            {% part form.telefono prefix %}<i class="material-icons prefix">phone_android</i>{% endpart %}
+            {% endform %}
+            <div class="card-action">
+                <div class="right-align">
+                    {% block submit_row %}
+                    <button type="submit" class="waves-effect waves-light btn white-text">Finalizar</button>
+                    {% endblock %}
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

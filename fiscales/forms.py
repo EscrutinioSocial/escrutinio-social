@@ -1,10 +1,10 @@
 from functools import partial
 from django import forms
 from django.forms import modelformset_factory, BaseModelFormSet
-from material import Layout, Row
+from material import Layout, Row, Fieldset
 from .models import Fiscal
 from elecciones.models import VotoMesaReportado, Categoria, Opcion
-from localflavor.ar.forms import ARDNIField
+from localflavor.ar.forms import ARDNIField, PROVINCE_CHOICES
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import ValidationError
@@ -18,7 +18,8 @@ class AuthenticationFormCustomError(AuthenticationForm):
             'Por favor introduzca un nombre de usuario y una contraseña correctos. '
             'Prueba tu DNI o teléfono sin puntos, guiones ni espacios.'
         ),
-        'inactive': _("This account is inactive."),
+        'inactive':
+        _("This account is inactive."),
     }
 
     def __init__(self, *args, **kwargs):
@@ -43,11 +44,14 @@ class FiscalForm(forms.ModelForm):
 
 
 class MisDatosForm(FiscalForm):
+
     class Meta:
         model = Fiscal
         fields = [
-            'nombres', 'apellido',
-            'tipo_dni', 'dni',
+            'nombres',
+            'apellido',
+            'tipo_dni',
+            'dni',
         ]
 
 
@@ -55,13 +59,11 @@ class FiscalFormSimple(FiscalForm):
 
     class Meta:
         model = Fiscal
-        fields = [
-            'nombres', 'apellido',
-            'dni'
-        ]
+        fields = ['nombres', 'apellido', 'dni']
 
 
 class CustomModelChoiceField(forms.ModelChoiceField):
+
     def label_from_instance(self, obj):
         return obj.label_from_instance
 
@@ -79,34 +81,58 @@ class FiscalForm(forms.ModelForm):
         exclude = []
 
 
-class QuieroSerFiscal1(forms.Form):
-    dni = ARDNIField(required=True, help_text='Ingresá tu Nº de documento')
-    email = forms.EmailField(required=True)
-    email2 = forms.EmailField(required=True, label="Confirmar email")
+class QuieroSerFiscalForm(forms.Form):
 
-    layout = Layout('dni',
-                    Row('email', 'email2'))
+    email = forms.EmailField(required=True)
+    email_confirmacion = forms.EmailField(required=True, label="Confirmar email")
+    nombre = forms.CharField(required=True, label="Nombre")
+    nombre_apellido = forms.CharField(required=True, label="Apellido")
+    nombre_dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
+    telefono = forms.CharField(label='Teléfono', help_text='Preferentemente celular')
+
+    referencia_lugar_provincia = forms.ChoiceField(choices=PROVINCE_CHOICES, label='Provincia')
+    referencia_lugar_departamento = forms.CharField(label="Departamento")
+
+    referencia_organizacion = forms.CharField(label="Organizacion")
+    referencia_referente = forms.CharField(label="Referente")
+
+    referencia_codigo = forms.CharField(
+        label="Código de referencia", help_text="Si no sabes qué es, dejalo en blanco"
+    )
+
+    error_messages = {
+        'password_mismatch': _("The two password fields didn't match."),
+        'telefono_invalido': 'No es un teléfono válido'
+    }
+    password = forms.CharField(
+        label=_("New password"),
+        widget=forms.PasswordInput,
+        strip=False,
+    )
+    password_confirmacion = forms.CharField(
+        label=_("New password confirmation"),
+        strip=False,
+        widget=forms.PasswordInput,
+    )
+
+    layout = Layout(
+        Fieldset(
+            'Datos personales', Row('nombre', 'nombre_apellido', 'nombre_dni'),
+            Row('email', 'email_confirmacion'), Row('password', 'password_confirmacion'), 'telefono'
+        ),
+        Fieldset(
+            'Referencia', Row('referencia_lugar_provincia', 'referencia_lugar_departamento'),
+            Row('referencia_referente', 'referencia_organizacion', 'referencia_codigo')
+        )
+    )
 
     def clean(self):
         cleaned_data = super().clean()
         email = cleaned_data.get('email')
-        email2 = cleaned_data.get('email2')
+        email2 = cleaned_data.get('email_confirmacion')
         if email and email2 and email != email2:
             self.add_error('email', 'Los emails no coinciden')
-            self.add_error('email2', 'Los emails no coinciden')
-
-
-class QuieroSerFiscal2(forms.ModelForm):
-    nombre = forms.CharField()
-    apellido = forms.CharField()
-    telefono = forms.CharField(
-        label='Teléfono', help_text='Preferentemente celular')
-
-    layout = Layout(Row('nombre', 'apellido'), 'telefono',)
-
-    class Meta:
-        model = Fiscal
-        fields = ['nombre', 'apellido', 'telefono']
+            self.add_error('email_confirmacion', 'Los emails no coinciden')
 
     def clean_telefono(self):
         valor = self.cleaned_data['telefono']
@@ -116,25 +142,9 @@ class QuieroSerFiscal2(forms.ModelForm):
             raise forms.ValidationError('No es un teléfono válido')
         return valor
 
-
-class QuieroSerFiscal4(forms.Form):
-    error_messages = {
-        'password_mismatch': _("The two password fields didn't match."),
-    }
-    new_password1 = forms.CharField(
-        label=_("New password"),
-        widget=forms.PasswordInput,
-        strip=False,
-    )
-    new_password2 = forms.CharField(
-        label=_("New password confirmation"),
-        strip=False,
-        widget=forms.PasswordInput,
-    )
-
     def clean_new_password2(self):
-        password1 = self.cleaned_data.get('new_password1')
-        password2 = self.cleaned_data.get('new_password2')
+        password1 = self.cleaned_data.get('password')
+        password2 = self.cleaned_data.get('password_confirmacion')
         if password1 and password2:
             if password1 != password2:
                 raise forms.ValidationError(
