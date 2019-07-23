@@ -1,6 +1,15 @@
+nav.topbar .brand-logo {
+  font-size: 1.5rem;
+}
+
 .filtros {
   line-height: 1.5;
   height: 80px;
+}
+
+.filtros label {
+  color: white;
+  font-weight: 100;
 }
 
 table tbody.resultado_detalle{

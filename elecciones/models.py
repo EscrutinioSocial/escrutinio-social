@@ -40,6 +40,7 @@ class Distrito(models.Model):
     def nombre_completo(self):
         return self.nombre
 
+
 class SeccionPolitica(models.Model):
     """
     Define la sección política, que es una agrupación de nuestras secciones electorales,
@@ -77,8 +78,8 @@ class Seccion(models.Model):
     """
     distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE, related_name='secciones')
     seccion_politica = models.ForeignKey(SeccionPolitica, null=True, blank=True,
-        on_delete=models.CASCADE, related_name='secciones'
-    )
+                                         on_delete=models.CASCADE, related_name='secciones'
+                                         )
     numero = models.PositiveIntegerField(null=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
@@ -106,7 +107,10 @@ class Seccion(models.Model):
         return Mesa.objects.filter(lugar_votacion__circuito__seccion=self, categorias=categoria)
 
     def nombre_completo(self):
-        return f"{self.distrito.nombre_completo()} - {self.nombre}"
+        if (self.seccion_politica):
+            return f"{self.seccion_politica.nombre_completo()} - {self.nombre}"
+        else:
+            return f"{self.distrito.nombre_completo()} - {self.nombre}"
 
 
 class Circuito(models.Model):
@@ -472,7 +476,7 @@ class Mesa(models.Model):
         ).distinct().values_list('opcion', 'votos')
 
     def __str__(self):
-        #return f'nro {self.numero} - circ. {self.circuito}'
+        # return f'nro {self.numero} - circ. {self.circuito}'
         return f'{self.numero}'
 
     def nombre_completo(self):
