@@ -1,7 +1,7 @@
 import pandas as pd
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-
+import math
 from elecciones.models import Mesa, Carga, VotoMesaReportado, Opcion
 from django.db import transaction
 from django.db.utils import IntegrityError
@@ -164,6 +164,9 @@ class CSVImporter:
                                           self.opcion_sobres)
                 else:
                     cantidad_votos = fila[mesa_columna]
+                    if not cantidad_votos or math.isnan(cantidad_votos):
+                        # La celda está vacía.
+                        continue
                     # Buscamos este nro de lista dentro de las opciones asociadas a
                     # esta categoría.
                     match_opcion = [una_opcion for una_opcion in categoria_bd.opciones.all()
@@ -200,7 +203,7 @@ class CSVImporter:
         # Ahora, en los tests puede no darse.
         if not self.carga_parcial:
             return
-        
+
         for voto_mesa_reportado_parcial in self.carga_parcial.reportados.all():
             voto_mesa_reportado_total = VotoMesaReportado.objects.create(
                 votos = voto_mesa_reportado_total.votos,

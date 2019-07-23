@@ -99,6 +99,7 @@ def carga_inicial(db):
     sobres = OpcionFactory(orden=1, codigo='0', nombre_corto="sobres", tipo='metadata')
     o1 = OpcionFactory(orden=3, codigo='A')
     o2 = OpcionFactory(orden=2, codigo='B')
+    o3 = OpcionFactory(orden=4, codigo='C')
     categorias = []
     for categoria in CATEGORIAS:
         categoria_bd = CategoriaFactory(nombre=categoria[0])
@@ -108,6 +109,7 @@ def carga_inicial(db):
         if categoria[0] == 'Presidente y vice':
             CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=True, opcion=votos)
             CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=True, opcion=sobres)
+            CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=True, opcion=o3)
     MesaFactory(numero='4012', lugar_votacion__circuito=circ, electores=100, circuito=circ,
                 categorias=categorias)
 
@@ -143,11 +145,15 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica
     # ya que hay dos opciones y 7 categorias prioritarias
     assert len(votos_carga_parcial) == 14
 
-    # Todo lo que está en carga total también está en carga parcial.
-    import ipdb; ipdb.set_trace()
-    for voto in votos_carga_parcial:
-        assert VotoMesaReportado.objects.filter(carga__in=cargas_totales, votos=voto.votos,
-                    opcion=voto.opcion).exists()
+    # Todo lo que está en carga total también está en carga parcial para la misma categoría.
+    for carga_parcial in cargas_parciales:
+        cargas_totales_misma_mc = cargas_totales.filter(mesa_categoria=carga_parcial.mesa_categoria)
+        if cargas_totales_misma_mc.count() == 0:
+            continue
+        carga_total_misma_mc = cargas_totales_misma_mc.first()
+        for voto in carga_parcial.reportados():
+            assert VotoMesaReportado.objects.filter(carga=carga_total_misma_mc, votos=voto.votos,
+                        opcion=voto.opcion).exists()
 
 
 def test_procesar_csv_informacion_valida_con_metadata_genera_resultados(db, usr_unidad_basica,
@@ -169,3 +175,19 @@ def test_procesar_csv_informacion_valida_con_metadata_genera_resultados(db, usr_
     votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=carga_parcial).all()
     # ya que hay dos opciones y 7 categorias prioritarias y 2 opciones de metadata
     assert len(votos_carga_parcial) == 16
+
+def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unidad_basica, carga_inicial):
+    CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_copia_parciales_a_totales.csv',
+        usr_unidad_basica).procesar()
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total).all()
+    cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial).all()
+
+    # Todo lo que está en carga total también está en carga parcial para la misma categoría.
+    for carga_parcial in cargas_parciales:
+        cargas_totales_misma_mc = cargas_totales.filter(mesa_categoria=carga_parcial.mesa_categoria)
+        if cargas_totales_misma_mc.count() == 0:
+            continue
+        carga_total_misma_mc = cargas_totales_misma_mc.first()
+        for voto in carga_parcial.reportados():
+            assert VotoMesaReportado.objects.filter(carga=carga_total_misma_mc, votos=voto.votos,
+                        opcion=voto.opcion).exists()
