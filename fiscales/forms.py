@@ -141,16 +141,16 @@ class QuieroSerFiscalForm(forms.Form):
             raise forms.ValidationError('No es un teléfono válido')
         return valor
 
-    def clean_new_password2(self):
-        password1 = self.cleaned_data.get('password')
-        password2 = self.cleaned_data.get('password_confirmacion')
-        if password1 and password2:
-            if password1 != password2:
+    def clean_password_confirmacion(self):
+        password = self.cleaned_data.get('password')
+        password_confirmacion = self.cleaned_data.get('password_confirmacion')
+        if password and password_confirmacion:
+            if password != password_confirmacion:
                 raise forms.ValidationError(
                     self.error_messages['password_mismatch'],
                     code='password_mismatch',
                 )
-        return password2
+        return password_confirmacion
 
 
 class VotoMesaModelForm(forms.ModelForm):
