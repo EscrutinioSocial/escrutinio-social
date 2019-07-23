@@ -2,15 +2,11 @@ import re
 import uuid
 from django.db import models
 from django.conf import settings
-from django.db.models import Q
 from django.contrib.contenttypes.fields import GenericRelation
-from model_utils import Choices
-from model_utils.models import TimeStampedModel
-from django.utils import timezone
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_delete
-from elecciones.models import Mesa, LugarVotacion, Categoria
+from elecciones.models import Seccion
 from django.contrib.contenttypes.models import ContentType
 from contacto.models import DatoDeContacto
 from model_utils.fields import StatusField
