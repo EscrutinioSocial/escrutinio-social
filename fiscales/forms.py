@@ -3,8 +3,8 @@ from django import forms
 from django.forms import modelformset_factory, BaseModelFormSet
 from material import Layout, Row, Fieldset
 from .models import Fiscal
-from elecciones.models import VotoMesaReportado, Categoria, Opcion
-from localflavor.ar.forms import ARDNIField, PROVINCE_CHOICES
+from elecciones.models import VotoMesaReportado, Categoria, Opcion, Distrito
+from localflavor.ar.forms import ARDNIField
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import ValidationError
@@ -89,7 +89,17 @@ class QuieroSerFiscalForm(forms.Form):
     dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
     telefono = forms.CharField(label='Teléfono', help_text='Preferentemente celular')
 
-    distrito = forms.ChoiceField(required=True, choices=PROVINCE_CHOICES, label='Provincia')
+    # distrito = forms.ChoiceField(
+    #     required=True,
+    #     label='Provincia',
+    #     choices=[(o.id, str(o)) for o in Distrito.objects.all().order_by('numero')]
+    # )
+    distrito = forms.ModelChoiceField(
+        required=True,
+        label='Provincia',
+        queryset=Distrito.objects.all().order_by('numero')
+    )
+
     seccion = forms.CharField(required=True, label="Departamento")
 
     referido_por_nombres = forms.CharField(required=False, label="Referido por", max_length=100)
