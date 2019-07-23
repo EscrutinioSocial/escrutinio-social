@@ -1,7 +1,4 @@
-{% extends "fiscales/base.html" %}
-{% load i18n material_form material_frontend %}
-
-{% block page_title %}Quiero ser fiscal{% endblock %}
+{% extends "fiscales/quiero-ser-fiscal.html" %}
 
 {% block left-panel %}
     <div class="card">
@@ -13,15 +10,5 @@
             <p>Te enviamos un email para que confirmes tu dirección de correo. Luego te
              contactaremos para confirmarte tu lugar de fiscalización y brindarte capacitación.</p>
         </div>
-        {% comment %}
-
-
-        <div class="card-action right-align">
-            <a class="btn white-text" href="/demo/wizard/">
-                {% trans "One more time" %}
-                <i class="mdi-av-repeat left"></i>
-            </a>
-        </div>
-        {% endcomment %}
     </div>
 {% endblock left-panel %}

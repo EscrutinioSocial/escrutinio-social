@@ -25,9 +25,9 @@ cached = cache_page(3600 * 24 * 30)
 urlpatterns = [
     url(r'^$', choice_home, name="home"),
     url(r'^permission-denied$', permission_denied, name='permission-denied'),
-    url(r'^quiero-ser-fiscal/$', QuieroSerFiscal.as_view(), name='quiero-ser-fiscal'),
+    url(r'^quiero-ser-validador/$', QuieroSerFiscal.as_view(), name='quiero-ser-fiscal'),
     url(r'^gracias/$', quiero_ser_fiscal_gracias, name='quiero-ser-fiscal-gracias'),
-    url(r'^quiero-ser-fiscal/confirmar-email/(?P<uuid>[0-9a-f-]+)$', confirmar_email, name='confirmar-email'),
+    url(r'^quiero-ser-validador/confirmar-email/(?P<uuid>[0-9a-f-]+)$', confirmar_email, name='confirmar-email'),
     url(r'^login/$', auth_views.LoginView.as_view(authentication_form=AuthenticationFormCustomError), name='login'),
 
     url(r'', include(frontend_urls)),

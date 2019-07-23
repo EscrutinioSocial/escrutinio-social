@@ -89,31 +89,10 @@ class BaseFiscal(LoginRequiredMixin, DetailView):
 
 class QuieroSerFiscal(FormView):
 
-    title = "Quiero ser fiscal"
+    title = "Quiero ser validador/a"
     template_name = 'fiscales/quiero-ser-fiscal.html'
     form_class = QuieroSerFiscalForm
     success_url = reverse_lazy('quiero-ser-fiscal-gracias')
-
-    def get_form_initial(self, step):
-        if step != '0':
-            dni = self.get_cleaned_data_for_step('0')['dni']
-            email = self.get_cleaned_data_for_step('0')['email']
-            fiscal = (get_object_or_None(Fiscal, dni=dni) or
-                      get_object_or_None(Fiscal,
-                                         datos_de_contacto__valor=email,
-                                         datos_de_contacto__tipo='email'))
-
-        if step == '1' and fiscal:
-            if self.steps.current == '0':
-                # sólo si acaba de llegar al paso '1' muestro mensaje
-                messages.info(self.request, 'Ya estás en el sistema. Por favor, confirmá tus datos.')
-            return {
-                'nombre': fiscal.nombres,
-                'apellido': fiscal.apellido,
-                'telefono': fiscal.telefonos[0] if fiscal.telefonos else '',
-            }
-
-        return self.initial_dict.get(step, {})
 
     def form_valid(self, form):
         data = form.cleaned_data
