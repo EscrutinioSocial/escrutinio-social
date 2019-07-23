@@ -74,9 +74,7 @@ class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         return ' / '.join(o.telefonos)
 
     def es_staff(o):
-        if o.user:
-            return o.user.is_staff
-        return False
+        return o.user.is_staff
 
     es_staff.boolean = True
 
