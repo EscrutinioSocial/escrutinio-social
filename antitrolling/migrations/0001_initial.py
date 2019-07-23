@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('adjuntos', '0007_identificacion_invalidada'),
         ('fiscales', '0003_fiscal_troll'),
-        ('elecciones', '0034_auto_20190719_1743'),
+        ('elecciones', '0034_auto_20190721_2211'),
     ]
 
     operations = [
