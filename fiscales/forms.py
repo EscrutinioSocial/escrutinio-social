@@ -92,8 +92,7 @@ class QuieroSerFiscalForm(forms.Form):
     referencia_lugar_provincia = forms.ChoiceField(choices=PROVINCE_CHOICES, label='Provincia')
     referencia_lugar_departamento = forms.CharField(label="Departamento")
 
-    referencia_organizacion = forms.CharField(label="Organizacion")
-    referencia_referente = forms.CharField(label="Referente")
+    referencia_referido_por = forms.CharField(label="Referido por")
 
     referencia_codigo = forms.CharField(
         label="Código de referencia", help_text="Si no sabes qué es, dejalo en blanco"
@@ -121,7 +120,7 @@ class QuieroSerFiscalForm(forms.Form):
         ),
         Fieldset(
             'Referencia', Row('referencia_lugar_provincia', 'referencia_lugar_departamento'),
-            Row('referencia_referente', 'referencia_organizacion', 'referencia_codigo')
+            Row('referencia_referido_por', 'referencia_codigo')
         )
     )
 
