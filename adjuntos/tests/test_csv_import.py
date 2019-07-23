@@ -126,22 +126,28 @@ def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inici
 
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
     CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
-    carga_total = Carga.objects.filter(tipo=Carga.TIPOS.total).all()
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total).all()
     totales = len([categoria for categoria in CATEGORIAS if not categoria[1]])
-    assert len(carga_total) == totales
-    for total in carga_total:
+    assert len(cargas_totales) == totales
+    for total in cargas_totales:
         assert total.origen == 'csv'
-    votos_carga_total = VotoMesaReportado.objects.filter(carga__in=carga_total).all()
+    votos_carga_total = VotoMesaReportado.objects.filter(carga__in=cargas_totales).all()
     # ya que hay dos opciones y 1 categoria no prioritaria
     assert len(votos_carga_total) == 2
-    carga_parcial = Carga.objects.filter(tipo=Carga.TIPOS.parcial).all()
+    cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial).all()
     parciales = len(CATEGORIAS) - totales
-    assert len(carga_parcial) == parciales
-    for parcial in carga_parcial:
+    assert len(cargas_parciales) == parciales
+    for parcial in cargas_parciales:
         assert parcial.origen == 'csv'
-    votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=carga_parcial).all()
+    votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=cargas_parciales).all()
     # ya que hay dos opciones y 7 categorias prioritarias
     assert len(votos_carga_parcial) == 14
+
+    # Todo lo que está en carga total también está en carga parcial.
+    import ipdb; ipdb.set_trace()
+    for voto in votos_carga_parcial:
+        assert VotoMesaReportado.objects.filter(carga__in=cargas_totales, votos=voto.votos,
+                    opcion=voto.opcion).exists()
 
 
 def test_procesar_csv_informacion_valida_con_metadata_genera_resultados(db, usr_unidad_basica,

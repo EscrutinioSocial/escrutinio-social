@@ -126,21 +126,100 @@ class CSVImporter:
             self.mesas_matches[mesa] = match_mesa
             self.mesas.append(match_mesa)
 
+    def obtener_metadata(self):
+        # Se obtienen las opciones correspondientes a metadata.
+        self.opcion_sobres = Opcion.objects.get(**OPCION_TOTAL_SOBRES)
+        self.opcion_votos = Opcion.objects.get(**OPCION_TOTAL_VOTOS)
+        self.categoria_sobres = self.opcion_sobres.categoriaopcion_set.first()
+        self.categoria_votos = self.opcion_votos.categoriaopcion_set.first()
+
+    def cargar_mesa_categoria(self, mesa, grupos, mesa_categoria, columnas_categorias):
+        self.carga_total = None
+        self.carga_parcial = None
+        categoria_bd = mesa_categoria.categoria
+        # Si justo estamos analizando la columna que matchea con la categoría de las
+        # opciones de tipo metadata.
+        analizar_sobres = self.categoria_sobres.categoria == categoria_bd
+        analizar_electores = self.categoria_votos.categoria == categoria_bd
+        # Buscamos el nombre de la columna asociada a esta categoría
+        matcheos = [columna for columna in columnas_categorias if columna.lower()
+                    in categoria_bd.nombre.lower()]
+        # Se encontró la categoría de la mesa en el archivo
+        if len(matcheos) != 0:
+            mesa_columna = matcheos[0]
+            # Los votos son por partido así que debemos iterar por todas las filas
+            for indice, fila in grupos.iterrows():
+                opcion = fila['nro de lista']
+                fila_analizada = FilaCSVImporter(mesa[0], mesa[1], mesa[2], mesa[3])
+                # Primero chequeamos si esta fila corresponde a metadata verificando el
+                # número de lista que está en cero cuando se trata de metadata.
+                if str(opcion) == '0':
+                    if analizar_electores:
+                        cantidad_electores = fila['cantidad de electores del padron']
+                        self.cargar_votos(cantidad_electores, self.categoria_votos,
+                                          mesa_categoria, self.opcion_votos)
+                    if analizar_sobres:
+                        cantidad_sobres = fila['cantidad de sobres en la urna']
+                        self.cargar_votos(cantidad_sobres, self.categoria_sobres, mesa_categoria,
+                                          self.opcion_sobres)
+                else:
+                    cantidad_votos = fila[mesa_columna]
+                    # Buscamos este nro de lista dentro de las opciones asociadas a
+                    # esta categoría.
+                    match_opcion = [una_opcion for una_opcion in categoria_bd.opciones.all()
+                                    if una_opcion.codigo and una_opcion.codigo.strip().lower()
+                                    == str(opcion).strip().lower()]
+                    opcion_bd = match_opcion[0] if len(match_opcion) > 0 else None
+                    if not opcion_bd:
+                        raise DatosInvalidosError(f'El número de lista {opcion} no fue '
+                                                  f'encontrado asociado la categoría '
+                                                  f'{categoria_bd.nombre}, revise que sea '
+                                                  f'el correcto.')
+                    opcion_categoria = opcion_bd.categoriaopcion_set.\
+                        filter(categoria=categoria_bd).first()
+                    self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
+                                      opcion_bd)
+        else:
+            raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
+                                      f'categoría: {categoria_bd.nombre}.')
+
+        self.copiar_carga_parcial_en_total_si_corresponde()
+
+    def copiar_carga_parcial_en_total_si_corresponde(self):
+        """
+        Esta función se encarga de copiar los votos de la carga parcial a la total
+        si corresponde. Corresponde cuando hay votos no prioritarios, es decir,
+        cuando la carga total no está vacía.
+        """
+        if not self.carga_total:
+            return
+
+        # Hay datos para copiar.
+
+        # Se presupone que si había total es porque también había parcial.
+        # Ahora, en los tests puede no darse.
+        if not self.carga_parcial:
+            return
+        
+        for voto_mesa_reportado_parcial in self.carga_parcial.reportados.all():
+            voto_mesa_reportado_total = VotoMesaReportado.objects.create(
+                votos = voto_mesa_reportado_total.votos,
+                opcion = voto_mesa_reportado_total.opcion,
+                carga = self.carga_total
+            )
+
     def cargar_info(self):
         """
         Carga la info del archivo CSV en la base de datos.
         Si hay errores, los reporta a través de excepciones.
         """
+        self.obtener_metadata()
         fila_analizada = None
         # se guardan los datos: El contenedor `carga` y los votos del archivo
         # la carga es por mesa y categoría entonces nos conviene ir analizando grupos de mesas
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         columnas_categorias = [i[0] for i in COLUMNAS_DEFAULT if i[1]]
-        # se obtienen las opciones correspondientes a metadata
-        opcion_sobres = Opcion.objects.get(**OPCION_TOTAL_SOBRES)
-        opcion_votos = Opcion.objects.get(**OPCION_TOTAL_VOTOS)
-        categoria_sobres = opcion_sobres.categoriaopcion_set.first()
-        categoria_votos = opcion_votos.categoriaopcion_set.first()
+
         try:
             with transaction.atomic():
 
@@ -149,54 +228,8 @@ class CSVImporter:
                     mesa_bd = self.mesas_matches[mesa]
                     # Analizo por categoria-mesa, y por cada categoria-mesa, todos los partidos posibles
                     for mesa_categoria in mesa_bd.mesacategoria_set.all():
-                        self.carga_total = None
-                        self.carga_parcial = None
-                        categoria_bd = mesa_categoria.categoria
-                        # si justo estamos analizando la columna que matchea con la categoria de las
-                        # opciones de tipo metadata
-                        analizar_sobres = categoria_sobres.categoria == categoria_bd
-                        analizar_electores = categoria_votos.categoria == categoria_bd
-                        # buscamos el nombre de la columna asociada a esta categoria
-                        matcheos = [columna for columna in columnas_categorias if columna.lower()
-                                    in categoria_bd.nombre.lower()]
-                        # se encontró la categoría de la mesa en el archivo
-                        if len(matcheos) != 0:
-                            mesa_columna = matcheos[0]
-                            # los votos son por partido así que debemos iterar por todas las filas
-                            for indice, fila in grupos.iterrows():
-                                opcion = fila['nro de lista']
-                                fila_analizada = FilaCSVImporter(mesa[0], mesa[1], mesa[2], mesa[3])
-                                # primero chequeamos si esta fila corresponde a metadata verificando el
-                                # numero de lista que está en cero cuando se trata de metadata
-                                if str(opcion) == '0':
-                                    if analizar_electores:
-                                        cantidad_electores = fila['cantidad de electores del padron']
-                                        self.cargar_votos(cantidad_electores, categoria_votos,
-                                                          mesa_categoria, opcion_votos)
-                                    if analizar_sobres:
-                                        cantidad_sobres = fila['cantidad de sobres en la urna']
-                                        self.cargar_votos(cantidad_sobres, categoria_sobres, mesa_categoria,
-                                                          opcion_sobres)
-                                else:
-                                    cantidad_votos = fila[mesa_columna]
-                                    # buscamos este nro de lista dentro de las opciones asociadas a
-                                    # esta categoría
-                                    match_opcion = [una_opcion for una_opcion in categoria_bd.opciones.all()
-                                                    if una_opcion.codigo and una_opcion.codigo.strip().lower()
-                                                    == str(opcion).strip().lower()]
-                                    opcion_bd = match_opcion[0] if len(match_opcion) > 0 else None
-                                    if not opcion_bd:
-                                        raise DatosInvalidosError(f'El número de lista {opcion} no fue '
-                                                                  f'encontrado asociado la categoría '
-                                                                  f'{categoria_bd.nombre}, revise que sea '
-                                                                  f'el correcto.')
-                                    opcion_categoria = opcion_bd.categoriaopcion_set.\
-                                        filter(categoria=categoria_bd).first()
-                                    self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
-                                                      opcion_bd)
-                        else:
-                            raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
-                                                      f'categoría: {categoria_bd.nombre}.')
+                        self.cargar_mesa_categoria(mesa, grupos, mesa_categoria, columnas_categorias)
+
 
         except IntegrityError as e:
             # fixme ver mejor forma de manejar estos errores
