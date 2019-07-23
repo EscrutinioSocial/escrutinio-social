@@ -192,6 +192,9 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert c1.es_testigo.exists()
     assert c2.es_testigo.exists()
 
+    # Para probar se piden las cuentas sin especificar categoría, lo que no tiene sentido
+    # salvo para testing.
+
     response = fiscal_client.get(
         url_resultados + f'?opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
     )
@@ -216,8 +219,6 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'  # (20 + 5 + 10 + 20) / total_positivos
 
     # todos los positivos suman 100
-    print(positivos.values())
-    import ipdb; ipdb.set_trace()
     assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
 
     # votos de partido 1 son iguales a los de o1 + o4
@@ -561,14 +562,23 @@ def test_siguiente_accion_cargar_acta(fiscal_client):
 
 def test_resultados_no_positivos(fiscal_client):
     o1, o2 = OpcionFactory.create_batch(2)
-    o3 = OpcionFactory(nombre='blanco', partido=None, tipo='no_positivo')
-    e1 = CategoriaFactory(opciones=[o1, o2, o3])
+
+    nombre_corto_blanco = settings.OPCION_BLANCOS['nombre_corto']
+    tipo_blanco = settings.OPCION_BLANCOS['tipo']
+    opcion_blanco = OpcionFactory(nombre=nombre_corto_blanco, partido=None, tipo=tipo_blanco)
+
+    nombre_corto_total = settings.OPCION_TOTAL_VOTOS['nombre_corto']
+    tipo_total = settings.OPCION_TOTAL_VOTOS['tipo']
+    opcion_total = OpcionFactory(nombre=nombre_corto_total, partido=None, tipo=tipo_total)
+
+    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total])
 
     m1 = MesaFactory(categorias=[e1], electores=200)
     c1 = CargaFactory(mesa_categoria__categoria=e1, mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial)
     VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=50)
     VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=40)
-    VotoMesaReportadoFactory(opcion=o3, carga=c1, votos=10)
+    VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c1, votos=10)
+    VotoMesaReportadoFactory(opcion=opcion_total, carga=c1, votos=100)
     c1.actualizar_firma()
     consumir_novedades_y_actualizar_objetos()
 
@@ -576,7 +586,7 @@ def test_resultados_no_positivos(fiscal_client):
         reverse('resultados-categoria', args=[e1.id]) + '?opcionaConsiderar=prioritarias'
     )
 
-    assert o3.nombre in response.content.decode('utf8')
+    assert opcion_blanco.nombre in response.content.decode('utf8')
     no_positivos = response.context['resultados'].tabla_no_positivos()
 
     assert no_positivos['blanco'] == {'porcentaje_total': '10.00', 'votos': 10}
