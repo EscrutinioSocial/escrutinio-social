@@ -309,12 +309,13 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     if is_valid:
         try:
             with transaction.atomic():
-                # se guardan los datos. El contenedor `carga`
+                # Se guardan los datos. El contenedor `carga`
                 # y los votos del formset asociados.
                 carga = Carga.objects.create(
                     mesa_categoria=mesa_categoria,
                     tipo=tipo,
                     fiscal=fiscal,
+                    origen=Carga.SOURCES.web
                 )
                 reportados = []
                 for form in formset:
@@ -327,11 +328,11 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             carga.actualizar_firma()
             messages.success(request, f'Guardada categoría {categoria} para {mesa}')
         except Exception as e:
-            # este catch estaba desde cuando no podia haber multiples cargas para una
-            # misma mesa-categoria
-            # ahora no podria darte IntegrityError porque esta vista sólo crea objetos
+            # Este catch estaba desde cuando no podía haber múltiples cargas para una
+            # misma mesa-categoría.
+            # Ahora no podría darte IntegrityError porque esta vista sólo crea objetos
             # y ya no hay constraint.
-            # Lo dejo por si queremos canalizar algun otro tipo de excepcion
+            # Lo dejo por si queremos canalizar algun otro tipo de excepción.
             capture_exception(e)
         redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
         return redirect(redirect_to)
@@ -383,6 +384,7 @@ class ReporteDeProblemaCreateView(CreateView):
         carga = Carga.objects.create(
             tipo=Carga.TIPOS.problema,
             fiscal=fiscal,
+            origen=Carga.SOURCES.web,
             mesa_categoria=self.mesa_categoria
         )
 

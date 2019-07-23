@@ -251,4 +251,5 @@ class Identificacion(TimeStampedModel):
 
     def invalidar(self):
         self.invalidada = True
-        self.save(update_fields=['invalidada'])
+        self.procesada = False
+        self.save(update_fields=['invalidada', 'procesada'])
