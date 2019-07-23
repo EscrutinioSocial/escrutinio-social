@@ -1,7 +1,8 @@
 import pytest
+from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
-from elecciones.models import (Categoria, MesaCategoria, Carga)
+from elecciones.models import (Categoria, MesaCategoria, Carga, Opcion)
 from .factories import (
     UserFactory,
     CategoriaFactory,
@@ -19,6 +20,7 @@ from .factories import (
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
 from .test_models import consumir_novedades_y_actualizar_objetos
+from elecciones.resultados import Sumarizador
 
 
 @pytest.fixture()
@@ -128,7 +130,6 @@ def test_electores_filtro_seccion(url_resultados, fiscal_client):
 
 
 def test_electores_filtro_distrito(url_resultados, fiscal_client):
-    mesa1 = MesaFactory(electores=120)
     m2 = MesaFactory(electores=90, lugar_votacion__circuito__seccion__distrito__nombre='otro')
     response = fiscal_client.get(
         url_resultados, {'distrito': m2.lugar_votacion.circuito.seccion.distrito.id}
@@ -154,7 +155,9 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # la opción 4 pasa a ser del mismo partido que la 1
     o4.partido = o1.partido
     o4.save()
-    blanco = categoria.opciones.get(nombre='blanco')
+
+    # TODO Usar info tomada de settings.py
+    blanco = categoria.opciones.get(nombre='blanco', tipo=Opcion.TIPOS.no_positivo)
     mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
     mc3 = MesaCategoria.objects.get(mesa=m3, categoria=categoria)
     c1 = CargaFactory(mesa_categoria=mc1, tipo=Carga.TIPOS.parcial)
@@ -181,7 +184,9 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert c1.es_testigo.exists()
     assert c2.es_testigo.exists()
 
-    response = fiscal_client.get(url_resultados)
+    response = fiscal_client.get(
+        url_resultados + f'?opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
+    )
     resultados = response.context['resultados']
     positivos = resultados.tabla_positivos()
 
@@ -190,7 +195,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # se ordena de acuerdo al que va ganando
     assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
 
-    total_positivos = resultados.positivos()
+    total_positivos = resultados.total_positivos()
 
     assert total_positivos == 215  # 20 + 5 + 30 + 40 + 20 + 10 + 40 + 50
 
@@ -415,15 +420,21 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
 
     # TODO se actualizaron las urls a lo que entiendo es lo esperado
     # response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
-    response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas')
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
+    )
     resultados = response.context['resultados']
     assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     # response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
-    response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas')
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas'
+    )
     resultados = response.context['resultados']
-    assert 'blanco' not in resultados.tabla_no_positivos()
+    assert resultados.tabla_no_positivos()['blanco'] == {'votos': 0, 'porcentaje_total': '-'}
     assert resultados.total_mesas_escrutadas() == 0
 
     c2 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria, tipo=Carga.TIPOS.total)
@@ -437,13 +448,19 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
 
     # response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
-    response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas')
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
+    )
     resultados = response.context['resultados']
     assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     # response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
-    response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas')
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas'
+    )
     resultados = response.context['resultados']
     assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
@@ -462,11 +479,14 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
 
     # TODO dependiendo de lo que se quiera la url podria ser algo como por ejemplo:
     # response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias')
-    response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias'
+    )
 
     resultados = response.context['resultados']
     # la carga está en status sin_confirmar
-    assert 'blanco' not in resultados.tabla_no_positivos()
+    assert resultados.tabla_no_positivos()['blanco'] == {'votos': 0, 'porcentaje_total': '-'}
     assert resultados.total_mesas_escrutadas() == 0
 
     c2 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria)
@@ -478,7 +498,10 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     assert mc.carga_testigo in [c1, c2]
     assert mc.status == MesaCategoria.STATUS.parcial_consolidada_dc
 
-    response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias'
+    )
     resultados = response.context['resultados']
     # Como tenemos dos cargas confirmadas, se modifica el resultado.
     assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
@@ -488,7 +511,10 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=10)
     c3.actualizar_firma()
     consumir_novedades_y_actualizar_objetos([mc])
-    response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias'
+    )
     resultados = response.context['resultados']
     # c3 no está confirmada, no varía el resultado.
     assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
@@ -499,7 +525,10 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     c4.actualizar_firma()
     consumir_novedades_y_actualizar_objetos([mc])
 
-    response = fiscal_client.get(reverse('resultados-parciales-confirmados', args=[categoria.id]))
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias'
+    )
     resultados = response.context['resultados']
     # Ahora sí varía.
     assert resultados.tabla_no_positivos()['blanco']['votos'] == 30
@@ -534,15 +563,18 @@ def test_resultados_no_positivos(fiscal_client):
     c1.actualizar_firma()
     consumir_novedades_y_actualizar_objetos()
 
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]))
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[e1.id]) + '?opcionaConsiderar=prioritarias'
+    )
 
     assert o3.nombre in response.content.decode('utf8')
     no_positivos = response.context['resultados'].tabla_no_positivos()
 
     assert no_positivos['blanco'] == {'porcentaje_total': '10.00', 'votos': 10}
-    assert no_positivos['positivos']['votos'] == 90
+    assert no_positivos['Votos Positivos']['votos'] == 90
 
 
+@pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_excluye_metadata(fiscal_client):
     s1, s2 = SeccionFactory.create_batch(2)
     o1, o2 = OpcionFactory.create_batch(2)
@@ -561,6 +593,7 @@ def test_resultados_excluye_metadata(fiscal_client):
     VotoMesaReportadoFactory(opcion=o3, carga=c1, votos=10)
     VotoMesaReportadoFactory(opcion=o4, carga=c1, votos=160)
     c1.actualizar_firma()
+
     c2 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=e1, tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=50)
     VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=100)

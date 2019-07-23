@@ -6,11 +6,11 @@ from django.contrib.auth.models import User
 from factory.django import DjangoModelFactory
 from faker import Faker
 
-
 fake = Faker('es_ES')
 
 
 class UserFactory(DjangoModelFactory):
+
     class Meta:
         model = User
 
@@ -21,25 +21,31 @@ class UserFactory(DjangoModelFactory):
 
 
 class PartidoFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.Partido'
+
     orden = factory.Sequence(lambda n: n + 1)
     nombre = factory.LazyAttribute(lambda obj: f"Partido {obj.orden}")
 
 
 class OpcionFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.Opcion'
-        django_get_or_create = ('nombre',)
+        django_get_or_create = ('nombre', )
+
     nombre = factory.LazyAttribute(lambda obj: f"Opción {obj.orden}")
     partido = factory.SubFactory(PartidoFactory)
     orden = factory.Sequence(lambda n: n + 1)
 
 
 class CategoriaFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.Categoria'
-        django_get_or_create = ('nombre',)
+        django_get_or_create = ('nombre', )
+
     nombre = factory.Sequence(lambda n: f'elecciones{n + 1}')
     slug = factory.LazyAttribute(lambda obj: obj.nombre)
 
@@ -52,48 +58,41 @@ class CategoriaFactory(DjangoModelFactory):
             for opcion in extracted:
                 CategoriaOpcionFactory(categoria=self, opcion=opcion)
         else:
+            # TODO Usar info tomada de settings.py
             CategoriaOpcionFactory(
-                categoria=self,
-                opcion=OpcionFactory(nombre='blanco', partido=None, tipo='no_positivo')
+                categoria=self, opcion=OpcionFactory(nombre='blanco', partido=None, tipo='no_positivo')
             )
-            CategoriaOpcionFactory(
-                categoria=self,
-                opcion=OpcionFactory(nombre='opc1')
-            )
-            CategoriaOpcionFactory(
-                categoria=self,
-                opcion=OpcionFactory(nombre='opc2')
-            )
-            CategoriaOpcionFactory(
-                categoria=self,
-                opcion=OpcionFactory(nombre='opc3')
-            )
-            CategoriaOpcionFactory(
-                categoria=self,
-                opcion=OpcionFactory(nombre='opc4')
-            )
+            CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc1'))
+            CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc2'))
+            CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc3'))
+            CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc4'))
 
 
 class CategoriaOpcionFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.CategoriaOpcion'
         django_get_or_create = ('categoria', 'opcion')
+
     categoria = factory.SubFactory(CategoriaFactory, nombre='default')
     opcion = factory.SubFactory(OpcionFactory)
 
 
 class DistritoFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.Distrito'
-        django_get_or_create = ('nombre',)
+        django_get_or_create = ('nombre', )
 
     numero = factory.Sequence(lambda n: n + 1)
     nombre = factory.LazyAttribute(lambda obj: f"Distrito {obj.numero}")
 
 
 class SeccionFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.Seccion'
+
     # notar que el distrito por default
     # ya existe porque se crea via migracion 0026 de eleccion
     # y get_or_create de distrito aplica por nombre
@@ -103,24 +102,30 @@ class SeccionFactory(DjangoModelFactory):
 
 
 class CircuitoFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.Circuito'
+
     seccion = factory.SubFactory(SeccionFactory)
     numero = factory.Sequence(lambda n: n + 1)
     nombre = factory.LazyAttribute(lambda obj: f"Circuito {obj.seccion.numero}.{obj.numero}")
 
 
 class LugarVotacionFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.LugarVotacion'
+
     circuito = factory.SubFactory(CircuitoFactory)
     nombre = factory.Sequence(lambda n: f"Escuela {n}")
     direccion = 'direccion'
 
 
 class MesaFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.Mesa'
+
     # 5 es un nro arbitrario para que no coincida con el id y salten potenciales errores.
     numero = factory.Sequence(lambda n: n + 5)
     lugar_votacion = factory.SubFactory(LugarVotacionFactory)
@@ -139,9 +144,11 @@ class MesaFactory(DjangoModelFactory):
 
 
 class MesaCategoriaFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.MesaCategoria'
         django_get_or_create = ('mesa', 'categoria')
+
     mesa = factory.SubFactory(MesaFactory)
     categoria = factory.SubFactory(CategoriaFactory)
 
@@ -151,8 +158,10 @@ class MesaCategoriaDefaultFactory(MesaCategoriaFactory):
 
 
 class FiscalFactory(DjangoModelFactory):
+
     class Meta:
         model = 'fiscales.Fiscal'
+
     user = factory.SubFactory(UserFactory)
     estado = 'CONFIRMADO'
     apellido = fake.last_name()
@@ -161,15 +170,19 @@ class FiscalFactory(DjangoModelFactory):
 
 
 class CargaFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.Carga'
+
     mesa_categoria = factory.SubFactory(MesaCategoriaFactory)
     fiscal = factory.SubFactory(FiscalFactory)
 
 
 class VotoMesaReportadoFactory(DjangoModelFactory):
+
     class Meta:
         model = 'elecciones.VotoMesaReportado'
+
     carga = factory.SubFactory(CargaFactory)
     opcion = factory.SubFactory(OpcionFactory)
 
@@ -185,19 +198,24 @@ def get_random_image():
 
 
 class AttachmentFactory(DjangoModelFactory):
+
     class Meta:
         model = 'adjuntos.Attachment'
+
     foto = factory.django.ImageField(from_func=get_random_image)
 
 
 class IdentificacionFactory(DjangoModelFactory):
+
     class Meta:
         model = 'adjuntos.Identificacion'
+
     mesa = factory.SubFactory(MesaFactory)
     attachment = factory.SubFactory(AttachmentFactory)
 
 
 class ProblemaFactory(DjangoModelFactory):
+
     class Meta:
         model = 'problemas.Problema'
 
@@ -205,4 +223,3 @@ class ProblemaFactory(DjangoModelFactory):
     mesa = factory.SubFactory(MesaFactory)
     attachment = factory.SubFactory(AttachmentFactory)
     estado = 'potencial'
-

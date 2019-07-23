@@ -9,6 +9,7 @@ from django.db.models import Q, F, Sum, Count, Subquery, Sum, IntegerField, Case
 from .models import (
     Eleccion,
     Distrito,
+    SeccionPolitica,
     Seccion,
     Circuito,
     Categoria,
@@ -141,7 +142,6 @@ class Sumarizador():
         asociadas a la categoría dada.
         """
         lookups = Q()
-        meta = {}
         if self.filtros:
             if self.filtros.model is Distrito:
                 lookups = Q(lugar_votacion__circuito__seccion__distrito__in=self.filtros)
@@ -179,7 +179,6 @@ class Sumarizador():
         Me quedo con los votos reportados pertenecientes a las "cargas testigo"
         de las mesas que corresponden de acuerdo a los parámetros y la categoría.
         """
-        print(self.cargas_a_considerar_status_filter(categoria))
         return VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
             carga__es_testigo__isnull=False,
@@ -333,6 +332,8 @@ class Resultados():
             total_partido = sum(filter(None, votos_por_opcion.values()))
             votos_positivos[partido] = {
                 'votos': total_partido,
+                'porcentaje_positivos': porcentaje(total_partido, self.total_positivos()),
+                'porcentaje_total': porcentaje(total_partido, self.votantes()),
                 'detalle': {
                     opcion: {
                         'votos': votos_opcion,

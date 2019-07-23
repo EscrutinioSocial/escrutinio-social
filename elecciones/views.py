@@ -39,13 +39,7 @@ from .models import (
 )
 from .resultados import Sumarizador
 
-ESTRUCTURA = {
-    None: Seccion,
-    Seccion: Circuito,
-    Circuito: LugarVotacion,
-    LugarVotacion: Mesa,
-    Mesa: None
-}
+ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
 
 class StaffOnlyMixing:
@@ -87,7 +81,7 @@ class LugaresVotacionGeoJSON(GeoJSONLayerView):
     """
 
     model = LugarVotacion
-    properties = ('id', 'color')    # 'popup_html',)
+    properties = ('id', 'color')  # 'popup_html',)
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -147,13 +141,16 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         nivel_de_agregacion = None
-        ids_a_considerar=None
+        ids_a_considerar = None
         for nivel in ['mesa', 'lugar_de_votacion', 'circuito', 'seccion', 'distrito']:
             if nivel in self.request.GET:
                 nivel_de_agregacion = nivel
                 ids_a_considerar = self.request.GET.getlist(nivel)
 
-        self.sumarizador = Sumarizador(self.get_tipo_de_agregacion(), self.get_opciones_a_considerar(), nivel_de_agregacion, ids_a_considerar)
+        self.sumarizador = Sumarizador(
+            self.get_tipo_de_agregacion(), self.get_opciones_a_considerar(), nivel_de_agregacion,
+            ids_a_considerar
+        )
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):
@@ -206,8 +203,7 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
 
         if self.filtros:
-            context['para'] = get_text_list(
-                [objeto.nombre_completo() for objeto in self.filtros], " y ")
+            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.filtros], " y ")
         else:
             context['para'] = 'todo el país'
 
