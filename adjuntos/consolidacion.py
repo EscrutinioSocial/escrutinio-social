@@ -198,15 +198,28 @@ def consolidar_identificaciones(attachment):
                 problema = Problema.confirmar_problema(identificacion=identificacion_con_problemas)
                 status_attachment = Attachment.STATUS.problema
 
+    # me acuerdo la mesa anterior por si se esta pasando a sin_identificar
+    mesa_anterior = attachment.mesa
+
     # Identifico el attachment.
     # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
     # Eso es correcto.
     # También podría estar haciendo pasar una attachment identificado al estado sin_identificar,
-    # porque ya no está más vigente alguna identificación que antes sí.
+    # porque ya no está más vigente alguna identificación que antes sí.     
     attachment.status = status_attachment
     attachment.mesa = mesa_attachment
     attachment.identificacion_testigo = testigo
     attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
+
+    # si el attachment pasa de tener una mesa a no tenerla, entonces para cada MesaCategoria:
+    # quitar el orden de carga, e invalidar todas sus cargas
+    if (mesa_anterior is not None) and (mesa_attachment is None):
+        for mc in MesaCategoria.objects.filter(mesa=mesa_anterior):
+            mc.orden_de_carga = None
+            mc.save(update_fields=['orden_de_carga'])
+            for carga in mc.cargas:
+                carga.invalidar()
+
 
 
 @transaction.atomic
