@@ -64,7 +64,7 @@ function setAutocompleteFromDistrito(seccionAutocomplete) {
   $distrito.change(function() {
     setAutocompleteParentValue(seccionAutocomplete, $distrito.val());
   });
-  if (!$(seccionAutocomplete.component.el).val('')) {
+  if (!$(seccionAutocomplete.component.el).val()) {
     setAutocompleteParentValue(seccionAutocomplete, $distrito.val());
   }
 }
