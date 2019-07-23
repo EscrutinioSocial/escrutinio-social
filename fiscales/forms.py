@@ -152,6 +152,12 @@ class QuieroSerFiscalForm(forms.Form):
                 )
         return password_confirmacion
 
+    def clean_dni(self):
+        dni = self.cleaned_data.get('dni')
+        if Fiscal.objects.filter(dni=dni).exists():
+            raise ValidationError('Ya se encuentra un usuario registrado con ese dni')
+        return dni
+
 
 class VotoMesaModelForm(forms.ModelForm):
 
