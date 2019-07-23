@@ -17,7 +17,7 @@
         <div id="{{ categoria.slug }}" class="card">
             <div class="card-content">
                 <script>
-                    var chart_data{{categoria.id}} = [{{ resultados.result_piechart | safe }}];
+                    var chart_data{{categoria.id}} = [{{ result_piechart | safe }}];
                 </script>
                 <link href="/static/elecciones/lib/nv.d3.min.css" rel="stylesheet" type="text/css">
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js" charset="utf-8"></script>
@@ -38,7 +38,7 @@
                                 </tr>
                                 <tr>
                                     <th title="Positivos"><i class="small material-icons">person_add</i></th>
-                                    <td title="Positivos">{{ resultados.positivos}}</td>
+                                    <td title="Positivos">{{ resultados.total_positivos}}</td>
                                 </tr>
                                 <tr>
                                     <th title="Participación"><i class="small material-icons">timeline</i></th>

@@ -7,6 +7,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from problemas.models import Problema
 
+
 def consolidar_cargas_por_tipo(cargas, tipo):
     """
     El parámetro cargas tiene solamente cargas del tipo parámetro.
@@ -26,9 +27,7 @@ def consolidar_cargas_por_tipo(cargas, tipo):
         }
     }
 
-    cargas_agrupadas_por_firma = cargas.values('firma').annotate(
-                                            count=Count('firma')
-                                        ).order_by('-count')
+    cargas_agrupadas_por_firma = cargas.values('firma').annotate(count=Count('firma')).order_by('-count')
 
     # Como están ordenadas por cantidad de coincidencia,
     # si alguna tiene doble carga, es la primera.
@@ -69,6 +68,7 @@ def consolidar_cargas_por_tipo(cargas, tipo):
 
     return status_resultante, carga_testigo_resultante
 
+
 def consolidar_cargas_con_problemas(cargas_que_reportan_problemas):
 
     # Tomo como "muestra" alguna de las que tienen problemas.
@@ -77,6 +77,7 @@ def consolidar_cargas_con_problemas(cargas_que_reportan_problemas):
     problema = Problema.confirmar_problema(carga=carga_con_problema)
 
     return MesaCategoria.STATUS.con_problemas, None
+
 
 def consolidar_cargas(mesa_categoria):
     """
@@ -144,10 +145,7 @@ def consolidar_identificaciones(attachment):
 
     mesa_id_consolidada = None
     for mesa_id, cantidad, cuantos_csv in status_count:
-        if (
-            cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or
-                cuantos_csv > 0
-        ):
+        if (cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or cuantos_csv > 0):
             mesa_id_consolidada = mesa_id
             break
 
@@ -158,9 +156,7 @@ def consolidar_identificaciones(attachment):
             mesa_id=mesa_id_consolidada, status=Identificacion.STATUS.identificada
         )
 
-        identificacion_con_csv = identificaciones_correctas.filter(
-            source=Identificacion.SOURCES.csv
-        ).first()
+        identificacion_con_csv = identificaciones_correctas.filter(source=Identificacion.SOURCES.csv).first()
 
         # Si hay una de CSV, es la testigo. Si no, cualquiera del resto.
         testigo = identificacion_con_csv if identificacion_con_csv else identificaciones_correctas.first()
@@ -186,7 +182,8 @@ def consolidar_identificaciones(attachment):
             if cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA:
                 # Tomo como "muestra" alguna de las que tienen problemas.
                 identificacion_con_problemas = attachment.identificaciones.filter(
-                    status=Identificacion.STATUS.problema).first()
+                    status=Identificacion.STATUS.problema
+                ).first()
                 # Confirmo el problema porque varios reportaron problemas.
                 problema = Problema.confirmar_problema(identificacion=identificacion_con_problemas)
                 status_attachment = Attachment.STATUS.problema
@@ -230,10 +227,7 @@ def consumir_novedades_carga():
 
 
 def consumir_novedades():
-    return (
-        consumir_novedades_identificacion(),
-        consumir_novedades_carga()
-    )
+    return (consumir_novedades_identificacion(), consumir_novedades_carga())
 
 
 @receiver(post_save, sender=Attachment)
@@ -241,8 +235,6 @@ def actualizar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     if instance.mesa and instance.identificacion_testigo:
         # Un nuevo attachment para una mesa ya identificada
         # (es decir, con orden de carga ya definido) la vuelve a actualizar.
-        a_actualizar = MesaCategoria.objects.filter(
-            mesa=instance.mesa
-        )
+        a_actualizar = MesaCategoria.objects.filter(mesa=instance.mesa)
         for mc in a_actualizar:
             mc.actualizar_orden_de_carga()
