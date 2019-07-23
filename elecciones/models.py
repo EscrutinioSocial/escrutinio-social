@@ -694,7 +694,7 @@ class Carga(TimeStampedModel):
         'parcial',
         'total'
     )
-    tipo = models.CharField(max_length=50, choices=TIPOS, null=True, blank=True)
+    tipo = models.CharField(max_length=50, choices=TIPOS)
 
     SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
