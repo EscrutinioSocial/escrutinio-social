@@ -89,19 +89,16 @@ class QuieroSerFiscalForm(forms.Form):
     dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
     telefono = forms.CharField(label='Teléfono', help_text='Preferentemente celular')
 
-    referencia_lugar_provincia = forms.ChoiceField(choices=PROVINCE_CHOICES, label='Provincia')
-    referencia_lugar_departamento = forms.CharField(label="Departamento")
+    distrito = forms.ChoiceField(choices=PROVINCE_CHOICES, label='Provincia')
+    seccion = forms.CharField(label="Departamento")
 
-    referencia_referido_por = forms.CharField(label="Referido por")
-
-    referencia_codigo = forms.CharField(
-        label="Código de referencia", help_text="Si no sabes qué es, dejalo en blanco"
+    referido_por = forms.CharField(required=False, label="Referido por")
+    referido_codigo = forms.CharField(
+        required=False,
+        label="Código de referencia",
+        help_text="Si no sabes qué es, dejalo en blanco"
     )
 
-    error_messages = {
-        'password_mismatch': _("The two password fields didn't match."),
-        'telefono_invalido': 'No es un teléfono válido'
-    }
     password = forms.CharField(
         label=_("New password"),
         widget=forms.PasswordInput,
@@ -115,12 +112,16 @@ class QuieroSerFiscalForm(forms.Form):
 
     layout = Layout(
         Fieldset(
-            'Datos personales', Row('nombre', 'apellido', 'dni'),
-            Row('email', 'email_confirmacion'), Row('password', 'password_confirmacion'), 'telefono'
+            'Datos personales',
+            Row('nombre', 'apellido', 'dni'),
+            Row('email', 'email_confirmacion'),
+            Row('password', 'password_confirmacion'),
+            'telefono',
+            Row('distrito', 'seccion'),
         ),
         Fieldset(
-            'Referencia', Row('referencia_lugar_provincia', 'referencia_lugar_departamento'),
-            Row('referencia_referido_por', 'referencia_codigo')
+            'Referencia',
+            Row('referido_por', 'referido_codigo')
         )
     )
 
@@ -145,10 +146,7 @@ class QuieroSerFiscalForm(forms.Form):
         password_confirmacion = self.cleaned_data.get('password_confirmacion')
         if password and password_confirmacion:
             if password != password_confirmacion:
-                raise forms.ValidationError(
-                    self.error_messages['password_mismatch'],
-                    code='password_mismatch',
-                )
+                raise forms.ValidationError("Las contraseñas no coinciden")
         return password_confirmacion
 
     def clean_dni(self):
