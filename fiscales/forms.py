@@ -111,12 +111,12 @@ class QuieroSerFiscalForm(forms.Form):
     )
 
     password = forms.CharField(
-        label=_("New password"),
+        label=_("Password"),
         widget=forms.PasswordInput,
         strip=False,
     )
     password_confirmacion = forms.CharField(
-        label=_("New password confirmation"),
+        label=_("Password confirmation"),
         strip=False,
         widget=forms.PasswordInput,
     )

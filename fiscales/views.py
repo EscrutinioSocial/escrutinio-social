@@ -90,9 +90,9 @@ class BaseFiscal(LoginRequiredMixin, DetailView):
 class QuieroSerFiscal(FormView):
 
     title = "Quiero ser validador/a"
-    template_name = 'fiscales/quiero-ser-fiscal.html'
+    template_name = 'fiscales/quiero-validar.html'
     form_class = QuieroSerFiscalForm
-    success_url = reverse_lazy('quiero-ser-fiscal-gracias')
+    success_url = reverse_lazy('quiero-validar-gracias')
 
     def form_valid(self, form):
         data = form.cleaned_data
@@ -136,7 +136,7 @@ class QuieroSerFiscal(FormView):
 
 
 def quiero_ser_fiscal_gracias(request,):
-    return render(request, 'fiscales/quiero-ser-fiscal-gracias.html')
+    return render(request, 'fiscales/quiero-validar-gracias.html')
 
 
 def confirmar_email(request, uuid):
