@@ -9,15 +9,31 @@
             </a>
         </div>
         <div class="collapsible-body">
-            <ul>
             {% for circuito in seccion.circuito_set.all %}
+            <ul class="collapsible collapsible-accordion">
                 <li id="circuito-{{circuito.id}}">
-                    <a href="{{ request.path }}?circuito={{ circuito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
-                        {{ circuito.nombre }}
-                    </a>
+                    <div class="collapsible-header">
+                        <i class="material-icons">arrow_drop_down</i>
+                        <a
+                            href="{{ request.path }}?circuito={{ circuito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                            {{ circuito.nombre }}
+                        </a>
+                    </div>
+                    <div class="collapsible-body">
+                        <ul>
+                            {% for mesa in circuito.mesa_set.all|dictsort:"numero" %}
+                            <li>
+                                <a
+                                    href="{{ request.path }}?mesa={{ mesa.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
+                                    {{ mesa.numero }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </li>
-            {% endfor %}
             </ul>
+            {% endfor %}
         </div>
     </li>
 </ul>
