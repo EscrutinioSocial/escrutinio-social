@@ -313,6 +313,13 @@ SCORING_TROLL_PROBLEMA_DESCARTADO = 200
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
 MESA_TAKE_WAIT_TIME = 2  # En minutos
 
+# Prioridades standard, a usar si no se definen prioridades específicas
+# para una categoría o circuito
+PRIORIDADES_STANDARD = [
+    {'desde': 0, 'hasta': 2, 'prioridad': 2},
+    {'desde': 2, 'hasta': 10, 'prioridad': 20},
+    {'desde': 20, 'hasta': 100, 'prioridad': 200},
+]
 
 # Las siguientes constantes definen los criterios de filtro
 # para obtener aquellas instancias que se utilizan en el cálculo de resultados

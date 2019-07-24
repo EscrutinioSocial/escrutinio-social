@@ -832,6 +832,22 @@ class VotoMesaReportado(models.Model):
         return f"{self.carga} - {self.opcion}: {self.votos}"
 
 
+class PrioridadScheduling(models.Model):
+    """
+    Representa una prioridad distinta de la standard para 
+    una determinada categoria o circuito
+    """
+    circuito = models.ForeignKey(Circuito, null=True, related_name="prioridades", on_delete=models.CASCADE)
+    categoria = models.ForeignKey(Categoria, null=True, related_name="prioridades", on_delete=models.CASCADE)
+    # desde / hasta: pueden ser 0, no pueden ser null ni negativos
+    desde = models.PositiveIntegerField(null=False)
+    hasta = models.PositiveIntegerField(null=False)
+    # prioridad: no pueden ser null ni negativo, en discusion si puede ser 0, por ahora se permite
+    prioridad = models.PositiveIntegerField(null=False)
+    
+    
+
+
 @receiver(post_save, sender=Mesa)
 def actualizar_electores(sender, instance=None, created=False, **kwargs):
     """
