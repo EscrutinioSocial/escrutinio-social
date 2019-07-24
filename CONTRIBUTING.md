@@ -178,8 +178,8 @@ que son agnósticas del lenguaje.
     ```
     requiere_parcial = self.mc.categoria.requiere_cargas_parciales
     sin_consolidar = self.mc.status[:2] < MesaCategoria.STATUS.parcial_consolidada_dc[:2])
-    if requiere_parcial and con_status:
-
+    if requiere_parcial and sin_consolidar:
+        ...
     ```
     Cuando la mera evaluación puede ser costosa computacionalmente, no hacer esto
     así usufructuamos los "[cortocircuitos](https://docs.python.org/3/library/stdtypes.html#boolean-operations-and-or-not)" del `if`
@@ -187,7 +187,7 @@ que son agnósticas del lenguaje.
   - La estructura ternaria (foo = 'bar' if condicion else 'baz') es útil siempre que la condicion no deba reusarse
     y todo entre en el ancho. En caso contrario
 
-  - Usar `foo is not bar` en vez de `not (for is bar)`
+  - Usar `foo is not bar` en vez de `not (foo is bar)`
 
   - En caso de que inevitablemente una condición se compone de muchas condiciones parciales
     en varias lineas, preferir
