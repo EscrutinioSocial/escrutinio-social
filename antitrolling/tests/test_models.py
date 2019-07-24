@@ -47,13 +47,13 @@ def test_quitar_marca_troll(db):
     eventos = list(fiscal.eventos_scoring_troll.order_by('created').all())
     assert len(eventos) == 2
     primer_evento = eventos[0]
-    assert primer_evento.motivo == EventoScoringTroll.MOTIVO.identificacion_attachment_distinta_a_confirmada
+    assert primer_evento.motivo == EventoScoringTroll.MOTIVOS.identificacion_attachment_distinta_a_confirmada
     assert primer_evento.automatico
     assert primer_evento.actor is None
     assert primer_evento.fiscal_afectado == fiscal
     assert primer_evento.variacion == 400
     segundo_evento = eventos[1]
-    assert segundo_evento.motivo == EventoScoringTroll.MOTIVO.remocion_marca_troll
+    assert segundo_evento.motivo == EventoScoringTroll.MOTIVOS.remocion_marca_troll
     assert not segundo_evento.automatico
     assert segundo_evento.actor == usuario_experto
     assert segundo_evento.fiscal_afectado == fiscal
@@ -88,7 +88,7 @@ def test_registro_evento_scoring_identificacion(db):
     assert EventoScoringTroll.objects.count() == cantidad_eventos_antes + 1
     assert fiscal.eventos_scoring_troll.count() == 1
     evento = fiscal.eventos_scoring_troll.first()
-    assert evento.motivo == EventoScoringTroll.MOTIVO.identificacion_attachment_distinta_a_confirmada
+    assert evento.motivo == EventoScoringTroll.MOTIVOS.identificacion_attachment_distinta_a_confirmada
     assert evento.mesa_categoria is None
     assert evento.attachment == attach
     assert evento.automatico
@@ -111,10 +111,10 @@ def test_registro_evento_scoring_carga(db):
     carga = nueva_carga(mesa_categoria, fiscal, [30, 20, 10])
 
     assert fiscal.eventos_scoring_troll.count() == 0
-    aumentar_scoring_troll_carga(42, carga, EventoScoringTroll.MOTIVO.carga_valores_distintos_a_confirmados)
+    aumentar_scoring_troll_carga(42, carga, EventoScoringTroll.MOTIVOS.carga_valores_distintos_a_confirmados)
     assert fiscal.eventos_scoring_troll.count() == 1
     evento = fiscal.eventos_scoring_troll.first()
-    assert evento.motivo == EventoScoringTroll.MOTIVO.carga_valores_distintos_a_confirmados
+    assert evento.motivo == EventoScoringTroll.MOTIVOS.carga_valores_distintos_a_confirmados
     assert evento.mesa_categoria == mesa_categoria
     assert evento.attachment is None
     assert evento.automatico
@@ -199,7 +199,7 @@ def test_marcar_explicitamente_como_troll(db):
     eventos = list(fiscal.eventos_scoring_troll.order_by('created').all())
     assert len(eventos) == 1
     primer_evento = eventos[0]
-    assert primer_evento.motivo == EventoScoringTroll.MOTIVO.marca_explicita_troll
+    assert primer_evento.motivo == EventoScoringTroll.MOTIVOS.marca_explicita_troll
     assert not primer_evento.automatico 
     assert primer_evento.actor == usuario_experto
     assert primer_evento.fiscal_afectado == fiscal

@@ -16,7 +16,7 @@ class EventoScoringTroll(TimeStampedModel):
     Otros resultan de una acción que toma deliberadamente un usuario, p.ej. quitarle el status de troll a un fiscal.
     """
 
-    MOTIVO = Choices(
+    MOTIVOS = Choices(
         ('carga_valores_distintos_a_confirmados', 'Carga valores distintos a los confirmados'),
         ('indica_problema_mesa_categoria_confirmada', 'Indica "problema" para una mesa/categoría con carga confirmada'),
         ('identificacion_attachment_distinta_a_confirmada', 'Identifica un attachment de una forma distinta a la confirmada'),
@@ -24,7 +24,7 @@ class EventoScoringTroll(TimeStampedModel):
         ('remocion_marca_troll', 'Se remueve la marca de troll a un fiscal'),
     )
     "descripcion del motivo para cambiar el scoring troll de un fiscal"
-    motivo = StatusField(choices_name='MOTIVO')
+    motivo = models.CharField(max_length=50, choices=MOTIVOS)
 
     "referencia a la MesaCategoria para eventos por carga de valores distintos a los confirmados; None para los otros eventos"
     mesa_categoria = models.ForeignKey(MesaCategoria, null=True, on_delete=models.CASCADE)
@@ -83,7 +83,7 @@ def aumentar_scoring_troll_identificacion(variacion, identificacion):
     fiscal = identificacion.fiscal
     scoring_anterior = fiscal.scoring_troll()
     nuevo_evento = EventoScoringTroll.objects.create(
-        motivo=EventoScoringTroll.MOTIVO.identificacion_attachment_distinta_a_confirmada,
+        motivo=EventoScoringTroll.MOTIVOS.identificacion_attachment_distinta_a_confirmada,
         attachment=identificacion.attachment,
         automatico=True,
         fiscal_afectado=fiscal,
@@ -120,7 +120,7 @@ def crear_evento_marca_explicita_como_troll(fiscal, actor):
     """
 
     nuevo_evento = EventoScoringTroll.objects.create(
-        motivo=EventoScoringTroll.MOTIVO.marca_explicita_troll,
+        motivo=EventoScoringTroll.MOTIVOS.marca_explicita_troll,
         automatico=False,
         actor=actor,
         fiscal_afectado=fiscal,
@@ -138,7 +138,7 @@ def registrar_fiscal_no_es_troll(fiscal, nuevo_scoring, actor):
 
     # nuevo EventoScoringTroll
     nuevo_evento = EventoScoringTroll.objects.create(
-        motivo=EventoScoringTroll.MOTIVO.remocion_marca_troll,
+        motivo=EventoScoringTroll.MOTIVOS.remocion_marca_troll,
         automatico=False,
         actor=actor,
         fiscal_afectado=fiscal,

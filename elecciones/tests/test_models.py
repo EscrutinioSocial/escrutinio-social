@@ -108,11 +108,11 @@ def test_carga_actualizar_firma(db):
     c = CargaFactory()
     o1 = VotoMesaReportadoFactory(carga=c, votos=10, opcion__orden=1).opcion
     o2 = VotoMesaReportadoFactory(carga=c, votos=8, opcion__orden=3).opcion
-    o3 = VotoMesaReportadoFactory(carga=c, votos=None, opcion__orden=2).opcion
+    o3 = VotoMesaReportadoFactory(carga=c, votos=0, opcion__orden=2).opcion
     # ignora otras
-    VotoMesaReportadoFactory()
+    VotoMesaReportadoFactory(votos=0)
     c.actualizar_firma()
-    assert c.firma == f'{o1.id}-10|{o3.id}-|{o2.id}-8'
+    assert c.firma == f'{o1.id}-10|{o3.id}-0|{o2.id}-8'
 
 
 def test_firma_count(db):

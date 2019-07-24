@@ -8,6 +8,10 @@ from .models import (
     EventoScoringTroll
 )
 
+import logging
+
+logger = logging.getLogger("e-va")
+
 
 def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
     """
@@ -24,30 +28,6 @@ def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
 
 
 
-def diferencia_opciones(carga_1, carga_2):
-    votos_carga_1 = list(carga_1.reportados.order_by("opcion__orden").all())
-    votos_carga_2 = list(carga_2.reportados.order_by("opcion__orden").all())
-    diferencia = 0
-
-    # se calcula la diferencia para cada voto en la carga 1
-    for voto_1 in votos_carga_1:
-        cantidad_votos_1 = voto_1.votos
-        voto_misma_opcion_2 = next((voto_2 for voto_2 in votos_carga_2 if voto_2.opcion == voto_1.opcion), None)
-        if (voto_misma_opcion_2):
-            cantidad_votos_2 = voto_misma_opcion_2.votos 
-            diferencia += abs(cantidad_votos_1 - cantidad_votos_2)
-            votos_carga_2.remove(voto_misma_opcion_2)
-        else:
-            diferencia += cantidad_votos_1
-    
-    # los votos que quedaron en votos_carga_2 no tienen correspondencia en votos_carga_1
-    for voto_2 in votos_carga_2:
-        diferencia += voto_2.votos
-    
-    return diferencia
-
-
-
 def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
     """
     Realizar las actualizaciones de scoring troll que correspondan
@@ -58,15 +38,22 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
     testigo = mesa_categoria.carga_testigo
     for carga in mesa_categoria.cargas.filter(invalidada=False):
         if (carga.tipo == testigo.tipo and carga.firma != testigo.firma):
-            diferencia = diferencia_opciones(carga, testigo)
-            aumentar_scoring_troll_carga(
-                diferencia, carga, EventoScoringTroll.MOTIVO.carga_valores_distintos_a_confirmados
-            )
+            # se calcula la diferencia. Puede dar error, en tal caso se considera diferencia 0
+            try:
+                diferencia = testigo - carga
+            except CargasIncompatiblesError as e:
+                logger.exception(f'Error al calcular diferencia entre opciones, {str(e.value)} - se toma 0')
+                diferencia = 0
+            # se aumenta el scoring del fiscal que cargo distinto
+            if (diferencia > 0):
+                aumentar_scoring_troll_carga(
+                    diferencia, carga, EventoScoringTroll.MOTIVOS.carga_valores_distintos_a_confirmados
+                )
         elif (carga.tipo == Carga.TIPOS.problema):
             aumentar_scoring_troll_carga(
                 settings.SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA, 
                 carga, 
-                EventoScoringTroll.MOTIVO.indica_problema_mesa_categoria_confirmada
+                EventoScoringTroll.MOTIVOS.indica_problema_mesa_categoria_confirmada
             )
 
 

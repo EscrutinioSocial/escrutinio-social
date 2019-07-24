@@ -2,12 +2,11 @@ import pytest
 
 from django.conf import settings
 
-from elecciones.models import MesaCategoria, Carga
+from elecciones.models import MesaCategoria, Carga, CargasIncompatiblesError
 from adjuntos.models import Identificacion, Attachment
 from adjuntos.consolidacion import consumir_novedades
 from antitrolling.efecto import (
-  efecto_scoring_troll_asociacion_attachment, efecto_scoring_troll_confirmacion_carga,
-  diferencia_opciones
+  efecto_scoring_troll_asociacion_attachment, efecto_scoring_troll_confirmacion_carga
 )
 from antitrolling.models import EventoScoringTroll
 from elecciones.tests.factories import (
@@ -15,8 +14,8 @@ from elecciones.tests.factories import (
 )
 
 from .utils_para_test import (
-  nuevo_fiscal, identificar, reportar_problema_attachment,
-  nueva_categoria, nueva_carga
+    nuevo_fiscal, identificar, reportar_problema_attachment,
+    nueva_categoria, nueva_carga
 )
 
 
@@ -74,7 +73,53 @@ def test_diferencia_opciones(db):
     carga_2 = nueva_carga(mesa_categoria, fiscal_2, [28, 19, 11])
 
     # calculo
-    assert diferencia_opciones(carga_1, carga_2) == 4
+    assert carga_1 - carga_2 == 4
+
+
+def test_diferencia_opciones_cargas_incompatibles(db):
+    # creo fiscales
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+
+    # creo opciones y categoria
+    categoria_1 = nueva_categoria(["o1", "o2", "o3"])
+    categoria_2 = nueva_categoria(["p1", "p2", "p3"])
+
+    # creo mesa y mesa_categoria
+    mesa = MesaFactory(categorias=[categoria_1, categoria_2])
+    mesa_categoria_1 = MesaCategoria.objects.filter(mesa=mesa, categoria=categoria_1).first()
+    mesa_categoria_2 = MesaCategoria.objects.filter(mesa=mesa, categoria=categoria_2).first()
+
+    # creo cargas
+    carga_1 = nueva_carga(mesa_categoria_1, fiscal_1, [30, 20, 10])
+    carga_2 = nueva_carga(mesa_categoria_2, fiscal_2, [28, 19, 11])
+
+    # verifico error
+    with pytest.raises(CargasIncompatiblesError) as e:
+        carga_1 - carga_2
+    assert 'las cargas no coinciden en mesa, categoría o tipo' in str(e.value)
+
+
+def test_diferencia_opciones_con_opciones_diferentes(db):
+    # creo fiscales
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+
+    # creo opciones y categoria
+    categoria = nueva_categoria(["o1", "o2", "o3"])
+
+    # creo mesa y mesa_categoria
+    mesa = MesaFactory(categorias=[categoria])
+    mesa_categoria = MesaCategoria.objects.filter(mesa=mesa).first()
+
+    # creo cargas, a la segunda le falta un valor, por lo que se van a agregar sólo dos VotoReportadoMesa
+    carga_1 = nueva_carga(mesa_categoria, fiscal_1, [30, 20, 10])
+    carga_2 = nueva_carga(mesa_categoria, fiscal_2, [28, 19])
+
+    # verifico error
+    with pytest.raises(CargasIncompatiblesError) as e:
+        carga_1 - carga_2
+    assert 'las cargas no coinciden en sus opciones' in str(e.value)
 
 
 def test_efecto_confirmar_carga_mesa_categoria(db):
@@ -101,14 +146,14 @@ def test_efecto_confirmar_carga_mesa_categoria(db):
     carga3 = nueva_carga(mesa_categoria, fiscal_3, [5, 40, 15])
     carga4 = nueva_carga(mesa_categoria, fiscal_4, [30, 20, 10])
     for carga in [carga1, carga2, carga3, carga4]:
-      carga.actualizar_firma()
+        carga.actualizar_firma()
 
     # se define que las cargas de fiscal_2 y fiscal_4 son las correctas
     mesa_categoria.actualizar_status(MesaCategoria.STATUS.total_consolidada_dc, carga2)
 
     # antes de afectar el scoring troll: los cuatro fiscales tienen scoring 0
     for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
-      assert fiscal.scoring_troll() == 0
+        assert fiscal.scoring_troll() == 0
 
     # hago la afectacion de scoring trol
     efecto_scoring_troll_confirmacion_carga(mesa_categoria)
@@ -176,8 +221,10 @@ def test_efecto_marcar_fiscal_como_troll(db):
     fiscal_1.marcar_como_troll(fiscal_4)
     assert Identificacion.objects.filter(invalidada=True).count() == 2
     assert Carga.objects.filter(invalidada=True).count() == 3
-    assert all(map(lambda ident : ident.invalidada, Identificacion.objects.filter(fiscal=fiscal_1).all()))
-    assert all(map(lambda carga : carga.invalidada, Carga.objects.filter(fiscal=fiscal_1).all()))
+    for ident in Identificacion.objects.filter(fiscal=fiscal_1):
+        assert ident.invalidada
+    for carga in Carga.objects.filter(fiscal=fiscal_1):
+        assert carga.invalidada
 
     
 def test_efecto_de_ser_troll(db):
@@ -209,11 +256,11 @@ def test_efecto_de_ser_troll(db):
     # las cargas e identificaciones que hizo el fiscal 1 estan invalidadas y procesadas,
     # las que hizo el fiscal 2 no
     for accion in [ident_1, problema_1, carga_1]:
-      assert accion.invalidada
-      assert accion.procesada
+        assert accion.invalidada
+        assert accion.procesada
     for accion in [ident_2, problema_2, carga_2]:
-      assert not accion.invalidada
-      assert not accion.procesada
+        assert not accion.invalidada
+        assert not accion.procesada
 
     # consolido cargas e identificaciones. Ni el attachment ni la mesa_categoria deberian estar consolidados.
     consumir_novedades()

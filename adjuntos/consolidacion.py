@@ -11,9 +11,6 @@ from antitrolling.efecto import (
 )
 
 
-
-
-
 def consolidar_cargas_por_tipo(cargas, tipo):
     """
     El parámetro cargas tiene solamente cargas del tipo parámetro.
@@ -211,24 +208,22 @@ def consolidar_identificaciones(attachment):
     attachment.identificacion_testigo = testigo
     attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
 
-    # si el attachment pasa de tener una mesa a no tenerla, entonces para cada MesaCategoria:
-    # quitar el orden de carga, e invalidar todas sus cargas
-    if (mesa_anterior is not None) and (mesa_attachment is None):
-        for mc in MesaCategoria.objects.filter(mesa=mesa_anterior):
-            mc.orden_de_carga = None
-            mc.save(update_fields=['orden_de_carga'])
-            for carga in mc.cargas.all():
-                carga.invalidar()
+    # si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
+    # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment
+    if (mesa_anterior) and (not mesa_attachment):
+        mesa_anterior.invalidar_asignacion_attachment()
 
 
 
 @transaction.atomic
 def consumir_novedades_identificacion():
     a_procesar = Identificacion.objects.select_for_update().filter(procesada=False)
+    # OJO - aca precomputar los ids_a_procesar es importante
+    # ver comentario en consumir_novedades_carga()
     ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
 
     attachments_con_novedades = Attachment.objects.filter(
-        identificaciones__in=Subquery(a_procesar.values('id'))
+        identificaciones__in=ids_a_procesar
     ).distinct()
     for attachment in attachments_con_novedades:
         consolidar_identificaciones(attachment)
@@ -242,9 +237,30 @@ def consumir_novedades_identificacion():
 def consumir_novedades_carga():
     a_procesar = Carga.objects.select_for_update().filter(procesada=False)
     ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+    # OJO - aca precomputar los ids_a_procesar es importante
+    # si en lugar de hacer esto, al final se ejecuta
+    #    a_procesar.update(procesada=True)
+    # entonces se pasa a procesadas **todas** las cargas que tuvieren procesada=False
+    # **al final** del proceso.
+    #
+    # En particular, si se detecta a un fiscal como troll, se pasan todas sus cargas a
+    # invalidada=True y procesada=False, para que **la siguiente** consolidacion de cargas
+    # recompute el estado de las MesaCategoria. 
+    # Pero también podría pasar que entren nuevas cargas mientras se ejecuta la consolidación.
+    # En ambos casos, es importante que se respete que esas cargas están pendientes de proceso.
+    #
+    # Técnicamente, por más que se haga el SELECT arriba, si se pone
+    #    a_procesar.update(procesada=True)
+    # el SQL generado por Django es de la forma
+    #    UPDATE carga SET procesada=True WHERE procesada=False
+    # considera **la condición** del SELECT, no su resultado.
+    # Al obtener los ids, se fuerza a que el SQL sea así:
+    #    UPDATE carga SET procesada=True WHERE id in [...lista_precalculada_de_ids...]
+    #
+    # Carlos Lombardi, 2019.07.24
 
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
-        cargas__in=Subquery(a_procesar.values('id'))
+        cargas__in=ids_a_procesar
     ).distinct()
     for mesa_categoria_con_novedades in mesa_categorias_con_novedades:
         consolidar_cargas(mesa_categoria_con_novedades)

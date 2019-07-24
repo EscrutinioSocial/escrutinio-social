@@ -105,19 +105,35 @@ class Fiscal(models.Model):
         return self.eventos_scoring_troll.aggregate(v=Sum('variacion'))['v'] or 0
 
     def marcar_como_troll(self, actor):
+        """
+        Un UE decidió, explícitamente, marcarme como troll
+        """
         evento = crear_evento_marca_explicita_como_troll(self, actor)
         marcar_fiscal_troll(self, evento)
 
     def aplicar_marca_troll(self):
+        """
+        Ejecutar las consecuencias de la decisión de marcarme como troll.
+        La decisión puede ser automática o manual.
+        El código que refleja la decisión generó el CambioEstadoTroll correspondiente,
+        este método es para el resto de las consecuencias.
+        """
         self.troll = True
         self.save(update_fields=['troll'])
         efecto_determinacion_fiscal_troll(self)
 
     def quitar_marca_troll(self, actor, nuevo_scoring):
+        """
+        Un UE decidió, explícitamente, quitarme la marca de troll.
+        Este es el único caso en que un fiscal pierde la marca de troll, no hay eventos automáticos para esto.
+        Por eso este método incluye todas las consecuencias del acto de desmarcar, 
+        al contrario de la decisión de marcar que puede ser manual o automática.
+        """
         era_troll = self.troll
         self.troll = False
         self.save(update_fields=['troll'])
-        registrar_fiscal_no_es_troll(self, nuevo_scoring, actor)
+        if (era_troll):
+            registrar_fiscal_no_es_troll(self, nuevo_scoring, actor)
 
 
 

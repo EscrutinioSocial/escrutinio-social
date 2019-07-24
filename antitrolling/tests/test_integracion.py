@@ -168,7 +168,8 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db):
     assert fiscal_1.scoring_troll() == 60
     assert Carga.objects.filter(invalidada=True).count() == 3
     assert Carga.objects.filter(procesada=False).count() == 3
-    assert all(map(lambda carga: carga.invalidada and not carga.procesada, Carga.objects.filter(fiscal=fiscal_1).all()))
+    for carga in Carga.objects.filter(fiscal=fiscal_1):
+        assert carga.invalidada and not carga.procesada
 
     # ahora lanzo una nueva consolidacion, que deberia procesar las cargas invalidadas 
     # me fijo que el estado de cada MC quede como lo espero
@@ -183,7 +184,8 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db):
     assert mesa_categoria_2_2.status == MesaCategoria.STATUS.total_consolidada_dc
     assert Carga.objects.filter(invalidada=True).count() == 3
     assert Carga.objects.filter(procesada=False).count() == 0
-    assert all(map(lambda carga: carga.invalidada, Carga.objects.filter(fiscal=fiscal_1).all()))
+    for carga in Carga.objects.filter(fiscal=fiscal_1):
+        assert carga.invalidada
 
     
 def test_cargas_troll_no_consolidadas(db):
@@ -271,8 +273,8 @@ def test_cargas_troll_no_consolidadas(db):
     assert fiscal_1.scoring_troll() == 60
     assert Carga.objects.filter(invalidada=True).count() == 5
     assert Carga.objects.filter(procesada=False).count() == 5
-    assert all(map(lambda carga: carga.invalidada and not carga.procesada,
-                   Carga.objects.filter(fiscal=fiscal_1).all()))
+    for carga in Carga.objects.filter(fiscal=fiscal_1):
+        assert carga.invalidada and not carga.procesada
 
     # ahora lanzo una nueva consolidacion, que deberia procesar las cargas invalidadas
     # me fijo que el estado de cada MC quede como lo espero
@@ -291,7 +293,8 @@ def test_cargas_troll_no_consolidadas(db):
     assert mesa_categoria_4_1.status == MesaCategoria.STATUS.total_sin_consolidar
     assert Carga.objects.filter(invalidada=True).count() == 5
     assert Carga.objects.filter(procesada=False).count() == 0
-    assert all(map(lambda carga: carga.invalidada, Carga.objects.filter(fiscal=fiscal_1).all()))
+    for carga in Carga.objects.filter(fiscal=fiscal_1):
+        assert carga.invalidada
 
 
 def test_identificaciones_troll(db):
@@ -387,7 +390,8 @@ def test_identificaciones_troll(db):
     assert fiscal_1.troll 
     assert Identificacion.objects.filter(procesada=False).count() == 3
     assert Identificacion.objects.filter(invalidada=True).count() == 3
-    assert all(map(lambda ident: ident.invalidada, Identificacion.objects.filter(fiscal=fiscal_1).all()))
+    for ident in Identificacion.objects.filter(fiscal=fiscal_1):
+        assert ident.invalidada
     assert Carga.objects.filter(procesada=False).count() == 0
     assert Carga.objects.filter(invalidada=True).count() == 0
 
@@ -410,7 +414,8 @@ def test_identificaciones_troll(db):
     assert Identificacion.objects.filter(invalidada=True).count() == 3
     assert Carga.objects.filter(procesada=False).count() == 2
     assert Carga.objects.filter(invalidada=True).count() == 2
-    assert all(map(lambda carga: carga.invalidada, Carga.objects.filter(mesa_categoria = mesa_categoria_1).all()))
+    for carga in Carga.objects.filter(mesa_categoria=mesa_categoria_1):
+        assert carga.invalidada
 
     # finalmente, se ejecuta una consolidacion de cargas
     # la MesaCategoria de m1 pasa a sin_cargas, y se le borra la carga testigo
@@ -427,5 +432,6 @@ def test_identificaciones_troll(db):
     assert Identificacion.objects.filter(invalidada=True).count() == 3
     assert Carga.objects.filter(procesada=False).count() == 0
     assert Carga.objects.filter(invalidada=True).count() == 2
-    assert all(map(lambda carga: carga.invalidada, Carga.objects.filter(mesa_categoria = mesa_categoria_1).all()))
+    for carga in Carga.objects.filter(mesa_categoria=mesa_categoria_1):
+        assert carga.invalidada
 
