@@ -44,7 +44,8 @@ from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
 
-from material import Layout, Row, LayoutMixin
+from secrets import choice
+from string import ascii_letters, digits
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
@@ -92,7 +93,6 @@ class QuieroSerFiscal(FormView):
     title = "Quiero ser validador/a"
     template_name = 'fiscales/quiero-validar.html'
     form_class = QuieroSerFiscalForm
-    success_url = reverse_lazy('quiero-validar-gracias')
 
     def form_valid(self, form):
         data = form.cleaned_data
@@ -103,17 +103,20 @@ class QuieroSerFiscal(FormView):
         fiscal.referido_por_nombres = data['referido_por_nombres']
         if data['referido_por_codigo']:
             fiscal.referido_por_codigo = data['referido_por_codigo']
+        fiscal.referido_codigo = generar_codigo_confirmacion()
         fiscal.save()
         fiscal.agregar_dato_de_contacto('teléfono', data['telefono'])
         fiscal.agregar_dato_de_contacto('email', data['email'])
         fiscal.user.set_password(data['password'])
+
         fiscal.user.save()
 
-        self.sendMail(fiscal, data['email'])
+        self.enviar_correo_confirmacion(fiscal, data['email'])
 
+        self.success_url = reverse('quiero-validar-gracias', kwargs={'codigo_ref': fiscal.referido_codigo})
         return super().form_valid(form)
 
-    def sendMail(self, fiscal, email):
+    def enviar_correo_confirmacion(self, fiscal, email):
         body_html = render_to_string(
             'fiscales/email.html', {
                 'fiscal': fiscal,
@@ -135,8 +138,28 @@ class QuieroSerFiscal(FormView):
         )
 
 
-def quiero_ser_fiscal_gracias(request,):
-    return render(request, 'fiscales/quiero-validar-gracias.html')
+def generar_codigo_confirmacion():
+    """
+    Genera un código único de 4 dígitos alfanuméricos y chequea que sea único en la base de una manera
+    no muy a salvo de problemas de concurrencia.
+
+    En caso de surgir un problema de naturaleza concurrente, lo salvará la constraint de la base.
+    """
+    codigo = generar_codigo_random()
+    fiscal_mismo_codigo = Fiscal.objects.filter(referido_codigo=codigo).first()
+    while fiscal_mismo_codigo is not None:
+        codigo = generar_codigo_random()
+        fiscal_mismo_codigo = Fiscal.objects.filter(referido_codigo=codigo).first()
+    return codigo
+
+
+def generar_codigo_random():
+    alphabet = ascii_letters + digits
+    return ''.join(choice(alphabet) for i in range(QuieroSerFiscalForm.CARACTERES_REF_CODIGO)).upper()
+
+
+def quiero_validar_gracias(request, codigo_ref):
+    return render(request, 'fiscales/quiero-validar-gracias.html', {'codigo_ref': codigo_ref})
 
 
 def confirmar_email(request, uuid):
