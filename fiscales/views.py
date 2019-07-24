@@ -9,7 +9,7 @@ from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
-from django.views.generic.edit import UpdateView, CreateView
+from django.views.generic.edit import UpdateView, CreateView, FormView
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -29,7 +29,6 @@ from elecciones.models import (
 )
 from .acciones import siguiente_accion
 
-from formtools.wizard.views import SessionWizardView
 from django.template.loader import render_to_string
 from html2text import html2text
 from django.core.mail import send_mail
@@ -37,9 +36,7 @@ from sentry_sdk import capture_exception
 from .forms import (
     MisDatosForm,
     votomesareportadoformset_factory,
-    QuieroSerFiscal1,
-    QuieroSerFiscal2,
-    QuieroSerFiscal4,
+    QuieroSerFiscalForm,
 )
 from contacto.views import ConContactosMixin
 from problemas.models import Problema
@@ -47,6 +44,7 @@ from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
 
+from material import Layout, Row, LayoutMixin
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
@@ -89,59 +87,33 @@ class BaseFiscal(LoginRequiredMixin, DetailView):
             raise Http404('no está registrado como fiscal')
 
 
-class QuieroSerFiscal(SessionWizardView):
-    form_list = [
-        QuieroSerFiscal1,
-        QuieroSerFiscal2,
-        #  QuieroSerFiscal3,
-        QuieroSerFiscal4
-    ]
+class QuieroSerFiscal(FormView):
 
-    def get_form_initial(self, step):
-        if step != '0':
-            dni = self.get_cleaned_data_for_step('0')['dni']
-            email = self.get_cleaned_data_for_step('0')['email']
-            fiscal = (get_object_or_None(Fiscal, dni=dni) or
-                      get_object_or_None(Fiscal,
-                                         datos_de_contacto__valor=email,
-                                         datos_de_contacto__tipo='email'))
+    title = "Quiero ser validador/a"
+    template_name = 'fiscales/quiero-ser-fiscal.html'
+    form_class = QuieroSerFiscalForm
+    success_url = reverse_lazy('quiero-ser-fiscal-gracias')
 
-        if step == '1' and fiscal:
-            if self.steps.current == '0':
-                # sólo si acaba de llegar al paso '1' muestro mensaje
-                messages.info(self.request, 'Ya estás en el sistema. Por favor, confirmá tus datos.')
-            return {
-                'nombre': fiscal.nombres,
-                'apellido': fiscal.apellido,
-                'telefono': fiscal.telefonos[0] if fiscal.telefonos else '',
-            }
-
-        return self.initial_dict.get(step, {})
-
-    def done(self, form_list, **kwargs):
-        data = self.get_all_cleaned_data()
-        dni = data['dni']
-        email = data['email']
-        fiscal = (get_object_or_None(Fiscal, dni=dni) or
-                  get_object_or_None(Fiscal,
-                                     datos_de_contacto__valor=email,
-                                     datos_de_contacto__tipo='email'))
-        if fiscal:
-            fiscal.estado = 'AUTOCONFIRMADO'
-        else:
-            fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=dni)
-
-        fiscal.dni = dni
-        fiscal.nombres = data['nombre']
+    def form_valid(self, form):
+        data = form.cleaned_data
+        fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
+        fiscal.nombres = data['nombres']
         fiscal.apellido = data['apellido']
-        # fiscal.escuela_donde_vota = data['escuela']
+        fiscal.seccion_id = data['seccion']
+        fiscal.referido_por_nombres = data['referido_por_nombres']
+        if data['referido_por_codigo']:
+            fiscal.referido_por_codigo = data['referido_por_codigo']
         fiscal.save()
         fiscal.agregar_dato_de_contacto('teléfono', data['telefono'])
-        fiscal.agregar_dato_de_contacto('email', email)
-
-        fiscal.user.set_password(data['new_password1'])
+        fiscal.agregar_dato_de_contacto('email', data['email'])
+        fiscal.user.set_password(data['password'])
         fiscal.user.save()
 
+        self.sendMail(fiscal, data['email'])
+
+        return super().form_valid(form)
+
+    def sendMail(self, fiscal, email):
         body_html = render_to_string(
             'fiscales/email.html', {
                 'fiscal': fiscal,
@@ -162,11 +134,9 @@ class QuieroSerFiscal(SessionWizardView):
             html_message=body_html
         )
 
-        return render(self.request, 'formtools/wizard/wizard_done.html', {
-            'fiscal': fiscal, 'email': settings.DEFAULT_FROM_EMAIL,
-            'cell_call': settings.DEFAULT_CEL_CALL, 'cell_local': settings.DEFAULT_CEL_LOCAL,
-            'site_url': settings.FULL_SITE_URL
-        })
+
+def quiero_ser_fiscal_gracias(request,):
+    return render(request, 'fiscales/quiero-ser-fiscal-gracias.html')
 
 
 def confirmar_email(request, uuid):
@@ -348,6 +318,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
         }
     )
 
+
 class ReporteDeProblemaCreateView(CreateView):
     http_method_names = ['post']
     form_class = IdentificacionDeProblemaForm
@@ -447,7 +418,7 @@ def confirmar_fiscal(request, fiscal_id):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-class AutocompleteBaseListView(LoginRequiredMixin, ListView):
+class AutocompleteBaseListView(ListView):
 
     def get(self, request, *args, **kwargs):
         data = {'options': [{'value': o.id, 'text': str(o)} for o in self.get_queryset()]}
@@ -476,4 +447,3 @@ class MesaListView(AutocompleteBaseListView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(lugar_votacion__circuito__id=self.request.GET['parent_id'])
-

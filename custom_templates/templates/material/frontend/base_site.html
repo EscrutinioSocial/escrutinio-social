@@ -21,18 +21,8 @@
 
 {% block favicon %}<link href="{% static 'img/favicon.png' %}" rel="shortcut icon">{% endblock %}
 
-
-    {% comment %}
-
-        esto da problemas. funcional el modal pero desactiva el menu y otras cosas.
-hola
-
-
-      {% block js %}
-      {{ block.super }}
-      <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-      {% include 'material/includes/material_js.html' %}
-      {% block extrajs %}{% endblock %}
-      {% endblock %}
-
-      {% endcomment %}
+{% block js %}
+{{ block.super }}
+<script src="{% static 'js/autocomplete.js' %}"></script>
+{% block extrajs %}{% endblock %}
+{% endblock %}
