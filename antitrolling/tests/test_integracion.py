@@ -295,6 +295,68 @@ def test_cargas_troll_no_consolidadas(db, settings):
         assert carga.invalidada
 
 
+def test_cargas_troll_con_problemas(db, settings):
+    """
+    Se verifica que luego de que un fiscal es detectado como troll, 
+    el estado de las cargas "con problemas" en las que participó cambie adecuadamente
+    """
+    settings.MIN_COINCIDENCIAS_CARGAS = 2
+    settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
+
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+    fiscal_3 = nuevo_fiscal()
+    categoria_1 = nueva_categoria(["o1", "o2", "o3"])
+
+    mesa_1 = MesaFactory(categorias=[categoria_1])
+    mesa_2 = MesaFactory(categorias=[categoria_1])
+    mesa_categoria_1_1 = MesaCategoria.objects.filter(mesa=mesa_1, categoria=categoria_1).first()
+    mesa_categoria_2_1 = MesaCategoria.objects.filter(mesa=mesa_2, categoria=categoria_1).first()
+
+    carga_1_1_1 = nueva_carga(mesa_categoria_1_1, fiscal_1, [20, 25, 15])
+    carga_1_1_2 = reportar_problema_mesa_categoria(mesa_categoria_1_1, fiscal_2)
+    carga_2_1_1 = reportar_problema_mesa_categoria(mesa_categoria_2_1, fiscal_1)
+    carga_2_1_3 = nueva_carga(mesa_categoria_2_1, fiscal_3, [60, 30, 15])
+
+    def refrescar_data():
+        for db_object in [mesa_categoria_1_1, mesa_categoria_2_1, fiscal_1, fiscal_2, fiscal_3]:
+            db_object.refresh_from_db()
+
+    assert Carga.objects.filter(procesada=False).count() == 4
+    assert Carga.objects.filter(invalidada=True).count() == 0
+    assert not fiscal_1.troll
+
+    # hasta aca: (1,1) y (2,1) sin consolidar, tienen problemas pero no la cantidad necesaria
+    consumir_novedades_carga()
+    refrescar_data()
+    assert mesa_categoria_1_1.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert mesa_categoria_2_1.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert Carga.objects.filter(procesada=False).count() == 0
+    assert Carga.objects.filter(invalidada=True).count() == 0
+
+    # ahora digo de prepo que el fiscal 1 es troll
+    # Por lo tanto sus cargas pasan a invalidadas y pendientes de proceso
+    fiscal_1.marcar_como_troll(fiscal_3)
+    assert fiscal_1.troll
+    assert Carga.objects.filter(invalidada=True).count() == 2
+    assert Carga.objects.filter(procesada=False).count() == 2
+    for carga in Carga.objects.filter(fiscal=fiscal_1):
+        assert carga.invalidada and not carga.procesada
+
+    # ahora lanzo una nueva consolidacion, que deberia procesar las cargas invalidadas
+    # La (1,1) queda sin_cargar, porque la única carga válida es un problema
+    # La (2,1) sigue sin_consolidar
+    consumir_novedades_carga()
+    refrescar_data()
+    assert mesa_categoria_1_1.status == MesaCategoria.STATUS.sin_cargar
+    assert mesa_categoria_2_1.status == MesaCategoria.STATUS.total_sin_consolidar
+    assert Carga.objects.filter(invalidada=True).count() == 2
+    assert Carga.objects.filter(procesada=False).count() == 0
+    assert mesa_categoria_2_1.carga_testigo == carga_2_1_3
+    for carga in Carga.objects.filter(fiscal=fiscal_1):
+        assert carga.invalidada
+
+
 def test_identificaciones_troll(db, settings):
     """
     Se verifica que luego de que un fiscal es detectado como troll, 

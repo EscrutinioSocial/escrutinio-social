@@ -133,6 +133,13 @@ def consolidar_cargas(mesa_categoria):
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         if (status_resultante == MesaCategoria.STATUS.parcial_consolidada_dc):
             efecto_scoring_troll_confirmacion_carga(mesa_categoria)
+        return 
+
+    # Si llegué hasta acá, es que hay cargas, pero no hay ninguna carga ni total ni parcial
+    # Ergo, todas las cargas que hay son de problemas
+    # En este caso, le corresponde sin_cargas y sin carga testigo, que son los valores default
+    # de status_resultante y carga_testigo_resultante
+    mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
 
 
 def consolidar_identificaciones(attachment):
