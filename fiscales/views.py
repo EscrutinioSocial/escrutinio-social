@@ -102,7 +102,7 @@ class QuieroSerFiscal(FormView):
         fiscal.seccion_id = data['seccion']
         fiscal.referido_por_nombres = data['referido_por_nombres']
         if data['referido_por_codigo']:
-            fiscal.referido_por_codigo = data['referido_por_codigo']
+            fiscal.referido_por_codigo = data['referido_por_codigo'].upper()
         fiscal.referido_codigo = generar_codigo_confirmacion()
         fiscal.save()
         fiscal.agregar_dato_de_contacto('teléfono', data['telefono'])
