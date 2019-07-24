@@ -1,7 +1,5 @@
 import pytest
 
-from django.conf import settings
-
 from elecciones.models import MesaCategoria, Carga, CargasIncompatiblesError
 from adjuntos.models import Identificacion, Attachment
 from adjuntos.consolidacion import consumir_novedades
@@ -19,8 +17,7 @@ from .utils_para_test import (
 )
 
 
-
-def test_efecto_consolidar_asociacion_attachment(db):
+def test_efecto_consolidar_asociacion_attachment(db, settings):
     """
     Se comprueba que el efecto de afectar el scoring de troll a partir de la asociacion 
     de un Attachment a una Mesa sea el correcto.

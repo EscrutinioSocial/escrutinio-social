@@ -1,7 +1,5 @@
 import pytest
 
-from django.conf import settings
-
 from antitrolling.models import (
     EventoScoringTroll, CambioEstadoTroll,
     aumentar_scoring_troll_identificacion, aumentar_scoring_troll_carga
@@ -25,7 +23,7 @@ def test_aplicar_marca_troll(db):
     assert fiscal.troll
 
 
-def test_quitar_marca_troll(db):
+def test_quitar_marca_troll(db, settings):
     settings.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 300
     
     fiscal = nuevo_fiscal()
@@ -123,8 +121,7 @@ def test_registro_evento_scoring_carga(db):
     assert evento.variacion == 42
 
 
-
-def test_registro_cambio_estado_troll(db):
+def test_registro_cambio_estado_troll(db, settings):
     """
     Se comprueba que un CambioEstadoTroll se genere con los valores correctos.
     """
@@ -149,8 +146,7 @@ def test_registro_cambio_estado_troll(db):
     assert cambioEstado.troll
 
 
-
-def test_aumentar_scrolling(db):
+def test_aumentar_scrolling(db, settings):
     """
     Se comprueba que al disparar eventos de aumento de scoring, el efecto sea el esperado
     """

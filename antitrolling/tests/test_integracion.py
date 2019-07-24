@@ -1,7 +1,5 @@
 import pytest
 
-from django.conf import settings
-
 from elecciones.models import MesaCategoria, Carga
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import (
@@ -19,7 +17,7 @@ from .utils_para_test import (
 )
 
 
-def test_asociacion_attachment_con_antitrolling(db):
+def test_asociacion_attachment_con_antitrolling(db, settings):
     """
     Se simula que se asocia un Attachment a una mesa, usando la función de consolidación.
     Se comprueba que el efecto sobre el scoring de troll de los fiscales que hicieron identificaciones es el correcto.
@@ -57,7 +55,7 @@ def test_asociacion_attachment_con_antitrolling(db):
     assert fiscal_4.scoring_troll() == 180
 
 
-def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db):
+def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db, settings):
     """
     Se simula que se confirma la carga total de una MesaCategoria, usando la función de consolidación.
     Se comprueba que el efecto sobre el scoring de troll de los fiscales que hicieron cargas es el correcto.
@@ -100,7 +98,7 @@ def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db):
     assert fiscal_5.scoring_troll() == 0
 
 
-def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db):
+def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
     """
     Se verifica que luego de que un fiscal que habia hecho una carga aceptada es detectado como troll, 
     y que posteriormente se ejecuta una consolidacion de cargas,
@@ -188,7 +186,7 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db):
         assert carga.invalidada
 
     
-def test_cargas_troll_no_consolidadas(db):
+def test_cargas_troll_no_consolidadas(db, settings):
     """
     Se verifica que luego de que un fiscal es detectado como troll, 
     el estado de las cargas "en conflicto" o "sin consolidar" en las que participó cambie adecuadamente
@@ -297,7 +295,7 @@ def test_cargas_troll_no_consolidadas(db):
         assert carga.invalidada
 
 
-def test_identificaciones_troll(db):
+def test_identificaciones_troll(db, settings):
     """
     Se verifica que luego de que un fiscal es detectado como troll, 
     el estado asociado a las identificaciones que hubiera hecho cambia tal cual se espera.
