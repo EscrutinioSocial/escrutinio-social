@@ -44,10 +44,18 @@ def hacer_staff(modeladmin, request, queryset):
 
 hacer_staff.short_description = "Hacer staff (dataentry)"
 
-class EventoScoringTrollInline(admin.StackedInline):
+class EventoScoringTrollInline(admin.TabularInline):
     model = EventoScoringTroll
     extra = 0
     fk_name = "fiscal_afectado"
+    readonly_fields = ('motivo', 'mesa_categoria', 'attachment', 'automatico', 'actor', 'variacion')
+    verbose_name = "Evento que afecta al scoring troll del fiscal"
+    verbose_name_plural = "Eventos que afectan al scoring troll del fiscal"
+    can_delete = False
+
+    def has_add_permission(self, request):
+        return False
+
 
 class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     actions = [hacer_staff]
@@ -84,7 +92,6 @@ class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         row_actions += super().get_row_actions(obj)
         return row_actions
 
-    @lru_cache(128)
     def scoring_troll(o):
         return o.scoring_troll()
 

@@ -11,10 +11,13 @@ NO_PERMISSION_REDIRECT = 'permission-denied'
 def cambiar_status_troll(request, fiscal_id, prender):
     fiscal = get_object_or_404(Fiscal, id=fiscal_id)
 
-    if prender:
-        fiscal.aplicar_marca_troll()
+    # el parámetro prender llega como un String, "True" o "False"
+    prender_bool = prender == "True"
+
+    if prender_bool:
+        fiscal.marcar_como_troll(request.user.fiscal)
     else:
-        fiscal.quitar_marca_troll(request.user.fiscal, 0) # XXX Pendiente el nuevo score.
+        fiscal.quitar_marca_troll(request.user.fiscal, 0)  # XXX Pendiente el nuevo score.
 
     messages.info(
         request,
