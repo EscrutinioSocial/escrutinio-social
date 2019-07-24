@@ -174,6 +174,7 @@ class QuieroSerFiscalForm(forms.Form):
         if referido_por_codigo:
             if len(referido_por_codigo) != self.CARACTERES_REF_CODIGO:
                 raise ValidationError('Codigo de referido debe ser de 4 letras y/o números')
+        return referido_por_codigo
 
 
 class VotoMesaModelForm(forms.ModelForm):
