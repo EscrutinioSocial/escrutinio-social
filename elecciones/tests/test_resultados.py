@@ -156,13 +156,9 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     o4.partido = o1.partido
     o4.save()
 
-    nombre_corto_blanco = settings.OPCION_BLANCOS['nombre_corto']
-    tipo_blanco = settings.OPCION_BLANCOS['tipo']
-    blanco = categoria.opciones.get(nombre=nombre_corto_blanco, tipo=tipo_blanco)
+    blanco = categoria.get_opcion_blancos()
 
-    nombre_corto_total = settings.OPCION_TOTAL_VOTOS['nombre_corto']
-    tipo_total = settings.OPCION_TOTAL_VOTOS['tipo']
-    total = categoria.opciones.get(nombre=nombre_corto_total, tipo=tipo_total)
+    total = categoria.get_opcion_total_votos()
 
     mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
     mc3 = MesaCategoria.objects.get(mesa=m3, categoria=categoria)
@@ -191,9 +187,6 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     c2.actualizar_firma()
     assert c1.es_testigo.exists()
     assert c2.es_testigo.exists()
-
-    # Para probar se piden las cuentas sin especificar categoría, lo que no tiene sentido
-    # salvo para testing.
 
     response = fiscal_client.get(
         url_resultados + f'?opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
@@ -418,7 +411,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
     # opciones a partido
-    blanco = categoria.opciones.get(nombre='blanco')
+    blanco = categoria.get_opcion_blancos()
 
     c1 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria, tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=20)
@@ -435,7 +428,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
         '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
     )
     resultados = response.context['resultados']
-    assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     # response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
@@ -444,7 +437,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
         '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas'
     )
     resultados = response.context['resultados']
-    assert resultados.tabla_no_positivos()['blanco'] == {'votos': 0, 'porcentaje_total': '-'}
+    assert resultados.tabla_no_positivos()[blanco.nombre] == {'votos': 0, 'porcentaje_total': '-'}
     assert resultados.total_mesas_escrutadas() == 0
 
     c2 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria, tipo=Carga.TIPOS.total)
@@ -463,7 +456,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
         '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
     )
     resultados = response.context['resultados']
-    assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     # response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
@@ -472,7 +465,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
         '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas'
     )
     resultados = response.context['resultados']
-    assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
 
@@ -480,7 +473,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
     # opciones a partido
-    blanco = categoria.opciones.get(nombre='blanco')
+    blanco = categoria.get_opcion_blancos()
 
     c1 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria)
     VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=20)
@@ -496,7 +489,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
 
     resultados = response.context['resultados']
     # la carga está en status sin_confirmar
-    assert resultados.tabla_no_positivos()['blanco'] == {'votos': 0, 'porcentaje_total': '-'}
+    assert resultados.tabla_no_positivos()[blanco.nombre] == {'votos': 0, 'porcentaje_total': '-'}
     assert resultados.total_mesas_escrutadas() == 0
 
     c2 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria)
@@ -514,7 +507,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     )
     resultados = response.context['resultados']
     # Como tenemos dos cargas confirmadas, se modifica el resultado.
-    assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     c3 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria)
@@ -527,7 +520,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     )
     resultados = response.context['resultados']
     # c3 no está confirmada, no varía el resultado.
-    assert resultados.tabla_no_positivos()['blanco']['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     c4 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria)
@@ -541,7 +534,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     )
     resultados = response.context['resultados']
     # Ahora sí varía.
-    assert resultados.tabla_no_positivos()['blanco']['votos'] == 30
+    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 30
     assert resultados.total_mesas_escrutadas() == 2
 
 
@@ -563,13 +556,8 @@ def test_siguiente_accion_cargar_acta(fiscal_client):
 def test_resultados_no_positivos(fiscal_client):
     o1, o2 = OpcionFactory.create_batch(2)
 
-    nombre_corto_blanco = settings.OPCION_BLANCOS['nombre_corto']
-    tipo_blanco = settings.OPCION_BLANCOS['tipo']
-    opcion_blanco = OpcionFactory(nombre=nombre_corto_blanco, partido=None, tipo=tipo_blanco)
-
-    nombre_corto_total = settings.OPCION_TOTAL_VOTOS['nombre_corto']
-    tipo_total = settings.OPCION_TOTAL_VOTOS['tipo']
-    opcion_total = OpcionFactory(nombre=nombre_corto_total, partido=None, tipo=tipo_total)
+    opcion_blanco = OpcionFactory(**settings.OPCION_BLANCOS)
+    opcion_total = OpcionFactory(**settings.OPCION_TOTAL_VOTOS)
 
     e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total])
 
@@ -589,7 +577,7 @@ def test_resultados_no_positivos(fiscal_client):
     assert opcion_blanco.nombre in response.content.decode('utf8')
     no_positivos = response.context['resultados'].tabla_no_positivos()
 
-    assert no_positivos['blanco'] == {'porcentaje_total': '10.00', 'votos': 10}
+    assert no_positivos[opcion_blanco.nombre] == {'porcentaje_total': '10.00', 'votos': 10}
     assert no_positivos['Votos Positivos']['votos'] == 90
 
 

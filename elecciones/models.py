@@ -609,6 +609,15 @@ class Categoria(models.Model):
     requiere_cargas_parciales = models.BooleanField(default=False)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
+    def get_opcion_blancos(self):
+        return self.opciones.get(**settings.OPCION_BLANCOS)
+
+    def get_opcion_total_votos(self):
+        return self.opciones.get(**settings.OPCION_TOTAL_VOTOS)
+
+    def get_opcion_total_sobres(self):
+        return self.opciones.get(**settings.OPCION_TOTAL_SOBRES)
+
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
 

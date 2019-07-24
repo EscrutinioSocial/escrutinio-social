@@ -293,8 +293,8 @@ class Resultados():
                 for opciones_partido in self.resultados.votos_positivos.values()
             )
         else:
-            nombre_corto_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre_corto']
-            total = self.resultados.votos_no_positivos[nombre_corto_opcion_total]
+            nombre_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre']
+            total = self.resultados.votos_no_positivos[nombre_opcion_total]
             total_no_positivos = self.total_no_positivos()
             total_positivos = total - total_no_positivos
 
@@ -306,10 +306,10 @@ class Resultados():
         Devuelve el total de votos no positivos, sumando los votos a cada opción no partidaria
         y excluyendo la opción que corresponde a totales (como el total de votantes o de sobres).
         """
-        nombre_corto_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre_corto']
-        nombre_corto_opcion_sobres = settings.OPCION_TOTAL_SOBRES['nombre_corto']
+        nombre_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre']
+        nombre_opcion_sobres = settings.OPCION_TOTAL_SOBRES['nombre']
         return sum(votos for opcion, votos in self.resultados.votos_no_positivos.items()
-                        if opcion != nombre_corto_opcion_total and opcion != nombre_corto_opcion_sobres
+                        if opcion != nombre_opcion_total and opcion != nombre_opcion_sobres
         )
 
     @lru_cache(128)
