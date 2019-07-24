@@ -172,7 +172,7 @@ class QuieroSerFiscalForm(forms.Form):
     def clean_referido_por_codigo(self):
         referido_por_codigo = self.cleaned_data.get('referido_por_codigo', None)
         if referido_por_codigo:
-            if len(referido_por_codigo) != self.CARACTERES_CODIGO_REFERIDO:
+            if len(referido_por_codigo) != self.CARACTERES_REF_CODIGO:
                 raise ValidationError('Codigo de referido debe ser de 4 letras y/o números')
 
 
