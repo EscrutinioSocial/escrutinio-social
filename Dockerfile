@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     binutils \
     git \
     libproj-dev \
+    wget \
     gdal-bin && rm -rf /var/lib/apt/lists/*
 
 #RUN mkdir /src
