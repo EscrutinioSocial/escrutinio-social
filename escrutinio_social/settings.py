@@ -90,7 +90,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                #'elecciones.context_processors.contadores'
+                # 'elecciones.context_processors.contadores'
             ],
         },
     },
@@ -102,7 +102,7 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # Sobreescribir en local_settings.py si se instala localmente.
-#DATABASES = {
+# DATABASES = {
 #    'default': {
 #        'ENGINE': 'django.db.backends.postgresql',
 #        'NAME': 'db_name',
@@ -111,7 +111,7 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 #        'HOST': 'localhost' if os.environ.get('TRAVIS') == 'true' else 'db',
 #        'PORT': '',
 #    }
-#}
+# }
 
 DATABASES = {
     'default': {
@@ -305,7 +305,6 @@ OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco'}
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos'}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos'}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres'}
-
 
 
 try:
