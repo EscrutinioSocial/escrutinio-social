@@ -216,7 +216,6 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['resultados'] = self.get_resultados(categoria)
         context['show_plot'] = settings.SHOW_PLOT
 
-        # TODO esto no está probado
         if settings.SHOW_PLOT:
             chart = self.get_plot_data(context['resultados'])
             context['plot_data'] = chart
