@@ -274,23 +274,19 @@ class MesaCategoriaQuerySet(models.QuerySet):
     def con_carga_pendiente(self):
         return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
-    def siguiente(self):
+    def mas_prioritaria(self):
         """
-        Devuelve la siguiente MesaCategoria en orden de prioridad
-        de carga.
+        Devuelve la intancia más prioritaria del queryset
         """
-        return self.con_carga_pendiente().order_by(
+        return self.order_by(
             'status', 'categoria__prioridad', 'orden_de_carga', 'mesa__prioridad', 'id'
         ).first()
 
-    def siguiente_de_la_mesa(self, mesa_existente):
+    def siguiente(self):
         """
-        devuelve la siguiente mesacategoria en orden de prioridad
-        de carga
+        Devuelve mesacat con carga pendiente más prioritaria
         """
-        return self.con_carga_pendiente().filter(
-            mesa=mesa_existente
-        ).order_by('status', 'categoria__prioridad', 'orden_de_carga', 'mesa__prioridad', 'id').first()
+        return self.con_carga_pendiente().mas_prioritaria()
 
 
 class MesaCategoria(models.Model):

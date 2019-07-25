@@ -4,6 +4,7 @@ from http import HTTPStatus
 
 from django.urls import reverse
 from elecciones.tests.factories import (
+    AttachmentFactory,
     CargaFactory,
     CategoriaFactory,
     CategoriaOpcionFactory,
@@ -21,12 +22,36 @@ from adjuntos.consolidacion import consumir_novedades_identificacion, consumir_n
 from elecciones.tests.test_models import consumir_novedades_y_actualizar_objetos
 
 
-def test_elegir_acta_sin_mesas(fiscal_client):
+def test_siguiente_accion_sin_mesas(fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert 'No hay actas para cargar por el momento' in response.content.decode('utf8')
 
 
-def test_siguiente_redirige_a_cargar_resultados(db, fiscal_client):
+@pytest.mark.parametrize('attachments, mcs, expect', [
+    [1, 0, 'asignar-mesa'],   # solo hay para identificar
+    [0, 1, 'carga-total'],    # solo hay para cargar
+    [1, 1, 'carga-total'],
+    [1, 2, 'carga-total'],
+    [1, 3, 'carga-total'],
+    [2, 1, 'asignar-mesa'],   # muchas actas acumuladas
+    [3, 1, 'asignar-mesa'],
+    [4, 2, 'asignar-mesa'],
+])
+def test_siguiente_accion_balancea(fiscal_client, attachments, mcs, expect):
+    attachments = AttachmentFactory.create_batch(attachments)
+    mcs = MesaCategoriaFactory.create_batch(mcs, orden_de_carga=1)
+
+    # como la url de identificacion pasa un id al azar
+    # y no nos importa acá saber exactamente a que instancia se relaciona la accion
+    # lo que evalúo es que rediriga a una url que empiece así
+    beginning = reverse(expect, args=[0])[:10]
+
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == 302
+    assert response.url.startswith(beginning)
+
+
+def test_siguiente_accion_redirige_a_cargar_resultados(db, fiscal_client):
     c1 = CategoriaFactory()
     c2 = CategoriaFactory()
     m1 = MesaFactory(categorias=[c1])
