@@ -249,4 +249,7 @@ class MesasDeCircuito(TemplateView):
         circuito = get_object_or_404(Circuito, id=pk)
         context['object'] = circuito
         context['mesas'] = circuito.mesa_set.all
+        if self.request.GET.get('mesa'):
+            context['mesa_seleccionada'] = get_object_or_404(Mesa, id=self.request.GET.get('mesa'))
+
         return context
