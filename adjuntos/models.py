@@ -6,16 +6,11 @@ from django.utils import timezone
 from model_utils import Choices
 from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
-from django.db.models import (
-    OuterRef, Exists, Count
-)
-
+from django.db.models import Count, Value
+from django.db.models.functions import Coalesce
 from django.db.models import Q
 from django.db import models
-from django.dispatch import receiver
-from django.db.models.signals import post_save
 import hashlib
-from model_utils import Choices
 from versatileimagefield.fields import VersatileImageField
 
 
@@ -85,8 +80,7 @@ class Attachment(TimeStampedModel):
     STATUS = Choices(
         ('sin_identificar', 'sin identificar'),
         'identificada',
-        'spam',
-        'invalida',
+        'problema',
     )
     status = StatusField(default=STATUS.sin_identificar)
     mesa = models.ForeignKey(
@@ -118,11 +112,28 @@ class Attachment(TimeStampedModel):
     )
     taken = models.DateTimeField(null=True)
 
+    # Identificación representativa del estado actual.
+    identificacion_testigo = models.ForeignKey(
+        'Identificacion', related_name='es_testigo',
+        null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    def take(self):
+        self.taken = timezone.now()
+        self.save(update_fields=['taken'])
+
+    def release(self):
+        """
+        Libera una mesa, es lo contrario de take().
+        """
+        self.taken = None
+        self.save(update_fields=['taken'])
+
     def save(self, *args, **kwargs):
         """
         Actualiza el hash de la imágen original asociada antes de guardar.
         Notar que esto puede puede producir una excepción si la imágen (el digest)
-        ya es conocido en el sistema
+        ya es conocido en el sistema.
         """
         if self.foto and not self.foto_digest:
             # FIXME
@@ -137,51 +148,66 @@ class Attachment(TimeStampedModel):
 
 
     @classmethod
-    def sin_identificar(cls, wait=2, fiscal=None):
+    def sin_identificar(cls, fiscal_a_excluir=None):
         """
         Devuelve un conjunto de Attachments que no tienen
-        identificación consolidada y no ha sido asignado
-        para clasificar en los últimos ``wait`` minutos
+        identificación consolidada y no han sido asignados
+        para clasificar en los últimos ``settings.ATTACHMENT_TAKE_WAIT_TIME`` minutos.
 
-        Se excluyen attachments que ya hayan sido clasificados por `fiscal`
+        Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
+        """
+        wait = settings.ATTACHMENT_TAKE_WAIT_TIME
+        return cls.sin_identificar_con_timeout(wait=wait, fiscal_a_excluir=fiscal_a_excluir)
+
+    @classmethod
+    def sin_identificar_con_timeout(cls, wait=2, fiscal_a_excluir=None):
+        """
+        Es la implementación de sin_identificar() que se expone sólo para poder
+        testear más fácilmente
         """
         desde = timezone.now() - timedelta(minutes=wait)
         qs = cls.objects.filter(
             Q(taken__isnull=True) | Q(taken__lt=desde),
             status='sin_identificar',
         )
-        if fiscal:
-            qs = qs.exclude(identificaciones__fiscal=fiscal)
+        if fiscal_a_excluir:
+            qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
         return qs
 
-    def status_count(self, exclude=None):
+    def status_count(self, estado):
         """
-        a partir del conjunto de identificaciones del attachment
-        se devuelve un diccionario con los cantidades para
-        cada grupo (mesa_id, status)
-        Por ejemplo:
-            {
-                (None, 'spam'): 2,
-                (None, 'invalida'): 1,
-                (1, 'identificada'): 1,
-                (2, 'identificada'): 1,
-            }
+        A partir del conjunto de identificaciones del attachment
+        que tienen el estado parámetro devuelve una lista de tuplas
+        (mesa_id, cantidad, cantidad que viene de csv).
+        Sólo cuenta las no invalidadas.
 
-        2 lo identificaron como spam, 1 como inválida,
-        1 a la mesa id=1, y otro a la mesa id=2
+        Cuando status == 'problema' el id de mesa es None
+
+        Por ejemplo (cuando estado == 'identificada'):
+            [
+                (3, 2, 0),
+                (4, 1, 1),
+            ]
+
+        Hay 2 identificaciones para la mesa id==3 y 1 para la id==4, pero ésa 
+        tiene una identificación por CSV.
         """
-        qs = self.identificaciones.all()
-        if exclude:
-            # en caso de que se pase ID, se excluye
-            # esa identificación del cálculo.
-            # es útil para no profucir cambios de estados
-            # en caso de edición de una identificacion
-            qs = qs.exclude(id=exclude)
-        result = {}
-        for item in qs.values('mesa', 'status').annotate(total=Count('status')):
-            result[(item['mesa'], item['status'])] = item['total']
+
+        qs = self.identificaciones.filter(status=estado, invalidada=False)
+        cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
+        result = []
+        query = qs.values('mesa', 'status').annotate(
+                mesa_o_0=Coalesce('mesa', Value(0))     # Esto es para facilitar el testing.
+            ).annotate(
+                total=Count('status')
+            ).annotate(
+                cuantos_csv=cuantos_csv
+            )
+        for item in query:
+            result.append(
+                (item['mesa_o_0'], item['total'], item['cuantos_csv'])
+            )
         return result
-
 
     def __str__(self):
         return f'{self.foto} ({self.mimetype})'
@@ -193,26 +219,21 @@ class Identificacion(TimeStampedModel):
     """
     STATUS = Choices(
         'identificada',
-        ('spam', 'Es SPAM'),
-        ('invalida', 'Es inválida'),
+        'problema'
     )
     #
     # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
     #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
     #     todos los datos de identificación.
     # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
+    # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
+
+    status = StatusField(choices_name='STATUS',choices=STATUS)
 
 
-    status = StatusField()
+    SOURCES = Choices('web', 'csv', 'telegram')
+    source = StatusField(choices_name='SOURCES', default=SOURCES.web)
 
-    consolidada = models.BooleanField(
-        default=False,
-        help_text=(
-            'una identificación consolidada es aquella '
-            'que se considera representativa y determina '
-            'el estado del attachment'
-        )
-    )
     fiscal = models.ForeignKey(
         'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -222,52 +243,13 @@ class Identificacion(TimeStampedModel):
     attachment = models.ForeignKey(
         Attachment, related_name='identificaciones', on_delete=models.CASCADE
     )
+    procesada = models.BooleanField(default=False)
+    invalidada = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.status} - {self.mesa} - {self.fiscal}'
+        return f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - procesada: {self.procesada} - invalidada: {self.invalidada}'
 
-    def save(self, *args, **kwargs):
-        if self.attachment:
-            status_count_dict = self.attachment.status_count(self.id)
-            same_status_count = status_count_dict.get(
-                (self.mesa, self.status)
-            )
-            # si esta identificación iguala o supera el mónimo de
-            # identificaciones coincidentes, la identificación se
-            # consolida.
-            # esto dispara la lógica de :func:`consolidacion_attachment`
-            if same_status_count and same_status_count + 1 >= settings.MIN_COINCIDENCIAS_IDENTIFICACION:
-                self.consolidada = True
-
-            # TODO, incorporar consolidación con origen en CSV, ver :issue:`49`.
-
-            # TODO - para reportar trolls
-            # sumar 200 a scoring de los usuarios que identificaron el acta diferente
-
-        super().save(*args, **kwargs)
-
-
-@receiver(post_save, sender=Identificacion)
-def consolidacion_attachment(sender, instance=None, created=False, **kwargs):
-    """
-    La consolidación de una identificación determina una transición
-    en el estado del attachment.
-    Si se identifica como identificada, entonces se le asigna
-    orden de carga a la mesa en cuestión.
-    """
-    from elecciones.models import Carga
-
-    if instance.consolidada:
-        attachment = instance.attachment
-        attachment.status = instance.status
-        attachment.mesa = instance.mesa
-        attachment.save(update_fields=['mesa', 'status'])
-
-        if (
-            instance.mesa and
-            instance.status == Identificacion.STATUS.identificada and
-            not Carga.objects.filter(mesa_categoria__mesa=instance.mesa).exists()
-        ):
-            mesa = instance.mesa
-            mesa.orden_de_carga = mesa.lugar_votacion.circuito.proximo_orden_de_carga()
-            mesa.save(update_fields=['orden_de_carga'])
+    def invalidar(self):
+        self.invalidada = True
+        self.procesada = False
+        self.save(update_fields=['invalidada', 'procesada'])

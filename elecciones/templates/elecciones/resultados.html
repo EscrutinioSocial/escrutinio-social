@@ -4,17 +4,30 @@
 
 {% block title %}Resultados{% endblock %}
 
-{% block page_title %}
-
-    <h5>Resultados para {{para|default:para}}</h5>
-    <form id="formulariotipodesumarizacion" method="get">
-        <select id='tipodesumarizacion' name='tipodesumarizacion' class="browser-default selector-tipo-sumarizacion">
-            {% for tipo_sumarizacion in tipos_sumarizacion %}
-                <option value="{{ tipo_sumarizacion.pk }}" {% if tipo_sumarizacion_seleccionado == tipo_sumarizacion.pk %}selected{% endif %}>{{ tipo_sumarizacion.name }}</option>
-            {% endfor %}
-        </select>
-    </form>
-
+{% block page_title %}Resultados para {{para|default:para}}{% endblock %}
+{% block breadcrumbs %}
+<nav class="filtros">
+  <div class="row">
+    <div class="col s5">
+      <label>Tipo de agregación</label>
+      <select id='tipoDeAgregacion' name='tipoDeAgregacion' class="browser-default">
+          {% for value, descripcion in tipos_de_agregaciones %}
+              <option value="{{ value }}" {% if tipos_de_agregaciones_seleccionado == value %}selected{% endif %}>
+                      {{ descripcion }}
+              </option>
+          {% endfor %}
+      </select>
+    </div>
+    <div class="col s5">
+      <label>Opción a considerar</label>
+      <select id='opcionaConsiderar' name='opcionaConsiderar' class="browser-default">
+          {% for value, descripcion in opciones_a_considerar %}
+              <option value="{{ value }}" {% if opciones_a_considerar_seleccionado == value %}selected{% endif %}>{{ descripcion }}</option>
+          {% endfor %}
+      </select>
+    </div>
+  </div>
+</nav>
 {% endblock %}
 
  {% block head %}
@@ -23,215 +36,203 @@
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     {% endif %}
     <link href="/static/elecciones/resultados.css" rel="stylesheet" type="text/css">
-    <script>
-        $( document ).ready(function() {
-            $( "#tipodesumarizacion" ).change(function() {
-                $( "#formulariotipodesumarizacion" ).submit();
-            });
-        });
-        
-    </script>
+    <link href="/static/elecciones/arbol_distrito.css" rel="stylesheet" type="text/css">
  {% endblock %}
 
 {% block sidenav_items %}
-
-      <li><a href="{% url "resultados-categoria" primera_categoria %}">Todo</a></li>
-
-      {% for distrito in distritos %}
-
-      <li>
-        <a href="{{ request.path }}?distrito={{ distrito.id }}">{{ distrito }}</a>
-      </li>
-
-      {% for seccion in distrito.secciones.all %}
-
-      <li><a href="{{ request.path }}?seccion={{ seccion.id }}">&nbsp;&nbsp;{{ seccion }}</a></li>
-      <li class="no-padding">
-        <ul class="collapsible collapsible-accordion">
-          <li>
-            <a class="collapsible-header"><i class="material-icons">arrow_drop_down</i></a>
-            <div class="collapsible-body">
-              <ul>
-                {% for circuito in seccion.circuito_set.all %}
-                    <li><a href="{{ request.path }}?circuito={{ circuito.id }}">{{ circuito.nombre }}</a></li>
-                {% endfor %}
-              </ul>
-            </div>
-          </li>
-        </ul>
-      </li>
-      {% endfor %}
-      {% endfor %}
-
+{% include "elecciones/arbol_distrito.html" %}
 {% endblock %}
 
-
-
 {% block left-panel %}
-    <ul class="tabs">
+<ul class="tabs">
+    {% for categoria in categorias %}
+    <li class="tab col s3" >
+        <a target="_self" href="{{categoria.get_absolute_url}}?{{ request.GET.urlencode }}" {% if categoria.id == object.id %}class="active"{% endif %}>{{ categoria.nombre }}</a>
+    </li>
+    {% endfor %}
+</ul>
+<div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
+    <div class="card-content" id="frame{{categoria.id}}">
+    {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
 
-        {% for categoria in categorias %}
-        <li class="tab col s3" >
-            <a target="_self" href="{{categoria.get_absolute_url}}?{{ request.GET.urlencode }}" {% if categoria.id == object.id %}class="active"{% endif %}>{{ categoria.nombre }}</a>
-        </li>
-        {% endfor %}
-    </ul>
+        <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
+            ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
+        </h4>
+
+        <table class="bordered" id="tabla_resultados">
+            <colgroup>
+                <col id="partido" />
+                {% if incluir_votos %}
+                <col id="voto_agrupacion"/>
+                <col id="voto_partido"/>
+          		  {% endif %}
+          		  <col id="porc_agrupacion"/>
+          		  <col id="porc_partido"/>
+          		  {% if resultados.proyectado %}
+          		  <col id="proyeccion"/>
+          		  {% endif %}
+            </colgroup>
+            <thead>
+                <tr>
+                    <th id="header_titulo" colspan="{%if incluir_votos %}3{%else%}5{%endif%}">Agrupaciones políticas/Listas</th>
+                </tr>
+                <tr>
+        		        <th></th>
+        		        <th id="header_votos" colspan="{%if incluir_votos %}2{%else%}4{%endif%}">Votos</th>
+                    {% if resultados.proyectado %}
+                    <th id="header_proyectado">
+                        % proyectado
+                        <i class="small material-icons {% if resultados.proyeccion_incompleta  %}tooltipped"
+                           data-position="bottom"
+                           data-tooltip="Proyección incompleta. Faltan cargar datos en {% for ag in resultados.proyeccion_incompleta %}{{ ag }} / {% endfor %}{% endif %}">
+                           warning
+                        </i>
+                    </th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% with resultados.tabla_positivos as tabla %}
+                {% include "elecciones/tabla_resultados_numerables.html" with responsive=True incluir_votos=True %}
+                {% endwith %}
+            </tbody>
+        </table>
+
+        <table class="striped bordered" style="margin-top: 2em">
+            <thead>
+                <tr>
+                    <th>Totales</th>
+                    <th>Cantidad</th>
+                    <th>%</th>
+                </tr>
+            </thead>
+
+            {% with resultados.tabla_no_positivos as tabla %}
+                {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True incluir_votos=True %}
+            {% endwith %}
+        </table>
+
+        {% if show_plot %}
+            <div id="columnchart-{{object.id}}"></div>
+        {% endif %}
 
 
-        <div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
-            <div class="card-content" id="frame{{categoria.id}}">
-
-              {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
-
-              <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
-                ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
-              </h4>
-
-
-
-              <table class="striped bordered">
-                  <thead>
-                  <tr>
-                      <th>Partido</th>
-                      <th>Votos</th>
-                      <th>%</th>
-                      {% if resultados.proyectado %}
-                      <th>% proyectado <i class="small material-icons {% if resultados.proyeccion_incompleta  %}tooltipped" data-position="bottom" data-tooltip="Proyección incompleta. Faltan cargar datos en
-
-{% for ag in resultados.proyeccion_incompleta %}{{ ag }} / {% endfor %}
-{% endif %}">warning</i> </th>
-                      {% endif %}
-                  </tr>
-                  </thead>
-
-                  {% with resultados.tabla_positivos as tabla %}
-                      {% include "elecciones/tabla_resultados_numerables.html" with responsive=True incluir_votos=True %}
-                  {% endwith %}
-
-              </table>
-
-              <table class="striped bordered" style="margin-top: 2em">
-                  <thead>
-                  <tr>
-                      <th>Totales</th>
-                      <th>Cantidad</th>
-                      <th>%</th>
-                  </tr>
-                  </thead>
-
-                  {% with resultados.tabla_no_positivos as tabla %}
-                      {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True incluir_votos=True %}
-                  {% endwith %}
-              </table>
-
-
-              {% if show_plot %}
-                <div id="columnchart-{{object.id}}"></div>
-              {% endif %}
-
-
-              {% else %}
-
-              <h5>Aún no hay mesas escrutadas en {{para}}</h5>
-
-              {% endif %}
-
-            </div>
-        </div>
-
-
+    {% else %}
+        <h5>Aún no hay mesas escrutadas en {{para}}</h5>
+    {% endif %}
+    </div>
+</div>
 {% endblock %}
 
 {% block right-panel %}
- <div class="card">
+<div class="card">
     <div id="metadata" class="card-content">
-      <table class="borderless" style="font-size: 0.9em">
-          <tr>
-              <th title="Electores"><i class="small material-icons">people_outline</i>Electores</th>
-          </tr>
-          <tr>
-              <td title="Electores">{{ resultados.electores}} </td>
-          </tr>
-          <tr>
-              <th title="Escrutados"><i class="small material-icons">person_outline</i>Escrutados</th>
-          </tr>
-          <tr>
-              <td title="Escrutados">{{ resultados.escrutados }} </td>
-          </tr>
-          <tr>
-              <th title="% Escrutado"><i class="small material-icons">trending_up</i>% Escrutado</th>
-          </tr>
-          <tr>
-              <td title="% Escrutado">{{ resultados.porcentaje_escrutado}} %</td>
-          </tr>
-          <tr>
-              <th title="Votantes"><i class="small material-icons">person</i>Votantes</th>
-          </tr>
-          <tr>
-              <td title="Votantes">{{ resultados.votantes }} </td>
-          </tr>
-          <tr>
-              <th title="Positivos"><i class="small material-icons">person_add</i>Positivos</th>
-          </tr>
-          <tr>
-              <td title="Positivos">{{ resultados.positivos}}</td>
-          </tr>
-          <tr>
-              <th title="% Participación"><i class="small material-icons">timeline</i>% Participacion</th>
-          </tr>
-          <tr>
+        <table class="borderless" style="font-size: 0.9em">
+            <tr>
+                <th title="Electores"><i class="small material-icons">people_outline</i>Electores</th>
+            </tr>
+            <tr>
+                <td title="Electores">{{ resultados.electores}} </td>
+            </tr>
+            <tr>
+                <th title="Escrutados"><i class="small material-icons">person_outline</i>Escrutados</th>
+            </tr>
+            <tr>
+                <td title="Escrutados">{{ resultados.electores_en_mesas_escrutadas }} </td>
+            </tr>
+            <tr>
+                <th title="% Escrutado"><i class="small material-icons">trending_up</i>% Escrutado</th>
+            </tr>
+            <tr>
+                <td title="% Escrutado">{{ resultados.porcentaje_escrutado}} %</td>
+            </tr>
+            <tr>
+                <th title="Votantes"><i class="small material-icons">person</i>Votantes</th>
+            </tr>
+            <tr>
+                <td title="Votantes">{{ resultados.votantes }} </td>
+            </tr>
+            <tr>
+                <th title="Positivos"><i class="small material-icons">person_add</i>Positivos</th>
+            </tr>
+            <tr>
+                <td title="Positivos">{{ resultados.positivos}}</td>
+            </tr>
+            <tr>
+                <th title="% Participación"><i class="small material-icons">timeline</i>% Participacion</th>
+            </tr>
+            <tr>
               <td title="% Participación">{{ resultados.porcentaje_participacion}} %</td>
-          </tr>
-      </table>
+            </tr>
+        </table>
     </div>
 </div>
-
-
-
 {% endblock right-panel %}
-
-
 
 {% block messages %}
 {{ block.super }}
 
 <script type="text/javascript">
+function aplicarSumarizacion() {
+  var $select = $(this);
+  var filterName = $select.attr('name');
+  var filterValue = $select.val();
 
-$(function() {
+  var searchParams = new URLSearchParams(location.search);
+  searchParams.set(filterName, filterValue);
+  var navToUrl = location.pathname + '?' + searchParams.toString();
+  $(location).attr('href', navToUrl);
+};
 
-   $('tabs').tabs();
+$(document).ready(function() {
+  $('tabs').tabs();
+  $('.tooltipped').tooltip();
+  $('.collapsible').collapsible();
 
-   $('.tooltipped').tooltip();
+  $('.show_detail').click(function(){
+    let p = $(this).parent()[0];
+	  let inf = $(this).children()[0];
+	  if (inf.innerHTML === "expand_more")
+	   inf.innerHTML = "expand_less";
+	  else
+	    inf.innerHTML = "expand_more";
+    let i = p.id;
+	  $("."+i+"_detalle").toggle();
+  });
 
-   $('.collapsible').collapsible();
+  {% if show_plot %}
+  var data = [{
+    y: {{ chart_values|safe }},
+    x: {{ chart_keys|safe }},
+    text: {{ chart_values|safe }},  // mostrar los numeros en las barras
+    textposition: 'auto',
+    opacity: 0.6,
+    type: 'bar',
+    marker: {
+      color: 'rgb(200,48,107)',
+      line: {
+        color: 'rgb(8,48,107)',
+        width: 1.5,
+      }
+    }
+  }];
 
-   {% if show_plot %}
+  var layout = {
+    height: 600,
+    width: 1200,
+    xaxis: {
+      tickangle: 15,
+      tickfont: {size: 9}
+    }
+  };
 
-   var data = [{
-      y: {{ chart_values|safe }},
-      x: {{ chart_keys|safe }},
-      text: {{ chart_values|safe }},  // mosytrar los numeros en las barras
-      textposition: 'auto',
-      opacity: 0.6,
-      type: 'bar',
-      marker: {color: 'rgb(200,48,107)',
-                line: {
-                      color: 'rgb(8,48,107)',
-                      width: 1.5,
-                }
-              }
-    }];
+  Plotly.newPlot('columnchart-{{categoria_id}}', data, layout);
+  {% endif %}
 
-    var layout = {height: 600,
-                    width: 1200,
-                    xaxis: {tickangle: 15,
-                            tickfont: {size: 9}
-                            }
-                    };
-
-    Plotly.newPlot('columnchart-{{categoria_id}}', data, layout);
-    {% endif %}
+  // Navega cuando se seleccina tipo de agregacion u opcion
+  $('.filtros select').change(aplicarSumarizacion);
 
 });
 </script>
+
 {% endblock messages %}

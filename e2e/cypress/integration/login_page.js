@@ -5,7 +5,7 @@ describe('Autenticación', () => {
     });
 
     it('chequear web fiscales', () => {
-        cy.visit('/quiero-ser-fiscal/');
+        cy.visit('/quiero-ser-validador/');
         cy.contains('Quiero ser fiscal de las PASO Nacional 2019');
     });
 

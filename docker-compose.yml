@@ -6,7 +6,7 @@ services:
     container_name: escrutinio-social-db
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=
+      - POSTGRES_PASSWORD=changeme
       - POSTGRES_DB=db_name
     ports:
       - "5433:5432"
@@ -15,9 +15,13 @@ services:
   app:
     container_name: escrutinio-social-app
     build: .
-    command: python3 manage.py runserver 0.0.0.0:8000
+    command: ./runner.sh
     environment:
-      - DATABASE_URL=postgres://postgres@db/postgres
+      #- DATABASE_URL=postgres://postgres@db/postgres
+      - DB_NAME=db_name
+      - DB_USER=postgres
+      - DB_PASS=changeme
+      - DB_HOST=db
     volumes:
       - .:/src
     ports:

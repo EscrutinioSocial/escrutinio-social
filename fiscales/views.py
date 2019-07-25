@@ -2,11 +2,8 @@
 define las vistas relacionadas a tareas que realizan los fiscales
 como elegir acta a clasificar / a cargar / validar
 """
-
-from io import StringIO
-import sys
-from django.core import serializers
-from django.http import Http404, HttpResponseForbidden, HttpResponse, JsonResponse
+from django.core.exceptions import PermissionDenied
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -17,49 +14,45 @@ from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
-from django.core.management import call_command
-from django.utils import timezone
-from datetime import timedelta
-from django.utils.safestring import mark_safe
-from django.db import IntegrityError, transaction
-from django.db.models import Q
+from django.db import transaction
+from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
-from contacto.forms import MinimoContactoInlineFormset
 from .models import Fiscal
 from elecciones.models import (
-    Mesa, Categoria, MesaCategoria, VotoMesaReportado, Carga, Circuito, LugarVotacion, Seccion
+    Mesa,
+    Carga,
+    Seccion,
+    Circuito,
+    Categoria,
+    MesaCategoria,
+    VotoMesaReportado
 )
-from django.utils.decorators import method_decorator
-from datetime import timedelta
-from django.utils import timezone
-from formtools.wizard.views import SessionWizardView
+from .acciones import siguiente_accion
+
 from django.template.loader import render_to_string
 from html2text import html2text
 from django.core.mail import send_mail
-from django.contrib.admin.views.decorators import staff_member_required
-from django import forms
 from sentry_sdk import capture_exception
 from .forms import (
     MisDatosForm,
-    FiscalFormSimple,
     votomesareportadoformset_factory,
-    QuieroSerFiscal1,
-    QuieroSerFiscal2,
-    QuieroSerFiscal3,
-    QuieroSerFiscal4,
-    ElegirFiscal,
-    FiscalxDNI,
+    QuieroSerFiscalForm,
 )
 from contacto.views import ConContactosMixin
-from adjuntos.models import Attachment
+from problemas.models import Problema
+from problemas.forms import IdentificacionDeProblemaForm
+
 from django.conf import settings
 
+from material import Layout, Row, LayoutMixin
 
-# tiempo maximo en minutos que se mantiene la asignacion de un acta hasta ser reasignada
-# es para que alguien no se "cuelgue" y quede un acta sin cargar.
-WAITING_FOR = 2
+NO_PERMISSION_REDIRECT = 'permission-denied'
 
-NO_PERMISSION_REDIRECT = '/permission-denied/'
+
+@login_required
+def bienvenido(request):
+    return render(request, 'fiscales/bienvenido.html')
+
 
 def choice_home(request):
     """
@@ -68,15 +61,16 @@ def choice_home(request):
     user = request.user
     if not user.is_authenticated:
         return redirect('login')
+    fiscal = get_object_or_404(Fiscal, user=request.user)
+    if fiscal.esta_en_grupo('validadores'):
+        return redirect('siguiente-accion')
 
-    es_fiscal = Fiscal.objects.filter(user=request.user).exists()
+    return redirect('bienvenido')
 
-    result = redirect('elegir-acta-a-cargar') if user.fiscal.esta_en_grupo('validadores') else render(request, 'fiscales/base.html')
-
-    return result
 
 def permission_denied(request):
-    return PermissionDenied
+    raise PermissionDenied()
+
 
 class BaseFiscal(LoginRequiredMixin, DetailView):
     model = Fiscal
@@ -93,107 +87,42 @@ class BaseFiscal(LoginRequiredMixin, DetailView):
             raise Http404('no está registrado como fiscal')
 
 
-class QuieroSerFiscal(SessionWizardView):
-    form_list = [
-        QuieroSerFiscal1,
-        QuieroSerFiscal2,
-        #  QuieroSerFiscal3,
-        QuieroSerFiscal4
-    ]
+class QuieroSerFiscal(FormView):
 
-    def get_form_initial(self, step):
-        if step != '0':
-            dni = self.get_cleaned_data_for_step('0')['dni']
-            email = self.get_cleaned_data_for_step('0')['email']
-            fiscal = (get_object_or_None(Fiscal, dni=dni) or
-                      get_object_or_None(Fiscal,
-                                         datos_de_contacto__valor=email,
-                                         datos_de_contacto__tipo='email'))
+    title = "Quiero ser validador/a"
+    template_name = 'fiscales/quiero-ser-fiscal.html'
+    form_class = QuieroSerFiscalForm
+    success_url = reverse_lazy('quiero-ser-fiscal-gracias')
 
-        if step == '1' and fiscal:
-            if self.steps.current == '0':
-                # sólo si acaba de llegar al paso '1' muestro mensaje
-                messages.info(self.request, 'Ya estás en el sistema. Por favor, confirmá tus datos.')
-            return {
-                'nombre': fiscal.nombres,
-                'apellido': fiscal.apellido,
-                'telefono': fiscal.telefonos[0] if fiscal.telefonos else '',
-                # 'disponibilidad': fiscal.disponibilidad,
-                # 'movilidad': fiscal.movilidad,
-                # 'seccion': fiscal.escuelas[0].circuito.seccion if fiscal.escuelas else None
-            }
-        # elif step == '2' and fiscal:
-        #     seccion = self.get_cleaned_data_for_step('1')['seccion']
-        #     seccion_original = fiscal.escuelas[0].circuito.seccion if fiscal.escuelas else None
-
-        #     if seccion_original and seccion == seccion_original:
-        #         circuito = fiscal.escuelas[0].circuito
-        #     else:
-        #         circuito = None
-
-        #     return {
-        #         'circuito': circuito
-        #     }
-        # elif step == '3' and fiscal:
-        #     circuito = self.get_cleaned_data_for_step('2')['circuito']
-        #     circuito_original = fiscal.escuelas[0].circuito if fiscal.escuelas else None
-
-        #     if circuito_original and circuito == circuito_original:
-        #         escuela = fiscal.escuelas[0]
-        #     else:
-        #         escuela = None
-
-        #     return {
-        #         'escuela': escuela
-        #     }
-
-        return self.initial_dict.get(step, {})
-
-    # def get_form(self, step=None, data=None, files=None):
-    #     form = super().get_form(step, data, files)
-
-    #     # determine the step if not given
-    #     if step is None:
-    #         step = self.steps.current
-
-    #     if step == '2':
-    #         seccion = self.get_cleaned_data_for_step('1')['seccion']
-    #         form.fields['circuito'].queryset = Circuito.objects.filter(seccion=seccion)
-    #     elif step == '3':
-    #         circuito = self.get_cleaned_data_for_step('2')['circuito']
-    #         form.fields['escuela'].queryset = LugarVotacion.objects.filter(circuito=circuito)
-    #     return form
-
-    def done(self, form_list, **kwargs):
-        data = self.get_all_cleaned_data()
-        dni = data['dni']
-        email = data['email']
-        fiscal = (get_object_or_None(Fiscal, dni=dni) or
-                  get_object_or_None(Fiscal,
-                                     datos_de_contacto__valor=email,
-                                     datos_de_contacto__tipo='email'))
-        if fiscal:
-            fiscal.estado = 'AUTOCONFIRMADO'
-        else:
-            fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=dni)
-
-        fiscal.dni = dni
-        fiscal.nombres = data['nombre']
+    def form_valid(self, form):
+        data = form.cleaned_data
+        fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
+        fiscal.nombres = data['nombres']
         fiscal.apellido = data['apellido']
-        # fiscal.escuela_donde_vota = data['escuela']
+        fiscal.seccion_id = data['seccion']
+        fiscal.referido_por_nombres = data['referido_por_nombres']
+        if data['referido_por_codigo']:
+            fiscal.referido_por_codigo = data['referido_por_codigo']
         fiscal.save()
         fiscal.agregar_dato_de_contacto('teléfono', data['telefono'])
-        fiscal.agregar_dato_de_contacto('email', email)
-
-        fiscal.user.set_password(data['new_password1'])
+        fiscal.agregar_dato_de_contacto('email', data['email'])
+        fiscal.user.set_password(data['password'])
         fiscal.user.save()
 
-        body_html = render_to_string('fiscales/email.html',
-                                        {'fiscal': fiscal,
-                                        'email': settings.DEFAULT_FROM_EMAIL,
-                                        'cell_call': settings.DEFAULT_CEL_CALL,
-                                        'cell_local': settings.DEFAULT_CEL_LOCAL,
-                                        'site_url': settings.FULL_SITE_URL})
+        self.sendMail(fiscal, data['email'])
+
+        return super().form_valid(form)
+
+    def sendMail(self, fiscal, email):
+        body_html = render_to_string(
+            'fiscales/email.html', {
+                'fiscal': fiscal,
+                'email': settings.DEFAULT_FROM_EMAIL,
+                'cell_call': settings.DEFAULT_CEL_CALL,
+                'cell_local': settings.DEFAULT_CEL_LOCAL,
+                'site_url': settings.FULL_SITE_URL
+            }
+        )
         body_text = html2text(body_html)
 
         send_mail(
@@ -205,11 +134,9 @@ class QuieroSerFiscal(SessionWizardView):
             html_message=body_html
         )
 
-        return render(self.request, 'formtools/wizard/wizard_done.html', {
-            'fiscal': fiscal, 'email': settings.DEFAULT_FROM_EMAIL,
-            'cell_call': settings.DEFAULT_CEL_CALL, 'cell_local': settings.DEFAULT_CEL_LOCAL,
-            'site_url': settings.FULL_SITE_URL
-        })
+
+def quiero_ser_fiscal_gracias(request,):
+    return render(request, 'fiscales/quiero-ser-fiscal-gracias.html')
 
 
 def confirmar_email(request, uuid):
@@ -239,7 +166,6 @@ def confirmar_email(request, uuid):
     )
 
 
-
 class MisDatos(BaseFiscal):
     template_name = "fiscales/mis-datos.html"
 
@@ -255,144 +181,191 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def elegir_acta_a_cargar(request):
+def realizar_siguiente_accion(request):
     """
-    Para el conjunto de mesas con carga pendiente (es decir, que tienen categorías sin cargar)
-    se elige una por orden de prioridad y tamaño del circuito, se actualiza
-    la marca temporal de "asignación" y se redirige a la categoría a cargar para esa mesa.
+    Lanza la siguiente acción a realizar, que puede ser
+    - identificar una foto (attachment)
+    - cargar una mesa/categoría
+    Si no hay ninguna acción pendiente, entonces muestra un mensaje al respecto
     """
-    mesas = Mesa.con_carga_pendiente().order_by(
-        'orden_de_carga', '-lugar_votacion__circuito__electores'
-    )
-    if mesas.exists():
-        mesa = mesas[0]
-        # se marca que se inicia una carga
-        mesa.taken = timezone.now()
-        mesa.save(update_fields=['taken'])
-
-        siguiente_categoria = mesa.siguiente_categoria_sin_carga()
-        if siguiente_categoria is None:
-            return render(request, 'fiscales/sin-actas.html')
-        siguiente_id = siguiente_categoria.id
-
-        return redirect(
-            'mesa-cargar-resultados',
-            categoria_id=siguiente_id,
-            mesa_numero=mesa.numero
-        )
-
-    return render(request, 'fiscales/sin-actas.html')
-
+    return siguiente_accion(request).ejecutar()
 
 
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
-def cargar_resultados(
-    request, categoria_id, mesa_numero, tipo='total', carga_id=None
-):
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
+def cargar_desde_ub(request, mesa_id, tipo='total'):
+    mesa_existente = get_object_or_404(Mesa, id=mesa_id)
+    mesacategoria = MesaCategoria.objects.siguiente_de_la_mesa(mesa_existente)
+    if mesacategoria:
+        mesacategoria.take()
+        return carga(request, mesacategoria.id, desde_ub=True)
+
+    # si es None, lo llevamos a subir un adjunto
+    return redirect('agregar-adjuntos-ub')
+
+
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')), login_url=NO_PERMISSION_REDIRECT)
+def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     """
-    Es la vista que muestra y procesa el formset de carga de datos para una categoria-mesa
+    Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
     fiscal = get_object_or_404(Fiscal, user=request.user)
-    mesa_categoria = get_object_or_404(
-        MesaCategoria,
-        categoria_id=categoria_id,
-        mesa__numero=mesa_numero
-    )
-
+    mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
+    # en carga parcial sólo se cargan opciones prioritarias
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
-    if carga_id:
-        carga = get_object_or_404(
-            Carga, id=carga_id, carga__mesa_categoria=mesa_categoria
-        )
-    else:
-        carga = None
 
+    # tenemos la lista de opciones ordenadas como la lista
+    opciones = categoria.opciones_actuales(solo_prioritarias)
+
+    # este diccionario es el que contiene informacion "pre completada"
+    # de una carga. si una opcion está en este dict, el campo se inicializará
+    # con su clave.
+    votos_para_opcion = dict(mesa.metadata())
+    if tipo == 'total' and mesa_categoria.status == MesaCategoria.STATUS.parcial_consolidada_dc:
+        # una carga total con parcial consolidada reutiliza los datos ya cargados
+        votos_para_opcion.update(
+            dict(mesa_categoria.carga_testigo.opcion_votos())
+        )
+
+    # obtenemos la clase para el formset seteando tantas filas como opciones
+    # existen. Como extra=0, el formset tiene un tamaño fijo
     VotoMesaReportadoFormset = votomesareportadoformset_factory(
-        min_num=categoria.opciones_actuales(solo_prioritarias).count()
+        min_num=opciones.count()
     )
 
     def fix_opciones(formset):
         # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
         # se podria hacer "disabled" pero ese caso quita el valor del
         # cleaned_data y luego lo exige por ser requerido.
-        for i, (opcion, form) in enumerate(zip(categoria.opciones_actuales(solo_prioritarias), formset), 1):
+        first_autofoco = None
+        for i, (opcion, form) in enumerate(zip(opciones, formset), 1):
             form.fields['opcion'].choices = [(opcion.id, str(opcion))]
 
             # esto hace que la navegacion mediante Tabs priorice los inputs de "votos"
             # por sobre los combo de "opcion"
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
-            form.fields['votos'].widget.attrs['tabindex'] = i
 
+            if votos_para_opcion.get(opcion.id):
+                # los campos que ya conocemos (metadata o cargas parciales consolidadas)
+                # los marcamos como sólo lectura
+                form.fields['votos'].widget.attrs['readonly'] = True
+            else:
+                form.fields['votos'].widget.attrs['tabindex'] = i
+
+                if not first_autofoco:
+                    first_autofoco = True
+                    form.fields['votos'].widget.attrs['autofocus'] = True
+
+            # todos los campos son requeridos
             form.fields['votos'].required = True
-            if i == 1:
-                form.fields['votos'].widget.attrs['autofocus'] = True
+
     data = request.POST if request.method == 'POST' else None
 
-    qs = VotoMesaReportado.objects.filter(carga=carga) if carga else VotoMesaReportado.objects.none()
-    initial = [{'opcion': o} for o in categoria.opciones_actuales(solo_prioritarias)]
+    qs = VotoMesaReportado.objects.none()
+    initial = [{'opcion': o, 'votos': votos_para_opcion.get(o.id)} for o in opciones]
     formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
     fix_opciones(formset)
-    is_valid = False
-    if qs:
-        formset.convert_warnings = True  # monkepatch
 
-    if request.method == 'POST' or qs:
+    is_valid = False
+    if request.method == 'POST':
         is_valid = formset.is_valid()
 
     if is_valid:
-
         try:
             with transaction.atomic():
-                # se guardan los datos. El contenedor `carga`
+                # Se guardan los datos. El contenedor `carga`
                 # y los votos del formset asociados.
-                if carga:
-                    carga.fiscal = fiscal
-                    carga.save()
-                else:
-                    carga = Carga.objects.create(
-                        mesa_categoria=mesa_categoria,
-                        status=tipo,
-                        fiscal=fiscal,
-                    )
+                carga = Carga.objects.create(
+                    mesa_categoria=mesa_categoria,
+                    tipo=tipo,
+                    fiscal=fiscal,
+                    origen=Carga.SOURCES.web
+                )
+                reportados = []
                 for form in formset:
                     vmr = form.save(commit=False)
                     vmr.carga = carga
-                    vmr.save()
+                    reportados.append(vmr)
+                VotoMesaReportado.objects.bulk_create(reportados)
+                # Libero el token sobre la mc
+                mesa_categoria.release()
             carga.actualizar_firma()
-            messages.success(
-                request,
-                f'Guardada categoría {categoria} para {mesa}')
-        except IntegrityError as e:
-            # hubo otra carga previa.
+            messages.success(request, f'Guardada categoría {categoria} para {mesa}')
+        except Exception as e:
+            # Este catch estaba desde cuando no podía haber múltiples cargas para una
+            # misma mesa-categoría.
+            # Ahora no podría darte IntegrityError porque esta vista sólo crea objetos
+            # y ya no hay constraint.
+            # Lo dejo por si queremos canalizar algun otro tipo de excepción.
             capture_exception(e)
-            messages.error(request, 'Alguien cargó esta mesa con anterioridad')
-            return redirect('elegir-acta-a-cargar')
+        redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+        return redirect(redirect_to)
 
-        # hay que cargar otra categoria (categoria) de la misma mesa?
-        # si es asi, se redirige a esa carga
-        siguiente = mesa.siguiente_categoria_sin_carga()
-        if siguiente:
-            # vuelvo a marcar un token
-            mesa.taken = timezone.now()
-            mesa.save(update_fields=['taken'])
-
-            return redirect(
-                'mesa-cargar-resultados',
-                categoria_id=siguiente.id,
-                mesa_numero=mesa.numero
-            )
-        return redirect('elegir-acta-a-cargar')
+    # Llega hasta acá si hubo error.
+    template_carga = 'carga.html' if not desde_ub else 'carga_ub.html'
     return render(
-        request, "fiscales/carga.html", {
+        request, "fiscales/" + template_carga, {
             'formset': formset,
             'categoria': categoria,
             'object': mesa,
-            'is_valid': is_valid or request.method == 'GET'
+            'is_valid': is_valid or request.method == 'GET',
+            'recibir_problema': 'problema',
+            'dato_id': mesa_categoria.id,
+            'form_problema': IdentificacionDeProblemaForm()
         }
     )
+
+
+class ReporteDeProblemaCreateView(CreateView):
+    http_method_names = ['post']
+    form_class = IdentificacionDeProblemaForm
+    template_name = "problemas/problema.html"
+
+    @cached_property
+    def mesa_categoria(self):
+        return get_object_or_404(
+            MesaCategoria, id=self.kwargs['mesacategoria_id']
+        )
+
+    def form_invalid(self, form):
+        messages.info(
+            self.request,
+            f'No se registró el reporte. Corroborá haber elegido una opción.',
+            extra_tags="problema"
+        )
+        return redirect('siguiente-accion')
+
+    def form_valid(self, form):
+        fiscal = self.request.user.fiscal
+        carga = form.save(commit=False)
+        carga.fiscal = fiscal
+        carga.status = Carga.TIPOS.problema
+        # Lo falso grabo para quedarme con la data de sus campos.
+        reporte_de_problema = form.save(commit=False)
+        tipo_de_problema = reporte_de_problema.tipo_de_problema
+        descripcion = reporte_de_problema.descripcion
+
+        # Creo la identificación.
+        carga = Carga.objects.create(
+            tipo=Carga.TIPOS.problema,
+            fiscal=fiscal,
+            origen=Carga.SOURCES.web,
+            mesa_categoria=self.mesa_categoria
+        )
+
+        # Creo el problema asociado.
+        Problema.reportar_problema(fiscal, descripcion, tipo_de_problema, carga=carga)
+
+        messages.info(
+            self.request,
+            f'Gracias por el reporte. Ahora pasamos a la siguiente acta.',
+            extra_tags="problema"
+        )
+        return redirect('siguiente-accion')
+
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
@@ -421,7 +394,6 @@ def detalle_mesa_categoria(request, categoria_id, mesa_numero, carga_id=None):
     )
 
 
-
 class CambiarPassword(PasswordChangeView):
     template_name = "fiscales/cambiar-contraseña.html"
     success_url = reverse_lazy('mis-datos')
@@ -446,7 +418,7 @@ def confirmar_fiscal(request, fiscal_id):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-class AutocompleteBaseListView(LoginRequiredMixin, ListView):
+class AutocompleteBaseListView(ListView):
 
     def get(self, request, *args, **kwargs):
         data = {'options': [{'value': o.id, 'text': str(o)} for o in self.get_queryset()]}
@@ -475,4 +447,3 @@ class MesaListView(AutocompleteBaseListView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(lugar_votacion__circuito__id=self.request.GET['parent_id'])
-

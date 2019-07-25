@@ -10,10 +10,6 @@
     background-color: {{ categoria.back_color }};
 }
 
-.right-panel > .card > .card-content > .acta-container {
-  overflow-x: hidden;
-  overflow-y: auto;
-}
 </style>
 
 <script type="text/javascript">
@@ -32,16 +28,11 @@ $(document).ready(function(){
       hasError.first().children('input').focus();
     }
     {% endif %}
-
-    $('.acta-container').height($("main").height() - 220);
+    $('.modal').modal();
 
 });
 </script>
 {% endblock js %}
-
-
-  {% block extra_form %}
-  {% endblock extra_form %}
 
 
 {% block breadcrumbs_items %}
@@ -56,25 +47,27 @@ $(document).ready(function(){
 {% block card-content %}
     <div class="card-title"> Mesa {{ object.numero }}
         <b style='background-color: {{ categoria.back_color }}; color: {{ categoria.color }}'>{{ categoria }}</b>
-
-    <a class="waves-effect waves-light btn-flat right-align" href="{% url "reportar-problema" object.numero %}" >¿Problemas?</a></div>
-
+    </div>
+    <form method="POST">
     {{ formset.management_form }}
     {% for form in formset %}
-        {% form %}{% endform %}
+    {% form %}{% endform %}
     {% endfor %}
+    </form>
 {% endblock card-content %}
 
-{% block card-action %}
-
-
+    {% block card-action %}
+    {% if recibir_problema %}
         <div class="row">
 
             <div class="col s12">
                 <div class="right-align">
                     <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="30">
                       Guardar
-                   </button>
+                    </button>
+		    <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
+                      Problema
+		    </a>
                 </div>
             </div>
 
@@ -84,12 +77,16 @@ $(document).ready(function(){
             <div class="col s12">
             </div>
         </div>
-
+	{% endif %}
 
     </div>
+
+
 {% endblock card-action %}
 
 {% block right-panel %}
+    <script src="{% static 'js/fabric.js' %}"></script>
+    <script src="{% static 'js/darkroom.js' %}"></script>
 
     <div class="acta card">
 
@@ -102,8 +99,15 @@ $(document).ready(function(){
             </ul>
             {% for title, foto in object.fotos %}
                 <div id="foto{{ forloop.counter }}" class="col s12 acta-container">
-                    <a href="{{ foto.url }}" onclick="return !window.open(this.href, 'Acta mesa Nº {{ object.numero }}', 'width=640,height=600')">ampliar</a><br>
-                    <img class="responsive-img" src="{{ foto.thumbnail.960x.url }}">
+                    <img id="target{{ forloop.counter }}" src="{{ foto.thumbnail.960x.url }}">
+                    <script>
+                    new Darkroom('#target{{ forloop.counter }}', {
+                      plugins: {
+                        save: false,
+                        crop: false
+                      }
+                    });
+                    </script>
                 </div>
             {% endfor %}
 

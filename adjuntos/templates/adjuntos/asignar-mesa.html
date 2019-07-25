@@ -10,7 +10,6 @@
 
 {% block extrahead %}
 <style type="text/css">
-
 .content {
   padding-bottom: 0px;
 }
@@ -36,11 +35,13 @@
 
 .right-panel {
   flex-basis: 70%;
-  min-width: 300px;
+  min-width: 350px;
   margin-left: 0.375rem;
-  margin-right: 0.375rem; }
-  .right-panel > .card {
-    margin-bottom: 0.5rem; }
+  margin-right: 0.375rem;
+}
+.right-panel > .card {
+    margin-bottom: 0.5rem;
+}
 
 
 @media only screen and (max-width: 993px) {
@@ -58,10 +59,12 @@
 </style>
 <script type="text/javascript">
 $(document).ready(function() {
-  var container = $('.darkroom-image-container');
+  // Actualizar el alto de la foto a lo disponible
+  var container = $('.darkroom-container');
   if (container.length) {
-    container.height($("main").height() - 200);
     $('html, body').css('overflowY', 'hidden');
+    var darkroomHeight = $(window).height() - container.offset().top - 50;
+    container.height(darkroomHeight);
   }
 });
 </script>
@@ -88,10 +91,12 @@ $(document).ready(function() {
         <div class="card-action">
             {% block card-action %}
             <div class="right-align">
-
                <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
                   Guardar
                </button>
+               <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
+                  Problema
+	       </a>
             </div>
             {% endblock card-action %}
         </div>
@@ -99,53 +104,27 @@ $(document).ready(function() {
        </form>
     </div>
 
-  {% block extra_form %}
-
-<div class="card">
-       <form method="POST" action="{% url 'asignar-problema' attachment.id %}" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="card-content">
-
-            <div class="card-title">¿Hay un problema?</div>
-                  {% form form=form_problema %}
-                  {% endform %}
-            </div>
-
-        <div class="card-action">
-            <div class="right-align">
-               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="7">
-                  Reportar
-               </button>
-            </div>
-        </div>
-
-       </form>
-    </div>
-
-  {% endblock extra_form %}
-
+{% if recibir_problema %}
+{% include "problemas/problema.html" %}
+{% endif %}
 
 {% endblock left-panel %}
 
 {% block head %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'css/darkroom.css' %}" />
-
- {% endblock %}
+{% endblock %}
 
 
 
 {% block right-panel %}
     <div class="acta card">
+        <div class="card-content">
+            <img id="target" src="{{ attachment.foto.thumbnail.960x.url }}">
 
-        <div class="card-content" >
-           <a href="{{ attachment.foto.url }}" target="new">ampliar</a>
-           <img id="target" class="responsive-img" src="{{ attachment.foto.thumbnail.960x.url }}">
-
-          <script src="{% static 'js/fabric.js' %}"></script>
-          <script src="{% static 'js/darkroom.js' %}"></script>
-
-          <script>
+            <script src="{% static 'js/fabric.js' %}"></script>
+            <script src="{% static 'js/darkroom.js' %}"></script>
+            <script>
             new Darkroom('#target', {
               plugins: {
                 save: {
@@ -159,19 +138,17 @@ $(document).ready(function() {
                 }
               }
             });
-          </script>
+            </script>
         </div>
-
-
-
     </div>
 {% endblock right-panel %}
 
 {% block messages %}
 {{ block.super }}
 <script type="text/javascript">
-$(document).ready(function(){
-  $('#id_status_container').attr('tabindex', 6);
-});
+  $(document).ready(function(){
+      $('#id_status_container').attr('tabindex', 6);
+      $('.modal').modal();
+  });
 </script>
 {% endblock messages %}

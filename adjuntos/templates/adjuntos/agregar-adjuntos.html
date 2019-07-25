@@ -1,31 +1,31 @@
 {% extends "fiscales/base.html" %}
 {% load i18n material_form material_frontend %}
 
-{% block page_title %}Subir Adjuntos{% endblock %}
+{% block page_title %}Subir actas{% endblock %}
 
 {% block left-panel %}
-      <div class="card">
+<div class="card">
 
-        <div class="card-content">
+    <div class="card-content">
 
-            <div class="card-title">{% block card-title %}
-                Subir Adjuntos
+        <div class="card-title">{% block card-title %}
+            Subir actas
             {% endblock card-title %}</div>
 
-            <form action="{% url 'agregar-adjuntos' %}" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                {# FIXME django-material desactiva el atributo multiple del filefield #}
-                {# {% form  %}{% endform %} #}
-                {{ form }}
-                <div class="card-action">
-                    <div class="right-align">
-                        {% block submit_row %}
-                        <button type="submit" class="waves-effect waves-light btn white-text">Subir</button>
-                        {% endblock %}
-                    </div>
+        <form action="{{ url_to_post }}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {# FIXME django-material desactiva el atributo multiple del filefield #}
+            {# {% form  %}{% endform %} #}
+            {{ form }}
+            <div class="card-action">
+                <div class="right-align">
+                    {% block submit_row %}
+                    <button type="submit" class="waves-effect waves-light btn white-text">Subir</button>
+                    {% endblock %}
                 </div>
-            </form>
+            </div>
+        </form>
 
-        </div>
-        </div>
+    </div>
+</div>
 {% endblock %}
