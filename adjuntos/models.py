@@ -112,9 +112,20 @@ class Attachment(TimeStampedModel):
     )
     taken = models.DateTimeField(null=True)
 
+    subido_por = models.ForeignKey(
+        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
+    )
+
     # Identificación representativa del estado actual.
     identificacion_testigo = models.ForeignKey(
         'Identificacion', related_name='es_testigo',
+        null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    # Información parcial de identificación que se completa cuando se
+    # sube el attachment y sirve para precomplentar parte de la identificación.
+    identificacion_parcial = models.ForeignKey(
+        'IdentificacionParcial', related_name='attachment',
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
@@ -129,11 +140,31 @@ class Attachment(TimeStampedModel):
         self.taken = None
         self.save(update_fields=['taken'])
 
+    def crear_identificacion_parcial_si_corresponde(self):
+        """
+        Le asocia al attachment una IdentificacionParcial con los datos del fiscal que la subió
+        si no una previa.
+        """
+        if self.identificacion_parcial:
+            return
+
+        # Si no tengo quién la subió tampoco lo puedo hacer.
+        if not self.subido_por:
+            return
+
+        self.identificacion_parcial = IdentificacionParcial.objects.create(
+            fiscal = self.subido_por,
+            distrito = self.subido_por.seccion.distrito if self.subido_por.seccion else None,
+            seccion = self.subido_por.seccion
+        )
+
     def save(self, *args, **kwargs):
         """
         Actualiza el hash de la imágen original asociada antes de guardar.
         Notar que esto puede puede producir una excepción si la imágen (el digest)
         ya es conocido en el sistema.
+
+        Además, crea una IdentificacionParcial con los datos del Fiscal que lo subió si no hay una.
         """
         if self.foto and not self.foto_digest:
             # FIXME
@@ -144,6 +175,7 @@ class Attachment(TimeStampedModel):
             # y sólo en ese caso actualizar el hash.
             self.foto.file.open()
             self.foto_digest = hash_file(self.foto.file)
+            self.crear_identificacion_parcial_si_corresponde()
         super().save(*args, **kwargs)
 
 
@@ -221,15 +253,8 @@ class Identificacion(TimeStampedModel):
         'identificada',
         'problema'
     )
-    #
-    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
-    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
-    #     todos los datos de identificación.
-    # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
-    # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
 
-    status = StatusField(choices_name='STATUS',choices=STATUS)
-
+    status = StatusField(choices_name='STATUS', choices=STATUS)
 
     SOURCES = Choices('web', 'csv', 'telegram')
     source = StatusField(choices_name='SOURCES', default=SOURCES.web)
@@ -238,7 +263,7 @@ class Identificacion(TimeStampedModel):
         'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
     )
     mesa = models.ForeignKey(
-        'elecciones.Mesa',  null=True, blank=True, on_delete=models.SET_NULL
+        'elecciones.Mesa', null=True, blank=True, on_delete=models.SET_NULL
     )
     attachment = models.ForeignKey(
         Attachment, related_name='identificaciones', on_delete=models.CASCADE
@@ -253,3 +278,27 @@ class Identificacion(TimeStampedModel):
         self.invalidada = True
         self.procesada = False
         self.save(update_fields=['invalidada', 'procesada'])
+
+class IdentificacionParcial(TimeStampedModel):
+    """
+    Este modelo se usa para asociar a los attachment información de identificación que no es completa.
+    No confundir con Identificacion ni con el status de identificación de una mesa.
+    """
+    
+    fiscal = models.ForeignKey(
+        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
+    )
+    # La información se guarda indenpendientemente del fiscal porque el fiscal puede mudarse
+    # o estar subiendo actas de otro lado.
+    distrito = models.ForeignKey(
+        'elecciones.Distrito', on_delete=models.CASCADE
+    )
+    seccion = models.ForeignKey(
+        'elecciones.Seccion', null=True, blank=True, on_delete=models.SET_NULL
+    )
+    circuito = models.ForeignKey(
+        'elecciones.Circuito', null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    def __str__(self):
+        return f'{self.distrito} - {self.seccion} - {self.circuito} (subida por {self.fiscal})'

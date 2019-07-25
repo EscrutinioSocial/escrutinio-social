@@ -60,7 +60,7 @@ def subir_acta(request):
     """
     serializer = ActaSerializer(data=request.data)
     if serializer.is_valid():
-        attachment = serializer.save()
+        attachment = serializer.save(subido_por=request.user.fiscal)
         return Response(data=ActaSerializer(attachment).data, status=status.HTTP_201_CREATED)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

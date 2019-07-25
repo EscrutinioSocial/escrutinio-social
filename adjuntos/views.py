@@ -197,7 +197,7 @@ class AgregarAdjuntos(FormView):
         if form.is_valid():
             contador_fotos = 0
             for file in files:
-                instance = self.procesar_adjunto(file)
+                instance = self.procesar_adjunto(file, request.user.fiscal)
                 if instance is not None:
                     contador_fotos = contador_fotos + 1
             if contador_fotos:
@@ -206,16 +206,17 @@ class AgregarAdjuntos(FormView):
 
         return self.form_invalid(form)
 
-    def procesar_adjunto(self, adjunto):
+    def procesar_adjunto(self, adjunto, subido_por):
         if adjunto.content_type not in self.types:
             self.mostrar_mensaje_tipo_archivo_invalido(adjunto.name)
             return None
-        return self.cargar_informacion_adjunto(adjunto)
+        return self.cargar_informacion_adjunto(adjunto, subido_por)
 
-    def cargar_informacion_adjunto(self, adjunto):
+    def cargar_informacion_adjunto(self, adjunto, subido_por):
         try:
             instance = Attachment(mimetype=adjunto.content_type)
             instance.foto.save(adjunto.name, adjunto, save=False)
+            instance.subido_por = subido_por
             instance.save()
             return instance
         except IntegrityError:
@@ -245,7 +246,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
-        #no debiese poder cargarse por la ui dos imágenes, aunque es mejor poder chequear esto
+        # No debería poderse cargar por la UI más de una imágenes, aunque es mejor chequear esto
         if len(files) > 1:
             form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
 

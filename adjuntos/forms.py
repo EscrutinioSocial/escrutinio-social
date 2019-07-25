@@ -2,7 +2,6 @@ from django import forms
 from .models import Identificacion
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
-# from problemas.forms import IdentificacionProblemaForm
 
 class IdentificacionForm(forms.ModelForm):
     """
@@ -23,6 +22,11 @@ class IdentificacionForm(forms.ModelForm):
             kwargs['initial']['circuito'] = circuito = instance.mesa.lugar_votacion.circuito
             kwargs['initial']['seccion'] = seccion = circuito.seccion
             kwargs['initial']['distrito'] = distrito = seccion.distrito
+        else:
+            if attachment.identificacion_parcial:
+                kwargs['initial']['circuito'] = circuito = identificacion_parcial.circuito
+                kwargs['initial']['seccion'] = seccion = identificacion_parcial.seccion
+                kwargs['initial']['distrito'] = distrito =identificacion_parcial.distrito
         super().__init__(*args, **kwargs)
         self.fields['distrito'].widget.attrs['autofocus'] = True
         self.fields['seccion'].choices = (('', '---------'),)
@@ -57,7 +61,7 @@ class AgregarAttachmentsForm(forms.Form):
     Form para subir uno o más archivos para ser asociados a instancias de
     :py:class:`adjuntos.Attachment`
 
-    Se le puede pasar por kwargs si el form acepta multiples archivos o uno solo
+    Se le puede pasar por kwargs si el form acepta múltiples archivos o uno solo.
     """
 
     file_field = forms.FileField(
@@ -69,5 +73,3 @@ class AgregarAttachmentsForm(forms.Form):
         es_multiple = kwargs.pop('es_multiple') if 'es_multiple' in kwargs else True
         super().__init__(*args, **kwargs)
         self.fields['file_field'].widget.attrs.update({'multiple': es_multiple})
-        
-
