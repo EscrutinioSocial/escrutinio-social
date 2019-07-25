@@ -58,7 +58,9 @@
         <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
             ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
         </h4>
+        {% if request.GET.circuito != null %}
         <a href="../mesas_circuito/{{ request.GET.circuito }}">Ver mesas del circuito</a>
+        {% endif %}
         <table class="bordered" id="tabla_resultados">
             <colgroup>
                 <col id="partido" />
