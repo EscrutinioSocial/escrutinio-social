@@ -234,3 +234,19 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
 
         context['distritos'] = Distrito.objects.all().order_by('numero')
         return context
+
+
+class MesasDeCircuito(TemplateView):
+
+    template_name = "elecciones/mesas_circuito.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            pk = Circuito.objects.first().id
+        circuito = get_object_or_404(Circuito, id=pk)
+        context['object'] = circuito
+        context['mesas'] = circuito.mesa_set.all
+        return context
