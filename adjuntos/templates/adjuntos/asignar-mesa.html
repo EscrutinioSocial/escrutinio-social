@@ -60,11 +60,17 @@
 <script type="text/javascript">
 $(document).ready(function() {
   // Actualizar el alto de la foto a lo disponible
-  var container = $('.darkroom-container');
-  if (container.length) {
+  var $container = $('.darkroom-container');
+  if ($container.length) {
     $('html, body').css('overflowY', 'hidden');
-    var darkroomHeight = $(window).height() - container.offset().top - 50;
-    container.height(darkroomHeight);
+    var darkroomHeight = $(window).height() - $container.offset().top - 50;
+    $container.height($(window).height() - $container.offset().top);
+
+    var $leftPanel = $('.left-panel .card');
+    var leftPanelHeight = $(window).height() - $leftPanel.offset().top
+    $('.left-panel .card')
+      .css('max-height', leftPanelHeight)
+      .css('overflowY', 'auto');
   }
 });
 </script>
