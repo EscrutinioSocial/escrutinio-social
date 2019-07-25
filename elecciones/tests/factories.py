@@ -5,6 +5,8 @@ from io import BytesIO
 from django.contrib.auth.models import User
 from factory.django import DjangoModelFactory
 from faker import Faker
+from django.conf import settings
+from elecciones.models import Opcion
 
 fake = Faker('es_ES')
 
@@ -51,6 +53,15 @@ class CategoriaFactory(DjangoModelFactory):
 
     @factory.post_generation
     def opciones(self, create, extracted, **kwargs):
+
+        def crear_opcion_desde_dict_si_no_existe(option_dict):
+            if self.opciones.filter(**option_dict).count() > 0:
+                return
+
+            opciones = Opcion.objects.filter(**option_dict)
+            opcion = opciones.first() if opciones.count() > 0 else OpcionFactory(**option_dict)
+            CategoriaOpcionFactory(categoria=self, opcion=opcion)
+
         if not create:
             return
         if extracted is not None:
@@ -58,10 +69,10 @@ class CategoriaFactory(DjangoModelFactory):
             for opcion in extracted:
                 CategoriaOpcionFactory(categoria=self, opcion=opcion)
         else:
-            # TODO Usar info tomada de settings.py
-            CategoriaOpcionFactory(
-                categoria=self, opcion=OpcionFactory(nombre='blanco', partido=None, tipo='no_positivo')
-            )
+            crear_opcion_desde_dict_si_no_existe(settings.OPCION_BLANCOS)
+            crear_opcion_desde_dict_si_no_existe(settings.OPCION_TOTAL_VOTOS)
+            crear_opcion_desde_dict_si_no_existe(settings.OPCION_TOTAL_SOBRES)
+
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc1'))
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc2'))
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc3'))

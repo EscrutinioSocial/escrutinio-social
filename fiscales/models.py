@@ -2,15 +2,11 @@ import re
 import uuid
 from django.db import models
 from django.conf import settings
-from django.db.models import Q
 from django.contrib.contenttypes.fields import GenericRelation
-from model_utils import Choices
-from model_utils.models import TimeStampedModel
-from django.utils import timezone
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_delete
-from elecciones.models import Mesa, LugarVotacion, Categoria
+from elecciones.models import Seccion
 from django.contrib.contenttypes.models import ContentType
 from contacto.models import DatoDeContacto
 from model_utils.fields import StatusField
@@ -43,6 +39,10 @@ class Fiscal(models.Model):
     user = models.OneToOneField(
         'auth.User', null=True, blank=True, related_name='fiscal', on_delete=models.SET_NULL
     )
+    seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
+    referido_codigo = models.CharField(max_length=4, blank=True, null=True, unique=True)
+    referido_por_nombres = models.CharField(max_length=100, blank=True, null=True)
+    referido_por_codigo = models.CharField(max_length=4, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Fiscales'

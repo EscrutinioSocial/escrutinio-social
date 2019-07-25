@@ -72,14 +72,13 @@ class Sumarizador():
         """
         lookups = dict()
 
-        # ['status'] == 'tc':
         if self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga:
             if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status'] = MesaCategoria.STATUS.total_consolidada_dc
-            else:  # éste era pc
+            else:
                 lookups[f'{prefix}status'] = MesaCategoria.STATUS.parcial_consolidada_dc
 
-        elif self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.solo_consolidados:  # no estaba
+        elif self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.solo_consolidados:
             # Doble carga y CSV.
             if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status__in'] = (
@@ -92,7 +91,6 @@ class Sumarizador():
                     MesaCategoria.STATUS.parcial_consolidada_csv,
                 )
 
-        # ['status'] == 'tsc':
         elif self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.todas_las_cargas:
             if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status__in'] = (
@@ -100,7 +98,7 @@ class Sumarizador():
                     MesaCategoria.STATUS.total_consolidada_csv,
                     MesaCategoria.STATUS.total_sin_consolidar,
                 )
-            else:  # este era psc
+            else:
                 lookups[f'{prefix}status__in'] = (
                     MesaCategoria.STATUS.parcial_consolidada_dc,
                     MesaCategoria.STATUS.parcial_consolidada_csv,
@@ -268,49 +266,56 @@ class Sumarizador():
         ``calcular``.
         """
         mesas = self.mesas(categoria)
-        return Resultados(self.calcular(categoria, mesas))
-
-    @classmethod
-    def get_tipos_sumarizacion(cls):
-        id = 0
-        tipos_sumarizacion = []
-
-        for tipo_de_agregacion in Sumarizador.TIPOS_DE_AGREGACIONES:
-            for opcion in Sumarizador.OPCIONES_A_CONSIDERAR:
-                tipos_sumarizacion.append({'pk': str(id), 'name': f'{tipo_de_agregacion}-{opcion}'})
-
-        return tipos_sumarizacion
+        return Resultados(self.opciones_a_considerar, self.calcular(categoria, mesas))
 
 
 class Resultados():
     """
-    Esta clase contiene los resultados
+    Esta clase contiene los resultados.
     """
 
-    def __init__(self, resultados):
+    def __init__(self, opciones_a_considerar, resultados):
+        self.opciones_a_considerar = opciones_a_considerar
         self.resultados = resultados
 
     @lru_cache(128)
     def total_positivos(self):
         """
-        Devuelve el total de votos positivos de la mesa, sumando los votos de cada una de las opciones de cada partido.
+        Devuelve el total de votos positivos, sumando los votos de cada una de las opciones de cada partido
+        en el caso self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas.
+
+        En el caso self.self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias
+        obtiene la opción de total
         """
-        return sum(
-            sum(votos for votos in opciones_partido.values() if votos)
-            for opciones_partido in self.resultados.votos_positivos.values()
-        )
+        if self.opciones_a_considerar == Sumarizador.OPCIONES_A_CONSIDERAR.todas:
+            total_positivos = sum(
+                sum(votos for votos in opciones_partido.values() if votos)
+                for opciones_partido in self.resultados.votos_positivos.values()
+            )
+        else:
+            nombre_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre']
+            total = self.resultados.votos_no_positivos[nombre_opcion_total]
+            total_no_positivos = self.total_no_positivos()
+            total_positivos = total - total_no_positivos
+
+        return total_positivos
 
     @lru_cache(128)
     def total_no_positivos(self):
         """
-        Devuelve el total de votos no positivos de la mesa, sumando los votos a cada opción no partidaria.
+        Devuelve el total de votos no positivos, sumando los votos a cada opción no partidaria
+        y excluyendo la opción que corresponde a totales (como el total de votantes o de sobres).
         """
-        return sum(votos for votos in self.resultados.votos_no_positivos.values())
+        nombre_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre']
+        nombre_opcion_sobres = settings.OPCION_TOTAL_SOBRES['nombre']
+        return sum(votos for opcion, votos in self.resultados.votos_no_positivos.items()
+                        if opcion != nombre_opcion_total and opcion != nombre_opcion_sobres
+        )
 
     @lru_cache(128)
     def votantes(self):
         """
-        Total de personas que votaron de la mesa
+        Total de personas que votaron.
         """
         return self.total_positivos() + self.total_no_positivos()
 
@@ -324,8 +329,8 @@ class Resultados():
                 Para cada opción incluye:
                     - votos: cantidad de votos para esta opción.
                     - porcentaje: porcentaje sobre el total del del partido.
-                    - porcentaje_positivos: porsentaje sobre el total de votos positivos.
-                    - porcentaje_total: porcentaje sobre el total de votos de la mesa.
+                    - porcentaje_positivos: porcentaje sobre el total de votos positivos.
+                    - porcentaje_total: porcentaje sobre el total de votos.
         """
         votos_positivos = {}
         for partido, votos_por_opcion in self.resultados.votos_positivos.items():
