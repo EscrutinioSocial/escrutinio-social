@@ -173,12 +173,12 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         # TODO el default también está en Sumarizador.__init__
         return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
 
-    def get_result_piechart(self, resultados):
+    def get_plot_data(self, resultados):
         return [{
             'key': str(k),
             'y': v["votos"],
             'color': k.color if not isinstance(k, str) else '#CCCCCC'
-        } for k, v in resultados['tabla_positivos'].items()]
+        } for k, v in resultados.tabla_positivos().items()]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -201,10 +201,9 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['resultados'] = self.get_resultados(categoria)
         context['show_plot'] = settings.SHOW_PLOT
 
-        # TODO esto no está probado
         if settings.SHOW_PLOT:
-            chart = self.get_result_piechart(resultados)
-            context['result_piechart'] = chart
+            chart = self.get_plot_data(context['resultados'])
+            context['plot_data'] = chart
             context['chart_values'] = [v['y'] for v in chart]
             context['chart_keys'] = [v['key'] for v in chart]
             context['chart_colors'] = [v['color'] for v in chart]
