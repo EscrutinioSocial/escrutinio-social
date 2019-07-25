@@ -82,6 +82,9 @@ class FiscalForm(forms.ModelForm):
 
 
 class QuieroSerFiscalForm(forms.Form):
+
+    CARACTERES_REF_CODIGO = 4
+
     email = forms.EmailField(required=True)
     email_confirmacion = forms.EmailField(required=True, label="Confirmar email")
     apellido = forms.CharField(required=True, label="Apellido", max_length=50)
@@ -95,7 +98,7 @@ class QuieroSerFiscalForm(forms.Form):
         queryset=Distrito.objects.all().order_by('numero')
     )
 
-    seccion_autocomplete = forms.CharField(label="Departamento",
+    seccion_autocomplete = forms.CharField(label="Departamento o Municipio",
                                            widget=forms.TextInput(attrs={
                                                'class': 'autocomplete',
                                                'id': 'seccion-autocomplete',
@@ -111,12 +114,12 @@ class QuieroSerFiscalForm(forms.Form):
     )
 
     password = forms.CharField(
-        label=_("New password"),
+        label=_("Password"),
         widget=forms.PasswordInput,
         strip=False,
     )
     password_confirmacion = forms.CharField(
-        label=_("New password confirmation"),
+        label=_("Password confirmation"),
         strip=False,
         widget=forms.PasswordInput,
     )
@@ -165,6 +168,13 @@ class QuieroSerFiscalForm(forms.Form):
         if Fiscal.objects.filter(dni=dni).exists():
             raise ValidationError('Ya se encuentra un usuario registrado con ese dni')
         return dni
+
+    def clean_referido_por_codigo(self):
+        referido_por_codigo = self.cleaned_data.get('referido_por_codigo', None)
+        if referido_por_codigo:
+            if len(referido_por_codigo) != self.CARACTERES_REF_CODIGO:
+                raise ValidationError('Codigo de referido debe ser de 4 letras y/o números')
+        return referido_por_codigo
 
 
 class VotoMesaModelForm(forms.ModelForm):

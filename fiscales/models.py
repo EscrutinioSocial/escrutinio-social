@@ -40,9 +40,9 @@ class Fiscal(models.Model):
         'auth.User', null=True, blank=True, related_name='fiscal', on_delete=models.SET_NULL
     )
     seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
-    referido_codigo = models.UUIDField(default=uuid.uuid4, editable=True)
+    referido_codigo = models.CharField(max_length=4, blank=True, null=True, unique=True)
     referido_por_nombres = models.CharField(max_length=100, blank=True, null=True)
-    referido_por_codigo = models.UUIDField(editable=True, blank=True, null=True)
+    referido_por_codigo = models.CharField(max_length=4, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Fiscales'
