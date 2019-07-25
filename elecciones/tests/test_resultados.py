@@ -228,6 +228,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.votantes() == 220
     assert resultados.electores() == 800
 
+
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
     # se crean 3 secciones electorales
@@ -421,8 +422,6 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert mc.carga_testigo == c1
     assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
 
-    # TODO se actualizaron las urls a lo que entiendo es lo esperado
-    # response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
         '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
@@ -431,7 +430,6 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
-    # response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
         '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas'
@@ -450,7 +448,6 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert mc.carga_testigo == c1
     assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
 
-    # response = fiscal_client.get(reverse('resultados-totales-sin-confirmar', args=[categoria.id]))
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
         '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
@@ -459,7 +456,6 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
-    # response = fiscal_client.get(reverse('resultados-totales-confirmados', args=[categoria.id]))
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
         '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas'
