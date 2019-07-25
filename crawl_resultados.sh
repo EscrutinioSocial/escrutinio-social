@@ -11,7 +11,7 @@ COOKIES=/tmp/cookies.txt
 WGET_BIN="wget --load-cookies=$COOKIES --save-cookies=$COOKIES --referer=$LOGIN_URL"
 
 echo "Django Auth: get csrftoken ..."
-rm $COOKIES
+rm -f $COOKIES
 $WGET_BIN --directory-prefix=/tmp $LOGIN_URL > /dev/null
 DJANGO_TOKEN="csrfmiddlewaretoken=$(grep csrftoken $COOKIES | sed 's/^.*csrftoken\s*//')"
 

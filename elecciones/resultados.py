@@ -492,12 +492,10 @@ class Proyecciones(Sumarizador):
             }
             for k, v in tabla_no_positivos.items()
         }
-        result_piechart = None
 
         resultados = {
             'tabla_positivos': tabla_positivos,
             'tabla_no_positivos': tabla_no_positivos,
-            'result_piechart': result_piechart,
             'electores': c.electores,
             'total_positivos': c.total_positivos,
             'electores_en_mesas_escrutadas': c.electores_en_mesas_escrutadas,
