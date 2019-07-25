@@ -3,6 +3,7 @@ import os
 
 from django.contrib.auth.models import Group
 from django.http import Http404
+from django.conf import settings
 
 from adjuntos.csv_import import (ColumnasInvalidasError, CSVImporter, DatosInvalidosError,
                                  PermisosInvalidosError)
@@ -78,8 +79,8 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     m = MesaFactory(numero='4012', lugar_votacion__circuito=c1, electores=100, circuito=c1)
     o2 = OpcionFactory(orden=3, codigo='A')
     o3 = OpcionFactory(orden=2, codigo='B')
-    votos = OpcionFactory(orden=0, codigo='0', nombre_corto="total_votos", tipo='metadata')
-    sobres = OpcionFactory(orden=1, codigo='0', nombre_corto="sobres", tipo='metadata')
+    votos = OpcionFactory(orden=0, **settings.OPCION_TOTAL_VOTOS)
+    sobres = OpcionFactory(orden=1, codigo='0', **settings.OPCION_TOTAL_SOBRES)
     c = CategoriaFactory(opciones=[o2, o3, votos, sobres], nombre='Otra categoria')
     CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True)
     MesaCategoriaFactory(mesa=m, categoria=c)
@@ -95,8 +96,8 @@ def carga_inicial(db):
     s1 = SeccionFactory(numero=50, distrito=d1)
     circ = CircuitoFactory(numero='2', seccion=s1)
     # crear las opciones para votos y sobres
-    votos = OpcionFactory(orden=0, codigo='0', nombre_corto="total_votos", tipo='metadata')
-    sobres = OpcionFactory(orden=1, codigo='0', nombre_corto="sobres", tipo='metadata')
+    votos = OpcionFactory(orden=0, codigo='0', **settings.OPCION_TOTAL_VOTOS)
+    sobres = OpcionFactory(orden=1, codigo='0', **settings.OPCION_TOTAL_SOBRES)
     o1 = OpcionFactory(orden=3, codigo='A')
     o2 = OpcionFactory(orden=2, codigo='B')
     categorias = []
@@ -106,8 +107,21 @@ def carga_inicial(db):
         CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=categoria[1], opcion=o1)
         CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=categoria[1], opcion=o2)
         if categoria[0] == 'Presidente y vice':
-            CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=True, opcion=votos)
-            CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=True, opcion=sobres)
+            # Les ajusto el orden.
+            votos = categoria_bd.get_opcion_total_votos()
+            votos.orden = 1
+            votos.save()
+            sobres = categoria_bd.get_opcion_total_sobres()
+            sobres.orden = 1
+            sobres.save()
+
+            # Las hago prioritarias.
+            votos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=votos)
+            votos_cat_opcion.prioritaria = True
+            votos_cat_opcion.save()
+            sobres_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=sobres)
+            sobres_cat_opcion.prioritaria = True
+            sobres_cat_opcion.save()
     MesaFactory(numero='4012', lugar_votacion__circuito=circ, electores=100, circuito=circ,
                 categorias=categorias)
 

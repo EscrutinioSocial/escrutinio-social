@@ -301,10 +301,10 @@ MESA_TAKE_WAIT_TIME = 2  # En minutos
 # Por ejemplo:
 #
 # blanco = Opcion.objects.get(**OPCION_BLANCOS)
-OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco'}
-OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos'}
-OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos'}
-OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres'}
+OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None}
+OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
+OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None}
+OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
 
 
