@@ -24,15 +24,15 @@ def siguiente_accion(request):
     cant_fotos = attachments.count()
     cant_cargas = con_carga_pendiente.count()
 
-    if not cant_fotos and not cant_cargas:
-        return NoHayAccion(request)
-
-    elif cant_fotos and not cant_cargas or cant_fotos >= cant_cargas * 2:
+    if cant_fotos and not cant_cargas or cant_fotos >= cant_cargas * 2:
         foto = attachments.order_by('?').first()
-        return IdentificacionDeFoto(request, foto)
-
-    mesacategoria = con_carga_pendiente.mas_prioritaria()
-    return CargaCategoriaEnActa(request, mesacategoria)
+        if foto:
+            return IdentificacionDeFoto(request, foto)
+    elif cant_cargas:
+        mesacategoria = con_carga_pendiente.mas_prioritaria()
+        if mesacategoria:
+            return CargaCategoriaEnActa(request, mesacategoria)
+    return NoHayAccion(request)
 
 
 class IdentificacionDeFoto():
