@@ -1,3 +1,9 @@
+// Algunos helpers para crea un autocomplete
+// basado en https://materializecss.com/autocomplete.html
+
+// Arma un diccionario con las descripciones y los IDs de las opciones
+// ej: { opcion1Description: opcion1Valor }
+// a partir de un listado de <option ...> $('options')
 function getValuesMapForOption($option) {
   var valuesMap = {};
   $option.filter(function() {
@@ -9,6 +15,9 @@ function getValuesMapForOption($option) {
   return valuesMap;
 }
 
+// Arma un diccionario con las descripciones y los IDs de las opciones
+// ej: { opcion1Description: opcion1Valor }
+// a partir del respose de la url que devuelve las opciones del autocomplete
 function getValuesMapForJson(response) {
   var valuesMap = {};
   response.options.forEach(function(option) {
@@ -17,6 +26,8 @@ function getValuesMapForJson(response) {
   return valuesMap;
 }
 
+// Arma el objeto data (https://materializecss.com/autocomplete.html
+// a partie de un diccionario con las descripciones y los IDs de las opciones
 function getAutocompleteData(valuesMap) {
   var data = {};
   Object.keys(valuesMap).forEach(function(key) {
@@ -25,16 +36,24 @@ function getAutocompleteData(valuesMap) {
   return data;
 }
 
+// Arma el patron de validación del input text
+// a partie de un diccionario con las descripciones y los IDs de las opciones
 function getValidationPattern(valuesMap) {
   var values = Object.keys(valuesMap).map(key => key);
   return values.join('|');
 }
 
+// Arma el mensaje de validación del input text
+// a partie de un diccionario con las descripciones y los IDs de las opciones
 function getValidationMessage(valuesMap) {
   var values = Object.keys(valuesMap).map(key => key);
   return 'Valores posibles: ' + values.join(', ');
 }
 
+// Crea un objeto autocomplete a partir de:
+// fieldId: el id del input text
+// dataUrl: la url que se utiliza para cargar las opciones del autocomplete
+// childAutocomplete: si tiene algún autocomplete hijo (dependiente)
 function buildAutocomplete(fieldId, dataUrl, childAutocomplete) {
   var autocomplete = {
     dataUrl: dataUrl,
