@@ -1,9 +1,11 @@
 from django.shortcuts import redirect, render
+from django.db import transaction
 
 from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
 
 
+@transaction.atomic
 def siguiente_accion(request):
     """
     Elige la siguiente acción a ejecutarse
