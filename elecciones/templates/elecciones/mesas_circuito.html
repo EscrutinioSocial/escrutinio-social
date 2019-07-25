@@ -1,0 +1,41 @@
+{% extends "fiscales/base.html" %}
+{% load staticfiles %}
+
+
+{% block title %}Mesas del circuito{% endblock %}
+
+{% block page_title %}Mesas para {{object.nombre_completo}}{% endblock %}
+
+{% block breadcrumbs %}
+{% endblock %}
+
+{% block head %}
+{{ block.super }}
+<link href="/static/elecciones/resultados.css" rel="stylesheet" type="text/css">
+<link href="/static/elecciones/arbol_distrito.css" rel="stylesheet" type="text/css">
+{% endblock %}
+
+{% block sidenav_items %}
+{% for mesa in mesas %}
+<ul>
+    <li id="mesa-{{mesa.id}}">
+        <a href="{{ request.path }}?mesa={{ mesa.id }}">
+            Mesa {{ mesa.numero }}
+        </a>
+    </li>
+</ul>
+{% endfor %}
+{% endblock %}
+
+{% block left-panel %}
+<div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
+    <div class="card-content" id="frame{{categoria.id}}">
+        <h1>soy una mesa</h1>
+    </div>
+</div>
+{% endblock %}
+
+{% block right-panel %}
+{% endblock right-panel %}
+{% block messages %}
+{% endblock messages %}
