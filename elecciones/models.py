@@ -310,14 +310,14 @@ class MesaCategoria(models.Model):
         ('10_parcial_sin_consolidar', 'parcial_sin_consolidar', 'parcial sin consolidar'),
         # no hay dos cargas mínimas coincidentes, pero una es de csv.
         # cargas parcial divergentes sin consolidar
-        ('20_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial_en_conflicto'),
-        ('30_parcial_consolidada_csv', 'parcial_consolidada_csv', 'parcial consolidada csv'),
+        ('20_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial en conflicto'),
+        ('30_parcial_consolidada_csv', 'parcial_consolidada_csv', 'parcial consolidada CSV'),
         # carga parcial consolidada por multicarga
-        ('40_parcial_consolidada_dc', 'parcial_consolidada_dc', 'parcial_consolidada_dc'),
+        ('40_parcial_consolidada_dc', 'parcial_consolidada_dc', 'parcial consolidada doble carga'),
         ('50_total_sin_consolidar', 'total_sin_consolidar', 'total sin consolidar'),
         ('60_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
-        ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada csv'),
-        ('80_total_consolidada_dc', 'total_consolidada_dc', 'tota consolidada dc'),
+        ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada CSV'),
+        ('80_total_consolidada_dc', 'total_consolidada_dc', 'total consolidada doble carga'),
         # No siguen en la carga.
         ('90_con_problemas', 'con_problemas', 'con problemas')
     )
