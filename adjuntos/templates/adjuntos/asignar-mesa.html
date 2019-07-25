@@ -74,40 +74,32 @@ $(document).ready(function() {
 {% block page_title %}Clasificar fotos de actas{% endblock %}
 
 {% block left-panel %}
-
-    <div class="card">
-       <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="card-content">
-
-          {% block card-content %}
-
-            <div class="card-title">¿De qué mesa es esta acta?</div>
-                  {% include "adjuntos/asignar-mesa-form.html" %}
-            </div>
-          {% endblock card-content %}
-
-
-        <div class="card-action">
+  <div class="card">
+      <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="card-content">
+            {% block card-content %}
+              <div class="card-title">¿De qué mesa es esta acta?</div>
+              {% include "adjuntos/asignar-mesa-form.html" %}
+            {% endblock card-content %}
+          </div>
+          <div class="card-action">
             {% block card-action %}
-            <div class="right-align">
-               <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
-                  Guardar
-               </button>
-               <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
-                  Problema
-	       </a>
-            </div>
+              <div class="right-align">
+                  <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
+                      Guardar
+                  </button>
+                  <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
+                      Problema
+	                </a>
+              </div>
             {% endblock card-action %}
-        </div>
-
-       </form>
-    </div>
-
-{% if recibir_problema %}
-{% include "problemas/problema.html" %}
-{% endif %}
-
+          </div>
+      </form>
+  </div>
+  {% if recibir_problema %}
+  {% include "problemas/problema.html" %}
+  {% endif %}
 {% endblock left-panel %}
 
 {% block head %}
