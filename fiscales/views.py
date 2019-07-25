@@ -225,7 +225,7 @@ def realizar_siguiente_accion(request):
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
 def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
-    mesacategoria = MesaCategoria.objects.siguiente_de_la_mesa(mesa_existente)
+    mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente()
     if mesacategoria:
         mesacategoria.take()
         return carga(request, mesacategoria.id, desde_ub=True)
