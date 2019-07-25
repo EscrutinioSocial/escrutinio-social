@@ -7,7 +7,7 @@ from elecciones.models import VotoMesaReportado, Categoria, Opcion, Distrito
 from localflavor.ar.forms import ARDNIField
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
-from django.core.validators import ValidationError
+from django.core.validators import ValidationError, MinLengthValidator, MaxLengthValidator
 from django.contrib.auth import password_validation
 
 import phonenumbers
@@ -100,8 +100,21 @@ class QuieroSerFiscalForm(forms.Form):
     telefono_area = forms.CharField(
         label='Código de área (sin 0 adelante)',
         help_text='Por ejemplo: 11 para CABA, 221 para La Plata, 351 para Córdoba, etc',
-        required=True)
-    telefono_local = forms.CharField(label='Teléfono', help_text='Ingrese su teléfono sin el 15', required=True)
+        required=True,
+        validators=[
+            MaxLengthValidator(MAX_DIGITOS_COD_AREA),
+            MinLengthValidator(MIN_DIGITOS_COD_AREA),
+        ]
+    )
+    telefono_local = forms.CharField(
+        label='Teléfono',
+        help_text='Ingresá tu teléfono sin el 15',
+        required=True,
+        validators=[
+            MaxLengthValidator(MAX_DIGITOS_TELEFONO_LOCAL),
+            MinLengthValidator(MIN_DIGITOS_TELEFONO_LOCAL),
+        ]
+    )
 
     distrito = forms.ModelChoiceField(
         required=True,
@@ -163,49 +176,39 @@ class QuieroSerFiscalForm(forms.Form):
             self.add_error('email_confirmacion', 'Los emails no coinciden')
         self.validar_telefono(cleaned_data.get('telefono_area'), cleaned_data.get('telefono_local'))
 
-    def clean_telefono_local(self):
-        telefono_local = self.cleaned_data.get('telefono_local')
-        if telefono_local:
-            cant_numeros_local = len(telefono_local)
-            if cant_numeros_local > self.MAX_DIGITOS_TELEFONO_LOCAL:
-                raise forms.ValidationError('Revisá el teléfono ingresado. Parece haber más números del máximo permitido (recuerde no ingresar el 15)')
-            if cant_numeros_local < self.MIN_DIGITOS_TELEFONO_LOCAL:
-                raise forms.ValidationError('Revisá el teléfono ingresado. Parece haber menos números del mínimo permitido')
-        return telefono_local
-
     def clean_telefono_area(self):
         telefono_area = self.cleaned_data.get('telefono_area')
         if telefono_area:
             # por las dudas, sacamos los 0 a la izquierda del código de área
             telefono_area.lstrip('0')
-            cant_numeros_area = len(telefono_area)
-            if cant_numeros_area > self.MAX_DIGITOS_COD_AREA:
-                raise forms.ValidationError(f'Revisá el código de área ingresado, no puede ser mayor a {self.MAX_DIGITOS_COD_AREA} dígitos')
-            if cant_numeros_area < self.MIN_DIGITOS_COD_AREA:
-                raise forms.ValidationError(f'Revisá el código de área ingresado, no puede ser menor a {self.MIN_DIGITOS_COD_AREA} dígitos')
         return telefono_area
 
     def validar_telefono(self, telefono_area, telefono_local):
         if telefono_area and telefono_local:
             cantidad_digitos_telefono = len(telefono_area) + len(telefono_local)
             if cantidad_digitos_telefono != self.CANTIDAD_DIGITOS_NUMERACION_ARGENTINA:
-                error = f'Revise el código de área y teléfono. Entre ambos deben ser {self.CANTIDAD_DIGITOS_NUMERACION_ARGENTINA} números'
+                error = (
+                    "Revisá el código de área y teléfono."
+                    f"Entre ambos deben ser {self.CANTIDAD_DIGITOS_NUMERACION_ARGENTINA} números"
+                )
                 self.add_error('telefono_area', error)
                 self.add_error('telefono_local', error)
             telefono = telefono_area + telefono_local
             valor = phonenumbers.parse(telefono, 'AR')
             if not phonenumbers.is_valid_number(valor):
-                self.add_error('telefono_local', 'Teléfono no es válido. Chequee código de área y teléfono local')
-                self.add_error('telefono_area',  'Teléfono no es válido. Chequee código de área y teléfono local')
+                self.add_error(
+                    'telefono_local',
+                    'Teléfono no es válido. Chequeá código de área y teléfono local'
+                )
+                self.add_error(
+                    'telefono_area',
+                    'Teléfono no es válido. Chequeá código de área y teléfono local'
+                )
 
     def clean_password(self):
         password = self.cleaned_data.get('password')
         if password:
-            try:
-                password_validation.validate_password(password)
-            except ValidationError as error:
-                error = " | ".join(error.messages)
-                raise forms.ValidationError(error)
+            password_validation.validate_password(password)
         return password
 
     def clean_password_confirmacion(self):

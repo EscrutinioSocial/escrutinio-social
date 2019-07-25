@@ -106,7 +106,7 @@ class QuieroSerFiscal(FormView):
             fiscal.referido_por_codigo = data['referido_por_codigo'].upper()
         fiscal.referido_codigo = generar_codigo_confirmacion()
         fiscal.save()
-        telefono = data['telefono_area'].lstrip('0') + data['telefono_local']
+        telefono = data['telefono_area'] + data['telefono_local']
         fiscal.agregar_dato_de_contacto('teléfono', telefono)
         fiscal.agregar_dato_de_contacto('email', data['email'])
         fiscal.user.set_password(data['password'])
