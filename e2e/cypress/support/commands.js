@@ -24,12 +24,12 @@
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
-import { login } from './login'
+import { loginWithForm, loginWithPost } from './login'
 
 Cypress.Commands.add('loginAs', (user, pass) => {
-  return login(user, pass);
+  return loginWithForm(user, pass);
 })
 
 Cypress.Commands.add('loginAsAdmin', () => {
-  return login('admin', 'admin');
+  return loginWithPost('admin', 'admin');
 })
