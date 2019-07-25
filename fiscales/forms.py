@@ -8,7 +8,8 @@ from localflavor.ar.forms import ARDNIField
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import ValidationError
-from contacto.forms import validar_telefono
+from django.contrib.auth import password_validation
+
 import phonenumbers
 
 
@@ -84,13 +85,23 @@ class FiscalForm(forms.ModelForm):
 class QuieroSerFiscalForm(forms.Form):
 
     CARACTERES_REF_CODIGO = 4
+    CANTIDAD_DIGITOS_NUMERACION_ARGENTINA = 10
+
+    MAX_DIGITOS_TELEFONO_LOCAL = 8
+    MIN_DIGITOS_TELEFONO_LOCAL = 5
+    MAX_DIGITOS_COD_AREA = 5
+    MIN_DIGITOS_COD_AREA = 2
 
     email = forms.EmailField(required=True)
     email_confirmacion = forms.EmailField(required=True, label="Confirmar email")
     apellido = forms.CharField(required=True, label="Apellido", max_length=50)
     nombres = forms.CharField(required=True, label="Nombres", max_length=100)
     dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
-    telefono = forms.CharField(label='Teléfono', help_text='Preferentemente celular')
+    telefono_area = forms.CharField(
+        label='Código de área (sin 0 adelante)',
+        help_text='Por ejemplo: 11 para CABA, 221 para La Plata, 351 para Córdoba, etc',
+        required=True)
+    telefono_local = forms.CharField(label='Teléfono', help_text='Ingrese su teléfono sin el 15', required=True)
 
     distrito = forms.ModelChoiceField(
         required=True,
@@ -106,7 +117,8 @@ class QuieroSerFiscalForm(forms.Form):
                                                'required': True,
                                            }))
     seccion = forms.CharField(widget=forms.HiddenInput(attrs={'id': 'seccion', 'name': 'seccion'}))
-    referido_por_nombres = forms.CharField(required=False, label="Referido por", max_length=100)
+    referido_por_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
+    referido_por_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
     referido_por_codigo = forms.CharField(
         required=False,
         label="Código de referencia",
@@ -130,12 +142,15 @@ class QuieroSerFiscalForm(forms.Form):
             Row('nombres', 'apellido', 'dni'),
             Row('email', 'email_confirmacion'),
             Row('password', 'password_confirmacion'),
-            'telefono',
             Row('distrito', 'seccion_autocomplete')
         ),
         Fieldset(
+            'Teléfono celular',
+            Row('telefono_area', 'telefono_local')
+        ),
+        Fieldset(
             'Referencia',
-            Row('referido_por_nombres', 'referido_por_codigo')
+            Row('referido_por_nombres', 'referido_por_apellido', 'referido_por_codigo')
         )
     )
 
@@ -146,14 +161,52 @@ class QuieroSerFiscalForm(forms.Form):
         if email and email2 and email != email2:
             self.add_error('email', 'Los emails no coinciden')
             self.add_error('email_confirmacion', 'Los emails no coinciden')
+        self.validar_telefono(cleaned_data.get('telefono_area'), cleaned_data.get('telefono_local'))
 
-    def clean_telefono(self):
-        valor = self.cleaned_data['telefono']
-        try:
-            valor = validar_telefono(valor)
-        except (AttributeError, phonenumbers.NumberParseException):
-            raise forms.ValidationError('No es un teléfono válido')
-        return valor
+    def clean_telefono_local(self):
+        telefono_local = self.cleaned_data.get('telefono_local')
+        if telefono_local:
+            cant_numeros_local = len(telefono_local)
+            if cant_numeros_local > self.MAX_DIGITOS_TELEFONO_LOCAL:
+                raise forms.ValidationError('Revisá el teléfono ingresado. Parece haber más números del máximo permitido (recuerde no ingresar el 15)')
+            if cant_numeros_local < self.MIN_DIGITOS_TELEFONO_LOCAL:
+                raise forms.ValidationError('Revisá el teléfono ingresado. Parece haber menos números del mínimo permitido')
+        return telefono_local
+
+    def clean_telefono_area(self):
+        telefono_area = self.cleaned_data.get('telefono_area')
+        if telefono_area:
+            # por las dudas, sacamos los 0 a la izquierda del código de área
+            telefono_area.lstrip('0')
+            cant_numeros_area = len(telefono_area)
+            if cant_numeros_area > self.MAX_DIGITOS_COD_AREA:
+                raise forms.ValidationError(f'Revisá el código de área ingresado, no puede ser mayor a {self.MAX_DIGITOS_COD_AREA} dígitos')
+            if cant_numeros_area < self.MIN_DIGITOS_COD_AREA:
+                raise forms.ValidationError(f'Revisá el código de área ingresado, no puede ser menor a {self.MIN_DIGITOS_COD_AREA} dígitos')
+        return telefono_area
+
+    def validar_telefono(self, telefono_area, telefono_local):
+        if telefono_area and telefono_local:
+            cantidad_digitos_telefono = len(telefono_area) + len(telefono_local)
+            if cantidad_digitos_telefono != self.CANTIDAD_DIGITOS_NUMERACION_ARGENTINA:
+                error = f'Revise el código de área y teléfono. Entre ambos deben ser {self.CANTIDAD_DIGITOS_NUMERACION_ARGENTINA} números'
+                self.add_error('telefono_area', error)
+                self.add_error('telefono_local', error)
+            telefono = telefono_area + telefono_local
+            valor = phonenumbers.parse(telefono, 'AR')
+            if not phonenumbers.is_valid_number(valor):
+                self.add_error('telefono_local', 'Teléfono no es válido. Chequee código de área y teléfono local')
+                self.add_error('telefono_area',  'Teléfono no es válido. Chequee código de área y teléfono local')
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if password:
+            try:
+                password_validation.validate_password(password)
+            except ValidationError as error:
+                error = " | ".join(error.messages)
+                raise forms.ValidationError(error)
+        return password
 
     def clean_password_confirmacion(self):
         password = self.cleaned_data.get('password')
