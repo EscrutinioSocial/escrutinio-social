@@ -146,7 +146,6 @@ class Attachment(TimeStampedModel):
             self.foto_digest = hash_file(self.foto.file)
         super().save(*args, **kwargs)
 
-
     @classmethod
     def sin_identificar(cls, fiscal_a_excluir=None):
         """
@@ -189,7 +188,7 @@ class Attachment(TimeStampedModel):
                 (4, 1, 1),
             ]
 
-        Hay 2 identificaciones para la mesa id==3 y 1 para la id==4, pero ésa 
+        Hay 2 identificaciones para la mesa id==3 y 1 para la id==4, pero ésa
         tiene una identificación por CSV.
         """
 

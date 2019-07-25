@@ -7,35 +7,32 @@ from elecciones.models import MesaCategoria
 def siguiente_accion(request):
     """
     Elige la siguiente acción a ejecutarse
-    - si hay actas en el queryset :meth:`Attachment.sin asignar`,
-      entonces la accion es identificar una al azar
-    - si hay mesas con carga pendiente (es decir, que tienen categorias sin cargar),
-      se elige una por orden de prioridad y tamaño del circuito
+
+    - si sólo hay actas sin cargar la accion será identificar una de ellas al azar
+
+    - si sólo hay mesas con carga pendiente (es decir, que tienen categorias sin cargar),
+      se elige una por orden de prioridad
+
+    - si hay tanto mesas como actas pendientes, se elige identicar
+      si el tamaño de la cola de identificaciones pendientes es el doble o más
+      que el tamaño de la cola de carga.
     - caso contrario, no hay nada para hacer
     """
-    accion = None
+    attachments = Attachment.sin_identificar(request.user.fiscal)
+    con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente()
 
-    if accion is None:
-        foto = foto_a_identificar(request.user.fiscal)
-        if foto is not None:
-            accion = IdentificacionDeFoto(request, foto)
+    cant_fotos = attachments.count()
+    cant_cargas = con_carga_pendiente.count()
 
-    if accion is None:
-        mesacategoria = MesaCategoria.objects.siguiente()
-        if mesacategoria:
-            accion = CargaCategoriaEnActa(request, mesacategoria)
+    if not cant_fotos and not cant_cargas:
+        return NoHayAccion(request)
 
-    if accion is None:
-        accion = NoHayAccion(request)
+    elif cant_fotos and not cant_cargas or cant_fotos >= cant_cargas * 2:
+        foto = attachments.order_by('?').first()
+        return IdentificacionDeFoto(request, foto)
 
-    return accion
-
-
-def foto_a_identificar(fiscal):
-    attachments = Attachment.sin_identificar(fiscal)
-    if attachments.exists():
-        return attachments.order_by('?').first()
-    return None
+    mesacategoria = con_carga_pendiente.siguiente()
+    return CargaCategoriaEnActa(request, mesacategoria)
 
 
 class IdentificacionDeFoto():
