@@ -690,13 +690,6 @@ class Categoria(models.Model):
         """
         return Mesa.objects.filter(categorias=self).aggregate(v=Sum('electores'))['v']
 
-    def prioridad_calculada(self, proporcion):
-        """
-        Devuelve la prioridad correspondiente a una MesaCategoria de esta categoría,
-        de acuerdo a la proporción de las mesas del circuito que están para cargar.
-        """
-
-
     class Meta:
         verbose_name = 'Categoría'
         verbose_name_plural = 'Categorías'
@@ -838,74 +831,6 @@ class VotoMesaReportado(models.Model):
     def __str__(self):
         return f"{self.carga} - {self.opcion}: {self.votos}"
 
-
-class PrioridadScheduling(models.Model):
-    """
-    Representa una prioridad distinta de la standard para 
-    una determinada categoria o circuito
-    """
-    circuito = models.ForeignKey(Circuito, null=True, related_name="prioridades", on_delete=models.CASCADE)
-    categoria = models.ForeignKey(Categoria, null=True, related_name="prioridades", on_delete=models.CASCADE)
-    # desde / hasta: pueden ser 0, no pueden ser null ni negativos
-    desde = models.PositiveIntegerField(null=False)
-    hasta = models.PositiveIntegerField(null=False)
-    # prioridad: no pueden ser null ni negativo, en discusion si puede ser 0, por ahora se permite
-    prioridad = models.PositiveIntegerField(null=False)
-    
-    
-class RangosDeProporcionesSeSolapanError(Exception):
-    pass
-
-
-class RegistroDePrioridad():
-    """
-    Representa la correspondencia de una prioridad con un rango de proporciones.
-    """
-
-    def __init__(self, desde, hasta, prioridad):
-        self.desde = desde
-        self.hasta = hasta
-        self.prioridad = prioridad
-
-    def aplica(proporcion):
-        return self.desde <= proporcion and (self.hasta=100 or self.hasta > proporcion)
-
-    def es_compatible_con(otro):
-        return self.hasta <= otro.desde or otro.hasta <= self.desde
-
-    def __str__(self):
-        return F"De {self.desde}% a {self.hasta}% corresponde prioridad {self.prioridad}"
-
-
-class SerieDePrioridades():
-    """
-    Representa un mapa entre proporción y prioridad, armado a partir de un conjunto 
-    de instancias de RegistroDePrioridad.
-    P.ej. desde 4% a 8%, corresponde prioridad 10.
-    """
-
-    def __init__(self):
-        self.registros = []
-
-    def agregarRegistro(registro):
-        registro_incompatible = next(reg for reg in self.registros if not reg.es_compatible_con(registro))
-        if registro_incompatible:
-            raise RangosDeProporcionesSeSolapanError(
-                F"Rangos se solapan entre <{registro}> y <{registro_incompatible}>")
-        self.registros.append(registro)
-
-    def registro_que_aplica(proporcion):
-        return next(reg for reg in self.registros if not reg.aplica(proporcion))
-
-    def valor_para(proporcion):
-        registro = self.registro_que_aplica(proporcion)
-        if registro:
-            return registro.prioridad
-        return None
-
-
-def prioridades_categoria_standard():
-    pass
 
 @receiver(post_save, sender=Mesa)
 def actualizar_electores(sender, instance=None, created=False, **kwargs):
