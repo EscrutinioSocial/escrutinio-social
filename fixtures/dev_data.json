@@ -825,7 +825,7 @@
     "pk": 1,
     "fields": {
       "tipo": "no_positivo",
-      "nombre": "Votos en blanco",
+      "nombre": "votos en blanco",
       "nombre_corto": "blanco",
       "partido": null,
       "orden": 10,
@@ -957,7 +957,7 @@
     "pk": 12,
     "fields": {
       "tipo": "metadata",
-      "nombre": "Total de votos",
+      "nombre": "total de votos",
       "nombre_corto": "total_votos",
       "partido": null,
       "orden": 100,
@@ -969,7 +969,7 @@
     "pk": 13,
     "fields": {
       "tipo": "metadata",
-      "nombre": "Total de sobres",
+      "nombre": "total de sobres",
       "nombre_corto": "sobres",
       "partido": null,
       "orden": 101,
