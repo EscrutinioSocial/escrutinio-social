@@ -42,6 +42,7 @@ class Fiscal(models.Model):
     seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
     referido_codigo = models.CharField(max_length=4, blank=True, null=True, unique=True)
     referido_por_nombres = models.CharField(max_length=100, blank=True, null=True)
+    referido_por_apellido = models.CharField(max_length=100, blank=True, null=True)
     referido_por_codigo = models.CharField(max_length=4, blank=True, null=True)
 
     class Meta:

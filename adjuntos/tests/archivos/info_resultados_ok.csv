@@ -1,4 +1,4 @@
-Sección,Circuito,Distrito,Nro de mesa,Nro de lista,Presidente y vice,Gobernador y vice,"Intendentes, Concejales y Consejeros Escolares",Legisladores Provinciales,Senadores Nacionales,Diputados Nacionales,Senadores Provinciales,Diputados Provinciales,Concejales y Consejeros Escolares,Cantidad de electores del padrón,Cantidad de sobres en la urna,Acta arreglada
-50,2,1,4012,0,,,,,,,,,,300,0,
-50,2,1,4012,A,200,10,10,10,10,10,10,10,10,,,
-50,2,1,4012,B,100,10,10,10,10,10,10,10,10,,,
+Distrito,Sección,Circuito,Nro de mesa,Nro de lista,Presidente y vice,Gobernador y vice,"Intendentes, Concejales y Consejeros Escolares",Senadores Nacionales,Diputados Nacionales,Senadores Provinciales,Diputados Provinciales,Concejales y Consejeros Escolares,Cantidad de electores del padrón,Cantidad de sobres en la urna,Acta arreglada
+1,50,2,4012,0,,,,,,,,,300,0,
+1,50,2,4012,A,200,10,10,10,10,10,10,10,,,
+1,50,2,4012,B,100,10,10,10,10,10,10,10,,,

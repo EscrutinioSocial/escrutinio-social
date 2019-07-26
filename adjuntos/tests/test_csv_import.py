@@ -22,7 +22,7 @@ from elecciones.tests.factories import (
 
 PATH_ARCHIVOS_TEST = os.path.dirname(os.path.abspath(__file__)) + '/archivos/'
 CATEGORIAS = [('Presidente y vice', True), ('Gobernador y vice', True),
-              ('Intendentes, Concejales y Consejeros Escolares', False), ('Legisladores Provinciales', True),
+              ('Intendentes, Concejales y Consejeros Escolares', False),
               ('Senadores Nacionales', True), ('Diputados Nacionales', True),
               ('Senadores Provinciales', True), ('Diputados Provinciales', True)]
 
@@ -161,8 +161,8 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica
     for parcial in cargas_parciales:
         assert parcial.origen == 'csv'
     votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=cargas_parciales).all()
-    # Ya que hay dos opciones + total de votantes x 7 categorias prioritarias
-    assert len(votos_carga_parcial) == 21
+    # Ya que hay dos opciones + total de votantes x 6 categorias prioritarias
+    assert len(votos_carga_parcial) == 18
 
 
 def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unidad_basica, carga_inicial):

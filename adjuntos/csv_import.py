@@ -9,15 +9,14 @@ from django.db.utils import IntegrityError
 from escrutinio_social.settings import OPCION_TOTAL_SOBRES, OPCION_TOTAL_VOTOS
 from fiscales.models import Fiscal
 
-# primer dato: nombre de la columna, segundo: si es parte de una categoria o no
+# Primer dato: nombre de la columna, segundo: si es parte de una categoría o no.
 COLUMNAS_DEFAULT = [('seccion', False), ('distrito', False), ('circuito', False), ('nro de mesa', False),
                     ('nro de lista', False), ('presidente y vice', True), ('gobernador y vice', True),
                     ('senadores nacionales', True), ('diputados nacionales', True),
-                    ('legisladores provinciales', True), ('senadores provinciales', True),
+                    ('senadores provinciales', True),
                     ('diputados provinciales', True),
                     ('intendentes, concejales y consejeros escolares', True),
-                    ('cantidad de electores del padron', False), ('cantidad de sobres en la urna', False),
-                    ('acta arreglada', False)]
+                    ('cantidad de electores del padron', False), ('cantidad de sobres en la urna', False)]
 
 
 # Excepciones custom, por si se quieren manejar
