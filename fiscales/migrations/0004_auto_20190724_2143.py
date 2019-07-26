@@ -20,15 +20,20 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL('SET CONSTRAINTS ALL IMMEDIATE',
-            reverse_sql=migrations.RunSQL.noop),
-        
+        migrations.RunSQL('SET CONSTRAINTS ALL IMMEDIATE', reverse_sql=migrations.RunSQL.noop),
+
+        migrations.AddField(
+            model_name='fiscal',
+            name='referido_por_apellido',
+            field=models.CharField(blank=True, max_length=100, null=True),
+        ),
+
         migrations.AlterField(
             model_name='fiscal',
             name='referido_codigo',
             field=models.CharField(blank=True, max_length=4, null=True, unique=False),
         ),
-        migrations.RunPython(actulizar_codigo_referido),
+        migrations.RunPython(actulizar_codigo_referido, migrations.RunPython.noop),
         migrations.AlterField(
             model_name='fiscal',
             name='referido_codigo',
@@ -39,7 +44,5 @@ class Migration(migrations.Migration):
             name='referido_por_codigo',
             field=models.CharField(blank=True, max_length=4, null=True),
         ),
-    
-        migrations.RunSQL(migrations.RunSQL.noop,
-            reverse_sql='SET CONSTRAINTS ALL IMMEDIATE'),
+        migrations.RunSQL(migrations.RunSQL.noop, reverse_sql='SET CONSTRAINTS ALL IMMEDIATE'),
     ]
