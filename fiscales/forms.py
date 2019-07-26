@@ -84,6 +84,11 @@ class FiscalForm(forms.ModelForm):
 
 class QuieroSerFiscalForm(forms.Form):
 
+    MENSAJE_ERROR_CODIGO_REF = 'Codigo de referido debe ser de 4 letras y/o números'
+    MENSAJE_ERROR_TELEFONO_INVALIDO = 'Teléfono no es válido. Chequeá código de área y teléfono local'
+    MENSAJE_ERROR_DNI_REPETIDO = 'Ya se encuentra un usuario registrado con ese dni'
+    MENSAJE_ERROR_PASSWORD_NO_IGUALES = "Las contraseñas no coinciden"
+
     CARACTERES_REF_CODIGO = 4
     CANTIDAD_DIGITOS_NUMERACION_ARGENTINA = 10
 
@@ -169,19 +174,22 @@ class QuieroSerFiscalForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        email = cleaned_data.get('email')
-        email2 = cleaned_data.get('email_confirmacion')
-        if email and email2 and email != email2:
-            self.add_error('email', 'Los emails no coinciden')
-            self.add_error('email_confirmacion', 'Los emails no coinciden')
+        self.validar_correo(cleaned_data)
         self.validar_telefono(cleaned_data.get('telefono_area'), cleaned_data.get('telefono_local'))
 
     def clean_telefono_area(self):
         telefono_area = self.cleaned_data.get('telefono_area')
         if telefono_area:
             # por las dudas, sacamos los 0 a la izquierda del código de área
-            telefono_area.lstrip('0')
+            telefono_area = telefono_area.lstrip('0')
         return telefono_area
+
+    def validar_correo(self, cleaned_data):
+        email = cleaned_data.get('email')
+        email2 = cleaned_data.get('email_confirmacion')
+        if email and email2 and email != email2:
+            self.add_error('email', 'Los emails no coinciden')
+            self.add_error('email_confirmacion', 'Los emails no coinciden')
 
     def validar_telefono(self, telefono_area, telefono_local):
         if telefono_area and telefono_local:
@@ -198,11 +206,11 @@ class QuieroSerFiscalForm(forms.Form):
             if not phonenumbers.is_valid_number(valor):
                 self.add_error(
                     'telefono_local',
-                    'Teléfono no es válido. Chequeá código de área y teléfono local'
+                    self.MENSAJE_ERROR_TELEFONO_INVALIDO
                 )
                 self.add_error(
                     'telefono_area',
-                    'Teléfono no es válido. Chequeá código de área y teléfono local'
+                    self.MENSAJE_ERROR_TELEFONO_INVALIDO
                 )
 
     def clean_password(self):
@@ -216,20 +224,20 @@ class QuieroSerFiscalForm(forms.Form):
         password_confirmacion = self.cleaned_data.get('password_confirmacion')
         if password and password_confirmacion:
             if password != password_confirmacion:
-                raise forms.ValidationError("Las contraseñas no coinciden")
+                raise forms.ValidationError(self.MENSAJE_ERROR_PASSWORD_NO_IGUALES)
         return password_confirmacion
 
     def clean_dni(self):
         dni = self.cleaned_data.get('dni')
         if Fiscal.objects.filter(dni=dni).exists():
-            raise ValidationError('Ya se encuentra un usuario registrado con ese dni')
+            raise ValidationError(self.MENSAJE_ERROR_DNI_REPETIDO)
         return dni
 
     def clean_referido_por_codigo(self):
         referido_por_codigo = self.cleaned_data.get('referido_por_codigo', None)
         if referido_por_codigo:
             if len(referido_por_codigo) != self.CARACTERES_REF_CODIGO:
-                raise ValidationError('Codigo de referido debe ser de 4 letras y/o números')
+                raise ValidationError(self.MENSAJE_ERROR_CODIGO_REF)
         return referido_por_codigo
 
 
