@@ -291,7 +291,7 @@ class IdentificacionParcial(TimeStampedModel):
     # La información se guarda indenpendientemente del fiscal porque el fiscal puede mudarse
     # o estar subiendo actas de otro lado.
     distrito = models.ForeignKey(
-        'elecciones.Distrito', on_delete=models.CASCADE
+        'elecciones.Distrito', on_delete=models.CASCADE, null=True
     )
     seccion = models.ForeignKey(
         'elecciones.Seccion', null=True, blank=True, on_delete=models.SET_NULL
