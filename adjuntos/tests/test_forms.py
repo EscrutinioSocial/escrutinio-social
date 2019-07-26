@@ -91,8 +91,6 @@ def test_identificacion_valida_si_mesa_no_corresponde_a_circuito(db):
     assert not form.is_valid()
     assert form.errors['mesa'] == ['Esta mesa no pertenece al circuito']
 
-
-
     form = IdentificacionForm({
         'mesa': m1.id,
         'circuito': m1.circuito.id,
@@ -101,7 +99,5 @@ def test_identificacion_valida_si_mesa_no_corresponde_a_circuito(db):
     })
     assert not form.is_valid()
     assert form.errors['circuito'] == ['Este circuito no pertenece a la sección']
-
-
 
 

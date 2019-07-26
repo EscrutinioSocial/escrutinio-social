@@ -264,6 +264,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         kwargs.update({'es_multiple': False})
         return kwargs
 
+
 class AgregarAdjuntosCSV(AgregarAdjuntos):
     """
     Permite subir un archivo CSV, valida que posea todas las columnas necesarias y que los datos sean
