@@ -59,12 +59,13 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # nuestras apps
-    'elecciones',
+    #'elecciones',
     'fiscales',
     'adjuntos',
     'problemas',
     'contacto',
-    'api'
+    'api',
+    'elecciones.apps.EleccionesAppConfig'
 ]
 
 MIDDLEWARE = [
@@ -75,6 +76,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'elecciones.middleware.OneSessionPerUserMiddleware'
 ]
 
 ROOT_URLCONF = 'escrutinio_social.urls'
