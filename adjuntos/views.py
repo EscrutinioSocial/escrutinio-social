@@ -252,7 +252,8 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
 
         if form.is_valid():
             file = files[0]
-            instance = self.procesar_adjunto(file)
+            fiscal = request.user.fiscal
+            instance = self.procesar_adjunto(file,fiscal)
             if instance is not None:
                 messages.success(self.request, 'Subiste el acta correctamente.')
                 return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
