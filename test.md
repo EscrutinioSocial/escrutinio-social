@@ -51,6 +51,14 @@ Si en cambio, tu branch aumenta la cobertura (porque hiciste tests que
 faltaban o borraste código muerto) por favor, aumentá ese valor al entero menor más próximo de
 la cobertura que lograste. ¡Gracias!
 
+Si necesitás saber exáctamente qué código del proyecto falta cubrir (especialmente en las partes
+donde realizaste modificaciones), podés obtener un reporte navegable donde verás el código coloreado
+con distinto fondo las líneas ejecutadas y las que no.
+
+```
+$ pytest --cov-report=html
+$ sensible-browser htmlcov/index.html
+```
 
 ## Pruebas de integación "end to end"
 
