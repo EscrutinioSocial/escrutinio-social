@@ -1,10 +1,9 @@
 from django.conf import settings
 from adjuntos.models import Identificacion
-
-from elecciones.models import Carga
-from adjuntos.models import Identificacion
+from elecciones.models import Carga, CargasIncompatiblesError
 from .models import (
-    aumentar_scoring_troll_identificacion, aumentar_scoring_troll_carga,
+    aumentar_scoring_troll_carga,
+    aumentar_scoring_troll_identificacion,
     EventoScoringTroll
 )
 
@@ -16,16 +15,17 @@ logger = logging.getLogger("e-va")
 def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
     """
     Realizar las actualizaciones de scoring troll que correspondan
-    a partir de que se confirma la asignacion de mesa a un attachment 
+    a partir de que se confirma la asignacion de mesa a un attachment
     """
 
-    ## para cada identificacion del attachment que no coincida en mesa, aumentar el scoring troll del fiscal que la hizo
     for identificacion in attachment.identificaciones.filter(invalidada=False):
-        if ((identificacion.status != Identificacion.STATUS.identificada) or (identificacion.mesa != mesa)):
+        if identificacion.status != Identificacion.STATUS.identificada or identificacion.mesa != mesa:
+            #  para cada identificacion del attachment que no coincida en mesa,
+            #  aumentar el scoring troll del fiscal que la hizo
             aumentar_scoring_troll_identificacion(
-                settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA, identificacion
+                settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA,
+                identificacion
             )
-
 
 
 def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
@@ -37,25 +37,25 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
 
     testigo = mesa_categoria.carga_testigo
     for carga in mesa_categoria.cargas.filter(invalidada=False):
-        if (carga.tipo == testigo.tipo and carga.firma != testigo.firma):
+        if carga.tipo == testigo.tipo and carga.firma != testigo.firma:
             # se calcula la diferencia. Puede dar error, en tal caso se considera diferencia 0
             try:
                 diferencia = testigo - carga
             except CargasIncompatiblesError as e:
                 logger.exception(f'Error al calcular diferencia entre opciones, {str(e.value)} - se toma 0')
                 diferencia = 0
+
             # se aumenta el scoring del fiscal que cargo distinto
-            if (diferencia > 0):
+            if diferencia:
                 aumentar_scoring_troll_carga(
                     diferencia, carga, EventoScoringTroll.MOTIVOS.carga_valores_distintos_a_confirmados
                 )
-        elif (carga.tipo == Carga.TIPOS.problema):
+        elif carga.tipo == Carga.TIPOS.problema:
             aumentar_scoring_troll_carga(
-                settings.SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA, 
-                carga, 
+                settings.SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA,
+                carga,
                 EventoScoringTroll.MOTIVOS.indica_problema_mesa_categoria_confirmada
             )
-
 
 
 def efecto_determinacion_fiscal_troll(fiscal):

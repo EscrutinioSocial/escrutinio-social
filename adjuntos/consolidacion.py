@@ -133,7 +133,7 @@ def consolidar_cargas(mesa_categoria):
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         if (status_resultante == MesaCategoria.STATUS.parcial_consolidada_dc):
             efecto_scoring_troll_confirmacion_carga(mesa_categoria)
-        return 
+        return
 
     # Si llegué hasta acá, es que hay cargas, pero no hay ninguna carga ni total ni parcial
     # Ergo, todas las cargas que hay son de problemas
@@ -209,7 +209,7 @@ def consolidar_identificaciones(attachment):
     # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
     # Eso es correcto.
     # También podría estar haciendo pasar una attachment identificado al estado sin_identificar,
-    # porque ya no está más vigente alguna identificación que antes sí.     
+    # porque ya no está más vigente alguna identificación que antes sí.
     attachment.status = status_attachment
     attachment.mesa = mesa_attachment
     attachment.identificacion_testigo = testigo
@@ -217,7 +217,7 @@ def consolidar_identificaciones(attachment):
 
     # si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
     # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment
-    if (mesa_anterior) and (not mesa_attachment):
+    if mesa_anterior and not mesa_attachment:
         mesa_anterior.invalidar_asignacion_attachment()
 
 
@@ -252,7 +252,7 @@ def consumir_novedades_carga():
     #
     # En particular, si se detecta a un fiscal como troll, se pasan todas sus cargas a
     # invalidada=True y procesada=False, para que **la siguiente** consolidacion de cargas
-    # recompute el estado de las MesaCategoria. 
+    # recompute el estado de las MesaCategoria.
     # Pero también podría pasar que entren nuevas cargas mientras se ejecuta la consolidación.
     # En ambos casos, es importante que se respete que esas cargas están pendientes de proceso.
     #

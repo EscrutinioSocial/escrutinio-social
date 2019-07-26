@@ -813,9 +813,7 @@ class VotoMesaReportado(models.Model):
     """
     carga = models.ForeignKey(Carga, related_name='reportados', on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
-
-    # es null cuando hay cargas parciales.
-    votos = models.PositiveIntegerField(null=False)
+    votos = models.PositiveIntegerField()
 
     class Meta:
         unique_together = ('carga', 'opcion')
@@ -832,28 +830,29 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
 
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
-    if (instance.lugar_votacion is not None and instance.lugar_votacion.circuito is not None):
+    if instance.lugar_votacion:
 
         circuito = instance.lugar_votacion.circuito
         seccion = circuito.seccion
         distrito = seccion.distrito
 
         # circuito
-        electores = Mesa.objects.filter(lugar_votacion__circuito=circuito, ).aggregate(v=Sum('electores')
-                                                                                       )['v'] or 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito=circuito,
+        ).aggregate(v=Sum('electores'))['v'] or 0
         circuito.electores = electores
         circuito.save(update_fields=['electores'])
 
         # seccion
-        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion=seccion, ).aggregate(
-            v=Sum('electores')
-        )['v'] or 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion=seccion
+        ).aggregate(v=Sum('electores'))['v'] or 0
         seccion.electores = electores
         seccion.save(update_fields=['electores'])
 
         # distrito
-        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion__distrito=distrito, ).aggregate(
-            v=Sum('electores')
-        )['v'] or 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion__distrito=distrito
+        ).aggregate(v=Sum('electores'))['v'] or 0
         distrito.electores = electores
         distrito.save(update_fields=['electores'])

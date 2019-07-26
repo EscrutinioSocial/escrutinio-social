@@ -1,5 +1,3 @@
-import pytest
-
 from elecciones.models import MesaCategoria, Carga
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import (
@@ -46,7 +44,7 @@ def test_asociacion_attachment_con_antitrolling(db, settings):
     # se agregan dos nuevas identificaciones: el fiscal 2 identifica la misma mesa que el 1, el fiscal 4 reporta un problema
     identificar(attach, mesa_1, fiscal_2)
     reportar_problema_attachment(attach, fiscal_4)
-    # ahora si deberia asociarse la mesa, y como consecuencia, 
+    # ahora si deberia asociarse la mesa, y como consecuencia,
     # aumentar el scoring troll para los fiscales 3 y 4 que identificaron distinto a lo que se decidio
     consolidar_identificaciones(attach)
     assert fiscal_1.scoring_troll() == 0
@@ -100,7 +98,7 @@ def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db, settings):
 
 def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
     """
-    Se verifica que luego de que un fiscal que habia hecho una carga aceptada es detectado como troll, 
+    Se verifica que luego de que un fiscal que habia hecho una carga aceptada es detectado como troll,
     y que posteriormente se ejecuta una consolidacion de cargas,
     el estado de la MesaCategoria donde participo el troll vuelve a "sin consolidar"
     """
@@ -169,9 +167,9 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
     for carga in Carga.objects.filter(fiscal=fiscal_1):
         assert carga.invalidada and not carga.procesada
 
-    # ahora lanzo una nueva consolidacion, que deberia procesar las cargas invalidadas 
+    # ahora lanzo una nueva consolidacion, que deberia procesar las cargas invalidadas
     # me fijo que el estado de cada MC quede como lo espero
-    # la unica que cambio es la (1,2). 
+    # la unica que cambio es la (1,2).
     # La (1,1) y la (2,2) no dependen de la carga del troll para quedar confirmadas
     # En la (2,1) no participo el troll
     consumir_novedades_carga()
@@ -188,7 +186,7 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
 
 def test_cargas_troll_no_consolidadas(db, settings):
     """
-    Se verifica que luego de que un fiscal es detectado como troll, 
+    Se verifica que luego de que un fiscal es detectado como troll,
     el estado de las cargas "en conflicto" o "sin consolidar" en las que participó cambie adecuadamente
     """
 
@@ -297,7 +295,7 @@ def test_cargas_troll_no_consolidadas(db, settings):
 
 def test_cargas_troll_con_problemas(db, settings):
     """
-    Se verifica que luego de que un fiscal es detectado como troll, 
+    Se verifica que luego de que un fiscal es detectado como troll,
     el estado de las cargas "con problemas" en las que participó cambie adecuadamente
     """
     settings.MIN_COINCIDENCIAS_CARGAS = 2
@@ -359,7 +357,7 @@ def test_cargas_troll_con_problemas(db, settings):
 
 def test_identificaciones_troll(db, settings):
     """
-    Se verifica que luego de que un fiscal es detectado como troll, 
+    Se verifica que luego de que un fiscal es detectado como troll,
     el estado asociado a las identificaciones que hubiera hecho cambia tal cual se espera.
     """
 
@@ -607,6 +605,7 @@ def test_troll_total_sin_consolidar_a_parcial_sin_consolidar(db, settings):
 
     assert mesa_categoria_1.status == MesaCategoria.STATUS.parcial_sin_consolidar
     assert Carga.objects.filter(invalidada=True).count() == 2
+
 
 def test_troll_total_consolidada_dc_a_sin_cargar(db, settings):
     fiscal_1 = nuevo_fiscal()
