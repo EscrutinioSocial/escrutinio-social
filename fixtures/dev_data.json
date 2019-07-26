@@ -159,7 +159,8 @@
       "nombres": "Fiscal",
       "tipo_dni": "DNI",
       "dni": "0000000",
-      "user": 1
+      "user": 1,
+      "referido_codigo": "AS12"
     }
   },
   {
@@ -174,7 +175,8 @@
       "nombres": "Usuario",
       "tipo_dni": "DNI",
       "dni": "00000000",
-      "user": 2
+      "user": 2,
+      "referido_codigo": "TS42"
     }
   },
   {
@@ -189,7 +191,8 @@
       "nombres": "Bot",
       "tipo_dni": "DNI",
       "dni": "00000001",
-      "user": 6
+      "user": 6,
+      "referido_codigo": "J67E"
     }
   },
   {
@@ -204,7 +207,8 @@
       "nombres": "Supervisor",
       "tipo_dni": "DNI",
       "dni": "00000002",
-      "user": 5
+      "user": 5,
+      "referido_codigo": "44XE"
     }
   },
   {
@@ -219,7 +223,8 @@
       "nombres": "Visualizador",
       "tipo_dni": "DNI",
       "dni": "00000003",
-      "user": 4
+      "user": 4,
+      "referido_codigo": "A178"
     }
   },
   {
@@ -234,7 +239,8 @@
       "nombres": "Unidad B\u00e1sica",
       "tipo_dni": "DNI",
       "dni": "00000004",
-      "user": 3
+      "user": 3,
+      "referido_codigo": "QAC1"
     }
   },
   {
