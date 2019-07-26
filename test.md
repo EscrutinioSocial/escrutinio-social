@@ -40,13 +40,16 @@ $ pytest --create-db
 
 ```
 
-Hay un theshold de cobertura de tests minimo definido en `pytest.ini` con el parámetro
+Hay un threshold de **cobertura de tests** mínimo definido en `pytest.ini` con el parámetro
 `--cov-fail-under`. Esto significa que cualquier código que se agrega debe incoporar las pruebas
 suficientes para no bajar de este nivel de cobertura.
 
 No se aceptarán integraciones de cambios que modifiquen este cambio a menos, salvo una
 muy justificada explicación.
 
+Si en cambio, tu branch aumenta la cobertura (porque hiciste tests que
+faltaban o borraste código muerto) por favor, aumentá ese valor al entero menor más próximo de
+la cobertura que lograste. ¡Gracias!
 
 
 ## Pruebas de integación "end to end"
