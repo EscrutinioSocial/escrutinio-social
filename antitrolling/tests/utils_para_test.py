@@ -28,15 +28,15 @@ def reportar_problema_attachment(attach, fiscal):
     )
 
 
-def nueva_categoria(nombres_opciones):
+def nueva_categoria(nombres_opciones, prior=False):
     opciones = list(map(lambda n: OpcionFactory(nombre=n), nombres_opciones))
-    return CategoriaFactory(opciones=opciones)
+    return CategoriaFactory(opciones=opciones, prioritaria=prior)
 
 
-def nueva_carga(mesa_categoria, fiscal, votos_opciones):
-  carga = CargaFactory(mesa_categoria=mesa_categoria, fiscal=fiscal, tipo=Carga.TIPOS.total)
-  for opcionConVotos in zip(mesa_categoria.categoria.opciones.order_by('nombre'), votos_opciones):
-    VotoMesaReportadoFactory(carga=carga, opcion=opcionConVotos[0], votos=opcionConVotos[1])
+def nueva_carga(mesa_categoria, fiscal, votos_opciones, tipo_carga=Carga.TIPOS.total):
+  carga = CargaFactory(mesa_categoria=mesa_categoria, fiscal=fiscal, tipo=tipo_carga)
+  for opcionVoto, cantidadVotos in zip(mesa_categoria.categoria.opciones.order_by('nombre'), votos_opciones):
+    VotoMesaReportadoFactory(carga=carga, opcion=opcionVoto, votos=cantidadVotos)
   return carga
 
 

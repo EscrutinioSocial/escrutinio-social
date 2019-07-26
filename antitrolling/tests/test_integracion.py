@@ -3,13 +3,13 @@ import pytest
 from elecciones.models import MesaCategoria, Carga
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import (
-    consolidar_identificaciones, consolidar_cargas, 
+    consolidar_identificaciones, consolidar_cargas,
     consumir_novedades_carga, consumir_novedades_identificacion
 )
 from antitrolling.models import EventoScoringTroll
 from elecciones.tests.factories import (
-    MesaFactory, AttachmentFactory
-)
+    MesaFactory, AttachmentFactory,
+    CategoriaFactory, CategoriaOpcionFactory)
 
 from .utils_para_test import (
     nuevo_fiscal, identificar, reportar_problema_attachment,
@@ -34,14 +34,14 @@ def test_asociacion_attachment_con_antitrolling(db, settings):
     mesa_1 = MesaFactory()
     mesa_2 = MesaFactory()
     attach = AttachmentFactory()
-    
+
     # empezamos con dos identificaciones a mesas distintas
     identificar(attach, mesa_1, fiscal_1)
     identificar(attach, mesa_2, fiscal_3)
     # hasta aca no debería asociarse la mesa, ergo no se afecta el scoring troll de ningun fiscal
     consolidar_identificaciones(attach)
     for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
-      assert fiscal.scoring_troll() == 0
+        assert fiscal.scoring_troll() == 0
 
     # se agregan dos nuevas identificaciones: el fiscal 2 identifica la misma mesa que el 1, el fiscal 4 reporta un problema
     identificar(attach, mesa_1, fiscal_2)
@@ -84,7 +84,7 @@ def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db, settings):
     # la consolidacion no deberia afectar el scoring de ningun fiscal, porque la mesa_categoria no queda consolidada
     consolidar_cargas(mesa_categoria)
     for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5]:
-      assert fiscal.scoring_troll() == 0
+        assert fiscal.scoring_troll() == 0
 
     # entra una quinta carga, coincidente con la segunda
     carga_5 = nueva_carga(mesa_categoria, fiscal_5, [30, 20, 10])
@@ -141,7 +141,7 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
 
     assert Carga.objects.filter(procesada=False).count() == 9
     assert Carga.objects.filter(invalidada=True).count() == 0
-    assert not fiscal_1.troll 
+    assert not fiscal_1.troll
 
     # hasta aca: (1,1), (1,2) y (2,1) consolidadas, (2,2) en conflicto, fiscal_1 tiene 20 de scoring troll
     consumir_novedades_carga()
@@ -150,7 +150,7 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
         assert mesa_categoria.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2_2.status == MesaCategoria.STATUS.total_en_conflicto
     assert fiscal_1.scoring_troll() == 20
-    assert not fiscal_1.troll 
+    assert not fiscal_1.troll
     assert Carga.objects.filter(procesada=False).count() == 0
     assert Carga.objects.filter(invalidada=True).count() == 0
 
@@ -185,7 +185,7 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
     for carga in Carga.objects.filter(fiscal=fiscal_1):
         assert carga.invalidada
 
-    
+
 def test_cargas_troll_no_consolidadas(db, settings):
     """
     Se verifica que luego de que un fiscal es detectado como troll, 
@@ -227,12 +227,12 @@ def test_cargas_troll_no_consolidadas(db, settings):
     carga_2_2_4 = nueva_carga(mesa_categoria_2_2, fiscal_4, [40, 30, 25, 10])
     carga_3_1_1 = nueva_carga(mesa_categoria_3_1, fiscal_1, [25, 15, 20])
     carga_3_1_5 = nueva_carga(mesa_categoria_3_1, fiscal_5, [28, 12, 20])
-    carga_3_2_1 = nueva_carga(mesa_categoria_3_2, fiscal_1, [60, 20, 18, 7])  
+    carga_3_2_1 = nueva_carga(mesa_categoria_3_2, fiscal_1, [60, 20, 18, 7])
     carga_4_1_2 = nueva_carga(mesa_categoria_4_1, fiscal_2, [60, 25, 20])
 
     def refrescar_data():
         for mesa_categoria in [
-            mesa_categoria_1_1, mesa_categoria_1_2, mesa_categoria_2_1, mesa_categoria_2_2, 
+            mesa_categoria_1_1, mesa_categoria_1_2, mesa_categoria_2_1, mesa_categoria_2_2,
             mesa_categoria_3_1, mesa_categoria_3_2, mesa_categoria_4_1
         ]:
             mesa_categoria.refresh_from_db()
@@ -241,7 +241,7 @@ def test_cargas_troll_no_consolidadas(db, settings):
 
     assert Carga.objects.filter(procesada=False).count() == 14
     assert Carga.objects.filter(invalidada=True).count() == 0
-    assert not fiscal_1.troll 
+    assert not fiscal_1.troll
 
     # hasta aca: (1,1) consolidada; (3,2) y (4,1) sin consolidar; (1,2), (2,1), (2,2), (3,1) en conflicto
     # fiscal_1 tiene 20 de scoring troll
@@ -255,7 +255,7 @@ def test_cargas_troll_no_consolidadas(db, settings):
     assert mesa_categoria_3_2.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mesa_categoria_4_1.status == MesaCategoria.STATUS.total_sin_consolidar
     assert fiscal_1.scoring_troll() == 20
-    assert not fiscal_1.troll 
+    assert not fiscal_1.troll
     assert Carga.objects.filter(procesada=False).count() == 0
     assert Carga.objects.filter(invalidada=True).count() == 0
 
@@ -267,7 +267,7 @@ def test_cargas_troll_no_consolidadas(db, settings):
     consumir_novedades_carga()
     refrescar_data()
     assert mesa_categoria_2_2.status == MesaCategoria.STATUS.total_consolidada_dc
-    assert fiscal_1.troll 
+    assert fiscal_1.troll
     assert fiscal_1.scoring_troll() == 60
     assert Carga.objects.filter(invalidada=True).count() == 5
     assert Carga.objects.filter(procesada=False).count() == 5
@@ -387,7 +387,7 @@ def test_identificaciones_troll(db, settings):
 
     def refrescar_data():
         for db_object in [
-            mesa_categoria_1, mesa_categoria_2, 
+            mesa_categoria_1, mesa_categoria_2,
             attach_1, attach_2, attach_3, attach_4,
             fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5
         ]:
@@ -401,8 +401,8 @@ def test_identificaciones_troll(db, settings):
     identificar(attach_3, mesa_4, fiscal_3)
     identificar(attach_4, mesa_1, fiscal_1)
     identificar(attach_4, mesa_4, fiscal_2)
-    nueva_carga(mesa_categoria_1, fiscal_3, [20, 25, 15])  
-    nueva_carga(mesa_categoria_1, fiscal_4, [20, 25, 15])  
+    nueva_carga(mesa_categoria_1, fiscal_3, [20, 25, 15])
+    nueva_carga(mesa_categoria_1, fiscal_4, [20, 25, 15])
     nueva_carga(mesa_categoria_2, fiscal_4, [60, 25, 20])
     nueva_carga(mesa_categoria_2, fiscal_5, [60, 25, 20])
 
@@ -425,7 +425,7 @@ def test_identificaciones_troll(db, settings):
     assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2.carga_testigo is not None
     assert mesa_categoria_2.orden_de_carga is not None
-    assert not fiscal_1.troll 
+    assert not fiscal_1.troll
     assert Identificacion.objects.filter(procesada=False).count() == 0
     assert Identificacion.objects.filter(invalidada=True).count() == 0
     assert Carga.objects.filter(procesada=False).count() == 0
@@ -447,7 +447,7 @@ def test_identificaciones_troll(db, settings):
     assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2.carga_testigo is not None
     assert mesa_categoria_2.orden_de_carga is not None
-    assert fiscal_1.troll 
+    assert fiscal_1.troll
     assert Identificacion.objects.filter(procesada=False).count() == 3
     assert Identificacion.objects.filter(invalidada=True).count() == 3
     for ident in Identificacion.objects.filter(fiscal=fiscal_1):
@@ -469,7 +469,7 @@ def test_identificaciones_troll(db, settings):
     assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2.carga_testigo is not None
     assert mesa_categoria_2.orden_de_carga is not None
-    assert fiscal_1.troll 
+    assert fiscal_1.troll
     assert Identificacion.objects.filter(procesada=False).count() == 0
     assert Identificacion.objects.filter(invalidada=True).count() == 3
     assert Carga.objects.filter(procesada=False).count() == 2
@@ -487,7 +487,7 @@ def test_identificaciones_troll(db, settings):
     assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mesa_categoria_2.carga_testigo is not None
     assert mesa_categoria_2.orden_de_carga is not None
-    assert fiscal_1.troll 
+    assert fiscal_1.troll
     assert Identificacion.objects.filter(procesada=False).count() == 0
     assert Identificacion.objects.filter(invalidada=True).count() == 3
     assert Carga.objects.filter(procesada=False).count() == 0
@@ -495,3 +495,50 @@ def test_identificaciones_troll(db, settings):
     for carga in Carga.objects.filter(mesa_categoria=mesa_categoria_1):
         assert carga.invalidada
 
+
+def test_carga_parcial_consolidada_dc(db, settings):
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+    presi = CategoriaFactory()
+    # op_prioritaria = CategoriaOpcionFactory(categoria=presi, prioritaria=True).opcion
+    # op_noprioritaria = CategoriaOpcionFactory(categoria=presi, prioritaria=False).opcion
+    mesa_1 = MesaFactory(categorias=[presi])
+    mesa_categoria_1 = MesaCategoria.objects.filter(mesa=mesa_1, categoria=presi).first()
+    attach_1 = AttachmentFactory()
+
+    assert mesa_categoria_1.status == MesaCategoria.STATUS.sin_cargar
+
+    identificar(attach_1, mesa_1, fiscal_1)
+    identificar(attach_1, mesa_1, fiscal_2)
+
+    refrescar_data([presi, fiscal_1, fiscal_2, mesa_1, mesa_categoria_1, attach_1])
+
+    assert not fiscal_1.troll
+    assert not fiscal_2.troll
+
+    assert Identificacion.objects.filter(procesada=False).count() == 2
+
+    consumir_novedades_identificacion()
+    refrescar_data([mesa_categoria_1, mesa_1, attach_1])
+
+    assert Identificacion.objects.filter(procesada=False).count() == 0
+
+    nueva_carga(mesa_categoria_1, fiscal_1, [20, 15], Carga.TIPOS.parcial)
+    consumir_novedades_carga()
+    refrescar_data([mesa_categoria_1])
+    assert mesa_categoria_1.status == MesaCategoria.STATUS.parcial_sin_consolidar
+
+    nueva_carga(mesa_categoria_1, fiscal_2, [20, 15], Carga.TIPOS.parcial)
+    refrescar_data([mesa_categoria_1])
+    assert Carga.objects.filter(procesada=False).count() == 1
+
+    consumir_novedades_carga()
+    refrescar_data([mesa_categoria_1])
+
+    assert mesa_categoria_1.status == MesaCategoria.STATUS.parcial_consolidada_dc
+    assert Carga.objects.filter(procesada=False).count() == 0
+
+
+def refrescar_data(objetos):
+    for db_object in objetos:
+        db_object.refresh_from_db()
