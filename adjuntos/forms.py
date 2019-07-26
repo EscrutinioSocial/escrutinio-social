@@ -1,5 +1,5 @@
 from django import forms
-from .models import Identificacion
+from .models import Identificacion, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
 
@@ -22,18 +22,22 @@ class IdentificacionForm(forms.ModelForm):
             kwargs['initial']['circuito'] = circuito = instance.mesa.lugar_votacion.circuito
             kwargs['initial']['seccion'] = seccion = circuito.seccion
             kwargs['initial']['distrito'] = distrito = seccion.distrito
-        else:
-            if attachment.identificacion_parcial:
-                kwargs['initial']['circuito'] = circuito = identificacion_parcial.circuito
-                kwargs['initial']['seccion'] = seccion = identificacion_parcial.seccion
-                kwargs['initial']['distrito'] = distrito =identificacion_parcial.distrito
         super().__init__(*args, **kwargs)
-        self.fields['distrito'].widget.attrs['autofocus'] = True
-        self.fields['seccion'].choices = (('', '---------'),)
-        self.fields['seccion'].label = 'Sección'
+        if kwargs['initial']['identificacion_parcial']:
+            distrito = kwargs['initial']['distrito']
+            seccion = kwargs['initial']['seccion']
+            self.fields['distrito'].widget.attrs['autofocus'] = True
+            self.fields['distrito'].choices = ((f'{distrito.id}',f'{distrito.nombre}'),)
+            self.fields['seccion'].choices = ((f'{seccion.id}',f'{seccion.nombre}'),)
+            self.fields['seccion'].label = 'Sección'
+            self.fields['mesa'].choices = (('', '---------'),)
+        else:
+            self.fields['distrito'].widget.attrs['autofocus'] = True
+            self.fields['seccion'].choices = (('', '---------'),)
+            self.fields['seccion'].label = 'Sección'
+            self.fields['mesa'].choices = (('', '---------'),)
         self.fields['circuito'].choices = (('', '---------'),)
-        self.fields['mesa'].choices = (('', '---------'),)
-
+            
     def clean(self):
         cleaned_data = super().clean()
         mesa = cleaned_data.get('mesa')
