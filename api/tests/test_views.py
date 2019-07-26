@@ -89,6 +89,18 @@ def test_identificar_acta(admin_client):
     assert identificacion.mesa.circuito.seccion.distrito.numero == codigo_distrito
 
 
+def test_identificar_acta_error(admin_client):
+    """
+    """
+    attachment = factories.AttachmentFactory()
+    assert attachment.identificaciones.count() == 0
+
+    url = reverse('identificar-acta', kwargs={'foto_digest': attachment.foto_digest})
+
+    response = admin_client.put(url, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
 def test_identificar_acta_not_found(admin_client):
     """
     """
@@ -209,6 +221,13 @@ def test_listar_categorias_con_prioridad(admin_client):
     assert [(cat['id'], cat['nombre']) for cat in response.data] == [(pv.id, pv.nombre), (gv.id, gv.nombre),
                                                                      (dn.id, dn.nombre)]
 
+@pytest.mark.parametrize('prioridad', ['XX', False])
+def test_listar_categorias_con_prioridad_error(prioridad, admin_client):
+    url = reverse('categorias')
+
+    response = admin_client.get(url, data={'prioridad': prioridad}, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
 
 def test_listar_opciones_default(admin_client):
     o2 = factories.OpcionFactory(orden=3)
@@ -249,3 +268,12 @@ def test_listar_opciones_todas(admin_client):
         (o2.id, o2.nombre),
         (o4.id, o4.nombre),
     ]
+
+
+@pytest.mark.parametrize('valor', ['No booleano', 42])
+def test_listar_opciones_error(valor, admin_client):
+    c = factories.CategoriaFactory()
+    url = reverse('opciones', kwargs={'id_categoria': c.id})
+
+    response = admin_client.get(url, data={'solo_prioritarias': valor}, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
