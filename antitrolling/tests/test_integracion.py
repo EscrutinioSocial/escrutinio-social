@@ -608,8 +608,7 @@ def test_troll_total_sin_consolidar_a_parcial_sin_consolidar(db, settings):
     assert mesa_categoria_1.status == MesaCategoria.STATUS.parcial_sin_consolidar
     assert Carga.objects.filter(invalidada=True).count() == 2
 
-
-def test_troll_total_consolidada_dc_a_parcial_sin_consolidar(db, settings):
+def test_troll_total_consolidada_dc_a_sin_cargar(db, settings):
     fiscal_1 = nuevo_fiscal()
     fiscal_2 = nuevo_fiscal()
     presi = CategoriaFactory()
@@ -621,8 +620,41 @@ def test_troll_total_consolidada_dc_a_parcial_sin_consolidar(db, settings):
 
     refrescar_data([presi, fiscal_1, fiscal_2, mesa_1, mesa_categoria_1, attach_1])
 
-    assert not fiscal_1.troll
-    assert not fiscal_2.troll
+    nueva_carga(mesa_categoria_1, fiscal_1, [20, 35], Carga.TIPOS.parcial)
+    nueva_carga(mesa_categoria_1, fiscal_2, [20, 35], Carga.TIPOS.parcial)
+
+    consumir_novedades_carga()
+    refrescar_data([mesa_categoria_1])
+
+    nueva_carga(mesa_categoria_1, fiscal_2, [20, 35], Carga.TIPOS.total)
+    nueva_carga(mesa_categoria_1, fiscal_1, [20, 35], Carga.TIPOS.total)
+
+    consumir_novedades_carga()
+    refrescar_data([mesa_categoria_1])
+
+    assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert Carga.objects.filter(invalidada=True).count() == 0
+
+    fiscal_2.aplicar_marca_troll()
+    consumir_novedades_carga()
+    refrescar_data([mesa_categoria_1, fiscal_2])
+
+    assert mesa_categoria_1.status == MesaCategoria.STATUS.sin_cargar
+    assert Carga.objects.filter(invalidada=True).count() == 3
+
+
+def test_troll_total_consolidada_dc_a_parcial_sin_consolidar(db, settings):
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+    fiscal_3 = nuevo_fiscal()
+    presi = CategoriaFactory()
+    mesa_1 = MesaFactory(categorias=[presi])
+    mesa_categoria_1 = MesaCategoria.objects.filter(mesa=mesa_1, categoria=presi).first()
+    attach_1 = AttachmentFactory()
+    identificar(attach_1, mesa_1, fiscal_1)
+    identificar(attach_1, mesa_1, fiscal_3)
+
+    refrescar_data([presi, fiscal_1, fiscal_2, fiscal_3, mesa_1, mesa_categoria_1, attach_1])
 
     nueva_carga(mesa_categoria_1, fiscal_1, [20, 35], Carga.TIPOS.parcial)
     nueva_carga(mesa_categoria_1, fiscal_2, [20, 35], Carga.TIPOS.parcial)
