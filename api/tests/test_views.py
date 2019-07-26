@@ -1,5 +1,7 @@
 import pytest
+
 from django.urls import reverse
+
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -28,11 +30,16 @@ def test_subir_acta(admin_client, datadir):
     """
     url = reverse('actas')
 
-    with open(datadir / 'acta.jpeg', 'rb') as foto:
-        response = admin_client.post(url, {'foto': foto})
+    foto = (datadir / 'acta.jpeg')
+    response = admin_client.post(url, {'foto': foto.open('rb')})
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert response.data['foto_digest'] == hash_file(open(datadir / 'acta.jpeg', 'rb'))
+    assert response.data['foto_digest'] == hash_file(foto.open('rb'))
+
+    response = admin_client.post(url, {'foto': foto.open('rb')})
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.data['foto_digest'] == hash_file(foto.open('rb'))
 
 
 def test_subir_acta_invalid_ext(admin_client, datadir):
