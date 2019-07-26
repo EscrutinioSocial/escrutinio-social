@@ -97,5 +97,17 @@ class MapaPrioridadesProducto():
         return valores[0] * valores[1]
 
 
-def prioridades_categoria_standard():
-    pass
+def registro_prioridad_desde_estructura(estructura):
+    """ 
+    Crea un RegistroPrioridad a partir de una estructura {'desde': nro, 'hasta': nro, 'prioridad': nro}
+    """ 
+    return RegistroDePrioridad(estructura['desde'], estructura['hasta'], estructura['prioridad'])
+
+
+def mapa_prioridades_desde_setting(setting):
+    """ 
+    Crea un MapaPrioridades a partir de una lista [{'desde': nro, 'hasta': nro, 'prioridad': nro}]
+    que es el formato que tiene la especificación de prioridades en los settings.
+    """ 
+    mapa = MapaPrioridades()
+    mapa
