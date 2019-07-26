@@ -2,8 +2,21 @@ from django.contrib import admin
 from django.urls import reverse
 from leaflet.admin import LeafletGeoAdmin
 from .models import (
-    Distrito, SeccionPolitica, Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion, CategoriaOpcion, Categoria,
-    VotoMesaReportado, MesaCategoria, Eleccion
+    Distrito,
+    SeccionPolitica,
+    Seccion,
+    Circuito,
+    LugarVotacion,
+    Mesa,
+    Partido,
+    Opcion,
+    CategoriaOpcion,
+    Categoria,
+    VotoMesaReportado,
+    MesaCategoria,
+    Eleccion,
+    TecnicaProyeccion,
+    AgrupacionCircuitos,
 )
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
@@ -228,6 +241,17 @@ class CategoriaOpcionAdmin(admin.ModelAdmin):
     ordering = ['categoria__nombre', 'opcion__orden']
 
 
+class TecnicaProyeccionAdmin(admin.ModelAdmin):
+    search_fields = ['nombre']
+    ordering = ['nombre']
+
+
+class AgrupacionCircuitosAdmin(admin.ModelAdmin):
+    search_fields = ['proyeccion', 'nombre']
+    ordering = ['proyeccion']
+    list_filter = ('proyeccion', )
+
+
 admin.site.register(Eleccion)
 admin.site.register(Distrito, DistritoAdmin)
 admin.site.register(SeccionPolitica, SeccionPoliticaAdmin)
@@ -241,3 +265,5 @@ admin.site.register(VotoMesaReportado, VotoMesaReportadoAdmin)
 admin.site.register(Opcion, OpcionAdmin)
 admin.site.register(Categoria, CategoriaAdmin)
 admin.site.register(CategoriaOpcion, CategoriaOpcionAdmin)
+admin.site.register(TecnicaProyeccion, TecnicaProyeccionAdmin)
+admin.site.register(AgrupacionCircuitos, AgrupacionCircuitosAdmin)

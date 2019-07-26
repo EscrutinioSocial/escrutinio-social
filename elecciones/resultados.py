@@ -1,9 +1,8 @@
 import itertools
 from django.conf import settings
 from functools import lru_cache
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 from attrdict import AttrDict
-from functools import lru_cache
 from model_utils import Choices
 from django.db.models import Q, F, Sum, Count, Subquery, Sum, IntegerField, Case, Value, When
 from .models import (
@@ -12,11 +11,9 @@ from .models import (
     SeccionPolitica,
     Seccion,
     Circuito,
-    Categoria,
     Partido,
     Opcion,
     VotoMesaReportado,
-    Carga,
     LugarVotacion,
     MesaCategoria,
     Mesa,
@@ -308,8 +305,9 @@ class Resultados():
         """
         nombre_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre']
         nombre_opcion_sobres = settings.OPCION_TOTAL_SOBRES['nombre']
-        return sum(votos for opcion, votos in self.resultados.votos_no_positivos.items()
-                        if opcion != nombre_opcion_total and opcion != nombre_opcion_sobres
+        return sum(
+            votos for opcion, votos in self.resultados.votos_no_positivos.items()
+            if opcion != nombre_opcion_total and opcion != nombre_opcion_sobres
         )
 
     @lru_cache(128)
