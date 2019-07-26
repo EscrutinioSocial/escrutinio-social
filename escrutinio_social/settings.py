@@ -288,7 +288,7 @@ MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
 # Tamaño maximo de archivos permitidos en el formulario
 # de subida de fotos y CSV
-MAX_UPLOAD_SIZE = 1024 ** 3     # 10 Mb
+MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
 
 # Tiempo en segundos que se espera entre
 # recálculo de consolidaciones de identificación y carga
