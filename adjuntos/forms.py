@@ -60,7 +60,7 @@ class AgregarAttachmentsForm(forms.Form):
     Se le puede pasar por kwargs si el form acepta multiples archivos o uno solo
     """
 
-    file_field = forms.FileField(
+    file_field = forms.ImageField(
         label="Archivo/s",
         widget=forms.ClearableFileInput()
     )
@@ -69,5 +69,5 @@ class AgregarAttachmentsForm(forms.Form):
         es_multiple = kwargs.pop('es_multiple') if 'es_multiple' in kwargs else True
         super().__init__(*args, **kwargs)
         self.fields['file_field'].widget.attrs.update({'multiple': es_multiple})
-        
+
 
