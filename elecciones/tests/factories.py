@@ -1,4 +1,5 @@
 import factory
+from factory.fuzzy import FuzzyText
 import random
 from PIL import Image
 from io import BytesIO
@@ -177,14 +178,8 @@ class FiscalFactory(DjangoModelFactory):
     estado = 'CONFIRMADO'
     apellido = fake.last_name()
     nombres = fake.first_name()
-    referido_codigo = factory.Sequence(lambda n: generar_codigo(n))
+    referido_codigo = FuzzyText(length=4)
     dni = factory.Sequence(lambda n: f'{n}00000{n}')
-
-
-def generar_codigo(n):
-    digitos = len(str(n))
-    padding = "0" * (4-digitos)
-    return padding + str(n)
 
 
 class CargaFactory(DjangoModelFactory):
