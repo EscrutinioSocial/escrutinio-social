@@ -783,6 +783,11 @@ class Carga(TimeStampedModel):
         """ Devuelve una lista de los votos para cada opción. """
         return self.reportados.values_list('opcion', 'votos')
 
+    def opciones(self):
+        """ Devuelve una lista de las opciones de esta carga. """
+        return self.reportados.values_list('opcion')
+
+
     def save(self, *args, **kwargs):
         """
         si el fiscal es troll, la carga nace invalidada y ya procesada

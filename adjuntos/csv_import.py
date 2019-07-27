@@ -2,10 +2,11 @@ import pandas as pd
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 import math
-from elecciones.models import Mesa, Carga, VotoMesaReportado, Opcion
+from elecciones.models import Mesa, Carga, VotoMesaReportado, Opcion, CategoriaOpcion
 from django.db import transaction
 from django.db.utils import IntegrityError
 
+from escrutinio_social import settings
 from escrutinio_social.settings import OPCION_TOTAL_SOBRES, OPCION_TOTAL_VOTOS
 from fiscales.models import Fiscal
 
@@ -133,6 +134,7 @@ class CSVImporter:
 
         self.carga_total = None
         self.carga_parcial = None
+        seccion, circuito, mesa, distrito = mesa
 
         # Buscamos el nombre de la columna asociada a esta categoría
         matcheos = [columna for columna in columnas_categorias if columna.lower()
@@ -147,7 +149,7 @@ class CSVImporter:
         # Los votos son por partido así que debemos iterar por todas las filas
         for indice, fila in grupos.iterrows():
             opcion = fila['nro de lista']
-            self.fila_analizada = FilaCSVImporter(mesa[0], mesa[1], mesa[2], mesa[3])
+            self.fila_analizada = FilaCSVImporter(seccion, circuito, mesa, distrito)
 
             # Primero chequeamos si esta fila corresponde a metadata verificando el
             # número de lista que está en cero cuando se trata de metadata.
@@ -179,6 +181,12 @@ class CSVImporter:
                     filter(categoria=categoria_bd).first()
                 self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
                                   opcion_bd)
+        # Verifico que las cargas parciales sean completas
+        self.validar_carga_parcial(self.carga_parcial)
+
+        # Si tengo que verificar entonces veo que las cargas totales sean completas
+        if settings.TOTALES_COMPLETAS:
+            self.validar_carga_total(self.carga_total)
 
         return self.carga_parcial, self.carga_total
 
@@ -312,6 +320,19 @@ class CSVImporter:
         if not self.usuario or not self.usuario.fiscal.esta_en_grupo('unidades basicas'):
             raise PermisosInvalidosError('Su usuario no tiene los permisos necesarios para realizar '
                                          'esta acción.')
+
+    def validar_carga_parcial(self, carga_parcial):
+        opciones_votos = carga_parcial.opciones()
+        mi_categoria = carga_parcial.categoria
+        opciones = CategoriaOpcion.objects.filter(categoria=mi_categoria).values_list('opcion__codigo')
+        if sorted(opciones) != sorted(opciones_votos):
+            raise DatosInvalidosError(
+                f'Los resultados para las opciones parciales deben estar completas '
+                f'faltan las opciones: {opciones - opciones_votos}.')
+
+    def validar_carga_total(self, carga_total):
+
+        pass
 
 
 class FilaCSVImporter:

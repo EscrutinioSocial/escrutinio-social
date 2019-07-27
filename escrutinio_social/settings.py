@@ -320,7 +320,10 @@ OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
 
+TOTALES_COMPLETAS = False
+
 try:
     from .local_settings import *  # noqa
 except ImportError:
     pass
+
