@@ -31,6 +31,8 @@ class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def attachment_(o):
         if o.attachment:
+            img_snippet = f'<img src="{obj.attachment.foto.url}" width="80px"/>'
+        return format_html(f'<a href="{obj.attachment.foto.url}">'+img_snippet+'</a>')
             return format_html(f'<a href="/admin/adjuntos/attachment/?id={o.attachment.id}">{o.attachment}</a>')
     attachment_.allow_tags = True
     attachment_.short_description = "Attachment"
