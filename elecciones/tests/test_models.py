@@ -108,11 +108,11 @@ def test_carga_actualizar_firma(db):
     c = CargaFactory()
     o1 = VotoMesaReportadoFactory(carga=c, votos=10, opcion__orden=1).opcion
     o2 = VotoMesaReportadoFactory(carga=c, votos=8, opcion__orden=3).opcion
-    o3 = VotoMesaReportadoFactory(carga=c, votos=None, opcion__orden=2).opcion
+    o3 = VotoMesaReportadoFactory(carga=c, votos=0, opcion__orden=2).opcion
     # ignora otras
-    VotoMesaReportadoFactory()
+    VotoMesaReportadoFactory(votos=0)
     c.actualizar_firma()
-    assert c.firma == f'{o1.id}-10|{o3.id}-|{o2.id}-8'
+    assert c.firma == f'{o1.id}-10|{o3.id}-0|{o2.id}-8'
 
 
 def test_firma_count(db):
@@ -194,17 +194,18 @@ def test_mc_status_carga_total_desde_mc_parcial(db):
     mc = MesaCategoriaFactory(
         status=MesaCategoria.STATUS.parcial_consolidada_dc,
     )
+    c0 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
     c1 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
     mc.carga_testigo = c1
     mc.save()
 
-    # se asume que la carga total reusará los datos coincidentes de la carga parcial
+    # Se asume que la carga total reusará los datos coincidentes de la carga parcial
     c2 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10|2-20')
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mc.carga_testigo == c2
 
-    # diverge
+    # Diverge
     c3 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10|2-19')
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.total_en_conflicto

@@ -4,6 +4,16 @@ from django.db import migrations, models
 import djgeojson.fields
 
 
+def update_tipo_carga(apps, schema_editor):
+    Carga = apps.get_model("elecciones", "Carga")
+    Carga.objects.filter(tipo='falta_foto').update(tipo='problema')
+
+
+def revert_tipo_carga(apps, schema_editor):
+    Carga = apps.get_model("elecciones", "Carga")
+    Carga.objects.filter(tipo='problema').update(tipo='falta_foto')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -58,4 +68,5 @@ class Migration(migrations.Migration):
             name='geom',
             field=djgeojson.fields.PointField(blank=True, null=True),
         ),
+        migrations.RunPython(update_tipo_carga, revert_tipo_carga),
     ]
