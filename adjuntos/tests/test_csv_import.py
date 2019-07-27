@@ -1,9 +1,8 @@
-import pytest
 import os
 
-from django.contrib.auth.models import Group
-from django.http import Http404
+import pytest
 from django.conf import settings
+from django.contrib.auth.models import Group
 
 from adjuntos.csv_import import (ColumnasInvalidasError, CSVImporter, DatosInvalidosError,
                                  PermisosInvalidosError)
@@ -140,10 +139,12 @@ def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inici
         CSVImporter(PATH_ARCHIVOS_TEST + 'opciones_invalidas.csv', usr_unidad_basica).procesar()
     assert 'El número de lista C no fue encontrado' in str(e.value)
 
+
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'falta_total_votos.csv', usr_unidad_basica).procesar()
     assert 'Falta el reporte de total de votantes para la mesa' in str(e.value)
+
 
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
     CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
@@ -167,7 +168,7 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica
 
 def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unidad_basica, carga_inicial):
     CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_copia_parciales_a_totales.csv',
-        usr_unidad_basica).procesar()
+                usr_unidad_basica).procesar()
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total).all()
     cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial).all()
 
@@ -179,4 +180,4 @@ def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unida
         carga_total_misma_mc = cargas_totales_misma_mc.first()
         for voto in carga_parcial.reportados.all():
             assert VotoMesaReportado.objects.filter(carga=carga_total_misma_mc, votos=voto.votos,
-                        opcion=voto.opcion).exists()
+                                                    opcion=voto.opcion).exists()
