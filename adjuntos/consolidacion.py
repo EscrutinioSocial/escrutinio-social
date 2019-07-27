@@ -126,18 +126,16 @@ def consolidar_cargas(mesa_categoria):
 
     # Analizo las parciales.
     cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
-    if cargas_parciales.count() > 0:
+    if cargas_parciales.exists():
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_por_tipo(cargas_parciales, Carga.TIPOS.parcial)
-
-    print("status resultante: ", status_resultante)
 
     if status_resultante in statuses_que_permiten_analizar_carga_total:
         # Analizo las totales solo si no hay ninguna parcial, o si están consolidadas las parciales.
         # En otro caso no tiene sentido porque puedo encontrar cargas totales "residuales", pero
         # todavía no se resolvió la parcial.
         cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
-        if cargas_totales.count() > 0:
+        if cargas_totales.exists():
             status_resultante, carga_testigo_resultante = \
                 consolidar_cargas_por_tipo(cargas_totales, Carga.TIPOS.total)
 
