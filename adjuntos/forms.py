@@ -70,12 +70,20 @@ class BaseUploadForm(forms.Form):
         return files
 
 
-class AgregarAttachmentsForm(forms.Form):
+class AgregarAttachmentsForm(BaseUploadForm):
 
     """
     Form para subir uno o más archivos para ser asociados a instancias de
     :py:class:`adjuntos.Attachment`
 
-    Se le puede pasar por kwargs si el form acepta multiples archivos o uno solo
+    Se le puede pasar por kwargs si el form acepta múltiples archivos o uno solo.
     """
-    file_field = forms.ImageField(label="Imágen/es")
+    file_field = forms.ImageField(label="Imagen/es")
+
+
+class AgregarAttachmentsCSV(BaseUploadForm):
+
+    """
+    Form para subir uno o más archivos CSV.
+    """
+    file_field = forms.ImageField(label="Archivos .csv")
