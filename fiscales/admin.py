@@ -97,6 +97,7 @@ class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         row_actions += super().get_row_actions(obj)
         return row_actions
 
+    @lru_cache(maxsize=64)
     def scoring_troll(o):
         return o.scoring_troll()
 
