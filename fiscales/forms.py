@@ -248,6 +248,14 @@ class VotoMesaModelForm(forms.ModelForm):
         self.fields['carga'].widget = forms.HiddenInput()
         self.fields['carga'].required = False
         self.fields['opcion'].label = ''
+        self.fields['opcion'].widget = forms.Select(
+            attrs={
+                # Materialize muestra el select default
+                'class': 'browser-default',
+                # Se deshabilita abrir el select
+                'onmousedown': '(function(e){ e.preventDefault(); })(event, this)'
+            }
+        )
         self.fields['votos'].label = ''
         self.fields['votos'].required = False
 

@@ -10,17 +10,28 @@
   max-width: 100%;
   display: flex;
   flex-flow: row wrap;
-  justify-content: flex-start;
-  align-items: baseline;
-  align-content: flex-start;
+  align-items: center;
 }
 
 .carga-acta-inline > dmc-select {
-  flex: 1 80%;
+  flex: 1 60%;
+}
+
+.carga-acta-inline > dmc-select select {
+  border: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  text-indent: 1px;
+  text-overflow: '';
+  text-align: right;
+}
+
+.carga-acta-inline > dmc-select select::-ms-expand {
+  display: none;
 }
 
 .carga-acta-inline > div {
-  flex: 1 20%;
+  flex: 1 40%;
 }
 
 .carga-acta-inline .row {
