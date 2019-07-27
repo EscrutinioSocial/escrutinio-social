@@ -259,8 +259,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        # TODO fix error al cargar acta desde ub
-        # kwargs.update({'es_multiple': False})
+        kwargs.update({'es_multiple': False})
         return kwargs
 
 
