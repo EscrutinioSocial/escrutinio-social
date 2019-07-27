@@ -169,6 +169,7 @@ class AgregarAdjuntos(FormView):
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
     """
+
     def __init__(self, types=('image/jpeg', 'image/png'), **kwargs):
         super().__init__(**kwargs)
         self.types = types
@@ -242,7 +243,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
 
-        #no debiese poder cargarse por la ui dos imágenes, aunque es mejor poder chequear esto
+        # no debiese poder cargarse por la ui dos imágenes, aunque es mejor poder chequear esto
         if len(files) > 1:
             form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
 
@@ -258,7 +259,8 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs.update({'es_multiple': False})
+        # TODO fix error al cargar acta desde ub
+        # kwargs.update({'es_multiple': False})
         return kwargs
 
 
