@@ -181,12 +181,6 @@ class CSVImporter:
                     filter(categoria=categoria_bd).first()
                 self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
                                   opcion_bd)
-        # Verifico que las cargas parciales sean completas
-        self.validar_carga_parcial(self.carga_parcial)
-
-        # Si tengo que verificar entonces veo que las cargas totales sean completas
-        if settings.TOTALES_COMPLETAS:
-            self.validar_carga_total(self.carga_total)
 
         return self.carga_parcial, self.carga_total
 
@@ -231,6 +225,10 @@ class CSVImporter:
         for carga_parcial, carga_total in cargas:
             # A todas las cargas le tengo que agregar el total de votantes y de sobres.
             self.agregar_total_de_votantes_y_sobres(mesa, carga_parcial)
+            self.validar_carga_parcial(carga_parcial)
+            # Si tengo que verificar entonces veo que las cargas totales sean completas
+            if settings.TOTALES_COMPLETAS:
+                self.validar_carga_total(carga_total)
 
             # El total de votos hay que impactarlo en todas las cargas.
             self.copiar_carga_parcial_en_total_si_corresponde(carga_parcial, carga_total)
@@ -325,13 +323,14 @@ class CSVImporter:
         opciones_votos = carga_parcial.listado_de_opciones()
         mi_categoria = carga_parcial.categoria
         opciones_prioritarias_de_la_categoria = CategoriaOpcion.objects.filter(categoria=mi_categoria,
-            prioritaria=True
-        ).values_list('opcion__id', flat=True)
-        import ipdb; ipdb.set_trace()
+                                                                               prioritaria=True
+                                                                               ).values_list('opcion__id', flat=True)
         if sorted(opciones_prioritarias_de_la_categoria) != sorted(opciones_votos):
+            opciones_faltantes = set(opciones_prioritarias_de_la_categoria) - set(opciones_votos)
+            Opcion.objects.filter(codigo=opciones_faltantes)
             raise DatosInvalidosError(
                 f'Los resultados para las opciones parciales deben estar completas. '
-                f'Faltan las opciones: {opciones - opciones_votos}.')
+                f'Faltan las opciones: {Opcion.objects.filter(id__in=opciones_faltantes)}.')
 
     def validar_carga_total(self, carga_total):
 

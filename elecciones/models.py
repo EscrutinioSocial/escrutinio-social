@@ -785,7 +785,7 @@ class Carga(TimeStampedModel):
 
     def listado_de_opciones(self):
         """ Devuelve una lista de los ids de las opciones de esta carga. """
-        return self.reportados.values('opcion__id', flat=True)
+        return self.reportados.values_list('opcion__id', flat=True)
 
 
     def save(self, *args, **kwargs):
