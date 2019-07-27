@@ -36,7 +36,7 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
     """
 
     testigo = mesa_categoria.carga_testigo
-    for carga in mesa_categoria.cargas.filter(invalidada=False):
+    for carga in mesa_categoria.cargas.exclude(id=testigo.id).filter(invalidada=False):
         if carga.tipo == testigo.tipo and carga.firma != testigo.firma:
             # se calcula la diferencia. Puede dar error, en tal caso se considera diferencia 0
             try:

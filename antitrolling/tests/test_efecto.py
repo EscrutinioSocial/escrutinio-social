@@ -299,4 +299,4 @@ def test_efecto_diferencia_1(db, caplog):
     carga_2.actualizar_firma()
     efecto_scoring_troll_confirmacion_carga(mesa_categoria)
     # hay un sólo evento troll y la diferencia es 1
-    assert EventoScoringTroll.objects.get().variacion == carga1 - carga2 == 1
+    assert EventoScoringTroll.objects.get().variacion == carga_1 - carga_2 == 1
