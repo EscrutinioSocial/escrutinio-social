@@ -319,23 +319,24 @@ class CSVImporter:
             raise PermisosInvalidosError('Su usuario no tiene los permisos necesarios para realizar '
                                          'esta acción.')
 
-    def validar_carga_parcial(self, carga_parcial):
-        opciones_votos = carga_parcial.listado_de_opciones()
-        mi_categoria = carga_parcial.categoria
-        opciones_prioritarias_de_la_categoria = CategoriaOpcion.objects.filter(categoria=mi_categoria,
-                                                                               prioritaria=True
-                                                                               ).values_list('opcion__id', flat=True)
-        if sorted(opciones_prioritarias_de_la_categoria) != sorted(opciones_votos):
-            opciones_faltantes = set(opciones_prioritarias_de_la_categoria) - set(opciones_votos)
+    def validar_carga(self, carga, parcial):
+        opciones_votos = carga.listado_de_opciones()
+        mi_categoria = carga.categoria
+        opciones_de_la_categoria = CategoriaOpcion.objects.filter(categoria=mi_categoria,
+                                                                  prioritaria=parcial
+                                                                  ).values_list('opcion__id', flat=True)
+        if sorted(opciones_de_la_categoria) != sorted(opciones_votos):
+            opciones_faltantes = set(opciones_de_la_categoria) - set(opciones_votos)
             Opcion.objects.filter(codigo=opciones_faltantes)
             raise DatosInvalidosError(
                 f'Los resultados para las opciones parciales deben estar completas. '
                 f'Faltan las opciones: {Opcion.objects.filter(id__in=opciones_faltantes)}.')
 
+    def validar_carga_parcial(self, carga_parcial):
+        self.validar_carga(carga_parcial, parcial=True)
+
     def validar_carga_total(self, carga_total):
-
-        pass
-
+        self.validar_carga(carga_total, parcial=False)
 
 class FilaCSVImporter:
     def __init__(self, seccion, circuito, mesa, distrito):
