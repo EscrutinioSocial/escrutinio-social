@@ -20,7 +20,7 @@ urlpatterns = [
         name='resultados-categoria'
     ),
     url(
-        '^mesas_circuito/(?P<pk>\d+)?$',
+        '^mesas_circuito/(?P<pkcircuito>\d+)?/(?P<pkcategoria>\d+)?$',
         views.MesasDeCircuito.as_view(),
         name='mesas-circuito'
     ),

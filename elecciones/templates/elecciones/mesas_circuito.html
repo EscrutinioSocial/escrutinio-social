@@ -4,7 +4,7 @@
 
 {% block title %}Mesas del circuito{% endblock %}
 
-{% block page_title %}Mesas para {{object.nombre_completo}}{% endblock %}
+{% block page_title %}Mesas para {{circuito_seleccionado.nombre_completo}}{% endblock %}
 
 {% block breadcrumbs %}
 {% endblock %}
@@ -28,6 +28,15 @@
 {% endblock %}
 
 {% block left-panel %}
+<ul class="tabs">
+    {% for categoria in categorias %}
+    <li class="tab col s3">
+        <a target="_self"
+            href="{% url 'mesas-circuito' circuito_seleccionado.id categoria.id %}?{{ request.GET.urlencode }}"
+            {% if categoria.id == categoria_seleccionada.id %}class=" active" {% endif %}>{{ categoria.nombre }}</a>
+    </li>
+    {% endfor %}
+</ul>
 <div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
     <div class="card-content" id="frame{{categoria.id}}">
         <h1>Soy la mesa {{ mesa_seleccionada.numero }}</h1>

@@ -243,13 +243,23 @@ class MesasDeCircuito(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        pk = self.kwargs.get('pk')
-        if pk is None:
-            pk = Circuito.objects.first().id
-        circuito = get_object_or_404(Circuito, id=pk)
-        context['object'] = circuito
+        pkcircuito = self.kwargs.get('pkcircuito')
+        if pkcircuito is None:
+            pkcircuito = Circuito.objects.first().id
+        circuito = get_object_or_404(Circuito, id=pkcircuito)
+        context['circuito_seleccionado'] = circuito
         context['mesas'] = circuito.mesa_set.all
+
+        pkcategoria = self.kwargs.get('pkcategoria')
+        if pkcategoria is None:
+            pkcategoria = Categoria.objects.first().id
+        categoria = get_object_or_404(Categoria, id=pkcategoria)
+        context['categoria_seleccionada'] = categoria
+        context['categoria_id'] = categoria.id
+
         if self.request.GET.get('mesa'):
-            context['mesa_seleccionada'] = get_object_or_404(Mesa, id=self.request.GET.get('mesa'))
+            mesa = get_object_or_404(Mesa, id=self.request.GET.get('mesa'))
+            context['mesa_seleccionada'] = mesa
+            context['categorias'] = Categoria.para_mesas([mesa]).order_by('id')
 
         return context
