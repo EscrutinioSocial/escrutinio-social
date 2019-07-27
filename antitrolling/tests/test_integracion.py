@@ -34,10 +34,10 @@ def test_asociacion_attachment_con_antitrolling(db, settings):
     mesa_2 = MesaFactory()
     attach = AttachmentFactory()
 
-    # empezamos con dos identificaciones a mesas distintas
+    # Empezamos con dos identificaciones a mesas distintas
     identificar(attach, mesa_1, fiscal_1)
     identificar(attach, mesa_2, fiscal_3)
-    # hasta aca no debería asociarse la mesa, ergo no se afecta el scoring troll de ningun fiscal
+    # Hasta acá no debería asociarse la mesa, ergo no se afecta el scoring troll de ningun fiscal
     consolidar_identificaciones(attach)
     for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
         assert fiscal.scoring_troll() == 0
@@ -608,7 +608,7 @@ def test_troll_total_sin_consolidar_a_parcial_sin_consolidar(db, settings):
     assert Carga.objects.filter(invalidada=True).count() == 2
 
 
-def test_troll_total_consolidada_dc_a_sin_cargar(db, settings):
+def test_troll_total_consolidada_dc_a_parcial_sin_consolidar(db, settings):
     fiscal_1 = nuevo_fiscal()
     fiscal_2 = nuevo_fiscal()
     presi = CategoriaFactory()
@@ -639,7 +639,7 @@ def test_troll_total_consolidada_dc_a_sin_cargar(db, settings):
     consumir_novedades_carga()
     refrescar_data([mesa_categoria_1, fiscal_2])
 
-    assert mesa_categoria_1.status == MesaCategoria.STATUS.sin_cargar
+    assert mesa_categoria_1.status == MesaCategoria.STATUS.parcial_sin_consolidar
     assert Carga.objects.filter(invalidada=True).count() == 3
 
 

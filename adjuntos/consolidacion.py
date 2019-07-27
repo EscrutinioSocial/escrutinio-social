@@ -77,7 +77,7 @@ def consolidar_cargas_con_problemas(cargas_que_reportan_problemas):
     # Tomo como "muestra" alguna de las que tienen problemas.
     carga_con_problema = cargas_que_reportan_problemas.first()
     # Confirmo el problema porque varios reportaron problemas.
-    problema = Problema.confirmar_problema(carga=carga_con_problema)
+    Problema.confirmar_problema(carga=carga_con_problema)
 
     return MesaCategoria.STATUS.con_problemas, None
 
@@ -86,6 +86,15 @@ def consolidar_cargas(mesa_categoria):
     """
     Consolida todas las cargas de la MesaCategoria parámetro.
     """
+    statuses_que_permiten_analizar_carga_total = [
+        MesaCategoria.STATUS.sin_cargar,
+        MesaCategoria.STATUS.parcial_consolidada_dc,
+        MesaCategoria.STATUS.parcial_consolidada_csv
+    ]
+    statuses_que_requieren_computar_efecto_trolling = [
+        MesaCategoria.STATUS.parcial_consolidada_dc,
+        MesaCategoria.STATUS.total_consolidada_dc
+    ]
 
     # Por lo pronto el status es sin_cargar.
     status_resultante = MesaCategoria.STATUS.sin_cargar
@@ -104,42 +113,37 @@ def consolidar_cargas(mesa_categoria):
     # Me fijo si es un problema.
     cargas_que_reportan_problemas = cargas.filter(tipo=Carga.TIPOS.problema)
     if cargas_que_reportan_problemas.count() >= settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA:
-        status_resultante, carga_testigo_resultante = consolidar_cargas_con_problemas(cargas_que_reportan_problemas)
+        status_resultante, carga_testigo_resultante = \
+            consolidar_cargas_con_problemas(cargas_que_reportan_problemas)
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
 
-    # A continuación voy probando los distintos status de mayor a menor.
+    # A continuación voy probando los distintos status.
 
     # Primero les actualizo la firma.
     for carga in cargas:
         carga.actualizar_firma()
-
-    # Analizo las totales.
-    cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
-    if cargas_totales.count() > 0:
-        status_resultante, carga_testigo_resultante = \
-            consolidar_cargas_por_tipo(cargas_totales, Carga.TIPOS.total)
-        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
-        if (status_resultante == MesaCategoria.STATUS.total_consolidada_dc):
-            efecto_scoring_troll_confirmacion_carga(mesa_categoria)
-        return
 
     # Analizo las parciales.
     cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
     if cargas_parciales.count() > 0:
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_por_tipo(cargas_parciales, Carga.TIPOS.parcial)
-        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
-        if (status_resultante == MesaCategoria.STATUS.parcial_consolidada_dc):
-            efecto_scoring_troll_confirmacion_carga(mesa_categoria)
-        return
 
-    # Si llegué hasta acá, es que hay cargas, pero no hay ninguna carga ni total ni parcial
-    # Ergo, todas las cargas que hay son de problemas
-    # En este caso, le corresponde sin_cargas y sin carga testigo, que son los valores default
-    # de status_resultante y carga_testigo_resultante
+    print("status resultante: ", status_resultante)
+
+    if status_resultante in statuses_que_permiten_analizar_carga_total:
+        # Analizo las totales solo si no hay ninguna parcial, o si están consolidadas las parciales.
+        # En otro caso no tiene sentido porque puedo encontrar cargas totales "residuales", pero
+        # todavía no se resolvió la parcial.
+        cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
+        if cargas_totales.count() > 0:
+            status_resultante, carga_testigo_resultante = \
+                consolidar_cargas_por_tipo(cargas_totales, Carga.TIPOS.total)
+
     mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
-
+    if status_resultante in statuses_que_requieren_computar_efecto_trolling:
+        efecto_scoring_troll_confirmacion_carga(mesa_categoria)
 
 def consolidar_identificaciones(attachment):
     """

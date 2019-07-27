@@ -194,17 +194,18 @@ def test_mc_status_carga_total_desde_mc_parcial(db):
     mc = MesaCategoriaFactory(
         status=MesaCategoria.STATUS.parcial_consolidada_dc,
     )
+    c0 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
     c1 = CargaFactory(mesa_categoria=mc, tipo='parcial', firma='1-10')
     mc.carga_testigo = c1
     mc.save()
 
-    # se asume que la carga total reusará los datos coincidentes de la carga parcial
+    # Se asume que la carga total reusará los datos coincidentes de la carga parcial
     c2 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10|2-20')
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.total_sin_consolidar
     assert mc.carga_testigo == c2
 
-    # diverge
+    # Diverge
     c3 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10|2-19')
     consumir_novedades_y_actualizar_objetos([mc])
     assert mc.status == MesaCategoria.STATUS.total_en_conflicto
