@@ -18,7 +18,7 @@ from adjuntos.csv_import import CSVImporter
 from problemas.models import Problema
 from problemas.forms import IdentificacionDeProblemaForm
 
-from .forms import AgregarAttachmentsForm, BaseUploadForm, IdentificacionForm
+from .forms import AgregarAttachmentsForm, AgregarAttachmentsCSV, IdentificacionForm
 from .models import Attachment, Identificacion
 
 
@@ -243,7 +243,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
 
-        # no debiese poder cargarse por la ui dos imágenes, aunque es mejor poder chequear esto
+        # No debería poder cargarse por UI más de una imagen, pero por las dudas lo chequeamos.
         if len(files) > 1:
             form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
 
@@ -270,7 +270,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
     Cargas totales, parciales e instancias de votos.
 
     """
-    form_class = BaseUploadForm
+    form_class = AgregarAttachmentsCSV
     template_name = 'adjuntos/agregar-adjuntos-csv.html'
     url_to_post = 'agregar-adjuntos-csv'
 
@@ -284,7 +284,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
         return HttpResponseForbidden()
 
     def cargar_informacion_adjunto(self, adjunto):
-        # validar la info del archivo
+        # Valida la info del archivo.
         try:
             CSVImporter(adjunto, self.request.user).procesar()
             return 'success'

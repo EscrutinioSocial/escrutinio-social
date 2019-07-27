@@ -19,6 +19,7 @@ from fiscales.forms import AuthenticationFormCustomError
 from problemas.views import ProblemaCreate
 
 from api import urls as api_urls
+from antitrolling import urls as antitrolling_urls
 
 cached = cache_page(3600 * 24 * 30)
 
@@ -40,7 +41,8 @@ urlpatterns = [
     url(r'^clasificar-actas/', include('adjuntos.urls')),
 
     url(r'^api/', include(api_urls)),
-    url(r'^problemas/', include(problemas_urls))
+    url(r'^problemas/', include(problemas_urls)),
+    url(r'^antitrolling/', include(antitrolling_urls)),   
 ]
 
 if settings.DEBUG:
