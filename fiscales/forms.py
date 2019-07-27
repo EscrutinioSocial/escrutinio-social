@@ -135,8 +135,10 @@ class QuieroSerFiscalForm(forms.Form):
                                                'required': True,
                                            }))
     seccion = forms.CharField(widget=forms.HiddenInput(attrs={'id': 'seccion', 'name': 'seccion'}))
-    referido_por_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
-    referido_por_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
+    referente_notas = forms.CharField(
+        required=False, label="Nombre y Apellido u otra información de tu referente", max_length=250
+    )
+
     referido_por_codigo = forms.CharField(
         required=False,
         label="Código de referencia",
@@ -168,7 +170,7 @@ class QuieroSerFiscalForm(forms.Form):
         ),
         Fieldset(
             'Referencia',
-            Row('referido_por_nombres', 'referido_por_apellido', 'referido_por_codigo')
+            Row('referente_notas', 'referido_por_codigo')
         )
     )
 
@@ -238,6 +240,7 @@ class QuieroSerFiscalForm(forms.Form):
         if referido_por_codigo:
             if len(referido_por_codigo) != self.CARACTERES_REF_CODIGO:
                 raise ValidationError(self.MENSAJE_ERROR_CODIGO_REF)
+            referido_por_codigo = referido_por_codigo.upper()
         return referido_por_codigo
 
 

@@ -17,7 +17,7 @@ from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
-from .models import Fiscal
+from .models import Fiscal, CodigoReferido
 from elecciones.models import (
     Mesa,
     Carga,
@@ -103,8 +103,9 @@ class QuieroSerFiscal(FormView):
         fiscal.referido_por_nombres = data['referido_por_nombres']
         fiscal.referido_por_apellido = data['referido_por_apellido']
         if data['referido_por_codigo']:
-            fiscal.referido_por_codigo = data['referido_por_codigo'].upper()
-        fiscal.referido_codigo = generar_codigo_confirmacion()
+            codigo = data['referido_por_codigo']
+            fiscal.referente, fiscal.referente_certeza = CodigoReferido.fiscal_para(codigo)
+            fiscal.referido_por_codigos = f'{fiscal.referido_por_codigos}-{codigo}'
         fiscal.save()
         telefono = data['telefono_area'] + data['telefono_local']
         fiscal.agregar_dato_de_contacto('teléfono', telefono)
@@ -138,26 +139,6 @@ class QuieroSerFiscal(FormView):
             fail_silently=False,
             html_message=body_html
         )
-
-
-def generar_codigo_confirmacion():
-    """
-    Genera un código único de 4 dígitos alfanuméricos y chequea que sea único en la base de una manera
-    no muy a salvo de problemas de concurrencia.
-
-    En caso de surgir un problema de naturaleza concurrente, lo salvará la constraint de la base.
-    """
-    codigo = generar_codigo_random()
-    fiscal_mismo_codigo = Fiscal.objects.filter(referido_codigo=codigo).first()
-    while fiscal_mismo_codigo is not None:
-        codigo = generar_codigo_random()
-        fiscal_mismo_codigo = Fiscal.objects.filter(referido_codigo=codigo).first()
-    return codigo
-
-
-def generar_codigo_random():
-    alphabet = ascii_letters + digits
-    return ''.join(choice(alphabet) for i in range(QuieroSerFiscalForm.CARACTERES_REF_CODIGO)).upper()
 
 
 def quiero_validar_gracias(request, codigo_ref):

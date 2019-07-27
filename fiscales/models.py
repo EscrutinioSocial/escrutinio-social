@@ -1,19 +1,69 @@
 import re
 import uuid
+import random
+import string
 from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_delete
-from elecciones.models import Seccion
 from django.contrib.contenttypes.models import ContentType
+from annoying.functions import get_object_or_None
+from elecciones.models import Seccion
+
 from contacto.models import DatoDeContacto
+from model_utils.models import TimeStampedModel
 from model_utils.fields import StatusField
+from django.db.utils import IntegrityError
 from model_utils import Choices
 from django.contrib.auth.models import Group
 
 TOTAL = 'Total General'
+
+
+class CodigoReferido(TimeStampedModel):
+    # hay al menos 1 codigo de referido por fiscal
+    fiscal = models.ForeignKey('Fiscal', related_name='codigos_de_referidos')
+    codigo = models.CharField(
+        max_length=4, unique=True, help_text='Código con el que el fiscal puede referir a otres'
+    )
+    activo = models.BooleanField(default=True)
+
+    @classmethod
+    def fiscal_para(cls, codigo, nombre=None, apellido=None):
+        """
+        Devuelve una lista de fiscales candidatos
+        """
+        fiscal = get_object_or_None(codigo=codigo)
+        # TO DO. encontrar fiscal candidato basado en un código similar
+        # http://andilabs.github.io/2018/04/06/searching-in-django-unaccent-levensthein-full-text-search-postgres-power.html
+        # restar 25% por cada grado de distancia Levenshtein
+        if fiscal:
+            return [(fiscal, 100)]
+        elif nombre and apellido:
+            qs = Fiscal.objects.filter(nombres__icontains=nombre, apellido__icontains=apellido)
+            if qs.exists():
+                return [(f, 75) for f in qs]
+        return [(None, 100)]
+
+    def save(self, *args, **kwargs):
+        """
+        Genera un código único de 4 dígitos alfanuméricos
+        """
+        intentos = 0
+        while True:
+            intentos += 1
+            try:
+                if not self.codigo:
+                    self.codigo = random.choice(string.ascii_uppercase + string.digits, 4)
+                super().save(*args, kwargs)
+                break
+            except IntegrityError:
+                # se crea un código random. Si falla muchas veces algo feo está pasando.
+                if intentos < 5:
+                    continue
+                raise
 
 
 class Fiscal(models.Model):
@@ -40,14 +90,23 @@ class Fiscal(models.Model):
         'auth.User', null=True, blank=True, related_name='fiscal', on_delete=models.SET_NULL
     )
     seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
-    referido_codigo = models.CharField(max_length=4, blank=True, null=True, unique=True)
-    referido_por_nombres = models.CharField(max_length=100, blank=True, null=True)
-    referido_por_apellido = models.CharField(max_length=100, blank=True, null=True)
-    referido_por_codigo = models.CharField(max_length=4, blank=True, null=True)
+
+    referente = models.ForeignKey('Fiscal', null=True, blank=True)
+    referente_certeza = models.PositiveIntegerField(default=100, help_text='El código no era exacto?')
+    # otra metadata del supuesto referente
+    referente_notas = models.CharField(max_length=250, blank=True, null=True)
+
+
+    # el materialized path de referencias
+    referido_por_codigos = models.CharField(max_length=250, blank=True, null=True)
+
 
     class Meta:
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'), )
+
+    def crear_codigo_de_referidos(self):
+        return CodigoReferido.objects.create(fiscal=self)
 
     def agregar_dato_de_contacto(self, tipo, valor):
         type_ = ContentType.objects.get_for_model(self)
@@ -97,7 +156,7 @@ class Fiscal(models.Model):
 
 
 @receiver(post_save, sender=Fiscal)
-def crear_user_para_fiscal(sender, instance=None, created=False, **kwargs):
+def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, **kwargs):
     """
     Cuando se crea o actualiza una instancia de ``Fiscal`` en estado confirmado
     que no tiene usuario asociado, automáticamente se crea uno ``auth.User``
@@ -116,6 +175,9 @@ def crear_user_para_fiscal(sender, instance=None, created=False, **kwargs):
         user.save()
         instance.user = user
         instance.save(update_fields=['user'])
+    if not instance.codigos_de_referidos.exist():
+        instance.crear_codigo_de_referido()
+
 
 
 @receiver(pre_delete, sender=Fiscal)
