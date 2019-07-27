@@ -8,6 +8,8 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('elecciones', '0035_opcion_codigo'),
+        ('elecciones', '0035_auto_20190722_1001'),
+        ('elecciones', '0035_auto_20190721_1529'),
     ]
 
     operations = [
