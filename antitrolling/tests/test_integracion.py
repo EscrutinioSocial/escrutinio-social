@@ -1,3 +1,4 @@
+import pytest
 from elecciones.models import MesaCategoria, Carga
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import (
@@ -721,6 +722,7 @@ def test_troll_total_consolidada_dc_a_total_sin_consolidar(db, settings):
 
     assert mesa_categoria_1.status == MesaCategoria.STATUS.total_sin_consolidar
     assert Carga.objects.filter(invalidada=True).count() == 1
+
 
 def refrescar_data(objetos):
     for db_object in objetos:

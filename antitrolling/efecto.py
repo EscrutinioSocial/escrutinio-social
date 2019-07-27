@@ -42,7 +42,7 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
             try:
                 diferencia = testigo - carga
             except CargasIncompatiblesError as e:
-                logger.exception(f'Error al calcular diferencia entre opciones, {str(e.value)} - se toma 0')
+                logger.error(f'Error al calcular diferencia entre opciones, {e} - se toma 0')
                 diferencia = 0
 
             # se aumenta el scoring del fiscal que cargo distinto

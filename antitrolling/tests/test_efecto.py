@@ -8,7 +8,7 @@ from antitrolling.efecto import (
 )
 from antitrolling.models import EventoScoringTroll
 from elecciones.tests.factories import (
-    MesaFactory, AttachmentFactory
+    MesaFactory, AttachmentFactory, MesaCategoriaFactory
 )
 
 from .utils_para_test import (
@@ -19,7 +19,7 @@ from .utils_para_test import (
 
 def test_efecto_consolidar_asociacion_attachment(db, settings):
     """
-    Se comprueba que el efecto de afectar el scoring de troll a partir de la asociacion 
+    Se comprueba que el efecto de afectar el scoring de troll a partir de la asociacion
     de un Attachment a una Mesa sea el correcto.
     O sea, que se aumente el scoring de los fiscales que hicieron identificaciones distintas
     a la aceptada, y que no aumente el scoring de los fiscales que hicieron la identificacion aceptada.
@@ -121,7 +121,7 @@ def test_diferencia_opciones_con_opciones_diferentes(db):
 
 def test_efecto_confirmar_carga_mesa_categoria(db):
     """
-    Se comprueba que el efecto de afectar el scoring de troll 
+    Se comprueba que el efecto de afectar el scoring de troll
     a partir de la confirmacion de la carga de una mesa_categoria sea el correcto.
     O sea, que se aumente el scoring de los fiscales que cargaron valores distintos a los aceptados,
     y que no aumente el scoring de los fiscales que hicieron la identificacion aceptada.
@@ -161,7 +161,7 @@ def test_efecto_confirmar_carga_mesa_categoria(db):
     assert fiscal_3.scoring_troll() == 50
     assert fiscal_4.scoring_troll() == 0
 
-    
+
 def test_efecto_marcar_fiscal_como_troll(db):
     """
     Se comprueba que al marcar un fiscal como troll,
@@ -223,13 +223,12 @@ def test_efecto_marcar_fiscal_como_troll(db):
     for carga in Carga.objects.filter(fiscal=fiscal_1):
         assert carga.invalidada
 
-    
+
 def test_efecto_de_ser_troll(db):
     """
-    Se comprueba que las cargas e identificaciones que realiza un fiscal 
+    Se comprueba que las cargas e identificaciones que realiza un fiscal
     luego de ser detectado como troll, nacen invalidadas y procesadas.
     """
-
     # escenario
     fiscal_1 = nuevo_fiscal()
     fiscal_2 = nuevo_fiscal()
@@ -262,7 +261,42 @@ def test_efecto_de_ser_troll(db):
     # consolido cargas e identificaciones. Ni el attachment ni la mesa_categoria deberian estar consolidados.
     consumir_novedades()
     for db_object in [mesa_categoria, attach_1, attach_2]:
-      db_object.refresh_from_db()
+        db_object.refresh_from_db()
     assert mesa_categoria.status == MesaCategoria.STATUS.total_sin_consolidar
     assert attach_1.status == Attachment.STATUS.sin_identificar
     assert attach_2.status == Attachment.STATUS.sin_identificar
+
+
+def test_efecto_ignora_cargas_incompatibles(db, caplog):
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+    mesa_categoria = MesaCategoriaFactory()
+    carga_1 = nueva_carga(mesa_categoria, fiscal_1, [30, 20, 10])
+    carga_1.actualizar_firma()
+    mesa_categoria.carga_testigo = carga_1
+    mesa_categoria.save()
+
+    # incompatible
+    carga_2 = nueva_carga(mesa_categoria, fiscal_2, [30, 20])
+    carga_2.actualizar_firma()
+    efecto_scoring_troll_confirmacion_carga(mesa_categoria)
+
+    # se ignoran las diferencias, no afecta
+    assert EventoScoringTroll.objects.count() == 0
+
+
+def test_efecto_diferencia_1(db, caplog):
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+    mesa_categoria = MesaCategoriaFactory()
+    carga_1 = nueva_carga(mesa_categoria, fiscal_1, [30, 20, 10])
+    carga_1.actualizar_firma()
+    mesa_categoria.carga_testigo = carga_1
+    mesa_categoria.save()
+
+    # incompatible
+    carga_2 = nueva_carga(mesa_categoria, fiscal_2, [30, 20, 9])
+    carga_2.actualizar_firma()
+    efecto_scoring_troll_confirmacion_carga(mesa_categoria)
+    # hay un sólo evento troll y la diferencia es 1
+    assert EventoScoringTroll.objects.get().variacion == carga1 - carga2 == 1

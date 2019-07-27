@@ -104,8 +104,7 @@ def consolidar_cargas(mesa_categoria):
     # Me fijo si es un problema.
     cargas_que_reportan_problemas = cargas.filter(tipo=Carga.TIPOS.problema)
     if cargas_que_reportan_problemas.count() >= settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA:
-        status_resultante, carga_testigo_resultante = \
-            consolidar_cargas_con_problemas(cargas_que_reportan_problemas)
+        status_resultante, carga_testigo_resultante = consolidar_cargas_con_problemas(cargas_que_reportan_problemas)
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
 
@@ -265,7 +264,6 @@ def consumir_novedades_carga():
     #    UPDATE carga SET procesada=True WHERE id in [...lista_precalculada_de_ids...]
     #
     # Carlos Lombardi, 2019.07.24
-
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
         cargas__in=ids_a_procesar
     ).distinct()
