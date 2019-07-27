@@ -322,13 +322,16 @@ class CSVImporter:
                                          'esta acción.')
 
     def validar_carga_parcial(self, carga_parcial):
-        opciones_votos = carga_parcial.opciones()
+        opciones_votos = carga_parcial.listado_de_opciones()
         mi_categoria = carga_parcial.categoria
-        opciones = CategoriaOpcion.objects.filter(categoria=mi_categoria).values_list('opcion__codigo')
-        if sorted(opciones) != sorted(opciones_votos):
+        opciones_prioritarias_de_la_categoria = CategoriaOpcion.objects.filter(categoria=mi_categoria,
+            prioritaria=True
+        ).values_list('opcion__id', flat=True)
+        import ipdb; ipdb.set_trace()
+        if sorted(opciones_prioritarias_de_la_categoria) != sorted(opciones_votos):
             raise DatosInvalidosError(
-                f'Los resultados para las opciones parciales deben estar completas '
-                f'faltan las opciones: {opciones - opciones_votos}.')
+                f'Los resultados para las opciones parciales deben estar completas. '
+                f'Faltan las opciones: {opciones - opciones_votos}.')
 
     def validar_carga_total(self, carga_total):
 

@@ -783,9 +783,9 @@ class Carga(TimeStampedModel):
         """ Devuelve una lista de los votos para cada opción. """
         return self.reportados.values_list('opcion', 'votos')
 
-    def opciones(self):
-        """ Devuelve una lista de las opciones de esta carga. """
-        return self.reportados.values_list('opcion')
+    def listado_de_opciones(self):
+        """ Devuelve una lista de los ids de las opciones de esta carga. """
+        return self.reportados.values('opcion__id', flat=True)
 
 
     def save(self, *args, **kwargs):
