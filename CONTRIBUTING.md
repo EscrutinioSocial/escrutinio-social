@@ -1,4 +1,4 @@
-# Cómo Contribuir #
+# Cómo Contribuir
 
 Coordinamos las actividades a través de un canal de Telegram. Podés
 ponerte en contacto con @AraCba para pedir acceso.
@@ -18,7 +18,6 @@ taggearemos releases que se definan en milestones.
 
 
 # Guía de estilo
-
 
 La intención de tener una guía de estilo de codificación es lograr una consistencia
 que facilite la lectura y la comprensión del proyecto.
@@ -253,9 +252,7 @@ que son agnósticas del lenguaje.
 
 
 
-## Repositorio Original ##
+## Repositorio Original
 
 Este repositorio es un fork de [escrutinio-social](https://github.com/OpenDataCordoba/escrutinio-social "Escrutinio Social")
 de [Open Data Córdoba](https://www.opendatacordoba.org/).
-
-
