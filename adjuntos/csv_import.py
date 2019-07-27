@@ -225,9 +225,11 @@ class CSVImporter:
         for carga_parcial, carga_total in cargas:
             # A todas las cargas le tengo que agregar el total de votantes y de sobres.
             self.agregar_total_de_votantes_y_sobres(mesa, carga_parcial)
-            self.validar_carga_parcial(carga_parcial)
+
+            if carga_parcial:
+                self.validar_carga_parcial(carga_parcial)
             # Si tengo que verificar entonces veo que las cargas totales sean completas
-            if settings.TOTALES_COMPLETAS:
+            if settings.TOTALES_COMPLETAS and carga_total:
                 self.validar_carga_total(carga_total)
 
             # El total de votos hay que impactarlo en todas las cargas.
@@ -320,13 +322,13 @@ class CSVImporter:
                                          'esta acción.')
 
     def validar_carga(self, carga, parcial):
-        opciones_votos = carga.listado_de_opciones()
+        opciones_votadas = carga.listado_de_opciones()
         mi_categoria = carga.categoria
         opciones_de_la_categoria = CategoriaOpcion.objects.filter(categoria=mi_categoria,
                                                                   prioritaria=parcial
                                                                   ).values_list('opcion__id', flat=True)
-        if sorted(opciones_de_la_categoria) != sorted(opciones_votos):
-            opciones_faltantes = set(opciones_de_la_categoria) - set(opciones_votos)
+        opciones_faltantes = set(opciones_de_la_categoria) - set(opciones_votadas)
+        if opciones_faltantes != set():
             Opcion.objects.filter(codigo=opciones_faltantes)
             raise DatosInvalidosError(
                 f'Los resultados para las opciones parciales deben estar completas. '

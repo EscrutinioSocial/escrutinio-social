@@ -76,8 +76,8 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     s1 = SeccionFactory(numero=50, distrito=d1)
     c1 = CircuitoFactory(numero='2', seccion=s1)
     m = MesaFactory(numero='4012', lugar_votacion__circuito=c1, electores=100, circuito=c1)
-    o2 = OpcionFactory(orden=3, codigo='A')
-    o3 = OpcionFactory(orden=2, codigo='B')
+    o2 = OpcionFactory(orden=3, codigo='Todes')
+    o3 = OpcionFactory(orden=2, codigo='Juntos')
     votos = OpcionFactory(orden=0, **settings.OPCION_TOTAL_VOTOS)
     sobres = OpcionFactory(orden=1, codigo='0', **settings.OPCION_TOTAL_SOBRES)
     c = CategoriaFactory(opciones=[o2, o3, votos, sobres], nombre='Otra categoria')
@@ -95,34 +95,46 @@ def carga_inicial(db):
     s1 = SeccionFactory(numero=50, distrito=d1)
     circ = CircuitoFactory(numero='2', seccion=s1)
     # crear las opciones para votos y sobres
-    votos = OpcionFactory(orden=0, codigo='0', **settings.OPCION_TOTAL_VOTOS)
+    total_votos = OpcionFactory(orden=0, codigo='0', **settings.OPCION_TOTAL_VOTOS)
     sobres = OpcionFactory(orden=1, codigo='0', **settings.OPCION_TOTAL_SOBRES)
-    o1 = OpcionFactory(orden=3, codigo='A')
-    o2 = OpcionFactory(orden=2, codigo='B')
-    o3 = OpcionFactory(orden=4, codigo='C')
+    blancos = OpcionFactory(orden=3, codigo='0', **settings.OPCION_BLANCOS)
+    nulos = OpcionFactory(orden=3, codigo='0', **settings.OPCION_NULOS)
+    fdt = OpcionFactory(orden=3, codigo='Todes')
+    jpc = OpcionFactory(orden=2, codigo='Juntos')
+    c2019 = OpcionFactory(orden=4, codigo='Concenso')
     categorias = []
-    for categoria in CATEGORIAS:
-        categoria_bd = CategoriaFactory(nombre=categoria[0])
+    for categoria, prioritaria in CATEGORIAS:
+        categoria_bd = CategoriaFactory(nombre=categoria)
         categorias.append(categoria_bd)
-        CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=categoria[1], opcion=o1)
-        CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=categoria[1], opcion=o2)
-        if categoria[0] == 'Presidente y vice':
-            CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=False, opcion=o3)
+        CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=prioritaria, opcion=fdt)
+        CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=prioritaria, opcion=jpc)
+        if categoria == 'Presidente y vice':
+            CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=False, opcion=c2019)
             # Les ajusto el orden.
-            votos = categoria_bd.get_opcion_total_votos()
-            votos.orden = 1
-            votos.save()
+            total_votos = categoria_bd.get_opcion_total_votos()
+            total_votos.orden = 1
+            total_votos.save()
             sobres = categoria_bd.get_opcion_total_sobres()
             sobres.orden = 1
             sobres.save()
+            blancos = categoria_bd.get_opcion_total_sobres()
+            blancos.orden = 1
+            blancos.save()
+            nulos = categoria_bd.get_opcion_nulos()
+            nulos.orden = 1
+            nulos.save()
+
 
             # Las hago prioritarias.
-            votos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=votos)
+            votos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=total_votos)
             votos_cat_opcion.prioritaria = True
             votos_cat_opcion.save()
-            sobres_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=sobres)
-            sobres_cat_opcion.prioritaria = True
-            sobres_cat_opcion.save()
+            blancos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=blancos)
+            blancos_cat_opcion.prioritaria = True
+            blancos_cat_opcion.save()
+            nulos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=nulos)
+            nulos_cat_opcion.prioritaria = True
+            nulos_cat_opcion.save()
 
     MesaFactory(numero='4012', lugar_votacion__circuito=circ, electores=100, circuito=circ,
                 categorias=categorias)
