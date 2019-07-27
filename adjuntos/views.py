@@ -62,26 +62,18 @@ class IdentificacionCreateView(CreateView):
     def attachment(self):
         return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
 
-
-    def get_initial(self, *args, **kwargs):
-        initial = super(IdentificacionCreateView, self).get_initial(**kwargs)
-        initial['attachment'] = self.attachment
-        initial['identificacion_parcial'] = False
-        id_parcial = self.attachment.identificacion_parcial
-        if id_parcial and id_parcial.seccion is not None:
-            id_parcial = self.attachment.identificacion_parcial
-            # initial['circuito'] = circuito = id_parcial.circuito
-            initial['seccion'] = seccion = id_parcial.seccion
-            initial['distrito'] = distrito =id_parcial.distrito
-            initial['identificacion_parcial'] = True
-        return initial
-    
     def get_context_data(self, **kwargs):
         context = super(IdentificacionCreateView,self).get_context_data(**kwargs)
         context['attachment'] = self.attachment
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
+        context['identificacion_parcial'] = False
+        id_parcial = self.attachment.identificacion_parcial
+        if id_parcial and id_parcial.seccion is not None:
+            id_parcial = self.attachment.identificacion_parcial
+            context['seccion_precargada'] = id_parcial.seccion
+            context['distrito_precargado'] = id_parcial.distrito
         return context
 
     def form_valid(self, form):

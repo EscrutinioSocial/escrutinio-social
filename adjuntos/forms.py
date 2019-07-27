@@ -23,19 +23,10 @@ class IdentificacionForm(forms.ModelForm):
             kwargs['initial']['seccion'] = seccion = circuito.seccion
             kwargs['initial']['distrito'] = distrito = seccion.distrito
         super().__init__(*args, **kwargs)
-        if kwargs['initial']['identificacion_parcial']:
-            distrito = kwargs['initial']['distrito']
-            seccion = kwargs['initial']['seccion']
-            self.fields['distrito'].widget.attrs['autofocus'] = True
-            self.fields['distrito'].choices = ((f'{distrito.id}',f'{distrito.nombre}'),)
-            self.fields['seccion'].choices = ((f'{seccion.id}',f'{seccion.nombre}'),)
-            self.fields['seccion'].label = 'Sección'
-            self.fields['mesa'].choices = (('', '---------'),)
-        else:
-            self.fields['distrito'].widget.attrs['autofocus'] = True
-            self.fields['seccion'].choices = (('', '---------'),)
-            self.fields['seccion'].label = 'Sección'
-            self.fields['mesa'].choices = (('', '---------'),)
+        self.fields['distrito'].widget.attrs['autofocus'] = True
+        self.fields['seccion'].choices = (('', '---------'),)
+        self.fields['seccion'].label = 'Sección'
+        self.fields['mesa'].choices = (('', '---------'),)
         self.fields['circuito'].choices = (('', '---------'),)
             
     def clean(self):
