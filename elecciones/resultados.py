@@ -17,6 +17,8 @@ from .models import (
     LugarVotacion,
     MesaCategoria,
     Mesa,
+    TecnicaProyeccion,
+    AgrupacionCircuitos,
 )
 
 
@@ -193,8 +195,7 @@ class Sumarizador():
 
         sum_por_opcion = {}
         for id in ids_opciones:
-            sum_por_opcion[str(id)
-                           ] = Sum(Case(When(opcion__id=id, then=F('votos')), output_field=IntegerField()))
+            sum_por_opcion[str(id)] = Sum(Case(When(opcion__id=id, then=F('votos')), output_field=IntegerField()))
 
         return self.votos_reportados(categoria, mesas).aggregate(**sum_por_opcion)
 
@@ -403,110 +404,34 @@ class Proyecciones(Sumarizador):
     Esta clase encapsula el cómputo de proyecciones.
     """
 
-    def get_resultados(self, categoria):
+    @classmethod
+    def tecnicas_de_proyeccion(cls):
+        return [(str(tecnica.id), tecnica.nombre) for tecnica in TecnicaProyeccion.objects.all()]
+
+    def votos_por_opcion(self, categoria, mesas):
         """
-        Realiza la contabilidad para la categoría, invocando al método
-        ``calcular``.
+        Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de
+        votos por cada una de las opciones posibles (partidarias o no)
 
-        Si se le pasa el parámetro `proyectado`, se incluye un diccionario
-        extra con la ponderación, invocando a ``calcular`` para obtener los
-        resultados parciales de cada subdistrito para luego realizar la ponderación.
+        Se utilizan expresiones condicionales. Referencia
+        https://docs.djangoproject.com/en/2.2/ref/models/conditional-expressions/
         """
-        lookups = Q()
-        resultados = {}
-        proyectado = True
 
-        if self.filtros:
-            if self.nivel_de_agregacion == 'seccion':
-                lookups = Q(mesa__lugar_votacion__circuito__seccion__in=self.filtros)
+        ids_opciones = Opcion.objects.filter(categorias__id=categoria.id).values_list('id', flat=True)
+        agrupaciones = AgrupacionCircuitos.objects.filter(proyeccion__nombre="Por sección")
 
-            elif self.nivel_de_agregacion == 'circuito':
-                lookups = Q(mesa__lugar_votacion__circuito__in=self.filtros)
+        sum_por_agrupacion = {}
+        for agrupacion in agrupaciones:
+            sum_por_opcion = {}
+            for id in ids_opciones:
+                sum_por_opcion[str(id)] = Sum(Case(
+                    When(
+                        opcion__id=id,
+                        carga__mesa__circuito__in=Subquery(agrupacion.circuitos.values('id')),
+                        then=F('votos')
+                    ),
+                    output_field=IntegerField(),
+                ))
+            sum_por_agrupacion[agrupacion] = sum_por_opcion
 
-            elif self.nivel_de_agregacion == 'lugarvotacion':
-                lookups = Q(mesa__lugar_votacion__in=self.filtros)
-
-            elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
-                lookups = Q(mesa__id__in=self.filtros)
-
-        mesas = self.mesas(categoria)
-
-        c = self.calcular(categoria, mesas)
-
-        proyeccion_incompleta = []
-        if proyectado:
-            # La proyección se calcula sólo cuando no hay filtros (es decir, para todo el universo)
-            # ponderando por secciones (o circuitos para secciones de "proyeccion ponderada").
-
-            agrupaciones = list(itertools.chain(  # cast para reusar
-                Circuito.objects.filter(seccion__proyeccion_ponderada=True),
-                Seccion.objects.filter(proyeccion_ponderada=False)
-            ))
-            datos_ponderacion = {}
-
-            electores_pond = 0
-            for ag in agrupaciones:
-                mesas = ag.mesas(categoria)
-                datos_ponderacion[ag] = self.calcular(categoria, mesas)
-
-                if not datos_ponderacion[ag]["electores_en_mesas_escrutadas"]:
-                    proyeccion_incompleta.append(ag)
-                else:
-                    electores_pond += datos_ponderacion[ag]["electores"]
-
-        expanded_result = {}
-        for k, v in c.votos.items():
-            porcentaje_total = f'{v*100/c.total:.2f}' if c.total else '-'
-            porcentaje_positivos = f'{v*100/c.positivos:.2f}' if c.positivos and isinstance(
-                k, Partido
-            ) else '-'
-            expanded_result[k] = {
-                "votos": v,
-                "porcentajeTotal": porcentaje_total,
-                "porcentajePositivos": porcentaje_positivos
-            }
-            if proyectado:
-                acumulador_positivos = 0
-                for ag in agrupaciones:
-                    data = datos_ponderacion[ag]
-                    if k in data["votos"] and data["positivos"]:
-                        acumulador_positivos += data["electores"] * \
-                            data["votos"][k]/data["positivos"]
-
-                expanded_result[k]["proyeccion"] = porcentaje(acumulador_positivos, electores_pond)
-
-        # TODO permitir opciones positivas no asociadas a partido.
-        tabla_positivos = OrderedDict(
-            sorted([(k, v) for k, v in expanded_result.items() if isinstance(k, Partido)],
-                   key=lambda x: float(x[1]["proyeccion" if proyectado else "votos"]),
-                   reverse=True)
-        )
-        tabla_no_positivos = {k: v for k, v in c.votos.items() if not isinstance(k, Partido)}
-        tabla_no_positivos["positivos"] = c.positivos
-        tabla_no_positivos = {
-            k: {
-                "votos": v,
-                "porcentajeTotal": f'{v*100/c.total:.2f}' if c.total else '-'
-            }
-            for k, v in tabla_no_positivos.items()
-        }
-
-        resultados = {
-            'tabla_positivos': tabla_positivos,
-            'tabla_no_positivos': tabla_no_positivos,
-            'electores': c.electores,
-            'total_positivos': c.total_positivos,
-            'electores_en_mesas_escrutadas': c.electores_en_mesas_escrutadas,
-            'votantes': c.total,
-            'proyectado': proyectado,
-            'proyeccion_incompleta': proyeccion_incompleta,
-            'porcentaje_mesas_escrutadas': c.porcentaje_mesas_escrutadas,
-            'porcentaje_escrutado':
-                f'{c.electores_en_mesas_escrutadas*100/c.electores:.2f}' if c.electores else '-',
-            'porcentaje_participacion':
-                f'{c.total*100/c.electores_en_mesas_escrutadas:.2f}'
-                if c.electores_en_mesas_escrutadas else '-',
-            'total_mesas_escrutadas': c.total_mesas_escrutadas,
-            'total_mesas': c.total_mesas
-        }
-        return resultados
+        return self.votos_reportados(categoria, mesas).aggregate(**sum_por_opcion)
