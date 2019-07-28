@@ -1,11 +1,14 @@
 from elecciones.tests.factories import (
     AttachmentFactory,
+    CargaFactory,
     MesaFactory,
+    MesaCategoriaFactory,
 )
 from django.urls import reverse
 from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
 from http import HTTPStatus
 from adjuntos.models import Attachment, Identificacion
+from adjuntos.consolidacion import consumir_novedades_carga
 
 
 def test_identificacion_create_view_get(fiscal_client):
