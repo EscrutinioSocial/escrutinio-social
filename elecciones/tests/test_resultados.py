@@ -549,6 +549,7 @@ def test_siguiente_accion_cargar_acta(fiscal_client):
     assert response.url == reverse('carga-total', args=(mc2.id, ))
 
 
+
 def test_resultados_no_positivos(fiscal_client):
     o1, o2 = OpcionFactory.create_batch(2)
 
