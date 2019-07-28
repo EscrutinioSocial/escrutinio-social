@@ -1,5 +1,6 @@
 from django.shortcuts import redirect, render
 from django.db import transaction
+from constance import config
 
 from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
@@ -26,7 +27,7 @@ def siguiente_accion(request):
     cant_fotos = attachments.count()
     cant_cargas = con_carga_pendiente.count()
 
-    if cant_fotos and not cant_cargas or cant_fotos >= cant_cargas * 2:
+    if cant_fotos and not cant_cargas or cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA:
         foto = attachments.order_by('?').first()
         if foto:
             return IdentificacionDeFoto(request, foto)

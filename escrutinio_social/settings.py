@@ -42,6 +42,9 @@ INSTALLED_APPS = [
     'material.theme.lightblue',
     'material',
     'dbbackup',
+    'constance',
+    'constance.backends.database',
+
     # 'material.admin',
     # 'django.contrib.admin',
     'material.frontend',
@@ -87,11 +90,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'constance.context_processors.config',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # 'elecciones.context_processors.contadores'
             ],
         },
     },
@@ -318,6 +321,14 @@ OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'vo
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
+
+
+CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
+
+CONSTANCE_CONFIG = {
+    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (2.0, 'Cuando la cola de identifacion sea N se prioriza esa tarea ', float),
+}
 
 
 try:
