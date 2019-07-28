@@ -169,6 +169,7 @@ class AgregarAdjuntos(FormView):
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
     """
+
     def __init__(self, types=('image/jpeg', 'image/png'), **kwargs):
         super().__init__(**kwargs)
         self.types = types
