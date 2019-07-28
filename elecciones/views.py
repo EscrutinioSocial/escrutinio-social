@@ -147,22 +147,28 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
                 nivel_de_agregacion = nivel
                 ids_a_considerar = self.request.GET.getlist(nivel)
 
-        self.sumarizador = Sumarizador(
-            self.get_tipo_de_agregacion(), self.get_opciones_a_considerar(), nivel_de_agregacion,
-            ids_a_considerar
+        parametros_sumarizacion = [
+            self.get_tipo_de_agregacion(), 
+            self.get_opciones_a_considerar(), 
+            nivel_de_agregacion,
+            ids_a_considerar,
+        ]
+
+        tecnica_de_proyeccion = next((tecnica for tecnica in Proyecciones.tecnicas_de_proyeccion()
+                                     if str(tecnica.id) == self.get_tecnica_de_proyeccion()), None)
+
+        self.sumarizador = (
+            Proyecciones(tecnica_de_proyeccion, *parametros_sumarizacion)
+            if tecnica_de_proyeccion
+            else Sumarizador(*parametros_sumarizacion)
         )
+
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
 
     def get_resultados(self, categoria):
-        # TODO, ¿dónde entra lo proyectado?
-        # proyectado = (
-        #    self.request.method == "GET" and
-        #    self.request.GET.get('tipodesumarizacion', '1') == str(2) and
-        #    not self.filtros
-        # )
         return self.sumarizador.get_resultados(categoria)
 
     def get_tipo_de_agregacion(self):
@@ -177,7 +183,8 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
 
     def get_tecnicas_de_proyeccion(self):
-        return [settings.SIN_PROYECCION] + Proyecciones.tecnicas_de_proyeccion()
+        return [settings.SIN_PROYECCION] + [(str(tecnica.id), tecnica.nombre)
+                                            for tecnica in Proyecciones.tecnicas_de_proyeccion()]
 
     def get_plot_data(self, resultados):
         return [{

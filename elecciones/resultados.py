@@ -4,7 +4,7 @@ from functools import lru_cache
 from collections import OrderedDict
 from attrdict import AttrDict
 from model_utils import Choices
-from django.db.models import Q, F, Sum, Count, Subquery, Sum, IntegerField, Case, Value, When
+from django.db.models import Q, F, Sum, Subquery, Sum, IntegerField, Case, When, OuterRef
 from .models import (
     Eleccion,
     Distrito,
@@ -186,18 +186,26 @@ class Sumarizador():
         """
         Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de
         votos por cada una de las opciones posibles (partidarias o no)
-
-        Se utilizan expresiones condicionales. Referencia
-        https://docs.djangoproject.com/en/2.2/ref/models/conditional-expressions/
         """
 
-        ids_opciones = Opcion.objects.filter(categorias__id=categoria.id).values_list('id', flat=True)
+        return (self.votos_reportados(categoria, mesas)
+                .values_list('opcion__id')
+                .annotate(sum_votos=Sum('votos')))
 
-        sum_por_opcion = {}
-        for id in ids_opciones:
-            sum_por_opcion[str(id)] = Sum(Case(When(opcion__id=id, then=F('votos')), output_field=IntegerField()))
+    def agrupar_votos(self, votos_por_opcion):
+        votos_positivos = {}
+        votos_no_positivos = {}
+        for id_opcion, sum_votos in votos_por_opcion:
+            opcion = Opcion.objects.get(id=id_opcion)
+            if opcion.partido:
+                # 3.1 Opciones partidarias se agrupan con otras opciones del mismo partido.
+                votos_positivos.setdefault(opcion.partido, {})[opcion] = sum_votos
+            else:
+                # 3.2 Opciones no partidarias
+                # TODO ¿Puede realmente pasar que no vengan las opciones completas?
+                votos_no_positivos[opcion.nombre] = sum_votos if sum_votos else 0
 
-        return self.votos_reportados(categoria, mesas).aggregate(**sum_por_opcion)
+        return votos_positivos, votos_no_positivos
 
     def calcular(self, categoria, mesas):
         """
@@ -206,7 +214,7 @@ class Sumarizador():
 
         Devuelve
             electores: cantidad de electores en las mesas válidas de la categoría
-            electores_en_mesas_escrutadas: cantidad de electores en las mesas que efectivamente fueron escrutadas
+            electores_en_mesas_escrutadas: cantidad de electores en las mesas efectivamente escrutadas
             porcentaje_mesas_escrutadas:
             votos: diccionario con resultados de votos por partido y opción (positivos y no positivos)
             total_positivos: total votos positivos
@@ -236,17 +244,7 @@ class Sumarizador():
         # 3) Votos
         votos_por_opcion = self.votos_por_opcion(categoria, mesas)
 
-        votos_positivos = {}
-        votos_no_positivos = {}
-        for id_opcion, votos in votos_por_opcion.items():
-            opcion = Opcion.objects.get(id=id_opcion)
-            if opcion.partido:
-                # 3.1 Opciones partidarias se agrupan con otras opciones del mismo partido.
-                votos_positivos.setdefault(opcion.partido, {})[opcion] = votos
-            else:
-                # 3.2 Opciones no partidarias se agrupan con otras opciones del mismo partido.
-                # TODO ¿Puede realmente pasar que no vengan las opciones completas?
-                votos_no_positivos[opcion.nombre] = votos if votos else 0
+        votos_positivos, votos_no_positivos = self.agrupar_votos(votos_por_opcion)
 
         return AttrDict({
             "total_mesas": total_mesas,
@@ -404,34 +402,41 @@ class Proyecciones(Sumarizador):
     Esta clase encapsula el cómputo de proyecciones.
     """
 
-    @classmethod
-    def tecnicas_de_proyeccion(cls):
-        return [(str(tecnica.id), tecnica.nombre) for tecnica in TecnicaProyeccion.objects.all()]
+    def __init__(self, tecnica, *args):
+        self.tecnica = tecnica
+        super().__init__(*args)
 
     def votos_por_opcion(self, categoria, mesas):
         """
         Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de
         votos por cada una de las opciones posibles (partidarias o no)
-
-        Se utilizan expresiones condicionales. Referencia
-        https://docs.djangoproject.com/en/2.2/ref/models/conditional-expressions/
         """
+        agrupaciones_subquery = AgrupacionCircuitos.objects.filter(
+            proyeccion__nombre="Por sección",
+            pk__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones')),
+        ).values_list('id', flat=True)
 
-        ids_opciones = Opcion.objects.filter(categorias__id=categoria.id).values_list('id', flat=True)
-        agrupaciones = AgrupacionCircuitos.objects.filter(proyeccion__nombre="Por sección")
+        return (self.votos_reportados(categoria, mesas)
+                .values_list('opcion__id')
+                .annotate(id_agrupacion=Subquery(agrupaciones_subquery))
+                .annotate(sum_votos=Sum('votos')))
 
-        sum_por_agrupacion = {}
-        for agrupacion in agrupaciones:
-            sum_por_opcion = {}
-            for id in ids_opciones:
-                sum_por_opcion[str(id)] = Sum(Case(
-                    When(
-                        opcion__id=id,
-                        carga__mesa__circuito__in=Subquery(agrupacion.circuitos.values('id')),
-                        then=F('votos')
-                    ),
-                    output_field=IntegerField(),
-                ))
-            sum_por_agrupacion[agrupacion] = sum_por_opcion
+    def agrupar_votos(self, votos_por_opcion):
+        votos_positivos = {}
+        votos_no_positivos = {}
+        for id_opcion, id_agrupacion, sum_votos in votos_por_opcion:
+            opcion = Opcion.objects.get(id=id_opcion)
+            print(opcion)
+            if opcion.partido:
+                # 3.1 Opciones partidarias se agrupan con otras opciones del mismo partido.
+                votos_positivos.setdefault(opcion.partido, {})[opcion] = sum_votos
+            else:
+                # 3.2 Opciones no partidarias
+                # TODO ¿Puede realmente pasar que no vengan las opciones completas?
+                votos_no_positivos[opcion.nombre] = sum_votos if sum_votos else 0
 
-        return self.votos_reportados(categoria, mesas).aggregate(**sum_por_opcion)
+        return votos_positivos, votos_no_positivos
+
+    @classmethod
+    def tecnicas_de_proyeccion(cls):
+        return TecnicaProyeccion.objects.all()

@@ -1255,7 +1255,7 @@
   "fields": {
     "carga": 1,
     "opcion": 2,
-    "votos": 10
+    "votos": 39
   }
 },
 {
@@ -1264,7 +1264,7 @@
   "fields": {
     "carga": 1,
     "opcion": 3,
-    "votos": 20
+    "votos": 31
   }
 },
 {
@@ -1272,8 +1272,8 @@
   "pk": 3,
   "fields": {
     "carga": 1,
-    "opcion": 4,
-    "votos": 30
+    "opcion": 12,
+    "votos": 100
   }
 },
 {
@@ -1292,6 +1292,15 @@
     "carga": 1,
     "opcion": 5,
     "votos": 1
+  }
+},
+{
+  "model": "elecciones.votomesareportado",
+  "pk": 6,
+  "fields": {
+    "carga": 1,
+    "opcion": 13,
+    "votos": 100
   }
 },
 {
