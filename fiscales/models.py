@@ -51,10 +51,21 @@ class Fiscal(models.Model):
     referido_por_nombres = models.CharField(max_length=100, blank=True, null=True)
     referido_por_apellido = models.CharField(max_length=100, blank=True, null=True)
     referido_por_codigo = models.CharField(max_length=4, blank=True, null=True)
+    # Campos para control de doble logueo.
+    session_key = models.CharField(max_length=32, null=True, blank=True)
+    last_seen = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'), )
+
+    def update_last_seen(self, cuando):
+        self.last_seen = cuando
+        self.save(update_fields=['last_seen'])
+
+    def update_session_key(self, session_key):
+        self.session_key = session_key
+        self.save(update_fields=['session_key'])
 
     def agregar_dato_de_contacto(self, tipo, valor):
         type_ = ContentType.objects.get_for_model(self)
@@ -101,7 +112,7 @@ class Fiscal(models.Model):
     @property
     def esta_en_grupo_unidades_basicas(self):
         return self.esta_en_grupo('unidades basicas')
-        
+
     def scoring_troll(self):
         return self.eventos_scoring_troll.aggregate(v=Sum('variacion'))['v'] or 0
 

@@ -830,17 +830,6 @@ class VotoMesaReportado(models.Model):
     def __str__(self):
         return f"{self.carga} - {self.opcion}: {self.votos}"
 
-User = settings.AUTH_USER_MODEL
-
-# Modelo para almacenar la lista de usuarios logueados
-class LoggedInUser(models.Model):
-    user = models.OneToOneField(User, on_delete=models.DO_NOTHING, related_name='logged_in_user')
-    # Session keys are 32 characters long
-    session_key = models.CharField(max_length=32, null=True, blank=True)
-
-    def __str__(self):
-        return self.user.username
-
 @receiver(post_save, sender=Mesa)
 def actualizar_electores(sender, instance=None, created=False, **kwargs):
     """

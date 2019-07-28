@@ -59,13 +59,13 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # nuestras apps
-    'fiscales',
+    #'fiscales',
+    'fiscales.apps.FiscalesAppConfig',  # Hay que ponerlo así para que cargue el app_ready()
     'adjuntos',
     'problemas',
     'contacto',
     'api',
-    #'elecciones',
-    'elecciones.apps.EleccionesAppConfig'  # Hay que ponerlo así para que cargue el app_ready()
+    'elecciones',
     'antitrolling',
 ]
 
@@ -77,7 +77,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'elecciones.middleware.OneSessionPerUserMiddleware'
+    'fiscales.middleware.OneSessionPerUserMiddleware'
 ]
 
 ROOT_URLCONF = 'escrutinio_social.urls'
@@ -320,6 +320,12 @@ OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'vo
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
+
+# Cada cuanto tiempo actualizar el campo last_seen de un Fiscal.
+LAST_SEEN_UPDATE_INTERVAL = 2*60  # en segundos.
+
+# Cuando expira una sesión.
+SESSION_TIMEOUT = 10*60  # en segundos.
 
 
 try:
