@@ -4,6 +4,7 @@ from elecciones.models import Carga, CargasIncompatiblesError
 from .models import (
     aumentar_scoring_troll_carga,
     aumentar_scoring_troll_identificacion,
+    aumentar_scoring_troll_problema_descartado,
     EventoScoringTroll
 )
 
@@ -15,12 +16,12 @@ logger = logging.getLogger("e-va")
 def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
     """
     Realizar las actualizaciones de scoring troll que correspondan
-    a partir de que se confirma la asignacion de mesa a un attachment
+    a partir de que se confirma la asignación de mesa a un attachment
     """
 
     for identificacion in attachment.identificaciones.filter(invalidada=False):
         if identificacion.status != Identificacion.STATUS.identificada or identificacion.mesa != mesa:
-            #  para cada identificacion del attachment que no coincida en mesa,
+            #  Para cada identificación del attachment que no coincida en mesa,
             #  aumentar el scoring troll del fiscal que la hizo
             aumentar_scoring_troll_identificacion(
                 settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA,
@@ -70,3 +71,14 @@ def efecto_determinacion_fiscal_troll(fiscal):
 
     for identificacion in Identificacion.objects.filter(fiscal=fiscal):
         identificacion.invalidar()
+
+def efecto_scoring_troll_descartar_problema(fiscal, problema):
+    """
+    Realiza el efecto de que se descarte un "problema" reportado por el usuario parámetro.
+    """
+    aumentar_scoring_troll_problema_descartado(
+        settings.SCORING_TROLL_PROBLEMA_DESCARTADO,
+        fiscal,
+        problema.mesa,
+        problema.attachment
+    )
