@@ -43,12 +43,13 @@ class CodigoReferido(TimeStampedModel):
         """
         Devuelve una lista de fiscales candidatos
         """
-        codigo_ref = get_object_or_None(CodigoReferido, codigo=codigo, activo=True)
-        # TO DO. encontrar fiscal candidato basado en un código similar
-        # http://andilabs.github.io/2018/04/06/searching-in-django-unaccent-levensthein-full-text-search-postgres-power.html
-        # restar 25% por cada grado de distancia Levenshtein
-        if codigo_ref:
+        codigo_ref = get_object_or_None(CodigoReferido, codigo=codigo.upper())
+        if codigo_ref and codigo_ref.activo:
+            # codigo valido vigente
             return [(codigo_ref.fiscal, 100)]
+        if codigo_ref and not codigo_ref.activo:
+            # codigo valido no activo
+            return [(codigo_ref.fiscal, 25)]
         elif nombre and apellido:
             qs = Fiscal.objects.filter(nombres__icontains=nombre, apellido__icontains=apellido)
             if qs.exists():

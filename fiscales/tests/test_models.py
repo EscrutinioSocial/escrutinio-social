@@ -2,9 +2,7 @@ import pytest
 from django.db.utils import IntegrityError
 from django.urls import reverse
 from elecciones.tests.factories import FiscalFactory
-
-
-from fiscales.models import CodigoReferido
+from fiscales.models import CodigoReferido, Fiscal
 
 
 def test_fiscal_crea_codigo(db):
@@ -27,6 +25,24 @@ def test_ultimo_codigo_url(db, settings, mocker):
     mocker.patch('fiscales.models.Fiscal.ultimo_codigo', return_value='D10S')
     f = FiscalFactory()
     assert f.ultimo_codigo_url() == 'https://site.com' + reverse('quiero-validar', args=['D10S'])
+
+
+def test_fiscales_para_codigo(db):
+    f = FiscalFactory()
+    code_original = f.ultimo_codigo()
+    # case unsensitive
+    assert CodigoReferido.fiscales_para(code_original.lower()) == [(f, 100)]
+
+    # por nombre y apellido. case unsensitive
+    assert CodigoReferido.fiscales_para('otro', f.nombres.upper(), f.apellido.title()) == [(f, 75)]
+
+    # codigo viejo
+    nuevo = f.crear_codigo_de_referidos()
+    assert CodigoReferido.fiscales_para(code_original) == [(f, 25)]
+
+    # codigo invalido
+    assert CodigoReferido.fiscales_para('NADA') == [(None, 100)]
+
 
 
 def test_generar_codigo_check_unicidad(db, mocker):
