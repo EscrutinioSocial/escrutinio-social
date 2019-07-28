@@ -1308,7 +1308,7 @@
     "nombre": "Secci\u00f3n 1",
     "proyeccion": 1,
     "minimo_mesas": 1,
-    "opciones": [
+    "circuitos": [
       1,
       2
     ]
@@ -1321,7 +1321,7 @@
     "nombre": "Secci\u00f3n 2",
     "proyeccion": 1,
     "minimo_mesas": 1,
-    "opciones": [
+    "circuitos": [
       3,
       4
     ]

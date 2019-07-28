@@ -800,7 +800,7 @@ class AgrupacionCircuitos(models.Model):
     nombre = models.CharField(max_length=100)
     proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.CASCADE, related_name='agrupaciones')
     minimo_mesas = models.PositiveIntegerField(default=1)
-    opciones = models.ManyToManyField(Circuito)
+    circuitos = models.ManyToManyField(Circuito)
 
     class Meta:
         verbose_name = 'Agrupación de Circuitos'
