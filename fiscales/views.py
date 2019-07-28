@@ -37,6 +37,7 @@ from .forms import (
     MisDatosForm,
     votomesareportadoformset_factory,
     QuieroSerFiscalForm,
+    ReferidoForm,
 )
 from contacto.views import ConContactosMixin
 from problemas.models import Problema
@@ -44,8 +45,6 @@ from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
 
-from secrets import choice
-from string import ascii_letters, digits
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
@@ -94,6 +93,11 @@ class QuieroSerFiscal(FormView):
     template_name = 'fiscales/quiero-validar.html'
     form_class = QuieroSerFiscalForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['referido_por_codigo'] = self.kwargs.get('codigo_ref', None)
+        return initial
+
     def form_valid(self, form):
         data = form.cleaned_data
         fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
@@ -119,7 +123,7 @@ class QuieroSerFiscal(FormView):
         fiscal.user.save()
         self.enviar_correo_confirmacion(fiscal, data['email'])
 
-        self.success_url = reverse('quiero-validar-gracias', kwargs={'codigo_ref': codigo})
+        self.success_url = reverse('quiero-validar-gracias', kwargs={'codigo_ref': fiscal.ultimo_codigo()})
         return super().form_valid(form)
 
     def enviar_correo_confirmacion(self, fiscal, email):
@@ -146,6 +150,21 @@ class QuieroSerFiscal(FormView):
 
 def quiero_validar_gracias(request, codigo_ref):
     return render(request, 'fiscales/quiero-validar-gracias.html', {'codigo_ref': codigo_ref})
+
+
+@login_required
+def referidos(request):
+    fiscal = request.user.fiscal
+    if request.method == 'POST':
+        if 'link' in request.POST:
+            fiscal.crear_codigo_de_referidos()
+        elif 'desconozco' in request.POST:
+            # TODO ver como dejar traza de esto
+            fiscal.referidos.filter(id__in=request.POST.getlist('referido')).update(referente=None)
+
+    form = ReferidoForm(initial={'url': fiscal.ultimo_codigo_url()})
+    return render(request, 'fiscales/referidos.html', {'form': form, 'referidos': fiscal.referidos.all()})
+
 
 
 def confirmar_email(request, uuid):

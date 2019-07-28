@@ -66,6 +66,12 @@ def test_quiero_validar__error_validacion(db, client):
     assert not Fiscal.objects.exists()
 
 
+def test_quiero_validar_con_codigo(db, client):
+    url_quiero_validar = reverse('quiero-validar', args=['xxxx'])
+    response = client.get(url_quiero_validar)
+    assert response.context['form'].initial['referido_por_codigo'] == 'xxxx'
+
+
 def _get_fiscal():
     return Fiscal.objects.filter(
         referido_por_codigos=QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['referido_por_codigo']
@@ -100,3 +106,4 @@ def construir_request_data(seccion):
     data["seccion"] = seccion.id
     data["seccion_autocomplete"] = seccion.id
     return data
+

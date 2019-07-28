@@ -26,7 +26,7 @@ cached = cache_page(3600 * 24 * 30)
 urlpatterns = [
     url(r'^$', choice_home, name="home"),
     url(r'^permission-denied$', permission_denied, name='permission-denied'),
-    url(r'^quiero-validar/$', QuieroSerFiscal.as_view(), name='quiero-validar'),
+    url(r'^quiero-validar/(?P<codigo_ref>\w+)?$', QuieroSerFiscal.as_view(), name='quiero-validar'),
     url(r'^gracias/(?P<codigo_ref>\w+)$', quiero_validar_gracias, name='quiero-validar-gracias'),
     url(r'^quiero-validar/confirmar-email/(?P<uuid>[0-9a-f-]+)$', confirmar_email, name='confirmar-email'),
     url(r'^login/$', auth_views.LoginView.as_view(authentication_form=AuthenticationFormCustomError), name='login'),
@@ -42,7 +42,7 @@ urlpatterns = [
 
     url(r'^api/', include(api_urls)),
     url(r'^problemas/', include(problemas_urls)),
-    url(r'^antitrolling/', include(antitrolling_urls)),   
+    url(r'^antitrolling/', include(antitrolling_urls)),
 ]
 
 if settings.DEBUG:

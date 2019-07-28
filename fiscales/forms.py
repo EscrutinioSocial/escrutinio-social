@@ -44,6 +44,15 @@ class FiscalForm(forms.ModelForm):
         exclude = []
 
 
+class ReferidoForm(forms.Form):
+    url = forms.CharField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['url'].widget.attrs['readonly'] = True
+
+
+
 class MisDatosForm(FiscalForm):
 
     class Meta:

@@ -3,6 +3,7 @@ import uuid
 import random
 import string
 from django.db import models
+from django.urls import reverse
 from django.conf import settings
 from django.db import transaction
 from django.contrib.contenttypes.fields import GenericRelation
@@ -102,7 +103,7 @@ class Fiscal(models.Model):
     )
     seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
-    referente = models.ForeignKey('Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
+    referente = models.ForeignKey('Fiscal', related_name='referidos', null=True, blank=True, on_delete=models.SET_NULL)
     referente_certeza = models.PositiveIntegerField(default=100, help_text='El código no era exacto?')
     # otra metadata del supuesto referente
     referente_nombres = models.CharField(max_length=50, blank=True, null=True)
@@ -117,7 +118,21 @@ class Fiscal(models.Model):
         unique_together = (('tipo_dni', 'dni'), )
 
     def crear_codigo_de_referidos(self):
+        self.codigos_de_referidos.filter(activo=True).update(activo=False)
         return CodigoReferido.objects.create(fiscal=self)
+
+    def ultimo_codigo(self):
+        """devuelve el ultimo codigo activo"""
+        cod_ref = self.codigos_de_referidos.filter(activo=True).last()
+        if cod_ref:
+            return cod_ref.codigo
+
+    def ultimo_codigo_url(self):
+        """
+        devuelve la url absoluta con ultimo codigo activo
+        """
+        url = reverse('quiero-validar', args=[self.ultimo_codigo()])
+        return f'{settings.FULL_SITE_URL}{url}'
 
     def agregar_dato_de_contacto(self, tipo, valor):
         type_ = ContentType.objects.get_for_model(self)
@@ -164,7 +179,7 @@ class Fiscal(models.Model):
     @property
     def esta_en_grupo_unidades_basicas(self):
         return self.esta_en_grupo('unidades basicas')
-        
+
     def scoring_troll(self):
         return self.eventos_scoring_troll.aggregate(v=Sum('variacion'))['v'] or 0
 
@@ -190,7 +205,7 @@ class Fiscal(models.Model):
         """
         Un UE decidió, explícitamente, quitarme la marca de troll.
         Este es el único caso en que un fiscal pierde la marca de troll, no hay eventos automáticos para esto.
-        Por eso este método incluye todas las consecuencias del acto de desmarcar, 
+        Por eso este método incluye todas las consecuencias del acto de desmarcar,
         al contrario de la decisión de marcar que puede ser manual o automática.
         """
         era_troll = self.troll
