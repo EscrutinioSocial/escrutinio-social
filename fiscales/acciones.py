@@ -17,8 +17,8 @@ def siguiente_accion(request):
       se elige una por orden de prioridad
 
     - si hay tanto mesas como actas pendientes, se elige identicar
-      si el tamaño de la cola de identificaciones pendientes es el doble o más
-      que el tamaño de la cola de carga.
+      si el tamaño de la cola de identificaciones pendientes es X veces el tamaño de la
+      cola de carga (siendo X la variable config.COEFICIENTE_IDENTIFICACION_VS_CARGA).
     - caso contrario, no hay nada para hacer
     """
     attachments = Attachment.sin_identificar(request.user.fiscal)
@@ -40,9 +40,9 @@ def siguiente_accion(request):
 
 class IdentificacionDeFoto():
     """
-    Accion sobre una foto (attachment):
+    Acción sobre una foto (attachment):
     estampa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para su clasificación
+    de guarda y redirige a la vista para su clasificación.
     """
 
     def __init__(self, _request, _attachment):
@@ -60,7 +60,7 @@ class CargaCategoriaEnActa():
     Acción sobre una mesa-categoría:
     estampa en la mesa el tiempo de "asignación" para que se excluya durante el periodo
     de guarda y redirige a la vista para la carga de la mesa/categoría dependiendo
-    de la configuracion de la categoria
+    de la configuracion de la categoría.
     """
 
     def __init__(self, _request, mc):

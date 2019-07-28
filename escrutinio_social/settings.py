@@ -327,7 +327,7 @@ CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
 
 CONSTANCE_CONFIG = {
-    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (2.0, 'Cuando la cola de identifacion sea N se prioriza esa tarea ', float),
+    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea ', float),
 }
 
 
