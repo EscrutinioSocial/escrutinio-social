@@ -207,7 +207,7 @@ class AgregarAdjuntos(FormView):
         if form.is_valid():
             contador_fotos = 0
             for file in files:
-                instance = self.procesar_adjunto(file, request.user.fiscal,identificacion)
+                instance = self.procesar_adjunto(file, request.user.fiscal, identificacion)
                 if instance is not None:
                     contador_fotos = contador_fotos + 1
             if contador_fotos:
@@ -221,7 +221,7 @@ class AgregarAdjuntos(FormView):
         if adjunto.content_type not in self.types:
             self.mostrar_mensaje_tipo_archivo_invalido(adjunto.name)
             return None
-        return self.cargar_informacion_adjunto(adjunto, subido_por,identificacion)
+        return self.cargar_informacion_adjunto(adjunto, subido_por, identificacion)
 
     def cargar_informacion_adjunto(self, adjunto, subido_por, identificacion=None):
         try:
@@ -331,7 +331,6 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
         context['attachment_form'] = attachment_form
         context['identificacion_form'] = identificacion_form
         return self.render_to_response(context)
-
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
