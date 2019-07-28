@@ -1,7 +1,7 @@
 from django.db import models
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
-
+from antitrolling.efecto import efecto_scoring_troll_descartar_problema
 
 
 class ReporteDeProblema(TimeStampedModel):
@@ -43,7 +43,7 @@ class Problema(TimeStampedModel):
         'potencial',                # Todavía no se confirmó que exista de verdad.
         'descartado',               # No era realmente un problema, se usa para antitrolling.
         'pendiente',                # Confirmado y no se resolvió aún.
-        ('en_curso', 'en curso'),    # Ídem anterior pero ya fue visto.
+        ('en_curso', 'en curso'),   # Ídem anterior pero ya fue visto.
         'resuelto',
     )
 
@@ -107,6 +107,8 @@ class Problema(TimeStampedModel):
 
     def descartar(self, resuelto_por):
         self.resolver_con_estado(self.ESTADOS.descartado, resuelto_por)
+        for reporte in self.reportes.all():
+            efecto_scoring_troll_descartar_problema(reporte.reportado_por, self)
 
     def resolver_con_estado(self, estado, resuelto_por):
         self.estado = estado
