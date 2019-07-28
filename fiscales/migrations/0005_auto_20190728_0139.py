@@ -6,6 +6,13 @@ import django.utils.timezone
 import model_utils.fields
 
 
+def crear_codigo(apps, schema_editor):
+    Fiscal = apps.get_model("fiscales", "Fiscal")
+    CodigoReferido = apps.get_model("fiscales", "CodigoReferido")
+    for i, f in enumerate(Fiscal.objects.all()):
+        CodigoReferido.objects.create(fiscal=f, codigo=f'{i:04}')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -68,4 +75,5 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
+        migrations.RunPython(crear_codigo),
     ]
