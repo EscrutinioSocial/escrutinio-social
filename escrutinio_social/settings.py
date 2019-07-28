@@ -59,13 +59,14 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # nuestras apps
-    #'elecciones',
     'fiscales',
     'adjuntos',
     'problemas',
     'contacto',
     'api',
-    'elecciones.apps.EleccionesAppConfig'
+    #'elecciones',
+    'elecciones.apps.EleccionesAppConfig'  # Hay que ponerlo así para que cargue el app_ready()
+    'antitrolling',
 ]
 
 MIDDLEWARE = [
@@ -288,9 +289,21 @@ MIN_COINCIDENCIAS_CARGAS = 2
 MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
 MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
+# Tamaño maximo de archivos permitidos en el formulario
+# de subida de fotos y CSV
+MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
+
 # Tiempo en segundos que se espera entre
 # recálculo de consolidaciones de identificación y carga
 PAUSA_CONSOLIDACION = 15
+
+# Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll
+SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 500
+
+# Cuanto aumenta el scoring de troll por una identificacion distinta a la confirmada
+SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 200
+# Cuanto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
+SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA = 200
 
 # Tiempos de 'taken', para adjuntos y para mesas.
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos

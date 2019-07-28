@@ -361,6 +361,14 @@ class MesaCategoria(models.Model):
         self.orden_de_carga = int(round((identificadas + 1) / total, 2) * 100)
         self.save(update_fields=['orden_de_carga'])
 
+    def invalidar_cargas(self):
+        """
+        Por alguna razón, hay que marcar todas las cargas que se hicieron para esta MesaCategoria
+        como inválidas.
+        """
+        for carga in self.cargas.all():
+            carga.invalidar()
+
     def firma_count(self):
         """
         Devuelve un diccionario que agrupa por tipo de carga y firmas.
@@ -458,6 +466,17 @@ class Mesa(models.Model):
                 fotos.append((f'Foto {i} (editada)', a.foto_edited))
             fotos.append((f'Foto {i} (original)', a.foto))
         return fotos
+
+    def invalidar_asignacion_attachment(self):
+        """
+        Efecto de que esta mesa tenía un attachment asociado y ya no lo tiene.
+        Hay que: invalidar todas las cargas, y borrar el orden de carga de las MesaCategoria
+        para que no se tengan en cuenta en el scheduling
+        """
+        for mc in MesaCategoria.objects.filter(mesa=self):
+            mc.orden_de_carga = None
+            mc.save(update_fields=['orden_de_carga'])
+            mc.invalidar_cargas()
 
     def metadata(self):
         """
@@ -695,6 +714,14 @@ class CategoriaOpcion(models.Model):
         return f'{self.categoria} - {self.opcion} {prioritaria}'
 
 
+class CargasIncompatiblesError(Exception):
+    """
+    Error que se produce si se pide la resta entre dos cargas incompatibles
+    """
+    pass
+
+
+
 class Carga(TimeStampedModel):
     """
     Es el contenedor de la carga de datos de un fiscal
@@ -714,9 +741,13 @@ class Carga(TimeStampedModel):
     SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
 
-    mesa_categoria = models.ForeignKey(MesaCategoria, related_name='cargas', on_delete=models.CASCADE)
-    fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
-    firma = models.CharField(max_length=300, null=True, blank=True, editable=False)
+    mesa_categoria = models.ForeignKey(
+        MesaCategoria, related_name='cargas', on_delete=models.CASCADE
+    )
+    fiscal = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
+    firma = models.CharField(
+        max_length=300, null=True, blank=True, editable=False
+    )
     procesada = models.BooleanField(default=False)
 
     @property
@@ -744,7 +775,7 @@ class Carga(TimeStampedModel):
         # Si ya hay firma y no están forzando, listo.
         if self.firma and not forzar:
             return
-        tuplas = (f'{o}-{v or ""}' for (o, v) in self.opcion_votos().order_by('opcion__orden'))
+        tuplas = (f'{o}-{v}' for (o, v) in self.opcion_votos().order_by('opcion__orden'))
         self.firma = '|'.join(tuplas)
         self.save(update_fields=['firma'])
 
@@ -752,9 +783,35 @@ class Carga(TimeStampedModel):
         """ Devuelve una lista de los votos para cada opción. """
         return self.reportados.values_list('opcion', 'votos')
 
+    def save(self, *args, **kwargs):
+        """
+        si el fiscal es troll, la carga nace invalidada y ya procesada
+        """
+        if self.id is None and self.fiscal is not None and self.fiscal.troll:
+            self.invalidada = True
+            self.procesada = True
+        super().save(*args, **kwargs)
+
     def __str__(self):
         str_invalidada = ' (invalidada) ' if self.invalidada else ' '
         return f'carga{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'
+
+    def __sub__(self, carga_2):
+        # arranco obteniendo los votos ordenados por opcion, que me van a ser utiles varias veces
+        reportados_1 = self.reportados.order_by('opcion__orden')
+        reportados_2 = carga_2.reportados.order_by('opcion__orden')
+
+        # antes que nada: si las cargas son incomparables, o los conjuntos de opciones no coinciden,
+        # la comparación se considera incorrecta
+        if (self.mesa_categoria != carga_2.mesa_categoria) or (self.tipo != carga_2.tipo):
+            raise CargasIncompatiblesError("las cargas no coinciden en mesa, categoría o tipo")
+        opciones_1 = [ov.opcion.id for ov in reportados_1]
+        opciones_2 = [ov.opcion.id for ov in reportados_2]
+        if (opciones_1 != opciones_2):
+            raise CargasIncompatiblesError("las cargas no coinciden en sus opciones")
+
+        diferencia = sum(abs(r1.votos - r2.votos) for r1, r2 in zip(reportados_1, reportados_2))
+        return diferencia
 
 
 class VotoMesaReportado(models.Model):
@@ -765,9 +822,7 @@ class VotoMesaReportado(models.Model):
     """
     carga = models.ForeignKey(Carga, related_name='reportados', on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
-
-    # es null cuando hay cargas parciales.
-    votos = models.PositiveIntegerField(null=True)
+    votos = models.PositiveIntegerField()
 
     class Meta:
         unique_together = ('carga', 'opcion')
@@ -794,28 +849,29 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
 
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
-    if (instance.lugar_votacion is not None and instance.lugar_votacion.circuito is not None):
+    if instance.lugar_votacion:
 
         circuito = instance.lugar_votacion.circuito
         seccion = circuito.seccion
         distrito = seccion.distrito
 
         # circuito
-        electores = Mesa.objects.filter(lugar_votacion__circuito=circuito, ).aggregate(v=Sum('electores')
-                                                                                       )['v'] or 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito=circuito,
+        ).aggregate(v=Sum('electores'))['v'] or 0
         circuito.electores = electores
         circuito.save(update_fields=['electores'])
 
         # seccion
-        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion=seccion, ).aggregate(
-            v=Sum('electores')
-        )['v'] or 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion=seccion
+        ).aggregate(v=Sum('electores'))['v'] or 0
         seccion.electores = electores
         seccion.save(update_fields=['electores'])
 
         # distrito
-        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion__distrito=distrito, ).aggregate(
-            v=Sum('electores')
-        )['v'] or 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion__distrito=distrito
+        ).aggregate(v=Sum('electores'))['v'] or 0
         distrito.electores = electores
         distrito.save(update_fields=['electores'])

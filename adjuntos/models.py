@@ -86,15 +86,19 @@ class Attachment(TimeStampedModel):
     mesa = models.ForeignKey(
         'elecciones.Mesa', related_name='attachments', null=True, blank=True, on_delete=models.SET_NULL
     )
-    email = models.ForeignKey('Email', null=True, on_delete=models.SET_NULL)
+    email = models.ForeignKey('Email', null=True, blank=True, on_delete=models.SET_NULL)
     mimetype = models.CharField(max_length=100, null=True)
-    foto = VersatileImageField(upload_to='attachments/',
-        null=True, blank=True,
+    foto = VersatileImageField(
+        upload_to='attachments/',
+        null=True,
+        blank=True,
         width_field='width',
         height_field='height'
     )
-    foto_edited = VersatileImageField(upload_to='attachments/edited',
-        null=True, blank=True,
+    foto_edited = VersatileImageField(
+        upload_to='attachments/edited',
+        null=True,
+        blank=True,
         width_field='width',
         height_field='height'
     )
@@ -189,10 +193,9 @@ class Attachment(TimeStampedModel):
                 (4, 1, 1),
             ]
 
-        Hay 2 identificaciones para la mesa id==3 y 1 para la id==4, pero ésa 
+        Hay 2 identificaciones para la mesa id==3 y 1 para la id==4, pero ésa
         tiene una identificación por CSV.
         """
-
         qs = self.identificaciones.filter(status=estado, invalidada=False)
         cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
         result = []
@@ -221,22 +224,12 @@ class Identificacion(TimeStampedModel):
         'identificada',
         'problema'
     )
-    #
-    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
-    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto con contiene
-    #     todos los datos de identificación.
-    # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
-    # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
-
     status = StatusField(choices_name='STATUS',choices=STATUS)
-
 
     SOURCES = Choices('web', 'csv', 'telegram')
     source = StatusField(choices_name='SOURCES', default=SOURCES.web)
 
-    fiscal = models.ForeignKey(
-        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
-    )
+    fiscal = models.ForeignKey('fiscales.Fiscal', blank=True, on_delete=models.CASCADE)
     mesa = models.ForeignKey(
         'elecciones.Mesa',  null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -247,9 +240,21 @@ class Identificacion(TimeStampedModel):
     invalidada = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - procesada: {self.procesada} - invalidada: {self.invalidada}'
+        return (
+            f'id: {self.id} - {self.status} - {self.mesa} - {self.fiscal} - '
+            f'procesada: {self.procesada} - invalidada: {self.invalidada}'
+        )
 
     def invalidar(self):
         self.invalidada = True
         self.procesada = False
         self.save(update_fields=['invalidada', 'procesada'])
+
+    def save(self, *args, **kwargs):
+        """
+        si el fiscal es troll, la identificacion nace invalidada y ya procesada
+        """
+        if self.id is None and self.fiscal is not None and self.fiscal.troll:
+            self.invalidada = True
+            self.procesada = True
+        super().save(*args, **kwargs)
