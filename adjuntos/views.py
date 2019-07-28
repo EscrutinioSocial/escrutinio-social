@@ -203,10 +203,11 @@ class AgregarAdjuntos(FormView):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
+        identificacion = kwargs.get('identificacion',None)
         if form.is_valid():
             contador_fotos = 0
             for file in files:
-                instance = self.procesar_adjunto(file, request.user.fiscal)
+                instance = self.procesar_adjunto(file, request.user.fiscal,identificacion)
                 if instance is not None:
                     contador_fotos = contador_fotos + 1
             if contador_fotos:
@@ -215,6 +216,7 @@ class AgregarAdjuntos(FormView):
 
         return self.form_invalid(form)
 
+    
     def procesar_adjunto(self, adjunto, subido_por,identificacion=None):
         if adjunto.content_type not in self.types:
             self.mostrar_mensaje_tipo_archivo_invalido(adjunto.name)
@@ -249,9 +251,46 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
     """
-    # form_class = AgregarAttachmentsForm
+    form_class = AgregarAttachmentsForm
     url_to_post = 'agregar-adjuntos-ub'
-    template_name = 'adjuntos/agregar-adjuntos-ub.html'
+    template_name = 'adjuntos/agregar-adjuntos.html'
+
+    def post(self, request, *args, **kwargs):
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        identificacion_form = IdentificacionParcialForm(self.request.POST)
+        files = request.FILES.getlist('file_field')
+        # No debería poderse cargar por la UI más de una imágenes, aunque es mejor chequear esto
+        if len(files) > 1:
+            form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
+
+        if form.is_valid():
+            file = files[0]
+            fiscal = request.user.fiscal
+            instance = self.procesar_adjunto(file,fiscal)
+            if instance is not None:
+                messages.success(self.request, 'Subiste el acta correctamente.')
+                return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
+
+            form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
+        return self.form_invalid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'es_multiple': False})
+        return kwargs
+
+
+class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
+    """
+    Permite subir una imagen, genera la instancia de Attachment y debería redirigir al flujo de
+    asignación de mesa -> carga de datos pp -> carga de datos secundarios , etc
+
+    Si una imagen ya existe en el sistema, se exluye con un mensaje de error
+    via `messages` framework.
+    """
+    url_to_post = 'agregar-adjuntos-batch'
+    template_name = 'adjuntos/agregar-adjuntos-identificar.html'
 
     def get(self, request, *args, **kwargs):
         attachment_form = AgregarAttachmentsForm()
@@ -273,25 +312,18 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         form = self.get_form(form_class)
         identificacion_form = IdentificacionParcialForm(self.request.POST)
         files = request.FILES.getlist('file_field')
-        # No debería poderse cargar por la UI más de una imágenes, aunque es mejor chequear esto
-        if len(files) > 1:
-            form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
 
         if form.is_valid():
             if not identificacion_form.is_valid():
-                return self.form_invalid(identificacion_form)
+                return self.form_invalid(form, identificacion_form)
 
-            file = files[0]
             fiscal = request.user.fiscal
             identificacion = identificacion_form.save(commit=False)
             identificacion.fiscal = fiscal
             identificacion.save()
-            instance = self.procesar_adjunto(file,fiscal,identificacion)
-            if instance is not None:
-                messages.success(self.request, 'Subiste el acta correctamente.')
-                return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
+            kwargs.update({'identificacion': identificacion})
+            super().post(request,*args,**kwargs)
 
-            form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
         return self.form_invalid(form, identificacion_form)
 
     def form_invalid(self, attachment_form, identificacion_form, **kwargs):
@@ -303,8 +335,9 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs.update({'es_multiple': False})
+        kwargs.update({'es_multiple': True})
         return kwargs
+
 
 class AgregarAdjuntosCSV(AgregarAdjuntos):
     """
