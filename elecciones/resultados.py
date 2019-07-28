@@ -133,12 +133,7 @@ class Sumarizador():
         elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
             return Mesa.objects.filter(id__in=self.ids_a_considerar)
 
-    @lru_cache(128)
-    def mesas(self, categoria):
-        """
-        Considerando los filtros posibles, devuelve el conjunto de mesas
-        asociadas a la categoría dada.
-        """
+    def lookups_de_mesas(self):
         lookups = Q()
         if self.filtros:
             if self.filtros.model is Distrito:
@@ -159,6 +154,15 @@ class Sumarizador():
             elif self.filtros.model is Mesa:
                 lookups = Q(id__in=self.filtros)
 
+        return lookups
+
+    @lru_cache(128)
+    def mesas(self, categoria):
+        """
+        Considerando los filtros posibles, devuelve el conjunto de mesas
+        asociadas a la categoría dada.
+        """
+        lookups = self.lookups_de_mesas()
         return Mesa.objects.filter(categorias=categoria).filter(lookups).distinct()
 
     @lru_cache(128)
@@ -268,6 +272,61 @@ class Sumarizador():
         mesas = self.mesas(categoria)
         return Resultados(self.opciones_a_considerar, self.calcular(categoria, mesas))
 
+class AvanceDeCarga(Sumarizador):
+    """
+    Esta clase contiene información sobre el avance de carga.
+    """
+
+    def __init__(self, categoria):
+        self.categoria = categoria
+        super().__init__(
+            tipo_de_agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas,
+            opciones_a_considerar=OPCIONES_A_CONSIDERAR.todas,
+            nivel_de_agregacion=None,
+            ids_a_considerar=None
+        )
+
+    @lru_cache(128)
+    def total_mesas(self):
+        # Está sólo para exponerlo.
+        return super().total_mesas()
+
+    def mesas_con_o_sin_attachment(self, con_attachment):
+        """
+        Devuelve el conjunto de mesas de la categoría actual, con o sin attachment
+        asociado (de acuerdo al parámetro con_attachment).
+        """
+        lookups = self.lookups_de_mesas()
+
+        return Mesa.objects.filter(
+            categorias=self.categoria,
+            attachments__is_null=not con_attachment
+        ).filter(lookups).distinct()
+
+    @lru_cache(128)
+    def cant_mesas_con_actas(self):
+        return self.mesas_con_o_sin_attachment(True).count()
+
+    def cant_actas_parcialmente_identificadas_por_origen(self):
+        mesas_sin_attachment = self.mesas_con_o_sin_attachment(False)
+        cant = Identificacion.objects.filter(
+            status=Identificacion.STATUS.identificada,
+            invalidada=False,
+            mesa__in=Subquery(mesas_sin_attachment.values('pk'))
+        ).values('source').annotate(count=Count('source'))
+
+    @lru_cache(128)
+    def cant_actas_parcialmente_identificadas(self, origen):
+        """
+        Devuelve la cantidad de actas parcialmente identificadas del origen parámetro.
+        """
+        for item in self.cant_actas_parcialmente_identificadas_por_origen():
+            if item['source'] == origen:
+                return item['count']
+
+    @lru_cache(128)
+    def cant_actas_con_identificacion_parcial(self):
+        IdentificacionParcial.objects.filter(...)
 
 class Resultados():
     """

@@ -224,7 +224,7 @@ class Identificacion(TimeStampedModel):
         'identificada',
         'problema'
     )
-    status = StatusField(choices_name='STATUS',choices=STATUS)
+    status = StatusField(choices_name='STATUS', choices=STATUS)
 
     SOURCES = Choices('web', 'csv', 'telegram')
     source = StatusField(choices_name='SOURCES', default=SOURCES.web)
