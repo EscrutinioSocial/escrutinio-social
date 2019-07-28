@@ -262,8 +262,9 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         if request.user:
             fiscal = request.user.fiscal
             context['desde_ub'] = True
-            context['seccion_precargada'] = fiscal.seccion
-            context['distrito_precargado'] = fiscal.seccion.distrito
+            if fiscal.seccion:
+                context['seccion_precargada'] = fiscal.seccion
+                context['distrito_precargado'] = fiscal.seccion.distrito
 
         return self.render_to_response(context)
 
