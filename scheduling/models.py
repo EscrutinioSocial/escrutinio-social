@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from elecciones.models import (Seccion, Categoria)
 
 
@@ -170,3 +171,21 @@ def mapa_prioridades_para_categoria(categoria):
     que hubiera definidas.
     """
     return PrioridadScheduling.mapa_prioridades(PrioridadScheduling.objects.filter(categoria=categoria, seccion=None))
+
+
+def mapa_prioridades_para_mesa_categoria(mesa_categoria):
+    """ 
+    Crea y devuelve el MapaPrioridades que corresponde a una MesaCategoria, de acuerdo a su categoria y a su seccion
+    """
+    # obtengo los mapas para seccion y categoria, con default a lo que sale de los settings
+    mapa_settings_seccion = mapa_prioridades_desde_setting(settings.PRIORIDADES_STANDARD_SECCION)
+    mapa_especifico_seccion = mapa_prioridades_para_seccion(mesa_categoria.mesa.lugar_votacion.circuito.seccion)
+    mapa_seccion = MapaPrioridadesConDefault(mapa_especifico_seccion, mapa_settings_seccion)
+
+    mapa_settings_categoria = mapa_prioridades_desde_setting(settings.PRIORIDADES_STANDARD_CATEGORIA)
+    mapa_especifico_categoria = mapa_prioridades_para_categoria(mesa_categoria.categoria)
+    mapa_categoria = MapaPrioridadesConDefault(mapa_especifico_categoria, mapa_settings_categoria)
+
+    # a la MesaCategoria le corresponde el __producto__ entre seccion y categoria
+    return MapaPrioridadesProducto(mapa_seccion, mapa_categoria)
+
