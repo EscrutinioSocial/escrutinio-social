@@ -2,7 +2,7 @@ import pytest
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
-from elecciones.models import (Categoria, MesaCategoria, Carga, Opcion)
+from elecciones.models import Categoria, MesaCategoria, Carga
 from .factories import (
     UserFactory,
     CategoriaFactory,
@@ -238,7 +238,7 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     # s3 200 votantes
 
     # Se crean 8 mesas (5 en s1, 2 en s2 y 1 en s3). Todas tienen 200 electores
-    ms1, ms2, ms3 = (
+    ms1, _, ms3 = (
         MesaFactory.create_batch(5, lugar_votacion__circuito__seccion=s1, electores=200),
         MesaFactory.create_batch(2, lugar_votacion__circuito__seccion=s2, electores=200),
         MesaFactory.create_batch(1, lugar_votacion__circuito__seccion=s3, electores=200)
@@ -547,7 +547,6 @@ def test_siguiente_accion_cargar_acta(fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == 302
     assert response.url == reverse('carga-total', args=(mc2.id, ))
-
 
 
 def test_resultados_no_positivos(fiscal_client):

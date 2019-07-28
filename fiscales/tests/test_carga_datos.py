@@ -134,7 +134,6 @@ def test_siguiente_manda_a_parcial_si_es_requerido(db, fiscal_client, settings):
     assert response.url == reverse('carga-parcial', args=[mc2.id])
 
 
-
 def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client):
     c = CategoriaFactory()
     o = CategoriaOpcionFactory(categoria=c, prioritaria=True).opcion
