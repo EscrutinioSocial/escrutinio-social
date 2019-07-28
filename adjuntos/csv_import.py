@@ -147,7 +147,7 @@ class CSVImporter:
         mesa_columna = matcheos[0]
         # Los votos son por partido así que debemos iterar por todas las filas
         for indice, fila in grupos.iterrows():
-            opcion = fila['nro de lista']
+            opcion = int(fila['nro de lista'])
             self.fila_analizada = FilaCSVImporter(mesa[0], mesa[1], mesa[2], mesa[3])
 
             # Primero chequeamos si esta fila corresponde a metadata verificando el
