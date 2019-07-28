@@ -64,7 +64,8 @@ INSTALLED_APPS = [
     'adjuntos',
     'problemas',
     'contacto',
-    'api'
+    'antitrolling',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -90,7 +91,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                #'elecciones.context_processors.contadores'
+                # 'elecciones.context_processors.contadores'
             ],
         },
     },
@@ -102,7 +103,7 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
 # Sobreescribir en local_settings.py si se instala localmente.
-#DATABASES = {
+# DATABASES = {
 #    'default': {
 #        'ENGINE': 'django.db.backends.postgresql',
 #        'NAME': 'db_name',
@@ -111,7 +112,7 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 #        'HOST': 'localhost' if os.environ.get('TRAVIS') == 'true' else 'db',
 #        'PORT': '',
 #    }
-#}
+# }
 
 DATABASES = {
     'default': {
@@ -286,9 +287,21 @@ MIN_COINCIDENCIAS_CARGAS = 2
 MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
 MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
+# Tamaño maximo de archivos permitidos en el formulario
+# de subida de fotos y CSV
+MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
+
 # Tiempo en segundos que se espera entre
 # recálculo de consolidaciones de identificación y carga
 PAUSA_CONSOLIDACION = 15
+
+# Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll
+SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 500
+
+# Cuanto aumenta el scoring de troll por una identificacion distinta a la confirmada
+SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 200
+# Cuanto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
+SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA = 200
 
 # Tiempos de 'taken', para adjuntos y para mesas.
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
@@ -305,7 +318,6 @@ OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'vo
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
-
 
 
 try:

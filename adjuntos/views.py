@@ -5,7 +5,6 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
-from django.http import HttpResponseRedirect
 from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse
@@ -16,14 +15,11 @@ from django.views.generic.edit import CreateView, FormView
 
 from adjuntos.consolidacion import consolidar_identificaciones
 from adjuntos.csv_import import CSVImporter
-from .forms import (
-    AgregarAttachmentsForm,
-    IdentificacionForm,
-)
-from .models import Attachment, Identificacion
-from problemas.models import Problema, ReporteDeProblema
+from problemas.models import Problema
 from problemas.forms import IdentificacionDeProblemaForm
-from adjuntos.consolidacion import consolidar_identificaciones
+
+from .forms import AgregarAttachmentsForm, AgregarAttachmentsCSV, IdentificacionForm
+from .models import Attachment, Identificacion
 
 
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
@@ -173,6 +169,7 @@ class AgregarAdjuntos(FormView):
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
     """
+
     def __init__(self, types=('image/jpeg', 'image/png'), **kwargs):
         super().__init__(**kwargs)
         self.types = types
@@ -245,7 +242,8 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
-        #no debiese poder cargarse por la ui dos imágenes, aunque es mejor poder chequear esto
+
+        # No debería poder cargarse por UI más de una imagen, pero por las dudas lo chequeamos.
         if len(files) > 1:
             form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
 
@@ -264,6 +262,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         kwargs.update({'es_multiple': False})
         return kwargs
 
+
 class AgregarAdjuntosCSV(AgregarAdjuntos):
     """
     Permite subir un archivo CSV, valida que posea todas las columnas necesarias y que los datos sean
@@ -271,7 +270,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
     Cargas totales, parciales e instancias de votos.
 
     """
-    form_class = AgregarAttachmentsForm
+    form_class = AgregarAttachmentsCSV
     template_name = 'adjuntos/agregar-adjuntos-csv.html'
     url_to_post = 'agregar-adjuntos-csv'
 
@@ -285,7 +284,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
         return HttpResponseForbidden()
 
     def cargar_informacion_adjunto(self, adjunto):
-        # validar la info del archivo
+        # Valida la info del archivo.
         try:
             CSVImporter(adjunto, self.request.user).procesar()
             return 'success'

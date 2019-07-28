@@ -1,4 +1,8 @@
-from adjuntos.forms import IdentificacionForm
+import pytest
+from django.http import QueryDict
+from django.core.files.uploadedfile import SimpleUploadedFile
+from adjuntos.forms import IdentificacionForm, BaseUploadForm
+
 from elecciones.tests.factories import (
     DistritoFactory,
     SeccionFactory,
@@ -91,8 +95,6 @@ def test_identificacion_valida_si_mesa_no_corresponde_a_circuito(db):
     assert not form.is_valid()
     assert form.errors['mesa'] == ['Esta mesa no pertenece al circuito']
 
-
-
     form = IdentificacionForm({
         'mesa': m1.id,
         'circuito': m1.circuito.id,
@@ -103,5 +105,15 @@ def test_identificacion_valida_si_mesa_no_corresponde_a_circuito(db):
     assert form.errors['circuito'] == ['Este circuito no pertenece a la sección']
 
 
-
-
+@pytest.mark.parametrize('size, valid', [
+    (9, True),
+    (10, True),
+    (11, False),
+])
+def test_base_form_file_size(settings, size, valid):
+    settings.MAX_UPLOAD_SIZE = 10
+    file = SimpleUploadedFile('data.csv', b'0' * size)
+    file_data = QueryDict(mutable=True)
+    file_data.update(file_field=file)
+    form = BaseUploadForm(files=file_data)
+    assert form.is_valid() is valid
