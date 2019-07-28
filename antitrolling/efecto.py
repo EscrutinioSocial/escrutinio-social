@@ -1,7 +1,7 @@
 from django.conf import settings
 from adjuntos.models import Identificacion
 from elecciones.models import Carga, CargasIncompatiblesError
-from antitrolling.models import (
+from .models import (
     aumentar_scoring_troll_carga,
     aumentar_scoring_troll_identificacion,
     aumentar_scoring_troll_problema_descartado,
