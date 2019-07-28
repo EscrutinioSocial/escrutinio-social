@@ -86,4 +86,4 @@ class AgregarAttachmentsCSV(BaseUploadForm):
     """
     Form para subir uno o más archivos CSV.
     """
-    file_field = forms.FileField(label="Archivos .csv")
+    file_field = forms.ImageField(label="Archivos .csv")
