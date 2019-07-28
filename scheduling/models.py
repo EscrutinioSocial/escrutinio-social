@@ -1,19 +1,43 @@
 from django.db import models
-from elecciones.models import (Circuito, Categoria)
+from elecciones.models import (Seccion, Categoria)
 
 
 class PrioridadScheduling(models.Model):
     """
     Representa una prioridad distinta de la standard para 
-    una determinada categoria o circuito
+    una determinada categoria o seccion.
+    Una prioridad aplica o no, dependiendo de la proporcion de las MesaCategoria que tengan foto asociada,
+    y el orden de llegada de la foto de cada MesaCategoria.
+
+    Se pueden establecer dos criterios para que esta prioridad aplique,
+    - desde / hasta proporcion de MesaCategoria con foto. 
+    - hasta cantidad, de acuerdo al orden de llegada de la foto. 
+      El uso de este segundo criterio es optativo; hasta_cantidad acepta null/None.
+    Se considera la disyuncion entre estos criterios.
     """
-    circuito = models.ForeignKey(Circuito, null=True, related_name="prioridades", on_delete=models.CASCADE)
+    seccion = models.ForeignKey(Seccion, null=True, related_name="prioridades", on_delete=models.CASCADE)
     categoria = models.ForeignKey(Categoria, null=True, related_name="prioridades", on_delete=models.CASCADE)
-    # desde / hasta: pueden ser 0, no pueden ser null ni negativos
-    desde = models.PositiveIntegerField(null=False)
-    hasta = models.PositiveIntegerField(null=False)
+    # desde_proporcion / hasta_proporcion: pueden ser 0, no pueden ser null ni negativos
+    desde_proporcion = models.PositiveIntegerField(null=False)
+    hasta_proporcion = models.PositiveIntegerField(null=False)
     # prioridad: no pueden ser null ni negativo, en discusion si puede ser 0, por ahora se permite
     prioridad = models.PositiveIntegerField(null=False)
+    # hasta_cantidad: puede ser null
+    hasta_cantidad = models.PositiveIntegerField(null=True)
+
+    def como_registro_prioridad(self):
+        return RegistroDePrioridad(self.desde_proporcion, self.hasta_proporcion, self.prioridad, self.hasta_cantidad)
+
+    @classmethod
+    def mapa_prioridades(cls, query_set):
+        """ 
+        Crea un MapaPrioridades a partir de QuerySet de ProridadScheduling.
+        """
+        mapa = MapaPrioridades()
+        for prioridad_scheduling in query_set:
+            mapa.agregar_registro(prioridad_scheduling.como_registro_prioridad())
+        return mapa
+
 
 
 class RangosDeProporcionesSeSolapanError(Exception):
@@ -25,28 +49,28 @@ class RegistroDePrioridad():
     Representa la correspondencia de una prioridad con un rango de proporciones.
     """
 
-    def __init__(self, desde, hasta, prioridad, tope=None):
-        self.desde = desde
-        self.hasta = hasta
+    def __init__(self, desde_proporcion, hasta_proporcion, prioridad, hasta_cantidad=None):
+        self.desde_proporcion = desde_proporcion
+        self.hasta_proporcion = hasta_proporcion
         self.prioridad = prioridad
-        self.tope = tope
+        self.hasta_cantidad = hasta_cantidad
 
-    def aplica(self, proporcion, numero_de_orden):
-        return (self.desde <= proporcion and (self.hasta == 100 or self.hasta > proporcion)) \
-            or (self.tope and numero_de_orden <= self.tope)
+    def aplica(self, proporcion, orden_de_llegada):
+        return (self.desde_proporcion <= proporcion and (self.hasta_proporcion == 100 or self.hasta_proporcion > proporcion)) \
+            or (self.hasta_cantidad and orden_de_llegada <= self.hasta_cantidad)
 
     def es_compatible_con(self, otro):
-        return self.hasta <= otro.desde or otro.hasta <= self.desde
+        return self.hasta_proporcion <= otro.desde_proporcion or otro.hasta_proporcion <= self.desde_proporcion
 
     def __str__(self):
-        return F"De {self.desde}% a {self.hasta}% corresponde prioridad {self.prioridad}"
+        return F"De {self.desde_proporcion}% a {self.hasta_proporcion}% corresponde prioridad {self.prioridad}"
 
 
 class MapaPrioridades():
     """
     Representa un mapa entre proporción y prioridad, armado a partir de un conjunto 
     de instancias de RegistroDePrioridad.
-    P.ej. desde 4% a 8%, corresponde prioridad 10.
+    P.ej. desde_proporcion 4% a 8%, corresponde prioridad 10.
     """
 
     def __init__(self):
@@ -62,14 +86,14 @@ class MapaPrioridades():
 
     def registros_ordenados(self):
         registros_ordenados = list(self.registros)
-        registros_ordenados.sort(key = lambda reg : reg.desde)
+        registros_ordenados.sort(key=lambda reg: reg.desde_proporcion)
         return registros_ordenados
 
-    def registro_que_aplica(self, proporcion, numero_de_orden):
-        return next((reg for reg in self.registros_ordenados() if reg.aplica(proporcion, numero_de_orden)), None)
+    def registro_que_aplica(self, proporcion, orden_de_llegada):
+        return next((reg for reg in self.registros_ordenados() if reg.aplica(proporcion, orden_de_llegada)), None)
 
-    def valor_para(self, proporcion, numero_de_orden):
-        registro = self.registro_que_aplica(proporcion, numero_de_orden)
+    def valor_para(self, proporcion, orden_de_llegada):
+        registro = self.registro_que_aplica(proporcion, orden_de_llegada)
         if registro:
             return registro.prioridad
         return None
@@ -85,10 +109,10 @@ class MapaPrioridadesConDefault():
         self.principal = principal
         self.default = default
 
-    def valor_para(self, proporcion, numero_de_orden):
-        valor_principal = self.principal.valor_para(proporcion, numero_de_orden)
+    def valor_para(self, proporcion, orden_de_llegada):
+        valor_principal = self.principal.valor_para(proporcion, orden_de_llegada)
         # no uso el "or" para respetar que el valor_principal podría ser 0, que es falsy
-        return valor_principal if valor_principal is not None else self.default.valor_para(proporcion, numero_de_orden)
+        return valor_principal if valor_principal is not None else self.default.valor_para(proporcion, orden_de_llegada)
 
 
 class MapaPrioridadesProducto():
@@ -101,9 +125,9 @@ class MapaPrioridadesProducto():
         self.factor_1 = factor_1
         self.factor_2 = factor_2
 
-    def valor_para(self, proporcion, numero_de_orden):
-        valores = [self.factor_1.valor_para(proporcion, numero_de_orden),
-                   self.factor_2.valor_para(proporcion, numero_de_orden)]
+    def valor_para(self, proporcion, orden_de_llegada):
+        valores = [self.factor_1.valor_para(proporcion, orden_de_llegada),
+                   self.factor_2.valor_para(proporcion, orden_de_llegada)]
         if any(valor is None for valor in valores):
             return None
         return valores[0] * valores[1]
@@ -111,18 +135,19 @@ class MapaPrioridadesProducto():
 
 def registro_prioridad_desde_estructura(estructura):
     """ 
-    Crea un RegistroPrioridad a partir de una estructura {'desde': nro, 'hasta': nro, 'prioridad': nro, 'tope': nro}
-    donde el tope es optativo
+    Crea un RegistroPrioridad a partir de una estructura 
+    {'desde_proporcion': nro, 'hasta_proporcion': nro, 'prioridad': nro, 'hasta_cantidad': nro}
+    donde el hasta_cantidad es optativo
     """
-    regi = RegistroDePrioridad(estructura['desde'], estructura['hasta'], estructura['prioridad'])
-    if 'tope' in estructura:
-        regi.tope = estructura['tope']
+    regi = RegistroDePrioridad(estructura['desde_proporcion'], estructura['hasta_proporcion'], estructura['prioridad'])
+    if 'hasta_cantidad' in estructura:
+        regi.hasta_cantidad = estructura['hasta_cantidad']
     return regi
 
 
 def mapa_prioridades_desde_setting(setting):
     """ 
-    Crea un MapaPrioridades a partir de una lista [{'desde': nro, 'hasta': nro, 'prioridad': nro}]
+    Crea un MapaPrioridades a partir de una lista [{'desde_proporcion': nro, 'hasta_proporcion': nro, 'prioridad': nro}]
     que es el formato que tiene la especificación de prioridades en los settings.
     """
     mapa = MapaPrioridades()
@@ -131,3 +156,17 @@ def mapa_prioridades_desde_setting(setting):
     return mapa
 
 
+def mapa_prioridades_para_seccion(seccion):
+    """ 
+    Crea y devuelve el MapaPrioridades que corresponde a una Seccion, de acuerdo a las PrioridadScheduling
+    que hubiera definidas.
+    """
+    return PrioridadScheduling.mapa_prioridades(PrioridadScheduling.objects.filter(seccion=seccion, categoria=None))
+
+
+def mapa_prioridades_para_categoria(categoria):
+    """ 
+    Crea y devuelve el MapaPrioridades que corresponde a una Categoria, de acuerdo a las PrioridadScheduling
+    que hubiera definidas.
+    """
+    return PrioridadScheduling.mapa_prioridades(PrioridadScheduling.objects.filter(categoria=categoria, seccion=None))

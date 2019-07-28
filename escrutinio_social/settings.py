@@ -317,12 +317,12 @@ MESA_TAKE_WAIT_TIME = 2  # En minutos
 # Prioridades standard, a usar si no se definen prioridades específicas
 # para una categoría o circuito
 PRIORIDADES_STANDARD_CIRCUITO = [
-    {'desde': 0, 'hasta': 2, 'prioridad': 2},
-    {'desde': 2, 'hasta': 10, 'prioridad': 20},
-    {'desde': 20, 'hasta': 100, 'prioridad': 100},
+    {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2},
+    {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 20},
+    {'desde_proporcion': 20, 'hasta_proporcion': 100, 'prioridad': 100},
 ]
 PRIORIDADES_STANDARD_CATEGORIA = [
-    {'desde': 0, 'hasta': 100, 'prioridad': 100},
+    {'desde_proporcion': 0, 'hasta_proporcion': 100, 'prioridad': 100},
 ]
 
 # Las siguientes constantes definen los criterios de filtro

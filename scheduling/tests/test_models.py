@@ -3,11 +3,17 @@ import pytest
 from scheduling.models import (
     MapaPrioridades, MapaPrioridadesConDefault, MapaPrioridadesProducto,
     RegistroDePrioridad, RangosDeProporcionesSeSolapanError,
-    mapa_prioridades_desde_setting
+    mapa_prioridades_desde_setting, mapa_prioridades_para_categoria, mapa_prioridades_para_seccion
+)
+from .factories import (
+    PrioridadSchedulingFactory
+)
+from elecciones.tests.factories import (
+    SeccionFactory, CategoriaFactory
 )
 
 
-def test_aplica_tope():
+def test_aplica_hasta_cantidad():
     regi = RegistroDePrioridad(0, 5, 20, 7)
     assert regi.aplica(2,2)
     assert regi.aplica(12,4)
@@ -137,7 +143,7 @@ def test_mapa_prioridades_producto(proporcion, prioridad):
     assert mapa.valor_para(proporcion, 1) == prioridad
 
 
-@pytest.mark.parametrize('proporcion, nro_de_orden, prioridad', [
+@pytest.mark.parametrize('proporcion, orden_de_llegada, prioridad', [
     [0, 1, 20],
     [4, 3, 20],
     [10, 6, 20],
@@ -154,33 +160,79 @@ def test_mapa_prioridades_producto(proporcion, prioridad):
     [70, 15, 100],
     [95, 20, 100],
 ])
-def test_tope(proporcion, nro_de_orden, prioridad):
+def test_hasta_cantidad(proporcion, orden_de_llegada, prioridad):
     mapa = MapaPrioridades()
     mapa.agregar_registro(RegistroDePrioridad(0, 5, 20, 7))
     mapa.agregar_registro(RegistroDePrioridad(5, 25, 40))
     mapa.agregar_registro(RegistroDePrioridad(25, 100, 100))
-    assert mapa.valor_para(proporcion, nro_de_orden) == prioridad
+    assert mapa.valor_para(proporcion, orden_de_llegada) == prioridad
 
+def verificar_registro_prioridad(regi, desde_proporcion, hasta_proporcion, prioridad, hasta_cantidad=None):
+    assert regi.desde_proporcion == desde_proporcion
+    assert regi.hasta_proporcion == hasta_proporcion
+    assert regi.prioridad == prioridad
+    assert regi.hasta_cantidad == hasta_cantidad
 
 def test_mapa_desde_estructura():
     estruc = [
-        {'desde': 0, 'hasta': 2, 'prioridad': 2, 'tope': 7},
-        {'desde': 20, 'hasta': 100, 'prioridad': 130},
-        {'desde': 2, 'hasta': 10, 'prioridad': 20},
+        {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2, 'hasta_cantidad': 7},
+        {'desde_proporcion': 20, 'hasta_proporcion': 100, 'prioridad': 130},
+        {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 20},
     ]
     mapa = mapa_prioridades_desde_setting(estruc)
     regis = mapa.registros_ordenados()
     assert len(regis) == 3
-    assert regis[0].desde == 0
-    assert regis[0].hasta == 2
-    assert regis[0].prioridad == 2
-    assert regis[0].tope == 7
-    assert regis[1].desde == 2
-    assert regis[1].hasta == 10
-    assert regis[1].prioridad == 20 
-    assert regis[1].tope == None
-    assert regis[2].desde == 20
-    assert regis[2].hasta == 100
-    assert regis[2].prioridad == 130
-    assert regis[2].tope == None
+    verificar_registro_prioridad(regis[0], 0, 2, 2, 7)
+    verificar_registro_prioridad(regis[1], 2, 10, 20)
+    verificar_registro_prioridad(regis[2], 20, 100, 130)
 
+
+def test_prioridades_seccion(db):
+    seccion_1 = SeccionFactory()
+    seccion_2 = SeccionFactory()
+    PrioridadSchedulingFactory(seccion=seccion_1, desde_proporcion=50, hasta_proporcion=100, prioridad=250)
+    PrioridadSchedulingFactory(seccion=seccion_1, desde_proporcion=30, hasta_proporcion=50, prioridad=120)
+    PrioridadSchedulingFactory(seccion=seccion_1, desde_proporcion=10, hasta_proporcion=30, prioridad=80)
+    PrioridadSchedulingFactory(seccion=seccion_1, desde_proporcion=0, hasta_proporcion=10, hasta_cantidad=12, prioridad=20)
+    PrioridadSchedulingFactory(seccion=seccion_2, desde_proporcion=0, hasta_proporcion=2, hasta_cantidad=7, prioridad=5)
+    PrioridadSchedulingFactory(seccion=seccion_2, desde_proporcion=2, hasta_proporcion=10, hasta_cantidad=20, prioridad=25)
+    PrioridadSchedulingFactory(seccion=seccion_2, desde_proporcion=10, hasta_proporcion=100, prioridad=110)    
+
+    mapa = mapa_prioridades_para_seccion(seccion_1)
+    regis = mapa.registros_ordenados()
+    assert len(regis) == 4
+    verificar_registro_prioridad(regis[0], 0, 10, 20, 12)
+    verificar_registro_prioridad(regis[1], 10, 30, 80)
+    verificar_registro_prioridad(regis[2], 30, 50, 120)
+    verificar_registro_prioridad(regis[3], 50, 100, 250)
+
+    mapa = mapa_prioridades_para_seccion(seccion_2)
+    regis = mapa.registros_ordenados()
+    assert len(regis) == 3
+    verificar_registro_prioridad(regis[0], 0, 2, 5, 7)
+    verificar_registro_prioridad(regis[1], 2, 10, 25, 20)
+    verificar_registro_prioridad(regis[2], 10, 100, 110)
+
+
+def test_prioridades_categoria(db):
+    categoria_1 = CategoriaFactory()
+    categoria_2 = CategoriaFactory()
+    categoria_3 = CategoriaFactory()
+    PrioridadSchedulingFactory(categoria=categoria_1, desde_proporcion=0, hasta_proporcion=100, prioridad=20)
+    PrioridadSchedulingFactory(categoria=categoria_2, desde_proporcion=0, hasta_proporcion=2, prioridad=5)
+    PrioridadSchedulingFactory(categoria=categoria_2, desde_proporcion=2, hasta_proporcion=100, prioridad=30)
+
+    mapa = mapa_prioridades_para_categoria(categoria_1)
+    regis = mapa.registros_ordenados()
+    assert len(regis) == 1
+    verificar_registro_prioridad(regis[0], 0, 100, 20)
+
+    mapa = mapa_prioridades_para_categoria(categoria_2)
+    regis = mapa.registros_ordenados()
+    assert len(regis) == 2
+    verificar_registro_prioridad(regis[0], 0, 2, 5)
+    verificar_registro_prioridad(regis[1], 2, 100, 30)
+
+    mapa = mapa_prioridades_para_categoria(categoria_3)
+    regis = mapa.registros_ordenados()
+    assert len(regis) == 0
