@@ -25,15 +25,15 @@ class RegistroDePrioridad():
     Representa la correspondencia de una prioridad con un rango de proporciones.
     """
 
-    def __init__(self, desde, hasta, prioridad, umbral=None):
+    def __init__(self, desde, hasta, prioridad, tope=None):
         self.desde = desde
         self.hasta = hasta
         self.prioridad = prioridad
-        self.umbral = umbral
+        self.tope = tope
 
     def aplica(self, proporcion, numero_de_orden):
         return (self.desde <= proporcion and (self.hasta == 100 or self.hasta > proporcion)) \
-            or self.umbral and numero_de_orden <= self.umbral
+            or (self.tope and numero_de_orden <= self.tope)
 
     def es_compatible_con(self, otro):
         return self.hasta <= otro.desde or otro.hasta <= self.desde
@@ -60,8 +60,13 @@ class MapaPrioridades():
                 F"Rangos se solapan entre <{registro}> y <{registro_incompatible}>")
         self.registros.append(registro)
 
+    def registros_ordenados(self):
+        registros_ordenados = list(self.registros)
+        registros_ordenados.sort(key = lambda reg : reg.desde)
+        return registros_ordenados
+
     def registro_que_aplica(self, proporcion, numero_de_orden):
-        return next((reg for reg in self.registros if reg.aplica(proporcion, numero_de_orden)), None)
+        return next((reg for reg in self.registros_ordenados() if reg.aplica(proporcion, numero_de_orden)), None)
 
     def valor_para(self, proporcion, numero_de_orden):
         registro = self.registro_que_aplica(proporcion, numero_de_orden)
@@ -106,9 +111,13 @@ class MapaPrioridadesProducto():
 
 def registro_prioridad_desde_estructura(estructura):
     """ 
-    Crea un RegistroPrioridad a partir de una estructura {'desde': nro, 'hasta': nro, 'prioridad': nro}
+    Crea un RegistroPrioridad a partir de una estructura {'desde': nro, 'hasta': nro, 'prioridad': nro, 'tope': nro}
+    donde el tope es optativo
     """
-    return RegistroDePrioridad(estructura['desde'], estructura['hasta'], estructura['prioridad'])
+    regi = RegistroDePrioridad(estructura['desde'], estructura['hasta'], estructura['prioridad'])
+    if 'tope' in estructura:
+        regi.tope = estructura['tope']
+    return regi
 
 
 def mapa_prioridades_desde_setting(setting):
@@ -117,6 +126,8 @@ def mapa_prioridades_desde_setting(setting):
     que es el formato que tiene la especificación de prioridades en los settings.
     """
     mapa = MapaPrioridades()
-    mapa
+    for estructura in setting:
+        mapa.agregar_registro(registro_prioridad_desde_estructura(estructura))
+    return mapa
 
 

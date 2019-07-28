@@ -2,8 +2,16 @@ import pytest
 
 from scheduling.models import (
     MapaPrioridades, MapaPrioridadesConDefault, MapaPrioridadesProducto,
-    RegistroDePrioridad, RangosDeProporcionesSeSolapanError
+    RegistroDePrioridad, RangosDeProporcionesSeSolapanError,
+    mapa_prioridades_desde_setting
 )
+
+
+def test_aplica_tope():
+    regi = RegistroDePrioridad(0, 5, 20, 7)
+    assert regi.aplica(2,2)
+    assert regi.aplica(12,4)
+    assert not regi.aplica(12,8)
 
 
 @pytest.mark.parametrize('proporcion, prioridad', [
@@ -127,3 +135,52 @@ def test_mapa_prioridades_producto(proporcion, prioridad):
 
     mapa = MapaPrioridadesProducto(factor_1, factor_2)
     assert mapa.valor_para(proporcion, 1) == prioridad
+
+
+@pytest.mark.parametrize('proporcion, nro_de_orden, prioridad', [
+    [0, 1, 20],
+    [4, 3, 20],
+    [10, 6, 20],
+    [12, 7, 20],
+    [14, 8, 40],
+    [24, 13, 40],
+    [26, 14, 100],
+    [80, 41, 100],
+    [5, 2, 20],
+    [20, 5, 20],
+    [25, 6, 20],
+    [30, 7, 20],
+    [35, 8, 100],
+    [70, 15, 100],
+    [95, 20, 100],
+])
+def test_tope(proporcion, nro_de_orden, prioridad):
+    mapa = MapaPrioridades()
+    mapa.agregar_registro(RegistroDePrioridad(0, 5, 20, 7))
+    mapa.agregar_registro(RegistroDePrioridad(5, 25, 40))
+    mapa.agregar_registro(RegistroDePrioridad(25, 100, 100))
+    assert mapa.valor_para(proporcion, nro_de_orden) == prioridad
+
+
+def test_mapa_desde_estructura():
+    estruc = [
+        {'desde': 0, 'hasta': 2, 'prioridad': 2, 'tope': 7},
+        {'desde': 20, 'hasta': 100, 'prioridad': 130},
+        {'desde': 2, 'hasta': 10, 'prioridad': 20},
+    ]
+    mapa = mapa_prioridades_desde_setting(estruc)
+    regis = mapa.registros_ordenados()
+    assert len(regis) == 3
+    assert regis[0].desde == 0
+    assert regis[0].hasta == 2
+    assert regis[0].prioridad == 2
+    assert regis[0].tope == 7
+    assert regis[1].desde == 2
+    assert regis[1].hasta == 10
+    assert regis[1].prioridad == 20 
+    assert regis[1].tope == None
+    assert regis[2].desde == 20
+    assert regis[2].hasta == 100
+    assert regis[2].prioridad == 130
+    assert regis[2].tope == None
+
