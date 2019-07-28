@@ -223,6 +223,7 @@ class IdentificacionFactory(DjangoModelFactory):
 
     mesa = factory.SubFactory(MesaFactory)
     attachment = factory.SubFactory(AttachmentFactory)
+    fiscal = factory.SubFactory(FiscalFactory)
 
 
 class ProblemaFactory(DjangoModelFactory):

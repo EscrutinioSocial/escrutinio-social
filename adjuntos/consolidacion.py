@@ -6,6 +6,9 @@ from django.db.models import Subquery, Count
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from problemas.models import Problema
+from antitrolling.efecto import (
+    efecto_scoring_troll_asociacion_attachment, efecto_scoring_troll_confirmacion_carga
+)
 
 
 def consolidar_cargas_por_tipo(cargas, tipo):
@@ -74,7 +77,7 @@ def consolidar_cargas_con_problemas(cargas_que_reportan_problemas):
     # Tomo como "muestra" alguna de las que tienen problemas.
     carga_con_problema = cargas_que_reportan_problemas.first()
     # Confirmo el problema porque varios reportaron problemas.
-    problema = Problema.confirmar_problema(carga=carga_con_problema)
+    Problema.confirmar_problema(carga=carga_con_problema)
 
     return MesaCategoria.STATUS.con_problemas, None
 
@@ -83,6 +86,15 @@ def consolidar_cargas(mesa_categoria):
     """
     Consolida todas las cargas de la MesaCategoria parámetro.
     """
+    statuses_que_permiten_analizar_carga_total = [
+        MesaCategoria.STATUS.sin_cargar,
+        MesaCategoria.STATUS.parcial_consolidada_dc,
+        MesaCategoria.STATUS.parcial_consolidada_csv
+    ]
+    statuses_que_requieren_computar_efecto_trolling = [
+        MesaCategoria.STATUS.parcial_consolidada_dc,
+        MesaCategoria.STATUS.total_consolidada_dc
+    ]
 
     # Por lo pronto el status es sin_cargar.
     status_resultante = MesaCategoria.STATUS.sin_cargar
@@ -106,28 +118,30 @@ def consolidar_cargas(mesa_categoria):
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
 
-    # A continuación voy probando los distintos status de mayor a menor.
+    # A continuación voy probando los distintos status.
 
     # Primero les actualizo la firma.
     for carga in cargas:
         carga.actualizar_firma()
 
-    # Analizo las totales.
-    cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
-    if cargas_totales.count() > 0:
-        status_resultante, carga_testigo_resultante = \
-            consolidar_cargas_por_tipo(cargas_totales, Carga.TIPOS.total)
-        mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
-        return
-
     # Analizo las parciales.
     cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
-    if cargas_parciales.count() > 0:
+    if cargas_parciales.exists():
         status_resultante, carga_testigo_resultante = \
             consolidar_cargas_por_tipo(cargas_parciales, Carga.TIPOS.parcial)
 
-    mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+    if status_resultante in statuses_que_permiten_analizar_carga_total:
+        # Analizo las totales solo si no hay ninguna parcial, o si están consolidadas las parciales.
+        # En otro caso no tiene sentido porque puedo encontrar cargas totales "residuales", pero
+        # todavía no se resolvió la parcial.
+        cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
+        if cargas_totales.exists():
+            status_resultante, carga_testigo_resultante = \
+                consolidar_cargas_por_tipo(cargas_totales, Carga.TIPOS.total)
 
+    mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+    if status_resultante in statuses_que_requieren_computar_efecto_trolling:
+        efecto_scoring_troll_confirmacion_carga(mesa_categoria)
 
 def consolidar_identificaciones(attachment):
     """
@@ -169,8 +183,9 @@ def consolidar_identificaciones(attachment):
         # porque se agregó un attachment.
         Problema.resolver_problema_falta_hoja(mesa_attachment)
 
-        # TODO - para reportar trolls
-        # sumar 200 a scoring de los usuarios que identificaron el acta diferente
+        # aumentar el scoring de los usuarios que identificaron el acta diferente
+        efecto_scoring_troll_asociacion_attachment(attachment, mesa_attachment)
+
     else:
         status_attachment = Attachment.STATUS.sin_identificar
         mesa_attachment = None
@@ -188,6 +203,9 @@ def consolidar_identificaciones(attachment):
                 problema = Problema.confirmar_problema(identificacion=identificacion_con_problemas)
                 status_attachment = Attachment.STATUS.problema
 
+    # me acuerdo la mesa anterior por si se esta pasando a sin_identificar
+    mesa_anterior = attachment.mesa
+
     # Identifico el attachment.
     # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
     # Eso es correcto.
@@ -198,31 +216,64 @@ def consolidar_identificaciones(attachment):
     attachment.identificacion_testigo = testigo
     attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
 
+    # si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
+    # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment
+    if mesa_anterior and not mesa_attachment:
+        mesa_anterior.invalidar_asignacion_attachment()
+
+
 
 @transaction.atomic
 def consumir_novedades_identificacion():
     a_procesar = Identificacion.objects.select_for_update().filter(procesada=False)
+    # OJO - aca precomputar los ids_a_procesar es importante
+    # ver comentario en consumir_novedades_carga()
+    ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+
     attachments_con_novedades = Attachment.objects.filter(
-        identificaciones__in=Subquery(a_procesar.values('id'))
+        identificaciones__in=ids_a_procesar
     ).distinct()
     for attachment in attachments_con_novedades:
         consolidar_identificaciones(attachment)
-    procesadas = a_procesar.update(procesada=True)
+
+    # Todas procesadas
+    procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
 
 
 @transaction.atomic
 def consumir_novedades_carga():
     a_procesar = Carga.objects.select_for_update().filter(procesada=False)
-
+    ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+    # OJO - aca precomputar los ids_a_procesar es importante
+    # si en lugar de hacer esto, al final se ejecuta
+    #    a_procesar.update(procesada=True)
+    # entonces se pasa a procesadas **todas** las cargas que tuvieren procesada=False
+    # **al final** del proceso.
+    #
+    # En particular, si se detecta a un fiscal como troll, se pasan todas sus cargas a
+    # invalidada=True y procesada=False, para que **la siguiente** consolidacion de cargas
+    # recompute el estado de las MesaCategoria.
+    # Pero también podría pasar que entren nuevas cargas mientras se ejecuta la consolidación.
+    # En ambos casos, es importante que se respete que esas cargas están pendientes de proceso.
+    #
+    # Técnicamente, por más que se haga el SELECT arriba, si se pone
+    #    a_procesar.update(procesada=True)
+    # el SQL generado por Django es de la forma
+    #    UPDATE carga SET procesada=True WHERE procesada=False
+    # considera **la condición** del SELECT, no su resultado.
+    # Al obtener los ids, se fuerza a que el SQL sea así:
+    #    UPDATE carga SET procesada=True WHERE id in [...lista_precalculada_de_ids...]
+    #
+    # Carlos Lombardi, 2019.07.24
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
-        cargas__in=Subquery(a_procesar.values('id'))
+        cargas__in=ids_a_procesar
     ).distinct()
     for mesa_categoria_con_novedades in mesa_categorias_con_novedades:
         consolidar_cargas(mesa_categoria_con_novedades)
 
     # Todas procesadas
-    procesadas = a_procesar.update(procesada=True)
+    procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
 
 

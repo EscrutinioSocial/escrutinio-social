@@ -8,6 +8,7 @@ from django.db import transaction
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.auth.models import User
 from django.dispatch import receiver
+from django.db.models import Sum
 from django.db.models.signals import post_save, pre_delete
 from django.contrib.contenttypes.models import ContentType
 from annoying.functions import get_object_or_None
@@ -19,6 +20,11 @@ from model_utils.fields import StatusField
 from django.db.utils import IntegrityError
 from model_utils import Choices
 from django.contrib.auth.models import Group
+
+from antitrolling.models import (
+    registrar_fiscal_no_es_troll, marcar_fiscal_troll, EventoScoringTroll, crear_evento_marca_explicita_como_troll
+)
+from antitrolling.efecto import efecto_determinacion_fiscal_troll
 
 TOTAL = 'Total General'
 
@@ -90,6 +96,7 @@ class Fiscal(models.Model):
     tipo_dni = models.CharField(choices=TIPO_DNI, max_length=3, default='DNI')
     dni = models.CharField(max_length=15, blank=True, null=True)
     datos_de_contacto = GenericRelation('contacto.DatoDeContacto', related_query_name='fiscales')
+    troll = models.BooleanField(null=False, default=False)
     user = models.OneToOneField(
         'auth.User', null=True, blank=True, related_name='fiscal', on_delete=models.SET_NULL
     )
@@ -157,6 +164,42 @@ class Fiscal(models.Model):
     @property
     def esta_en_grupo_unidades_basicas(self):
         return self.esta_en_grupo('unidades basicas')
+        
+    def scoring_troll(self):
+        return self.eventos_scoring_troll.aggregate(v=Sum('variacion'))['v'] or 0
+
+    def marcar_como_troll(self, actor):
+        """
+        Un UE decidió, explícitamente, marcarme como troll
+        """
+        evento = crear_evento_marca_explicita_como_troll(self, actor)
+        marcar_fiscal_troll(self, evento)
+
+    def aplicar_marca_troll(self):
+        """
+        Ejecutar las consecuencias de la decisión de marcarme como troll.
+        La decisión puede ser automática o manual.
+        El código que refleja la decisión generó el CambioEstadoTroll correspondiente,
+        este método es para el resto de las consecuencias.
+        """
+        self.troll = True
+        self.save(update_fields=['troll'])
+        efecto_determinacion_fiscal_troll(self)
+
+    def quitar_marca_troll(self, actor, nuevo_scoring):
+        """
+        Un UE decidió, explícitamente, quitarme la marca de troll.
+        Este es el único caso en que un fiscal pierde la marca de troll, no hay eventos automáticos para esto.
+        Por eso este método incluye todas las consecuencias del acto de desmarcar, 
+        al contrario de la decisión de marcar que puede ser manual o automática.
+        """
+        era_troll = self.troll
+        self.troll = False
+        self.save(update_fields=['troll'])
+        if (era_troll):
+            registrar_fiscal_no_es_troll(self, nuevo_scoring, actor)
+
+
 
 
 @receiver(post_save, sender=Fiscal)
