@@ -42,10 +42,20 @@ def test_quiero_validar__camino_feliz(db, client):
     _assert_fiscal_cargado_correctamente(seccion)
 
     fiscal = _get_fiscal()
-    url_gracias = reverse('quiero-validar-gracias', kwargs={'codigo_ref': fiscal.referido_por_codigos})
+    # se setea el fiscal
+    assert client.session['fiscal_id'] == fiscal.id
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('quiero-validar-gracias')
 
-    assert HTTPStatus.FOUND == response.status_code
-    assert url_gracias == response.url
+
+def test_quiero_validar_gracias(db, client):
+    f = FiscalFactory()
+    s = client.session
+    s['fiscal_id'] = f.id
+    s.save()
+    response = client.get(reverse('quiero-validar-gracias'))
+    assert response.context['fiscal'] == f
+    assert f.ultimo_codigo_url() in response.content.decode('utf8')
 
 
 def test_quiero_validar__error_validacion(db, client):

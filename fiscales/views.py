@@ -123,7 +123,9 @@ class QuieroSerFiscal(FormView):
         fiscal.user.save()
         self.enviar_correo_confirmacion(fiscal, data['email'])
 
-        self.success_url = reverse('quiero-validar-gracias', kwargs={'codigo_ref': fiscal.ultimo_codigo()})
+        # se guarda el fiscal en la sesion para que se consuma en la página de agradecimiento
+        self.request.session['fiscal_id'] = fiscal.id
+        self.success_url = reverse('quiero-validar-gracias')
         return super().form_valid(form)
 
     def enviar_correo_confirmacion(self, fiscal, email):
@@ -148,8 +150,9 @@ class QuieroSerFiscal(FormView):
         )
 
 
-def quiero_validar_gracias(request, codigo_ref):
-    return render(request, 'fiscales/quiero-validar-gracias.html', {'codigo_ref': codigo_ref})
+def quiero_validar_gracias(request):
+    fiscal = get_object_or_None(Fiscal, id=request.session.get('fiscal_id'))
+    return render(request, 'fiscales/quiero-validar-gracias.html', {'fiscal': fiscal})
 
 
 @login_required
