@@ -1,5 +1,6 @@
 from django.db import models
-from .models import (Circuito, Categoria)
+from elecciones.models import (Circuito, Categoria)
+
 
 class PrioridadScheduling(models.Model):
     """
@@ -24,13 +25,15 @@ class RegistroDePrioridad():
     Representa la correspondencia de una prioridad con un rango de proporciones.
     """
 
-    def __init__(self, desde, hasta, prioridad):
+    def __init__(self, desde, hasta, prioridad, umbral=None):
         self.desde = desde
         self.hasta = hasta
         self.prioridad = prioridad
+        self.umbral = umbral
 
-    def aplica(self, proporcion):
-        return self.desde <= proporcion and (self.hasta==100 or self.hasta > proporcion)
+    def aplica(self, proporcion, numero_de_orden):
+        return (self.desde <= proporcion and (self.hasta == 100 or self.hasta > proporcion)) \
+            or self.umbral and numero_de_orden <= self.umbral
 
     def es_compatible_con(self, otro):
         return self.hasta <= otro.desde or otro.hasta <= self.desde
@@ -49,18 +52,19 @@ class MapaPrioridades():
     def __init__(self):
         self.registros = []
 
-    def agregarRegistro(self, registro):
-        registro_incompatible = next((reg for reg in self.registros if not reg.es_compatible_con(registro)), None)
+    def agregar_registro(self, registro):
+        registro_incompatible = next(
+            (reg for reg in self.registros if not reg.es_compatible_con(registro)), None)
         if registro_incompatible:
             raise RangosDeProporcionesSeSolapanError(
                 F"Rangos se solapan entre <{registro}> y <{registro_incompatible}>")
         self.registros.append(registro)
 
-    def registro_que_aplica(self, proporcion):
-        return next((reg for reg in self.registros if reg.aplica(proporcion)), None)
+    def registro_que_aplica(self, proporcion, numero_de_orden):
+        return next((reg for reg in self.registros if reg.aplica(proporcion, numero_de_orden)), None)
 
-    def valor_para(self, proporcion):
-        registro = self.registro_que_aplica(proporcion)
+    def valor_para(self, proporcion, numero_de_orden):
+        registro = self.registro_que_aplica(proporcion, numero_de_orden)
         if registro:
             return registro.prioridad
         return None
@@ -71,14 +75,15 @@ class MapaPrioridadesConDefault():
     Un MapaPrioridades compuesto, tiene un principal y un default.
     Para una dada proporción, si el principal no tiene valor, entonces delega en el default.
     """
+
     def __init__(self, principal, default):
         self.principal = principal
         self.default = default
-    
-    def valor_para(self, proporcion):
-        valor_principal = self.principal.valor_para(proporcion)
+
+    def valor_para(self, proporcion, numero_de_orden):
+        valor_principal = self.principal.valor_para(proporcion, numero_de_orden)
         # no uso el "or" para respetar que el valor_principal podría ser 0, que es falsy
-        return valor_principal if valor_principal is not None else self.default.valor_para(proporcion)
+        return valor_principal if valor_principal is not None else self.default.valor_para(proporcion, numero_de_orden)
 
 
 class MapaPrioridadesProducto():
@@ -86,12 +91,14 @@ class MapaPrioridadesProducto():
     Un MapaPrioridades compuesto, que devuelve el producto de los valores que entregan sus dos factores.
     Devuelve None si al menos un factor devuelve None.
     """
+
     def __init__(self, factor_1, factor_2):
         self.factor_1 = factor_1
         self.factor_2 = factor_2
-    
-    def valor_para(self, proporcion):
-        valores = [self.factor_1.valor_para(proporcion), self.factor_2.valor_para(proporcion)]
+
+    def valor_para(self, proporcion, numero_de_orden):
+        valores = [self.factor_1.valor_para(proporcion, numero_de_orden),
+                   self.factor_2.valor_para(proporcion, numero_de_orden)]
         if any(valor is None for valor in valores):
             return None
         return valores[0] * valores[1]
@@ -100,7 +107,7 @@ class MapaPrioridadesProducto():
 def registro_prioridad_desde_estructura(estructura):
     """ 
     Crea un RegistroPrioridad a partir de una estructura {'desde': nro, 'hasta': nro, 'prioridad': nro}
-    """ 
+    """
     return RegistroDePrioridad(estructura['desde'], estructura['hasta'], estructura['prioridad'])
 
 
@@ -108,6 +115,8 @@ def mapa_prioridades_desde_setting(setting):
     """ 
     Crea un MapaPrioridades a partir de una lista [{'desde': nro, 'hasta': nro, 'prioridad': nro}]
     que es el formato que tiene la especificación de prioridades en los settings.
-    """ 
+    """
     mapa = MapaPrioridades()
     mapa
+
+

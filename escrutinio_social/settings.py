@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'contacto',
     'antitrolling',
     'api',
+    'scheduling'
 ]
 
 MIDDLEWARE = [
