@@ -100,23 +100,26 @@ class QuieroSerFiscal(FormView):
         fiscal.nombres = data['nombres']
         fiscal.apellido = data['apellido']
         fiscal.seccion_id = data['seccion']
-        fiscal.referido_por_nombres = data['referido_por_nombres']
-        fiscal.referido_por_apellido = data['referido_por_apellido']
+        fiscal.referente_nombres = data['referente_nombres']
+        fiscal.referente_apellido = data['referente_apellido']
         if data['referido_por_codigo']:
             codigo = data['referido_por_codigo']
-            fiscal.referente, fiscal.referente_certeza = CodigoReferido.fiscal_para(codigo)
-            fiscal.referido_por_codigos = f'{fiscal.referido_por_codigos}-{codigo}'
+            referente, certeza = CodigoReferido.fiscales_para(codigo)[0]
+            fiscal.referente = referente
+            fiscal.referente_certeza = certeza
+            if referente:
+                fiscal.referido_por_codigos = f'{referente.referido_por_codigos}-{codigo}'
+            else:
+                fiscal.referido_por_codigos = codigo
         fiscal.save()
         telefono = data['telefono_area'] + data['telefono_local']
         fiscal.agregar_dato_de_contacto('teléfono', telefono)
         fiscal.agregar_dato_de_contacto('email', data['email'])
         fiscal.user.set_password(data['password'])
-
         fiscal.user.save()
-
         self.enviar_correo_confirmacion(fiscal, data['email'])
 
-        self.success_url = reverse('quiero-validar-gracias', kwargs={'codigo_ref': fiscal.referido_codigo})
+        self.success_url = reverse('quiero-validar-gracias', kwargs={'codigo_ref': codigo})
         return super().form_valid(form)
 
     def enviar_correo_confirmacion(self, fiscal, email):

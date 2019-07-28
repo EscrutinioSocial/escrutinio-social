@@ -135,9 +135,8 @@ class QuieroSerFiscalForm(forms.Form):
                                                'required': True,
                                            }))
     seccion = forms.CharField(widget=forms.HiddenInput(attrs={'id': 'seccion', 'name': 'seccion'}))
-    referente_notas = forms.CharField(
-        required=False, label="Nombre y Apellido u otra información de tu referente", max_length=250
-    )
+    referente_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
+    referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
 
     referido_por_codigo = forms.CharField(
         required=False,
@@ -170,7 +169,7 @@ class QuieroSerFiscalForm(forms.Form):
         ),
         Fieldset(
             'Referencia',
-            Row('referente_notas', 'referido_por_codigo')
+            Row('referente_nombres', 'referente_apellido', 'referido_por_codigo')
         )
     )
 
@@ -214,6 +213,12 @@ class QuieroSerFiscalForm(forms.Form):
                     'telefono_area',
                     self.MENSAJE_ERROR_TELEFONO_INVALIDO
                 )
+
+    def clean_referente_apellido(self):
+        return self.cleaned_data.get('referente_apellido', '').strip() or None
+
+    def clean_referente_nombres(self):
+        return self.cleaned_data.get('referente_nombres', '').strip() or None
 
     def clean_password(self):
         password = self.cleaned_data.get('password')

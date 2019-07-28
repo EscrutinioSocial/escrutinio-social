@@ -4,6 +4,7 @@ import random
 import string
 from django.db import models
 from django.conf import settings
+from django.db import transaction
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.auth.models import User
 from django.dispatch import receiver
@@ -24,23 +25,23 @@ TOTAL = 'Total General'
 
 class CodigoReferido(TimeStampedModel):
     # hay al menos 1 codigo de referido por fiscal
-    fiscal = models.ForeignKey('Fiscal', related_name='codigos_de_referidos')
+    fiscal = models.ForeignKey('Fiscal', related_name='codigos_de_referidos', on_delete=models.CASCADE)
     codigo = models.CharField(
         max_length=4, unique=True, help_text='Código con el que el fiscal puede referir a otres'
     )
     activo = models.BooleanField(default=True)
 
     @classmethod
-    def fiscal_para(cls, codigo, nombre=None, apellido=None):
+    def fiscales_para(cls, codigo, nombre=None, apellido=None):
         """
         Devuelve una lista de fiscales candidatos
         """
-        fiscal = get_object_or_None(codigo=codigo)
+        codigo_ref = get_object_or_None(CodigoReferido, codigo=codigo, activo=True)
         # TO DO. encontrar fiscal candidato basado en un código similar
         # http://andilabs.github.io/2018/04/06/searching-in-django-unaccent-levensthein-full-text-search-postgres-power.html
         # restar 25% por cada grado de distancia Levenshtein
-        if fiscal:
-            return [(fiscal, 100)]
+        if codigo_ref:
+            return [(codigo_ref.fiscal, 100)]
         elif nombre and apellido:
             qs = Fiscal.objects.filter(nombres__icontains=nombre, apellido__icontains=apellido)
             if qs.exists():
@@ -51,17 +52,20 @@ class CodigoReferido(TimeStampedModel):
         """
         Genera un código único de 4 dígitos alfanuméricos
         """
-        intentos = 0
+        intentos = 5
         while True:
-            intentos += 1
+            intentos -= 1
             try:
                 if not self.codigo:
-                    self.codigo = random.choice(string.ascii_uppercase + string.digits, 4)
-                super().save(*args, kwargs)
+                    self.codigo = ''.join(random.sample(string.ascii_uppercase + string.digits, 4))
+                with transaction.atomic():
+                    super().save(*args, kwargs)
                 break
             except IntegrityError:
-                # se crea un código random. Si falla muchas veces algo feo está pasando.
-                if intentos < 5:
+                self.codigo = None
+                # se crea un código random unico.
+                # Si falla muchas veces algo feo está pasando.
+                if intentos:
                     continue
                 raise
 
@@ -91,11 +95,11 @@ class Fiscal(models.Model):
     )
     seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
-    referente = models.ForeignKey('Fiscal', null=True, blank=True)
+    referente = models.ForeignKey('Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
     referente_certeza = models.PositiveIntegerField(default=100, help_text='El código no era exacto?')
     # otra metadata del supuesto referente
-    referente_notas = models.CharField(max_length=250, blank=True, null=True)
-
+    referente_nombres = models.CharField(max_length=50, blank=True, null=True)
+    referente_apellido = models.CharField(max_length=30, blank=True, null=True)
 
     # el materialized path de referencias
     referido_por_codigos = models.CharField(max_length=250, blank=True, null=True)
@@ -175,8 +179,8 @@ def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, **kwar
         user.save()
         instance.user = user
         instance.save(update_fields=['user'])
-    if not instance.codigos_de_referidos.exist():
-        instance.crear_codigo_de_referido()
+    if not instance.codigos_de_referidos.exists():
+        instance.crear_codigo_de_referidos()
 
 
 
