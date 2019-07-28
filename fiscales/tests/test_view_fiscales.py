@@ -1,11 +1,13 @@
 from django.urls import reverse
 from http import HTTPStatus
 
+from elecciones.tests.test_resultados import fiscal_client, setup_groups
 from elecciones.tests.factories import (
     FiscalFactory,
     SeccionFactory,
 )
 from fiscales.models import Fiscal
+from fiscales.forms import ReferidoForm
 
 
 QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT = {
@@ -107,3 +109,43 @@ def construir_request_data(seccion):
     data["seccion_autocomplete"] = seccion.id
     return data
 
+
+def test_referidos_muestra_link_y_referidos(fiscal_client, admin_user):
+    fiscal = admin_user.fiscal
+    referidos_ids = {f.id for f in FiscalFactory.create_batch(2, referente=fiscal)}
+
+    # otros fiscales no afectan
+    FiscalFactory(referente=FiscalFactory())
+
+    assert set(fiscal.referidos.values_list('id', flat=True)) == referidos_ids
+
+    response = fiscal_client.get(reverse('referidos'))
+    assert response.status_code == 200
+    content = response.content.decode('utf8')
+    form = response.context['form']
+
+    assert isinstance(form, ReferidoForm)
+    assert form.initial['url'] == fiscal.ultimo_codigo_url()
+    assert set(response.context['referidos'].values_list('id', flat=True)) == referidos_ids
+    assert str(response.context['referidos'][0]) in content
+    assert str(response.context['referidos'][1]) in content
+
+
+def test_referidos_post_regenera_link(fiscal_client, admin_user, mocker):
+    crear_mock = mocker.patch('fiscales.models.Fiscal.crear_codigo_de_referidos')
+    response = fiscal_client.post(
+        reverse('referidos'), data={'link': ''}
+    )
+    assert response.status_code == 200
+    assert crear_mock.call_count == 1
+
+
+def test_referidos_post_desconoce(fiscal_client, admin_user):
+    fiscal = admin_user.fiscal
+    referidos_ids = [f.id for f in FiscalFactory.create_batch(2, referente=fiscal)]
+    assert fiscal.referidos.count() == 2
+    response = fiscal_client.post(
+        reverse('referidos'), data={'desconozco': '', 'referido': referidos_ids}
+    )
+    assert response.status_code == 200
+    assert fiscal.referidos.count() == 0
