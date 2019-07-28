@@ -1,5 +1,5 @@
 from django import forms
-from .models import Identificacion, Attachment
+from .models import Identificacion, IdentificacionParcial, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
 
@@ -46,6 +46,46 @@ class IdentificacionForm(forms.ModelForm):
         if mesa and mesa.lugar_votacion.circuito != circuito:
             self.add_error(
                 'mesa', 'Esta mesa no pertenece al circuito'
+            )
+        return cleaned_data
+
+
+class IdentificacionParcialForm(forms.ModelForm):
+    """
+    Este formulario se utiliza para asignar una identificación parcial a un adjunto.
+    """
+    distrito = forms.ModelChoiceField(queryset=Distrito.objects.all())
+    seccion = forms.ModelChoiceField(queryset=Seccion.objects.all())
+    circuito = forms.ModelChoiceField(queryset=Circuito.objects.all(),required=False)
+
+    class Meta:
+        model = IdentificacionParcial
+        fields = ['distrito', 'seccion', 'circuito']
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        if instance:
+            kwargs['initial']['circuito'] = circuito = circuito
+            kwargs['initial']['seccion'] = seccion = circuito.seccion
+            kwargs['initial']['distrito'] = distrito = seccion.distrito
+        super().__init__(*args, **kwargs)
+        self.fields['distrito'].widget.attrs['autofocus'] = True
+        self.fields['seccion'].choices = (('', '---------'),)
+        self.fields['seccion'].label = 'Sección'
+        self.fields['circuito'].choices = (('', '---------'),)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        circuito = cleaned_data.get('circuito')
+        seccion = cleaned_data.get('seccion')
+        distrito = cleaned_data.get('distrito')
+        if seccion and seccion.distrito != distrito:
+            self.add_error(
+                'seccion', 'Esta sección no pertenece al distrito'
+            )
+        elif circuito and circuito.seccion != seccion:
+            self.add_error(
+                'circuito', 'Este circuito no pertenece a la sección'
             )
         return cleaned_data
 

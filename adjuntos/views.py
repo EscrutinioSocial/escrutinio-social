@@ -19,6 +19,7 @@ from adjuntos.csv_import import CSVImporter
 from .forms import (
     AgregarAttachmentsForm,
     IdentificacionForm,
+    IdentificacionParcialForm,
 )
 from .models import Attachment, Identificacion
 from problemas.models import Problema, ReporteDeProblema
@@ -74,6 +75,8 @@ class IdentificacionCreateView(CreateView):
             id_parcial = self.attachment.identificacion_parcial
             context['seccion_precargada'] = id_parcial.seccion
             context['distrito_precargado'] = id_parcial.distrito
+            if id_parcial.circuito is not None:
+                context['circuito_precargado'] = id_parcial.circuito
         return context
 
     def form_valid(self, form):
@@ -87,6 +90,7 @@ class IdentificacionCreateView(CreateView):
             f'Identificada mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito}',
         )
         return super().form_valid(form)
+
 
 class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
     template_name = "adjuntos/asignar-mesa-ub.html"
@@ -211,17 +215,19 @@ class AgregarAdjuntos(FormView):
 
         return self.form_invalid(form)
 
-    def procesar_adjunto(self, adjunto, subido_por):
+    def procesar_adjunto(self, adjunto, subido_por,identificacion=None):
         if adjunto.content_type not in self.types:
             self.mostrar_mensaje_tipo_archivo_invalido(adjunto.name)
             return None
-        return self.cargar_informacion_adjunto(adjunto, subido_por)
+        return self.cargar_informacion_adjunto(adjunto, subido_por,identificacion)
 
-    def cargar_informacion_adjunto(self, adjunto, subido_por):
+    def cargar_informacion_adjunto(self, adjunto, subido_por, identificacion=None):
         try:
             instance = Attachment(mimetype=adjunto.content_type)
             instance.foto.save(adjunto.name, adjunto, save=False)
             instance.subido_por = subido_por
+            if identificacion is not None:
+                instance.identificacion_parcial = identificacion
             instance.save()
             return instance
         except IntegrityError:
@@ -243,28 +249,56 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
     """
-
-    form_class = AgregarAttachmentsForm
+    # form_class = AgregarAttachmentsForm
     url_to_post = 'agregar-adjuntos-ub'
+    template_name = 'adjuntos/agregar-adjuntos-ub.html'
+
+    def get(self, request, *args, **kwargs):
+        attachment_form = AgregarAttachmentsForm()
+        identificacion_form = IdentificacionParcialForm()
+        context = self.get_context_data()
+        context['attachment_form'] = attachment_form
+        context['identificacion_form'] = identificacion_form
+        if request.user:
+            fiscal = request.user.fiscal
+            context['desde_ub'] = True
+            context['seccion_precargada'] = fiscal.seccion
+            context['distrito_precargado'] = fiscal.seccion.distrito
+
+        return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
-        form_class = self.get_form_class()
+        form_class = AgregarAttachmentsForm
         form = self.get_form(form_class)
+        identificacion_form = IdentificacionParcialForm(self.request.POST)
         files = request.FILES.getlist('file_field')
         # No debería poderse cargar por la UI más de una imágenes, aunque es mejor chequear esto
         if len(files) > 1:
             form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
 
         if form.is_valid():
+            if not identificacion_form.is_valid():
+                return self.form_invalid(identificacion_form)
+
             file = files[0]
             fiscal = request.user.fiscal
-            instance = self.procesar_adjunto(file,fiscal)
+            identificacion = identificacion_form.save(commit=False)
+            identificacion.fiscal = fiscal
+            identificacion.save()
+            instance = self.procesar_adjunto(file,fiscal,identificacion)
             if instance is not None:
                 messages.success(self.request, 'Subiste el acta correctamente.')
                 return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
 
             form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
-        return self.form_invalid(form)
+        return self.form_invalid(form, identificacion_form)
+
+    def form_invalid(self, attachment_form, identificacion_form, **kwargs):
+        context = self.get_context_data()
+        context['attachment_form'] = attachment_form
+        context['identificacion_form'] = identificacion_form
+        return self.render_to_response(context)
+
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
