@@ -57,3 +57,7 @@ td.opcion {
 tr.fila_detalle > td.dato {
     text-align: right;
 }
+
+#metadata th span {
+  vertical-align: 6px;
+}

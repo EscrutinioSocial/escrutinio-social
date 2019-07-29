@@ -1,5 +1,7 @@
 from django.shortcuts import get_object_or_404
+
 from django.db import transaction
+from django.db.utils import IntegrityError
 
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.response import Response
@@ -14,7 +16,7 @@ from .serializers import (
     ListarCategoriasQuerySerializer, ListarOpcionesQuerySerializer
 )
 
-from adjuntos.models import Identificacion, Attachment
+from adjuntos.models import Identificacion, Attachment, hash_file
 from elecciones.models import (
     Distrito, Seccion, Circuito, Mesa, MesaCategoria, CategoriaOpcion, Categoria, Carga, VotoMesaReportado
 )
@@ -60,7 +62,17 @@ def subir_acta(request):
     """
     serializer = ActaSerializer(data=request.data)
     if serializer.is_valid():
-        attachment = serializer.save(subido_por=request.user.fiscal)
+
+        try:
+            with transaction.atomic():
+                attachment = serializer.save(subido_por=request.user.fiscal)
+        except IntegrityError:
+            foto = serializer.validated_data['foto']
+            foto.seek(0)
+            attachment = Attachment.objects.filter(foto_digest=hash_file(foto)).first()
+
+            return Response(data=ActaSerializer(attachment).data, status=status.HTTP_409_CONFLICT)
+
         return Response(data=ActaSerializer(attachment).data, status=status.HTTP_201_CREATED)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

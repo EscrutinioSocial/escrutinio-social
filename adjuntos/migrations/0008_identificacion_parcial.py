@@ -9,8 +9,8 @@ import model_utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('fiscales', '0004_auto_20190724_2143'),
-        ('elecciones', '0039_auto_20190723_1559'),
+        ('fiscales', '0004_auto_20190727_1136'),
+        ('elecciones', '0037_auto_20190727_1136'),
         ('adjuntos', '0007_identificacion_invalidada'),
     ]
 

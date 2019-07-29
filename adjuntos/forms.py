@@ -2,6 +2,8 @@ from django import forms
 from .models import Identificacion, IdentificacionParcial, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
+from django.conf import settings
+
 
 class IdentificacionForm(forms.ModelForm):
     """
@@ -90,7 +92,26 @@ class IdentificacionParcialForm(forms.ModelForm):
         return cleaned_data
 
 
-class AgregarAttachmentsForm(forms.Form):
+class BaseUploadForm(forms.Form):
+    file_field = forms.FileField(label="Imágenes/s")
+
+    def __init__(self, *args, **kwargs):
+        es_multiple = kwargs.pop('es_multiple') if 'es_multiple' in kwargs else True
+        super().__init__(*args, **kwargs)
+        self.fields['file_field'].widget.attrs.update({'multiple': es_multiple})
+
+    def clean_file_field(self):
+        files = self.files.getlist('file_field')
+        errors = []
+        for content in files:
+            if content.size > settings.MAX_UPLOAD_SIZE:
+                errors.append(forms.ValidationError(f'Archivo {content.name} demasiado grande'))
+        if errors:
+            raise forms.ValidationError(errors)
+        return files
+
+
+class AgregarAttachmentsForm(BaseUploadForm):
 
     """
     Form para subir uno o más archivos para ser asociados a instancias de
@@ -98,13 +119,12 @@ class AgregarAttachmentsForm(forms.Form):
 
     Se le puede pasar por kwargs si el form acepta múltiples archivos o uno solo.
     """
+    file_field = forms.ImageField(label="Imagen/es")
 
-    file_field = forms.FileField(
-        label="Archivo/s",
-        widget=forms.ClearableFileInput()
-    )
 
-    def __init__(self, *args, **kwargs):
-        es_multiple = kwargs.pop('es_multiple') if 'es_multiple' in kwargs else True
-        super().__init__(*args, **kwargs)
-        self.fields['file_field'].widget.attrs.update({'multiple': es_multiple})
+class AgregarAttachmentsCSV(BaseUploadForm):
+
+    """
+    Form para subir uno o más archivos CSV.
+    """
+    file_field = forms.FileField(label="Archivos .csv")

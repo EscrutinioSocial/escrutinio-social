@@ -42,6 +42,9 @@ INSTALLED_APPS = [
     'material.theme.lightblue',
     'material',
     'dbbackup',
+    'constance',
+    'constance.backends.database',
+
     # 'material.admin',
     # 'django.contrib.admin',
     'material.frontend',
@@ -64,7 +67,8 @@ INSTALLED_APPS = [
     'adjuntos',
     'problemas',
     'contacto',
-    'api'
+    'antitrolling',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -86,11 +90,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'constance.context_processors.config',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # 'elecciones.context_processors.contadores'
             ],
         },
     },
@@ -286,9 +290,23 @@ MIN_COINCIDENCIAS_CARGAS = 2
 MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
 MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
+# Tamaño maximo de archivos permitidos en el formulario
+# de subida de fotos y CSV
+MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
+
 # Tiempo en segundos que se espera entre
 # recálculo de consolidaciones de identificación y carga
 PAUSA_CONSOLIDACION = 15
+
+# Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll
+SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 500
+
+# Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada
+SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 200
+# Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
+SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA = 200
+# Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.
+SCORING_TROLL_PROBLEMA_DESCARTADO = 200
 
 # Tiempos de 'taken', para adjuntos y para mesas.
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
@@ -305,6 +323,14 @@ OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'vo
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
+
+
+CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
+
+CONSTANCE_CONFIG = {
+    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea ', float),
+}
 
 
 try:
