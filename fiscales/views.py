@@ -123,7 +123,7 @@ class QuieroSerFiscal(FormView):
         fiscal.user.save()
         self.enviar_correo_confirmacion(fiscal, data['email'])
 
-        # se guarda el fiscal en la sesion para que se consuma en la página de agradecimiento
+        # se guarda el fiscal en la sesión para que se consuma en la página de agradecimiento
         self.request.session['fiscal_id'] = fiscal.id
         self.success_url = reverse('quiero-validar-gracias')
         return super().form_valid(form)
@@ -161,9 +161,11 @@ def referidos(request):
     if request.method == 'POST':
         if 'link' in request.POST:
             fiscal.crear_codigo_de_referidos()
-        elif 'desconozco' in request.POST:
+        elif 'conozco' in request.POST:
             # TODO ver como dejar traza de esto
-            fiscal.referidos.filter(id__in=request.POST.getlist('referido')).update(referente=None)
+            referidos_confirmados = request.POST.getlist('referido')
+            fiscal.referidos.filter(id__in=referidos_confirmados).update(referencia_confirmada=True)
+            fiscal.referidos.exclude(id__in=referidos_confirmados).update(referencia_confirmada=False)
 
     form = ReferidoForm(initial={'url': fiscal.ultimo_codigo_url()})
     return render(request, 'fiscales/referidos.html', {'form': form, 'referidos': fiscal.referidos.all()})
@@ -176,7 +178,7 @@ def confirmar_email(request, uuid):
         texto = mark_safe('El código de confirmación es inválido. '
                           'Por favor copiá y pegá el link que te enviamos'
                           ' por email en la barra de direcciones'
-                          'Si seguís con problemas, env '
+                          'Si seguís con problemas, envía un mail a '
                           '<a href="mailto:{email}">'
                           '{email}</a>'.format(email=settings.DEFAULT_FROM_EMAIL))
 

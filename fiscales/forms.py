@@ -46,6 +46,7 @@ class FiscalForm(forms.ModelForm):
 
 class ReferidoForm(forms.Form):
     url = forms.CharField()
+    url.label = ''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -110,10 +111,10 @@ class QuieroSerFiscalForm(forms.Form):
     email_confirmacion = forms.EmailField(required=True, label="Confirmar email")
     apellido = forms.CharField(required=True, label="Apellido", max_length=50)
     nombres = forms.CharField(required=True, label="Nombres", max_length=100)
-    dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
+    dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento sin puntos.')
     telefono_area = forms.CharField(
-        label='Código de área (sin 0 adelante)',
-        help_text='Por ejemplo: 11 para CABA, 221 para La Plata, 351 para Córdoba, etc',
+        label='Código de área (sin 0 adelante).',
+        help_text='Por ejemplo: 11 para CABA, 221 para La Plata, 351 para Córdoba, etc.',
         required=True,
         validators=[
             MaxLengthValidator(MAX_DIGITOS_COD_AREA),
@@ -122,7 +123,7 @@ class QuieroSerFiscalForm(forms.Form):
     )
     telefono_local = forms.CharField(
         label='Teléfono',
-        help_text='Ingresá tu teléfono sin el 15',
+        help_text='Ingresá tu teléfono sin el 15, ni guiones ni espacios.',
         required=True,
         validators=[
             MaxLengthValidator(MAX_DIGITOS_TELEFONO_LOCAL),
@@ -150,7 +151,7 @@ class QuieroSerFiscalForm(forms.Form):
     referido_por_codigo = forms.CharField(
         required=False,
         label="Código de referencia",
-        help_text="Si no sabes qué es, dejalo en blanco"
+        help_text="Si no sabes qué es, dejalo en blanco."
     )
 
     password = forms.CharField(

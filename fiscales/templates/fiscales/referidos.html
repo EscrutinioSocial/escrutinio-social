@@ -36,7 +36,7 @@
                 {% for referido in referidos %}
                 <p>
                   <label>
-                    <input name="referido" value="{{ referido.id }}"  type="checkbox" />
+                    <input name="referido" value="{{ referido.id }}"  type="checkbox" {% if referido.referencia_confirmada %} checked {% endif %}"/>
                     <span>{{ referido }}</span>
                   </label>
                 </p>
@@ -44,8 +44,8 @@
 
                 <div class="card-action">
                     <div class="right-align">
-                        <button type="submit" name='desconozco' class="waves-effect waves-light btn white-text">
-                        Desconozco a las personas seleccionadas
+                        <button type="submit" name='conozco' class="waves-effect waves-light btn white-text">
+                        Confirmo que conozco a las personas seleccionadas
                         </button>
                     </div>
                 </div>

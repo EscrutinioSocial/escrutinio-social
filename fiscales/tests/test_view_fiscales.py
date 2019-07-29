@@ -150,12 +150,12 @@ def test_referidos_post_regenera_link(fiscal_client, admin_user, mocker):
     assert crear_mock.call_count == 1
 
 
-def test_referidos_post_desconoce(fiscal_client, admin_user):
+def test_referidos_post_confirma_conoce(fiscal_client, admin_user):
     fiscal = admin_user.fiscal
     referidos_ids = [f.id for f in FiscalFactory.create_batch(2, referente=fiscal)]
-    assert fiscal.referidos.count() == 2
+    assert fiscal.referidos.filter(referencia_confirmada=True).count() == 0
     response = fiscal_client.post(
-        reverse('referidos'), data={'desconozco': '', 'referido': referidos_ids}
+        reverse('referidos'), data={'conozco': '', 'referido': referidos_ids}
     )
     assert response.status_code == 200
-    assert fiscal.referidos.count() == 0
+    assert fiscal.referidos.filter(referencia_confirmada=True).count() == 2

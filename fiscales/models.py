@@ -31,7 +31,7 @@ TOTAL = 'Total General'
 
 
 class CodigoReferido(TimeStampedModel):
-    # hay al menos 1 codigo de referido por fiscal
+    # hay al menos 1 código de referido por fiscal
     fiscal = models.ForeignKey('Fiscal', related_name='codigos_de_referidos', on_delete=models.CASCADE)
     codigo = models.CharField(
         max_length=4, unique=True, help_text='Código con el que el fiscal puede referir a otres'
@@ -106,6 +106,9 @@ class Fiscal(models.Model):
 
     referente = models.ForeignKey('Fiscal', related_name='referidos', null=True, blank=True, on_delete=models.SET_NULL)
     referente_certeza = models.PositiveIntegerField(default=100, help_text='El código no era exacto?')
+    # Se pone en true cuando quien lo refirió indica que sí lo conoce.
+    referencia_confirmada = models.BooleanField(default=False)
+
     # otra metadata del supuesto referente
     referente_nombres = models.CharField(max_length=50, blank=True, null=True)
     referente_apellido = models.CharField(max_length=30, blank=True, null=True)
@@ -123,14 +126,14 @@ class Fiscal(models.Model):
         return CodigoReferido.objects.create(fiscal=self)
 
     def ultimo_codigo(self):
-        """devuelve el ultimo codigo activo"""
+        """devuelve el último código activo"""
         cod_ref = self.codigos_de_referidos.filter(activo=True).last()
         if cod_ref:
             return cod_ref.codigo
 
     def ultimo_codigo_url(self):
         """
-        devuelve la url absoluta con ultimo codigo activo
+        devuelve la url absoluta con último código activo
         """
         url = reverse('quiero-validar', args=[self.ultimo_codigo()])
         return f'{settings.FULL_SITE_URL}{url}'
