@@ -129,7 +129,7 @@ class Attachment(TimeStampedModel):
     # Información parcial de identificación que se completa cuando se
     # sube el attachment y sirve para precomplentar parte de la identificación.
     identificacion_parcial = models.ForeignKey(
-        'IdentificacionParcial', related_name='attachment',
+        'PreIdentificacion', related_name='attachment',
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
@@ -146,7 +146,7 @@ class Attachment(TimeStampedModel):
 
     def crear_identificacion_parcial_si_corresponde(self):
         """
-        Le asocia al attachment una IdentificacionParcial con los datos del fiscal que la subió
+        Le asocia al attachment una PreIdentificacion con los datos del fiscal que la subió
         si no una previa.
         """
         if self.identificacion_parcial:
@@ -156,7 +156,7 @@ class Attachment(TimeStampedModel):
         if not self.subido_por:
             return
 
-        self.identificacion_parcial = IdentificacionParcial.objects.create(
+        self.identificacion_parcial = PreIdentificacion.objects.create(
             fiscal = self.subido_por,
             distrito = self.subido_por.seccion.distrito if self.subido_por.seccion else None,
             seccion = self.subido_por.seccion
@@ -168,7 +168,7 @@ class Attachment(TimeStampedModel):
         Notar que esto puede puede producir una excepción si la imágen (el digest)
         ya es conocido en el sistema.
 
-        Además, crea una IdentificacionParcial con los datos del Fiscal que lo subió si no hay una.
+        Además, crea una PreIdentificacion con los datos del Fiscal que lo subió si no hay una.
         """
         if self.foto and not self.foto_digest:
             # FIXME
@@ -290,7 +290,7 @@ class Identificacion(TimeStampedModel):
             self.procesada = True
         super().save(*args, **kwargs)
 
-class IdentificacionParcial(TimeStampedModel):
+class PreIdentificacion(TimeStampedModel):
     """
     Este modelo se usa para asociar a los attachment información de identificación que no es completa.
     No confundir con Identificacion ni con el status de identificación de una mesa.

@@ -18,7 +18,7 @@ from adjuntos.csv_import import CSVImporter
 from .forms import (
     AgregarAttachmentsForm,
     IdentificacionForm,
-    IdentificacionParcialForm,
+    PreIdentificacionForm,
 )
 from .models import Attachment, Identificacion
 from problemas.models import Problema, ReporteDeProblema
@@ -258,7 +258,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
-        identificacion_form = IdentificacionParcialForm(self.request.POST)
+        identificacion_form = PreIdentificacionForm(self.request.POST)
         files = request.FILES.getlist('file_field')
 
         # No debería poder cargarse por UI más de una imagen, pero por las dudas lo chequeamos.
@@ -296,7 +296,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
 
     def get(self, request, *args, **kwargs):
         attachment_form = AgregarAttachmentsForm()
-        identificacion_form = IdentificacionParcialForm()
+        identificacion_form = PreIdentificacionForm()
         context = self.get_context_data()
         context['attachment_form'] = attachment_form
         context['identificacion_form'] = identificacion_form
@@ -312,7 +312,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     def post(self, request, *args, **kwargs):
         form_class = AgregarAttachmentsForm
         form = self.get_form(form_class)
-        identificacion_form = IdentificacionParcialForm(self.request.POST)
+        identificacion_form = PreIdentificacionForm(self.request.POST)
         files = request.FILES.getlist('file_field')
 
         if form.is_valid():

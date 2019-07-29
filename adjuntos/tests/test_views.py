@@ -99,3 +99,26 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     a.refresh_from_db()
     assert a.identificacion_testigo is None
     assert not m1.attachments.exists()
+
+
+def test_preidentificacion_create_view_post(fiscal_client):
+    mesa_1 = MesaFactory()
+    attachment = AttachmentFactory()
+    data = {
+        'circuito': mesa_1.circuito.id,
+        'seccion': mesa_1.circuito.seccion.id,
+        'distrito': mesa_1.circuito.seccion.distrito.id,
+    }
+    response = fiscal_client.post(reverse('agregar-adjuntos'), data)
+    assert response.status_code == HTTPStatus.OK
+
+    # Refrescamos el attachment desde la base
+    attachment.refresh_from_db()
+
+    assert attachment.identificacion_parcial is not None
+    assert attachment.status == Attachment.STATUS.sin_identificar
+
+    identificacion_parcial = attachment.identificacion_parcial
+    assert identificacion_parcial.circuito == mesa_1.circuito
+    assert identificacion_parcial.seccion == mesa_1.circuito.seccion
+    assert identificacion_parcial.distrito == mesa_1.circuito.seccion.distrito

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Identificacion, IdentificacionParcial, Attachment
+from .models import Identificacion, PreIdentificacion, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
 from django.conf import settings
@@ -52,7 +52,7 @@ class IdentificacionForm(forms.ModelForm):
         return cleaned_data
 
 
-class IdentificacionParcialForm(forms.ModelForm):
+class PreIdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar una identificación parcial a un adjunto.
     """
@@ -61,7 +61,7 @@ class IdentificacionParcialForm(forms.ModelForm):
     circuito = forms.ModelChoiceField(queryset=Circuito.objects.all(),required=False)
 
     class Meta:
-        model = IdentificacionParcial
+        model = PreIdentificacion
         fields = ['distrito', 'seccion', 'circuito']
 
     def __init__(self, *args, **kwargs):
