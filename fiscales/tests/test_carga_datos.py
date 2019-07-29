@@ -401,6 +401,14 @@ def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
+def test_carga_sin_permiso(fiscal_client, admin_user):
+    mc = MesaCategoriaFactory(orden_de_carga=1)
+    response = fiscal_client.get(reverse('carga-total', args=[mc.id]))
+    assert response.status_code == 403
+    mc.take(admin_user.fiscal)
+    response = fiscal_client.get(reverse('carga-total', args=[mc.id]))
+    assert response.status_code == 200
+
 
 def _construir_request_data_para_carga_de_resultados(tuplas_opcion_electores):
     """

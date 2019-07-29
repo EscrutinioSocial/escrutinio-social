@@ -3,6 +3,7 @@ import base64
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponseForbidden
@@ -57,9 +58,13 @@ class IdentificacionCreateView(CreateView):
     @cached_property
     def attachment(self):
         # solo el fiscal asignado al attachment puede identificar la carga
-        return get_object_or_404(
-            Attachment, id=self.kwargs['attachment_id'], taken_by=self.request.user.fiscal
-        )
+        attachment = get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
+        fiscal = self.request.user.fiscal
+        if attachment.taken_by != fiscal:
+            # TO DO: deberiamos loguear esta situación (o captura via sentry)
+            # y quizas sumar puntos al score anti-trolling?
+            raise PermissionDenied('no te toca identificar esta acta')
+        return attachment
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -239,8 +239,13 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
     fiscal = request.user.fiscal
-    # Sólo el fiscal a quien se le asignó la mesa puede cargar esta categoria
-    mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id, taken_by=fiscal)
+    mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
+
+    # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
+    if mesa_categoria.taken_by != fiscal:
+        # TO DO: deberiamos loguear esta situación (o captura via sentry)
+        # y quizas sumar puntos al score anti-trolling?
+        raise PermissionDenied('no te toca cargar acá')
 
     # en carga parcial sólo se cargan opciones prioritarias
     solo_prioritarias = tipo == 'parcial'
