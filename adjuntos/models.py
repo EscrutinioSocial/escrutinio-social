@@ -9,7 +9,7 @@ from model_utils.models import TimeStampedModel
 from django.db.models import Count, Value
 from django.db.models.functions import Coalesce
 from django.db.models import Q
-from django.db import models
+from django.db import models, transaction
 import hashlib
 from versatileimagefield.fields import VersatileImageField
 
@@ -114,7 +114,8 @@ class Attachment(TimeStampedModel):
         blank=True,
         null=True
     )
-    taken = models.DateTimeField(null=True)
+    taken = models.DateTimeField(null=True, blank=True)
+    taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
     # Identificación representativa del estado actual.
     identificacion_testigo = models.ForeignKey(
@@ -122,16 +123,20 @@ class Attachment(TimeStampedModel):
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    def take(self):
+    @transaction.atomic
+    def take(self, fiscal):
         self.taken = timezone.now()
-        self.save(update_fields=['taken'])
+        self.taken_by = fiscal
+        self.save(update_fields=['taken', 'taken_by'])
 
+    @transaction.atomic
     def release(self):
         """
         Libera una mesa, es lo contrario de take().
         """
         self.taken = None
-        self.save(update_fields=['taken'])
+        self.taken_by = None
+        self.save(update_fields=['taken', 'taken_by'])
 
     def save(self, *args, **kwargs):
         """

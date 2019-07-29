@@ -56,7 +56,10 @@ class IdentificacionCreateView(CreateView):
 
     @cached_property
     def attachment(self):
-        return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
+        # solo el fiscal asignado al attachment puede identificar la carga
+        return get_object_or_404(
+            Attachment, id=self.kwargs['attachment_id'], taken_by=self.request.user.fiscal
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

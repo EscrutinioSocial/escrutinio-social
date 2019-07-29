@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Sum, Count, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -327,23 +327,28 @@ class MesaCategoria(models.Model):
     )
 
     # timestamp para dar un tiempo de guarda a la espera de una carga
-    taken = models.DateTimeField(null=True, editable=False)
+    taken = models.DateTimeField(null=True, blank=True)
+    taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
     # entero que se define como el procentaje (redondeado) de mesas
     # ya identificadas todavia sin consolidar al momento de identificar la
     # mesa
     orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
 
-    def take(self):
+    @transaction.atomic
+    def take(self, fiscal):
         self.taken = timezone.now()
-        self.save(update_fields=['taken'])
+        self.taken_by = fiscal
+        self.save(update_fields=['taken', 'taken_by'])
 
+    @transaction.atomic
     def release(self):
         """
         Libera la mesa, es lo contrario de take().
         """
         self.taken = None
-        self.save(update_fields=['taken'])
+        self.taken_by = None
+        self.save(update_fields=['taken', 'taken_by'])
 
     def actualizar_orden_de_carga(self):
         """
