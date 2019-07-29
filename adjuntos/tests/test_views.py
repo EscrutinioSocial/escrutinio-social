@@ -9,7 +9,7 @@ from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
 from http import HTTPStatus
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga
-
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 def test_identificacion_create_view_get(fiscal_client):
     a = AttachmentFactory()
@@ -102,9 +102,11 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
 
 
 def test_preidentificacion_create_view_post(fiscal_client):
+    file = SimpleUploadedFile('acta.png', b'00000', content_type="image/png")
+
     mesa_1 = MesaFactory()
-    attachment = AttachmentFactory()
     data = {
+        'file_field': (file,),
         'circuito': mesa_1.circuito.id,
         'seccion': mesa_1.circuito.seccion.id,
         'distrito': mesa_1.circuito.seccion.distrito.id,
@@ -112,8 +114,7 @@ def test_preidentificacion_create_view_post(fiscal_client):
     response = fiscal_client.post(reverse('agregar-adjuntos'), data)
     assert response.status_code == HTTPStatus.OK
 
-    # Refrescamos el attachment desde la base
-    attachment.refresh_from_db()
+    attachment = Attachment.objects.all().first()
 
     assert attachment.identificacion_parcial is not None
     assert attachment.status == Attachment.STATUS.sin_identificar
