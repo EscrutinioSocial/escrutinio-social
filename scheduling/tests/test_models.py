@@ -7,6 +7,9 @@ from scheduling.models import (
 from .factories import (
     PrioridadSchedulingFactory
 )
+from .utils_para_test import (
+    verificar_registro_prioridad, asignar_prioridades_standard
+)
 from elecciones.tests.factories import (
     SeccionFactory, CategoriaFactory, MesaCategoriaFactory,
     CircuitoFactory, LugarVotacionFactory, MesaFactory
@@ -19,23 +22,9 @@ from elecciones.models import (
 # los objetos de esta aplicacion: Seccion, Categoria, MesaCategoria
 
 
-def verificar_registro_prioridad(regi, desde_proporcion, hasta_proporcion, prioridad, hasta_cantidad=None):
-    assert regi.desde_proporcion == desde_proporcion
-    assert regi.hasta_proporcion == hasta_proporcion
-    assert regi.prioridad == prioridad
-    assert regi.hasta_cantidad == hasta_cantidad
-
 
 def definir_prioridades_seccion_categoria(settings):
-    settings.PRIORIDADES_STANDARD_SECCION = [
-        {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2},
-        {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 20},
-        {'desde_proporcion': 10, 'hasta_proporcion': 100, 'prioridad': 100},
-    ]
-    settings.PRIORIDADES_STANDARD_CATEGORIA = [
-        {'desde_proporcion': 0, 'hasta_proporcion': 100, 'prioridad': 100},
-    ]
-
+    asignar_prioridades_standard(settings)
     seccion_cuatro_prioridades = SeccionFactory(nombre="Cuatro prioridades")
     seccion_dos_cantidades = SeccionFactory(nombre="Dos cantidades")
     seccion_prioritaria = SeccionFactory(nombre="Prioritaria")

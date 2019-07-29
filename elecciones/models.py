@@ -1,4 +1,5 @@
 import logging
+import math
 from datetime import timedelta
 from collections import defaultdict
 
@@ -330,9 +331,17 @@ class MesaCategoria(models.Model):
     taken = models.DateTimeField(null=True, blank=True)
     taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
-    # entero que se define como el procentaje (redondeado) de mesas
-    # ya identificadas todavia sin consolidar al momento de identificar la
-    # mesa
+    # entero que se define como el procentaje (redondeado) de mesas del circuito
+    # ya identificadas al momento de identificar la mesa.
+    # Incide en el cálculo del orden_de_carga.
+    percentil = models.PositiveIntegerField(null=True, blank=True)
+
+    # en qué orden se identificó esta MesaCategoría dentro de las del circuito.
+    # Incide en el cálculo del orden_de_carga.
+    # aumenta en forma correlativa, salvo colisiones que no perjudican al uso en una medida relevante.
+    orden_de_llegada = models.PositiveIntegerField(null=True, blank=True)
+
+    # orden relativo de carga, usado en la priorizacion
     orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
 
     @transaction.atomic
@@ -352,15 +361,21 @@ class MesaCategoria(models.Model):
 
     def actualizar_orden_de_carga(self):
         """
-        Actualiza `self.orden_de_carga` como una proporcion de mesas
+        Actualiza `self.orden_de_carga` a partir de las prioridades por seccion y categoria
         """
+        from scheduling.models import mapa_prioridades_para_mesa_categoria
+
         en_circuito = MesaCategoria.objects.filter(
             categoria=self.categoria, mesa__circuito=self.mesa.circuito
         )
         total = en_circuito.count()
         identificadas = en_circuito.identificadas().count()
-        self.orden_de_carga = int(round((identificadas + 1) / total, 2) * 100)
-        self.save(update_fields=['orden_de_carga'])
+        
+        self.orden_de_llegada = identificadas + 1
+        self.percentil = math.floor((identificadas * 100) / total) + 1
+        self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self) \
+            .valor_para(self.percentil-1, self.orden_de_llegada) * self.percentil
+        self.save(update_fields=['orden_de_carga', 'orden_de_llegada', 'percentil'])
 
     def invalidar_cargas(self):
         """
@@ -476,7 +491,9 @@ class Mesa(models.Model):
         """
         for mc in MesaCategoria.objects.filter(mesa=self):
             mc.orden_de_carga = None
-            mc.save(update_fields=['orden_de_carga'])
+            mc.percentil = None
+            mc.orden_de_llegada = None
+            mc.save(update_fields=['orden_de_carga', 'percentil', 'orden_de_llegada'])
             mc.invalidar_cargas()
 
     def metadata(self):

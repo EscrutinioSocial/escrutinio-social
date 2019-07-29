@@ -5,6 +5,9 @@ from scheduling.models import (
     RegistroDePrioridad, RangosDeProporcionesSeSolapanError,
     mapa_prioridades_desde_setting
 )
+from .utils_para_test import (
+    verificar_registro_prioridad
+)
 
 # En este archivo se incluyen los tests sobre los objetos basicos que modelan el calculo de prioridades
 # a partir de una proporcion (de mesas con foto) y de un orden de llegada
@@ -162,13 +165,6 @@ def test_hasta_cantidad(proporcion, orden_de_llegada, prioridad):
     mapa.agregar_registro(RegistroDePrioridad(5, 25, 40))
     mapa.agregar_registro(RegistroDePrioridad(25, 100, 100))
     assert mapa.valor_para(proporcion, orden_de_llegada) == prioridad
-
-
-def verificar_registro_prioridad(regi, desde_proporcion, hasta_proporcion, prioridad, hasta_cantidad=None):
-    assert regi.desde_proporcion == desde_proporcion
-    assert regi.hasta_proporcion == hasta_proporcion
-    assert regi.prioridad == prioridad
-    assert regi.hasta_cantidad == hasta_cantidad
 
 
 def test_mapa_desde_estructura():
