@@ -187,8 +187,6 @@ class AgregarAdjuntos(FormView):
         self.types = types
 
     form_class = AgregarAttachmentsForm
-    template_name = 'adjuntos/agregar-adjuntos.html'
-    url_to_post = 'agregar-adjuntos'
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -289,7 +287,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
     """
-    url_to_post = 'agregar-adjuntos-batch'
+    url_to_post = 'agregar-adjuntos'
     template_name = 'adjuntos/agregar-adjuntos-identificar.html'
 
     def get(self, request, *args, **kwargs):
@@ -330,6 +328,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
         context = self.get_context_data()
         context['attachment_form'] = attachment_form
         context['identificacion_form'] = identificacion_form
+        context['desde_ub'] = True
         return self.render_to_response(context)
 
     def get_form_kwargs(self):
