@@ -17,6 +17,7 @@ from .models import (
     Eleccion,
     TecnicaProyeccion,
     AgrupacionCircuitos,
+    AgrupacionCircuito,
 )
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
@@ -246,10 +247,16 @@ class TecnicaProyeccionAdmin(admin.ModelAdmin):
     ordering = ['nombre']
 
 
+class AgrupacionCircuitoInline(admin.TabularInline):
+    model = AgrupacionCircuito
+    extra = 3
+
+
 class AgrupacionCircuitosAdmin(admin.ModelAdmin):
     search_fields = ['proyeccion', 'nombre']
     ordering = ['proyeccion']
     list_filter = ('proyeccion', )
+    inlines = (AgrupacionCircuitoInline, )
 
 
 admin.site.register(Eleccion)

@@ -390,8 +390,7 @@ class MesaCategoria(models.Model):
         self.status = status
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
-
-
+                
 class Mesa(models.Model):
     """
     Define la mesa de votación que pertenece a un class:`LugarDeVotación`.
@@ -800,7 +799,11 @@ class AgrupacionCircuitos(models.Model):
     nombre = models.CharField(max_length=100)
     proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.CASCADE, related_name='agrupaciones')
     minimo_mesas = models.PositiveIntegerField(default=1)
-    circuitos = models.ManyToManyField(Circuito, related_name='agrupaciones')
+    circuitos = models.ManyToManyField(
+        Circuito,
+        through='AgrupacionCircuito',
+        related_name='agrupaciones'
+    )
 
     class Meta:
         verbose_name = 'Agrupación de Circuitos'
@@ -808,6 +811,11 @@ class AgrupacionCircuitos(models.Model):
 
     def __str__(self):
         return f'Agrupación de circuitos {self.nombre}'
+
+
+class AgrupacionCircuito(models.Model):
+    circuito = models.ForeignKey('Circuito', on_delete=models.CASCADE)
+    agrupacion = models.ForeignKey('AgrupacionCircuitos', on_delete=models.CASCADE)
 
 
 @receiver(post_save, sender=Mesa)

@@ -1,17 +1,15 @@
-import itertools
 from django.conf import settings
 from functools import lru_cache
 from collections import OrderedDict
 from attrdict import AttrDict
 from model_utils import Choices
-from django.db.models import Q, F, Sum, Subquery, Sum, IntegerField, Case, When, OuterRef
+from django.db.models import Q, F, Sum, Subquery, IntegerField, OuterRef, Count
 from .models import (
     Eleccion,
     Distrito,
     SeccionPolitica,
     Seccion,
     Circuito,
-    Partido,
     Opcion,
     VotoMesaReportado,
     LugarVotacion,
@@ -19,6 +17,7 @@ from .models import (
     Mesa,
     TecnicaProyeccion,
     AgrupacionCircuitos,
+    AgrupacionCircuito,
 )
 
 
@@ -243,7 +242,6 @@ class Sumarizador():
 
         # 3) Votos
         votos_por_opcion = self.votos_por_opcion(categoria, mesas)
-
         votos_positivos, votos_no_positivos = self.agrupar_votos(votos_por_opcion)
 
         return AttrDict({
@@ -261,8 +259,9 @@ class Sumarizador():
         Realiza la contabilidad para la categoría, invocando al método
         ``calcular``.
         """
-        mesas = self.mesas(categoria)
-        return Resultados(self.opciones_a_considerar, self.calcular(categoria, mesas))
+        self.categoria = categoria
+        self.mesas_a_considerar = self.mesas(categoria)
+        return Resultados(self.opciones_a_considerar, self.calcular(categoria, self.mesas_a_considerar))
 
 
 class Resultados():
@@ -406,36 +405,112 @@ class Proyecciones(Sumarizador):
         self.tecnica = tecnica
         super().__init__(*args)
 
+    def mesas_escrutadas(self):
+        return self.mesas_a_considerar.filter(
+            mesacategoria__categoria=self.categoria,
+            mesacategoria__carga_testigo__isnull=False,
+            **self.cargas_a_considerar_status_filter(self.categoria, 'mesacategoria__')
+        )
+
+    def total_electores(self, agrupacion):
+        return (
+            self.mesas_a_considerar.filter(circuito__in=Subquery(
+                AgrupacionCircuito.objects
+                .filter(agrupacion__id=agrupacion.id)
+                .values_list('circuito_id', flat=True)))
+            .aggregate(electores=Sum('electores'))
+        )['electores']
+
+    def electores_en_mesas_escrutadas(self, agrupacion):
+        return (
+            self.mesas_escrutadas().filter(circuito__in=Subquery(
+                AgrupacionCircuito.objects
+                .filter(agrupacion__id=agrupacion.id)
+                .values_list('circuito_id', flat=True)))
+            .aggregate(electores=Sum('electores'))
+        )['electores']
+
+    def agrupaciones_a_considerar(self, categoria, mesas):
+        """
+        Devuelve la lista de agrupaciones_a_considerar a considerar, descartando aquellas que no tienen aún
+        el mínimo de mesas definido según la técnica de proyección.
+        """
+        mesas_por_agrupacion_subquery = (
+            self.mesas_escrutadas()
+            .filter(circuito__id__in=OuterRef('circuitos'))
+            .annotate(mesas_escrutadas=Count('pk'))
+            .values_list('mesas_escrutadas', flat=True)
+        )
+
+        return (AgrupacionCircuitos.objects
+                .filter(proyeccion=self.tecnica)
+                .annotate(mesas_escrutadas=Subquery(
+                    mesas_por_agrupacion_subquery[:1],
+                    output_field=IntegerField()
+                ))
+                .filter(minimo_mesas__lte=F('mesas_escrutadas')))
+
+    def coeficientes_para_proyeccion(self):
+        return {
+            agrupacion.id: self.total_electores(agrupacion) / self.electores_en_mesas_escrutadas(agrupacion)
+            for agrupacion
+            in self.agrupaciones_a_considerar(self.categoria, self.mesas_a_considerar)
+        }
+
     def votos_por_opcion(self, categoria, mesas):
         """
         Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de
-        votos por cada una de las opciones posibles (partidarias o no)
+        votos por cada una de las opciones posibles (partidarias o no). A diferencia de la superclase,
+        aquí se realiza el group_by también por AgrupacionCircuitos, filtrando sólo aquellas cargas
+        correspondientes a agrupaciones que llegaron al mínimo de mesas requerido.
         """
-        agrupaciones_subquery = AgrupacionCircuitos.objects.filter(
-            proyeccion__nombre="Por sección",
-            pk__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones')),
-        ).values_list('id', flat=True)
 
-        return (self.votos_reportados(categoria, mesas)
-                .values_list('opcion__id')
-                .annotate(id_agrupacion=Subquery(agrupaciones_subquery))
-                .annotate(sum_votos=Sum('votos')))
+        agrupaciones_subquery = (
+            self.agrupaciones_a_considerar(categoria, mesas)
+            .filter(pk__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones')))
+            .values_list('id', flat=True)
+        )
 
-    def agrupar_votos(self, votos_por_opcion):
-        votos_positivos = {}
-        votos_no_positivos = {}
-        for id_opcion, id_agrupacion, sum_votos in votos_por_opcion:
-            opcion = Opcion.objects.get(id=id_opcion)
-            print(opcion)
-            if opcion.partido:
-                # 3.1 Opciones partidarias se agrupan con otras opciones del mismo partido.
-                votos_positivos.setdefault(opcion.partido, {})[opcion] = sum_votos
-            else:
-                # 3.2 Opciones no partidarias
-                # TODO ¿Puede realmente pasar que no vengan las opciones completas?
-                votos_no_positivos[opcion.nombre] = sum_votos if sum_votos else 0
+        return (
+            self.votos_reportados(categoria, mesas).values_list('opcion__id')
+            .annotate(id_agrupacion=Subquery(agrupaciones_subquery))
+            .annotate(sum_votos=Sum('votos'))
+            .values_list('opcion__id', 'id_agrupacion', 'sum_votos')
+        )
 
-        return votos_positivos, votos_no_positivos
+    def votos_por_agrupacion(self, votos_a_procesar):
+        """
+        Dada una lista de tuplas (id_opcion, id_agrupacion, sum_votos) los agrupa en un dictionary
+        con key id_agrupacion y value = lista de tuplas (id_opcion, sum_votos)
+        """
+        votos_por_agrupacion = {}
+        for id_opcion, id_agrupacion, sum_votos in votos_a_procesar:
+            votos_por_agrupacion.setdefault(id_agrupacion, []).append((id_opcion, sum_votos))
+        return votos_por_agrupacion
+
+    def agrupar_votos(self, votos_a_procesar):
+        coeficientes = self.coeficientes_para_proyeccion()
+        votos_positivos_proyectados = {}
+        votos_no_positivos_proyectados = {}
+
+        for id_agrupacion, votos_de_agrupacion in self.votos_por_agrupacion(votos_a_procesar).items():
+            votos_positivos, votos_no_positivos = super().agrupar_votos(votos_de_agrupacion)
+
+            # Votos positivos
+            for partido, votos_por_opcion in votos_positivos.items():
+                votos_partido = votos_positivos_proyectados.setdefault(partido, {})
+                for opcion, votos in votos_por_opcion.items():
+                    votos_partido[opcion] = (votos_partido.setdefault(opcion, 0)
+                                             + round(votos * coeficientes[id_agrupacion]))
+
+            # Votos no positivos[opcion.nombre] = sum_votos if sum_votos else 0
+            for nombre_opcion, votos in votos_no_positivos.items():
+                votos_no_positivos_proyectados[nombre_opcion] = (
+                    votos_no_positivos_proyectados.setdefault(nombre_opcion, 0)
+                    + round(votos * coeficientes[id_agrupacion])
+                )
+
+        return votos_positivos_proyectados, votos_no_positivos_proyectados
 
     @classmethod
     def tecnicas_de_proyeccion(cls):
