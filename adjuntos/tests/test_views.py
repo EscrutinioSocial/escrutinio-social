@@ -107,10 +107,16 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     assert not m1.attachments.exists()
 
 
-def test_identificacion_sin_permiso(fiscal_client, admin_user):
+def test_identificacion_sin_permiso(fiscal_client, admin_user, mocker):
+    fiscal = admin_user.fiscal
+    capture = mocker.patch('adjuntos.views.capture_message')
     a = AttachmentFactory()
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
     assert response.status_code == 403
-    a.take(admin_user.fiscal)
+    assert capture.call_count == 1
+    mensaje = capture.call_args[0][0]
+    assert 'Intento de asignar mesa de attachment' in mensaje
+    assert str(fiscal) in mensaje
+    a.take(fiscal)
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
     assert response.status_code == 200

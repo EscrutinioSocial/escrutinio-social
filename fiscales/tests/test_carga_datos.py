@@ -401,11 +401,17 @@ def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_carga_sin_permiso(fiscal_client, admin_user):
+def test_carga_sin_permiso(fiscal_client, admin_user, mocker):
+    fiscal = admin_user.fiscal
+    capture = mocker.patch('fiscales.views.capture_message')
     mc = MesaCategoriaFactory(orden_de_carga=1)
     response = fiscal_client.get(reverse('carga-total', args=[mc.id]))
     assert response.status_code == 403
-    mc.take(admin_user.fiscal)
+    assert capture.call_count == 1
+    mensaje = capture.call_args[0][0]
+    assert 'Intento de cargar mesa-categoria' in mensaje
+    assert str(fiscal) in mensaje
+    mc.take(fiscal)
     response = fiscal_client.get(reverse('carga-total', args=[mc.id]))
     assert response.status_code == 200
 

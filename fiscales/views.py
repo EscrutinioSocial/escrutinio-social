@@ -32,7 +32,7 @@ from .acciones import siguiente_accion
 from django.template.loader import render_to_string
 from html2text import html2text
 from django.core.mail import send_mail
-from sentry_sdk import capture_exception
+from sentry_sdk import capture_exception, capture_message
 from .forms import (
     MisDatosForm,
     votomesareportadoformset_factory,
@@ -243,8 +243,15 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
 
     # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
     if mesa_categoria.taken_by != fiscal:
-        # TO DO: deberiamos loguear esta situación (o captura via sentry)
-        # y quizas sumar puntos al score anti-trolling?
+        capture_message(
+            f"""
+            Intento de cargar mesa-categoria {mesa_categoria.id}
+
+            taken_by: {mesa_categoria.taken_by}
+            fiscal: {fiscal} ({fiscal.id})
+            """
+        )
+        # TO DO: quizas sumar puntos al score anti-trolling?
         raise PermissionDenied('no te toca cargar acá')
 
     # en carga parcial sólo se cargan opciones prioritarias
