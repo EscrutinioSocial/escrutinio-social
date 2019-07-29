@@ -15,6 +15,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
+from django.db.models import Q
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
 from .models import Fiscal
@@ -511,9 +512,9 @@ class CircuitoFromMesaSeccion(ListView):
     
     def get_queryset(self):
         qs = super().get_queryset()
-        mesa = Mesa.objects.get(id=self.request.GET['mesa'])
-        seccion = Seccion.objects.get(id=self.request.GET['seccion'])
-        return qs.filter(id=mesa.circuito_id,seccion__id=seccion.id)
+        mesas= Mesa.objects.filter(mesa__numero=self.request.GET['mesa']).values('circuito_id')
+        secciones = Seccion.objects.filter(id=self.request.GET['seccion']).values('id')
+        return qs.filter(seccion_id__in=secciones,id__in=mesas).distinct()
 
 class SeccionFromMesaCircuito(ListView):
     model = Circuito
@@ -530,7 +531,7 @@ class SeccionFromMesaCircuito(ListView):
     
     def get_queryset(self):
         qs = super().get_queryset()
-        mesa = Mesa.objects.get(numero=self.request.GET['mesa']).annotate(mesa__circuito__seccion)
-        circuito = Circuito.objects.get(numero=self.request.GET['circuito'])
-        return qs.intersect(mesa,circuito)
+        #mesa = Mesa.objects.get(numero=self.request.GET['mesa']).annotate(mesa__circuito__seccion)
+        #circuito = Circuito.objects.get(numero=self.request.GET['circuito'])
+        return qs
 
