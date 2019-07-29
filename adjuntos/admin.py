@@ -9,7 +9,7 @@ class IdentificacionInline(admin.StackedInline):
     extra = 0
 
 class AttachmentAdmin(AdminRowActionsMixin, admin.ModelAdmin):
-    list_display = ('status', 'mesa', 'foto', 'foto_edited', 'taken')
+    list_display = ('status', 'mesa', 'foto', 'foto_edited', 'taken', 'identificacion_parcial')
     list_filter = ('status',)
     search_fields = ('mesa__numero',)
 
