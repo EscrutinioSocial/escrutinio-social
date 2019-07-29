@@ -9,7 +9,8 @@ from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
 from http import HTTPStatus
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile
+import os
 
 def test_identificacion_create_view_get(fiscal_client):
     a = AttachmentFactory()
@@ -102,7 +103,8 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
 
 
 def test_preidentificacion_create_view_post(fiscal_client):
-    file = SimpleUploadedFile('acta.png', b'00000', content_type="image/png")
+    content = open('adjuntos/tests/acta.jpg','rb')
+    file = SimpleUploadedFile('acta.jpg', content.read(), content_type="image/jpeg")
 
     mesa_1 = MesaFactory()
     data = {
@@ -123,3 +125,40 @@ def test_preidentificacion_create_view_post(fiscal_client):
     assert identificacion_parcial.circuito == mesa_1.circuito
     assert identificacion_parcial.seccion == mesa_1.circuito.seccion
     assert identificacion_parcial.distrito == mesa_1.circuito.seccion.distrito
+
+
+def test_preidentificacion_sin_datos(fiscal_client):
+    content = open('adjuntos/tests/acta.jpg','rb')
+    file = SimpleUploadedFile('acta.jpg', content.read(), content_type="image/jpeg")
+
+    mesa_1 = MesaFactory()
+    data = {
+        'file_field': (file,),
+    }
+    response = fiscal_client.post(reverse('agregar-adjuntos'), data)
+    assert response.status_code == HTTPStatus.OK
+    
+    attachment = Attachment.objects.all().first()
+    assert attachment is None
+    assert "Este campo es requerido" in response.content.decode('utf8')
+
+
+def test_preidentificacion_con_datos_de_fiscal(fiscal_client):
+    content = open('adjuntos/tests/acta.jpg','rb')
+    mesa = MesaFactory()
+    seccion = mesa.circuito.seccion
+
+    form_response = fiscal_client.get(reverse('agregar-adjuntos'))
+    fiscal = form_response.wsgi_request.user.fiscal
+    fiscal.seccion = seccion
+    fiscal.save()
+    fiscal.refresh_from_db()
+    
+    distrito_preset = f"presetOption('id_distrito','{seccion.distrito}','{seccion.distrito.id}');"
+    seccion_preset =  f"presetOption('id_seccion','{seccion}','{seccion.id}');"
+    
+    response = fiscal_client.get(reverse('agregar-adjuntos'))
+    content = response.content.decode('utf8')
+    
+    assert distrito_preset in content
+    assert seccion_preset in content
