@@ -6,7 +6,7 @@ from csv import DictReader
 from elecciones.models import Distrito, Seccion, Circuito, LugarVotacion, Mesa, Categoria
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/cartamarina-escuelas-elecciones-2015-cordoba.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/cartamarina-escuelas-elecciones-2017-cordoba.csv'
 
 def to_float(val):
     try:
@@ -31,53 +31,51 @@ class BaseCommand(BaseCommand):
 
 
 class Command(BaseCommand):
-    ''' formato de archivo:
+    ''' formato de archivo: cartamarina-escuelas-elecciones-2015-cordoba.csv
     Seccion Nro,Seccion Nombre,Circuito Nro,Circuito Nombre,Escuela,Mesas,Desde,Hasta,Electores
     1,CAPITAL,1,SECCIONAL PRIMERA,CENTRO EDUC.NIVEL MEDIO ADULTO - DEAN FUNES 417,7,1,7,2408
+    
+    cambiando a formato de archivo: cartamarina-escuelas-elecciones-2017-cordoba.csv
+    escuela,direccion,localidad,distrito_nro,distrito_name,seccion_nro,seccion_name,circuito_nro,circuito_name,cant_mesas,desde,hasta,electores,latitud,longitud
+    INST EDUC NTRA SEÑORA,INCA MANCO 3450,,4,CORDOBA,1,CAPITAL,4B,VILLA REVOL,19,246,264,6536,0,0
+
+    
     '''
     help = "Importar carta marina"
 
     def handle(self, *args, **options):
-        # por ahora hardcodeado; TODO: leer de argv
-        distrito = Distrito(numero=4,nombre="Córdoba",electores=0,prioridad=3)
-        distrito.save()
         fecha = datetime.datetime(2019, 5, 12, 8, 0)
 
         reader = DictReader(CSV.open())
 
-#        categoria_gobernador_cordoba, created = Categoria.objects.get_or_create(slug='gobernador-cordoba-2019', nombre='Gobernador Córdoba 2019', fecha=fecha) # comento lo que falla para probar
-#        categoria_gobernador_cordoba, created = Categoria.objects.get_or_create(slug='gobernador-cordoba-2019', nombre='Gobernador Córdoba 2019')#, fecha=fecha)
-#        categoria_intendente_cordoba, created = Categoria.objects.get_or_create(slug='intendente-cordoba-2019', nombre='Intendente Córdoba 2019', fecha=fecha)
-#        categoria_intendente_cordoba, created = Categoria.objects.get_or_create(slug='intendente-cordoba-2019', nombre='Intendente Córdoba 2019')#, fecha=fecha)
-#        categoria_legisladores_distrito_unico, created = Categoria.objects.get_or_create(slug='legisladores-dist-unico-cordoba-2019', nombre='Legisladores Distrito Único Córdoba 2019', fecha=fecha)
-#        categoria_legisladores_distrito_unico, created = Categoria.objects.get_or_create(slug='legisladores-dist-unico-cordoba-2019', nombre='Legisladores Distrito Único Córdoba 2019')#, fecha=fecha)
-#        categoria_tribunal_de_cuentas_provincial, created = Categoria.objects.get_or_create(slug='tribunal-cuentas-prov-cordoba-2019', nombre='Tribunal de Cuentas Provincia de Córdoba 2019', fecha=fecha, activa=False)
-
         for c, row in enumerate(reader, 1):
-            print ('row:',c)
-            depto = row['Seccion Nombre']
-            numero_de_seccion = int(row['Seccion Nro'])
+            num_distrito=row['distrito_nro']
+            nom_distrito=row['distrito_name']
+            distrito, created = Distrito.objects.get_or_create(numero=num_distrito,nombre=nom_distrito,electores=0,prioridad=3)
+            distrito.save()
+            self.log(distrito, created)
+
+            print ('row:',c) # para cuando algo falla
+
+            depto = row['seccion_name']
+            numero_de_seccion = int(row['seccion_nro'])
             seccion, created = Seccion.objects.get_or_create(distrito=distrito,nombre=depto, numero=numero_de_seccion)
             self.log(seccion, created)
  
-            circuito, created = Circuito.objects.get_or_create(nombre=row['Circuito Nombre'], numero=row['Circuito Nro'], seccion=seccion)
+            circuito, created = Circuito.objects.get_or_create(nombre=row['circuito_name'], numero=row['circuito_nro'], seccion=seccion)
             self.log(circuito, created)
 
-            esc=row['Escuela'].split(' - ')
-            if len(esc)<2: esc.append('n/d') # esto es porque hay casos en que no esta dividida por - o no hay direccion
             escuela, created = LugarVotacion.objects.get_or_create(
                 circuito=circuito,
-                nombre=esc[0],
-                direccion=esc[1]
-                   
+                nombre=row['escuela'],
+                direccion=row['direccion']
 #                ciudad=row['Ciudad'] or '',
 #                barrio=row['Barrio'] or ''
                 )
 
-            escuela.electores = int(row['Electores'])
+            escuela.electores = int(row['electores'])
             
-            x='''
-            coordenadas = [to_float(row['Longitud']), to_float(row['Latitud'])]
+            coordenadas = [to_float(row['longitud']), to_float(row['latitud'])]
             if coordenadas[0] and coordenadas[1]:
                 geom = {'type': 'Point', 'coordinates': coordenadas}
                 if row['Estado Geolocalizacion'] == 'Match':
@@ -89,38 +87,19 @@ class Command(BaseCommand):
                 estado_geolocalizacion = 0
             escuela.geom = geom
             escuela.estado_geolocalizacion = estado_geolocalizacion
-            '''
             escuela.save()
 
             self.log(escuela, created)
 
-            for mesa_nro in range(int(row['Desde']), int(row['Hasta']) + 1):
+            for mesa_nro in range(int(row['desde']), int(row['hasta']) + 1):
             #ojo habia caso mesas con numeros no consecutivos - prever
             #tal vez agregar las mesas en otra instancia y solo guardar los valores
                 mesa, created = Mesa.objects.get_or_create(numero=mesa_nro)  # EVITAR duplicados en limpiezas de escuelas y otros
                 mesa.lugar_votacion=escuela
                 mesa.circuito=circuito
+                mesa.electores=escuela.electores/(int(row['hasta']) + 1- int(row['desde'])) # habria que guardar escuela.mesas en el modelo
                 mesa.save()
 
                 self.log(mesa, created)
 
 
-        x=""" hay 3 mesas que son de una escuela y no son nros consecutivos
-            Se requiere copiar la mesa 1 3 veces antes de tirar este comando para que no falten esos tres datos
-
-
-        mesa_8651 = Mesa.objects.get(numero=1)
-        mesa_8651.pk = None
-        mesa_8651.numero = 8651
-        mesa_8651.save()
-
-        mesa_8652 = Mesa.objects.get(numero=1)
-        mesa_8652.pk = None
-        mesa_8652.numero = 8652
-        mesa_8652.save()
-
-        mesa_8653 = Mesa.objects.get(numero=1)
-        mesa_8653.pk = None
-        mesa_8653.numero = 8653
-        mesa_8653.save()
-        """
