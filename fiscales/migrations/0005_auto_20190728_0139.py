@@ -61,6 +61,16 @@ class Migration(migrations.Migration):
             name='referido_por_codigos',
             field=models.CharField(blank=True, max_length=250, null=True),
         ),
+        migrations.AddField(
+            model_name='fiscal',
+            name='referencia_confirmada',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AlterField(
+            model_name='fiscal',
+            name='referente',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='referidos', to='fiscales.Fiscal'),
+        ),
         migrations.CreateModel(
             name='CodigoReferido',
             fields=[
