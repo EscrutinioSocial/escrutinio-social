@@ -150,7 +150,6 @@ class Attachment(TimeStampedModel):
             self.foto_digest = hash_file(self.foto.file)
         super().save(*args, **kwargs)
 
-
     @classmethod
     def sin_identificar(cls, fiscal_a_excluir=None):
         """

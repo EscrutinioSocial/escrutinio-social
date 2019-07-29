@@ -4,6 +4,7 @@ from http import HTTPStatus
 
 from django.urls import reverse
 from elecciones.tests.factories import (
+    AttachmentFactory,
     CargaFactory,
     CategoriaFactory,
     CategoriaOpcionFactory,
@@ -13,6 +14,8 @@ from elecciones.tests.factories import (
     OpcionFactory,
     VotoMesaReportadoFactory,
 )
+from constance.test import override_config
+
 from elecciones.tests.test_resultados import fiscal_client, setup_groups    # noqa
 from elecciones.models import Carga, MesaCategoria, Opcion
 from adjuntos.models import Identificacion
@@ -21,12 +24,43 @@ from adjuntos.consolidacion import consumir_novedades_identificacion, consumir_n
 from elecciones.tests.test_models import consumir_novedades_y_actualizar_objetos
 
 
-def test_elegir_acta_sin_mesas(fiscal_client):
+def test_siguiente_accion_sin_mesas(fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert 'No hay actas para cargar por el momento' in response.content.decode('utf8')
 
 
-def test_siguiente_redirige_a_cargar_resultados(db, fiscal_client):
+@pytest.mark.parametrize('attachments, mcs, coeficiente, expect', [
+    [1, 0, 2.0, 'asignar-mesa'],   # solo hay para identificar
+    [0, 1, 2.0, 'carga-total'],    # solo hay para cargar
+    [1, 1, 2.0, 'carga-total'],
+    [1, 2, 2.0, 'carga-total'],
+    [1, 3, 2.0, 'carga-total'],
+    [2, 1, 2.0, 'asignar-mesa'],   # muchas actas acumuladas
+    [3, 1, 2.0, 'asignar-mesa'],
+    [4, 2, 2.0, 'asignar-mesa'],
+
+    # ahora con otros coefiecientes
+    [2, 1, 3.0, 'carga-total'],   # hacen falta 3
+    [3, 1, 3.0, 'asignar-mesa'],
+    [1, 1, 0.5, 'asignar-mesa'],
+
+])
+def test_siguiente_accion_balancea(fiscal_client, attachments, mcs, coeficiente, expect):
+    attachments = AttachmentFactory.create_batch(attachments)
+    mcs = MesaCategoriaFactory.create_batch(mcs, orden_de_carga=1)
+
+    # como la url de identificacion pasa un id al azar
+    # y no nos importa acá saber exactamente a que instancia se relaciona la accion
+    # lo que evalúo es que rediriga a una url que empiece así
+    beginning = reverse(expect, args=[0])[:10]
+
+    with override_config(COEFICIENTE_IDENTIFICACION_VS_CARGA=coeficiente):
+        response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == 302
+    assert response.url.startswith(beginning)
+
+
+def test_siguiente_accion_redirige_a_cargar_resultados(db, fiscal_client):
     c1 = CategoriaFactory()
     c2 = CategoriaFactory()
     m1 = MesaFactory(categorias=[c1])

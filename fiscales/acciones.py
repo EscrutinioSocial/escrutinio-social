@@ -1,48 +1,48 @@
 from django.shortcuts import redirect, render
+from django.db import transaction
+from constance import config
 
 from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
 
 
+@transaction.atomic
 def siguiente_accion(request):
     """
     Elige la siguiente acción a ejecutarse
-    - si hay actas en el queryset :meth:`Attachment.sin asignar`,
-      entonces la accion es identificar una al azar
-    - si hay mesas con carga pendiente (es decir, que tienen categorias sin cargar),
-      se elige una por orden de prioridad y tamaño del circuito
+
+    - si sólo hay actas sin cargar la accion será identificar una de ellas al azar
+
+    - si sólo hay mesas con carga pendiente (es decir, que tienen categorias sin cargar),
+      se elige una por orden de prioridad
+
+    - si hay tanto mesas como actas pendientes, se elige identicar
+      si el tamaño de la cola de identificaciones pendientes es X veces el tamaño de la
+      cola de carga (siendo X la variable config.COEFICIENTE_IDENTIFICACION_VS_CARGA).
     - caso contrario, no hay nada para hacer
     """
-    accion = None
+    attachments = Attachment.sin_identificar(request.user.fiscal)
+    con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente()
 
-    if accion is None:
-        foto = foto_a_identificar(request.user.fiscal)
-        if foto is not None:
-            accion = IdentificacionDeFoto(request, foto)
+    cant_fotos = attachments.count()
+    cant_cargas = con_carga_pendiente.count()
 
-    if accion is None:
-        mesacategoria = MesaCategoria.objects.siguiente()
+    if cant_fotos and not cant_cargas or cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA:
+        foto = attachments.order_by('?').first()
+        if foto:
+            return IdentificacionDeFoto(request, foto)
+    elif cant_cargas:
+        mesacategoria = con_carga_pendiente.mas_prioritaria()
         if mesacategoria:
-            accion = CargaCategoriaEnActa(request, mesacategoria)
-
-    if accion is None:
-        accion = NoHayAccion(request)
-
-    return accion
-
-
-def foto_a_identificar(fiscal):
-    attachments = Attachment.sin_identificar(fiscal)
-    if attachments.exists():
-        return attachments.order_by('?').first()
-    return None
+            return CargaCategoriaEnActa(request, mesacategoria)
+    return NoHayAccion(request)
 
 
 class IdentificacionDeFoto():
     """
-    Accion sobre una foto (attachment):
+    Acción sobre una foto (attachment):
     estampa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para su clasificación
+    de guarda y redirige a la vista para su clasificación.
     """
 
     def __init__(self, _request, _attachment):
@@ -60,7 +60,7 @@ class CargaCategoriaEnActa():
     Acción sobre una mesa-categoría:
     estampa en la mesa el tiempo de "asignación" para que se excluya durante el periodo
     de guarda y redirige a la vista para la carga de la mesa/categoría dependiendo
-    de la configuracion de la categoria
+    de la configuracion de la categoría.
     """
 
     def __init__(self, _request, mc):
