@@ -3,6 +3,7 @@ import base64
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponseForbidden
@@ -12,6 +13,8 @@ from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView, FormView
+
+from sentry_sdk import capture_message
 
 from adjuntos.consolidacion import consolidar_identificaciones
 from adjuntos.csv_import import CSVImporter
@@ -56,7 +59,21 @@ class IdentificacionCreateView(CreateView):
 
     @cached_property
     def attachment(self):
-        return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
+        # solo el fiscal asignado al attachment puede identificar la carga
+        attachment = get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
+        fiscal = self.request.user.fiscal
+        if attachment.taken_by != fiscal:
+            capture_message(
+                f"""
+                Intento de asignar mesa de attachment {attachment.id} sin permiso
+
+                taken_by: {attachment.taken_by}
+                fiscal: {fiscal} ({fiscal.id})
+                """
+            )
+            # TO DO: deberiamos sumar puntos al score anti-trolling?
+            raise PermissionDenied()
+        return attachment
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

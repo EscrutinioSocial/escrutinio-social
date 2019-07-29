@@ -11,17 +11,21 @@ from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga
 
 
-def test_identificacion_create_view_get(fiscal_client):
+def test_identificacion_create_view_get(fiscal_client, admin_user):
     a = AttachmentFactory()
+    # se la asigno al fiscal
+    a.take(admin_user.fiscal)
+
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
-    fotoUrl = a.foto.thumbnail['960x'].url
+    foto_url = a.foto.thumbnail['960x'].url
     assert response.status_code == HTTPStatus.OK
-    assert fotoUrl in response.content.decode('utf8')
+    assert foto_url in response.content.decode('utf8')
 
 
 def test_identificacion_create_view_post(fiscal_client, admin_user):
     m1 = MesaFactory()
     a = AttachmentFactory()
+    a.take(admin_user.fiscal)
     data = {
         'mesa': m1.id,
         'circuito': m1.circuito.id,
@@ -42,8 +46,9 @@ def test_identificacion_create_view_post(fiscal_client, admin_user):
     assert not m1.attachments.exists()
 
 
-def test_identificacion_create_view_get__desde_unidad_basica(fiscal_client):
+def test_identificacion_create_view_get__desde_unidad_basica(fiscal_client, admin_user):
     a = AttachmentFactory()
+    a.take(admin_user.fiscal)
     response = fiscal_client.get(reverse('asignar-mesa-ub', args=[a.id]))
     assert response.status_code == HTTPStatus.OK
 
@@ -51,9 +56,10 @@ def test_identificacion_create_view_get__desde_unidad_basica(fiscal_client):
     assert foto_url in response.content.decode('utf8')
 
 
-def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client):
+def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client, admin_user):
     mesa_1 = MesaFactory()
     attachment = AttachmentFactory()
+    attachment.take(admin_user.fiscal)
     data = {
         'mesa': mesa_1.id,
         'circuito': mesa_1.circuito.id,
@@ -99,3 +105,18 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     a.refresh_from_db()
     assert a.identificacion_testigo is None
     assert not m1.attachments.exists()
+
+
+def test_identificacion_sin_permiso(fiscal_client, admin_user, mocker):
+    fiscal = admin_user.fiscal
+    capture = mocker.patch('adjuntos.views.capture_message')
+    a = AttachmentFactory()
+    response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
+    assert response.status_code == 403
+    assert capture.call_count == 1
+    mensaje = capture.call_args[0][0]
+    assert 'Intento de asignar mesa de attachment' in mensaje
+    assert str(fiscal) in mensaje
+    a.take(fiscal)
+    response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
+    assert response.status_code == 200

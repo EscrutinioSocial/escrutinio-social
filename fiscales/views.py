@@ -32,7 +32,7 @@ from .acciones import siguiente_accion
 from django.template.loader import render_to_string
 from html2text import html2text
 from django.core.mail import send_mail
-from sentry_sdk import capture_exception
+from sentry_sdk import capture_exception, capture_message
 from .forms import (
     MisDatosForm,
     votomesareportadoformset_factory,
@@ -230,7 +230,7 @@ def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
     mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente()
     if mesacategoria:
-        mesacategoria.take()
+        mesacategoria.take(request.user.fiscal)
         return carga(request, mesacategoria.id, desde_ub=True)
 
     # si es None, lo llevamos a subir un adjunto
@@ -238,13 +238,30 @@ def cargar_desde_ub(request, mesa_id, tipo='total'):
 
 
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')), login_url=NO_PERMISSION_REDIRECT)
+@user_passes_test(
+    lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')),
+    login_url=NO_PERMISSION_REDIRECT
+)
 def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
-    fiscal = get_object_or_404(Fiscal, user=request.user)
+    fiscal = request.user.fiscal
     mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
+
+    # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
+    if mesa_categoria.taken_by != fiscal:
+        capture_message(
+            f"""
+            Intento de cargar mesa-categoria {mesa_categoria.id}
+
+            taken_by: {mesa_categoria.taken_by}
+            fiscal: {fiscal} ({fiscal.id})
+            """
+        )
+        # TO DO: quizas sumar puntos al score anti-trolling?
+        raise PermissionDenied('no te toca cargar acá')
+
     # en carga parcial sólo se cargan opciones prioritarias
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
