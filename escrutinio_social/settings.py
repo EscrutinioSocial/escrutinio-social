@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'dbbackup',
     'constance',
     'constance.backends.database',
+    'djangoql',
 
     # 'material.admin',
     # 'django.contrib.admin',
