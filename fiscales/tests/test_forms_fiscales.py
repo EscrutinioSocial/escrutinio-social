@@ -43,7 +43,7 @@ def test_quiero_ser_fiscal_form__dni_repetido(db):
     seccion = SeccionFactory()
     request_data = construir_request_data(seccion)
 
-    FiscalFactory(dni=request_data['dni'], referido_codigo="1234")
+    FiscalFactory(dni=request_data['dni'])
 
     form = QuieroSerFiscalForm(data=request_data)
     assert not form.is_valid()

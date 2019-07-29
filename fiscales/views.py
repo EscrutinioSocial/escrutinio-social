@@ -17,7 +17,7 @@ from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
-from .models import Fiscal
+from .models import Fiscal, CodigoReferido
 from elecciones.models import (
     Mesa,
     Carga,
@@ -37,6 +37,7 @@ from .forms import (
     MisDatosForm,
     votomesareportadoformset_factory,
     QuieroSerFiscalForm,
+    ReferidoForm,
 )
 from contacto.views import ConContactosMixin
 from problemas.models import Problema
@@ -44,8 +45,6 @@ from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
 
-from secrets import choice
-from string import ascii_letters, digits
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
@@ -94,28 +93,39 @@ class QuieroSerFiscal(FormView):
     template_name = 'fiscales/quiero-validar.html'
     form_class = QuieroSerFiscalForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['referido_por_codigo'] = self.kwargs.get('codigo_ref', None)
+        return initial
+
     def form_valid(self, form):
         data = form.cleaned_data
         fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
         fiscal.nombres = data['nombres']
         fiscal.apellido = data['apellido']
         fiscal.seccion_id = data['seccion']
-        fiscal.referido_por_nombres = data['referido_por_nombres']
-        fiscal.referido_por_apellido = data['referido_por_apellido']
+        fiscal.referente_nombres = data['referente_nombres']
+        fiscal.referente_apellido = data['referente_apellido']
         if data['referido_por_codigo']:
-            fiscal.referido_por_codigo = data['referido_por_codigo'].upper()
-        fiscal.referido_codigo = generar_codigo_confirmacion()
+            codigo = data['referido_por_codigo']
+            referente, certeza = CodigoReferido.fiscales_para(codigo)[0]
+            fiscal.referente = referente
+            fiscal.referente_certeza = certeza
+            if referente:
+                fiscal.referido_por_codigos = f'{referente.referido_por_codigos}-{codigo}'
+            else:
+                fiscal.referido_por_codigos = codigo
         fiscal.save()
         telefono = data['telefono_area'] + data['telefono_local']
         fiscal.agregar_dato_de_contacto('teléfono', telefono)
         fiscal.agregar_dato_de_contacto('email', data['email'])
         fiscal.user.set_password(data['password'])
-
         fiscal.user.save()
-
         self.enviar_correo_confirmacion(fiscal, data['email'])
 
-        self.success_url = reverse('quiero-validar-gracias', kwargs={'codigo_ref': fiscal.referido_codigo})
+        # se guarda el fiscal en la sesión para que se consuma en la página de agradecimiento
+        self.request.session['fiscal_id'] = fiscal.id
+        self.success_url = reverse('quiero-validar-gracias')
         return super().form_valid(form)
 
     def enviar_correo_confirmacion(self, fiscal, email):
@@ -140,28 +150,26 @@ class QuieroSerFiscal(FormView):
         )
 
 
-def generar_codigo_confirmacion():
-    """
-    Genera un código único de 4 dígitos alfanuméricos y chequea que sea único en la base de una manera
-    no muy a salvo de problemas de concurrencia.
-
-    En caso de surgir un problema de naturaleza concurrente, lo salvará la constraint de la base.
-    """
-    codigo = generar_codigo_random()
-    fiscal_mismo_codigo = Fiscal.objects.filter(referido_codigo=codigo).first()
-    while fiscal_mismo_codigo is not None:
-        codigo = generar_codigo_random()
-        fiscal_mismo_codigo = Fiscal.objects.filter(referido_codigo=codigo).first()
-    return codigo
+def quiero_validar_gracias(request):
+    fiscal = get_object_or_None(Fiscal, id=request.session.get('fiscal_id'))
+    return render(request, 'fiscales/quiero-validar-gracias.html', {'fiscal': fiscal})
 
 
-def generar_codigo_random():
-    alphabet = ascii_letters + digits
-    return ''.join(choice(alphabet) for i in range(QuieroSerFiscalForm.CARACTERES_REF_CODIGO)).upper()
+@login_required
+def referidos(request):
+    fiscal = request.user.fiscal
+    if request.method == 'POST':
+        if 'link' in request.POST:
+            fiscal.crear_codigo_de_referidos()
+        elif 'conozco' in request.POST:
+            # TODO ver como dejar traza de esto
+            referidos_confirmados = request.POST.getlist('referido')
+            fiscal.referidos.filter(id__in=referidos_confirmados).update(referencia_confirmada=True)
+            fiscal.referidos.exclude(id__in=referidos_confirmados).update(referencia_confirmada=False)
 
+    form = ReferidoForm(initial={'url': fiscal.ultimo_codigo_url()})
+    return render(request, 'fiscales/referidos.html', {'form': form, 'referidos': fiscal.referidos.all()})
 
-def quiero_validar_gracias(request, codigo_ref):
-    return render(request, 'fiscales/quiero-validar-gracias.html', {'codigo_ref': codigo_ref})
 
 
 def confirmar_email(request, uuid):
@@ -170,7 +178,7 @@ def confirmar_email(request, uuid):
         texto = mark_safe('El código de confirmación es inválido. '
                           'Por favor copiá y pegá el link que te enviamos'
                           ' por email en la barra de direcciones'
-                          'Si seguís con problemas, env '
+                          'Si seguís con problemas, envía un mail a '
                           '<a href="mailto:{email}">'
                           '{email}</a>'.format(email=settings.DEFAULT_FROM_EMAIL))
 
