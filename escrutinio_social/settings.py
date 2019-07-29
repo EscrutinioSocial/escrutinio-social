@@ -298,12 +298,10 @@ PAUSA_CONSOLIDACION = 15
 # Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll
 SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 500
 
-# Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada
+# Cuanto aumenta el scoring de troll por una identificacion distinta a la confirmada
 SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 200
-# Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
+# Cuanto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
 SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA = 200
-# Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.
-SCORING_TROLL_PROBLEMA_DESCARTADO = 200
 
 # Tiempos de 'taken', para adjuntos y para mesas.
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos

@@ -92,48 +92,6 @@ def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client,
     assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
 
 
-def test_siguiente_happy_path_parcial_y_total(db, fiscal_client, settings):
-    settings.MIN_COINCIDENCIAS_CARGAS = 1
-    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, orden_de_carga=1)
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
-    assert response.url == reverse('carga-parcial', args=[mc1.id])
-
-    carga = CargaFactory(mesa_categoria=mc1, tipo='parcial')
-    consumir_novedades_carga()
-    mc1.refresh_from_db()
-    assert mc1.status == MesaCategoria.STATUS.parcial_consolidada_dc
-    assert mc1.carga_testigo == carga
-    mc1.release()
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.url == reverse('carga-total', args=[mc1.id])
-
-    carga = CargaFactory(mesa_categoria=mc1, tipo='total')
-    consumir_novedades_carga()
-    mc1.refresh_from_db()
-    assert mc1.status == MesaCategoria.STATUS.total_consolidada_dc
-    assert mc1.carga_testigo == carga
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    # no hay actas
-    assert response.status_code == 200
-
-
-def test_siguiente_manda_a_parcial_si_es_requerido(db, fiscal_client, settings):
-    settings.MIN_COINCIDENCIAS_CARGAS = 1
-    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=False, orden_de_carga=1)
-    mc2 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, orden_de_carga=2)
-
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
-    assert response.url == reverse('carga-total', args=[mc1.id])
-
-    # mc1 queda en taken, ahora da mc2
-
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
-    assert response.url == reverse('carga-parcial', args=[mc2.id])
-
-
 def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client):
     c = CategoriaFactory()
     o = CategoriaOpcionFactory(categoria=c, prioritaria=True).opcion

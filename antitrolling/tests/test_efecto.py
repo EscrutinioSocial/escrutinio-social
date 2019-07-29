@@ -1,5 +1,4 @@
 import pytest
-from django.conf import settings
 
 from elecciones.models import MesaCategoria, Carga, CargasIncompatiblesError
 from adjuntos.models import Identificacion, Attachment
@@ -9,15 +8,13 @@ from antitrolling.efecto import (
 )
 from antitrolling.models import EventoScoringTroll
 from elecciones.tests.factories import (
-    MesaFactory, AttachmentFactory, MesaCategoriaFactory, IdentificacionFactory,
-    FiscalFactory
+    MesaFactory, AttachmentFactory, MesaCategoriaFactory
 )
 
 from .utils_para_test import (
     nuevo_fiscal, identificar, reportar_problema_attachment,
     nueva_categoria, nueva_carga
 )
-from problemas.models import Problema, ReporteDeProblema
 
 
 def test_efecto_consolidar_asociacion_attachment(db, settings):
@@ -303,20 +300,3 @@ def test_efecto_diferencia_1(db, caplog):
     efecto_scoring_troll_confirmacion_carga(mesa_categoria)
     # hay un sólo evento troll y la diferencia es 1
     assert EventoScoringTroll.objects.get().variacion == carga_1 - carga_2 == 1
-
-def test_efecto_problema_descartado(db):
-    fiscal_1 = nuevo_fiscal()
-    fiscal_2 = nuevo_fiscal()
-
-    a = AttachmentFactory()
-    m1 = MesaFactory()
-    i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
-    f = FiscalFactory()
-    Problema.reportar_problema(fiscal_1, 'reporte 1', 
-        ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, identificacion=i1)
-    assert i1.problemas.first().problema.estado == Problema.ESTADOS.potencial
-
-    problema = i1.problemas.first().problema
-    problema.descartar(nuevo_fiscal().user)
-
-    assert EventoScoringTroll.objects.get().variacion == settings.SCORING_TROLL_PROBLEMA_DESCARTADO

@@ -54,7 +54,7 @@ class EventoScoringTrollInline(admin.TabularInline):
     can_delete = False
 
     # probablemente haya una mejor forma de hacer esto.
-    def attachment_link(self, obj):
+    def attachment_link(self,obj):
         img_snippet = f'<img src="{obj.attachment.foto.url}" width="80px"/>'
         return format_html(f'<a href="{obj.attachment.foto.url}">'+img_snippet+'</a>')
 
