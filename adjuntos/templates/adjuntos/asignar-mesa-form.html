@@ -7,13 +7,18 @@ function buildDistritoAutocomplete(childAutocomplete) {
 }
 
 $(document).ready(function() {
-  var mesaAutocomplete = buildAutocomplete('id_mesa', '{% url 'autocomplete-mesa' %}', null);
-  var circuitoAutocomplete = buildAutocomplete('id_circuito', '{% url 'autocomplete-circuito' %}', mesaAutocomplete);
+  // var mesaAutocomplete = buildAutocomplete('id_mesa', '{% url 'autocomplete-mesa' %}', null);
+  var circuitoAutocomplete = buildAutocomplete('id_circuito', '{% url 'autocomplete-circuito' %}', null);
   var seccionAutocomplete = buildAutocomplete('id_seccion', '{% url 'autocomplete-seccion' %}', circuitoAutocomplete);
   var distritoAutocomplete = buildDistritoAutocomplete(seccionAutocomplete);
 
   $('#id_distrito-autocomplete').focus();
 
+  $('#id_mesa-autocomplete').on('blur', function(e){
+      mesa_id = e.target.value;
+      distrito_id = $('#id_distrito-autocomplete').value;
+      
+  });    
   // Borrar los <select generados por django
   $('.remove').remove();
 });

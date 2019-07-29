@@ -7,6 +7,10 @@ urlpatterns = [
     url('^_autocomplete/c$', views.CircuitoListView.as_view(), name='autocomplete-circuito'),
     url('^_autocomplete/m$', views.MesaListView.as_view(), name='autocomplete-mesa'),
 
+    url('^_autocomplete/cmd$', views.CircuitoFromMesaDistrito.as_view(), name='autocomplete-cmd'),
+    url('^_autocomplete/cms$', views.CircuitoFromMesaSeccion.as_view(), name='autocomplete-cms'),
+
+    
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
     url('^siguiente/$', views.realizar_siguiente_accion, name='siguiente-accion'),
 

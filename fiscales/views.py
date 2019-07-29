@@ -19,6 +19,7 @@ from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
 from .models import Fiscal
 from elecciones.models import (
+    Distrito,
     Mesa,
     Carga,
     Seccion,
@@ -472,3 +473,64 @@ class MesaListView(AutocompleteBaseListView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(lugar_votacion__circuito__id=self.request.GET['parent_id'])
+
+
+class CircuitoFromMesaDistrito(ListView):
+    model = Circuito
+
+    def get(self, request, *args, **kwargs):
+        data = {'options':
+                [
+                    {'circuito_id': c.id,
+                     'circuito': str(c),
+                     'seccion_id' : c.seccion.id,
+                     'seccion': str(c.seccion)
+                    } for c in self.get_queryset()
+                ]
+        }
+        return JsonResponse(data, status=200, safe=False)
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        mesa = Mesa.objects.get(id=self.request.GET['mesa'])
+        distrito = Distrito.objects.get(id=self.request.GET['distrito'])
+        return qs.filter(id=mesa.circuito_id,seccion__distrito__id=distrito.id)
+
+class CircuitoFromMesaSeccion(ListView):
+    model = Circuito
+
+    def get(self, request, *args, **kwargs):
+        data = {'options':
+                [
+                    {'circuito_id': c.id,
+                     'circuito': str(c),
+                    } for c in self.get_queryset()
+                ]
+        }
+        return JsonResponse(data, status=200, safe=False)
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        mesa = Mesa.objects.get(id=self.request.GET['mesa'])
+        seccion = Seccion.objects.get(id=self.request.GET['seccion'])
+        return qs.filter(id=mesa.circuito_id,seccion__id=seccion.id)
+
+class SeccionFromMesaCircuito(ListView):
+    model = Circuito
+
+    def get(self, request, *args, **kwargs):
+        data = {'options':
+                [
+                    {'seccion_id': s.id,
+                     'seccion': str(s),
+                    } for s in self.get_queryset()
+                ]
+        }
+        return JsonResponse(data, status=200, safe=False)
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        mesa = Mesa.objects.get(numero=self.request.GET['mesa']).annotate(mesa__circuito__seccion)
+        circuito = Circuito.objects.get(numero=self.request.GET['circuito'])
+        return qs.intersect(mesa,circuito)
+

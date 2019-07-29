@@ -15,7 +15,7 @@ class IdentificacionForm(forms.ModelForm):
 
     class Meta:
         model = Identificacion
-        fields = ['distrito', 'seccion', 'circuito', 'mesa']
+        fields = ['distrito', 'mesa', 'seccion', 'circuito']
 
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
