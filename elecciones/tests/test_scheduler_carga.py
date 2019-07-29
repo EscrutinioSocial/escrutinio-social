@@ -3,16 +3,15 @@ from datetime import timedelta
 from django.utils import timezone
 from elecciones.tests.factories import (
     AttachmentFactory,
-    MesaCategoriaFactory,
-    MesaCategoriaDefaultFactory,
+    CargaFactory,
     CategoriaFactory,
-    IdentificacionFactory,
     CircuitoFactory,
-    MesaFactory
+    IdentificacionFactory,
+    MesaCategoriaDefaultFactory,
+    MesaCategoriaFactory,
+    MesaFactory,
 )
-from elecciones.models import MesaCategoria, Mesa
-from adjuntos.consolidacion import consumir_novedades_identificacion
-from problemas.models import Problema, ReporteDeProblema
+from elecciones.models import MesaCategoria
 
 
 def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
