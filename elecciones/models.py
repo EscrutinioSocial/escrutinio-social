@@ -280,7 +280,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
         Devuelve la intancia más prioritaria del queryset
         """
         return self.order_by(
-            'status', 'categoria__prioridad', 'orden_de_carga', 'mesa__prioridad', 'id'
+            'status', 'orden_de_carga', 'id'
         ).first()
 
     def siguiente(self):

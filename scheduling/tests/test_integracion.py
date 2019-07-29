@@ -61,10 +61,8 @@ def test_orden_de_carga_escenario_base(db, settings):
 
     mesas = []
     for nro in range(25):
-        mesa = MesaFactory(lugar_votacion=lugar_votacion, numero=str(nro))
+        mesa = MesaFactory(lugar_votacion=lugar_votacion, numero=str(nro), categorias=categorias)
         mesas.append(mesa)
-        for cat in categorias:
-            MesaCategoriaFactory(mesa=mesa, categoria=cat)
 
     # primera mesa
     identificar_mesa(mesas[0], fiscal)
@@ -115,10 +113,8 @@ def test_orden_de_carga_seccion_categoria_prioritaria(db, settings):
 
     mesas = []
     for nro in range(200):
-        mesa = MesaFactory(lugar_votacion=lugar_votacion, numero=str(nro))
+        mesa = MesaFactory(lugar_votacion=lugar_votacion, numero=str(nro), categorias=categorias)
         mesas.append(mesa)
-        for cat in categorias:
-            MesaCategoriaFactory(mesa=mesa, categoria=cat)
     
     # primera mesa
     identificar_mesa(mesas[0], fiscal)
@@ -184,10 +180,8 @@ def test_orden_de_carga_cantidad_mesas_prioritarias(db, settings):
 
     mesas = []
     for nro in range(30):
-        mesa = MesaFactory(lugar_votacion=lugar_votacion, numero=str(nro))
+        mesa = MesaFactory(lugar_votacion=lugar_votacion, numero=str(nro), categorias=categorias)
         mesas.append(mesa)
-        for cat in categorias:
-            MesaCategoriaFactory(mesa=mesa, categoria=cat)
 
     # primera mesa
     identificar_mesa(mesas[0], fiscal)
@@ -214,3 +208,121 @@ def test_orden_de_carga_cantidad_mesas_prioritarias(db, settings):
     for nro in range(5, 20):
         identificar_mesa(mesas[nro], fiscal)
     verificar_valores_scheduling_mesacat(mesas[19], pv, 64, 20, 640000)
+
+
+def siguiente_mesa_a_cargar():
+    mesacat = MesaCategoria.objects.siguiente()
+    mesacat.status = MesaCategoria.STATUS.total_consolidada_dc
+    mesacat.save(update_fields=['status'])
+    return mesacat
+
+
+def test_secuencia_carga_secciones_standard_prioritaria(db, settings):
+    """
+    Se verifica la secuencia con la que se asignan mesas considerando dos secciones de 100 mesas,
+    una standard y una prioritaria, de 100 mesas cada una
+    """
+    asignar_prioridades_standard(settings)
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
+    fiscal = nuevo_fiscal()
+
+    # una seccion prioritaria y una standard, un circuito, 200 mesas en el mismo lugar de votacion, una categoria prioritaria, una standard
+    seccion_prioritaria = SeccionFactory(nombre="Barrio marítimo")
+    circuito_prioritario = CircuitoFactory(seccion=seccion_prioritaria)
+    lugar_votacion_prioritario = LugarVotacionFactory(circuito=circuito_prioritario)
+    seccion_standard = SeccionFactory(nombre="Bera centro")
+    circuito_standard = CircuitoFactory(seccion=seccion_standard)
+    lugar_votacion_standard = LugarVotacionFactory(circuito=circuito_standard)
+
+    pv = CategoriaFactory(nombre="PV")
+    categorias = [pv]
+
+    PrioridadSchedulingFactory(seccion=seccion_prioritaria, desde_proporcion=0, hasta_proporcion=2, prioridad=2)
+    PrioridadSchedulingFactory(seccion=seccion_prioritaria, desde_proporcion=2, hasta_proporcion=10, prioridad=8)
+    PrioridadSchedulingFactory(seccion=seccion_prioritaria, desde_proporcion=10, hasta_proporcion=100, prioridad=40)
+
+    mesas_seccion_standard = []
+    mesas_seccion_prioritaria = []
+    for nro in range(100):
+        mesa_standard = MesaFactory(lugar_votacion=lugar_votacion_standard, numero=str(nro+1), categorias=categorias)
+        mesa_prioritaria = MesaFactory(lugar_votacion=lugar_votacion_prioritario,
+                                       numero=str(nro+1001), categorias=categorias)
+        mesas_seccion_standard.append(mesa_standard)
+        mesas_seccion_prioritaria.append(mesa_prioritaria)
+
+    # se identifican las mesas en orden
+    for nro in range(100):
+        identificar_mesa(mesas_seccion_standard[nro], fiscal)
+        identificar_mesa(mesas_seccion_prioritaria[nro], fiscal)
+
+    # primer mesa a cargar
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_standard[0], categoria=pv)[0]
+
+    # segunda mesa a cargar
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[0], categoria=pv)[0]
+
+    # tercera mesa a cargar
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_standard[1], categoria=pv)[0]
+
+    # cuarta mesa a cargar
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[1], categoria=pv)[0]
+
+    # quinta mesa a cargar - orden_de_carga 2400
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[2], categoria=pv)[0]
+
+    # novena mesa a cargar - orden_de_carga 5600
+    for nro in range(4):
+        mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[6], categoria=pv)[0]
+
+    # mesa 10 a cargar - orden_de_carga 6000
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_standard[2], categoria=pv)[0]
+
+    # mesa 12 a cargar - orden_de_carga 7200
+    mesacat = siguiente_mesa_a_cargar()
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[8], categoria=pv)[0]
+
+    # mesa 13 a cargar - orden_de_carga 8000
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_standard[3], categoria=pv)[0]
+
+    # mesa 14 a cargar - orden_de_carga 8000
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[9], categoria=pv)[0]
+
+    # mesa 15 a cargar - orden_de_carga 10000
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_standard[4], categoria=pv)[0]
+
+    # mesa 20 a cargar - orden_de_carga 20000
+    for nro in range(5):
+        mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_standard[9], categoria=pv)[0]
+
+    # mesa 21 a cargar - orden_de_carga 44000
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[10], categoria=pv)[0]
+
+    # mesa 36 a cargar - orden_de_carga 104000
+    for nro in range(15):
+        mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[25], categoria=pv)[0]
+
+    # mesa 37 a cargar - orden_de_carga 108000
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[26], categoria=pv)[0]
+
+    # mesa 38 a cargar - orden_de_carga 110000
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_standard[10], categoria=pv)[0]
+
+    # mesa 39 a cargar - orden_de_carga 112000
+    mesacat = siguiente_mesa_a_cargar()
+    assert mesacat == MesaCategoria.objects.filter(mesa=mesas_seccion_prioritaria[27], categoria=pv)[0]
