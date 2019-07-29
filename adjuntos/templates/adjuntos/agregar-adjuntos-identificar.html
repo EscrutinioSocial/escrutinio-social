@@ -1,0 +1,37 @@
+{% extends "fiscales/base.html" %}
+{% load i18n material_form material_frontend %}
+{% load staticfiles %}
+
+{% block page_title %}Subir actas e identifiar{% endblock %}
+
+{% block left-panel %}
+<div class="card">
+
+    <div class="card-content">
+
+        <div class="card-title">{% block card-title %}
+            Subir actas e identificarlas
+            {% endblock card-title %}</div>
+
+        <form action="{{ url_to_post }}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {# FIXME django-material desactiva el atributo multiple del filefield #}
+            {# {% form  %}{% endform %} #}
+            {{ attachment_form }}
+
+            <div class="card-title">¿De qué sección/circuito son estas actas?</div>
+                  {% include "adjuntos/asignar-mesa-form.html" with form=identificacion_form %}
+            </div>
+	    
+            <div class="card-action">
+                <div class="right-align">
+                    {% block submit_row %}
+                    <button type="submit" class="waves-effect waves-light btn white-text">Subir</button>
+                    {% endblock %}
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

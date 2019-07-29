@@ -18,7 +18,13 @@ from sentry_sdk import capture_message
 
 from adjuntos.consolidacion import consolidar_identificaciones
 from adjuntos.csv_import import CSVImporter
-from problemas.models import Problema
+from .forms import (
+    AgregarAttachmentsForm,
+    IdentificacionForm,
+    PreIdentificacionForm,
+)
+from .models import Attachment, Identificacion
+from problemas.models import Problema, ReporteDeProblema
 from problemas.forms import IdentificacionDeProblemaForm
 
 from .forms import AgregarAttachmentsForm, AgregarAttachmentsCSV, IdentificacionForm
@@ -59,9 +65,9 @@ class IdentificacionCreateView(CreateView):
 
     @cached_property
     def attachment(self):
-        # solo el fiscal asignado al attachment puede identificar la carga
         attachment = get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
         fiscal = self.request.user.fiscal
+        # Sólo el fiscal asignado al attachment puede identificar la foto.
         if attachment.taken_by != fiscal:
             capture_message(
                 f"""
@@ -71,16 +77,24 @@ class IdentificacionCreateView(CreateView):
                 fiscal: {fiscal} ({fiscal.id})
                 """
             )
-            # TO DO: deberiamos sumar puntos al score anti-trolling?
+            # TO DO: deberíamos sumar puntos al score anti-trolling?
             raise PermissionDenied()
         return attachment
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        context = super(IdentificacionCreateView,self).get_context_data(**kwargs)
         context['attachment'] = self.attachment
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
+        context['pre_identificacion'] = False
+        id_parcial = self.attachment.identificacion_parcial
+        if id_parcial and id_parcial.seccion is not None:
+            id_parcial = self.attachment.identificacion_parcial
+            context['seccion_precargada'] = id_parcial.seccion
+            context['distrito_precargado'] = id_parcial.distrito
+            if id_parcial.circuito is not None:
+                context['circuito_precargado'] = id_parcial.circuito
         return context
 
     def form_valid(self, form):
@@ -192,8 +206,6 @@ class AgregarAdjuntos(FormView):
         self.types = types
 
     form_class = AgregarAttachmentsForm
-    template_name = 'adjuntos/agregar-adjuntos.html'
-    url_to_post = 'agregar-adjuntos'
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -208,10 +220,11 @@ class AgregarAdjuntos(FormView):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
+        identificacion = kwargs.get('identificacion',None)
         if form.is_valid():
             contador_fotos = 0
             for file in files:
-                instance = self.procesar_adjunto(file)
+                instance = self.procesar_adjunto(file, request.user.fiscal, identificacion)
                 if instance is not None:
                     contador_fotos = contador_fotos + 1
             if contador_fotos:
@@ -220,16 +233,20 @@ class AgregarAdjuntos(FormView):
 
         return self.form_invalid(form)
 
-    def procesar_adjunto(self, adjunto):
+    
+    def procesar_adjunto(self, adjunto, subido_por,identificacion=None):
         if adjunto.content_type not in self.types:
             self.mostrar_mensaje_tipo_archivo_invalido(adjunto.name)
             return None
-        return self.cargar_informacion_adjunto(adjunto)
+        return self.cargar_informacion_adjunto(adjunto, subido_por, identificacion)
 
-    def cargar_informacion_adjunto(self, adjunto):
+    def cargar_informacion_adjunto(self, adjunto, subido_por, identificacion=None):
         try:
             instance = Attachment(mimetype=adjunto.content_type)
             instance.foto.save(adjunto.name, adjunto, save=False)
+            instance.subido_por = subido_por
+            if identificacion is not None:
+                instance.pre_identificacion = identificacion
             instance.save()
             return instance
         except IntegrityError:
@@ -251,22 +268,25 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
     """
-
     form_class = AgregarAttachmentsForm
     url_to_post = 'agregar-adjuntos-ub'
+    template_name = 'adjuntos/agregar-adjuntos.html'
 
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
+        pre_identificacion_form = PreIdentificacionForm(self.request.POST)
         files = request.FILES.getlist('file_field')
 
         # No debería poder cargarse por UI más de una imagen, pero por las dudas lo chequeamos.
+
         if len(files) > 1:
             form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
 
         if form.is_valid():
             file = files[0]
-            instance = self.procesar_adjunto(file)
+            fiscal = request.user.fiscal
+            instance = self.procesar_adjunto(file,fiscal)
             if instance is not None:
                 messages.success(self.request, 'Subiste el acta correctamente.')
                 return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
@@ -277,6 +297,64 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs.update({'es_multiple': False})
+        return kwargs
+
+
+class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
+    """
+    Permite subir una imagen, genera la instancia de Attachment y debería redirigir al flujo de
+    asignación de mesa -> carga de datos pp -> carga de datos secundarios , etc
+
+    Si una imagen ya existe en el sistema, se exluye con un mensaje de error
+    via `messages` framework.
+    """
+    url_to_post = 'agregar-adjuntos'
+    template_name = 'adjuntos/agregar-adjuntos-identificar.html'
+
+    def get(self, request, *args, **kwargs):
+        attachment_form = AgregarAttachmentsForm()
+        pre_identificacion_form = PreIdentificacionForm()
+        context = self.get_context_data()
+        context['attachment_form'] = attachment_form
+        context['pre_identificacion_form'] = pre_identificacion_form
+        if request.user:
+            fiscal = request.user.fiscal
+            context['desde_ub'] = True
+            if fiscal.seccion:
+                context['seccion_precargada'] = fiscal.seccion
+                context['distrito_precargado'] = fiscal.seccion.distrito
+
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        form_class = AgregarAttachmentsForm
+        form = self.get_form(form_class)
+        pre_identificacion_form = PreIdentificacionForm(self.request.POST)
+        files = request.FILES.getlist('file_field')
+
+        if form.is_valid():
+            if not pre_identificacion_form.is_valid():
+                return self.form_invalid(form, pre_identificacion_form)
+
+            fiscal = request.user.fiscal
+            pre_identificacion = pre_identificacion_form.save(commit=False)
+            pre_identificacion.fiscal = fiscal
+            pre_identificacion.save()
+            kwargs.update({'pre_identificacion': pre_identificacion})
+            super().post(request,*args,**kwargs)
+
+        return self.form_invalid(form, pre_identificacion_form)
+
+    def form_invalid(self, attachment_form, identificacion_form, **kwargs):
+        context = self.get_context_data()
+        context['attachment_form'] = attachment_form
+        context['pre_identificacion_form'] = pre_identificacion_form
+        context['desde_ub'] = True
+        return self.render_to_response(context)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'es_multiple': True})
         return kwargs
 
 
