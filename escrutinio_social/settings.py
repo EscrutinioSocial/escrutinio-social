@@ -242,6 +242,10 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
+        'csv_import': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     },
 }
 

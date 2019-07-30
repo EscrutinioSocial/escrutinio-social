@@ -96,18 +96,19 @@ def carga_inicial(db):
     circ = CircuitoFactory(numero='2', seccion=s1)
 
     # Creamos los partidos.
-    fdt = OpcionFactory(orden=3, codigo='FdT')
-    jpc = OpcionFactory(orden=2, codigo='JpC')
-    c2019 = OpcionFactory(orden=4, codigo='C2019')
+    fdt = OpcionFactory(orden=3, codigo='FdT', nombre='FdT', partido__nombre='FpT')
+    jpc = OpcionFactory(orden=2, codigo='JpC', nombre='JpC', partido__nombre='JpC')
+    c2019 = OpcionFactory(orden=4, codigo='C2019', nombre='C2019', partido__nombre='C2019')
 
     categorias = []
     for categoria, prioritaria in CATEGORIAS:
         categoria_bd = CategoriaFactory(nombre=categoria)
         categorias.append(categoria_bd)
-        CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=prioritaria, opcion=fdt)
-        CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=prioritaria, opcion=jpc)
+        CategoriaOpcionFactory(categoria=categoria_bd, prioritaria=prioritaria, opcion=fdt)
+        CategoriaOpcionFactory(categoria=categoria_bd, prioritaria=prioritaria, opcion=jpc)
         if categoria == 'Presidente y vice':
-            CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=False, opcion=c2019)
+            CategoriaOpcionFactory(categoria=categoria_bd, prioritaria=False, opcion=c2019)
+        if prioritaria:
             # Adecuamos las opciones prioritarias.
             total_votos = categoria_bd.get_opcion_total_votos()
             total_votos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=total_votos)
@@ -143,7 +144,7 @@ def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inici
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'falta_total_votos.csv', usr_unidad_basica).procesar()
-    assert 'Falta el reporte de total de votantes para la mesa' in str(e.value)
+    assert "Los resultados para las opciones parciales para la categoría Diputados Provinciales deben estar completos. Faltan las opciones: ['total de votos', 'total de sobres', 'votos nulos']." in str(e.value)
 
 
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
@@ -155,19 +156,20 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica
         assert total.origen == 'csv'
 
     votos_carga_total = VotoMesaReportado.objects.filter(carga__in=cargas_totales).all()
-    # XXX Ver cuántos deberían ser.
-    assert len(votos_carga_total) == 2
+    # Cats: DP, SP, SN, DN, Int, Gob tienen 2 partidos + blancos + nulos + sobres= 6 * 5
+    # Cat: Pres tiene 3 partidos + blancos + nulos + sobres = 6
+    assert votos_carga_total.count() == 36
 
     cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial)
-    cant_parciales = len(CATEGORIAS) - totales
-    assert cargas_parciales.count() == cant_parciales
+    # Hay una sola categoría no prioritaria.
+    assert cargas_parciales.count() == len(CATEGORIAS) - 1
 
     for parcial in cargas_parciales:
         assert parcial.origen == 'csv'
 
     votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=cargas_parciales).all()
-    # Ya que hay dos opciones + total de votantes x 6 categorias prioritarias
-    assert len(votos_carga_parcial) == 18
+    # Cada cat tiene 2 partidos + blancos + nulos + sobres = 5
+    assert votos_carga_parcial.count() == (len(CATEGORIAS) - 1) * 5
 
 
 def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unidad_basica, carga_inicial):

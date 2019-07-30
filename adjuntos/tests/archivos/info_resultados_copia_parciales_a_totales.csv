@@ -1,6 +1,7 @@
-"Sección","Circuito","Distrito","Nro de mesa","Nro de lista","Presidente y vice","Gobernador y vice","Intendentes, Concejales y Consejeros Escolares","Senadores Nacionales","Diputados Nacionales","Senadores Provinciales","Diputados Provinciales","Concejales y Consejeros Escolares","Cantidad de electores del padrón","Cantidad de sobres en la urna","Acta arreglada"
+Sección,Circuito,Distrito,Nro de mesa,Nro de lista,Presidente y vice,Gobernador y vice,"Intendentes, Concejales y Consejeros Escolares",Senadores Nacionales,Diputados Nacionales,Senadores Provinciales,Diputados Provinciales,Concejales y Consejeros Escolares,Cantidad de electores del padrón,Cantidad de sobres en la urna,Acta arreglada
 50,2,1,4012,0,,,,,,,,,400,400,
-50,2,1,4012,"FdT",200,10,10,10,10,10,10,10,,,
-50,2,1,4012,"JpC",100,10,10,10,10,10,10,10,,,
-50,2,1,4012,"C2019",100,,,,,,,,,,
-50,2,1,4012,10001,0,,,,,,,,,,
+50,2,1,4012,FdT,200,10,10,10,10,10,10,10,,,
+50,2,1,4012,JpC,100,10,10,10,10,10,10,10,,,
+50,2,1,4012,C2019,100,,,,,,,,,,
+50,2,1,4012,10001,0,0,0,0,0,0,0,0,,,
+50,2,1,4012,10010,305,301,20,30,30,30,20,,,,
