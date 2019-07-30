@@ -14,7 +14,7 @@ build:
   stage: build
   image: docker:stable
   services:
-    - docker:stable-dind
+    - docker:18.09-dind
   before_script:
     - apk -uv add --no-cache groff bash jq less git py-pip
     - pip install --no-cache-dir awscli
@@ -27,11 +27,12 @@ build:
 
 test:
   stage: test
+  allow_failure: true
   image: 
     name: docker/compose:1.24.0
     entrypoint: [""]
   services:
-    - docker:stable-dind
+    - docker:18.09-dind
   script:
     - docker-compose build
     - docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
@@ -44,7 +45,7 @@ test:
     - docker
     
 pages:
-  stage: deploy
+  stage: pages
   dependencies:
     - test
   script:

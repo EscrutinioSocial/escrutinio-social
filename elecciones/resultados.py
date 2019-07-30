@@ -188,10 +188,18 @@ class Sumarizador():
         votos por cada una de las opciones posibles (partidarias o no)
         """
 
-        return (
-            self.votos_reportados(categoria,
-                                  mesas).values_list('opcion__id').annotate(sum_votos=Sum('votos'))
+        # Obtener los votos reportados
+        votos_reportados = self.votos_reportados(categoria, mesas).values_list('opcion__id').annotate(
+            sum_votos=Sum('votos')
         )
+
+        # Diccionario inicial, opciones completas, todas en 0 (por si alguna opción no viene reportada).
+        votos_por_opcion = {opcion.id: 0 for opcion in Opcion.objects.filter(categorias__id=categoria.id)}
+
+        # Sobreescribir los valores default (en 0) con los votos reportados
+        votos_por_opcion.update(votos_reportados)
+
+        return votos_por_opcion.items()
 
     def agrupar_votos(self, votos_por_opcion):
         votos_positivos = {}
