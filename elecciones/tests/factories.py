@@ -73,6 +73,7 @@ class CategoriaFactory(DjangoModelFactory):
             crear_opcion_desde_dict_si_no_existe(settings.OPCION_BLANCOS)
             crear_opcion_desde_dict_si_no_existe(settings.OPCION_TOTAL_VOTOS)
             crear_opcion_desde_dict_si_no_existe(settings.OPCION_TOTAL_SOBRES)
+            crear_opcion_desde_dict_si_no_existe(settings.OPCION_NULOS)
 
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc1'))
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc2'))

@@ -94,14 +94,12 @@ def carga_inicial(db):
     d1 = DistritoFactory(numero=1)
     s1 = SeccionFactory(numero=50, distrito=d1)
     circ = CircuitoFactory(numero='2', seccion=s1)
+
     # crear las opciones para votos y sobres
-    total_votos = OpcionFactory(orden=0, codigo='0', **settings.OPCION_TOTAL_VOTOS)
-    sobres = OpcionFactory(orden=1, codigo='0', **settings.OPCION_TOTAL_SOBRES)
-    blancos = OpcionFactory(orden=3, codigo='0', **settings.OPCION_BLANCOS)
-    nulos = OpcionFactory(orden=3, codigo='0', **settings.OPCION_NULOS)
-    fdt = OpcionFactory(orden=3, codigo='Todes')
-    jpc = OpcionFactory(orden=2, codigo='Juntos')
-    c2019 = OpcionFactory(orden=4, codigo='Concenso')
+    fdt = OpcionFactory(orden=3, codigo='FdT')
+    jpc = OpcionFactory(orden=2, codigo='JpC')
+    c2019 = OpcionFactory(orden=4, codigo='C2019')
+
     categorias = []
     for categoria, prioritaria in CATEGORIAS:
         categoria_bd = CategoriaFactory(nombre=categoria)

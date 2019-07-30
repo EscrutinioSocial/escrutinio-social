@@ -319,7 +319,7 @@ OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
-
+# Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
 TOTALES_COMPLETAS = False
 
 try:
