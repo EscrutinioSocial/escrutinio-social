@@ -229,6 +229,85 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.electores() == 800
 
 
+def test_proyecciones_parciales(carta_marina, url_resultados, fiscal_client):
+    # resultados para mesa 1
+    m1, _, m3, _, m5, *_ = carta_marina
+    categoria = m1.categorias.get()  # sólo default
+    # opciones a partido
+    o1, o2 = categoria.opciones.filter(partido__isnull=False)
+    blanco = categoria.get_opcion_blancos()
+    total = categoria.get_opcion_total_votos()
+
+    mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
+    mc3 = MesaCategoria.objects.get(mesa=m3, categoria=categoria)
+    mc5 = MesaCategoria.objects.get(mesa=m5, categoria=categoria)
+    c1 = CargaFactory(mesa_categoria=mc1, tipo=Carga.TIPOS.parcial)
+    c2 = CargaFactory(mesa_categoria=mc3, tipo=Carga.TIPOS.parcial)
+    c3 = CargaFactory(mesa_categoria=mc5, tipo=Carga.TIPOS.parcial)
+    consumir_novedades_y_actualizar_objetos([m1, m3, m5])
+
+    VotoMesaReportadoFactory(carga=c1, opcion=o1, votos=20)
+    VotoMesaReportadoFactory(carga=c1, opcion=o2, votos=30)
+    VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=5)
+    VotoMesaReportadoFactory(carga=c1, opcion=total, votos=100)
+
+    VotoMesaReportadoFactory(carga=c2, opcion=o1, votos=10)
+    VotoMesaReportadoFactory(carga=c2, opcion=o2, votos=40)
+    VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=10)
+    VotoMesaReportadoFactory(carga=c2, opcion=total, votos=120)
+
+    VotoMesaReportadoFactory(carga=c3, opcion=o1, votos=30)
+    VotoMesaReportadoFactory(carga=c3, opcion=o2, votos=10)
+    VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=5)
+    VotoMesaReportadoFactory(carga=c3, opcion=total, votos=100)
+
+    c1.actualizar_firma()
+    c2.actualizar_firma()
+    c3.actualizar_firma()
+    assert c1.es_testigo.exists()
+    assert c2.es_testigo.exists()
+    assert c3.es_testigo.exists()
+
+    response = fiscal_client.get(
+        url_resultados + f'?opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
+    )
+    resultados = response.context['resultados']
+    positivos = resultados.tabla_positivos()
+
+    assert resultados.porcentaje_mesas_escrutadas() == '25.00'  # 2 de 8
+
+    # se ordena de acuerdo al que va ganando
+    assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
+
+    total_positivos = resultados.total_positivos()
+
+    assert total_positivos == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+
+    # cuentas
+    assert positivos[o3.partido]['votos'] == 40 + 50
+    assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'  # (40 + 50) / total_positivos
+    assert positivos[o2.partido]['votos'] == 30 + 40
+    assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'  # (30 + 40) / total_positivos
+    assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
+    assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'  # (20 + 5 + 10 + 20) / total_positivos
+
+    # todos los positivos suman 100
+    assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
+
+    # votos de partido 1 son iguales a los de o1 + o4
+    assert positivos[o1.partido]['votos'] == sum(
+        x['votos'] for x in positivos[o4.partido]['detalle'].values()
+    )
+
+    content = response.content.decode('utf8')
+
+    assert f'<td id="votos_{o1.partido.id}" class="dato">55</td>' in content
+    assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
+    assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
+
+    assert resultados.votantes() == 220
+    assert resultados.electores() == 800
+
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
     # se crean 3 secciones electorales
