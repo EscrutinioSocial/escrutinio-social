@@ -149,18 +149,22 @@ def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
     CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
-    cant_totales = len([categoria for categoria in CATEGORIAS])
-    assert len(cargas_totales) == cant_totales
+
+    assert cargas_totales.count() == len(CATEGORIAS)
     for total in cargas_totales:
         assert total.origen == 'csv'
+
     votos_carga_total = VotoMesaReportado.objects.filter(carga__in=cargas_totales).all()
-    # ya que hay dos opciones y 1 categoria no prioritaria
+    # XXX Ver cuántos deberían ser.
     assert len(votos_carga_total) == 2
+
     cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial)
-    parciales = len(CATEGORIAS) - totales
-    assert len(cargas_parciales) == parciales
+    cant_parciales = len(CATEGORIAS) - totales
+    assert cargas_parciales.count() == cant_parciales
+
     for parcial in cargas_parciales:
         assert parcial.origen == 'csv'
+
     votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=cargas_parciales).all()
     # Ya que hay dos opciones + total de votantes x 6 categorias prioritarias
     assert len(votos_carga_parcial) == 18

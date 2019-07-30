@@ -121,8 +121,8 @@ class CSVImporter:
                     nro_de_mesa, circuito, seccion, distrito)
             except Mesa.DoesNotExist:
                 raise DatosInvalidosError(
-                    f'No existe mesa: {nro_de_mesa} en circuito: {circuito}, sección: {seccion} y '
-                    f'distrito: {distrito}.')
+                    f'No existe mesa {nro_de_mesa} en circuito {circuito}, sección {seccion} y '
+                    f'distrito {distrito}.')
             self.mesas_matches[nro_de_mesa] = match_mesa
             self.mesas.append(match_mesa)
 
@@ -167,7 +167,12 @@ class CSVImporter:
                     # La celda está vacía.
                     continue
 
-                cantidad_votos = int(cantidad_votos)
+                try:
+                    cantidad_votos = int(cantidad_votos)
+                except ValueError:
+                    raise DatosInvalidosError(
+                        f'Los resultados deben ser números positivos. Revise la siguiente celda '
+                        f'a {self.celda_analizada}.')
 
                 # Buscamos este nro de lista dentro de las opciones asociadas a
                 # esta categoría.
@@ -187,21 +192,18 @@ class CSVImporter:
 
         return self.carga_parcial, self.carga_total
 
-    def copiar_carga_parcial_en_total_si_corresponde(self, carga_parcial, carga_total):
+    def copiar_carga_parcial_en_total(self, carga_parcial, carga_total):
         """
         Esta función se encarga de copiar los votos de la carga parcial a la total
-        si corresponde. Corresponde cuando hay votos no prioritarios, es decir,
-        cuando la carga total no está vacía.
+        si corresponde.
         """
         if not carga_total:
-            return
-
-        # Hay datos para copiar.
-
-        # Se presupone que si había total es porque también había parcial.
-        # Ahora, en los tests puede no darse.
-        if not carga_parcial:
-            return
+            carga_total = Carga.objects.create(
+                tipo=Carga.TIPOS.total,
+                origen=Carga.SOURCES.csv,
+                mesa_categoria=carga_parcial.mesa_categoria,
+                fiscal=self.fiscal
+            )
 
         for voto_mesa_reportado_parcial in carga_parcial.reportados.all():
             voto_mesa_reportado_total = VotoMesaReportado.objects.create(
@@ -209,6 +211,8 @@ class CSVImporter:
                 opcion=voto_mesa_reportado_parcial.opcion,
                 carga=carga_total
             )
+
+        return carga_total
 
     def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
         # Obtengo la mesa correspondiente.
@@ -238,8 +242,8 @@ class CSVImporter:
             if settings.TOTALES_COMPLETAS and carga_total:
                 self.validar_carga_total(categoria, carga_total)
 
-            # El total de votos hay que impactarlo en todas las cargas.
-            self.copiar_carga_parcial_en_total_si_corresponde(carga_parcial, carga_total)
+            if carga_parcial:
+                carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
 
     def agregar_total_de_votantes_y_sobres(self, mesa, carga_parcial):
         if not carga_parcial:
@@ -291,13 +295,13 @@ class CSVImporter:
             # fixme ver mejor forma de manejar estos errores
             if 'votomesareportado_votos_check' in str(e):
                 raise DatosInvalidosError(
-                    f'Los resultados deben ser números positivos. Revise las filas correspondientes '
+                    f'Los resultados deben ser números positivos. Revise la celda correspondiente '
                     f'a {self.celda_analizada}.')
-            raise DatosInvalidosError(f'Error al guardar los resultados. Revise las filas correspondientes '
+            raise DatosInvalidosError(f'Error al guardar los resultados. Revise la celda correspondiente '
                                       f'a {self.celda_analizada}.')
         except ValueError as e:
             raise DatosInvalidosError(
-                f'Revise que los datos de resultados sean numéricos. Revise las filas correspondientes '
+                f'Revise que los datos de resultados sean numéricos. Revise la celda correspondiente '
                 f'a {self.celda_analizada}: {e}')
         except Exception as e:
             raise e
@@ -321,8 +325,8 @@ class CSVImporter:
                     fiscal=self.fiscal
                 )
             carga = self.carga_total
-        voto = VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
-        voto.save()
+        print(carga, opcion_bd)
+        VotoMesaReportado.objects.create(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
 
     def validar_usuario(self):
         try:

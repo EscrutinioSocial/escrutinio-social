@@ -800,7 +800,7 @@ class Carga(TimeStampedModel):
 
     def __str__(self):
         str_invalidada = ' (invalidada) ' if self.invalidada else ' '
-        return f'carga{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'
+        return f'carga {self.tipo}{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'
 
     def __sub__(self, carga_2):
         # arranco obteniendo los votos ordenados por opcion, que me van a ser utiles varias veces
