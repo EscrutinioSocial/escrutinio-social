@@ -177,6 +177,7 @@ class Sumarizador():
         """
         return VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
+            carga__mesa_categoria__categoria=categoria,
             carga__es_testigo__isnull=False,
             **self.cargas_a_considerar_status_filter(categoria)
         )
@@ -306,7 +307,7 @@ class Resultados():
         nombre_opcion_sobres = settings.OPCION_TOTAL_SOBRES['nombre']
         return sum(
             votos for opcion, votos in self.resultados.votos_no_positivos.items()
-            if opcion not in (nombre_opcion_total, opcion != nombre_opcion_sobres)
+            if opcion not in (nombre_opcion_total, nombre_opcion_sobres)
         )
 
     @lru_cache(128)
@@ -388,7 +389,7 @@ class Resultados():
         return porcentaje(self.resultados.electores_en_mesas_escrutadas, self.resultados.electores)
 
     def porcentaje_participacion(self):
-        return porcentaje(self.votantes(), self.resultados.electores_en_mesas_escrutadas)
+        return porcentaje(self.votantes(), self.resultados.electores)
 
     def total_mesas_escrutadas(self):
         return self.resultados.total_mesas_escrutadas
