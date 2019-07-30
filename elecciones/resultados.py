@@ -494,7 +494,6 @@ class Proyecciones(Sumarizador):
         """
         votos_por_agrupacion = {}
         for id_opcion, id_agrupacion, sum_votos in votos_a_procesar:
-            print(id_opcion, id_agrupacion, sum_votos)
             votos_por_agrupacion.setdefault(id_agrupacion, []).append((id_opcion, sum_votos))
 
         return votos_por_agrupacion
