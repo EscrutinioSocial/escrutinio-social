@@ -42,6 +42,10 @@ INSTALLED_APPS = [
     'material.theme.lightblue',
     'material',
     'dbbackup',
+    'constance',
+    'constance.backends.database',
+    'djangoql',
+
     # 'material.admin',
     # 'django.contrib.admin',
     'material.frontend',
@@ -64,7 +68,9 @@ INSTALLED_APPS = [
     'adjuntos',
     'problemas',
     'contacto',
-    'api'
+    'antitrolling',
+    'api',
+    'scheduling'
 ]
 
 MIDDLEWARE = [
@@ -86,11 +92,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'constance.context_processors.config',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # 'elecciones.context_processors.contadores'
             ],
         },
     },
@@ -286,14 +292,38 @@ MIN_COINCIDENCIAS_CARGAS = 2
 MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
 MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
+# Tamaño maximo de archivos permitidos en el formulario
+# de subida de fotos y CSV
+MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
+
 # Tiempo en segundos que se espera entre
 # recálculo de consolidaciones de identificación y carga
 PAUSA_CONSOLIDACION = 15
+
+# Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll
+SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 500
+
+# Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada
+SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 200
+# Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
+SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA = 200
+# Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.
+SCORING_TROLL_PROBLEMA_DESCARTADO = 200
 
 # Tiempos de 'taken', para adjuntos y para mesas.
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
 MESA_TAKE_WAIT_TIME = 2  # En minutos
 
+# Prioridades standard, a usar si no se definen prioridades específicas
+# para una categoría o circuito
+PRIORIDADES_STANDARD_SECCION = [
+    {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2},
+    {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 20},
+    {'desde_proporcion': 10, 'hasta_proporcion': 100, 'prioridad': 100},
+]
+PRIORIDADES_STANDARD_CATEGORIA = [
+    {'desde_proporcion': 0, 'hasta_proporcion': 100, 'prioridad': 100},
+]
 
 # Las siguientes constantes definen los criterios de filtro
 # para obtener aquellas instancias que se utilizan en el cálculo de resultados
@@ -308,6 +338,14 @@ OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': '
 
 # Opción para elegir ninguna proyección en el combo
 SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
+
+CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
+
+CONSTANCE_CONFIG = {
+    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea ', float),
+}
+
 
 try:
     from .local_settings import *  # noqa

@@ -1,4 +1,8 @@
-from adjuntos.forms import IdentificacionForm
+import pytest
+from django.http import QueryDict
+from django.core.files.uploadedfile import SimpleUploadedFile
+from adjuntos.forms import IdentificacionForm, PreIdentificacionForm, BaseUploadForm
+
 from elecciones.tests.factories import (
     DistritoFactory,
     SeccionFactory,
@@ -91,8 +95,6 @@ def test_identificacion_valida_si_mesa_no_corresponde_a_circuito(db):
     assert not form.is_valid()
     assert form.errors['mesa'] == ['Esta mesa no pertenece al circuito']
 
-
-
     form = IdentificacionForm({
         'mesa': m1.id,
         'circuito': m1.circuito.id,
@@ -103,5 +105,57 @@ def test_identificacion_valida_si_mesa_no_corresponde_a_circuito(db):
     assert form.errors['circuito'] == ['Este circuito no pertenece a la sección']
 
 
+@pytest.mark.parametrize('size, valid', [
+    (9, True),
+    (10, True),
+    (11, False),
+])
+def test_base_form_file_size(settings, size, valid):
+    settings.MAX_UPLOAD_SIZE = 10
+    file = SimpleUploadedFile('data.csv', b'0' * size)
+    file_data = QueryDict(mutable=True)
+    file_data.update(file_field=file)
+    form = BaseUploadForm(files=file_data)
+    assert form.is_valid() is valid
 
 
+def test_preidentificacion_nok(db):
+    m1 = MesaFactory()
+    m2 = MesaFactory()
+    form = PreIdentificacionForm({
+        'circuito': m1.circuito.id,
+        'seccion': m2.circuito.seccion.id,
+        'distrito': m2.circuito.seccion.distrito.id,
+    })
+    assert not form.is_valid()
+    assert form.errors['circuito'] == ['Este circuito no pertenece a la sección']
+
+def test_preidentificacion_ok(db):
+    m1 = MesaFactory()
+    form = PreIdentificacionForm({
+        'circuito': m1.circuito.id,
+        'seccion': m1.circuito.seccion.id,
+        'distrito': m1.circuito.seccion.distrito.id,
+    })
+    assert form.is_valid()
+
+
+def test_preidentificacion_parcial_ok(db):
+    m1 = MesaFactory()
+    form = PreIdentificacionForm({
+        'circuito': m1.circuito.id,
+        'seccion': m1.circuito.seccion.id,
+        'distrito': m1.circuito.seccion.distrito.id
+    })
+    assert form.is_valid()
+
+    form = PreIdentificacionForm({
+        'seccion': m1.circuito.seccion.id,
+        'distrito': m1.circuito.seccion.distrito.id
+    })
+    assert form.is_valid()
+
+    form = PreIdentificacionForm({
+        'distrito': m1.circuito.seccion.distrito.id
+    })
+    assert form.is_valid()
