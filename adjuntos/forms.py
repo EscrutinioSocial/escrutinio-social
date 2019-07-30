@@ -54,10 +54,10 @@ class IdentificacionForm(forms.ModelForm):
 
 class PreIdentificacionForm(forms.ModelForm):
     """
-    Este formulario se utiliza para asignar una identificación parcial a un adjunto.
+    Este formulario se utiliza para asignar una pre identificación a un adjunto.
     """
     distrito = forms.ModelChoiceField(queryset=Distrito.objects.all())
-    seccion = forms.ModelChoiceField(queryset=Seccion.objects.all(),required=False)
+    seccion = forms.ModelChoiceField(queryset=Seccion.objects.all(), required=False)
     circuito = forms.ModelChoiceField(queryset=Circuito.objects.all(),required=False)
 
     class Meta:

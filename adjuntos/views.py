@@ -88,13 +88,13 @@ class IdentificacionCreateView(CreateView):
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
         context['pre_identificacion'] = False
-        id_parcial = self.attachment.identificacion_parcial
-        if id_parcial and id_parcial.seccion is not None:
-            id_parcial = self.attachment.identificacion_parcial
-            context['seccion_precargada'] = id_parcial.seccion
-            context['distrito_precargado'] = id_parcial.distrito
-            if id_parcial.circuito is not None:
-                context['circuito_precargado'] = id_parcial.circuito
+        pre_identificacion = self.attachment.pre_identificacion
+        if pre_identificacion and pre_identificacion.seccion is not None:
+            pre_identificacion = self.attachment.pre_identificacion
+            context['seccion_precargada'] = pre_identificacion.seccion
+            context['distrito_precargado'] = pre_identificacion.distrito
+            if pre_identificacion.circuito is not None:
+                context['circuito_precargado'] = pre_identificacion.circuito
         return context
 
     def form_valid(self, form):
@@ -220,11 +220,11 @@ class AgregarAdjuntos(FormView):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
-        identificacion = kwargs.get('identificacion',None)
+        pre_identificacion = kwargs.get('pre_identificacion', None)
         if form.is_valid():
             contador_fotos = 0
             for file in files:
-                instance = self.procesar_adjunto(file, request.user.fiscal, identificacion)
+                instance = self.procesar_adjunto(file, request.user.fiscal, pre_identificacion)
                 if instance is not None:
                     contador_fotos = contador_fotos + 1
             if contador_fotos:
@@ -233,20 +233,20 @@ class AgregarAdjuntos(FormView):
 
         return self.form_invalid(form)
 
-    
-    def procesar_adjunto(self, adjunto, subido_por,identificacion=None):
+
+    def procesar_adjunto(self, adjunto, subido_por, pre_identificacion=None):
         if adjunto.content_type not in self.types:
             self.mostrar_mensaje_tipo_archivo_invalido(adjunto.name)
             return None
-        return self.cargar_informacion_adjunto(adjunto, subido_por, identificacion)
+        return self.cargar_informacion_adjunto(adjunto, subido_por, pre_identificacion)
 
-    def cargar_informacion_adjunto(self, adjunto, subido_por, identificacion=None):
+    def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion=None):
         try:
             instance = Attachment(mimetype=adjunto.content_type)
             instance.foto.save(adjunto.name, adjunto, save=False)
             instance.subido_por = subido_por
-            if identificacion is not None:
-                instance.pre_identificacion = identificacion
+            if pre_identificacion is not None:
+                instance.pre_identificacion = pre_identificacion
             instance.save()
             return instance
         except IntegrityError:
@@ -286,9 +286,10 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         if form.is_valid():
             file = files[0]
             fiscal = request.user.fiscal
-            instance = self.procesar_adjunto(file,fiscal)
+            instance = self.procesar_adjunto(file, fiscal)
             if instance is not None:
                 messages.success(self.request, 'Subiste el acta correctamente.')
+                instance.take(fiscal)
                 return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
 
             form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
@@ -302,8 +303,7 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
 
 class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     """
-    Permite subir una imagen, genera la instancia de Attachment y debería redirigir al flujo de
-    asignación de mesa -> carga de datos pp -> carga de datos secundarios , etc
+    Permite subir varias imágenes pre identificándolas.
 
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
@@ -312,9 +312,9 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     template_name = 'adjuntos/agregar-adjuntos-identificar.html'
 
     def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
         attachment_form = AgregarAttachmentsForm()
         pre_identificacion_form = PreIdentificacionForm()
-        context = self.get_context_data()
         context['attachment_form'] = attachment_form
         context['pre_identificacion_form'] = pre_identificacion_form
         if request.user:
@@ -341,11 +341,11 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
             pre_identificacion.fiscal = fiscal
             pre_identificacion.save()
             kwargs.update({'pre_identificacion': pre_identificacion})
-            super().post(request,*args,**kwargs)
+            super().post(request, *args, **kwargs)
 
-        return self.form_invalid(form, pre_identificacion_form)
+        return self.form_invalid(form, pre_identificacion_form, **kwargs)
 
-    def form_invalid(self, attachment_form, identificacion_form, **kwargs):
+    def form_invalid(self, attachment_form, pre_identificacion_form, **kwargs):
         context = self.get_context_data()
         context['attachment_form'] = attachment_form
         context['pre_identificacion_form'] = pre_identificacion_form

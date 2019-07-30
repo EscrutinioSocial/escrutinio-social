@@ -2,7 +2,7 @@
 {% load i18n material_form material_frontend %}
 {% load staticfiles %}
 
-{% block page_title %}Subir actas e identifiar{% endblock %}
+{% block page_title %}Subir actas y pre identificarlas{% endblock %}
 
 {% block left-panel %}
 <div class="card">
@@ -10,7 +10,7 @@
     <div class="card-content">
 
         <div class="card-title">{% block card-title %}
-            Subir actas e identificarlas
+            Subir actas y pre identificarlas
             {% endblock card-title %}</div>
 
         <form action="{{ url_to_post }}" method="post" enctype="multipart/form-data">
@@ -20,7 +20,7 @@
             {{ attachment_form }}
 
             <div class="card-title">¿De qué sección/circuito son estas actas?</div>
-                  {% include "adjuntos/asignar-mesa-form.html" with form=identificacion_form %}
+                  {% include "adjuntos/asignar-mesa-form.html" with form=pre_identificacion_form %}
             </div>
 	    
             <div class="card-action">

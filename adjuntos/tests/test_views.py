@@ -138,13 +138,13 @@ def test_preidentificacion_create_view_post(fiscal_client):
 
     attachment = Attachment.objects.all().first()
 
-    assert attachment.identificacion_parcial is not None
+    assert attachment.pre_identificacion is not None
     assert attachment.status == Attachment.STATUS.sin_identificar
 
-    identificacion_parcial = attachment.identificacion_parcial
-    assert identificacion_parcial.circuito == mesa_1.circuito
-    assert identificacion_parcial.seccion == mesa_1.circuito.seccion
-    assert identificacion_parcial.distrito == mesa_1.circuito.seccion.distrito
+    pre_identificacion = attachment.pre_identificacion
+    assert pre_identificacion.circuito == mesa_1.circuito
+    assert pre_identificacion.seccion == mesa_1.circuito.seccion
+    assert pre_identificacion.distrito == mesa_1.circuito.seccion.distrito
 
 
 def test_preidentificacion_sin_datos(fiscal_client):
@@ -173,12 +173,12 @@ def test_preidentificacion_con_datos_de_fiscal(fiscal_client):
     fiscal.seccion = seccion
     fiscal.save()
     fiscal.refresh_from_db()
-    
+
     distrito_preset = f"presetOption('id_distrito','{seccion.distrito}','{seccion.distrito.id}');"
     seccion_preset =  f"presetOption('id_seccion','{seccion}','{seccion.id}');"
-    
+
     response = fiscal_client.get(reverse('agregar-adjuntos'))
     content = response.content.decode('utf8')
-    
+
     assert distrito_preset in content
     assert seccion_preset in content

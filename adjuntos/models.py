@@ -118,7 +118,8 @@ class Attachment(TimeStampedModel):
     taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
     subido_por = models.ForeignKey(
-        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
+        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='attachments_subidos'
     )
 
     # Identificación representativa del estado actual.
@@ -152,7 +153,7 @@ class Attachment(TimeStampedModel):
     def crear_pre_identificacion_si_corresponde(self):
         """
         Le asocia al attachment una PreIdentificacion con los datos del fiscal que la subió
-        si no una previa.
+        si no hay una previa.
         """
         if self.pre_identificacion:
             return
