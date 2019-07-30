@@ -32,14 +32,14 @@ def carta_marina(db):
     c1, c2 = CircuitoFactory.create_batch(2, seccion=s1)
     c3, c4 = CircuitoFactory.create_batch(2, seccion=s2)
     return (
-        MesaFactory(numero=1, lugar_votacion__circuito=c1,
-                    electores=100), MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
-        MesaFactory(numero=3, lugar_votacion__circuito=c2,
-                    electores=120), MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
-        MesaFactory(numero=5, lugar_votacion__circuito=c3,
-                    electores=90), MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
-        MesaFactory(numero=7, lugar_votacion__circuito=c4,
-                    electores=90), MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90)
+        MesaFactory(numero=1, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=3, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=5, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=7, lugar_votacion__circuito=c4, electores=90),
+        MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90),
     )
 
 
@@ -227,7 +227,6 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     assert resultados.votantes() == 220
     assert resultados.electores() == 800
-
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):

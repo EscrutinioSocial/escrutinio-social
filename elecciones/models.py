@@ -426,8 +426,7 @@ class MesaCategoria(models.Model):
         self.status = status
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
-
-
+                
 class Mesa(models.Model):
     """
     Define la mesa de votación que pertenece a un class:`LugarDeVotación`.
@@ -859,6 +858,49 @@ class VotoMesaReportado(models.Model):
 
     def __str__(self):
         return f"{self.carga} - {self.opcion}: {self.votos}"
+
+
+class TecnicaProyeccion(models.Model):
+    """
+    Representa una estrategia para agrupar circuitos para hacer proyecciones.
+    Contiene una lista de AgrupacionCircuitos que debería en total cubrir a todos los circuitos
+    correspondientes a la categoria que se desea proyectar.
+    """
+    nombre = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ('nombre', )
+        verbose_name = 'Técnica de Proyección'
+        verbose_name_plural = 'Técnicas de Proyección'
+
+    def __str__(self):
+        return f'Técnica de proyección {self.nombre}'
+
+
+class AgrupacionCircuitos(models.Model):
+    """
+    Representa un conjunto de circuitos que se computarán juntos a los efectos de una proyección.
+    """
+    nombre = models.CharField(max_length=100)
+    proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.CASCADE, related_name='agrupaciones')
+    minimo_mesas = models.PositiveIntegerField(default=1)
+    circuitos = models.ManyToManyField(
+        Circuito,
+        through='AgrupacionCircuito',
+        related_name='agrupaciones'
+    )
+
+    class Meta:
+        verbose_name = 'Agrupación de Circuitos'
+        verbose_name_plural = 'Agrupaciones de Cicuitos'
+
+    def __str__(self):
+        return f'Agrupación de circuitos {self.nombre}'
+
+
+class AgrupacionCircuito(models.Model):
+    circuito = models.ForeignKey('Circuito', on_delete=models.CASCADE)
+    agrupacion = models.ForeignKey('AgrupacionCircuitos', on_delete=models.CASCADE)
 
 
 @receiver(post_save, sender=Mesa)
