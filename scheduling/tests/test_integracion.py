@@ -2,10 +2,10 @@ import pytest
 
 from adjuntos.consolidacion import consolidar_identificaciones
 from elecciones.models import (
-    MesaCategoria
+    MesaCategoria, Carga
 )
 from elecciones.tests.factories import (
-    SeccionFactory, CategoriaFactory, MesaCategoriaFactory,
+    SeccionFactory, CategoriaFactory, MesaCategoriaFactory, CargaFactory, 
     CircuitoFactory, LugarVotacionFactory, MesaFactory, 
     IdentificacionFactory, AttachmentFactory,
     UserFactory, FiscalFactory
@@ -452,7 +452,6 @@ def test_secuencia_carga_seccion_con_corte(db, settings):
     - tres secciones: una standard, una prioritaria, una con corte a las 7 mesas, de 50 mesas cada una
     - una categoria standard
     """
-
     asignar_prioridades_standard(settings)
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
     fiscal = nuevo_fiscal()
@@ -526,3 +525,49 @@ def test_secuencia_carga_seccion_con_corte(db, settings):
     verificar_siguiente_mesacat(mesas_seccion_standard[14], pv, 29)         # mesacat 65 - orden de carga 290000
     verificar_siguiente_mesacat(mesas_seccion_corte[14], pv)                # mesacat 66 - orden de carga 290000
     verificar_siguiente_mesacat(mesas_seccion_prioritaria[36], pv)          # mesacat 67 - orden de carga 292000
+
+
+def test_excluir_fiscal_que_ya_cargo(db, settings):
+    """
+    Se verifica que no se propone una MesaCategoria para cargar, a un fiscal que ya hizo una carga
+    sobre esa MesaCategoria.
+    """
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
+    settings.MIN_COINCIDENCIAS_CARGAS = 2
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+    fiscal_3 = nuevo_fiscal()
+    pv = CategoriaFactory(nombre="PV")
+    gv = CategoriaFactory(nombre="GV")
+    # hago que la categoria pv sea prioritaria
+    PrioridadSchedulingFactory(categoria=pv, desde_proporcion=0, hasta_proporcion=100, prioridad=30)
+
+    mesa = MesaFactory(numero="51", categorias=[gv, pv])
+    identificar_mesa(mesa, fiscal_3)
+    mesacat_pv = MesaCategoria.objects.filter(mesa=mesa, categoria=pv).first()
+    mesacat_gv = MesaCategoria.objects.filter(mesa=mesa, categoria=gv).first()
+
+    # antes de cargar, la siguiente mesacat para ambos fiscales es pv, que es más prioritaria
+    mesacat_fiscal_2 = MesaCategoria.objects.con_carga_pendiente().sin_cargas_del_fiscal(fiscal_2).mas_prioritaria()
+    mesacat_fiscal_3 = MesaCategoria.objects.con_carga_pendiente().sin_cargas_del_fiscal(fiscal_3).mas_prioritaria()
+    assert mesacat_fiscal_2 == mesacat_pv
+    assert mesacat_fiscal_3 == mesacat_pv
+
+    # agrego una carga 
+    carga = CargaFactory(mesa_categoria=mesacat_pv, fiscal=fiscal_2, tipo=Carga.TIPOS.parcial)
+
+    # la siguiente mesacat para el fiscal_2 es gv, porque de pv ya hizo una carga
+    # la del fiscal 3 es pv, que es más prioritaria
+    mesacat_fiscal_2 = MesaCategoria.objects.con_carga_pendiente().sin_cargas_del_fiscal(fiscal_2).mas_prioritaria()
+    mesacat_fiscal_3 = MesaCategoria.objects.con_carga_pendiente().sin_cargas_del_fiscal(fiscal_3).mas_prioritaria()
+    assert mesacat_fiscal_2 == mesacat_gv
+    assert mesacat_fiscal_3 == mesacat_pv
+
+    # el fiscal 2 carga la mesacat que le queda
+    carga = CargaFactory(mesa_categoria=mesacat_gv, fiscal=fiscal_2, tipo=Carga.TIPOS.parcial)
+
+    # ahora el fiscal 2 no tiene mesacat para cargar, el fiscal 3 sigue con pv como prioritaria
+    mesacat_fiscal_2 = MesaCategoria.objects.con_carga_pendiente().sin_cargas_del_fiscal(fiscal_2).mas_prioritaria()
+    mesacat_fiscal_3 = MesaCategoria.objects.con_carga_pendiente().sin_cargas_del_fiscal(fiscal_3).mas_prioritaria()
+    assert mesacat_fiscal_2 == None
+    assert mesacat_fiscal_3 == mesacat_pv

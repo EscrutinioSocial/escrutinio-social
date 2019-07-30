@@ -272,6 +272,12 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
 
+    def sin_cargas_del_fiscal(self, fiscal):
+        """
+        Excluye las instancias que tengan alguna carga del fiscal indicado
+        """
+        return self.exclude(cargas__fiscal=fiscal)
+
     def con_carga_pendiente(self):
         return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
@@ -288,6 +294,12 @@ class MesaCategoriaQuerySet(models.QuerySet):
         Devuelve mesacat con carga pendiente más prioritaria
         """
         return self.con_carga_pendiente().mas_prioritaria()
+
+    def siguiente_para_fiscal(self, fiscal):
+        """
+        Devuelve mesacat con carga pendiente más prioritaria, que no tenga cargas del fiscal indicado
+        """
+        return self.con_carga_pendiente().sin_cargas_del_fiscal(fiscal).mas_prioritaria()
 
 
 class MesaCategoria(models.Model):
