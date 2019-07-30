@@ -210,11 +210,8 @@ class CSVImporter:
             )
 
         for voto_mesa_reportado_parcial in carga_parcial.reportados.all():
-            voto_mesa_reportado_total = VotoMesaReportado.objects.create(
-                votos=voto_mesa_reportado_parcial.votos,
-                opcion=voto_mesa_reportado_parcial.opcion,
-                carga=carga_total
-            )
+            VotoMesaReportado.objects.create(votos=voto_mesa_reportado_parcial.votos,
+                                             opcion=voto_mesa_reportado_parcial.opcion, carga=carga_total)
 
         return carga_total
 
@@ -244,13 +241,19 @@ class CSVImporter:
             self.agregar_electores_y_sobres(mesa, carga_parcial)
             self.agregar_electores_y_sobres(mesa, carga_total)
 
-            if settings.TOTALES_COMPLETAS and carga_total:
-                # Si tengo que verificar las cargas completas y existen entonces las valido
+            self.logger.debug("----+ El settings.TOTALES_COMPLETAS es %s",
+                              str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
+            if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
+                self.logger.debug("----+ Validando carga total.")
+                # Si el flag de cargas totales esta activo y hay carga total, entonces verifcamos que estén
+                # todas las opciones para todas las categorias
                 opciones = CategoriaOpcion.objects.filter(categoria=categoria).values_list('opcion__id', flat=True)
                 self.validar_carga_total(carga_total, categoria, opciones)
 
             elif carga_parcial:
-                # Si no hay carga total o no hay que verificarla, me fijo las parciales
+                self.logger.debug("----+ Validando carga parcial.")
+                # Si se cargaron las cargas parciales, entonces verificamos que estén todas las opciones
+                # de las categorias prioritarias
                 opciones = CategoriaOpcion.objects.filter(categoria=categoria, prioritaria=True).values_list(
                     'opcion__id', flat=True)
                 self.validar_carga_parcial(carga_parcial, categoria, opciones)

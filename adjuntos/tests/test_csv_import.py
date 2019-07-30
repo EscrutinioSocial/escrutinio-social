@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group
 
 from adjuntos.csv_import import (ColumnasInvalidasError, CSVImporter, DatosInvalidosError,
                                  PermisosInvalidosError)
-from elecciones.models import Carga, VotoMesaReportado
+from elecciones.models import Carga, VotoMesaReportado, CategoriaOpcion
 from elecciones.tests.factories import (
     DistritoFactory,
     SeccionFactory,
@@ -149,9 +149,21 @@ def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
 
 
 def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
+    settings.OPCIONES_CARGAS_TOTALES_COMPLETAS = False
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_parcial.csv', usr_unidad_basica).procesar()
     assert "Los resultados para la carga parcial para la categoría Diputados Provinciales deben estar completos. " \
+           "Faltan las opciones: ['JpC']." in str(e.value)
+
+
+def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
+    for i in range(1, 5):
+        opc = "opc" + str(i)
+        CategoriaOpcion.objects.filter(opcion__nombre=opc).delete()
+
+    with pytest.raises(DatosInvalidosError) as e:
+        CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_total.csv', usr_unidad_basica).procesar()
+    assert "Los resultados para la carga total para la categoría Diputados Provinciales deben estar completos. " \
            "Faltan las opciones: ['JpC']." in str(e.value)
 
 
