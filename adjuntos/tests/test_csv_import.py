@@ -122,7 +122,6 @@ def carga_inicial(db):
             nulos.orden = 1
             nulos.save()
 
-
             # Las hago prioritarias.
             votos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=total_votos)
             votos_cat_opcion.prioritaria = True
