@@ -60,10 +60,16 @@ class VisualizadoresOnlyMixin:
     """
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.fiscal.esta_en_grupo('visualizadores'):
-            return super().dispatch(request, *args, **kwargs)
+        if not request.user.fiscal.esta_en_grupo('visualizadores'):
+            return HttpResponseForbidden()
 
-        return HttpResponseForbidden()
+        pk = kwargs.get('pk')
+        categoria = get_object_or_404(Categoria, id=pk)
+
+        if categoria.sensible and not request.user.fiscal.esta_en_grupo('visualizadores_sensible'):
+            return HttpResponseForbidden()
+
+        return super().dispatch(request, *args, **kwargs)
 
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):
@@ -151,6 +157,8 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
             self.get_tipo_de_agregacion(), self.get_opciones_a_considerar(), nivel_de_agregacion,
             ids_a_considerar
         )
+
+        self.ocultar_sensibles = not request.user.fiscal.esta_en_grupo('visualizadores_sensible')
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):
@@ -214,7 +222,10 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         # Para el cálculo se filtran categorías activas que estén relacionadas
         # a las mesas.
         mesas = self.sumarizador.mesas(categoria)
-        context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
+        categorias = Categoria.para_mesas(mesas)
+        if self.ocultar_sensibles:
+            categorias = categorias.exclude(sensible=True)
 
+        context['categorias'] = categorias.order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('numero')
         return context

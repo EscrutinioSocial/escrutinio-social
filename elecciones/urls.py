@@ -14,7 +14,7 @@ urlpatterns = [
         views.EscuelaDetailView.as_view(), name='detalle_escuela'),
     url('^mapa/$', login_required(cached(views.Mapa.as_view())), name='mapa'),
     url(
-        '^resultados/(?P<pk>\d+)?$',
+        '^resultados/(?P<pk>\d+)$',
         views.ResultadosCategoria.as_view(),
         name='resultados-categoria'
     ),

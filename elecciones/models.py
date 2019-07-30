@@ -626,6 +626,13 @@ class Categoria(models.Model):
         )
     )
 
+    sensible = models.BooleanField(
+        default=False,
+        help_text=(
+            'Solo pueden visualizar los resultados de esta cagtegoría con permisos especiales.'
+        )
+    )
+
     requiere_cargas_parciales = models.BooleanField(default=False)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
