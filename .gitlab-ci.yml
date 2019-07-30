@@ -27,6 +27,7 @@ build:
 
 test:
   stage: test
+  allow_failure: true
   image: 
     name: docker/compose:1.24.0
     entrypoint: [""]
@@ -44,7 +45,7 @@ test:
     - docker
     
 pages:
-  stage: deploy
+  stage: pages
   dependencies:
     - test
   script:

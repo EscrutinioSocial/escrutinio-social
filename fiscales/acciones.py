@@ -33,7 +33,7 @@ def siguiente_accion(request):
         if foto:
             return IdentificacionDeFoto(request, foto)
     elif cant_cargas:
-        mesacategoria = con_carga_pendiente.mas_prioritaria()
+        mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
         if mesacategoria:
             return CargaCategoriaEnActa(request, mesacategoria)
     return NoHayAccion(request)
