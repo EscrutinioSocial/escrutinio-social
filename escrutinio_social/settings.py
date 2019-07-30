@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'contacto',
     'antitrolling',
     'api',
+    'scheduling'
 ]
 
 MIDDLEWARE = [
@@ -313,6 +314,16 @@ SCORING_TROLL_PROBLEMA_DESCARTADO = 200
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
 MESA_TAKE_WAIT_TIME = 2  # En minutos
 
+# Prioridades standard, a usar si no se definen prioridades específicas
+# para una categoría o circuito
+PRIORIDADES_STANDARD_SECCION = [
+    {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2},
+    {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 20},
+    {'desde_proporcion': 10, 'hasta_proporcion': 100, 'prioridad': 100},
+]
+PRIORIDADES_STANDARD_CATEGORIA = [
+    {'desde_proporcion': 0, 'hasta_proporcion': 100, 'prioridad': 100},
+]
 
 # Las siguientes constantes definen los criterios de filtro
 # para obtener aquellas instancias que se utilizan en el cálculo de resultados
@@ -325,6 +336,8 @@ OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
+# Opción para elegir ninguna proyección en el combo
+SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'

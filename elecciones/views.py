@@ -37,7 +37,7 @@ from .models import (
     MesaCategoria,
     Mesa,
 )
-from .resultados import Sumarizador
+from .resultados import Sumarizador, Proyecciones
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
@@ -147,22 +147,28 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
                 nivel_de_agregacion = nivel
                 ids_a_considerar = self.request.GET.getlist(nivel)
 
-        self.sumarizador = Sumarizador(
-            self.get_tipo_de_agregacion(), self.get_opciones_a_considerar(), nivel_de_agregacion,
-            ids_a_considerar
+        parametros_sumarizacion = [
+            self.get_tipo_de_agregacion(), 
+            self.get_opciones_a_considerar(), 
+            nivel_de_agregacion,
+            ids_a_considerar,
+        ]
+
+        tecnica_de_proyeccion = next((tecnica for tecnica in Proyecciones.tecnicas_de_proyeccion()
+                                     if str(tecnica.id) == self.get_tecnica_de_proyeccion()), None)
+
+        self.sumarizador = (
+            Proyecciones(tecnica_de_proyeccion, *parametros_sumarizacion)
+            if tecnica_de_proyeccion
+            else Sumarizador(*parametros_sumarizacion)
         )
+
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
 
     def get_resultados(self, categoria):
-        # TODO, ¿dónde entra lo proyectado?
-        # proyectado = (
-        #    self.request.method == "GET" and
-        #    self.request.GET.get('tipodesumarizacion', '1') == str(2) and
-        #    not self.filtros
-        # )
         return self.sumarizador.get_resultados(categoria)
 
     def get_tipo_de_agregacion(self):
@@ -172,6 +178,13 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     def get_opciones_a_considerar(self):
         # TODO el default también está en Sumarizador.__init__
         return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
+
+    def get_tecnica_de_proyeccion(self):
+        return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
+
+    def get_tecnicas_de_proyeccion(self):
+        return [settings.SIN_PROYECCION] + [(str(tecnica.id), tecnica.nombre)
+                                            for tecnica in Proyecciones.tecnicas_de_proyeccion()]
 
     def get_plot_data(self, resultados):
         return [{
@@ -186,6 +199,8 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['tipos_de_agregaciones_seleccionado'] = self.get_tipo_de_agregacion()
         context['opciones_a_considerar'] = Sumarizador.OPCIONES_A_CONSIDERAR
         context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
+        context['tecnicas_de_proyeccion'] = self.get_tecnicas_de_proyeccion()
+        context['tecnicas_de_proyeccion_seleccionado'] = self.get_tecnica_de_proyeccion()
 
         if self.sumarizador.filtros:
             context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.sumarizador.filtros], " y ")
