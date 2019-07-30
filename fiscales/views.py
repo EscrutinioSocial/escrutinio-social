@@ -15,7 +15,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
-from django.db.models import Q
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
 from .models import Fiscal, CodigoReferido
@@ -30,6 +29,8 @@ from elecciones.models import (
     VotoMesaReportado
 )
 from .acciones import siguiente_accion
+
+from dal import autocomplete
 
 from django.template.loader import render_to_string
 from html2text import html2text
@@ -473,10 +474,24 @@ def confirmar_fiscal(request, fiscal_id):
 class AutocompleteBaseListView(ListView):
 
     def get(self, request, *args, **kwargs):
-        data = {'options': [{'value': o.id, 'text': str(o)} for o in self.get_queryset()]}
+        try:
+            data = {'options': [{'value': o.id, 'text': str(o)} for o in self.get_queryset()]}
+        except:
+            return JsonResponse(data={},status=500)
         return JsonResponse(data, status=200, safe=False)
 
 
+
+class DistritoListView(autocomplete.Select2QuerySetView):
+    model = Distrito
+
+    def get_queryset(self):
+        qs = Distrito.objects.all()
+        if self.q:
+            qs = qs.filter(nombre__istartswith=self.q)
+        return qs
+
+    
 class SeccionListView(AutocompleteBaseListView):
     model = Seccion
 
@@ -501,62 +516,63 @@ class MesaListView(AutocompleteBaseListView):
         return qs.filter(lugar_votacion__circuito__id=self.request.GET['parent_id'])
 
 
+class MesaForDistritoListView(MesaListView):
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(circuito__seccion__distrito=self.request.GET['parent_id'])
+
+    
 class CircuitoFromMesaDistrito(ListView):
+    """Devuelve información sobre circuito y sección a partir de 
+    (números de) Mesa y Distrito."""
     model = Circuito
 
     def get(self, request, *args, **kwargs):
-        data = {'options':
-                [
-                    {'circuito_id': c.id,
-                     'circuito': str(c),
-                     'seccion_id' : c.seccion.id,
-                     'seccion': str(c.seccion)
-                    } for c in self.get_queryset()
-                ]
-        }
+        try:
+            data = {'options':
+                    [
+                        {'circuito_id': c.id,
+                         'circuito': str(c),
+                         'seccion_id' : c.seccion.id,
+                         'seccion': str(c.seccion)
+                        } for c in self.get_queryset()
+                    ]
+            }
+        except:
+            return JsonResponse({'error': 'Some error'}, status=500, safe=False)
         return JsonResponse(data, status=200, safe=False)
     
     def get_queryset(self):
         qs = super().get_queryset()
-        mesa = Mesa.objects.get(id=self.request.GET['mesa'])
-        distrito = Distrito.objects.get(id=self.request.GET['distrito'])
-        return qs.filter(id=mesa.circuito_id,seccion__distrito__id=distrito.id)
-
-class CircuitoFromMesaSeccion(ListView):
+        distrito = self.request.GET['distrito']
+        mesa_nro = self.request.GET['mesa']
+        mesa = Mesa.objects.filter(numero=mesa_nro)
+        distrito = Distrito.objects.get(id=distrito)
+        return qs.filter(id__in=mesa.circuito_id,seccion__distrito__id=distrito.id).distinct()
+    
+    
+class CircuitoFromMesaSeccion(AutocompleteBaseListView):
     model = Circuito
-
-    def get(self, request, *args, **kwargs):
-        data = {'options':
-                [
-                    {'circuito_id': c.id,
-                     'circuito': str(c),
-                    } for c in self.get_queryset()
-                ]
-        }
-        return JsonResponse(data, status=200, safe=False)
     
     def get_queryset(self):
         qs = super().get_queryset()
-        mesas= Mesa.objects.filter(mesa__numero=self.request.GET['mesa']).values('circuito_id')
-        secciones = Seccion.objects.filter(id=self.request.GET['seccion']).values('id')
+        distrito = self.request.GET['distrito']
+        seccion_nro = self.request.GET['seccion']
+        mesa_nro = self.request.GET['mesa']
+        mesas= Mesa.objects.filter(numero=mesa_nro).values('circuito_id')
+        secciones = Seccion.objects.filter(numero=seccion_nro,distrito_id=distrito).values('id')
         return qs.filter(seccion_id__in=secciones,id__in=mesas).distinct()
 
 class SeccionFromMesaCircuito(ListView):
-    model = Circuito
-
-    def get(self, request, *args, **kwargs):
-        data = {'options':
-                [
-                    {'seccion_id': s.id,
-                     'seccion': str(s),
-                    } for s in self.get_queryset()
-                ]
-        }
-        return JsonResponse(data, status=200, safe=False)
+    model = Seccion
     
     def get_queryset(self):
         qs = super().get_queryset()
-        #mesa = Mesa.objects.get(numero=self.request.GET['mesa']).annotate(mesa__circuito__seccion)
-        #circuito = Circuito.objects.get(numero=self.request.GET['circuito'])
-        return qs
+        distrito = self.request.GET['distrito']
+        circuito_nro = self.request.GET['circuito']
+        mesa_nro = self.request.GET['mesa']
+        mesas = Mesa.objects.filter(numero=mesa).values('circuito_id')
+        circuitos = Circuito.objects.filter(numero=circuito_nro,id__in=mesas).values('seccion_id')
+        return qs.filter(id__in=circuitos,distrito_id=distrito).distinct()
 

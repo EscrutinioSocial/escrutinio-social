@@ -3,13 +3,15 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
+    url('^_autocomplete/d$', views.DistritoListView.as_view(), name='autocomplete-distrito'),
     url('^_autocomplete/s$', views.SeccionListView.as_view(), name='autocomplete-seccion'),
     url('^_autocomplete/c$', views.CircuitoListView.as_view(), name='autocomplete-circuito'),
     url('^_autocomplete/m$', views.MesaListView.as_view(), name='autocomplete-mesa'),
 
+    url('^_autocomplete/md$', views.CircuitoFromMesaDistrito.as_view(), name='autocomplete-md'),
     url('^_autocomplete/cmd$', views.CircuitoFromMesaDistrito.as_view(), name='autocomplete-cmd'),
     url('^_autocomplete/cms$', views.CircuitoFromMesaSeccion.as_view(), name='autocomplete-cms'),
-
+    url('^_autocomplete/smc$', views.SeccionFromMesaCircuito.as_view(), name='autocomplete-smc'),
     
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
     url('^referidos$', views.referidos, name='referidos'),

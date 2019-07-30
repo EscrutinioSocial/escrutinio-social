@@ -89,12 +89,12 @@ class IdentificacionCreateView(CreateView):
         context['form_problema'] = IdentificacionDeProblemaForm()
         context['pre_identificacion'] = False
         pre_identificacion = self.attachment.pre_identificacion
-        if pre_identificacion and pre_identificacion.seccion is not None:
-            pre_identificacion = self.attachment.pre_identificacion
-            context['seccion_precargada'] = pre_identificacion.seccion
+        if pre_identificacion.distrito is not None:
             context['distrito_precargado'] = pre_identificacion.distrito
-            if pre_identificacion.circuito is not None:
-                context['circuito_precargado'] = pre_identificacion.circuito
+        if pre_identificacion.seccion is not None:
+            context['seccion_precargada'] = pre_identificacion.seccion
+        if pre_identificacion.circuito is not None:
+            context['circuito_precargado'] = pre_identificacion.circuito
         return context
 
     def form_valid(self, form):
@@ -392,3 +392,4 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
 
     def mostrar_mensaje_archivos_cargados(self, c):
         messages.success(self.request, f'Subiste {c} archivos CSV. Gracias!')
+

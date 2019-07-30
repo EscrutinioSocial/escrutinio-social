@@ -44,7 +44,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-07-19T04:36:53.377Z",
+    "last_login": "2019-07-30T18:52:22.416Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -180,6 +180,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -202,6 +203,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -224,6 +226,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -246,6 +249,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -268,6 +272,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -290,6 +295,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -302,6 +308,16 @@
     "numero": "1",
     "nombre": "Distrito \u00fanico",
     "electores": 800,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.distrito",
+  "pk": 2,
+  "fields": {
+    "numero": "2",
+    "nombre": "Otro",
+    "electores": 0,
     "prioridad": 0
   }
 },
@@ -327,6 +343,32 @@
     "numero": "2",
     "nombre": "Secci\u00f3n 2",
     "electores": 360,
+    "proyeccion_ponderada": false,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.seccion",
+  "pk": 3,
+  "fields": {
+    "distrito": 2,
+    "seccion_politica": null,
+    "numero": "3",
+    "nombre": "Tres Cruces",
+    "electores": 0,
+    "proyeccion_ponderada": false,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.seccion",
+  "pk": 4,
+  "fields": {
+    "distrito": 2,
+    "seccion_politica": null,
+    "numero": "4",
+    "nombre": "Cuatro Vientos",
+    "electores": 0,
     "proyeccion_ponderada": false,
     "prioridad": 0
   }
@@ -376,6 +418,54 @@
     "numero": "4",
     "nombre": "Circuito 2.4",
     "electores": 180,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 5,
+  "fields": {
+    "seccion": 3,
+    "localidad_cabecera": "Trencitos",
+    "numero": "1",
+    "nombre": "Uno Tres",
+    "electores": 0,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 6,
+  "fields": {
+    "seccion": 3,
+    "localidad_cabecera": "Dumesnil",
+    "numero": "2",
+    "nombre": "Docemil",
+    "electores": 0,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 7,
+  "fields": {
+    "seccion": 4,
+    "localidad_cabecera": "Ventosa",
+    "numero": "3",
+    "nombre": "Cuatrero",
+    "electores": 0,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 8,
+  "fields": {
+    "seccion": 4,
+    "localidad_cabecera": "Cualunqueful",
+    "numero": "4",
+    "nombre": "Cualenquef\u00fa",
+    "electores": 0,
     "prioridad": 0
   }
 },
@@ -523,8 +613,9 @@
     "mesa": 1,
     "categoria": 1,
     "carga_testigo": null,
-    "taken": "2019-07-19T04:42:17.480Z",
-    "orden_de_carga": 0.5
+    "taken": "2019-07-30T18:52:17.748Z",
+    "taken_by": 1,
+    "orden_de_carga": 0
   }
 },
 {
@@ -536,6 +627,7 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
     "orden_de_carga": null
   }
 },
@@ -548,7 +640,8 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": "2019-07-19T04:43:18.088Z",
-    "orden_de_carga": 0.5
+    "taken_by": null,
+    "orden_de_carga": 0
   }
 },
 {
@@ -560,6 +653,7 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
     "orden_de_carga": null
   }
 },
@@ -572,6 +666,7 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
     "orden_de_carga": null
   }
 },
@@ -584,6 +679,7 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
     "orden_de_carga": null
   }
 },
@@ -596,7 +692,8 @@
     "categoria": 1,
     "carga_testigo": 2,
     "taken": null,
-    "orden_de_carga": 0.5
+    "taken_by": null,
+    "orden_de_carga": 0
   }
 },
 {
@@ -608,6 +705,7 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
     "orden_de_carga": null
   }
 },
@@ -620,6 +718,7 @@
     "categoria": 2,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
     "orden_de_carga": null
   }
 },
@@ -632,7 +731,8 @@
     "categoria": 2,
     "carga_testigo": null,
     "taken": null,
-    "orden_de_carga": 0.5
+    "taken_by": null,
+    "orden_de_carga": 0
   }
 },
 {
@@ -736,6 +836,45 @@
     "lugar_votacion": 8,
     "url": "",
     "electores": 90,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 9,
+  "fields": {
+    "numero": "1",
+    "es_testigo": false,
+    "circuito": 5,
+    "lugar_votacion": 1,
+    "url": "",
+    "electores": null,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 10,
+  "fields": {
+    "numero": "2",
+    "es_testigo": false,
+    "circuito": 6,
+    "lugar_votacion": 1,
+    "url": "",
+    "electores": null,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 11,
+  "fields": {
+    "numero": "2",
+    "es_testigo": false,
+    "circuito": 7,
+    "lugar_votacion": 1,
+    "url": "",
+    "electores": null,
     "prioridad": 0
   }
 },

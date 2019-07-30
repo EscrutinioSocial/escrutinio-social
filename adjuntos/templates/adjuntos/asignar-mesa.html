@@ -1,14 +1,19 @@
 {% extends "fiscales/base.html" %}
-{% load i18n material_form material_frontend %}
+{% load l10n i18n material_form material_frontend %}
 {% load staticfiles %}
 
 {% block breadcrumbs_items %}
 <a href="{{ object.get_absolute_url }}">{{ object }}</a>
 <a class="active">Acta</a>
 {% endblock %}
-
+{% block js %}
+{{ block.super }}
+<script src="{% static 'js/sidenav.js' %}"></script>
+{% block extrajs %}{% endblock %}
+{% endblock %}
 
 {% block extrahead %}
+<link rel="stylesheet" type="text/css" href="/static/css/select2-materialize.css" />
 <style type="text/css">
 .content {
   padding-bottom: 0px;
@@ -89,7 +94,7 @@ $(document).ready(function() {
           <div class="card-content">
             {% block card-content %}
               <div class="card-title">¿De qué mesa es esta acta?</div>
-              {% include "adjuntos/asignar-mesa-form.html" %}
+              {% form form=form %}{% endform %}
             {% endblock card-content %}
           </div>
           <div class="card-action">

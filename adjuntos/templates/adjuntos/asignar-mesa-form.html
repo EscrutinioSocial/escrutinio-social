@@ -15,12 +15,13 @@ function presetOption(fieldId, text, value){
 }
   
 $(document).ready(function() {    
-    var mesaAutocomplete = {% if desde_ub %} null {% else %} buildAutocomplete('id_mesa', '{% url 'autocomplete-mesa' %}', null) {% endif %};   
+    var mesaAutocomplete = buildAutocomplete('id_mesa', '{% url 'autocomplete-md' %}', null) 
     var circuitoAutocomplete = buildAutocomplete('id_circuito', '{% url 'autocomplete-circuito' %}', mesaAutocomplete);
     var seccionAutocomplete = buildAutocomplete('id_seccion', '{% url 'autocomplete-seccion' %}', circuitoAutocomplete);
     var distritoAutocomplete = buildDistritoAutocomplete(seccionAutocomplete);    
     // Borrar los <select> generados por django
     $('.remove').remove();
+
     {% if distrito_precargado %}
     presetOption('id_distrito','{{distrito_precargado}}','{{distrito_precargado.id}}');
     $('#id_seccion-autocomplete')[0].focus()
@@ -50,7 +51,7 @@ $(document).ready(function() {
 {% for field in form %}
     <div class="input-field col s12">
       {{ field.errors }}
-      <i class="material-icons prefix small">textsms</i>
+      <i class="material-icons prefix small">short_text</i>
       <input type="hidden" id="{{field.auto_id}}" name="{{field.html_name}}"/>
       <input type="text" id="{{field.auto_id}}-autocomplete" name="{{field.html_name}}-autocomplete" class="autocomplete" tabindex="{{forloop.counter}}" autocomplete="off" {%if not desde_ub %} required="true"{% endif %}/>
       <label for="{{field.auto_id}}-autocomplete">{{field.label}}</label>

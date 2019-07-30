@@ -61,6 +61,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
 
+    # django-autocomplete-light
+    'dal',
+    'dal_select2',
+    
     # nuestras apps
     'elecciones',
     'fiscales',

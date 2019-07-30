@@ -1,23 +1,57 @@
 from django import forms
+from django.conf import settings
+
 from .models import Identificacion, PreIdentificacion, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
-from django.conf import settings
-
+from dal import autocomplete
 
 class IdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar mesa
     """
-    distrito = forms.ModelChoiceField(queryset=Distrito.objects.all())
-    seccion = forms.ModelChoiceField(queryset=Seccion.objects.all())
+    distrito = forms.ModelChoiceField(
+        queryset=Distrito.objects.all(),
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-distrito',
+            attrs={
+                'data-placeholder': 'Autocompletar ...',
+                'data-minimum-input-length': 3,
+            },
+        )
+    )
+    seccion = forms.ModelChoiceField(
+        queryset=Seccion.objects.all(),
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-seccion',
+            forward=('seccion',)
+        )
+    )
+
+    # distrito = forms.ModelChoiceField(
+    #     queryset=Distrito.objects.all(),
+    #     widget=autocomplete.ModelSelect2(url='autocomplete-distrito')
+    # )
+    # seccion = forms.ModelChoiceField(
+    #     queryset=Seccion.objects.all(),
+    #     widget=autocomplete.ModelSelect2(url='autocomplete-seccion',
+    #                               forward=['distrito']) 
+    # )
     circuito = forms.ModelChoiceField(queryset=Circuito.objects.all())
     mesa = forms.ModelChoiceField(queryset=Mesa.objects.all())
 
+    # distrito = autocomplete.ModelSelect2(url='seccion-autocomplete')
+                                         
+    # seccion = autocomplete.ModelSelect2(url='seccion-autocomplete',
+    #                        forward=['distrito']) 
+    # circuito = autocomplete.ModelSelect2(url='circuito-autocomplete',
+    #                         forward=['seccion'])
+    # mesa = autocomplete.ModelSelect2(url='seccion-autocomplete',
+    #                     forward=['circuito'])
     class Meta:
         model = Identificacion
-        fields = ['distrito', 'mesa', 'seccion', 'circuito']
-
+        fields = ['distrito','mesa','seccion','circuito']
+        
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
         if instance and instance.mesa:
@@ -25,11 +59,11 @@ class IdentificacionForm(forms.ModelForm):
             kwargs['initial']['seccion'] = seccion = circuito.seccion
             kwargs['initial']['distrito'] = distrito = seccion.distrito
         super().__init__(*args, **kwargs)
-        self.fields['distrito'].widget.attrs['autofocus'] = True
-        self.fields['seccion'].choices = (('', '---------'),)
-        self.fields['seccion'].label = 'Sección'
-        self.fields['mesa'].choices = (('', '---------'),)
-        self.fields['circuito'].choices = (('', '---------'),)
+        # self.fields['distrito'].widget.attrs['autofocus'] = True
+        # self.fields['seccion'].choices = (('', '---------'),)
+        # self.fields['seccion'].label = 'Sección'
+        # self.fields['mesa'].choices = (('', '---------'),)
+        # self.fields['circuito'].choices = (('', '---------'),)
             
     def clean(self):
         cleaned_data = super().clean()
