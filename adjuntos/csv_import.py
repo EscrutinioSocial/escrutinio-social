@@ -244,20 +244,24 @@ class CSVImporter:
             self.agregar_electores_y_sobres(mesa, carga_parcial)
             self.agregar_electores_y_sobres(mesa, carga_total)
 
-            if carga_parcial:
-                self.validar_carga_parcial(categoria, carga_parcial)
-
-            # Si tengo que verificar entonces veo que las cargas totales sean completas.
             if settings.TOTALES_COMPLETAS and carga_total:
-                self.validar_carga_total(categoria, carga_total)
+                # Si tengo que verificar las cargas completas y existen entonces las valido
+                opciones = CategoriaOpcion.objects.filter(categoria=categoria).values_list('opcion__id', flat=True)
+                self.validar_carga_total(carga_total, categoria, opciones)
+
+            elif carga_parcial:
+                # Si no hay carga total o no hay que verificarla, me fijo las parciales
+                opciones = CategoriaOpcion.objects.filter(categoria=categoria, prioritaria=True).values_list(
+                    'opcion__id', flat=True)
+                self.validar_carga_parcial(carga_parcial, categoria, opciones)
 
     def agregar_electores_y_sobres(self, mesa, carga):
         if not carga:
             return
 
         # XXX Ver qué hacemos con la cantidad de electores.
-        #if self.dato_ausente(self.cantidad_electores_mesa):
-            
+        # if self.dato_ausente(self.cantidad_electores_mesa):
+
         # Si no hay sobres no pasa nada.
         if self.dato_ausente(self.cantidad_sobres_mesa):
             return
@@ -270,7 +274,7 @@ class CSVImporter:
                                          opcion=opcion_sobres
                                          )
         self.logger.debug("---- Agregando %d votos a %s en carga %s.", cantidad_votos, opcion_sobres,
-            carga.tipo)
+                          carga.tipo)
 
     def dato_ausente(self, dato):
         """
@@ -344,26 +348,34 @@ class CSVImporter:
             raise PermisosInvalidosError('Su usuario no tiene los permisos necesarios para realizar '
                                          'esta acción.')
 
-    def validar_carga(self, carga, categoria, parcial):
+    def validar_carga(self, carga, categoria, opciones_de_carga, es_parcial):
+        """
+        Valida que la Carga tenga todas las opciones disponibles para votar en esa mesa. Si corresponde a una carga
+        parcial se valida que estén las opciones correspondientes a las categorías prioritarias.
+        Si es una carga Total, se verifica que estén todas las opciones para esa mesa.
+
+        :param parcial: Booleano, sirve para describir si se quiere validar una carga parcial
+        (correspondiente a los partidos prioritarios).
+        :param categoria: Objeto Categoria que queremos verificar que este completo.
+        """
         opciones_votadas = carga.listado_de_opciones()
-        mi_categoria = carga.categoria
-        opciones_de_la_categoria = CategoriaOpcion.objects.filter(categoria=mi_categoria,
-                                                                  prioritaria=parcial
-                                                                  ).values_list('opcion__id', flat=True)
+        opciones_de_la_categoria = opciones_de_carga
         opciones_faltantes = set(opciones_de_la_categoria) - set(opciones_votadas)
+
         if opciones_faltantes != set():
             nombres_opciones_faltantes = list(Opcion.objects.filter(
-                            id__in=opciones_faltantes).values_list('nombre', flat=True))
+                id__in=opciones_faltantes).values_list('nombre', flat=True))
+            tipo_carga = "parcial" if es_parcial else "total"
             raise DatosInvalidosError(
-                f'Los resultados para las opciones parciales para la categoría {categoria} '
+                f'Los resultados para la carga {tipo_carga} para la categoría {categoria} '
                 f'deben estar completos. '
                 f'Faltan las opciones: {nombres_opciones_faltantes}.')
 
-    def validar_carga_parcial(self, categoria, carga_parcial):
-        self.validar_carga(carga_parcial, categoria, parcial=True)
+    def validar_carga_parcial(self, carga_parcial, categoria, opciones_de_carga):
+        self.validar_carga(carga_parcial, categoria, opciones_de_carga, True)
 
-    def validar_carga_total(self, categoria, carga_total):
-        self.validar_carga(carga_total, categoria, parcial=False)
+    def validar_carga_total(self, carga_total, categoria, opciones_de_carga):
+        self.validar_carga(carga_total, categoria, opciones_de_carga, False)
 
 
 class CeldaCSVImporter:
@@ -377,4 +389,4 @@ class CeldaCSVImporter:
 
     def __str__(self):
         return f"Mesa: {self.mesa} - sección: {self.seccion} - circuito: {self.circuito} - " \
-            f"distrito: {self.distrito} - lista: {self.codigo_lista} - columna: {self.columna}"
+               f"distrito: {self.distrito} - lista: {self.codigo_lista} - columna: {self.columna}"

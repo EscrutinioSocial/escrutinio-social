@@ -144,7 +144,15 @@ def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inici
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'falta_total_votos.csv', usr_unidad_basica).procesar()
-    assert "Los resultados para las opciones parciales para la categoría Diputados Provinciales deben estar completos. Faltan las opciones: ['total de votos', 'total de sobres', 'votos nulos']." in str(e.value)
+    assert "Los resultados para la carga parcial para la categoría Diputados Provinciales deben estar completos. " \
+           "Faltan las opciones: ['total de votos', 'total de sobres', 'votos nulos']." in str(e.value)
+
+
+def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
+    with pytest.raises(DatosInvalidosError) as e:
+        CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_parcial.csv', usr_unidad_basica).procesar()
+    assert "Los resultados para la carga parcial para la categoría Diputados Provinciales deben estar completos. " \
+           "Faltan las opciones: ['JpC']." in str(e.value)
 
 
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
