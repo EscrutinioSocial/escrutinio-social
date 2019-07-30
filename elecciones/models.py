@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Sum, Count, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -274,23 +274,19 @@ class MesaCategoriaQuerySet(models.QuerySet):
     def con_carga_pendiente(self):
         return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
-    def siguiente(self):
+    def mas_prioritaria(self):
         """
-        Devuelve la siguiente MesaCategoria en orden de prioridad
-        de carga.
+        Devuelve la intancia más prioritaria del queryset
         """
-        return self.con_carga_pendiente().order_by(
+        return self.order_by(
             'status', 'categoria__prioridad', 'orden_de_carga', 'mesa__prioridad', 'id'
         ).first()
 
-    def siguiente_de_la_mesa(self, mesa_existente):
+    def siguiente(self):
         """
-        devuelve la siguiente mesacategoria en orden de prioridad
-        de carga
+        Devuelve mesacat con carga pendiente más prioritaria
         """
-        return self.con_carga_pendiente().filter(
-            mesa=mesa_existente
-        ).order_by('status', 'categoria__prioridad', 'orden_de_carga', 'mesa__prioridad', 'id').first()
+        return self.con_carga_pendiente().mas_prioritaria()
 
 
 class MesaCategoria(models.Model):
@@ -310,14 +306,14 @@ class MesaCategoria(models.Model):
         ('10_parcial_sin_consolidar', 'parcial_sin_consolidar', 'parcial sin consolidar'),
         # no hay dos cargas mínimas coincidentes, pero una es de csv.
         # cargas parcial divergentes sin consolidar
-        ('20_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial_en_conflicto'),
-        ('30_parcial_consolidada_csv', 'parcial_consolidada_csv', 'parcial consolidada csv'),
+        ('20_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial en conflicto'),
+        ('30_parcial_consolidada_csv', 'parcial_consolidada_csv', 'parcial consolidada CSV'),
         # carga parcial consolidada por multicarga
-        ('40_parcial_consolidada_dc', 'parcial_consolidada_dc', 'parcial_consolidada_dc'),
+        ('40_parcial_consolidada_dc', 'parcial_consolidada_dc', 'parcial consolidada doble carga'),
         ('50_total_sin_consolidar', 'total_sin_consolidar', 'total sin consolidar'),
         ('60_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
-        ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada csv'),
-        ('80_total_consolidada_dc', 'total_consolidada_dc', 'tota consolidada dc'),
+        ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada CSV'),
+        ('80_total_consolidada_dc', 'total_consolidada_dc', 'total consolidada doble carga'),
         # No siguen en la carga.
         ('90_con_problemas', 'con_problemas', 'con problemas')
     )
@@ -331,23 +327,28 @@ class MesaCategoria(models.Model):
     )
 
     # timestamp para dar un tiempo de guarda a la espera de una carga
-    taken = models.DateTimeField(null=True, editable=False)
+    taken = models.DateTimeField(null=True, blank=True)
+    taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
     # entero que se define como el procentaje (redondeado) de mesas
     # ya identificadas todavia sin consolidar al momento de identificar la
     # mesa
     orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
 
-    def take(self):
+    @transaction.atomic
+    def take(self, fiscal):
         self.taken = timezone.now()
-        self.save(update_fields=['taken'])
+        self.taken_by = fiscal
+        self.save(update_fields=['taken', 'taken_by'])
 
+    @transaction.atomic
     def release(self):
         """
         Libera la mesa, es lo contrario de take().
         """
         self.taken = None
-        self.save(update_fields=['taken'])
+        self.taken_by = None
+        self.save(update_fields=['taken', 'taken_by'])
 
     def actualizar_orden_de_carga(self):
         """
@@ -360,6 +361,14 @@ class MesaCategoria(models.Model):
         identificadas = en_circuito.identificadas().count()
         self.orden_de_carga = int(round((identificadas + 1) / total, 2) * 100)
         self.save(update_fields=['orden_de_carga'])
+
+    def invalidar_cargas(self):
+        """
+        Por alguna razón, hay que marcar todas las cargas que se hicieron para esta MesaCategoria
+        como inválidas.
+        """
+        for carga in self.cargas.all():
+            carga.invalidar()
 
     def firma_count(self):
         """
@@ -459,6 +468,17 @@ class Mesa(models.Model):
             fotos.append((f'Foto {i} (original)', a.foto))
         return fotos
 
+    def invalidar_asignacion_attachment(self):
+        """
+        Efecto de que esta mesa tenía un attachment asociado y ya no lo tiene.
+        Hay que: invalidar todas las cargas, y borrar el orden de carga de las MesaCategoria
+        para que no se tengan en cuenta en el scheduling
+        """
+        for mc in MesaCategoria.objects.filter(mesa=self):
+            mc.orden_de_carga = None
+            mc.save(update_fields=['orden_de_carga'])
+            mc.invalidar_cargas()
+
     def metadata(self):
         """
         Las opciones metadatas comunes a las distintas categorías de la misma mesa
@@ -526,7 +546,7 @@ class Opcion(models.Model):
 
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
-    # el código de opción corresponde con el Nro de Lista en los archivos csv
+    # El código de opción corresponde con el nro de lista en los archivos CSV.
     codigo = models.CharField(max_length=10, help_text='Codigo de opción', null=True, blank=True)
     partido = models.ForeignKey(
         Partido, null=True, on_delete=models.SET_NULL, blank=True, related_name='opciones'
@@ -609,6 +629,15 @@ class Categoria(models.Model):
     requiere_cargas_parciales = models.BooleanField(default=False)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
+    def get_opcion_blancos(self):
+        return self.opciones.get(**settings.OPCION_BLANCOS)
+
+    def get_opcion_total_votos(self):
+        return self.opciones.get(**settings.OPCION_TOTAL_VOTOS)
+
+    def get_opcion_total_sobres(self):
+        return self.opciones.get(**settings.OPCION_TOTAL_SOBRES)
+
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
 
@@ -686,6 +715,14 @@ class CategoriaOpcion(models.Model):
         return f'{self.categoria} - {self.opcion} {prioritaria}'
 
 
+class CargasIncompatiblesError(Exception):
+    """
+    Error que se produce si se pide la resta entre dos cargas incompatibles
+    """
+    pass
+
+
+
 class Carga(TimeStampedModel):
     """
     Es el contenedor de la carga de datos de un fiscal
@@ -705,9 +742,13 @@ class Carga(TimeStampedModel):
     SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
 
-    mesa_categoria = models.ForeignKey(MesaCategoria, related_name='cargas', on_delete=models.CASCADE)
-    fiscal = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
-    firma = models.CharField(max_length=300, null=True, blank=True, editable=False)
+    mesa_categoria = models.ForeignKey(
+        MesaCategoria, related_name='cargas', on_delete=models.CASCADE
+    )
+    fiscal = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
+    firma = models.CharField(
+        max_length=300, null=True, blank=True, editable=False
+    )
     procesada = models.BooleanField(default=False)
 
     @property
@@ -735,7 +776,7 @@ class Carga(TimeStampedModel):
         # Si ya hay firma y no están forzando, listo.
         if self.firma and not forzar:
             return
-        tuplas = (f'{o}-{v or ""}' for (o, v) in self.opcion_votos().order_by('opcion__orden'))
+        tuplas = (f'{o}-{v}' for (o, v) in self.opcion_votos().order_by('opcion__orden'))
         self.firma = '|'.join(tuplas)
         self.save(update_fields=['firma'])
 
@@ -743,9 +784,35 @@ class Carga(TimeStampedModel):
         """ Devuelve una lista de los votos para cada opción. """
         return self.reportados.values_list('opcion', 'votos')
 
+    def save(self, *args, **kwargs):
+        """
+        si el fiscal es troll, la carga nace invalidada y ya procesada
+        """
+        if self.id is None and self.fiscal is not None and self.fiscal.troll:
+            self.invalidada = True
+            self.procesada = True
+        super().save(*args, **kwargs)
+
     def __str__(self):
         str_invalidada = ' (invalidada) ' if self.invalidada else ' '
         return f'carga{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'
+
+    def __sub__(self, carga_2):
+        # arranco obteniendo los votos ordenados por opcion, que me van a ser utiles varias veces
+        reportados_1 = self.reportados.order_by('opcion__orden')
+        reportados_2 = carga_2.reportados.order_by('opcion__orden')
+
+        # antes que nada: si las cargas son incomparables, o los conjuntos de opciones no coinciden,
+        # la comparación se considera incorrecta
+        if (self.mesa_categoria != carga_2.mesa_categoria) or (self.tipo != carga_2.tipo):
+            raise CargasIncompatiblesError("las cargas no coinciden en mesa, categoría o tipo")
+        opciones_1 = [ov.opcion.id for ov in reportados_1]
+        opciones_2 = [ov.opcion.id for ov in reportados_2]
+        if (opciones_1 != opciones_2):
+            raise CargasIncompatiblesError("las cargas no coinciden en sus opciones")
+
+        diferencia = sum(abs(r1.votos - r2.votos) for r1, r2 in zip(reportados_1, reportados_2))
+        return diferencia
 
 
 class VotoMesaReportado(models.Model):
@@ -756,9 +823,7 @@ class VotoMesaReportado(models.Model):
     """
     carga = models.ForeignKey(Carga, related_name='reportados', on_delete=models.CASCADE)
     opcion = models.ForeignKey(Opcion, on_delete=models.CASCADE)
-
-    # es null cuando hay cargas parciales.
-    votos = models.PositiveIntegerField(null=True)
+    votos = models.PositiveIntegerField()
 
     class Meta:
         unique_together = ('carga', 'opcion')
@@ -775,28 +840,29 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
 
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
-    if (instance.lugar_votacion is not None and instance.lugar_votacion.circuito is not None):
+    if instance.lugar_votacion:
 
         circuito = instance.lugar_votacion.circuito
         seccion = circuito.seccion
         distrito = seccion.distrito
 
         # circuito
-        electores = Mesa.objects.filter(lugar_votacion__circuito=circuito, ).aggregate(v=Sum('electores')
-                                                                                       )['v'] or 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito=circuito,
+        ).aggregate(v=Sum('electores'))['v'] or 0
         circuito.electores = electores
         circuito.save(update_fields=['electores'])
 
         # seccion
-        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion=seccion, ).aggregate(
-            v=Sum('electores')
-        )['v'] or 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion=seccion
+        ).aggregate(v=Sum('electores'))['v'] or 0
         seccion.electores = electores
         seccion.save(update_fields=['electores'])
 
         # distrito
-        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion__distrito=distrito, ).aggregate(
-            v=Sum('electores')
-        )['v'] or 0
+        electores = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion__distrito=distrito
+        ).aggregate(v=Sum('electores'))['v'] or 0
         distrito.electores = electores
         distrito.save(update_fields=['electores'])

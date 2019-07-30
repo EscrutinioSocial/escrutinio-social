@@ -3,9 +3,9 @@ import base64
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
-from django.http import HttpResponseRedirect
 from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse
@@ -14,16 +14,21 @@ from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView, FormView
 
+from sentry_sdk import capture_message
+
 from adjuntos.consolidacion import consolidar_identificaciones
 from adjuntos.csv_import import CSVImporter
 from .forms import (
     AgregarAttachmentsForm,
     IdentificacionForm,
+    PreIdentificacionForm,
 )
 from .models import Attachment, Identificacion
 from problemas.models import Problema, ReporteDeProblema
 from problemas.forms import IdentificacionDeProblemaForm
-from adjuntos.consolidacion import consolidar_identificaciones
+
+from .forms import AgregarAttachmentsForm, AgregarAttachmentsCSV, IdentificacionForm
+from .models import Attachment, Identificacion
 
 
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
@@ -60,14 +65,36 @@ class IdentificacionCreateView(CreateView):
 
     @cached_property
     def attachment(self):
-        return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
+        attachment = get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
+        fiscal = self.request.user.fiscal
+        # Sólo el fiscal asignado al attachment puede identificar la foto.
+        if attachment.taken_by != fiscal:
+            capture_message(
+                f"""
+                Intento de asignar mesa de attachment {attachment.id} sin permiso
+
+                taken_by: {attachment.taken_by}
+                fiscal: {fiscal} ({fiscal.id})
+                """
+            )
+            # TO DO: deberíamos sumar puntos al score anti-trolling?
+            raise PermissionDenied()
+        return attachment
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        context = super(IdentificacionCreateView,self).get_context_data(**kwargs)
         context['attachment'] = self.attachment
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
+        context['pre_identificacion'] = False
+        pre_identificacion = self.attachment.pre_identificacion
+        if pre_identificacion and pre_identificacion.seccion is not None:
+            pre_identificacion = self.attachment.pre_identificacion
+            context['seccion_precargada'] = pre_identificacion.seccion
+            context['distrito_precargado'] = pre_identificacion.distrito
+            if pre_identificacion.circuito is not None:
+                context['circuito_precargado'] = pre_identificacion.circuito
         return context
 
     def form_valid(self, form):
@@ -173,13 +200,12 @@ class AgregarAdjuntos(FormView):
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
     """
+
     def __init__(self, types=('image/jpeg', 'image/png'), **kwargs):
         super().__init__(**kwargs)
         self.types = types
 
     form_class = AgregarAttachmentsForm
-    template_name = 'adjuntos/agregar-adjuntos.html'
-    url_to_post = 'agregar-adjuntos'
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -194,10 +220,11 @@ class AgregarAdjuntos(FormView):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
         files = request.FILES.getlist('file_field')
+        pre_identificacion = kwargs.get('pre_identificacion', None)
         if form.is_valid():
             contador_fotos = 0
             for file in files:
-                instance = self.procesar_adjunto(file)
+                instance = self.procesar_adjunto(file, request.user.fiscal, pre_identificacion)
                 if instance is not None:
                     contador_fotos = contador_fotos + 1
             if contador_fotos:
@@ -206,16 +233,20 @@ class AgregarAdjuntos(FormView):
 
         return self.form_invalid(form)
 
-    def procesar_adjunto(self, adjunto):
+
+    def procesar_adjunto(self, adjunto, subido_por, pre_identificacion=None):
         if adjunto.content_type not in self.types:
             self.mostrar_mensaje_tipo_archivo_invalido(adjunto.name)
             return None
-        return self.cargar_informacion_adjunto(adjunto)
+        return self.cargar_informacion_adjunto(adjunto, subido_por, pre_identificacion)
 
-    def cargar_informacion_adjunto(self, adjunto):
+    def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion=None):
         try:
             instance = Attachment(mimetype=adjunto.content_type)
             instance.foto.save(adjunto.name, adjunto, save=False)
+            instance.subido_por = subido_por
+            if pre_identificacion is not None:
+                instance.pre_identificacion = pre_identificacion
             instance.save()
             return instance
         except IntegrityError:
@@ -237,23 +268,28 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
     via `messages` framework.
     """
-
     form_class = AgregarAttachmentsForm
     url_to_post = 'agregar-adjuntos-ub'
+    template_name = 'adjuntos/agregar-adjuntos.html'
 
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
+        pre_identificacion_form = PreIdentificacionForm(self.request.POST)
         files = request.FILES.getlist('file_field')
-        #no debiese poder cargarse por la ui dos imágenes, aunque es mejor poder chequear esto
+
+        # No debería poder cargarse por UI más de una imagen, pero por las dudas lo chequeamos.
+
         if len(files) > 1:
             form.add_error('file_field', MENSAJE_SOLO_UN_ACTA)
 
         if form.is_valid():
             file = files[0]
-            instance = self.procesar_adjunto(file)
+            fiscal = request.user.fiscal
+            instance = self.procesar_adjunto(file, fiscal)
             if instance is not None:
                 messages.success(self.request, 'Subiste el acta correctamente.')
+                instance.take(fiscal)
                 return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
 
             form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
@@ -264,6 +300,64 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         kwargs.update({'es_multiple': False})
         return kwargs
 
+
+class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
+    """
+    Permite subir varias imágenes pre identificándolas.
+
+    Si una imagen ya existe en el sistema, se exluye con un mensaje de error
+    via `messages` framework.
+    """
+    url_to_post = 'agregar-adjuntos'
+    template_name = 'adjuntos/agregar-adjuntos-identificar.html'
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        attachment_form = AgregarAttachmentsForm()
+        pre_identificacion_form = PreIdentificacionForm()
+        context['attachment_form'] = attachment_form
+        context['pre_identificacion_form'] = pre_identificacion_form
+        if request.user:
+            fiscal = request.user.fiscal
+            context['desde_ub'] = True
+            if fiscal.seccion:
+                context['seccion_precargada'] = fiscal.seccion
+                context['distrito_precargado'] = fiscal.seccion.distrito
+
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        form_class = AgregarAttachmentsForm
+        form = self.get_form(form_class)
+        pre_identificacion_form = PreIdentificacionForm(self.request.POST)
+        files = request.FILES.getlist('file_field')
+
+        if form.is_valid():
+            if not pre_identificacion_form.is_valid():
+                return self.form_invalid(form, pre_identificacion_form)
+
+            fiscal = request.user.fiscal
+            pre_identificacion = pre_identificacion_form.save(commit=False)
+            pre_identificacion.fiscal = fiscal
+            pre_identificacion.save()
+            kwargs.update({'pre_identificacion': pre_identificacion})
+            super().post(request, *args, **kwargs)
+
+        return self.form_invalid(form, pre_identificacion_form, **kwargs)
+
+    def form_invalid(self, attachment_form, pre_identificacion_form, **kwargs):
+        context = self.get_context_data()
+        context['attachment_form'] = attachment_form
+        context['pre_identificacion_form'] = pre_identificacion_form
+        context['desde_ub'] = True
+        return self.render_to_response(context)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'es_multiple': True})
+        return kwargs
+
+
 class AgregarAdjuntosCSV(AgregarAdjuntos):
     """
     Permite subir un archivo CSV, valida que posea todas las columnas necesarias y que los datos sean
@@ -271,7 +365,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
     Cargas totales, parciales e instancias de votos.
 
     """
-    form_class = AgregarAttachmentsForm
+    form_class = AgregarAttachmentsCSV
     template_name = 'adjuntos/agregar-adjuntos-csv.html'
     url_to_post = 'agregar-adjuntos-csv'
 
@@ -285,7 +379,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
         return HttpResponseForbidden()
 
     def cargar_informacion_adjunto(self, adjunto):
-        # validar la info del archivo
+        # Valida la info del archivo.
         try:
             CSVImporter(adjunto, self.request.user).procesar()
             return 'success'

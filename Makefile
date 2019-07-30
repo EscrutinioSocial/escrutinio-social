@@ -35,10 +35,10 @@ log-db:
 	docker-compose logs db
 
 test:
-	docker-compose run --rm app pytest --cov=. --cov-report=html --cov-fail-under=52
+	docker-compose run --rm app pytest
 
 test-exec:
-	docker-compose exec app pytest --cov=. --cov-report=html --cov-fail-under=52
+	docker-compose exec app pytest --cov-report=html
 
 collectstatic:
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py collectstatic --noinput"

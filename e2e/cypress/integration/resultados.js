@@ -2,8 +2,8 @@ describe('Pagina de resultados', () => {
   beforeEach(() => cy.loginAsAdmin());
 
   it('resultados', () => {
-    cy.visit('/elecciones/resultados/1');
-    cy.contains('Resultados para Córdoba');
+    cy.visit('/elecciones/resultados');
+    cy.contains('Resultados para todo el país');
   });
 
 });

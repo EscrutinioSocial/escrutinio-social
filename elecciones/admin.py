@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import reverse
+from djangoql.admin import DjangoQLSearchMixin
 from leaflet.admin import LeafletGeoAdmin
 from .models import (
     Distrito, SeccionPolitica, Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion, CategoriaOpcion, Categoria,
@@ -197,20 +198,24 @@ class SeccionAdmin(admin.ModelAdmin):
     )
 
 
-class VotoMesaReportadoAdmin(admin.ModelAdmin):
+class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = [
         'carga',
         'id',
         'opcion',
+        'opcion_orden',
         'votos',
     ]
     list_display_links = list_display
-    ordering = ['-id']
     list_filter = ('carga__mesa_categoria__categoria', 'opcion')
     search_fields = [
-        'fiscal__nombre', 'carga__mesa_categoria__mesa__numero',
+        'carga__mesa_categoria__mesa__numero',
+        'carga__mesa_categoria__mesa__circuito__nombre',
         'carga__mesa_categoria__mesa__lugar_votacion__nombre'
     ]
+
+    def opcion_orden(self, obj):
+        return obj.opcion.orden
 
 
 class OpcionAdmin(admin.ModelAdmin):

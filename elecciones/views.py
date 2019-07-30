@@ -156,21 +156,6 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
 
-    def status_filter(self, categoria, prefix='carga__mesa_categoria__'):
-        return self.sumarizador.status_filter(categoria, prefix)
-
-    @property
-    def filtros(self):
-        return self.sumarizador.filtros
-
-    @lru_cache(128)
-    def mesas(self, categoria):
-        return self.sumarizador.mesas(categoria)
-
-    @lru_cache(128)
-    def electores(self, categoria):
-        return self.sumarizador.electores(categoria)
-
     def get_resultados(self, categoria):
         # TODO, ¿dónde entra lo proyectado?
         # proyectado = (
@@ -188,12 +173,12 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         # TODO el default también está en Sumarizador.__init__
         return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
 
-    def get_result_piechart(self, resultados):
+    def get_plot_data(self, resultados):
         return [{
             'key': str(k),
             'y': v["votos"],
             'color': k.color if not isinstance(k, str) else '#CCCCCC'
-        } for k, v in resultados['tabla_positivos'].items()]
+        } for k, v in resultados.tabla_positivos().items()]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -202,8 +187,8 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['opciones_a_considerar'] = Sumarizador.OPCIONES_A_CONSIDERAR
         context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
 
-        if self.filtros:
-            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.filtros], " y ")
+        if self.sumarizador.filtros:
+            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.sumarizador.filtros], " y ")
         else:
             context['para'] = 'todo el país'
 
@@ -216,10 +201,9 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['resultados'] = self.get_resultados(categoria)
         context['show_plot'] = settings.SHOW_PLOT
 
-        # TODO esto no está probado
         if settings.SHOW_PLOT:
-            chart = self.get_result_piechart(resultados)
-            context['result_piechart'] = chart
+            chart = self.get_plot_data(context['resultados'])
+            context['plot_data'] = chart
             context['chart_values'] = [v['y'] for v in chart]
             context['chart_keys'] = [v['key'] for v in chart]
             context['chart_colors'] = [v['color'] for v in chart]
@@ -229,7 +213,7 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
 
         # Para el cálculo se filtran categorías activas que estén relacionadas
         # a las mesas.
-        mesas = self.mesas(categoria)
+        mesas = self.sumarizador.mesas(categoria)
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
 
         context['distritos'] = Distrito.objects.all().order_by('numero')

@@ -1,0 +1,77 @@
+{% extends "fiscales/base.html" %}
+{% load i18n material_form material_frontend %}
+{% load staticfiles %}
+
+{% block page_title %}Quiero ser validador/a{% endblock %}
+
+{% block left-panel %}
+
+<div class="card">
+
+    <div class="card-content">
+
+        <div class="card-title">
+            {% block card-title %}Necesitamos algunos datos{% endblock card-title %}
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% form %}
+            {% part form.nombres prefix %}<i class="material-icons prefix">account_box</i>{% endpart %}
+            {% part form.email prefix %}<i class="material-icons prefix">email</i>{% endpart %}
+            {% part form.password prefix %}<i class="material-icons prefix">lock</i>{% endpart %}
+            {% part form.telefono_area prefix %}<i class="material-icons prefix">phone_android</i>{% endpart %}
+            {% part form.seccion_autocomplete prefix %}<i class="material-icons prefix">textsms</i>{% endpart %}
+            {% endform %}
+            <div class="card-action">
+                <div class="right-align">
+                    {% block submit_row %}
+                    <button type="submit" class="waves-effect waves-light btn white-text">Finalizar</button>
+                    {% endblock %}
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+<script>
+function updateAutocompleteData(autocomplete) {
+  autocomplete.component.updateData(getAutocompleteData(autocomplete.valuesMap));
+  // Seteo el valor en vacio
+  $(autocomplete.component.el).val('');
+  // Actualizo la validación
+  $(autocomplete.component.el).attr('pattern', getValidationPattern(autocomplete.valuesMap));
+  $(autocomplete.component.el).attr('title', getValidationMessage(autocomplete.valuesMap));
+}
+
+function setAutocompleteParentValue(autocomplete, parentValue) {
+  if (parentValue) {
+    $.get(autocomplete.dataUrl, {
+      'parent_id': parentValue
+    },
+    function(response) {
+      autocomplete.valuesMap = getValuesMapForJson(response);
+      updateAutocompleteData(autocomplete);
+    }, "json" );
+  } else {
+    autocomplete.valuesMap = getValuesMapForJson({options: []});
+    updateAutocompleteData(autocomplete);
+  }
+}
+
+function setAutocompleteFromDistrito(seccionAutocomplete) {
+  var $distrito = $('#id_distrito');
+  $distrito.change(function() {
+    setAutocompleteParentValue(seccionAutocomplete, $distrito.val());
+  });
+  if (!$(seccionAutocomplete.component.el).val()) {
+    setAutocompleteParentValue(seccionAutocomplete, $distrito.val());
+  }
+}
+
+$(document).ready(function(){
+  var seccionAutocomplete = buildAutocomplete('seccion', '{% url 'autocomplete-seccion' %}');
+  setAutocompleteFromDistrito(seccionAutocomplete);
+});
+</script>
+{% endblock %}

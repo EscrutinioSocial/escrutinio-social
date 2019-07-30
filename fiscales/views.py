@@ -9,7 +9,7 @@ from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
-from django.views.generic.edit import UpdateView, CreateView
+from django.views.generic.edit import UpdateView, CreateView, FormView
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -17,7 +17,7 @@ from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
-from .models import Fiscal
+from .models import Fiscal, CodigoReferido
 from elecciones.models import (
     Mesa,
     Carga,
@@ -29,17 +29,15 @@ from elecciones.models import (
 )
 from .acciones import siguiente_accion
 
-from formtools.wizard.views import SessionWizardView
 from django.template.loader import render_to_string
 from html2text import html2text
 from django.core.mail import send_mail
-from sentry_sdk import capture_exception
+from sentry_sdk import capture_exception, capture_message
 from .forms import (
     MisDatosForm,
     votomesareportadoformset_factory,
-    QuieroSerFiscal1,
-    QuieroSerFiscal2,
-    QuieroSerFiscal4,
+    QuieroSerFiscalForm,
+    ReferidoForm,
 )
 from contacto.views import ConContactosMixin
 from problemas.models import Problema
@@ -89,59 +87,48 @@ class BaseFiscal(LoginRequiredMixin, DetailView):
             raise Http404('no está registrado como fiscal')
 
 
-class QuieroSerFiscal(SessionWizardView):
-    form_list = [
-        QuieroSerFiscal1,
-        QuieroSerFiscal2,
-        #  QuieroSerFiscal3,
-        QuieroSerFiscal4
-    ]
+class QuieroSerFiscal(FormView):
 
-    def get_form_initial(self, step):
-        if step != '0':
-            dni = self.get_cleaned_data_for_step('0')['dni']
-            email = self.get_cleaned_data_for_step('0')['email']
-            fiscal = (get_object_or_None(Fiscal, dni=dni) or
-                      get_object_or_None(Fiscal,
-                                         datos_de_contacto__valor=email,
-                                         datos_de_contacto__tipo='email'))
+    title = "Quiero ser validador/a"
+    template_name = 'fiscales/quiero-validar.html'
+    form_class = QuieroSerFiscalForm
 
-        if step == '1' and fiscal:
-            if self.steps.current == '0':
-                # sólo si acaba de llegar al paso '1' muestro mensaje
-                messages.info(self.request, 'Ya estás en el sistema. Por favor, confirmá tus datos.')
-            return {
-                'nombre': fiscal.nombres,
-                'apellido': fiscal.apellido,
-                'telefono': fiscal.telefonos[0] if fiscal.telefonos else '',
-            }
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['referido_por_codigo'] = self.kwargs.get('codigo_ref', None)
+        return initial
 
-        return self.initial_dict.get(step, {})
-
-    def done(self, form_list, **kwargs):
-        data = self.get_all_cleaned_data()
-        dni = data['dni']
-        email = data['email']
-        fiscal = (get_object_or_None(Fiscal, dni=dni) or
-                  get_object_or_None(Fiscal,
-                                     datos_de_contacto__valor=email,
-                                     datos_de_contacto__tipo='email'))
-        if fiscal:
-            fiscal.estado = 'AUTOCONFIRMADO'
-        else:
-            fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=dni)
-
-        fiscal.dni = dni
-        fiscal.nombres = data['nombre']
+    def form_valid(self, form):
+        data = form.cleaned_data
+        fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
+        fiscal.nombres = data['nombres']
         fiscal.apellido = data['apellido']
-        # fiscal.escuela_donde_vota = data['escuela']
+        fiscal.seccion_id = data['seccion']
+        fiscal.referente_nombres = data['referente_nombres']
+        fiscal.referente_apellido = data['referente_apellido']
+        if data['referido_por_codigo']:
+            codigo = data['referido_por_codigo']
+            referente, certeza = CodigoReferido.fiscales_para(codigo)[0]
+            fiscal.referente = referente
+            fiscal.referente_certeza = certeza
+            if referente:
+                fiscal.referido_por_codigos = f'{referente.referido_por_codigos}-{codigo}'
+            else:
+                fiscal.referido_por_codigos = codigo
         fiscal.save()
-        fiscal.agregar_dato_de_contacto('teléfono', data['telefono'])
-        fiscal.agregar_dato_de_contacto('email', email)
-
-        fiscal.user.set_password(data['new_password1'])
+        telefono = data['telefono_area'] + data['telefono_local']
+        fiscal.agregar_dato_de_contacto('teléfono', telefono)
+        fiscal.agregar_dato_de_contacto('email', data['email'])
+        fiscal.user.set_password(data['password'])
         fiscal.user.save()
+        self.enviar_correo_confirmacion(fiscal, data['email'])
 
+        # se guarda el fiscal en la sesión para que se consuma en la página de agradecimiento
+        self.request.session['fiscal_id'] = fiscal.id
+        self.success_url = reverse('quiero-validar-gracias')
+        return super().form_valid(form)
+
+    def enviar_correo_confirmacion(self, fiscal, email):
         body_html = render_to_string(
             'fiscales/email.html', {
                 'fiscal': fiscal,
@@ -162,11 +149,27 @@ class QuieroSerFiscal(SessionWizardView):
             html_message=body_html
         )
 
-        return render(self.request, 'formtools/wizard/wizard_done.html', {
-            'fiscal': fiscal, 'email': settings.DEFAULT_FROM_EMAIL,
-            'cell_call': settings.DEFAULT_CEL_CALL, 'cell_local': settings.DEFAULT_CEL_LOCAL,
-            'site_url': settings.FULL_SITE_URL
-        })
+
+def quiero_validar_gracias(request):
+    fiscal = get_object_or_None(Fiscal, id=request.session.get('fiscal_id'))
+    return render(request, 'fiscales/quiero-validar-gracias.html', {'fiscal': fiscal})
+
+
+@login_required
+def referidos(request):
+    fiscal = request.user.fiscal
+    if request.method == 'POST':
+        if 'link' in request.POST:
+            fiscal.crear_codigo_de_referidos()
+        elif 'conozco' in request.POST:
+            # TODO ver como dejar traza de esto
+            referidos_confirmados = request.POST.getlist('referido')
+            fiscal.referidos.filter(id__in=referidos_confirmados).update(referencia_confirmada=True)
+            fiscal.referidos.exclude(id__in=referidos_confirmados).update(referencia_confirmada=False)
+
+    form = ReferidoForm(initial={'url': fiscal.ultimo_codigo_url()})
+    return render(request, 'fiscales/referidos.html', {'form': form, 'referidos': fiscal.referidos.all()})
+
 
 
 def confirmar_email(request, uuid):
@@ -175,7 +178,7 @@ def confirmar_email(request, uuid):
         texto = mark_safe('El código de confirmación es inválido. '
                           'Por favor copiá y pegá el link que te enviamos'
                           ' por email en la barra de direcciones'
-                          'Si seguís con problemas, env '
+                          'Si seguís con problemas, envía un mail a '
                           '<a href="mailto:{email}">'
                           '{email}</a>'.format(email=settings.DEFAULT_FROM_EMAIL))
 
@@ -225,9 +228,9 @@ def realizar_siguiente_accion(request):
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
 def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
-    mesacategoria = MesaCategoria.objects.siguiente_de_la_mesa(mesa_existente)
+    mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente()
     if mesacategoria:
-        mesacategoria.take()
+        mesacategoria.take(request.user.fiscal)
         return carga(request, mesacategoria.id, desde_ub=True)
 
     # si es None, lo llevamos a subir un adjunto
@@ -235,13 +238,30 @@ def cargar_desde_ub(request, mesa_id, tipo='total'):
 
 
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')), login_url=NO_PERMISSION_REDIRECT)
+@user_passes_test(
+    lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')),
+    login_url=NO_PERMISSION_REDIRECT
+)
 def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
-    fiscal = get_object_or_404(Fiscal, user=request.user)
+    fiscal = request.user.fiscal
     mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
+
+    # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
+    if mesa_categoria.taken_by != fiscal:
+        capture_message(
+            f"""
+            Intento de cargar mesa-categoria {mesa_categoria.id}
+
+            taken_by: {mesa_categoria.taken_by}
+            fiscal: {fiscal} ({fiscal.id})
+            """
+        )
+        # TO DO: quizas sumar puntos al score anti-trolling?
+        raise PermissionDenied('no te toca cargar acá')
+
     # en carga parcial sólo se cargan opciones prioritarias
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
@@ -348,6 +368,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
         }
     )
 
+
 class ReporteDeProblemaCreateView(CreateView):
     http_method_names = ['post']
     form_class = IdentificacionDeProblemaForm
@@ -447,7 +468,7 @@ def confirmar_fiscal(request, fiscal_id):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-class AutocompleteBaseListView(LoginRequiredMixin, ListView):
+class AutocompleteBaseListView(ListView):
 
     def get(self, request, *args, **kwargs):
         data = {'options': [{'value': o.id, 'text': str(o)} for o in self.get_queryset()]}
@@ -476,4 +497,3 @@ class MesaListView(AutocompleteBaseListView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(lugar_votacion__circuito__id=self.request.GET['parent_id'])
-

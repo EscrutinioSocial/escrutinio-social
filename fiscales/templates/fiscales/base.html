@@ -3,88 +3,113 @@
 {% block page_title %}Fiscal de PASO Nacional 2019{% endblock %}
 
 
-        {% block sidenav_items %}
+{% block sidenav_items %}
 
-        {% comment %}
-        <li class="active">
-            <ul class="collapsible collapsible-accordion">
-                <li>
-                    <a href="{{ module.index_url }}" class="collapsible-header active">{{ module.verbose_name }}{{ module.icon|safe }}</a>
-                    <div class="collapsible-body" style="display:block">
-                        {% include module.menu %}
-                    </div>
-                </li>
-            </ul>
-        </li>
-
-        {% endcomment %}
-
-        {% if request.user.is_superuser %}
-            <li>
-                <a href="{% url "admin:index" %}" class="collapsible-header" data-turbolinks="false">Admin<i class="material-icons">dashboard</i></a>
-            </li>
-
-            <li>
-                <a href="{% url "mapa" %}" class="collapsible-header" data-turbolinks="false">Mapa<i class="material-icons">map</i></a>
-            </li>
-
-            <li>
-                <a href="{% url "agregar-adjuntos" %}" class="collapsible-header" data-turbolinks="false">Subir actas<i class="material-icons">cloud_upload</i></a>
-            </li>
-
-            <li></li>
-
-        {% endif  %}
-
-        {% if request.user.fiscal.esta_en_grupo_unidades_basicas %}
-            <li>
-                <a href="{% url "agregar-adjuntos-ub" %}" class="collapsible-header" data-turbolinks="false">Subir actas desde UB<i class="material-icons">cloud_upload</i></a>
-            </li>
-            <li>
-                <a href="{% url "agregar-adjuntos-csv" %}" class="collapsible-header" data-turbolinks="false">Cargar CSV<i class="material-icons">attachment</i></a>
-            </li>
-        {% endif %}
-
-        {% if request.user.fiscal.esta_en_grupo_validadores %}
-            {% url 'siguiente-accion' as url %}
-            <li {% if url in request.path %} class="active"{% endif %}>
-                <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Actuar sobre acta<i class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
-            </li>
-        {% endif  %}
-
-            <li></li>
-
-        {% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_staff %}
-            <li>
-                <a href="{% url "resultados-categoria"  primera_categoria %}" class="collapsible-header" data-turbolinks="false">Resultados<i class="material-icons">insert_chart</i></a>
-            </li>
-
-            <li>
-                <a href="{% url "resultados-categoria" primera_categoria %}?proyectado=✓" target="_blank" class="collapsible-header" data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
-            </li>
-        {% endif %}
-
+{% comment %}
+<li class="active">
+    <ul class="collapsible collapsible-accordion">
         <li>
-            <a href="https://docs.google.com/document/d/19qFhQ6_bd1mvfOLmwSzj07nDtc4Q0WKJo75dhMPIhVg/edit?usp=sharing" target="_blank" class="collapsible-header" data-turbolinks="false">Ayuda<i class="material-icons">help_outline</i></a>
+            <a href="{{ module.index_url }}"
+                class="collapsible-header active">{{ module.verbose_name }}{{ module.icon|safe }}</a>
+            <div class="collapsible-body" style="display:block">
+                {% include module.menu %}
+            </div>
         </li>
+    </ul>
+</li>
+
+{% endcomment %}
+
+
+{% if request.user.is_authenticated %}
+<!-- si no está autenticado, no debiese mostrar nada -->
+
+{% if request.user.is_superuser %}
+<li>
+    <a href="{% url "admin:index" %}" class="collapsible-header" data-turbolinks="false">Admin<i
+            class="material-icons">dashboard</i></a>
+</li>
+
+<li>
+    <a href="{% url "mapa" %}" class="collapsible-header" data-turbolinks="false">Mapa<i
+            class="material-icons">map</i></a>
+</li>
+
+<li>
+    <a href="{% url "agregar-adjuntos" %}" class="collapsible-header" data-turbolinks="false">Subir varias actas<i
+            class="material-icons">cloud_upload</i></a>
+</li>
+
+<li></li>
+
+{% endif  %}
+
+{% if request.user.fiscal.esta_en_grupo_unidades_basicas %}
+<li>
+    <a href="{% url "agregar-adjuntos-ub" %}" class="collapsible-header" data-turbolinks="false">Subir y cargar acta<i
+            class="material-icons">cloud_upload</i></a>
+</li>
+<li>
+    <a href="{% url "agregar-adjuntos-csv" %}" class="collapsible-header" data-turbolinks="false">Cargar CSV<i
+            class="material-icons">attachment</i></a>
+</li>
+{% endif %}
+
+{% if request.user.fiscal.esta_en_grupo_validadores %}
+{% url 'siguiente-accion' as url %}
+<li {% if url in request.path %} class="active" {% endif %}>
+    <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Actuar sobre acta<i
+            class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
+</li>
+{% endif  %}
+
+<li></li>
+
+{% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_staff %}
+<li>
+    <a href="{% url "resultados-categoria"  primera_categoria %}" class="collapsible-header"
+        data-turbolinks="false">Resultados<i class="material-icons">insert_chart</i></a>
+</li>
+
+<li>
+    <a href="{% url "resultados-categoria" primera_categoria %}?proyectado=✓" target="_blank" class="collapsible-header"
+        data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
+</li>
+{% endif %}
+
+
+<li>
+    <a href="{% url "referidos" %}" class="collapsible-header" data-turbolinks="false">Referidos<i
+            class="material-icons">group_add</i></a>
+</li>
 
 
 
-        <li>
-            <a href="{% url 'logout' %}" class="collapsible-header"  data-turbolinks="false">Cerrar sesión<i class="material-icons">exit_to_app</i></a>
-        </li>
+<li>
+    <a href="https://docs.google.com/document/d/19qFhQ6_bd1mvfOLmwSzj07nDtc4Q0WKJo75dhMPIhVg/edit?usp=sharing"
+        target="_blank" class="collapsible-header" data-turbolinks="false">Ayuda<i
+            class="material-icons">help_outline</i></a>
+</li>
 
 
-        {% endblock sidenav_items %}
+
+<li>
+    <a href="{% url 'logout' %}" class="collapsible-header" data-turbolinks="false">Cerrar sesión<i
+            class="material-icons">exit_to_app</i></a>
+</li>
+
+{% endif %}
+
+{% endblock sidenav_items %}
 
 
 
 {% block content %}
 <div class="left-panel">
-{% block left-panel %}
-{% endblock left-panel %}
+    {% block left-panel %}
+    {% endblock left-panel %}
 </div>
 <div class="right-panel">
-{% block right-panel %}{% endblock right-panel %}
+    {% block right-panel %}{% endblock right-panel %}
 </div>
 {% endblock %}
