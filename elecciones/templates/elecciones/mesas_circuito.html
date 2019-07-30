@@ -39,7 +39,15 @@
 </ul>
 <div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
     <div class="card-content" id="frame{{categoria.id}}">
-        <h1>Soy la mesa {{ mesa_seleccionada.numero }}</h1>
+        <p>{{ mensaje_error }}</p>
+        <table class="highlight bordered {% if responsive %}responsive-table{% endif %}">
+            {% for r in reportados %}
+                <tr>
+                    <th>{{ r.opcion }}</th>
+                    <td> {{ r.votos }}</td>
+                </tr>
+            {% endfor %}
+        </table>
     </div>
 </div>
 {% endblock %}

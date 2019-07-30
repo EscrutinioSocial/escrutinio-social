@@ -242,8 +242,21 @@ class MesasDeCircuito(TemplateView):
         context['categoria_id'] = categoria.id
 
         if self.request.GET.get('mesa'):
-            mesa = get_object_or_404(Mesa, id=self.request.GET.get('mesa'))
-            context['mesa_seleccionada'] = mesa
-            context['categorias'] = Categoria.para_mesas([mesa]).order_by('id')
+            try:
+                mesa = Mesa.objects.get(id=self.request.GET.get('mesa'))
+                context['mesa_seleccionada'] = mesa
+                context['categorias'] = Categoria.para_mesas([mesa]).order_by('id')
+                context['reportados'] = self._obtener_votos_reportados(mesa, categoria)
+            except (Mesa.DoesNotExist, MesaCategoria.DoesNotExist):
+                context['mensaje_error'] = 'No hay datos para esta mesa/categoría'
 
         return context
+
+    def _obtener_votos_reportados(self, mesa, categoria):
+        mc = MesaCategoria.objects.get(
+                mesa__numero=mesa.numero,
+                categoria__id=categoria.id,
+                carga_testigo__isnull=False,
+        )
+        carga = mc.carga_testigo
+        return carga.reportados.order_by('opcion__orden')
