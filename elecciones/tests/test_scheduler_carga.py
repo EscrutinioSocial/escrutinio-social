@@ -3,9 +3,9 @@ from datetime import timedelta
 from django.utils import timezone
 from elecciones.tests.factories import (
     AttachmentFactory,
-    CargaFactory,
     CategoriaFactory,
     CircuitoFactory,
+    FiscalFactory,
     IdentificacionFactory,
     MesaCategoriaDefaultFactory,
     MesaCategoriaFactory,
@@ -31,6 +31,7 @@ def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
 
 
 def test_siguiente_prioriza_estado_y_luego_coeficiente(db, django_assert_num_queries):
+    f = FiscalFactory()
     c = CategoriaFactory(prioridad=1)
     mc1 = MesaCategoriaFactory(
         status=MesaCategoria.STATUS.parcial_sin_consolidar,
@@ -49,15 +50,16 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, django_assert_num_que
     )
     with django_assert_num_queries(1):
         assert MesaCategoria.objects.siguiente() == mc1
-    mc1.take()
+    mc1.take(f)
     assert MesaCategoria.objects.siguiente() == mc3
-    mc3.take()
+    mc3.take(f)
     assert MesaCategoria.objects.siguiente() == mc2
-    mc2.take()
+    mc2.take(f)
     assert MesaCategoria.objects.siguiente() is None
 
 
 def test_siguiente_prioriza_categoria(db):
+    f = FiscalFactory()
     c = CategoriaFactory(prioridad=2)
     c2 = CategoriaFactory(prioridad=1)
     mc1 = MesaCategoriaFactory(
@@ -72,13 +74,14 @@ def test_siguiente_prioriza_categoria(db):
     )
     # se recibe la mc con categoria más baja
     assert MesaCategoria.objects.siguiente() == mc2
-    mc2.take()
+    mc2.take(f)
     assert MesaCategoria.objects.siguiente() == mc1
-    mc1.take()
+    mc1.take(f)
     assert MesaCategoria.objects.siguiente() is None
 
 
 def test_siguiente_prioriza_mesa(db):
+    f = FiscalFactory()
     mc1 = MesaCategoriaFactory(
         status=MesaCategoria.STATUS.parcial_sin_consolidar,
         mesa__prioridad=2,
@@ -94,9 +97,9 @@ def test_siguiente_prioriza_mesa(db):
 
     # se recibe la mc con mesa con prioridad menor
     assert MesaCategoria.objects.siguiente() == mc2
-    mc2.take()
+    mc2.take(f)
     assert MesaCategoria.objects.siguiente() == mc1
-    mc1.take()
+    mc1.take(f)
     assert MesaCategoria.objects.siguiente() is None
 
 
@@ -118,13 +121,15 @@ def test_identificadas_excluye_sin_orden(db):
 
 
 def test_no_taken_incluye_taken_nulo(db):
+    f = FiscalFactory()
     mc1 = MesaCategoriaDefaultFactory()
     mc2 = MesaCategoriaDefaultFactory()
     assert mc1.taken is None
     assert mc2.taken is None
     assert set(MesaCategoria.objects.no_taken()) == {mc1, mc2}
-    mc2.take()
+    mc2.take(f)
     assert mc2.taken is not None
+    assert mc2.taken_by == f
     assert set(MesaCategoria.objects.no_taken()) == {mc1}
 
 

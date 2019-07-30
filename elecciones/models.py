@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Sum, Count, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -274,23 +274,19 @@ class MesaCategoriaQuerySet(models.QuerySet):
     def con_carga_pendiente(self):
         return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
-    def siguiente(self):
+    def mas_prioritaria(self):
         """
-        Devuelve la siguiente MesaCategoria en orden de prioridad
-        de carga.
+        Devuelve la intancia más prioritaria del queryset
         """
-        return self.con_carga_pendiente().order_by(
+        return self.order_by(
             'status', 'categoria__prioridad', 'orden_de_carga', 'mesa__prioridad', 'id'
         ).first()
 
-    def siguiente_de_la_mesa(self, mesa_existente):
+    def siguiente(self):
         """
-        devuelve la siguiente mesacategoria en orden de prioridad
-        de carga
+        Devuelve mesacat con carga pendiente más prioritaria
         """
-        return self.con_carga_pendiente().filter(
-            mesa=mesa_existente
-        ).order_by('status', 'categoria__prioridad', 'orden_de_carga', 'mesa__prioridad', 'id').first()
+        return self.con_carga_pendiente().mas_prioritaria()
 
 
 class MesaCategoria(models.Model):
@@ -331,23 +327,28 @@ class MesaCategoria(models.Model):
     )
 
     # timestamp para dar un tiempo de guarda a la espera de una carga
-    taken = models.DateTimeField(null=True, editable=False)
+    taken = models.DateTimeField(null=True, blank=True)
+    taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
     # entero que se define como el procentaje (redondeado) de mesas
     # ya identificadas todavia sin consolidar al momento de identificar la
     # mesa
     orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
 
-    def take(self):
+    @transaction.atomic
+    def take(self, fiscal):
         self.taken = timezone.now()
-        self.save(update_fields=['taken'])
+        self.taken_by = fiscal
+        self.save(update_fields=['taken', 'taken_by'])
 
+    @transaction.atomic
     def release(self):
         """
         Libera la mesa, es lo contrario de take().
         """
         self.taken = None
-        self.save(update_fields=['taken'])
+        self.taken_by = None
+        self.save(update_fields=['taken', 'taken_by'])
 
     def actualizar_orden_de_carga(self):
         """

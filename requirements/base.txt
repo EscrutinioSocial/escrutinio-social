@@ -3,6 +3,7 @@ coveralls==1.8.0
 django==2.2.2
 django-model-utils==3.1.2
 django-admin-row-actions==0.0.5
+django-constance[database]==2.4.0
 git+https://github.com/mgaitan/django-sneak.git@#egg=django-sneak
 git+https://github.com/mgaitan/django-admincommand.git@filefield#egg=django-admincommand
 git+https://github.com/mgaitan/django-versatileimagefield@one-dimension-resize#egg=django-versatileimagefield
@@ -14,7 +15,7 @@ django-material==1.5.6
 django-extensions==2.1.7
 html2text==2016.9.19
 django-geojson==2.10.0
-git+https://github.com/mgaitan/django-hijack.git#egg=django-hijack
+django-hijack==2.1.10
 django-leaflet==0.22.0
 django-localflavor==2.2
 IPython==7.5.0
@@ -27,9 +28,12 @@ Fabric3==1.14.post1
 easyimap==0.6.3
 factory_boy==2.12.0
 pytest-django==3.5.1
+
 # pytest-cov==2.7.1
 # PR open at https://github.com/pytest-dev/pytest-cov/pull/311
 git+https://github.com/mgaitan/pytest-cov.git@260-cov-fail-under-float
+pytest-django==3.5.1
+pytest-mock==1.10.4
 psycopg2_binary==2.8.2
 sentry-sdk==0.7.6
 django-excel==0.0.10
