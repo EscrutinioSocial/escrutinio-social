@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block sidenav_items %}
-{% for mesa in mesas %}
+{% for mesa in mesas|dictsort:"numero" %}
 <ul>
     <li id="mesa-{{mesa.id}}">
         <a href="{{ request.path }}?mesa={{ mesa.id }}">
