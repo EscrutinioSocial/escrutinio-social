@@ -9,6 +9,7 @@ from django.db.utils import IntegrityError
 from escrutinio_social import settings
 from escrutinio_social.settings import OPCION_TOTAL_SOBRES, OPCION_TOTAL_VOTOS
 from fiscales.models import Fiscal
+import logging
 
 # Primer dato: nombre de la columna, segundo: si es parte de una categoría o no.
 COLUMNAS_DEFAULT = [('seccion', False), ('distrito', False), ('circuito', False), ('nro de mesa', False),
@@ -58,6 +59,8 @@ class CSVImporter:
         self.mesas_matches = {}
         self.carga_total = None
         self.carga_parcial = None
+        self.logger = logging.getLogger('csv_import')
+        self.logger.debug("Importando archivo '%s'.", archivo)
 
     def procesar(self):
         self.validar()
@@ -132,6 +135,7 @@ class CSVImporter:
         Devuelve la carga parcial y la total generadas.
         """
         categoria_bd = mesa_categoria.categoria
+        self.logger.debug("-- Procesando categoría '%s'.", categoria_bd)
 
         self.carga_total = None
         self.carga_parcial = None
@@ -215,6 +219,7 @@ class CSVImporter:
         return carga_total
 
     def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
+        self.logger.debug("- Procesando mesa '%s'.", mesa)
         # Obtengo la mesa correspondiente.
         mesa_bd = self.mesas_matches[mesa[2]]
         self.cantidad_electores_mesa = None
@@ -232,8 +237,12 @@ class CSVImporter:
         # Esto lo puedo hacer recién acá porque tengo que iterar por todas las "categorías" primero
         # para encontrar la de la metadata.
         for categoria, (carga_parcial, carga_total) in cargas:
-            # A todas las cargas le tengo que agregar el total de votantes y de sobres.
-            self.agregar_total_de_votantes_y_sobres(mesa, carga_parcial)
+            if carga_parcial:
+                carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
+
+            # A todas las cargas le tengo que agregar el total de electores y de sobres.
+            self.agregar_electores_y_sobres(mesa, carga_parcial)
+            self.agregar_electores_y_sobres(mesa, carga_total)
 
             if carga_parcial:
                 self.validar_carga_parcial(categoria, carga_parcial)
@@ -242,31 +251,26 @@ class CSVImporter:
             if settings.TOTALES_COMPLETAS and carga_total:
                 self.validar_carga_total(categoria, carga_total)
 
-            if carga_parcial:
-                carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
-
-    def agregar_total_de_votantes_y_sobres(self, mesa, carga_parcial):
-        if not carga_parcial:
+    def agregar_electores_y_sobres(self, mesa, carga):
+        if not carga:
             return
 
-        if self.dato_ausente(self.cantidad_electores_mesa):
-            raise DatosInvalidosError(f'Falta el reporte de total de votantes para la mesa {mesa}.')
-
-        opcion_total_votos = carga_parcial.mesa_categoria.categoria.get_opcion_total_votos()
-        VotoMesaReportado.objects.create(carga=carga_parcial,
-                                         votos=int(self.cantidad_electores_mesa),
-                                         opcion=opcion_total_votos
-                                         )
-
+        # XXX Ver qué hacemos con la cantidad de electores.
+        #if self.dato_ausente(self.cantidad_electores_mesa):
+            
         # Si no hay sobres no pasa nada.
         if self.dato_ausente(self.cantidad_sobres_mesa):
             return
 
-        opcion_sobres = carga_parcial.mesa_categoria.categoria.get_opcion_total_sobres()
-        VotoMesaReportado.objects.create(carga=carga_parcial,
-                                         votos=int(self.cantidad_sobres_mesa),
+        opcion_sobres = carga.mesa_categoria.categoria.get_opcion_total_sobres()
+
+        cantidad_votos = int(self.cantidad_sobres_mesa)
+        VotoMesaReportado.objects.create(carga=carga,
+                                         votos=cantidad_votos,
                                          opcion=opcion_sobres
                                          )
+        self.logger.debug("---- Agregando %d votos a %s en carga %s.", cantidad_votos, opcion_sobres,
+            carga.tipo)
 
     def dato_ausente(self, dato):
         """
@@ -315,6 +319,7 @@ class CSVImporter:
                     mesa_categoria=mesa_categoria,
                     fiscal=self.fiscal
                 )
+                self.logger.debug("--- Creando carga parcial.")
             carga = self.carga_parcial
         else:
             if not self.carga_total:
@@ -324,8 +329,10 @@ class CSVImporter:
                     mesa_categoria=mesa_categoria,
                     fiscal=self.fiscal
                 )
+                self.logger.debug("--- Creando carga total.")
             carga = self.carga_total
-        print(carga, opcion_bd)
+
+        self.logger.debug("---- Agregando %d votos a %s en carga %s.", cantidad_votos, opcion_bd, carga.tipo)
         VotoMesaReportado.objects.create(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
 
     def validar_usuario(self):
@@ -345,8 +352,8 @@ class CSVImporter:
                                                                   ).values_list('opcion__id', flat=True)
         opciones_faltantes = set(opciones_de_la_categoria) - set(opciones_votadas)
         if opciones_faltantes != set():
-            nombres_opciones_faltantes = Opcion.objects.filter(
-                id__in=opciones_faltantes).values_list('nombre', flat=True)
+            nombres_opciones_faltantes = list(Opcion.objects.filter(
+                            id__in=opciones_faltantes).values_list('nombre', flat=True))
             raise DatosInvalidosError(
                 f'Los resultados para las opciones parciales para la categoría {categoria} '
                 f'deben estar completos. '
