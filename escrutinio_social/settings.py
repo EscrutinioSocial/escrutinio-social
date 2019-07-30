@@ -324,7 +324,8 @@ OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
 # Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
-TOTALES_COMPLETAS = False
+# Ver csv_import.py
+OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 
 try:
     from .local_settings import *  # noqa
