@@ -187,9 +187,18 @@ class Sumarizador():
         votos por cada una de las opciones posibles (partidarias o no)
         """
 
-        return (self.votos_reportados(categoria, mesas)
-                .values_list('opcion__id')
-                .annotate(sum_votos=Sum('votos')))
+        # Obtener los votos reportados
+        votos_reportados = self.votos_reportados(categoria, mesas).values_list('opcion__id').annotate(
+            sum_votos=Sum('votos')
+        )
+
+        # Diccionario inicial, opciones completas, todas en 0 (por si alguna opción no viene reportada).
+        votos_por_opcion = {opcion.id: 0 for opcion in Opcion.objects.filter(categorias__id=categoria.id)}
+
+        # Sobreescribir los valores default (en 0) con los votos reportados
+        votos_por_opcion.update(votos_reportados)
+        
+        return votos_por_opcion.items()
 
     def agrupar_votos(self, votos_por_opcion):
         votos_positivos = {}
@@ -305,7 +314,7 @@ class Resultados():
         nombre_opcion_sobres = settings.OPCION_TOTAL_SOBRES['nombre']
         return sum(
             votos for opcion, votos in self.resultados.votos_no_positivos.items()
-            if opcion != nombre_opcion_total and opcion != nombre_opcion_sobres
+            if opcion not in (nombre_opcion_total, opcion != nombre_opcion_sobres)
         )
 
     @lru_cache(128)
@@ -414,20 +423,22 @@ class Proyecciones(Sumarizador):
 
     def total_electores(self, agrupacion):
         return (
-            self.mesas_a_considerar.filter(circuito__in=Subquery(
-                AgrupacionCircuito.objects
-                .filter(agrupacion__id=agrupacion.id)
-                .values_list('circuito_id', flat=True)))
-            .aggregate(electores=Sum('electores'))
+            self.mesas_a_considerar.filter(
+                circuito__in=Subquery(
+                    AgrupacionCircuito.objects.filter(agrupacion__id=agrupacion.id
+                                                      ).values_list('circuito_id', flat=True)
+                )
+            ).aggregate(electores=Sum('electores'))
         )['electores']
 
     def electores_en_mesas_escrutadas(self, agrupacion):
         return (
-            self.mesas_escrutadas().filter(circuito__in=Subquery(
-                AgrupacionCircuito.objects
-                .filter(agrupacion__id=agrupacion.id)
-                .values_list('circuito_id', flat=True)))
-            .aggregate(electores=Sum('electores'))
+            self.mesas_escrutadas().filter(
+                circuito__in=Subquery(
+                    AgrupacionCircuito.objects.filter(agrupacion__id=agrupacion.id
+                                                      ).values_list('circuito_id', flat=True)
+                )
+            ).aggregate(electores=Sum('electores'))
         )['electores']
 
     def agrupaciones_a_considerar(self, categoria, mesas):
@@ -436,25 +447,21 @@ class Proyecciones(Sumarizador):
         el mínimo de mesas definido según la técnica de proyección.
         """
         mesas_por_agrupacion_subquery = (
-            self.mesas_escrutadas()
-            .filter(circuito__id__in=OuterRef('circuitos'))
-            .annotate(mesas_escrutadas=Count('pk'))
-            .values_list('mesas_escrutadas', flat=True)
+            self.mesas_escrutadas().filter(circuito__id__in=OuterRef('circuitos')
+                                           ).annotate(mesas_escrutadas=Count('pk')
+                                                      ).values_list('mesas_escrutadas', flat=True)
         )
 
-        return (AgrupacionCircuitos.objects
-                .filter(proyeccion=self.tecnica)
-                .annotate(mesas_escrutadas=Subquery(
-                    mesas_por_agrupacion_subquery[:1],
-                    output_field=IntegerField()
-                ))
-                .filter(minimo_mesas__lte=F('mesas_escrutadas')))
+        return (
+            AgrupacionCircuitos.objects.filter(proyeccion=self.tecnica).annotate(
+                mesas_escrutadas=Subquery(mesas_por_agrupacion_subquery[:1], output_field=IntegerField())
+            ).filter(minimo_mesas__lte=F('mesas_escrutadas'))
+        )
 
     def coeficientes_para_proyeccion(self):
         return {
             agrupacion.id: self.total_electores(agrupacion) / self.electores_en_mesas_escrutadas(agrupacion)
-            for agrupacion
-            in self.agrupaciones_a_considerar(self.categoria, self.mesas_a_considerar)
+            for agrupacion in self.agrupaciones_a_considerar(self.categoria, self.mesas_a_considerar)
         }
 
     def votos_por_opcion(self, categoria, mesas):
@@ -465,18 +472,19 @@ class Proyecciones(Sumarizador):
         correspondientes a agrupaciones que llegaron al mínimo de mesas requerido.
         """
 
-        agrupaciones_subquery = (
-            self.agrupaciones_a_considerar(categoria, mesas)
-            .filter(pk__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones')))
-            .values_list('id', flat=True)
+        agrupaciones_subquery = Subquery(
+            self.agrupaciones_a_considerar(categoria, mesas).filter(
+                pk__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones'))
+            ).values_list('id', flat=True)
         )
 
-        return (
-            self.votos_reportados(categoria, mesas).values_list('opcion__id')
-            .annotate(id_agrupacion=Subquery(agrupaciones_subquery))
-            .annotate(sum_votos=Sum('votos'))
-            .values_list('opcion__id', 'id_agrupacion', 'sum_votos')
-        )
+        return self.votos_reportados(categoria, mesas).values_list('opcion__id').annotate(
+                id_agrupacion=agrupaciones_subquery
+            ).exclude(
+                id_agrupacion__isnull=True
+            ).annotate(
+                sum_votos=Sum('votos')
+            ).values_list('opcion__id', 'id_agrupacion', 'sum_votos')
 
     def votos_por_agrupacion(self, votos_a_procesar):
         """
@@ -486,6 +494,7 @@ class Proyecciones(Sumarizador):
         votos_por_agrupacion = {}
         for id_opcion, id_agrupacion, sum_votos in votos_a_procesar:
             votos_por_agrupacion.setdefault(id_agrupacion, []).append((id_opcion, sum_votos))
+
         return votos_por_agrupacion
 
     def agrupar_votos(self, votos_a_procesar):
@@ -500,14 +509,15 @@ class Proyecciones(Sumarizador):
             for partido, votos_por_opcion in votos_positivos.items():
                 votos_partido = votos_positivos_proyectados.setdefault(partido, {})
                 for opcion, votos in votos_por_opcion.items():
-                    votos_partido[opcion] = (votos_partido.setdefault(opcion, 0)
-                                             + round(votos * coeficientes[id_agrupacion]))
+                    votos_partido[opcion] = (
+                        votos_partido.setdefault(opcion, 0) + round(votos * coeficientes[id_agrupacion])
+                    )
 
             # Votos no positivos[opcion.nombre] = sum_votos if sum_votos else 0
             for nombre_opcion, votos in votos_no_positivos.items():
                 votos_no_positivos_proyectados[nombre_opcion] = (
-                    votos_no_positivos_proyectados.setdefault(nombre_opcion, 0)
-                    + round(votos * coeficientes[id_agrupacion])
+                    votos_no_positivos_proyectados.setdefault(nombre_opcion, 0) +
+                    round(votos * coeficientes[id_agrupacion])
                 )
 
         return votos_positivos_proyectados, votos_no_positivos_proyectados

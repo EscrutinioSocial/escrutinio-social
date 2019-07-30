@@ -228,7 +228,6 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.votantes() == 220
     assert resultados.electores() == 800
 
-
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
     # se crean 3 secciones electorales
