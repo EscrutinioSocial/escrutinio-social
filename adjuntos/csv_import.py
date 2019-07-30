@@ -51,7 +51,7 @@ class CSVImporter:
 
     def __init__(self, archivo, usuario):
         self.archivo = archivo
-        self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"])
+        self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"], dtype=str)
         self.usuario = usuario
         self.fiscal = None
         self.mesas = []
@@ -117,7 +117,8 @@ class CSVImporter:
 
         for seccion, circuito, nro_de_mesa, distrito in mesa_circuito_seccion_distrito:
             try:
-                match_mesa = Mesa.obtener_mesa_en_circuito_seccion_distrito(nro_de_mesa, circuito, seccion, distrito)
+                match_mesa = Mesa.obtener_mesa_en_circuito_seccion_distrito(
+                    nro_de_mesa, circuito, seccion, distrito)
             except Mesa.DoesNotExist:
                 raise DatosInvalidosError(
                     f'No existe mesa: {nro_de_mesa} en circuito: {circuito}, sección: {seccion} y '
@@ -125,7 +126,7 @@ class CSVImporter:
             self.mesas_matches[nro_de_mesa] = match_mesa
             self.mesas.append(match_mesa)
 
-    def cargar_mesa_categoria(self, mesa, grupos, mesa_categoria, columnas_categorias):
+    def cargar_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
         """
         Realiza la carga correspondiente a una mesa y una categoría.
         Devuelve la carga parcial y la total generadas.
@@ -145,22 +146,24 @@ class CSVImporter:
                                       f'categoría: {categoria_bd.nombre}.')
 
         # Se encontró la categoría de la mesa en el archivo.
-        mesa_columna = matcheos[0]
+        columna_de_la_categoria = matcheos[0]
         # Los votos son por partido así que debemos iterar por todas las filas
-        for indice, fila in grupos.iterrows():
-            opcion = fila['nro de lista']
-            self.fila_analizada = FilaCSVImporter(seccion, circuito, mesa, distrito)
+        for indice, fila in filas_de_la_mesa.iterrows():
+            codigo_lista_en_csv = fila['nro de lista']
+            self.celda_analizada = CeldaCSVImporter(
+                seccion, circuito, mesa, distrito, codigo_lista_en_csv, columna_de_la_categoria)
 
             # Primero chequeamos si esta fila corresponde a metadata verificando el
             # número de lista que está en cero cuando se trata de metadata.
-            if str(opcion) == '0':
+            if codigo_lista_en_csv == '0':
                 # Nos quedamos con la metadata.
                 self.cantidad_electores_mesa = fila['cantidad de electores del padron']
                 self.cantidad_sobres_mesa = fila['cantidad de sobres en la urna']
 
             else:
-                cantidad_votos = fila[mesa_columna]
-                if not cantidad_votos or math.isnan(cantidad_votos):
+                cantidad_votos = fila[columna_de_la_categoria]
+
+                if self.dato_ausente(cantidad_votos):
                     # La celda está vacía.
                     continue
 
@@ -168,12 +171,12 @@ class CSVImporter:
 
                 # Buscamos este nro de lista dentro de las opciones asociadas a
                 # esta categoría.
-                match_opcion = [una_opcion for una_opcion in categoria_bd.opciones.all()
-                                if una_opcion.codigo and una_opcion.codigo.strip().lower()
-                                == str(opcion).strip().lower()]
-                opcion_bd = match_opcion[0] if len(match_opcion) > 0 else None
+                match_codigo_lista = [una_opcion for una_opcion in categoria_bd.opciones.all()
+                                      if una_opcion.codigo and una_opcion.codigo.strip().lower()
+                                      == codigo_lista_en_csv.strip().lower()]
+                opcion_bd = match_codigo_lista[0] if len(match_codigo_lista) > 0 else None
                 if not opcion_bd:
-                    raise DatosInvalidosError(f'El número de lista {opcion} no fue '
+                    raise DatosInvalidosError(f'El número de lista {codigo_lista_en_csv} no fue '
                                               f'encontrado asociado la categoría '
                                               f'{categoria_bd.nombre}, revise que sea '
                                               f'el correcto.')
@@ -207,7 +210,7 @@ class CSVImporter:
                 carga=carga_total
             )
 
-    def cargar_mesa(self, mesa, grupos, columnas_categorias):
+    def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
         # Obtengo la mesa correspondiente.
         mesa_bd = self.mesas_matches[mesa[2]]
         self.cantidad_electores_mesa = None
@@ -218,19 +221,22 @@ class CSVImporter:
 
         # Analizo por categoria-mesa, y por cada categoria-mesa, todos los partidos posibles
         for mesa_categoria in mesa_bd.mesacategoria_set.all():
-            cargas.append(self.cargar_mesa_categoria(mesa, grupos, mesa_categoria, columnas_categorias))
+            cargas.append((mesa_categoria.categoria,
+                           self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria,
+                                                      columnas_categorias)))
 
         # Esto lo puedo hacer recién acá porque tengo que iterar por todas las "categorías" primero
         # para encontrar la de la metadata.
-        for carga_parcial, carga_total in cargas:
+        for categoria, (carga_parcial, carga_total) in cargas:
             # A todas las cargas le tengo que agregar el total de votantes y de sobres.
             self.agregar_total_de_votantes_y_sobres(mesa, carga_parcial)
 
             if carga_parcial:
-                self.validar_carga_parcial(carga_parcial)
-            # Si tengo que verificar entonces veo que las cargas totales sean completas
+                self.validar_carga_parcial(categoria, carga_parcial)
+
+            # Si tengo que verificar entonces veo que las cargas totales sean completas.
             if settings.TOTALES_COMPLETAS and carga_total:
-                self.validar_carga_total(carga_total)
+                self.validar_carga_total(categoria, carga_total)
 
             # El total de votos hay que impactarlo en todas las cargas.
             self.copiar_carga_parcial_en_total_si_corresponde(carga_parcial, carga_total)
@@ -239,31 +245,37 @@ class CSVImporter:
         if not carga_parcial:
             return
 
-        if not self.cantidad_electores_mesa or math.isnan(self.cantidad_electores_mesa):
+        if self.dato_ausente(self.cantidad_electores_mesa):
             raise DatosInvalidosError(f'Falta el reporte de total de votantes para la mesa {mesa}.')
 
         opcion_total_votos = carga_parcial.mesa_categoria.categoria.get_opcion_total_votos()
         VotoMesaReportado.objects.create(carga=carga_parcial,
-                                         votos=self.cantidad_electores_mesa,
+                                         votos=int(self.cantidad_electores_mesa),
                                          opcion=opcion_total_votos
                                          )
 
         # Si no hay sobres no pasa nada.
-        if not self.cantidad_sobres_mesa or math.isnan(self.cantidad_sobres_mesa):
+        if self.dato_ausente(self.cantidad_sobres_mesa):
             return
 
         opcion_sobres = carga_parcial.mesa_categoria.categoria.get_opcion_total_sobres()
         VotoMesaReportado.objects.create(carga=carga_parcial,
-                                         votos=self.cantidad_sobres_mesa,
+                                         votos=int(self.cantidad_sobres_mesa),
                                          opcion=opcion_sobres
                                          )
+
+    def dato_ausente(self, dato):
+        """
+        Responde si un dato está o no presente, considerando las particularidades del parsing del CSV.
+        """
+        return not dato or math.isnan(float(dato))
 
     def cargar_info(self):
         """
         Carga la info del archivo CSV en la base de datos.
         Si hay errores, los reporta a través de excepciones.
         """
-        self.fila_analizada = None
+        self.celda_analizada = None
         # se guardan los datos: El contenedor `carga` y los votos del archivo
         # la carga es por mesa y categoría entonces nos conviene ir analizando grupos de mesas
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
@@ -272,21 +284,21 @@ class CSVImporter:
         try:
             with transaction.atomic():
 
-                for mesa, grupos in grupos_mesas:
-                    self.cargar_mesa(mesa, grupos, columnas_categorias)
+                for mesa, filas_de_la_mesa in grupos_mesas:
+                    self.cargar_mesa(mesa, filas_de_la_mesa, columnas_categorias)
 
         except IntegrityError as e:
             # fixme ver mejor forma de manejar estos errores
             if 'votomesareportado_votos_check' in str(e):
                 raise DatosInvalidosError(
                     f'Los resultados deben ser números positivos. Revise las filas correspondientes '
-                    f'a {self.fila_analizada}.')
+                    f'a {self.celda_analizada}.')
             raise DatosInvalidosError(f'Error al guardar los resultados. Revise las filas correspondientes '
-                                      f'a {self.fila_analizada}.')
+                                      f'a {self.celda_analizada}.')
         except ValueError as e:
             raise DatosInvalidosError(
                 f'Revise que los datos de resultados sean numéricos. Revise las filas correspondientes '
-                f'a {self.fila_analizada}.')
+                f'a {self.celda_analizada}: {e}')
         except Exception as e:
             raise e
 
@@ -321,7 +333,7 @@ class CSVImporter:
             raise PermisosInvalidosError('Su usuario no tiene los permisos necesarios para realizar '
                                          'esta acción.')
 
-    def validar_carga(self, carga, parcial):
+    def validar_carga(self, carga, categoria, parcial):
         opciones_votadas = carga.listado_de_opciones()
         mi_categoria = carga.categoria
         opciones_de_la_categoria = CategoriaOpcion.objects.filter(categoria=mi_categoria,
@@ -329,24 +341,29 @@ class CSVImporter:
                                                                   ).values_list('opcion__id', flat=True)
         opciones_faltantes = set(opciones_de_la_categoria) - set(opciones_votadas)
         if opciones_faltantes != set():
-            Opcion.objects.filter(codigo=opciones_faltantes)
+            nombres_opciones_faltantes = Opcion.objects.filter(
+                id__in=opciones_faltantes).values_list('nombre', flat=True)
             raise DatosInvalidosError(
-                f'Los resultados para las opciones parciales deben estar completas. '
-                f'Faltan las opciones: {Opcion.objects.filter(id__in=opciones_faltantes)}.')
+                f'Los resultados para las opciones parciales para la categoría {categoria} '
+                f'deben estar completos. '
+                f'Faltan las opciones: {nombres_opciones_faltantes}.')
 
-    def validar_carga_parcial(self, carga_parcial):
-        self.validar_carga(carga_parcial, parcial=True)
+    def validar_carga_parcial(self, categoria, carga_parcial):
+        self.validar_carga(carga_parcial, categoria, parcial=True)
 
-    def validar_carga_total(self, carga_total):
-        self.validar_carga(carga_total, parcial=False)
+    def validar_carga_total(self, categoria, carga_total):
+        self.validar_carga(carga_total, categoria, parcial=False)
 
-class FilaCSVImporter:
-    def __init__(self, seccion, circuito, mesa, distrito):
+
+class CeldaCSVImporter:
+    def __init__(self, seccion, circuito, mesa, distrito, codigo_lista, columna):
         self.mesa = mesa
         self.seccion = seccion
         self.circuito = circuito
         self.distrito = distrito
+        self.codigo_lista = codigo_lista
+        self.columna = columna
 
     def __str__(self):
         return f"Mesa: {self.mesa} - sección: {self.seccion} - circuito: {self.circuito} - " \
-               f"distrito: {self.distrito}"
+            f"distrito: {self.distrito} - lista: {self.codigo_lista} - columna: {self.columna}"
