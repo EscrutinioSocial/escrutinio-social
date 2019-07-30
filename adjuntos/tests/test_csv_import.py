@@ -95,7 +95,7 @@ def carga_inicial(db):
     s1 = SeccionFactory(numero=50, distrito=d1)
     circ = CircuitoFactory(numero='2', seccion=s1)
 
-    # crear las opciones para votos y sobres
+    # Creamos los partidos.
     fdt = OpcionFactory(orden=3, codigo='FdT')
     jpc = OpcionFactory(orden=2, codigo='JpC')
     c2019 = OpcionFactory(orden=4, codigo='C2019')
@@ -108,27 +108,18 @@ def carga_inicial(db):
         CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=prioritaria, opcion=jpc)
         if categoria == 'Presidente y vice':
             CategoriaOpcionFactory(categoria=categoria_bd, opcion__orden=1, prioritaria=False, opcion=c2019)
-            # Les ajusto el orden.
+            # Adecuamos las opciones prioritarias.
             total_votos = categoria_bd.get_opcion_total_votos()
-            total_votos.orden = 1
-            total_votos.save()
-            sobres = categoria_bd.get_opcion_total_sobres()
-            sobres.orden = 1
-            sobres.save()
-            blancos = categoria_bd.get_opcion_total_sobres()
-            blancos.orden = 1
-            blancos.save()
-            nulos = categoria_bd.get_opcion_nulos()
-            nulos.orden = 1
-            nulos.save()
+            total_votos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=total_votos)
+            total_votos_cat_opcion.prioritaria = True
+            total_votos_cat_opcion.save()
 
-            # Las hago prioritarias.
-            votos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=total_votos)
-            votos_cat_opcion.prioritaria = True
-            votos_cat_opcion.save()
+            blancos = categoria_bd.get_opcion_total_sobres()
             blancos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=blancos)
             blancos_cat_opcion.prioritaria = True
             blancos_cat_opcion.save()
+
+            nulos = categoria_bd.get_opcion_nulos()
             nulos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=nulos)
             nulos_cat_opcion.prioritaria = True
             nulos_cat_opcion.save()
@@ -146,7 +137,7 @@ def test_procesar_csv_resultados_negativos(db, usr_unidad_basica, carga_inicial)
 def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inicial):
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'opciones_invalidas.csv', usr_unidad_basica).procesar()
-    assert 'El número de lista C no fue encontrado' in str(e.value)
+    assert 'El número de lista C2019 no fue encontrado' in str(e.value)
 
 
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
@@ -158,18 +149,22 @@ def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
     CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
-    totales = len([categoria for categoria in CATEGORIAS if not categoria[1]])
-    assert len(cargas_totales) == totales
+
+    assert cargas_totales.count() == len(CATEGORIAS)
     for total in cargas_totales:
         assert total.origen == 'csv'
+
     votos_carga_total = VotoMesaReportado.objects.filter(carga__in=cargas_totales).all()
-    # ya que hay dos opciones y 1 categoria no prioritaria
+    # XXX Ver cuántos deberían ser.
     assert len(votos_carga_total) == 2
+
     cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial)
-    parciales = len(CATEGORIAS) - totales
-    assert len(cargas_parciales) == parciales
+    cant_parciales = len(CATEGORIAS) - totales
+    assert cargas_parciales.count() == cant_parciales
+
     for parcial in cargas_parciales:
         assert parcial.origen == 'csv'
+
     votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=cargas_parciales).all()
     # Ya que hay dos opciones + total de votantes x 6 categorias prioritarias
     assert len(votos_carga_parcial) == 18
