@@ -67,6 +67,20 @@ def url_resultados(carta_marina):
     return reverse('resultados-categoria', args=[c.id])
 
 
+def test_resultados_pide_login(db, client, url_resultados):
+    response = client.get(url_resultados)
+    assert response.status_code == 302
+    query = f'?next={url_resultados}'
+    assert response.url == reverse('login') + query
+
+
+def test_resultados_pide_visualizador(db, fiscal_client, admin_user, url_resultados):
+    g = Group.objects.get(name='visualizadores')
+    admin_user.groups.remove(g)
+    response = fiscal_client.get(url_resultados)
+    assert response.status_code == 403          # permission denied
+
+
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
     # implicitamente está creada la categoria default que tiene todo el padron

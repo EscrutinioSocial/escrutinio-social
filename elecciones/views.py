@@ -1,40 +1,19 @@
-import itertools
 from django.conf import settings
-from functools import lru_cache
-from collections import defaultdict, OrderedDict
-from attrdict import AttrDict
-from django.http import JsonResponse
-from datetime import timedelta
-from django.utils import timezone
-from django.template.loader import render_to_string
-from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Q, F, Sum, Count, Subquery
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from djgeojson.views import GeoJSONLayerView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, HttpResponseForbidden
-from django.utils.functional import cached_property
-from django.views import View
-from django.contrib.auth.models import User
-from fiscales.models import Fiscal
-from django.db.models import Sum, IntegerField, Case, When
+from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
 from .models import (
     Distrito,
     Seccion,
     Circuito,
     Categoria,
-    Partido,
-    Opcion,
-    VotoMesaReportado,
     LugarVotacion,
-    MesaCategoria,
     Mesa,
 )
 from .resultados import Sumarizador, Proyecciones
@@ -53,17 +32,16 @@ class StaffOnlyMixing:
         return super().dispatch(*args, **kwargs)
 
 
-class VisualizadoresOnlyMixin:
+class VisualizadoresOnlyMixin(AccessMixin):
     """
     Mixin para que sólo usuarios visualizadores
     accedan a la vista.
     """
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.fiscal.esta_en_grupo('visualizadores'):
-            return super().dispatch(request, *args, **kwargs)
-
-        return HttpResponseForbidden()
+        if not request.user.is_authenticated or not request.user.fiscal.esta_en_grupo('visualizadores'):
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
 
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):
@@ -148,8 +126,8 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
                 ids_a_considerar = self.request.GET.getlist(nivel)
 
         parametros_sumarizacion = [
-            self.get_tipo_de_agregacion(), 
-            self.get_opciones_a_considerar(), 
+            self.get_tipo_de_agregacion(),
+            self.get_opciones_a_considerar(),
             nivel_de_agregacion,
             ids_a_considerar,
         ]
