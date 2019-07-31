@@ -149,11 +149,6 @@ def test_electores_sin_filtro(url_resultados, fiscal_client):
 def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # resultados para mesa 1
     m1, m2, m3, *otras_mesas = carta_marina
-    total_electores = (m1.electores +
-                       m2.electores +
-                       m3.electores +
-                       sum(m.electores for m in otras_mesas))
-
     categoria = m1.categorias.get()  # sólo default
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
@@ -208,15 +203,8 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     resultados = response.context['resultados']
 
     positivos = resultados.tabla_positivos()
-
-    assert resultados.porcentaje_mesas_escrutadas() == '37.50'  # 3 de 8
-
     # se ordena de acuerdo al que va ganando
     assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
-
-    total_positivos = resultados.total_positivos()
-
-    assert total_positivos == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
 
     # cuentas
     assert positivos[o3.partido]['votos'] == 40 + 50
@@ -240,11 +228,30 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
 
-    assert resultados.votantes() == 265
+    total_electores = (m1.electores +
+                       m2.electores +
+                       m3.electores +
+                       sum(m.electores for m in otras_mesas))
+
     assert resultados.electores() == total_electores
+    assert resultados.total_positivos() == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+    assert resultados.porcentaje_mesas_escrutadas() == '37.50'  # 3 de 8
+    assert resultados.votantes() == 265
     assert resultados.electores_en_mesas_escrutadas() == 320
     assert resultados.porcentaje_escrutado() == f'{100 * 320 / total_electores:.2f}'
     assert resultados.porcentaje_participacion() == f'{100 * 265 / total_electores:.2f}'
+
+    columna_datos = [
+        ('Electores', resultados.electores()),
+        ('Escrutados', resultados.electores_en_mesas_escrutadas()),
+        ('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
+        ('Votantes', resultados.votantes()),
+        ('Positivos', resultados.total_positivos()),
+        ('% Participación', f'{resultados.porcentaje_participacion()} %'),
+    ]
+    for variable, valor in columna_datos:
+        assert f'<td title="{variable}">{valor}</td>' in content
+
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
