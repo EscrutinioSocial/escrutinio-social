@@ -1,4 +1,6 @@
 import itertools
+from urllib import parse
+
 from django.conf import settings
 from functools import lru_cache
 from collections import defaultdict, OrderedDict
@@ -235,37 +237,45 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         return context
 
 
-class MesasDeCircuito(TemplateView):
+class MesasDeCircuito(ResultadosCategoria):
 
     template_name = "elecciones/mesas_circuito.html"
 
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        pkcircuito = self.kwargs.get('pkcircuito')
-        if pkcircuito is None:
-            pkcircuito = Circuito.objects.first().id
-        circuito = get_object_or_404(Circuito, id=pkcircuito)
+        categoria = context['object']
+        circuito_id = self._obtener_circuito()
+        circuito = get_object_or_404(Circuito, id=circuito_id)
         context['circuito_seleccionado'] = circuito
-        context['mesas'] = circuito.mesa_set.all
-
-        pkcategoria = self.kwargs.get('pkcategoria')
-        if pkcategoria is None:
-            pkcategoria = Categoria.objects.first().id
-        categoria = get_object_or_404(Categoria, id=pkcategoria)
-        context['categoria_seleccionada'] = categoria
-        context['categoria_id'] = categoria.id
-
-        if self.request.GET.get('mesa'):
-            try:
-                mesa = Mesa.objects.get(id=self.request.GET.get('mesa'))
-                context['mesa_seleccionada'] = mesa
-                context['categorias'] = Categoria.para_mesas([mesa]).order_by('id')
-                context['reportados'] = self._obtener_votos_reportados(mesa, categoria)
-            except (Mesa.DoesNotExist, MesaCategoria.DoesNotExist):
-                context['mensaje_error'] = 'No hay datos para esta mesa/categoría'
+        mesas = circuito.mesa_set.all().order_by("numero")
+        context['mesas'] = mesas
+        mesa = self._obtener_informacion_mesa(mesas)
+        context['resultados'] = self.sumarizador.votos_reportados_categoria(
+            categoria,
+            mesas.filter(id=mesa.id)
+        )
+        context['mesa_seleccionada'] = mesa
+        context['mensaje_no_hay_info'] = f'No hay datos para la categoría {categoria} en la mesa {mesa}'
+        context['url_params'] = self._construir_url_params(self.request.GET.copy())
 
         return context
+
+    def _construir_url_params(self, url_params_original):
+        if 'mesa' in url_params_original:
+            del url_params_original['mesa']
+        return parse.urlencode(url_params_original)
+
+    def _obtener_informacion_mesa(self, mesas):
+        """
+        Devolvemos la mesa dependiendo si en el URL viene cargado.
+        Si no viene cargado, devolvemos la primer mesa del circuito
+        """
+        mesa_id = self.request.GET.get('mesa')
+        mesa = mesas.first() if mesa_id is None else Mesa.objects.get(id=mesa_id)
+        return mesa
 
     def _obtener_votos_reportados(self, mesa, categoria):
         mc = MesaCategoria.objects.get(
@@ -275,3 +285,6 @@ class MesasDeCircuito(TemplateView):
         )
         carga = mc.carga_testigo
         return carga.reportados.order_by('opcion__orden')
+
+    def _obtener_circuito(self):
+        return self.request.GET.get('circuito')

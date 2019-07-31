@@ -1,13 +1,10 @@
-{% extends "fiscales/carga.html" %}
+{% extends "elecciones/resultados.html" %}
 {% load staticfiles %}
 {% load i18n material_form material_frontend staticfiles %}
 
 {% block title %}Mesas del circuito{% endblock %}
 
 {% block page_title %}Mesas para {{circuito_seleccionado.nombre_completo}}{% endblock %}
-
-{% block breadcrumbs %}
-{% endblock %}
 
 {% block head %}
 {{ block.super }}
@@ -16,10 +13,10 @@
 {% endblock %}
 
 {% block sidenav_items %}
-{% for mesa in mesas|dictsort:"numero" %}
+{% for mesa in mesas %}
 <ul>
     <li id="mesa-{{mesa.id}}">
-        <a href="{{ request.path }}?mesa={{ mesa.id }}">
+        <a href="{{ request.path }}?mesa={{ mesa.id }}&{{ url_params }}">
             Mesa {{ mesa.numero }}
         </a>
     </li>
@@ -32,22 +29,25 @@
     {% for categoria in categorias %}
     <li class="tab col s3">
         <a target="_self"
-            href="{% url 'mesas-circuito' circuito_seleccionado.id categoria.id %}?{{ request.GET.urlencode }}"
-            {% if categoria.id == categoria_seleccionada.id %}class=" active" {% endif %}>{{ categoria.nombre }}</a>
+            href="{% url 'mesas-circuito' categoria.id %}?{{ request.GET.urlencode }}"
+            {% if categoria.id == object.id %}class=" active" {% endif %}>{{ categoria.nombre }}</a>
     </li>
     {% endfor %}
 </ul>
 <div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
     <div class="card-content" id="frame{{categoria.id}}">
-        <p>{{ mensaje_error }}</p>
+        {% if resultados %}
         <table class="highlight bordered {% if responsive %}responsive-table{% endif %}">
-            {% for r in reportados %}
+            {% for r in resultados %}
                 <tr>
                     <th>{{ r.opcion }}</th>
-                    <td> {{ r.votos }}</td>
+                    <td>{{ r.votos }}</td>
                 </tr>
             {% endfor %}
         </table>
+        {% else %}
+        <p>{{ mensaje_no_hay_info }}</p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -84,5 +84,3 @@
 
 </div>
 {% endblock right-panel %}
-{% block messages %}
-{% endblock messages %}
