@@ -85,6 +85,8 @@ class IdentificacionCreateView(CreateView):
     def get_initial(self):
         initial = super(CreateView, self).get_initial()
         pre_identificacion = self.attachment.pre_identificacion
+        if pre_identificacion is None:
+            return inital
         if pre_identificacion.distrito is not None:
             initial['distrito'] = pre_identificacion.distrito
         if pre_identificacion.seccion is not None:
@@ -329,12 +331,6 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
                 context['distrito_precargado'] = fiscal.seccion.distrito
 
         return self.render_to_response(context)
-
-    # def get_initial(self):
-    #     initial = super(FormView, self).get_initial()
-    #     initial['distrito'] = 1 # Distrito.objects.get(id=1)
-    #     return initial
-
     
     def post(self, request, *args, **kwargs):
         form_class = AgregarAttachmentsForm
