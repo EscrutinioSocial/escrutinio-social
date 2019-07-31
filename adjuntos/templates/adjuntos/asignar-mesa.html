@@ -9,6 +9,37 @@
 {% block js %}
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
+<script language="javascript">
+  function updateCircuito(){
+      var url ="{% url 'autocomplete-cmd' %}";
+      var mesa_nro = $("#id_mesa").val();
+      var distrito_id = $("#id_distrito").val();
+      var req_url = url+'?forward={"mesa":"'+mesa_nro+'","distrito":"'+distrito_id+'"}';
+      updateField('#id_circuito',req_url);
+  }
+  function updateSeccion(){
+      var url ="{% url 'autocomplete-smd' %}";
+      var mesa_nro = $("#id_mesa").val();
+      var distrito_id = $("#id_distrito").val();
+      var req_url = url+'?forward={"mesa":"'+mesa_nro+'","distrito":"'+distrito_id+'"}';
+      updateField('#id_seccion',req_url);
+  }
+  function updateField(target,url){
+    var targetSelect = $(target);
+    $.ajax({
+      	  type: 'GET',
+      	  url: url
+    }).then(function (data) {
+	var op = data['results'][0];
+      	    var option = new Option(op['text'], op['id'], true, true);
+      	    targetSelect.append(option).trigger('change');
+      	    targetSelect.trigger({
+                type: 'select2:select',
+                params: {data: op}
+            })}
+	   );
+  }
+</script>
 {% block extrajs %}{% endblock %}
 {% endblock %}
 
@@ -93,8 +124,9 @@ $(document).ready(function() {
           {% csrf_token %}
           <div class="card-content">
             {% block card-content %}
-              <div class="card-title">¿De qué mesa es esta acta?  {{ distrito_precargado }} </div> 
-              {% form form=form %}{% endform %}
+              <div class="card-title">¿De qué mesa es esta acta?</div> 
+              {% form form=form %}
+	      {% endform %}
 	      {{form.media.js}}
             {% endblock card-content %}
           </div>

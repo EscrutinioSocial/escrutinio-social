@@ -15,7 +15,6 @@ class IdentificacionForm(forms.ModelForm):
         widget=autocomplete.ModelSelect2(
             url='autocomplete-distrito',
             attrs={
-                'data-placeholder': 'Autocompletar ...',
                 'data-minimum-input-length': 3,
             },
         )
@@ -23,16 +22,14 @@ class IdentificacionForm(forms.ModelForm):
     
     seccion = forms.ModelChoiceField(
         queryset=Seccion.objects.all(),
-        required=False,
         widget=autocomplete.ModelSelect2(
             url='autocomplete-seccion',
-            forward=['distrito']
+            forward=['distrito','mesa']
         )
     )
     
     circuito = forms.ModelChoiceField(
         queryset=Circuito.objects.all(),
-        required=False,
         widget=autocomplete.ModelSelect2(
             url='autocomplete-cmd',
             forward=['distrito','mesa']
@@ -43,7 +40,10 @@ class IdentificacionForm(forms.ModelForm):
         queryset=Mesa.objects.all(),
         widget=autocomplete.ModelSelect2(
             url='autocomplete-md',
-            forward=['distrito','circuito']
+            attrs={
+                'onChange': 'updateCircuito();updateSeccion();'
+            },
+            forward=['distrito']
         )
     )
     
@@ -124,10 +124,6 @@ class PreIdentificacionForm(forms.ModelForm):
             kwargs['initial']['seccion'] = seccion = circuito.seccion
             kwargs['initial']['distrito'] = distrito = seccion.distrito
         super().__init__(*args, **kwargs)
-        # self.fields['distrito'].widget.attrs['autofocus'] = True
-        # self.fields['seccion'].choices = (('', '---------'),)
-        # self.fields['seccion'].label = 'Sección'
-        # self.fields['circuito'].choices = (('', '---------'),)
 
     def clean(self):
         cleaned_data = super().clean()

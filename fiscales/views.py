@@ -525,7 +525,7 @@ class MesaListView(autocomplete.Select2QuerySetView):
         if circuito:
             qs = qs.filter(circuito_id=circuito)
         if self.q:
-            qs = qs.filter(nombre__istartswith=self.q)
+            qs = qs.filter(numero__istartswith=self.q)
         return qs
 
 
@@ -537,15 +537,16 @@ class MesaDistritoListView(autocomplete.Select2QuerySetView):
         if distrito:
             qs = qs.filter(circuito__seccion__distrito_id=distrito)
         if self.q:
-            qs = qs.filter(nombre__istartswith=self.q)
+            qs = qs.filter(numero__istartswith=self.q)
         return qs
 
     
+
 class CircuitoFromMesaDistrito(autocomplete.Select2QuerySetView):
     """Devuelve información sobre circuito y sección a partir de 
     (números de) Mesa y Distrito."""
     model = Circuito
-    
+
     def get_queryset(self):
         qs = Circuito.objects.all()
         lookups = Q()
@@ -560,7 +561,25 @@ class CircuitoFromMesaDistrito(autocomplete.Select2QuerySetView):
             lookups = Q(nombre__istartswith=self.q)
         return qs.filter(lookups)
 
-    
+class SeccionFromMesaDistrito(autocomplete.Select2QuerySetView):
+    """Devuelve información sobre Sección y sección a partir de 
+    (números de) Mesa y Distrito."""
+    model = Seccion
+
+    def get_queryset(self):
+        qs = Seccion.objects.all()
+        lookups = Q()
+        distrito = self.forwarded.get('distrito',None)
+        if distrito:
+            lookups = Q(seccion__distrito__id=distrito)
+        mesa = self.forwarded.get('mesa',None)
+        if mesa:
+            mesa = Mesa.objects.get(id=mesa)
+            lookups = Q(id=mesa.circuito.seccion_id)
+        if self.q:
+            lookups = Q(nombre__istartswith=self.q)
+        return qs.filter(lookups)
+
     
 class CircuitoFromMesaSeccion(AutocompleteBaseListView):
     model = Circuito

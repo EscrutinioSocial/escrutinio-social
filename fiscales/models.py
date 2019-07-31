@@ -23,11 +23,11 @@ from model_utils import Choices
 from django.contrib.auth.models import Group
 
 from antitrolling.models import (
-    registrar_fiscal_no_es_troll, marcar_fiscal_troll, EventoScoringTroll, crear_evento_marca_explicita_como_troll
+    crear_evento_marca_explicita_como_troll,
+    marcar_fiscal_troll,
+    registrar_fiscal_no_es_troll,
 )
 from antitrolling.efecto import efecto_determinacion_fiscal_troll
-
-TOTAL = 'Total General'
 
 
 class CodigoReferido(TimeStampedModel):
@@ -116,7 +116,6 @@ class Fiscal(models.Model):
     # el materialized path de referencias
     referido_por_codigos = models.CharField(max_length=250, blank=True, null=True)
 
-
     class Meta:
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'), )
@@ -157,6 +156,7 @@ class Fiscal(models.Model):
         return f'{self.nombres} {self.apellido}'
 
     def esta_en_grupo(self, nombre_grupo):
+
         grupo = Group.objects.get(name=nombre_grupo)
 
         return grupo in self.user.groups.all()
@@ -215,10 +215,8 @@ class Fiscal(models.Model):
         era_troll = self.troll
         self.troll = False
         self.save(update_fields=['troll'])
-        if (era_troll):
+        if era_troll:
             registrar_fiscal_no_es_troll(self, nuevo_scoring, actor)
-
-
 
 
 @receiver(post_save, sender=Fiscal)
@@ -237,13 +235,11 @@ def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, **kwar
             email=instance.emails[0] if instance.emails else ""
         )
 
-        # user.set_password(settings.DEFAULT_PASS_PREFIX + instance.dni[-3:])
         user.save()
         instance.user = user
         instance.save(update_fields=['user'])
     if not instance.codigos_de_referidos.exists():
         instance.crear_codigo_de_referidos()
-
 
 
 @receiver(pre_delete, sender=Fiscal)

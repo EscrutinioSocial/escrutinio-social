@@ -19,10 +19,9 @@
       </div>
         <form action="{{ url_to_post }}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            {% form form=pre_identificacion_form %}{% endform %}
-	    
             {{ attachment_form.as_p }}
-	    
+
+            {% form form=pre_identificacion_form %}{% endform %}
 	    
             <div class="card-action">
               <div class="right-align">

@@ -86,7 +86,7 @@ class IdentificacionCreateView(CreateView):
         initial = super(CreateView, self).get_initial()
         pre_identificacion = self.attachment.pre_identificacion
         if pre_identificacion is None:
-            return inital
+            return initial
         if pre_identificacion.distrito is not None:
             initial['distrito'] = pre_identificacion.distrito
         if pre_identificacion.seccion is not None:
@@ -114,7 +114,6 @@ class IdentificacionCreateView(CreateView):
             f'Identificada mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito}',
         )
         return super().form_valid(form)
-
 
 class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
     template_name = "adjuntos/asignar-mesa-ub.html"
@@ -320,15 +319,16 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data()
         attachment_form = AgregarAttachmentsForm()
-        pre_identificacion_form = PreIdentificacionForm()
+        initial = {}
+        if request.user and request.user.fiscal.seccion:
+            fiscal = request.user.fiscal
+            initial = {
+                'seccion':fiscal.seccion,
+                'distrito': fiscal.seccion.distrito
+            }
+        pre_identificacion_form = PreIdentificacionForm(initial=initial)
         context['attachment_form'] = attachment_form
         context['pre_identificacion_form'] = pre_identificacion_form
-        if request.user:
-            fiscal = request.user.fiscal
-            context['desde_ub'] = True
-            if fiscal.seccion:
-                context['seccion_precargada'] = fiscal.seccion
-                context['distrito_precargado'] = fiscal.seccion.distrito
 
         return self.render_to_response(context)
     

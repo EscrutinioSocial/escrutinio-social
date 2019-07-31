@@ -32,14 +32,14 @@ def carta_marina(db):
     c1, c2 = CircuitoFactory.create_batch(2, seccion=s1)
     c3, c4 = CircuitoFactory.create_batch(2, seccion=s2)
     return (
-        MesaFactory(numero=1, lugar_votacion__circuito=c1,
-                    electores=100), MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
-        MesaFactory(numero=3, lugar_votacion__circuito=c2,
-                    electores=120), MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
-        MesaFactory(numero=5, lugar_votacion__circuito=c3,
-                    electores=90), MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
-        MesaFactory(numero=7, lugar_votacion__circuito=c4,
-                    electores=90), MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90)
+        MesaFactory(numero=1, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=3, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=5, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=7, lugar_votacion__circuito=c4, electores=90),
+        MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90),
     )
 
 
@@ -65,6 +65,20 @@ def fiscal_client(db, admin_user, setup_groups, client):
 def url_resultados(carta_marina):
     c = CategoriaFactory(nombre='default')
     return reverse('resultados-categoria', args=[c.id])
+
+
+def test_resultados_pide_login(db, client, url_resultados):
+    response = client.get(url_resultados)
+    assert response.status_code == 302
+    query = f'?next={url_resultados}'
+    assert response.url == reverse('login') + query
+
+
+def test_resultados_pide_visualizador(db, fiscal_client, admin_user, url_resultados):
+    g = Group.objects.get(name='visualizadores')
+    admin_user.groups.remove(g)
+    response = fiscal_client.get(url_resultados)
+    assert response.status_code == 403          # permission denied
 
 
 def test_total_electores_en_categoria(carta_marina):
@@ -227,7 +241,6 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     assert resultados.votantes() == 220
     assert resultados.electores() == 800
-
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
