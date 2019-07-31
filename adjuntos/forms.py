@@ -34,16 +34,16 @@ class IdentificacionForm(forms.ModelForm):
         queryset=Circuito.objects.all(),
         required=False,
         widget=autocomplete.ModelSelect2(
-            url='autocomplete-circuito',
-            forward=['seccion']
+            url='autocomplete-cmd',
+            forward=['distrito','mesa']
         )
     )
     
     mesa = forms.ModelChoiceField(
         queryset=Mesa.objects.all(),
         widget=autocomplete.ModelSelect2(
-            url='autocomplete-mesa',
-            forward=['circuito']
+            url='autocomplete-md',
+            forward=['distrito','circuito']
         )
     )
     

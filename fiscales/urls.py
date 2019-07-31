@@ -8,7 +8,7 @@ urlpatterns = [
     url('^_autocomplete/c$', views.CircuitoListView.as_view(), name='autocomplete-circuito'),
     url('^_autocomplete/m$', views.MesaListView.as_view(), name='autocomplete-mesa'),
 
-    url('^_autocomplete/md$', views.CircuitoFromMesaDistrito.as_view(), name='autocomplete-md'),
+    url('^_autocomplete/md$', views.MesaDistritoListView.as_view(), name='autocomplete-md'),
     url('^_autocomplete/cmd$', views.CircuitoFromMesaDistrito.as_view(), name='autocomplete-cmd'),
     url('^_autocomplete/cms$', views.CircuitoFromMesaSeccion.as_view(), name='autocomplete-cms'),
     url('^_autocomplete/smc$', views.SeccionFromMesaCircuito.as_view(), name='autocomplete-smc'),

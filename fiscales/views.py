@@ -529,40 +529,37 @@ class MesaListView(autocomplete.Select2QuerySetView):
         return qs
 
 
-class MesaForDistritoListView(MesaListView):
+class MesaDistritoListView(autocomplete.Select2QuerySetView):
     
     def get_queryset(self):
-        qs = super().get_queryset()
-        return qs.filter(circuito__seccion__distrito=self.request.GET['parent_id'])
+        qs = Mesa.objects.all()
+        distrito = self.forwarded.get('distrito',None)
+        if distrito:
+            qs = qs.filter(circuito__seccion__distrito_id=distrito)
+        if self.q:
+            qs = qs.filter(nombre__istartswith=self.q)
+        return qs
 
     
-class CircuitoFromMesaDistrito(ListView):
+class CircuitoFromMesaDistrito(autocomplete.Select2QuerySetView):
     """Devuelve información sobre circuito y sección a partir de 
     (números de) Mesa y Distrito."""
     model = Circuito
-
-    def get(self, request, *args, **kwargs):
-        try:
-            data = {'options':
-                    [
-                        {'circuito_id': c.id,
-                         'circuito': str(c),
-                         'seccion_id' : c.seccion.id,
-                         'seccion': str(c.seccion)
-                        } for c in self.get_queryset()
-                    ]
-            }
-        except:
-            return JsonResponse({'error': 'Some error'}, status=500, safe=False)
-        return JsonResponse(data, status=200, safe=False)
     
     def get_queryset(self):
-        qs = super().get_queryset()
-        distrito = self.request.GET['distrito']
-        mesa_nro = self.request.GET['mesa']
-        mesa = Mesa.objects.filter(numero=mesa_nro)
-        distrito = Distrito.objects.get(id=distrito)
-        return qs.filter(id__in=mesa.circuito_id,seccion__distrito__id=distrito.id).distinct()
+        qs = Circuito.objects.all()
+        lookups = Q()
+        distrito = self.forwarded.get('distrito',None)
+        if distrito:
+            lookups = Q(seccion__distrito__id=distrito)
+        mesa = self.forwarded.get('mesa',None)
+        if mesa:
+            mesa = Mesa.objects.get(id=mesa)
+            lookups = Q(id=mesa.circuito_id)
+        if self.q:
+            lookups = Q(nombre__istartswith=self.q)
+        return qs.filter(lookups)
+
     
     
 class CircuitoFromMesaSeccion(AutocompleteBaseListView):
