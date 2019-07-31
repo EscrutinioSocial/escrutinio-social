@@ -63,7 +63,7 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # nuestras apps
-    'elecciones',
+    'elecciones.apps.EleccionesAppConfig',
     'fiscales',
     'adjuntos',
     'problemas',
