@@ -30,14 +30,16 @@ easyimap==0.6.3
 factory_boy==2.12.0
 pytest-django==3.5.1
 django-autocomplete-light==3.4.1
+python-dotenv==0.10.3
 
 # pytest-cov==2.7.1
 # PR open at https://github.com/pytest-dev/pytest-cov/pull/311
 git+https://github.com/mgaitan/pytest-cov.git@260-cov-fail-under-float
+
 pytest-django==3.5.1
 pytest-mock==1.10.4
 psycopg2_binary==2.8.2
-sentry-sdk==0.7.6
+sentry-sdk==0.10.2
 django-excel==0.0.10
 pyexcel==0.5.13
 djangorestframework==3.9.4

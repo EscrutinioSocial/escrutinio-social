@@ -1,5 +1,6 @@
 from django import forms
 from django.conf import settings
+from django.core.validators import FileExtensionValidator
 
 from .models import Identificacion, PreIdentificacion, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
@@ -161,7 +162,6 @@ class BaseUploadForm(forms.Form):
 
 
 class AgregarAttachmentsForm(BaseUploadForm):
-
     """
     Form para subir uno o más archivos para ser asociados a instancias de
     :py:class:`adjuntos.Attachment`
@@ -172,8 +172,8 @@ class AgregarAttachmentsForm(BaseUploadForm):
 
 
 class AgregarAttachmentsCSV(BaseUploadForm):
-
     """
     Form para subir uno o más archivos CSV.
     """
-    file_field = forms.FileField(label="Archivos .csv")
+    file_field = forms.FileField(label="Archivos .csv", validators=[FileExtensionValidator(allowed_extensions=['csv'])])
+

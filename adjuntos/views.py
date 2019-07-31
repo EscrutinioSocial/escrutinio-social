@@ -384,7 +384,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             return super().dispatch(request, *args, **kwargs)
         return HttpResponseForbidden()
 
-    def cargar_informacion_adjunto(self, adjunto):
+    def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion):
         # Valida la info del archivo.
         try:
             CSVImporter(adjunto, self.request.user).procesar()
