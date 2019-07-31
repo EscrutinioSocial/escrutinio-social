@@ -209,3 +209,19 @@ def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
         CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_total.csv', usr_unidad_basica).procesar()
     assert "Los resultados para la carga total para la categoría Intendentes, Concejales y Consejeros Escolares deben estar completos. " \
            "Faltan las opciones: ['JpC']." in str(e.value)
+
+def test_caracteres_alfabeticos_en_votos(db, usr_unidad_basica, carga_inicial):
+    with pytest.raises(DatosInvalidosError) as e:
+        CSVImporter(PATH_ARCHIVOS_TEST + 'valores_texto_en_votos.csv', usr_unidad_basica).procesar()
+    assert 'Revise que los datos de resultados sean numéricos.' in str(e.value)
+
+def test_procesar_csv_informacion_valida_con_listas_numericas(db, usr_unidad_basica, carga_inicial):
+    fdt = Opcion.objects.get(nombre='FdT')
+    fdt.codigo = '136'
+    fdt.save()
+    CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok_con_listas_numericas.csv', usr_unidad_basica).procesar()
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene
+    # además opción no prioritaria.
+    assert cargas_totales.count() == 2
