@@ -347,7 +347,12 @@ CONSTANCE_CONFIG = {
 }
 
 
-try:
-    from .local_settings import *  # noqa
-except ImportError:
-    pass
+import sys
+TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
+
+# Para los tests no se importan los local settings.
+if not TESTING:
+    try:
+        from .local_settings import *  # noqa
+    except ImportError:
+        pass
