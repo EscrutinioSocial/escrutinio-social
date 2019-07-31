@@ -7,7 +7,7 @@ from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from djgeojson.views import GeoJSONLayerView
-from django.contrib.auth.mixins import LoginRequiredMixin, AccessMixin
+from django.contrib.auth.mixins import AccessMixin
 from .models import (
     Distrito,
     Seccion,
@@ -181,7 +181,9 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['tecnicas_de_proyeccion_seleccionado'] = self.get_tecnica_de_proyeccion()
 
         if self.sumarizador.filtros:
-            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.sumarizador.filtros], " y ")
+            context['para'] = get_text_list([
+                objeto.nombre_completo() for objeto in self.sumarizador.filtros
+            ], " y ")
         else:
             context['para'] = 'todo el país'
 
