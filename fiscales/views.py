@@ -15,6 +15,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
+from django.db.models import Q
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
 from .models import Fiscal, CodigoReferido
@@ -491,29 +492,41 @@ class DistritoListView(autocomplete.Select2QuerySetView):
             qs = qs.filter(nombre__istartswith=self.q)
         return qs
 
-    
-class SeccionListView(AutocompleteBaseListView):
+class SeccionListView(autocomplete.Select2QuerySetView):
     model = Seccion
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        return qs.filter(distrito__id=self.request.GET['parent_id'])
+        qs = Seccion.objects.all()
+        distrito = self.forwarded.get('distrito',None)
+        if distrito:
+            qs = qs.filter(distrito_id=distrito)
+        if self.q:
+            qs = qs.filter(nombre__istartswith=self.q)
+        return qs
 
-
-class CircuitoListView(AutocompleteBaseListView):
+class CircuitoListView(autocomplete.Select2QuerySetView):
     model = Circuito
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        return qs.filter(seccion__id=self.request.GET['parent_id'])
+        qs = Circuito.objects.all()
+        seccion = self.forwarded.get('seccion',None)
+        if seccion:
+            qs = qs.filter(seccion_id=seccion)
+        if self.q:
+            qs = qs.filter(nombre__istartswith=self.q)
+        return qs
 
-
-class MesaListView(AutocompleteBaseListView):
+class MesaListView(autocomplete.Select2QuerySetView):
     model = Mesa
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        return qs.filter(lugar_votacion__circuito__id=self.request.GET['parent_id'])
+        qs = Mesa.objects.all()
+        circuito = self.forwarded.get('circuito',None)
+        if circuito:
+            qs = qs.filter(circuito_id=circuito)
+        if self.q:
+            qs = qs.filter(nombre__istartswith=self.q)
+        return qs
 
 
 class MesaForDistritoListView(MesaListView):

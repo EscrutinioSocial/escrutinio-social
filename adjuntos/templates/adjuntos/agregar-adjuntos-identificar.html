@@ -1,6 +1,9 @@
 {% extends "fiscales/base.html" %}
 {% load i18n material_form material_frontend %}
 {% load staticfiles %}
+{% block extrahead %}
+<link href="/static/css/select2-materialize.css" type="text/css" media="screen" rel="stylesheet">
+{% endblock %}
 
 {% block page_title %}Subir actas y pre identificarlas{% endblock %}
 
@@ -9,29 +12,29 @@
 
     <div class="card-content">
 
-        <div class="card-title">{% block card-title %}
-            Subir actas y pre identificarlas
-            {% endblock card-title %}</div>
-
+      <div class="card-title">
+	{% block card-title %}
+	¿De qué sección/circuito son estas actas?
+        {% endblock card-title %}
+      </div>
         <form action="{{ url_to_post }}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            {# FIXME django-material desactiva el atributo multiple del filefield #}
-            {# {% form  %}{% endform %} #}
-            {{ attachment_form }}
-
-            <div class="card-title">¿De qué sección/circuito son estas actas?</div>
-                  {% include "adjuntos/asignar-mesa-form.html" with form=pre_identificacion_form %}
-            </div>
+            {% form form=pre_identificacion_form %}{% endform %}
+	    
+            {{ attachment_form.as_p }}
+	    
 	    
             <div class="card-action">
-                <div class="right-align">
-                    {% block submit_row %}
-                    <button type="submit" class="waves-effect waves-light btn white-text">Subir</button>
-                    {% endblock %}
-                </div>
+              <div class="right-align">
+                {% block submit_row %}
+                <button type="submit" class="waves-effect waves-light btn white-text">Subir</button>
+                {% endblock %}
+              </div>
             </div>
         </form>
 
     </div>
 </div>
+{{ pre_identificacion_form.media.js }}
+
 {% endblock %}

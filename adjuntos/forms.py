@@ -20,34 +20,33 @@ class IdentificacionForm(forms.ModelForm):
             },
         )
     )
+    
     seccion = forms.ModelChoiceField(
         queryset=Seccion.objects.all(),
+        required=False,
         widget=autocomplete.ModelSelect2(
             url='autocomplete-seccion',
-            forward=('seccion',)
+            forward=['distrito']
         )
     )
-
-    # distrito = forms.ModelChoiceField(
-    #     queryset=Distrito.objects.all(),
-    #     widget=autocomplete.ModelSelect2(url='autocomplete-distrito')
-    # )
-    # seccion = forms.ModelChoiceField(
-    #     queryset=Seccion.objects.all(),
-    #     widget=autocomplete.ModelSelect2(url='autocomplete-seccion',
-    #                               forward=['distrito']) 
-    # )
-    circuito = forms.ModelChoiceField(queryset=Circuito.objects.all())
-    mesa = forms.ModelChoiceField(queryset=Mesa.objects.all())
-
-    # distrito = autocomplete.ModelSelect2(url='seccion-autocomplete')
-                                         
-    # seccion = autocomplete.ModelSelect2(url='seccion-autocomplete',
-    #                        forward=['distrito']) 
-    # circuito = autocomplete.ModelSelect2(url='circuito-autocomplete',
-    #                         forward=['seccion'])
-    # mesa = autocomplete.ModelSelect2(url='seccion-autocomplete',
-    #                     forward=['circuito'])
+    
+    circuito = forms.ModelChoiceField(
+        queryset=Circuito.objects.all(),
+        required=False,
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-circuito',
+            forward=['seccion']
+        )
+    )
+    
+    mesa = forms.ModelChoiceField(
+        queryset=Mesa.objects.all(),
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-mesa',
+            forward=['circuito']
+        )
+    )
+    
     class Meta:
         model = Identificacion
         fields = ['distrito','mesa','seccion','circuito']
@@ -59,12 +58,8 @@ class IdentificacionForm(forms.ModelForm):
             kwargs['initial']['seccion'] = seccion = circuito.seccion
             kwargs['initial']['distrito'] = distrito = seccion.distrito
         super().__init__(*args, **kwargs)
-        # self.fields['distrito'].widget.attrs['autofocus'] = True
-        # self.fields['seccion'].choices = (('', '---------'),)
-        # self.fields['seccion'].label = 'Sección'
-        # self.fields['mesa'].choices = (('', '---------'),)
-        # self.fields['circuito'].choices = (('', '---------'),)
-            
+
+
     def clean(self):
         cleaned_data = super().clean()
         mesa = cleaned_data.get('mesa')
@@ -90,9 +85,33 @@ class PreIdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar una pre identificación a un adjunto.
     """
-    distrito = forms.ModelChoiceField(queryset=Distrito.objects.all())
-    seccion = forms.ModelChoiceField(queryset=Seccion.objects.all(), required=False)
-    circuito = forms.ModelChoiceField(queryset=Circuito.objects.all(),required=False)
+    distrito = forms.ModelChoiceField(
+        queryset=Distrito.objects.all(),
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-distrito',
+            attrs={
+                'data-minimum-input-length': 3,
+            },
+        )
+    )
+    
+    seccion = forms.ModelChoiceField(
+        queryset=Seccion.objects.all(),
+        required=False,
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-seccion',
+            forward=['distrito']
+        )
+    )
+    
+    circuito = forms.ModelChoiceField(
+        queryset=Circuito.objects.all(),
+        required=False,
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-circuito',
+            forward=['seccion']
+        )
+    )
 
     class Meta:
         model = PreIdentificacion
@@ -105,10 +124,10 @@ class PreIdentificacionForm(forms.ModelForm):
             kwargs['initial']['seccion'] = seccion = circuito.seccion
             kwargs['initial']['distrito'] = distrito = seccion.distrito
         super().__init__(*args, **kwargs)
-        self.fields['distrito'].widget.attrs['autofocus'] = True
-        self.fields['seccion'].choices = (('', '---------'),)
-        self.fields['seccion'].label = 'Sección'
-        self.fields['circuito'].choices = (('', '---------'),)
+        # self.fields['distrito'].widget.attrs['autofocus'] = True
+        # self.fields['seccion'].choices = (('', '---------'),)
+        # self.fields['seccion'].label = 'Sección'
+        # self.fields['circuito'].choices = (('', '---------'),)
 
     def clean(self):
         cleaned_data = super().clean()

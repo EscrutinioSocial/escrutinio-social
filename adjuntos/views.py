@@ -29,6 +29,7 @@ from problemas.forms import IdentificacionDeProblemaForm
 
 from .forms import AgregarAttachmentsForm, AgregarAttachmentsCSV, IdentificacionForm
 from .models import Attachment, Identificacion
+from elecciones.models import Distrito
 
 
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
@@ -81,20 +82,23 @@ class IdentificacionCreateView(CreateView):
             raise PermissionDenied()
         return attachment
 
+    def get_initial(self):
+        initial = super(CreateView, self).get_initial()
+        pre_identificacion = self.attachment.pre_identificacion
+        if pre_identificacion.distrito is not None:
+            initial['distrito'] = pre_identificacion.distrito
+        if pre_identificacion.seccion is not None:
+            initial['seccion'] = pre_identificacion.seccion
+        if pre_identificacion.circuito is not None:
+            initial['circuito'] = pre_identificacion.circuito
+        return initial
+    
     def get_context_data(self, **kwargs):
         context = super(IdentificacionCreateView,self).get_context_data(**kwargs)
         context['attachment'] = self.attachment
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
-        context['pre_identificacion'] = False
-        pre_identificacion = self.attachment.pre_identificacion
-        if pre_identificacion.distrito is not None:
-            context['distrito_precargado'] = pre_identificacion.distrito
-        if pre_identificacion.seccion is not None:
-            context['seccion_precargada'] = pre_identificacion.seccion
-        if pre_identificacion.circuito is not None:
-            context['circuito_precargado'] = pre_identificacion.circuito
         return context
 
     def form_valid(self, form):
@@ -326,6 +330,12 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
 
         return self.render_to_response(context)
 
+    # def get_initial(self):
+    #     initial = super(FormView, self).get_initial()
+    #     initial['distrito'] = 1 # Distrito.objects.get(id=1)
+    #     return initial
+
+    
     def post(self, request, *args, **kwargs):
         form_class = AgregarAttachmentsForm
         form = self.get_form(form_class)
