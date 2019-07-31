@@ -107,26 +107,22 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-# Sobreescribir en local_settings.py si se instala localmente.
-# DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': 'db_name',
-#        'USER': 'postgres',
-#        'PASSWORD': '',
-#        'HOST': 'localhost' if os.environ.get('TRAVIS') == 'true' else 'db',
-#        'PORT': '',
-#    }
-# }
+# Si se instala localmente crear un archivo .env
+#
+# DB_NAME=db_name
+# DB_USER=postgres
+# DB_PASS=changeme
+# DB_HOST=db
+# DB_PORT=port
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASS'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': '',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASS'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT', ''),
     }
 }
 # Password validation
@@ -347,7 +343,12 @@ CONSTANCE_CONFIG = {
 }
 
 
-try:
-    from .local_settings import *  # noqa
-except ImportError:
-    pass
+import sys
+TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
+
+# Para los tests no se importan los local settings.
+if not TESTING:
+    try:
+        from .local_settings import *  # noqa
+    except ImportError:
+        pass
