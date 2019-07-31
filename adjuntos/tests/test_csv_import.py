@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group
 
 from adjuntos.csv_import import (ColumnasInvalidasError, CSVImporter, DatosInvalidosError,
                                  PermisosInvalidosError)
-from elecciones.models import Carga, VotoMesaReportado, CategoriaOpcion
+from elecciones.models import Carga, VotoMesaReportado, CategoriaOpcion, Opcion
 from elecciones.tests.factories import (
     DistritoFactory,
     SeccionFactory,
@@ -103,6 +103,12 @@ def carga_inicial(db):
     categorias = []
     for categoria, prioritaria in CATEGORIAS:
         categoria_bd = CategoriaFactory(nombre=categoria)
+
+        # La factory las crea con unas opciones que hacen ruido en estos tests.
+        for nombre in ['opc1', 'opc2', 'opc3', 'opc4']:
+            opcion = Opcion.objects.get(nombre=nombre)
+            opcion.delete()
+
         categorias.append(categoria_bd)
         CategoriaOpcionFactory(categoria=categoria_bd, prioritaria=prioritaria, opcion=fdt)
         CategoriaOpcionFactory(categoria=categoria_bd, prioritaria=prioritaria, opcion=jpc)
@@ -115,7 +121,7 @@ def carga_inicial(db):
             total_votos_cat_opcion.prioritaria = True
             total_votos_cat_opcion.save()
 
-            blancos = categoria_bd.get_opcion_total_sobres()
+            blancos = categoria_bd.get_opcion_blancos()
             blancos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=blancos)
             blancos_cat_opcion.prioritaria = True
             blancos_cat_opcion.save()
@@ -144,41 +150,23 @@ def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inici
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'falta_total_votos.csv', usr_unidad_basica).procesar()
-    assert "Los resultados para la carga parcial para la categoría Diputados Provinciales deben estar completos. " \
-           "Faltan las opciones: ['total de votos', 'total de sobres', 'votos nulos']." in str(e.value)
-
-
-def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
-    settings.OPCIONES_CARGAS_TOTALES_COMPLETAS = False
-    with pytest.raises(DatosInvalidosError) as e:
-        CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_parcial.csv', usr_unidad_basica).procesar()
-    assert "Los resultados para la carga parcial para la categoría Diputados Provinciales deben estar completos. " \
-           "Faltan las opciones: ['JpC']." in str(e.value)
-
-
-def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
-    for i in range(1, 5):
-        opc = "opc" + str(i)
-        CategoriaOpcion.objects.filter(opcion__nombre=opc).delete()
-
-    with pytest.raises(DatosInvalidosError) as e:
-        CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_total.csv', usr_unidad_basica).procesar()
-    assert "Los resultados para la carga total para la categoría Diputados Provinciales deben estar completos. " \
-           "Faltan las opciones: ['JpC']." in str(e.value)
+    assert "Faltan las opciones: ['total de votos']." in str(e.value)
 
 
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
     CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
-    assert cargas_totales.count() == len(CATEGORIAS)
+    # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene
+    # además opción no prioritaria.
+    assert cargas_totales.count() == 2
     for total in cargas_totales:
         assert total.origen == 'csv'
 
     votos_carga_total = VotoMesaReportado.objects.filter(carga__in=cargas_totales).all()
-    # Cats: DP, SP, SN, DN, Int, Gob tienen 2 partidos + blancos + nulos + sobres= 6 * 5
-    # Cat: Pres tiene 3 partidos + blancos + nulos + sobres = 6
-    assert votos_carga_total.count() == 36
+    # Cat Int tiene 2 partidos + total + blancos + nulos + sobres = 6
+    # Cat Pres tiene 3 partidos + total + blancos + nulos + sobres = 7
+    assert votos_carga_total.count() == 13
 
     cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial)
     # Hay una sola categoría no prioritaria.
@@ -188,8 +176,8 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica
         assert parcial.origen == 'csv'
 
     votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=cargas_parciales).all()
-    # Cada cat tiene 2 partidos + blancos + nulos + sobres = 5
-    assert votos_carga_parcial.count() == (len(CATEGORIAS) - 1) * 5
+    # Cada cat tiene 2 partidos + total + blancos + nulos + sobres = 6
+    assert votos_carga_parcial.count() == (len(CATEGORIAS) - 1) * 6
 
 
 def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unidad_basica, carga_inicial):
@@ -207,3 +195,17 @@ def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unida
         for voto in carga_parcial.reportados.all():
             assert VotoMesaReportado.objects.filter(carga=carga_total_misma_mc, votos=voto.votos,
                                                     opcion=voto.opcion).exists()
+
+
+def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
+    settings.OPCIONES_CARGAS_TOTALES_COMPLETAS = False
+    with pytest.raises(DatosInvalidosError) as e:
+        CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_parcial.csv', usr_unidad_basica).procesar()
+    assert "Faltan las opciones: ['JpC']." in str(e.value)
+
+
+def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
+    with pytest.raises(DatosInvalidosError) as e:
+        CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_total.csv', usr_unidad_basica).procesar()
+    assert "Los resultados para la carga total para la categoría Intendentes, Concejales y Consejeros Escolares deben estar completos. " \
+           "Faltan las opciones: ['JpC']." in str(e.value)

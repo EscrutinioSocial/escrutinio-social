@@ -129,6 +129,49 @@ class CSVImporter:
             self.mesas_matches[nro_de_mesa] = match_mesa
             self.mesas.append(match_mesa)
 
+    def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
+        self.logger.debug("- Procesando mesa '%s'.", mesa)
+        # Obtengo la mesa correspondiente.
+        mesa_bd = self.mesas_matches[mesa[2]]
+        self.cantidad_electores_mesa = None
+        self.cantidad_sobres_mesa = None
+
+        # Vamos a acumular las cargas.
+        cargas = []
+
+        # Analizo por categoria-mesa, y por cada categoria-mesa, todos los partidos posibles
+        for mesa_categoria in mesa_bd.mesacategoria_set.all():
+            cargas.append((mesa_categoria.categoria,
+                           self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria,
+                                                      columnas_categorias)))
+
+        # Esto lo puedo hacer recién acá porque tengo que iterar por todas las "categorías" primero
+        # para encontrar la de la metadata.
+        for categoria, (carga_parcial, carga_total) in cargas:
+            if carga_parcial:
+                carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
+
+            # A todas las cargas le tengo que agregar el total de electores y de sobres.
+            self.agregar_electores_y_sobres(mesa, carga_parcial)
+            self.agregar_electores_y_sobres(mesa, carga_total)
+
+            self.logger.debug("----+ El settings.OPCIONES_CARGAS_TOTALES_COMPLETAS es %s",
+                              str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
+            if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
+                self.logger.debug("----+ Validando carga total.")
+                # Si el flag de cargas totales esta activo y hay carga total, entonces verificamos que estén
+                # todas las opciones para todas las categorías.
+                opciones = CategoriaOpcion.objects.filter(categoria=categoria).values_list('opcion__id', flat=True)
+                self.validar_carga_total(carga_total, categoria, opciones)
+
+            elif carga_parcial:
+                self.logger.debug("----+ Validando carga parcial.")
+                # Si se cargaron las cargas parciales, entonces verificamos que estén todas las opciones
+                # de las categorias prioritarias
+                opciones = CategoriaOpcion.objects.filter(categoria=categoria, prioritaria=True).values_list(
+                    'opcion__id', flat=True)
+                self.validar_carga_parcial(carga_parcial, categoria, opciones)
+
     def cargar_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
         """
         Realiza la carga correspondiente a una mesa y una categoría.
@@ -202,61 +245,13 @@ class CSVImporter:
         si corresponde.
         """
         if not carga_total:
-            carga_total = Carga.objects.create(
-                tipo=Carga.TIPOS.total,
-                origen=Carga.SOURCES.csv,
-                mesa_categoria=carga_parcial.mesa_categoria,
-                fiscal=self.fiscal
-            )
+            return
 
         for voto_mesa_reportado_parcial in carga_parcial.reportados.all():
             VotoMesaReportado.objects.create(votos=voto_mesa_reportado_parcial.votos,
                                              opcion=voto_mesa_reportado_parcial.opcion, carga=carga_total)
 
         return carga_total
-
-    def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
-        self.logger.debug("- Procesando mesa '%s'.", mesa)
-        # Obtengo la mesa correspondiente.
-        mesa_bd = self.mesas_matches[mesa[2]]
-        self.cantidad_electores_mesa = None
-        self.cantidad_sobres_mesa = None
-
-        # Vamos a acumular las cargas.
-        cargas = []
-
-        # Analizo por categoria-mesa, y por cada categoria-mesa, todos los partidos posibles
-        for mesa_categoria in mesa_bd.mesacategoria_set.all():
-            cargas.append((mesa_categoria.categoria,
-                           self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria,
-                                                      columnas_categorias)))
-
-        # Esto lo puedo hacer recién acá porque tengo que iterar por todas las "categorías" primero
-        # para encontrar la de la metadata.
-        for categoria, (carga_parcial, carga_total) in cargas:
-            if carga_parcial:
-                carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
-
-            # A todas las cargas le tengo que agregar el total de electores y de sobres.
-            self.agregar_electores_y_sobres(mesa, carga_parcial)
-            self.agregar_electores_y_sobres(mesa, carga_total)
-
-            self.logger.debug("----+ El settings.TOTALES_COMPLETAS es %s",
-                              str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
-            if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
-                self.logger.debug("----+ Validando carga total.")
-                # Si el flag de cargas totales esta activo y hay carga total, entonces verifcamos que estén
-                # todas las opciones para todas las categorias
-                opciones = CategoriaOpcion.objects.filter(categoria=categoria).values_list('opcion__id', flat=True)
-                self.validar_carga_total(carga_total, categoria, opciones)
-
-            elif carga_parcial:
-                self.logger.debug("----+ Validando carga parcial.")
-                # Si se cargaron las cargas parciales, entonces verificamos que estén todas las opciones
-                # de las categorias prioritarias
-                opciones = CategoriaOpcion.objects.filter(categoria=categoria, prioritaria=True).values_list(
-                    'opcion__id', flat=True)
-                self.validar_carga_parcial(carga_parcial, categoria, opciones)
 
     def agregar_electores_y_sobres(self, mesa, carga):
         if not carga:
