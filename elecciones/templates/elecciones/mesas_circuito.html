@@ -15,7 +15,7 @@
 {% block sidenav_items %}
 {% for mesa in mesas %}
 <ul>
-    <li id="mesa-{{mesa.id}}">
+    <li id="mesa-{{mesa.id}}" {% if mesa.id == mesa_seleccionada.id %} class=" active" {% endif %}>
         <a href="{{ request.path }}?mesa={{ mesa.id }}&{{ url_params }}">
             Mesa {{ mesa.numero }}
         </a>
