@@ -173,6 +173,7 @@ class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     form = FiscalForm
     list_display = ('__str__', 'dni', 'referente', 'referido_por_codigos', es_staff, 'troll', scoring_troll)
+    readonly_fields = ['troll']
     search_fields = ('apellido', 'nombres', 'dni',)
     list_display_links = ('__str__',)
     list_filter = (TieneReferente, CertezaFilter, 'troll', EsStaffFilter, 'estado')

@@ -67,6 +67,20 @@ def url_resultados(carta_marina):
     return reverse('resultados-categoria', args=[c.id])
 
 
+def test_resultados_pide_login(db, client, url_resultados):
+    response = client.get(url_resultados)
+    assert response.status_code == 302
+    query = f'?next={url_resultados}'
+    assert response.url == reverse('login') + query
+
+
+def test_resultados_pide_visualizador(db, fiscal_client, admin_user, url_resultados):
+    g = Group.objects.get(name='visualizadores')
+    admin_user.groups.remove(g)
+    response = fiscal_client.get(url_resultados)
+    assert response.status_code == 403          # permission denied
+
+
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
     # implicitamente está creada la categoria default que tiene todo el padron
@@ -84,7 +98,7 @@ def test_electores_filtro_mesa(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados, {'mesa': mesa1.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
-    assert b'<td title="Electores">120 </td>' in response.content
+    assert b'<td title="Electores">120</td>' in response.content
 
 
 def test_electores_filtro_mesa_multiple_categoria(fiscal_client):
@@ -97,7 +111,7 @@ def test_electores_filtro_mesa_multiple_categoria(fiscal_client):
     response = fiscal_client.get(url, {'mesa': mesa1.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
-    assert b'<td title="Electores">120 </td>' in response.content
+    assert b'<td title="Electores">120</td>' in response.content
 
 
 def test_electores_filtro_escuela(url_resultados, fiscal_client):
@@ -108,7 +122,7 @@ def test_electores_filtro_escuela(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados, {'lugar_de_votacion': e.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 200
-    assert b'<td title="Electores">200 </td>' in response.content
+    assert b'<td title="Electores">200</td>' in response.content
 
 
 def test_electores_filtro_circuito(url_resultados, fiscal_client):
@@ -117,7 +131,7 @@ def test_electores_filtro_circuito(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados, {'circuito': mesa1.lugar_votacion.circuito.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
-    assert b'<td title="Electores">120 </td>' in response.content
+    assert b'<td title="Electores">120</td>' in response.content
 
 
 def test_electores_filtro_seccion(url_resultados, fiscal_client):
@@ -126,7 +140,7 @@ def test_electores_filtro_seccion(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados, {'seccion': mesa1.lugar_votacion.circuito.seccion.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
-    assert b'<td title="Electores">120 </td>' in response.content
+    assert b'<td title="Electores">120</td>' in response.content
 
 
 def test_electores_filtro_distrito(url_resultados, fiscal_client):
@@ -136,19 +150,19 @@ def test_electores_filtro_distrito(url_resultados, fiscal_client):
     )
     resultados = response.context['resultados']
     assert resultados.electores() == 90
-    assert b'<td title="Electores">90 </td>' in response.content
+    assert b'<td title="Electores">90</td>' in response.content
 
 
 def test_electores_sin_filtro(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados)
     resultados = response.context['resultados']
     assert resultados.electores() == 800
-    assert b'<td title="Electores">800 </td>' in response.content
+    assert b'<td title="Electores">800</td>' in response.content
 
 
 def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # resultados para mesa 1
-    m1, _, m3, *_ = carta_marina
+    m1, m2, m3, *otras_mesas = carta_marina
     categoria = m1.categorias.get()  # sólo default
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
@@ -161,10 +175,12 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     total = categoria.get_opcion_total_votos()
 
     mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
+    mc2 = MesaCategoria.objects.get(mesa=m2, categoria=categoria)
     mc3 = MesaCategoria.objects.get(mesa=m3, categoria=categoria)
     c1 = CargaFactory(mesa_categoria=mc1, tipo=Carga.TIPOS.parcial)
     c2 = CargaFactory(mesa_categoria=mc3, tipo=Carga.TIPOS.parcial)
-    consumir_novedades_y_actualizar_objetos([m1, m3])
+    c3 = CargaFactory(mesa_categoria=mc2, tipo=Carga.TIPOS.parcial)
+    consumir_novedades_y_actualizar_objetos([m1, m2, m3])
 
     VotoMesaReportadoFactory(carga=c1, opcion=o1, votos=20)
     VotoMesaReportadoFactory(carga=c1, opcion=o2, votos=30)
@@ -183,25 +199,26 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # votaron 120/120 personas
     VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=0)
     VotoMesaReportadoFactory(carga=c2, opcion=total, votos=120)
+
+    # votaron 45 / 100 personas
+    VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=45)
+    VotoMesaReportadoFactory(carga=c3, opcion=total, votos=45)
+
     c1.actualizar_firma()
     c2.actualizar_firma()
+    c3.actualizar_firma()
     assert c1.es_testigo.exists()
     assert c2.es_testigo.exists()
+    assert c3.es_testigo.exists()
 
     response = fiscal_client.get(
         url_resultados + f'?opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
     )
     resultados = response.context['resultados']
+
     positivos = resultados.tabla_positivos()
-
-    assert resultados.porcentaje_mesas_escrutadas() == '25.00'  # 2 de 8
-
     # se ordena de acuerdo al que va ganando
     assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
-
-    total_positivos = resultados.total_positivos()
-
-    assert total_positivos == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
 
     # cuentas
     assert positivos[o3.partido]['votos'] == 40 + 50
@@ -225,8 +242,27 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
 
-    assert resultados.votantes() == 220
-    assert resultados.electores() == 800
+    total_electores = sum(m.electores for m in carta_marina)
+
+    assert resultados.electores() == total_electores
+    assert resultados.total_positivos() == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+    assert resultados.porcentaje_mesas_escrutadas() == '37.50'  # 3 de 8
+    assert resultados.votantes() == 265
+    assert resultados.electores_en_mesas_escrutadas() == 320
+    assert resultados.porcentaje_escrutado() == f'{100 * 320 / total_electores:.2f}'
+    assert resultados.porcentaje_participacion() == f'{100 * 265 / total_electores:.2f}'
+
+    columna_datos = [
+        ('Electores', resultados.electores()),
+        ('Escrutados', resultados.electores_en_mesas_escrutadas()),
+        ('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
+        ('Votantes', resultados.votantes()),
+        ('Positivos', resultados.total_positivos()),
+        ('% Participación', f'{resultados.porcentaje_participacion()} %'),
+    ]
+    for variable, valor in columna_datos:
+        assert f'<td title="{variable}">{valor}</td>' in content
+
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
@@ -258,8 +294,10 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
     blanco = categoria.opciones.get(nombre='blanco')
 
-    # simulo que van entrandom resultados en las mesas 1 (la primera de la seccion 1) y 3 (la primera de la seccion 3)
-    # Resultados de la mesa 1: 120 votos en la mesa 1 para el partido 1, 80 para el 2, 0 para el 3 y en blanco
+    # simulo que van entraron resultados en las mesas 1 (la primera de la seccion 1)
+    # y 3 (la primera de la seccion 3).
+    #
+    # Resultados de la mesa 1: 120 votos partido 1, 80 para el 2, 0 para el 3 y 0 en blanco
     c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=categoria)
     consumir_novedades_y_actualizar_objetos([m1])
 
@@ -476,7 +514,8 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     consumir_novedades_y_actualizar_objetos()
 
     # TODO dependiendo de lo que se quiera la url podria ser algo como por ejemplo:
-    # response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias')
+    # response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) +
+    #       '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias')
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
         '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias'
@@ -639,11 +678,11 @@ def test_actualizar_electores(carta_marina):
 
 def test_permisos_vistas(setup_groups, url_resultados, client):
     u_visualizador = UserFactory()
-    visualizador = FiscalFactory(user=u_visualizador)
+    FiscalFactory(user=u_visualizador)
     g_visualizadores = Group.objects.get(name='visualizadores')
     u_visualizador.groups.add(g_visualizadores)
     u_validador = UserFactory()
-    validador = FiscalFactory(user=u_validador)
+    FiscalFactory(user=u_validador)
     g_validadores = Group.objects.get(name='validadores')
     u_validador.groups.add(g_validadores)
 
