@@ -9,7 +9,8 @@ from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
 from http import HTTPStatus
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga
-
+from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile
+import os
 
 def test_identificacion_create_view_get(fiscal_client, admin_user):
     a = AttachmentFactory()
@@ -120,3 +121,64 @@ def test_identificacion_sin_permiso(fiscal_client, admin_user, mocker):
     a.take(fiscal)
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
     assert response.status_code == 200
+
+def test_preidentificacion_create_view_post(fiscal_client):
+    content = open('adjuntos/tests/acta.jpg','rb')
+    file = SimpleUploadedFile('acta.jpg', content.read(), content_type="image/jpeg")
+
+    mesa_1 = MesaFactory()
+    data = {
+        'file_field': (file,),
+        'circuito': mesa_1.circuito.id,
+        'seccion': mesa_1.circuito.seccion.id,
+        'distrito': mesa_1.circuito.seccion.distrito.id,
+    }
+    response = fiscal_client.post(reverse('agregar-adjuntos'), data)
+    assert response.status_code == HTTPStatus.OK
+
+    attachment = Attachment.objects.all().first()
+
+    assert attachment.pre_identificacion is not None
+    assert attachment.status == Attachment.STATUS.sin_identificar
+
+    pre_identificacion = attachment.pre_identificacion
+    assert pre_identificacion.circuito == mesa_1.circuito
+    assert pre_identificacion.seccion == mesa_1.circuito.seccion
+    assert pre_identificacion.distrito == mesa_1.circuito.seccion.distrito
+
+
+def test_preidentificacion_sin_datos(fiscal_client):
+    content = open('adjuntos/tests/acta.jpg','rb')
+    file = SimpleUploadedFile('acta.jpg', content.read(), content_type="image/jpeg")
+
+    mesa_1 = MesaFactory()
+    data = {
+        'file_field': (file,),
+    }
+    response = fiscal_client.post(reverse('agregar-adjuntos'), data)
+    assert response.status_code == HTTPStatus.OK
+    
+    attachment = Attachment.objects.all().first()
+    assert attachment is None
+    assert "Este campo es requerido" in response.content.decode('utf8')
+
+
+def test_preidentificacion_con_datos_de_fiscal(fiscal_client):
+    content = open('adjuntos/tests/acta.jpg','rb')
+    mesa = MesaFactory()
+    seccion = mesa.circuito.seccion
+
+    form_response = fiscal_client.get(reverse('agregar-adjuntos'))
+    fiscal = form_response.wsgi_request.user.fiscal
+    fiscal.seccion = seccion
+    fiscal.save()
+    fiscal.refresh_from_db()
+
+    distrito_preset = f"presetOption('id_distrito','{seccion.distrito}','{seccion.distrito.id}');"
+    seccion_preset =  f"presetOption('id_seccion','{seccion}','{seccion.id}');"
+
+    response = fiscal_client.get(reverse('agregar-adjuntos'))
+    content = response.content.decode('utf8')
+
+    assert distrito_preset in content
+    assert seccion_preset in content

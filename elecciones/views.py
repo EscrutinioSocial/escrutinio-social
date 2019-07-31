@@ -1,46 +1,24 @@
-import itertools
 from django.conf import settings
-from functools import lru_cache
-from collections import defaultdict, OrderedDict
-from attrdict import AttrDict
-from django.http import JsonResponse
-from datetime import timedelta
-from django.utils import timezone
-from django.template.loader import render_to_string
-from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Q, F, Sum, Count, Subquery
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from djgeojson.views import GeoJSONLayerView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, HttpResponseForbidden
-from django.utils.functional import cached_property
-from django.views import View
-from django.contrib.auth.models import User
-from fiscales.models import Fiscal
-from django.db.models import Sum, IntegerField, Case, When
+from django.contrib.auth.mixins import AccessMixin
 from .models import (
     Distrito,
     Seccion,
     Circuito,
     Categoria,
-    Partido,
-    Opcion,
-    VotoMesaReportado,
     LugarVotacion,
-    MesaCategoria,
     Mesa,
 )
-from .resultados import Sumarizador
+from .resultados import Sumarizador, Proyecciones
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
-
 
 class StaffOnlyMixing:
     """
@@ -53,21 +31,21 @@ class StaffOnlyMixing:
         return super().dispatch(*args, **kwargs)
 
 
-class VisualizadoresOnlyMixin:
+class VisualizadoresOnlyMixin(AccessMixin):
     """
     Mixin para que sólo usuarios visualizadores
     accedan a la vista.
     """
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.fiscal.esta_en_grupo('visualizadores'):
-            return HttpResponseForbidden()
+        if not request.user.is_authenticated or not request.user.fiscal.esta_en_grupo('visualizadores'):
+            return self.handle_no_permission()
 
         pk = kwargs.get('pk')
         categoria = get_object_or_404(Categoria, id=pk)
 
         if categoria.sensible and not request.user.fiscal.esta_en_grupo('visualizadores_sensible'):
-            return HttpResponseForbidden()
+            return self.handle_no_permission()
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -138,6 +116,14 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
+def resultados_default(request):
+
+    e = Categoria.objects.filter(sensible=False).first()
+    if e is None:
+        raise EnvironmentError("Debe exisitr una categoría no sensible")
+    return redirect('resultados-categoria', args=[e.id])
+
+
 class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     """
     Vista principal para el cálculo de resultados
@@ -153,24 +139,30 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
                 nivel_de_agregacion = nivel
                 ids_a_considerar = self.request.GET.getlist(nivel)
 
-        self.sumarizador = Sumarizador(
-            self.get_tipo_de_agregacion(), self.get_opciones_a_considerar(), nivel_de_agregacion,
-            ids_a_considerar
+        parametros_sumarizacion = [
+            self.get_tipo_de_agregacion(),
+            self.get_opciones_a_considerar(),
+            nivel_de_agregacion,
+            ids_a_considerar,
+        ]
+
+        tecnica_de_proyeccion = next((tecnica for tecnica in Proyecciones.tecnicas_de_proyeccion()
+                                     if str(tecnica.id) == self.get_tecnica_de_proyeccion()), None)
+
+        self.sumarizador = (
+            Proyecciones(tecnica_de_proyeccion, *parametros_sumarizacion)
+            if tecnica_de_proyeccion
+            else Sumarizador(*parametros_sumarizacion)
         )
 
         self.ocultar_sensibles = not request.user.fiscal.esta_en_grupo('visualizadores_sensible')
+
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
 
     def get_resultados(self, categoria):
-        # TODO, ¿dónde entra lo proyectado?
-        # proyectado = (
-        #    self.request.method == "GET" and
-        #    self.request.GET.get('tipodesumarizacion', '1') == str(2) and
-        #    not self.filtros
-        # )
         return self.sumarizador.get_resultados(categoria)
 
     def get_tipo_de_agregacion(self):
@@ -180,6 +172,13 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     def get_opciones_a_considerar(self):
         # TODO el default también está en Sumarizador.__init__
         return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
+
+    def get_tecnica_de_proyeccion(self):
+        return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
+
+    def get_tecnicas_de_proyeccion(self):
+        return [settings.SIN_PROYECCION] + [(str(tecnica.id), tecnica.nombre)
+                                            for tecnica in Proyecciones.tecnicas_de_proyeccion()]
 
     def get_plot_data(self, resultados):
         return [{
@@ -194,9 +193,13 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['tipos_de_agregaciones_seleccionado'] = self.get_tipo_de_agregacion()
         context['opciones_a_considerar'] = Sumarizador.OPCIONES_A_CONSIDERAR
         context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
+        context['tecnicas_de_proyeccion'] = self.get_tecnicas_de_proyeccion()
+        context['tecnicas_de_proyeccion_seleccionado'] = self.get_tecnica_de_proyeccion()
 
         if self.sumarizador.filtros:
-            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.sumarizador.filtros], " y ")
+            context['para'] = get_text_list([
+                objeto.nombre_completo() for objeto in self.sumarizador.filtros
+            ], " y ")
         else:
             context['para'] = 'todo el país'
 

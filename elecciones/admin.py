@@ -1,9 +1,24 @@
 from django.contrib import admin
 from django.urls import reverse
+from djangoql.admin import DjangoQLSearchMixin
 from leaflet.admin import LeafletGeoAdmin
 from .models import (
-    Distrito, SeccionPolitica, Seccion, Circuito, LugarVotacion, Mesa, Partido, Opcion, CategoriaOpcion, Categoria,
-    VotoMesaReportado, MesaCategoria, Eleccion
+    Distrito,
+    SeccionPolitica,
+    Seccion,
+    Circuito,
+    LugarVotacion,
+    Mesa,
+    Partido,
+    Opcion,
+    CategoriaOpcion,
+    Categoria,
+    VotoMesaReportado,
+    MesaCategoria,
+    Eleccion,
+    TecnicaProyeccion,
+    AgrupacionCircuitos,
+    AgrupacionCircuito,
 )
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
@@ -197,20 +212,24 @@ class SeccionAdmin(admin.ModelAdmin):
     )
 
 
-class VotoMesaReportadoAdmin(admin.ModelAdmin):
+class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = [
         'carga',
         'id',
         'opcion',
+        'opcion_orden',
         'votos',
     ]
     list_display_links = list_display
-    ordering = ['-id']
     list_filter = ('carga__mesa_categoria__categoria', 'opcion')
     search_fields = [
-        'fiscal__nombre', 'carga__mesa_categoria__mesa__numero',
+        'carga__mesa_categoria__mesa__numero',
+        'carga__mesa_categoria__mesa__circuito__nombre',
         'carga__mesa_categoria__mesa__lugar_votacion__nombre'
     ]
+
+    def opcion_orden(self, obj):
+        return obj.opcion.orden
 
 
 class OpcionAdmin(admin.ModelAdmin):
@@ -228,6 +247,23 @@ class CategoriaOpcionAdmin(admin.ModelAdmin):
     ordering = ['categoria__nombre', 'opcion__orden']
 
 
+class TecnicaProyeccionAdmin(admin.ModelAdmin):
+    search_fields = ['nombre']
+    ordering = ['nombre']
+
+
+class AgrupacionCircuitoInline(admin.TabularInline):
+    model = AgrupacionCircuito
+    extra = 3
+
+
+class AgrupacionCircuitosAdmin(admin.ModelAdmin):
+    search_fields = ['proyeccion', 'nombre']
+    ordering = ['proyeccion']
+    list_filter = ('proyeccion', )
+    inlines = (AgrupacionCircuitoInline, )
+
+
 admin.site.register(Eleccion)
 admin.site.register(Distrito, DistritoAdmin)
 admin.site.register(SeccionPolitica, SeccionPoliticaAdmin)
@@ -241,3 +277,5 @@ admin.site.register(VotoMesaReportado, VotoMesaReportadoAdmin)
 admin.site.register(Opcion, OpcionAdmin)
 admin.site.register(Categoria, CategoriaAdmin)
 admin.site.register(CategoriaOpcion, CategoriaOpcionAdmin)
+admin.site.register(TecnicaProyeccion, TecnicaProyeccionAdmin)
+admin.site.register(AgrupacionCircuitos, AgrupacionCircuitosAdmin)

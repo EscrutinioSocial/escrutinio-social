@@ -52,7 +52,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-07-19T04:36:53.377Z",
+    "last_login": "2019-07-30T17:19:15.715Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -188,6 +188,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -210,6 +211,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -232,6 +234,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -254,6 +257,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -276,6 +280,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -298,6 +303,7 @@
     "seccion": null,
     "referente": null,
     "referente_certeza": 100,
+    "referencia_confirmada": false,
     "referente_nombres": null,
     "referente_apellido": null,
     "referido_por_codigos": null
@@ -532,7 +538,10 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": "2019-07-19T04:42:17.480Z",
-    "orden_de_carga": 0.5
+    "taken_by": null,
+    "percentil": null,
+    "orden_de_llegada": null,
+    "orden_de_carga": 0
   }
 },
 {
@@ -544,6 +553,9 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
+    "percentil": null,
+    "orden_de_llegada": null,
     "orden_de_carga": null
   }
 },
@@ -555,8 +567,11 @@
     "mesa": 3,
     "categoria": 1,
     "carga_testigo": null,
-    "taken": "2019-07-19T04:43:18.088Z",
-    "orden_de_carga": 0.5
+    "taken": "2019-07-30T17:19:24.701Z",
+    "taken_by": 1,
+    "percentil": null,
+    "orden_de_llegada": null,
+    "orden_de_carga": 0
   }
 },
 {
@@ -568,6 +583,9 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
+    "percentil": null,
+    "orden_de_llegada": null,
     "orden_de_carga": null
   }
 },
@@ -580,6 +598,9 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
+    "percentil": null,
+    "orden_de_llegada": null,
     "orden_de_carga": null
   }
 },
@@ -592,6 +613,9 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
+    "percentil": null,
+    "orden_de_llegada": null,
     "orden_de_carga": null
   }
 },
@@ -604,7 +628,10 @@
     "categoria": 1,
     "carga_testigo": 2,
     "taken": null,
-    "orden_de_carga": 0.5
+    "taken_by": null,
+    "percentil": null,
+    "orden_de_llegada": null,
+    "orden_de_carga": 0
   }
 },
 {
@@ -616,6 +643,9 @@
     "categoria": 1,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
+    "percentil": null,
+    "orden_de_llegada": null,
     "orden_de_carga": null
   }
 },
@@ -628,6 +658,9 @@
     "categoria": 2,
     "carga_testigo": null,
     "taken": null,
+    "taken_by": null,
+    "percentil": null,
+    "orden_de_llegada": null,
     "orden_de_carga": null
   }
 },
@@ -640,7 +673,10 @@
     "categoria": 2,
     "carga_testigo": null,
     "taken": null,
-    "orden_de_carga": 0.5
+    "taken_by": null,
+    "percentil": null,
+    "orden_de_llegada": null,
+    "orden_de_carga": 0
   }
 },
 {
@@ -753,9 +789,9 @@
   "fields": {
     "orden": 1,
     "numero": null,
-    "codigo": null,
+    "codigo": "p1",
     "nombre": "Partido 1",
-    "nombre_corto": "",
+    "nombre_corto": "partido1",
     "color": "",
     "referencia": ""
   }
@@ -766,9 +802,9 @@
   "fields": {
     "orden": 2,
     "numero": null,
-    "codigo": null,
+    "codigo": "p2",
     "nombre": "Partido 2",
-    "nombre_corto": "",
+    "nombre_corto": "partido2",
     "color": "",
     "referencia": ""
   }
@@ -779,9 +815,9 @@
   "fields": {
     "orden": 3,
     "numero": null,
-    "codigo": null,
+    "codigo": "p3",
     "nombre": "Partido 3",
-    "nombre_corto": "",
+    "nombre_corto": "partido3",
     "color": "",
     "referencia": ""
   }
@@ -835,6 +871,45 @@
     "codigo": null,
     "partido": 3,
     "orden": 4,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 5,
+  "fields": {
+    "tipo": "no_positivo",
+    "nombre": "votos nulos",
+    "nombre_corto": "nulos",
+    "codigo": null,
+    "partido": null,
+    "orden": 11,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 6,
+  "fields": {
+    "tipo": "no_positivo",
+    "nombre": "total de votos",
+    "nombre_corto": "total_votos",
+    "codigo": null,
+    "partido": null,
+    "orden": 12,
+    "codigo_dne": null
+  }
+},
+{
+  "model": "elecciones.opcion",
+  "pk": 7,
+  "fields": {
+    "tipo": "no_positivo",
+    "nombre": "total de sobres",
+    "nombre_corto": "total_sobres",
+    "codigo": null,
+    "partido": null,
+    "orden": 13,
     "codigo_dne": null
   }
 },
@@ -1046,6 +1121,63 @@
     "carga": 2,
     "opcion": 1,
     "votos": 14
+  }
+},
+{
+  "model": "elecciones.tecnicaproyeccion",
+  "pk": 1,
+  "fields": {
+    "nombre": "Por secci\u00f3n"
+  }
+},
+{
+  "model": "elecciones.agrupacioncircuitos",
+  "pk": 1,
+  "fields": {
+    "nombre": "Secci\u00f3n 1",
+    "proyeccion": 1,
+    "minimo_mesas": 1
+  }
+},
+{
+  "model": "elecciones.agrupacioncircuitos",
+  "pk": 2,
+  "fields": {
+    "nombre": "Secci\u00f3n 2",
+    "proyeccion": 1,
+    "minimo_mesas": 1
+  }
+},
+{
+  "model": "elecciones.agrupacioncircuito",
+  "pk": 1,
+  "fields": {
+    "circuito": 1,
+    "agrupacion": 1
+  }
+},
+{
+  "model": "elecciones.agrupacioncircuito",
+  "pk": 2,
+  "fields": {
+    "circuito": 2,
+    "agrupacion": 1
+  }
+},
+{
+  "model": "elecciones.agrupacioncircuito",
+  "pk": 3,
+  "fields": {
+    "circuito": 3,
+    "agrupacion": 2
+  }
+},
+{
+  "model": "elecciones.agrupacioncircuito",
+  "pk": 4,
+  "fields": {
+    "circuito": 4,
+    "agrupacion": 2
   }
 }
 ]
