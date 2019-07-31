@@ -7,7 +7,7 @@ from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from djgeojson.views import GeoJSONLayerView
-from django.http import HttpResponseForbidden
+from django.contrib.auth.mixins import AccessMixin
 from .models import (
     Distrito,
     Seccion,
@@ -32,17 +32,16 @@ class StaffOnlyMixing:
         return super().dispatch(*args, **kwargs)
 
 
-class VisualizadoresOnlyMixin:
+class VisualizadoresOnlyMixin(AccessMixin):
     """
     Mixin para que sólo usuarios visualizadores
     accedan a la vista.
     """
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.fiscal.esta_en_grupo('visualizadores'):
-            return super().dispatch(request, *args, **kwargs)
-
-        return HttpResponseForbidden()
+        if not request.user.is_authenticated or not request.user.fiscal.esta_en_grupo('visualizadores'):
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
 
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):

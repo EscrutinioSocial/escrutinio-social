@@ -67,6 +67,20 @@ def url_resultados(carta_marina):
     return reverse('resultados-categoria', args=[c.id])
 
 
+def test_resultados_pide_login(db, client, url_resultados):
+    response = client.get(url_resultados)
+    assert response.status_code == 302
+    query = f'?next={url_resultados}'
+    assert response.url == reverse('login') + query
+
+
+def test_resultados_pide_visualizador(db, fiscal_client, admin_user, url_resultados):
+    g = Group.objects.get(name='visualizadores')
+    admin_user.groups.remove(g)
+    response = fiscal_client.get(url_resultados)
+    assert response.status_code == 403          # permission denied
+
+
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
     # implicitamente está creada la categoria default que tiene todo el padron
@@ -228,10 +242,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
 
-    total_electores = (m1.electores +
-                       m2.electores +
-                       m3.electores +
-                       sum(m.electores for m in otras_mesas))
+    total_electores = sum(m.electores for m in carta_marina)
 
     assert resultados.electores() == total_electores
     assert resultados.total_positivos() == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
@@ -251,7 +262,6 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     ]
     for variable, valor in columna_datos:
         assert f'<td title="{variable}">{valor}</td>' in content
-
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
@@ -284,8 +294,10 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
     blanco = categoria.opciones.get(nombre='blanco')
 
-    # simulo que van entrandom resultados en las mesas 1 (la primera de la seccion 1) y 3 (la primera de la seccion 3)
-    # Resultados de la mesa 1: 120 votos en la mesa 1 para el partido 1, 80 para el 2, 0 para el 3 y en blanco
+    # simulo que van entraron resultados en las mesas 1 (la primera de la seccion 1)
+    # y 3 (la primera de la seccion 3).
+    #
+    # Resultados de la mesa 1: 120 votos partido 1, 80 para el 2, 0 para el 3 y 0 en blanco
     c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=categoria)
     consumir_novedades_y_actualizar_objetos([m1])
 
@@ -502,7 +514,8 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     consumir_novedades_y_actualizar_objetos()
 
     # TODO dependiendo de lo que se quiera la url podria ser algo como por ejemplo:
-    # response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias')
+    # response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) +
+    #       '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias')
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
         '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias'
@@ -665,11 +678,11 @@ def test_actualizar_electores(carta_marina):
 
 def test_permisos_vistas(setup_groups, url_resultados, client):
     u_visualizador = UserFactory()
-    visualizador = FiscalFactory(user=u_visualizador)
+    FiscalFactory(user=u_visualizador)
     g_visualizadores = Group.objects.get(name='visualizadores')
     u_visualizador.groups.add(g_visualizadores)
     u_validador = UserFactory()
-    validador = FiscalFactory(user=u_validador)
+    FiscalFactory(user=u_validador)
     g_validadores = Group.objects.get(name='validadores')
     u_validador.groups.add(g_validadores)
 
