@@ -241,22 +241,25 @@ class CSVImporter:
             self.agregar_electores_y_sobres(mesa, carga_parcial)
             self.agregar_electores_y_sobres(mesa, carga_total)
 
-            self.logger.debug("----+ El settings.TOTALES_COMPLETAS es %s",
-                              str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
-            if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
-                self.logger.debug("----+ Validando carga total.")
-                # Si el flag de cargas totales esta activo y hay carga total, entonces verifcamos que estén
-                # todas las opciones para todas las categorias
-                opciones = CategoriaOpcion.objects.filter(categoria=categoria).values_list('opcion__id', flat=True)
-                self.validar_carga_total(carga_total, categoria, opciones)
+            self.validar_que_esten_todas_las_opciones_segun_carga(carga_parcial, carga_total, categoria)
 
-            elif carga_parcial:
-                self.logger.debug("----+ Validando carga parcial.")
-                # Si se cargaron las cargas parciales, entonces verificamos que estén todas las opciones
-                # de las categorias prioritarias
-                opciones = CategoriaOpcion.objects.filter(categoria=categoria, prioritaria=True).values_list(
-                    'opcion__id', flat=True)
-                self.validar_carga_parcial(carga_parcial, categoria, opciones)
+    def validar_que_esten_todas_las_opciones_segun_carga(self, carga_parcial, carga_total, categoria):
+        self.logger.debug("----+ El settings.TOTALES_COMPLETAS es %s",
+                          str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
+        if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
+            self.logger.debug("----+ Validando carga total.")
+            # Si el flag de cargas totales esta activo y hay carga total, entonces verifcamos que estén
+            # todas las opciones para todas las categorias
+            opciones = CategoriaOpcion.objects.filter(categoria=categoria).values_list('opcion__id', flat=True)
+            self.validar_carga_total(carga_total, categoria, opciones)
+
+        elif carga_parcial:
+            self.logger.debug("----+ Validando carga parcial.")
+            # Si se cargaron las cargas parciales, entonces verificamos que estén todas las opciones
+            # de las categorias prioritarias
+            opciones = CategoriaOpcion.objects.filter(categoria=categoria, prioritaria=True).values_list(
+                'opcion__id', flat=True)
+            self.validar_carga_parcial(carga_parcial, categoria, opciones)
 
     def agregar_electores_y_sobres(self, mesa, carga):
         if not carga:
