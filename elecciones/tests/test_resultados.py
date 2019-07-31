@@ -2,7 +2,7 @@ import pytest
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
-from elecciones.models import (Categoria, MesaCategoria, Carga, Opcion)
+from elecciones.models import Categoria, MesaCategoria, Carga
 from .factories import (
     UserFactory,
     CategoriaFactory,
@@ -32,14 +32,14 @@ def carta_marina(db):
     c1, c2 = CircuitoFactory.create_batch(2, seccion=s1)
     c3, c4 = CircuitoFactory.create_batch(2, seccion=s2)
     return (
-        MesaFactory(numero=1, lugar_votacion__circuito=c1,
-                    electores=100), MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
-        MesaFactory(numero=3, lugar_votacion__circuito=c2,
-                    electores=120), MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
-        MesaFactory(numero=5, lugar_votacion__circuito=c3,
-                    electores=90), MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
-        MesaFactory(numero=7, lugar_votacion__circuito=c4,
-                    electores=90), MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90)
+        MesaFactory(numero=1, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=3, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=5, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=7, lugar_votacion__circuito=c4, electores=90),
+        MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90),
     )
 
 
@@ -228,7 +228,6 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.votantes() == 220
     assert resultados.electores() == 800
 
-
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
     # se crean 3 secciones electorales
@@ -238,7 +237,7 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     # s3 200 votantes
 
     # Se crean 8 mesas (5 en s1, 2 en s2 y 1 en s3). Todas tienen 200 electores
-    ms1, ms2, ms3 = (
+    ms1, _, ms3 = (
         MesaFactory.create_batch(5, lugar_votacion__circuito__seccion=s1, electores=200),
         MesaFactory.create_batch(2, lugar_votacion__circuito__seccion=s2, electores=200),
         MesaFactory.create_batch(1, lugar_votacion__circuito__seccion=s3, electores=200)

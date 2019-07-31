@@ -4,7 +4,7 @@ from model_utils.models import TimeStampedModel
 from model_utils import Choices
 from model_utils.fields import StatusField
 
-from elecciones.models import MesaCategoria
+from elecciones.models import MesaCategoria, Mesa
 from adjuntos.models import Attachment
 
 
@@ -20,19 +20,24 @@ class EventoScoringTroll(TimeStampedModel):
         ('carga_valores_distintos_a_confirmados', 'Carga valores distintos a los confirmados'),
         ('indica_problema_mesa_categoria_confirmada', 'Indica "problema" para una mesa/categoría con carga confirmada'),
         ('identificacion_attachment_distinta_a_confirmada', 'Identifica un attachment de una forma distinta a la confirmada'),
+        ('problema_descartado', 'Se descarta un "problema" reportado por el usuario.'),
         ('marca_explicita_troll', 'Un usuario marca explitimamente a un fiscal como troll'),
         ('remocion_marca_troll', 'Se remueve la marca de troll a un fiscal'),
     )
-    # descripcion del motivo para cambiar el scoring troll de un fiscal
+    # descripción del motivo para cambiar el scoring troll de un fiscal
     motivo = models.CharField(max_length=50, choices=MOTIVOS)
 
-    # referencia a la MesaCategoria para eventos por carga de valores distintos a los confirmados;
+    # Referencia a la Mesa para eventos de descarte de problemas;
     # None para los otros eventos
-    mesa_categoria = models.ForeignKey(MesaCategoria, null=True, on_delete=models.CASCADE)
+    mesa = models.ForeignKey(Mesa, null=True, blank=True, on_delete=models.CASCADE)
 
-    # referencia al Attachment para eventos por identificación distinta a la confirmada;
+    # Referencia a la MesaCategoria para eventos por carga de valores distintos a los confirmados;
     # None para los otros eventos
-    attachment = models.ForeignKey(Attachment, null=True, on_delete=models.CASCADE)
+    mesa_categoria = models.ForeignKey(MesaCategoria, null=True, blank=True, on_delete=models.CASCADE)
+
+    # Referencia al Attachment para eventos por identificación distinta a la confirmada;
+    # None para los otros eventos
+    attachment = models.ForeignKey(Attachment, null=True, blank=True, on_delete=models.CASCADE)
 
     # True si el evento se genera automáticamente,
     # False si es resultado de una decisión de un usuario
@@ -63,14 +68,14 @@ class CambioEstadoTroll(TimeStampedModel):
     # True si el evento se genera automáticamente, False si es resultado de una decisión de un usuario
     automatico = models.BooleanField(default=True)
 
-    # referencia al usuario que tomó la decisión de cambiar el status de troll de un fiscal;"
+    # Referencia al usuario que tomó la decisión de cambiar el status de troll de un fiscal;
     # None si el cambio de status se dispara en forma automática
     actor = models.ForeignKey('fiscales.Fiscal', null=True, on_delete=models.SET_NULL)
 
-    # referencia al evento por el cual un fiscal cambia su status de troll
+    # Referencia al evento por el cual un fiscal cambia su status de troll
     evento_disparador = models.ForeignKey(EventoScoringTroll, null=False, on_delete=models.CASCADE)
 
-    # referencia al fiscal que cambia su status de troll
+    # Referencia al fiscal que cambia su status de troll
     fiscal_afectado = models.ForeignKey(
         'fiscales.Fiscal', null=False, related_name='cambios_estado_troll', on_delete=models.CASCADE
     )
@@ -120,6 +125,19 @@ def aumentar_scoring_troll_carga(variacion, carga, motivo):
     if scoring_actualizado >= settings.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
         marcar_fiscal_troll(fiscal, nuevo_evento)
 
+def aumentar_scoring_troll_problema_descartado(variacion, fiscal_afectado, mesa, attachment):
+    scoring_anterior = fiscal_afectado.scoring_troll()
+    nuevo_evento = EventoScoringTroll.objects.create(
+        motivo=EventoScoringTroll.MOTIVOS.problema_descartado,
+        attachment=attachment,
+        mesa=mesa,
+        automatico=False,
+        fiscal_afectado=fiscal_afectado,
+        variacion=variacion
+    )
+    scoring_actualizado = scoring_anterior + variacion
+    if scoring_actualizado >= settings.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
+        marcar_fiscal_troll(fiscal_afectado, nuevo_evento)
 
 def crear_evento_marca_explicita_como_troll(fiscal, actor):
     """

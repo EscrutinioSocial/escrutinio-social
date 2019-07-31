@@ -62,9 +62,10 @@ def subir_acta(request):
     """
     serializer = ActaSerializer(data=request.data)
     if serializer.is_valid():
+
         try:
             with transaction.atomic():
-                attachment = serializer.save()
+                attachment = serializer.save(subido_por=request.user.fiscal)
         except IntegrityError:
             foto = serializer.validated_data['foto']
             foto.seek(0)

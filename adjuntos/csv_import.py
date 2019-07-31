@@ -161,7 +161,8 @@ class CSVImporter:
                 self.logger.debug("----+ Validando carga total.")
                 # Si el flag de cargas totales esta activo y hay carga total, entonces verificamos que estén
                 # todas las opciones para todas las categorías.
-                opciones = CategoriaOpcion.objects.filter(categoria=categoria).values_list('opcion__id', flat=True)
+                opciones = CategoriaOpcion.objects.filter(
+                    categoria=categoria).values_list('opcion__id', flat=True)
                 self.validar_carga_total(carga_total, categoria, opciones)
 
             elif carga_parcial:
@@ -387,4 +388,4 @@ class CeldaCSVImporter:
 
     def __str__(self):
         return f"Mesa: {self.mesa} - sección: {self.seccion} - circuito: {self.circuito} - " \
-               f"distrito: {self.distrito} - lista: {self.codigo_lista} - columna: {self.columna}"
+            f"distrito: {self.distrito} - lista: {self.codigo_lista} - columna: {self.columna}"

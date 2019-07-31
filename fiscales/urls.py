@@ -8,6 +8,7 @@ urlpatterns = [
     url('^_autocomplete/m$', views.MesaListView.as_view(), name='autocomplete-mesa'),
 
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
+    url('^referidos$', views.referidos, name='referidos'),
     url('^siguiente/$', views.realizar_siguiente_accion, name='siguiente-accion'),
 
     url('^ub/carga/(?P<mesa_id>\d+)$', views.cargar_desde_ub, name='procesar-acta-mesa'),

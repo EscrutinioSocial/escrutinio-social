@@ -36,7 +36,7 @@
 </li>
 
 <li>
-    <a href="{% url "agregar-adjuntos" %}" class="collapsible-header" data-turbolinks="false">Subir actas<i
+    <a href="{% url "agregar-adjuntos" %}" class="collapsible-header" data-turbolinks="false">Subir varias actas<i
             class="material-icons">cloud_upload</i></a>
 </li>
 
@@ -46,7 +46,7 @@
 
 {% if request.user.fiscal.esta_en_grupo_unidades_basicas %}
 <li>
-    <a href="{% url "agregar-adjuntos-ub" %}" class="collapsible-header" data-turbolinks="false">Subir actas desde UB<i
+    <a href="{% url "agregar-adjuntos-ub" %}" class="collapsible-header" data-turbolinks="false">Subir y cargar acta<i
             class="material-icons">cloud_upload</i></a>
 </li>
 <li>
@@ -76,6 +76,14 @@
         data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
 </li>
 {% endif %}
+
+
+<li>
+    <a href="{% url "referidos" %}" class="collapsible-header" data-turbolinks="false">Referidos<i
+            class="material-icons">group_add</i></a>
+</li>
+
+
 
 <li>
     <a href="https://docs.google.com/document/d/19qFhQ6_bd1mvfOLmwSzj07nDtc4Q0WKJo75dhMPIhVg/edit?usp=sharing"
