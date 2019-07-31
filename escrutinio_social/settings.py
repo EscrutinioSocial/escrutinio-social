@@ -243,6 +243,10 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
+        'csv_import': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     },
 }
 
@@ -327,10 +331,14 @@ PRIORIDADES_STANDARD_CATEGORIA = [
 # Por ejemplo:
 #
 # blanco = Opcion.objects.get(**OPCION_BLANCOS)
-OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None}
-OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
-OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'Total de votos', 'partido': None}
-OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'Total de sobres', 'partido': None}
+OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None, 'codigo': '10000'}
+OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None, 'codigo': '10001'}
+OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
+OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
+
+# Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
+# Ver csv_import.py
+OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 
 # Opción para elegir ninguna proyección en el combo
 SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
