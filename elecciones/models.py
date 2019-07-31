@@ -98,7 +98,7 @@ class Seccion(models.Model):
         verbose_name_plural = 'Secciones electorales'
 
     def resultados_url(self):
-        return reverse('resultados-categoria') + f'?seccion={self.id}'
+        return reverse('resultados-primera-categoria') + f'?seccion={self.id}'
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
@@ -136,7 +136,7 @@ class Circuito(models.Model):
         return f"{self.numero} - {self.nombre}"
 
     def resultados_url(self):
-        return reverse('resultados-categoria') + f'?circuito={self.id}'
+        return reverse('resultados-primera-categoria') + f'?circuito={self.id}'
 
     def mesas(self, categoria):
         """

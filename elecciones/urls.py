@@ -5,6 +5,9 @@ from fancy_cache import cache_page
 from django.contrib.auth.decorators import login_required
 from elecciones.resultados import Sumarizador
 
+from django.views.generic.base import RedirectView
+
+
 cached = cache_page(300)
 
 urlpatterns = [
@@ -18,6 +21,9 @@ urlpatterns = [
         views.ResultadosCategoria.as_view(),
         name='resultados-categoria'
     ),
+    url('^resultados/$', RedirectView.as_view(url='/resultados/10',  # FIXME: Debe ser una categoría NO sensible.
+                                              permanent=True),
+        name='resultados-primera-categoria'),
 
     url(r'^resultados-parciales-(?P<slug_categoria>[\w-]+).(?P<filetype>csv|xls)$',
         data_views.resultado_parcial_categoria, name='resultado-parcial-categoria'),

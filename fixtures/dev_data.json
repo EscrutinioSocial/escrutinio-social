@@ -40,6 +40,14 @@
   }
 },
 {
+  "model": "auth.group",
+  "pk": 6,
+  "fields": {
+    "name": "visualizadores_sensible",
+    "permissions": []
+  }
+},
+{
   "model": "auth.user",
   "pk": 1,
   "fields": {
