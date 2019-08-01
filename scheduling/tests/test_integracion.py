@@ -1,55 +1,14 @@
 import pytest
 
-from adjuntos.consolidacion import consolidar_identificaciones
 from elecciones.models import (
     MesaCategoria, Carga
 )
-from elecciones.tests.factories import (
-    SeccionFactory, CategoriaFactory, MesaCategoriaFactory, CargaFactory, 
-    CircuitoFactory, LugarVotacionFactory, MesaFactory, 
-    IdentificacionFactory, AttachmentFactory,
-    UserFactory, FiscalFactory
-)
+from elecciones.tests.factories import (CategoriaFactory, CargaFactory, MesaFactory)
 from .factories import PrioridadSchedulingFactory
-from .utils_para_test import asignar_prioridades_standard
-
-
-def nuevo_fiscal():
-    usuario = UserFactory()
-    fiscal = FiscalFactory(user=usuario)
-    return fiscal
-
-
-def identificar(attach, mesa, fiscal):
-    return IdentificacionFactory(
-        status='identificada',
-        attachment=attach,
-        mesa=mesa,
-        fiscal=fiscal
-    )
-
-def identificar_mesa(mesa, fiscal):
-    attach = AttachmentFactory()
-    identificar(attach, mesa, fiscal)
-    consolidar_identificaciones(attach)
-
-
-def verificar_valores_scheduling_mesacat(mesa, cat, percentil, orden_de_llegada, orden_de_carga):
-    mesacat = MesaCategoria.objects.filter(mesa=mesa, categoria=cat)[0]
-    assert mesacat.percentil == percentil
-    assert mesacat.orden_de_llegada == orden_de_llegada
-    assert mesacat.orden_de_carga == orden_de_carga
-
-
-def verificar_siguiente_mesacat(mesa, categoria, saltear=0):
-    for ix in range(saltear+1):
-        mesacat = siguiente_mesa_a_cargar()
-    if not (mesacat.mesa == mesa and mesacat.categoria == categoria):
-        print(f'verificación siguiente mesacat falla, la mesacat encontrada es:')
-        print(f'mesa: {mesacat.mesa}  --  categoria: {mesacat.categoria}  --  orden de carga: {mesacat.orden_de_carga}')
-    assert mesacat.mesa == mesa
-    assert mesacat.categoria == categoria
-    return mesacat
+from .utils_para_test import (
+    asignar_prioridades_standard, crear_mesas, crear_seccion, identificar_mesa, nuevo_fiscal,
+    verificar_valores_scheduling_mesacat, verificar_siguiente_mesacat
+)
 
 
 def test_orden_de_carga_escenario_base(db, settings):
@@ -62,18 +21,12 @@ def test_orden_de_carga_escenario_base(db, settings):
     fiscal = nuevo_fiscal()
 
     # una seccion standard, un circuito, 25 mesas en el mismo lugar de votacion, dos categorias standard
-    la_seccion = SeccionFactory(nombre="Bera centro")
-    circuito = CircuitoFactory(seccion=la_seccion)
-    lugar_votacion = LugarVotacionFactory(circuito=circuito)
-
+    la_seccion, circuito, lugar_votacion = crear_seccion("Bera centro")
     pv = CategoriaFactory(nombre="PV")
     gv = CategoriaFactory(nombre="GV")
     categorias = [pv, gv]
 
-    mesas = []
-    for nro in range(25):
-        mesa = MesaFactory(lugar_votacion=lugar_votacion, numero=str(nro), categorias=categorias)
-        mesas.append(mesa)
+    [mesas] = crear_mesas([lugar_votacion], categorias, 25)
 
     # primera mesa
     identificar_mesa(mesas[0], fiscal)
@@ -109,10 +62,7 @@ def test_orden_de_carga_seccion_categoria_prioritaria(db, settings):
     fiscal = nuevo_fiscal()
 
     # una seccion prioritaria, un circuito, 200 mesas en el mismo lugar de votacion, una categoria prioritaria, una standard
-    la_seccion = SeccionFactory(nombre="Bera centro")
-    circuito = CircuitoFactory(seccion=la_seccion)
-    lugar_votacion = LugarVotacionFactory(circuito=circuito)
-
+    la_seccion, circuito, lugar_votacion = crear_seccion("Bera centro")
     pv = CategoriaFactory(nombre="PV")
     gv = CategoriaFactory(nombre="GV")
     categorias = [pv, gv]
@@ -122,10 +72,7 @@ def test_orden_de_carga_seccion_categoria_prioritaria(db, settings):
     PrioridadSchedulingFactory(seccion=la_seccion, desde_proporcion=10, hasta_proporcion=100, prioridad=40)
     PrioridadSchedulingFactory(categoria=pv, desde_proporcion=0, hasta_proporcion=100, prioridad=20)
 
-    mesas = []
-    for nro in range(200):
-        mesa = MesaFactory(lugar_votacion=lugar_votacion, numero=str(nro), categorias=categorias)
-        mesas.append(mesa)
+    [mesas] = crear_mesas([lugar_votacion], categorias, 200)
     
     # primera mesa
     identificar_mesa(mesas[0], fiscal)
@@ -181,18 +128,13 @@ def test_orden_de_carga_cantidad_mesas_prioritarias(db, settings):
     fiscal = nuevo_fiscal()
 
     # una seccion standard, un circuito, 30 mesas en el mismo lugar de votacion, dos categorias standard
-    la_seccion = SeccionFactory(nombre="Bera centro")
-    circuito = CircuitoFactory(seccion=la_seccion)
-    lugar_votacion = LugarVotacionFactory(circuito=circuito)
+    la_seccion, circuito, lugar_votacion = crear_seccion("Bera centro")
     pv = CategoriaFactory(nombre="PV")
     categorias = [pv]
 
     PrioridadSchedulingFactory(seccion=la_seccion, desde_proporcion=0, hasta_proporcion=2, prioridad=2, hasta_cantidad=7)
 
-    mesas = []
-    for nro in range(30):
-        mesa = MesaFactory(lugar_votacion=lugar_votacion, numero=str(nro), categorias=categorias)
-        mesas.append(mesa)
+    [mesas] = crear_mesas([lugar_votacion], categorias, 30)
 
     # primera mesa
     identificar_mesa(mesas[0], fiscal)
@@ -221,13 +163,6 @@ def test_orden_de_carga_cantidad_mesas_prioritarias(db, settings):
     verificar_valores_scheduling_mesacat(mesas[19], pv, 64, 20, 640000)
 
 
-def siguiente_mesa_a_cargar():
-    mesacat = MesaCategoria.objects.siguiente()
-    mesacat.status = MesaCategoria.STATUS.total_consolidada_dc
-    mesacat.save(update_fields=['status'])
-    return mesacat
-
-
 def test_secuencia_carga_secciones_standard_prioritaria(db, settings):
     """
     Se verifica la secuencia con la que se asignan mesas considerando dos secciones,
@@ -237,13 +172,8 @@ def test_secuencia_carga_secciones_standard_prioritaria(db, settings):
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
     fiscal = nuevo_fiscal()
 
-    seccion_prioritaria = SeccionFactory(nombre="Barrio marítimo")
-    circuito_prioritario = CircuitoFactory(seccion=seccion_prioritaria)
-    lugar_votacion_prioritario = LugarVotacionFactory(circuito=circuito_prioritario)
-    seccion_standard = SeccionFactory(nombre="Bera centro")
-    circuito_standard = CircuitoFactory(seccion=seccion_standard)
-    lugar_votacion_standard = LugarVotacionFactory(circuito=circuito_standard)
-
+    seccion_prioritaria, circuito_prioritario, lugar_votacion_prioritario = crear_seccion("Barrio marítimo")
+    seccion_standard, circuito_standard, lugar_votacion_standard = crear_seccion("Bera centro")
     pv = CategoriaFactory(nombre="PV")
     categorias = [pv]
 
@@ -251,14 +181,8 @@ def test_secuencia_carga_secciones_standard_prioritaria(db, settings):
     PrioridadSchedulingFactory(seccion=seccion_prioritaria, desde_proporcion=2, hasta_proporcion=10, prioridad=8)
     PrioridadSchedulingFactory(seccion=seccion_prioritaria, desde_proporcion=10, hasta_proporcion=100, prioridad=40)
 
-    mesas_seccion_standard = []
-    mesas_seccion_prioritaria = []
-    for nro in range(100):
-        mesa_standard = MesaFactory(lugar_votacion=lugar_votacion_standard, numero=str(nro+1), categorias=categorias)
-        mesa_prioritaria = MesaFactory(lugar_votacion=lugar_votacion_prioritario,
-                                       numero=str(nro+1001), categorias=categorias)
-        mesas_seccion_standard.append(mesa_standard)
-        mesas_seccion_prioritaria.append(mesa_prioritaria)
+    mesas_seccion_standard, mesas_seccion_prioritaria = \
+        crear_mesas([lugar_votacion_standard, lugar_votacion_prioritario], categorias, 100)
 
     # se identifican las mesas en orden
     for nro in range(100):
@@ -294,13 +218,8 @@ def test_secuencia_carga_escenario_complejo_1(db, settings):
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
     fiscal = nuevo_fiscal()
 
-    seccion_prioritaria = SeccionFactory(nombre="Barrio marítimo")
-    circuito_prioritario = CircuitoFactory(seccion=seccion_prioritaria)
-    lugar_votacion_prioritario = LugarVotacionFactory(circuito=circuito_prioritario)
-    seccion_standard = SeccionFactory(nombre="Bera centro")
-    circuito_standard = CircuitoFactory(seccion=seccion_standard)
-    lugar_votacion_standard = LugarVotacionFactory(circuito=circuito_standard)
-
+    seccion_prioritaria, circuito_prioritario, lugar_votacion_prioritario = crear_seccion("Barrio marítimo")
+    seccion_standard, circuito_standard, lugar_votacion_standard = crear_seccion("Bera centro")
     pv = CategoriaFactory(nombre="PV")
     dip = CategoriaFactory(nombre="Diputados")
     categorias = [pv, dip]
@@ -313,15 +232,8 @@ def test_secuencia_carga_escenario_complejo_1(db, settings):
                                hasta_proporcion=100, prioridad=40)
     PrioridadSchedulingFactory(categoria=pv, desde_proporcion=0, hasta_proporcion=100, prioridad=12)
 
-    mesas_seccion_standard = []
-    mesas_seccion_prioritaria = []
-    for nro in range(50):
-        mesa_standard = MesaFactory(lugar_votacion=lugar_votacion_standard,
-                                    numero=str(nro+1), categorias=categorias)
-        mesa_prioritaria = MesaFactory(lugar_votacion=lugar_votacion_prioritario,
-                                       numero=str(nro+1001), categorias=categorias)
-        mesas_seccion_standard.append(mesa_standard)
-        mesas_seccion_prioritaria.append(mesa_prioritaria)
+    mesas_seccion_standard, mesas_seccion_prioritaria = \
+        crear_mesas([lugar_votacion_standard, lugar_votacion_prioritario], categorias, 50)
 
     # se identifican las mesas en orden
     for nro in range(50):
@@ -383,13 +295,8 @@ def test_secuencia_carga_escenario_complejo_2(db, settings):
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
     fiscal = nuevo_fiscal()
 
-    seccion_prioritaria = SeccionFactory(nombre="Barrio marítimo")
-    circuito_prioritario = CircuitoFactory(seccion=seccion_prioritaria)
-    lugar_votacion_prioritario = LugarVotacionFactory(circuito=circuito_prioritario)
-    seccion_standard = SeccionFactory(nombre="Bera centro")
-    circuito_standard = CircuitoFactory(seccion=seccion_standard)
-    lugar_votacion_standard = LugarVotacionFactory(circuito=circuito_standard)
-
+    seccion_prioritaria, circuito_prioritario, lugar_votacion_prioritario = crear_seccion("Barrio marítimo")
+    seccion_standard, circuito_standard, lugar_votacion_standard = crear_seccion("Bera centro")
     pv = CategoriaFactory(nombre="PV")
     dip = CategoriaFactory(nombre="Diputados")
     categorias = [pv, dip]
@@ -402,15 +309,8 @@ def test_secuencia_carga_escenario_complejo_2(db, settings):
                                hasta_proporcion=100, prioridad=25)
     PrioridadSchedulingFactory(categoria=pv, desde_proporcion=0, hasta_proporcion=100, prioridad=30)
 
-    mesas_seccion_standard = []
-    mesas_seccion_prioritaria = []
-    for nro in range(50):
-        mesa_standard = MesaFactory(lugar_votacion=lugar_votacion_standard,
-                                    numero=str(nro+1), categorias=categorias)
-        mesa_prioritaria = MesaFactory(lugar_votacion=lugar_votacion_prioritario,
-                                       numero=str(nro+1001), categorias=categorias)
-        mesas_seccion_standard.append(mesa_standard)
-        mesas_seccion_prioritaria.append(mesa_prioritaria)
+    mesas_seccion_standard, mesas_seccion_prioritaria = \
+        crear_mesas([lugar_votacion_standard, lugar_votacion_prioritario], categorias, 50)
 
     # se identifican las mesas en orden
     for nro in range(50):
@@ -456,16 +356,9 @@ def test_secuencia_carga_seccion_con_corte(db, settings):
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
     fiscal = nuevo_fiscal()
 
-    seccion_prioritaria = SeccionFactory(nombre="Barrio marítimo")
-    circuito_prioritario = CircuitoFactory(seccion=seccion_prioritaria)
-    lugar_votacion_prioritario = LugarVotacionFactory(circuito=circuito_prioritario)
-    seccion_standard = SeccionFactory(nombre="Bera centro")
-    circuito_standard = CircuitoFactory(seccion=seccion_standard)
-    lugar_votacion_standard = LugarVotacionFactory(circuito=circuito_standard)
-    seccion_corte = SeccionFactory(nombre="Solano")
-    circuito_corte = CircuitoFactory(seccion=seccion_corte)
-    lugar_votacion_corte = LugarVotacionFactory(circuito=circuito_corte)
-
+    seccion_prioritaria, circuito_prioritario, lugar_votacion_prioritario = crear_seccion("Barrio marítimo")
+    seccion_standard, circuito_standard, lugar_votacion_standard = crear_seccion("Bera centro")
+    seccion_corte, circuito_corte, lugar_votacion_corte = crear_seccion("Solano")
     pv = CategoriaFactory(nombre="PV")
     categorias = [pv]
 
@@ -478,19 +371,8 @@ def test_secuencia_carga_seccion_con_corte(db, settings):
     PrioridadSchedulingFactory(seccion=seccion_corte, desde_proporcion=0,
                                hasta_proporcion=2, prioridad=2, hasta_cantidad=7)
 
-    mesas_seccion_standard = []
-    mesas_seccion_prioritaria = []
-    mesas_seccion_corte = []
-    for nro in range(50):
-        mesa_standard = MesaFactory(lugar_votacion=lugar_votacion_standard,
-                                    numero=str(nro), categorias=categorias)
-        mesa_prioritaria = MesaFactory(lugar_votacion=lugar_votacion_prioritario,
-                                       numero=str(nro+1000), categorias=categorias)
-        mesa_corte = MesaFactory(lugar_votacion=lugar_votacion_corte,
-                                       numero=str(nro+2000), categorias=categorias)
-        mesas_seccion_standard.append(mesa_standard)
-        mesas_seccion_prioritaria.append(mesa_prioritaria)
-        mesas_seccion_corte.append(mesa_corte)
+    mesas_seccion_standard, mesas_seccion_prioritaria, mesas_seccion_corte = \
+        crear_mesas([lugar_votacion_standard, lugar_votacion_prioritario, lugar_votacion_corte], categorias, 50)
 
     # se identifican las mesas en orden
     for nro in range(50):

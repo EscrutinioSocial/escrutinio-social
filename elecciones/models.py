@@ -392,8 +392,6 @@ class MesaCategoria(models.Model):
         """
         Actualiza `self.orden_de_carga` a partir de las prioridades por seccion y categoria
         """
-        from scheduling.models import mapa_prioridades_para_mesa_categoria
-
         en_circuito = MesaCategoria.objects.filter(
             categoria=self.categoria, mesa__circuito=self.mesa.circuito
         )
@@ -410,6 +408,8 @@ class MesaCategoria(models.Model):
         Actualiza el valor de `self.orden_de_carga` a partir de las prioridades por seccion y categoria,
         **sin** disparar el `save` correspondiente
         """
+        from scheduling.models import mapa_prioridades_para_mesa_categoria
+
         self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self) \
             .valor_para(self.percentil-1, self.orden_de_llegada) * self.percentil
 
@@ -460,7 +460,7 @@ class MesaCategoria(models.Model):
         """
         mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \
             .sin_consolidar_por_doble_carga().filter(categoria=categoria)
-        cls.recalcular_orden_de_carga(mesa_cats_a_actualizar)
+        cls.recalcular_orden_de_carga_mesas(mesa_cats_a_actualizar)
 
     @classmethod
     def recalcular_orden_de_carga_para_seccion(cls, seccion):
@@ -470,13 +470,13 @@ class MesaCategoria(models.Model):
         Se usa como acción derivada del cambio de prioridades en la categoría.
         """
         mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \
-            .sin_consolidar_por_doble_carga().filter(seccion=seccion)
-        cls.recalcular_orden_de_carga(mesa_cats_a_actualizar)
+            .sin_consolidar_por_doble_carga().filter(mesa__circuito__seccion=seccion)
+        cls.recalcular_orden_de_carga_mesas(mesa_cats_a_actualizar)
 
     @classmethod
-    def recalcular_orden_de_carga(cls, mesa_cats):
+    def recalcular_orden_de_carga_mesas(cls, mesa_cats):
         for mesa_cat in mesa_cats:
-            mc.recalcular_orden_de_carga()
+            mesa_cat.recalcular_orden_de_carga()
         cls.objects.bulk_update(mesa_cats, ['orden_de_carga'])
         
 
