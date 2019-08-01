@@ -382,7 +382,7 @@ class MesaCategoria(models.Model):
         )
         total = en_circuito.count()
         identificadas = en_circuito.identificadas().count()
-        
+
         self.orden_de_llegada = identificadas + 1
         self.percentil = math.floor((identificadas * 100) / total) + 1
         self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self) \
@@ -417,6 +417,26 @@ class MesaCategoria(models.Model):
             result[item['tipo']][item['firma']] = item['total']
         return result
 
+    def datos_previos(self, tipo_carga):
+        """
+        Devuelve un diccionario que contiene informacion confirmada
+        (proveniente de campos de metadata o prioritarios compartidos)
+        para "pre completar" una carga.
+
+            {opcion.id: cantidad_votos, ...}
+
+        Si una opcion está en este diccionario, su campo votos
+        se inicilizará con la cantidad de votos y será de sólo lectura,
+        validando además que coincidan cuando la carga se guarda.
+        """
+        datos = dict(self.mesa.metadata())
+        if tipo_carga == 'total' and self.status == MesaCategoria.STATUS.parcial_consolidada_dc:
+            # una carga total con parcial consolidada reutiliza los datos ya cargados
+            datos.update(
+                dict(self.carga_testigo.opcion_votos())
+            )
+        return datos
+
     class Meta:
         unique_together = ('mesa', 'categoria')
         verbose_name = 'Mesa categoría'
@@ -426,7 +446,7 @@ class MesaCategoria(models.Model):
         self.status = status
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
-                
+
 class Mesa(models.Model):
     """
     Define la mesa de votación que pertenece a un class:`LugarDeVotación`.
@@ -811,11 +831,15 @@ class Carga(TimeStampedModel):
         self.save(update_fields=['firma'])
 
     def opcion_votos(self):
-        """ Devuelve una lista de los votos para cada opción. """
+        """
+        Devuelve una lista de los votos para cada opción.
+        """
         return self.reportados.values_list('opcion', 'votos')
 
     def listado_de_opciones(self):
-        """ Devuelve una lista de los ids de las opciones de esta carga. """
+        """
+        Devuelve una lista de los ids de las opciones de esta carga.
+        """
         return self.reportados.values_list('opcion__id', flat=True)
 
     def save(self, *args, **kwargs):
@@ -838,11 +862,12 @@ class Carga(TimeStampedModel):
 
         # antes que nada: si las cargas son incomparables, o los conjuntos de opciones no coinciden,
         # la comparación se considera incorrecta
-        if (self.mesa_categoria != carga_2.mesa_categoria) or (self.tipo != carga_2.tipo):
+        if self.mesa_categoria != carga_2.mesa_categoria or self.tipo != carga_2.tipo:
             raise CargasIncompatiblesError("las cargas no coinciden en mesa, categoría o tipo")
+
         opciones_1 = [ov.opcion.id for ov in reportados_1]
         opciones_2 = [ov.opcion.id for ov in reportados_2]
-        if (opciones_1 != opciones_2):
+        if opciones_1 != opciones_2:
             raise CargasIncompatiblesError("las cargas no coinciden en sus opciones")
 
         diferencia = sum(abs(r1.votos - r2.votos) for r1, r2 in zip(reportados_1, reportados_2))
