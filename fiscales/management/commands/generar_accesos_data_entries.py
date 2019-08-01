@@ -1,24 +1,22 @@
 from django.core.management.base import BaseCommand, CommandError
 from fiscales.models import Fiscal
+from elecciones.models import Seccion
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.contrib.auth.models import Group
 
 class Command(BaseCommand):
-    help = """ Generar accesos para los usuarios del sistema
-            Ejemplos:
-                ./manage.py generar_accesos_data_entries  # 20 usuarios para cada partido
-                ./manage.py generar_accesos_data_entries --equipo=ALL --cantidad=1 # un usuario para cada partido
-                ./manage.py generar_accesos_data_entries  --cantidad=10 # 10 usuarios para un equipo nuevo
+    help = """ Generar accesos para los usuarios del sistema.
             """
 
     def add_arguments(self, parser):
         parser.add_argument('--prefijo', default='usr', type=str, help='Prefijo de los usuarios al que se agrega _ y el nro de serie.')
-        parser.add_argument('--cantidad', default=20, type=int, help='Cantidad de usuarios a crear.')
+        parser.add_argument('--cantidad', type=int, help='Cantidad de usuarios a crear.')
         parser.add_argument('--grupo', default='fiscales con acceso al bot', type=str, help='En qué grupo se agregan.')
+        parser.add_argument('--id_seccion', type=int, help='id de la sección a la que corresponde el usuario.')
 
 
-    def crear_acceso(self, prefijo, indice, grupo, sobre_escribir=True):
+    def crear_acceso(self, prefijo, indice, grupo, seccion, sobre_escribir=True):
         username = slugify(f'{prefijo}_{indice:02d}')
 
         user, created = User.objects.get_or_create(username=username)
@@ -37,6 +35,7 @@ class Command(BaseCommand):
         fiscal.email_confirmado = True
         fiscal.apellido = username
         fiscal.nombres = username
+        fiscal.seccion = seccion
         fiscal.save()
 
         # Lo agrego al grupo.
@@ -51,9 +50,11 @@ class Command(BaseCommand):
         cantidad = options['cantidad']
         nombre_grupo = options['grupo']
         grupo = Group.objects.get(name=nombre_grupo)
+        id_seccion = options['id_seccion']
+        seccion = Seccion.objects.get(id=id_seccion)
 
         for i in range(cantidad):
-            user, clave = self.crear_acceso(prefijo=prefijo, indice=i, grupo=grupo, sobre_escribir=True)
+            user, clave = self.crear_acceso(prefijo=prefijo, indice=i, grupo=grupo, seccion=seccion, sobre_escribir=True)
             self.stdout.write(self.style.SUCCESS(f'Usuario {user}, clave "{clave}" (sin las comillas).'))
 
 
