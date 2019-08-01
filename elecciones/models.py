@@ -94,15 +94,16 @@ class Seccion(models.Model):
     )
     # esta es la prioridad del "viejo" modelo de scheduling, está deprecada a la espera del refactor 
     # que permita borrarla
-    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(1000)])
+    prioridad = models.PositiveIntegerField(
+        default=0, null=True, blank=True, validators=[MaxValueValidator(1000)])
     # estos son los nuevos atributos que intervienen en el modelo actual de scheduling
     prioridad_hasta_2 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
-    cantidad_minima_prioridad_hasta_2 = models.PositiveIntegerField(
         default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
     prioridad_2_a_10 = models.PositiveIntegerField(
         default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
     prioridad_10_a_100 = models.PositiveIntegerField(
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
+    cantidad_minima_prioridad_hasta_2 = models.PositiveIntegerField(
         default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
 
     # Tracker de cambios en los atributos relacionados con la prioridad, 

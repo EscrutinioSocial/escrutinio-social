@@ -71,8 +71,7 @@ def test_configuracion_seccion_set_hasta_cantidad_no_prioridad(db, settings):
     seccion = SeccionFactory(cantidad_minima_prioridad_hasta_2=9)
     prioridades = PrioridadScheduling.objects.filter(seccion=seccion)
     assert prioridades.count() == 1
-    assert prioridades.filter(desde_proporcion=0).first().prioridad == \
-        settings.PRIORIDADES_STANDARD_SECCION[0]['prioridad']
+    assert prioridades.filter(desde_proporcion=0).first().prioridad is None
     assert prioridades.filter(desde_proporcion=0).first().hasta_cantidad == 9
 
 

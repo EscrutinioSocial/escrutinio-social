@@ -83,15 +83,6 @@ class FiscalxDNI(forms.ModelForm):
     dni = ARDNIField(required=True)
 
 
-class FiscalForm(forms.ModelForm):
-
-    dni = ARDNIField(required=False)
-
-    class Meta:
-        model = Fiscal
-        exclude = []
-
-
 class QuieroSerFiscalForm(forms.Form):
 
     MENSAJE_ERROR_CODIGO_REF = 'Codigo de referido debe ser de 4 letras y/o números'
