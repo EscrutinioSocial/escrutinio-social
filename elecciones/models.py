@@ -528,7 +528,7 @@ class Mesa(models.Model):
         return f'{self.numero}'
 
     def nombre_completo(self):
-        return self.lugar_votacion.nombre_completo() + " - " + self.numero
+        return self.lugar_votacion.nombre_completo() + " - Mesa N°" + self.numero
 
 
 class Partido(models.Model):
