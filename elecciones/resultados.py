@@ -318,22 +318,6 @@ class Resultados():
             if opcion not in (nombre_opcion_total, nombre_opcion_sobres)
         )
 
-    def total_blancos(self):
-        nombre_opcion_blancos = settings.OPCION_BLANCOS['nombre']
-        return self.resultados.votos_no_positivos[nombre_opcion_blancos]
-
-    def total_nulos(self):
-        nombre_opcion_nulos = settings.OPCION_NULOS['nombre']
-        return self.resultados.votos_no_positivos[nombre_opcion_nulos]
-
-    def total_votos(self):
-        nombre_opcion_total_votos = settings.OPCION_TOTAL_VOTOS['nombre']
-        return self.resultados.votos_no_positivos[nombre_opcion_total_votos]
-
-    def total_sobres(self):
-        nombre_opcion_total_sobres = settings.OPCION_TOTAL_SOBRES['nombre']
-        return self.resultados.votos_no_positivos[nombre_opcion_total_sobres]
-
     @lru_cache(128)
     def votantes(self):
         """
@@ -420,6 +404,18 @@ class Resultados():
 
     def total_mesas(self):
         return self.resultados.total_mesas
+
+    def total_blancos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre'], '--')
+
+    def total_nulos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre'], '--')
+
+    def total_votos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre'], '--')
+
+    def total_sobres(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '--')
 
 
 class Proyecciones(Sumarizador):
