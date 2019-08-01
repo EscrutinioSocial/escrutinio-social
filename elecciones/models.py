@@ -402,9 +402,16 @@ class MesaCategoria(models.Model):
         
         self.orden_de_llegada = identificadas + 1
         self.percentil = math.floor((identificadas * 100) / total) + 1
+        self.recalcular_orden_de_carga()
+        self.save(update_fields=['orden_de_carga', 'orden_de_llegada', 'percentil'])
+
+    def recalcular_orden_de_carga(self):
+        """
+        Actualiza el valor de `self.orden_de_carga` a partir de las prioridades por seccion y categoria,
+        **sin** disparar el `save` correspondiente
+        """
         self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self) \
             .valor_para(self.percentil-1, self.orden_de_llegada) * self.percentil
-        self.save(update_fields=['orden_de_carga', 'orden_de_llegada', 'percentil'])
 
     def invalidar_cargas(self):
         """
@@ -443,7 +450,39 @@ class MesaCategoria(models.Model):
         self.status = status
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
-                
+
+    @classmethod
+    def recalcular_orden_de_carga_para_categoria(cls, categoria):
+        """
+        Recalcula el orden_de_carga de las MesaCategoria correspondientes a la categoría indicada
+        que estén pendientes de carga.
+        Se usa como acción derivada del cambio de prioridades en la categoría.
+        """
+        mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \
+            .sin_consolidar_por_doble_carga().filter(categoria=categoria)
+        cls.recalcular_orden_de_carga(mesa_cats_a_actualizar)
+
+    @classmethod
+    def recalcular_orden_de_carga_para_seccion(cls, seccion):
+        """
+        Recalcula el orden_de_carga de las MesaCategoria correspondientes a la sección indicada
+        que estén pendientes de carga.
+        Se usa como acción derivada del cambio de prioridades en la categoría.
+        """
+        mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \
+            .sin_consolidar_por_doble_carga().filter(seccion=seccion)
+        cls.recalcular_orden_de_carga(mesa_cats_a_actualizar)
+
+    @classmethod
+    def recalcular_orden_de_carga(cls, mesa_cats):
+        for mesa_cat in mesa_cats:
+            mc.recalcular_orden_de_carga()
+        cls.objects.bulk_update(mesa_cats, ['orden_de_carga'])
+        
+
+
+
+
 class Mesa(models.Model):
     """
     Define la mesa de votación que pertenece a un class:`LugarDeVotación`.
@@ -966,20 +1005,21 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
 
 
 @receiver(post_save, sender=Categoria)
-def actualizar_prioridad_scheduling_categoria(sender, instance, created, **kwargs):
+def actualizar_prioridades_categoria(sender, instance, created, **kwargs):
     from scheduling.models import registrar_prioridad_categoria
 
     if created or instance.tracker.has_changed('prioridad'):
         registrar_prioridad_categoria(instance)
+        MesaCategoria.recalcular_orden_de_carga_para_categoria(instance)
 
 
 @receiver(post_save, sender=Seccion)
-def actualizar_prioridad_scheduling_seccion(sender, instance, created, **kwargs):
+def actualizar_prioridades_seccion(sender, instance, created, **kwargs):
     from scheduling.models import registrar_prioridades_seccion
 
-    # 'prioridad_hasta_2', 'cantidad_minima_prioridad_hasta_2', 'prioridad_2_a_10', 'prioridad_10_a_100'
     if created or instance.tracker.has_changed('prioridad_hasta_2') \
         or instance.tracker.has_changed('cantidad_minima_prioridad_hasta_2') \
             or instance.tracker.has_changed('prioridad_2_a_10')  \
                 or instance.tracker.has_changed('prioridad_10_a_100'):
         registrar_prioridades_seccion(instance)
+        MesaCategoria.recalcular_orden_de_carga_para_seccion(instance)
