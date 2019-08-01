@@ -599,8 +599,9 @@ def test_resultados_no_positivos(fiscal_client):
 
     opcion_blanco = OpcionFactory(**settings.OPCION_BLANCOS)
     opcion_total = OpcionFactory(**settings.OPCION_TOTAL_VOTOS)
+    opcion_sobres = OpcionFactory(**settings.OPCION_TOTAL_SOBRES)
 
-    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total])
+    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total, opcion_sobres])
 
     m1 = MesaFactory(categorias=[e1], electores=200)
     c1 = CargaFactory(mesa_categoria__categoria=e1, mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial)
@@ -608,6 +609,7 @@ def test_resultados_no_positivos(fiscal_client):
     VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=40)
     VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c1, votos=10)
     VotoMesaReportadoFactory(opcion=opcion_total, carga=c1, votos=100)
+    VotoMesaReportadoFactory(opcion=opcion_sobres, carga=c1, votos=110)
     c1.actualizar_firma()
     consumir_novedades_y_actualizar_objetos()
 
@@ -615,11 +617,12 @@ def test_resultados_no_positivos(fiscal_client):
         reverse('resultados-categoria', args=[e1.id]) + '?opcionaConsiderar=prioritarias'
     )
 
-    assert opcion_blanco.nombre in response.content.decode('utf8')
-    no_positivos = response.context['resultados'].tabla_no_positivos()
+    resultados = response.context['resultados']
 
-    assert no_positivos[opcion_blanco.nombre] == {'porcentaje_total': '10.00', 'votos': 10}
-    assert no_positivos['Votos Positivos']['votos'] == 90
+    assert resultados.total_positivos() == 90
+    assert resultados.total_blancos() == 10
+    assert resultados.total_votos() == 100
+    assert resultados.total_sobres() == 110
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
