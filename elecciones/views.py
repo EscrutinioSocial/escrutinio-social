@@ -234,7 +234,7 @@ class MesasDeCircuito(ResultadosCategoria):
         mesas = circuito.mesa_set.all().order_by("numero")
         context['mesas'] = mesas
         mesa = self._obtener_informacion_mesa(mesas)
-        context['resultados'] = self.sumarizador.votos_reportados_categoria(
+        context['resultados'] = self.sumarizador.votos_reportados(
             categoria,
             mesas.filter(id=mesa.id)
         )
@@ -257,15 +257,6 @@ class MesasDeCircuito(ResultadosCategoria):
         mesa_id = self.request.GET.get('mesa')
         mesa = mesas.first() if mesa_id is None else Mesa.objects.get(id=mesa_id)
         return mesa
-
-    def _obtener_votos_reportados(self, mesa, categoria):
-        mc = MesaCategoria.objects.get(
-                mesa__numero=mesa.numero,
-                categoria__id=categoria.id,
-                carga_testigo__isnull=False,
-        )
-        carga = mc.carga_testigo
-        return carga.reportados.order_by('opcion__orden')
 
     def _obtener_circuito(self):
         return self.request.GET.get('circuito')

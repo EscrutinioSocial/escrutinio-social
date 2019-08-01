@@ -181,28 +181,11 @@ class Sumarizador():
 
         votos_reportados = VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
-            carga__es_testigo__isnull=False,
-            **self.cargas_a_considerar_status_filter(categoria)
-        )
-
-        return votos_reportados
-
-    def votos_reportados_categoria(self, categoria, mesas):
-        """
-        Este método es igual al de arriba, solo que estamos filtrando por categoría.
-        A esta altura, no queremos romper el método anterior y meter inestabilidades.
-        Si los que conocen este dominio lo consideran necesario, este método se puede borrar
-        y agregar el filtrado en votos_reportados (o en su defecto, eliminar el parámetro categoria
-        en el método votos_reportados, ya que no se usa)
-        """
-
-        votos_reportados = VotoMesaReportado.objects.filter(
-            carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
             carga__mesa_categoria__categoria=categoria,
             carga__es_testigo__isnull=False,
-            carga__mesa_categoria__categoria=categoria.id,
             **self.cargas_a_considerar_status_filter(categoria)
         )
+
         return votos_reportados
 
     def votos_por_opcion(self, categoria, mesas):
