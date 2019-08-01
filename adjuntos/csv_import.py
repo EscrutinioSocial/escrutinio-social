@@ -2,12 +2,14 @@ import pandas as pd
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 import math
-from elecciones.models import Mesa, Carga, VotoMesaReportado, Opcion
+from elecciones.models import Mesa, Carga, VotoMesaReportado, Opcion, CategoriaOpcion
 from django.db import transaction
 from django.db.utils import IntegrityError
 
+from escrutinio_social import settings
 from escrutinio_social.settings import OPCION_TOTAL_SOBRES, OPCION_TOTAL_VOTOS
 from fiscales.models import Fiscal
+import logging
 
 # Primer dato: nombre de la columna, segundo: si es parte de una categoría o no.
 COLUMNAS_DEFAULT = [('seccion', False), ('distrito', False), ('circuito', False), ('nro de mesa', False),
@@ -50,13 +52,15 @@ class CSVImporter:
 
     def __init__(self, archivo, usuario):
         self.archivo = archivo
-        self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"])
+        self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"], dtype=str)
         self.usuario = usuario
         self.fiscal = None
         self.mesas = []
         self.mesas_matches = {}
         self.carga_total = None
         self.carga_parcial = None
+        self.logger = logging.getLogger('csv_import')
+        self.logger.debug("Importando archivo '%s'.", archivo)
 
     def procesar(self):
         self.validar()
@@ -83,8 +87,8 @@ class CSVImporter:
         except CSVImportacionError as e:
             raise e
         # para manejar cualquier otro tipo de error
-        except Exception as e:
-            raise FormatoArchivoInvalidoError('No es un CSV válido.')
+        # except Exception as e:
+        #     raise FormatoArchivoInvalidoError('No es un CSV válido.')
 
     def validar_columnas(self):
         """
@@ -114,101 +118,21 @@ class CSVImporter:
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         mesa_circuito_seccion_distrito = list(mesa for mesa, grupo in grupos_mesas)
 
-        for mesa in mesa_circuito_seccion_distrito:
+        for seccion, circuito, nro_de_mesa, distrito in mesa_circuito_seccion_distrito:
             try:
-                match_mesa = Mesa.obtener_mesa_en_circuito_seccion_distrito(mesa[2], mesa[1],
-                                                                            mesa[0], mesa[3])
+                match_mesa = Mesa.obtener_mesa_en_circuito_seccion_distrito(
+                    nro_de_mesa, circuito, seccion, distrito)
             except Mesa.DoesNotExist:
                 raise DatosInvalidosError(
-                    f'No existe mesa: {mesa[2]} en circuito: {mesa[1]}, sección: {mesa[0]} y '
-                    f'distrito: {mesa[3]}.')
-            self.mesas_matches[mesa] = match_mesa
+                    f'No existe mesa {nro_de_mesa} en circuito {circuito}, sección {seccion} y '
+                    f'distrito {distrito}.')
+            self.mesas_matches[nro_de_mesa] = match_mesa
             self.mesas.append(match_mesa)
 
-    def cargar_mesa_categoria(self, mesa, grupos, mesa_categoria, columnas_categorias):
-        """
-        Realiza la carga correspondiente a una mesa y una categoría.
-        Devuelve la carga parcial y la total generadas.
-        """
-        categoria_bd = mesa_categoria.categoria
-
-        self.carga_total = None
-        self.carga_parcial = None
-
-        # Buscamos el nombre de la columna asociada a esta categoría
-        matcheos = [columna for columna in columnas_categorias if columna.lower()
-                    in categoria_bd.nombre.lower()]
-        
-        if len(matcheos) == 0:
-            raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
-                                      f'categoría: {categoria_bd.nombre}.')
-
-        # Se encontró la categoría de la mesa en el archivo.
-        mesa_columna = matcheos[0]
-        # Los votos son por partido así que debemos iterar por todas las filas
-        for indice, fila in grupos.iterrows():
-            opcion = fila['nro de lista']
-            self.fila_analizada = FilaCSVImporter(mesa[0], mesa[1], mesa[2], mesa[3])
-
-            # Primero chequeamos si esta fila corresponde a metadata verificando el
-            # número de lista que está en cero cuando se trata de metadata.
-            if str(opcion) == '0':
-                # Nos quedamos con la metadata.
-                self.cantidad_electores_mesa = fila['cantidad de electores del padron']
-                self.cantidad_sobres_mesa = fila['cantidad de sobres en la urna']
-
-            else:
-                cantidad_votos = fila[mesa_columna]
-                if not cantidad_votos or math.isnan(cantidad_votos):
-                    # La celda está vacía.
-                    continue
-
-                cantidad_votos = int(cantidad_votos)
-
-                # Buscamos este nro de lista dentro de las opciones asociadas a
-                # esta categoría.
-                match_opcion = [una_opcion for una_opcion in categoria_bd.opciones.all()
-                                if una_opcion.codigo and una_opcion.codigo.strip().lower()
-                                == str(opcion).strip().lower()]
-                opcion_bd = match_opcion[0] if len(match_opcion) > 0 else None
-                if not opcion_bd:
-                    raise DatosInvalidosError(f'El número de lista {opcion} no fue '
-                                              f'encontrado asociado la categoría '
-                                              f'{categoria_bd.nombre}, revise que sea '
-                                              f'el correcto.')
-                opcion_categoria = opcion_bd.categoriaopcion_set.\
-                    filter(categoria=categoria_bd).first()
-                self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
-                                  opcion_bd)
-
-        return self.carga_parcial, self.carga_total
-
-    def copiar_carga_parcial_en_total_si_corresponde(self, carga_parcial, carga_total):
-        """
-        Esta función se encarga de copiar los votos de la carga parcial a la total
-        si corresponde. Corresponde cuando hay votos no prioritarios, es decir,
-        cuando la carga total no está vacía.
-        """
-        if not carga_total:
-            return
-
-        # Hay datos para copiar.
-
-        # Se presupone que si había total es porque también había parcial.
-        # Ahora, en los tests puede no darse.
-        if not carga_parcial:
-            return
-
-        for voto_mesa_reportado_parcial in carga_parcial.reportados.all():
-            voto_mesa_reportado_total = VotoMesaReportado.objects.create(
-                votos = voto_mesa_reportado_parcial.votos,
-                opcion = voto_mesa_reportado_parcial.opcion,
-                carga = carga_total
-            )
-
-    def cargar_mesa(self, mesa, grupos, columnas_categorias):
+    def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
+        self.logger.debug("- Procesando mesa '%s'.", mesa)
         # Obtengo la mesa correspondiente.
-        mesa_bd = self.mesas_matches[mesa]
+        mesa_bd = self.mesas_matches[mesa[2]]
         self.cantidad_electores_mesa = None
         self.cantidad_sobres_mesa = None
 
@@ -217,47 +141,153 @@ class CSVImporter:
 
         # Analizo por categoria-mesa, y por cada categoria-mesa, todos los partidos posibles
         for mesa_categoria in mesa_bd.mesacategoria_set.all():
-            cargas.append(self.cargar_mesa_categoria(mesa, grupos, mesa_categoria, columnas_categorias))
-     
+            cargas.append((mesa_categoria.categoria,
+                           self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria,
+                                                      columnas_categorias)))
+
         # Esto lo puedo hacer recién acá porque tengo que iterar por todas las "categorías" primero
         # para encontrar la de la metadata.
-        for carga_parcial, carga_total in cargas:
-            # A todas las cargas le tengo que agregar el total de votantes y de sobres.
-            self.agregar_total_de_votantes_y_sobres(mesa, carga_parcial)
+        for categoria, (carga_parcial, carga_total) in cargas:
+            if carga_parcial:
+                carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
 
-            # El total de votos hay que impactarlo en todas las cargas.
-            self.copiar_carga_parcial_en_total_si_corresponde(carga_parcial, carga_total)
+            # A todas las cargas le tengo que agregar el total de electores y de sobres.
+            self.agregar_electores_y_sobres(mesa, carga_parcial)
+            self.agregar_electores_y_sobres(mesa, carga_total)
 
-    def agregar_total_de_votantes_y_sobres(self, mesa, carga_parcial):
-        if not carga_parcial:
+            self.logger.debug("----+ El settings.OPCIONES_CARGAS_TOTALES_COMPLETAS es %s",
+                              str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
+            if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
+                self.logger.debug("----+ Validando carga total.")
+                # Si el flag de cargas totales esta activo y hay carga total, entonces verificamos que estén
+                # todas las opciones para todas las categorías.
+                opciones = CategoriaOpcion.objects.filter(
+                    categoria=categoria).values_list('opcion__id', flat=True)
+                self.validar_carga_total(carga_total, categoria, opciones)
+
+            elif carga_parcial:
+                self.logger.debug("----+ Validando carga parcial.")
+                # Si se cargaron las cargas parciales, entonces verificamos que estén todas las opciones
+                # de las categorias prioritarias
+                opciones = CategoriaOpcion.objects.filter(categoria=categoria, prioritaria=True).values_list(
+                    'opcion__id', flat=True)
+                self.validar_carga_parcial(carga_parcial, categoria, opciones)
+
+    def cargar_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
+        """
+        Realiza la carga correspondiente a una mesa y una categoría.
+        Devuelve la carga parcial y la total generadas.
+        """
+        categoria_bd = mesa_categoria.categoria
+        self.logger.debug("-- Procesando categoría '%s'.", categoria_bd)
+
+        self.carga_total = None
+        self.carga_parcial = None
+        seccion, circuito, mesa, distrito = mesa
+
+        # Buscamos el nombre de la columna asociada a esta categoría
+        matcheos = [columna for columna in columnas_categorias if columna.lower()
+                    in categoria_bd.nombre.lower()]
+
+        if len(matcheos) == 0:
+            raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
+                                      f'categoría: {categoria_bd.nombre}.')
+
+        # Se encontró la categoría de la mesa en el archivo.
+        columna_de_la_categoria = matcheos[0]
+        # Los votos son por partido así que debemos iterar por todas las filas
+        for indice, fila in filas_de_la_mesa.iterrows():
+            codigo_lista_en_csv = fila['nro de lista']
+            self.celda_analizada = CeldaCSVImporter(
+                seccion, circuito, mesa, distrito, codigo_lista_en_csv, columna_de_la_categoria)
+
+            # Primero chequeamos si esta fila corresponde a metadata verificando el
+            # número de lista que está en cero cuando se trata de metadata.
+            if codigo_lista_en_csv == '0':
+                # Nos quedamos con la metadata.
+                self.cantidad_electores_mesa = fila['cantidad de electores del padron']
+                self.cantidad_sobres_mesa = fila['cantidad de sobres en la urna']
+
+            else:
+                cantidad_votos = fila[columna_de_la_categoria]
+
+                if self.dato_ausente(cantidad_votos):
+                    # La celda está vacía.
+                    continue
+
+                try:
+                    cantidad_votos = int(cantidad_votos)
+                except ValueError:
+                    raise DatosInvalidosError(
+                        f'Los resultados deben ser números positivos. Revise la siguiente celda '
+                        f'a {self.celda_analizada}.')
+
+                # Buscamos este nro de lista dentro de las opciones asociadas a
+                # esta categoría.
+                match_codigo_lista = [una_opcion for una_opcion in categoria_bd.opciones.all()
+                                      if una_opcion.codigo and una_opcion.codigo.strip().lower()
+                                      == codigo_lista_en_csv.strip().lower()]
+                opcion_bd = match_codigo_lista[0] if len(match_codigo_lista) > 0 else None
+                if not opcion_bd:
+                    raise DatosInvalidosError(f'El número de lista {codigo_lista_en_csv} no fue '
+                                              f'encontrado asociado la categoría '
+                                              f'{categoria_bd.nombre}, revise que sea '
+                                              f'el correcto.')
+                opcion_categoria = opcion_bd.categoriaopcion_set.filter(
+                    categoria=categoria_bd
+                ).first()
+                self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
+                                  opcion_bd)
+
+        return self.carga_parcial, self.carga_total
+
+    def copiar_carga_parcial_en_total(self, carga_parcial, carga_total):
+        """
+        Esta función se encarga de copiar los votos de la carga parcial a la total
+        si corresponde.
+        """
+        if not carga_total:
             return
 
-        if not self.cantidad_electores_mesa or math.isnan(self.cantidad_electores_mesa):
-            raise DatosInvalidosError(f'Falta el reporte de total de votantes para la mesa {mesa}.')
+        for voto_mesa_reportado_parcial in carga_parcial.reportados.all():
+            VotoMesaReportado.objects.create(votos=voto_mesa_reportado_parcial.votos,
+                                             opcion=voto_mesa_reportado_parcial.opcion, carga=carga_total)
 
-        opcion_total_votos = carga_parcial.mesa_categoria.categoria.get_opcion_total_votos()
-        VotoMesaReportado.objects.create(carga=carga_parcial,
-            votos=self.cantidad_electores_mesa,
-            opcion=opcion_total_votos
-        )
+        return carga_total
+
+    def agregar_electores_y_sobres(self, mesa, carga):
+        if not carga:
+            return
+
+        # XXX Ver qué hacemos con la cantidad de electores.
+        # if self.dato_ausente(self.cantidad_electores_mesa):
 
         # Si no hay sobres no pasa nada.
-        if not self.cantidad_sobres_mesa or math.isnan(self.cantidad_sobres_mesa):
+        if self.dato_ausente(self.cantidad_sobres_mesa):
             return
 
-        opcion_sobres = carga_parcial.mesa_categoria.categoria.get_opcion_total_sobres()
-        VotoMesaReportado.objects.create(carga=carga_parcial,
-            votos=self.cantidad_sobres_mesa,
-            opcion=opcion_sobres
-        )
+        opcion_sobres = carga.mesa_categoria.categoria.get_opcion_total_sobres()
 
+        cantidad_votos = int(self.cantidad_sobres_mesa)
+        VotoMesaReportado.objects.create(carga=carga,
+                                         votos=cantidad_votos,
+                                         opcion=opcion_sobres
+                                         )
+        self.logger.debug("---- Agregando %d votos a %s en carga %s.", cantidad_votos, opcion_sobres,
+                          carga.tipo)
+
+    def dato_ausente(self, dato):
+        """
+        Responde si un dato está o no presente, considerando las particularidades del parsing del CSV.
+        """
+        return not dato or math.isnan(float(dato))
 
     def cargar_info(self):
         """
         Carga la info del archivo CSV en la base de datos.
         Si hay errores, los reporta a través de excepciones.
         """
-        self.fila_analizada = None
+        self.celda_analizada = None
         # se guardan los datos: El contenedor `carga` y los votos del archivo
         # la carga es por mesa y categoría entonces nos conviene ir analizando grupos de mesas
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
@@ -266,21 +296,21 @@ class CSVImporter:
         try:
             with transaction.atomic():
 
-                for mesa, grupos in grupos_mesas:
-                    self.cargar_mesa(mesa, grupos, columnas_categorias)
+                for mesa, filas_de_la_mesa in grupos_mesas:
+                    self.cargar_mesa(mesa, filas_de_la_mesa, columnas_categorias)
 
         except IntegrityError as e:
             # fixme ver mejor forma de manejar estos errores
             if 'votomesareportado_votos_check' in str(e):
                 raise DatosInvalidosError(
-                    f'Los resultados deben ser números positivos. Revise las filas correspondientes '
-                    f'a {self.fila_analizada}.')
-            raise DatosInvalidosError(f'Error al guardar los resultados. Revise las filas correspondientes '
-                                      f'a {self.fila_analizada}.')
+                    f'Los resultados deben ser números positivos. Revise la celda correspondiente '
+                    f'a {self.celda_analizada}.')
+            raise DatosInvalidosError(f'Error al guardar los resultados. Revise la celda correspondiente '
+                                      f'a {self.celda_analizada}.')
         except ValueError as e:
             raise DatosInvalidosError(
-                f'Revise que los datos de resultados sean numéricos. Revise las filas correspondientes '
-                f'a {self.fila_analizada}.')
+                f'Revise que los datos de resultados sean numéricos. Revise la celda correspondiente '
+                f'a {self.celda_analizada}: {e}')
         except Exception as e:
             raise e
 
@@ -293,6 +323,7 @@ class CSVImporter:
                     mesa_categoria=mesa_categoria,
                     fiscal=self.fiscal
                 )
+                self.logger.debug("--- Creando carga parcial.")
             carga = self.carga_parcial
         else:
             if not self.carga_total:
@@ -302,9 +333,11 @@ class CSVImporter:
                     mesa_categoria=mesa_categoria,
                     fiscal=self.fiscal
                 )
+                self.logger.debug("--- Creando carga total.")
             carga = self.carga_total
-        voto = VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
-        voto.save()
+
+        self.logger.debug("---- Agregando %d votos a %s en carga %s.", cantidad_votos, opcion_bd, carga.tipo)
+        VotoMesaReportado.objects.create(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
 
     def validar_usuario(self):
         try:
@@ -315,14 +348,47 @@ class CSVImporter:
             raise PermisosInvalidosError('Su usuario no tiene los permisos necesarios para realizar '
                                          'esta acción.')
 
+    def validar_carga(self, carga, categoria, opciones_de_carga, es_parcial):
+        """
+        Valida que la Carga tenga todas las opciones disponibles para votar en esa mesa. Si corresponde a una carga
+        parcial se valida que estén las opciones correspondientes a las categorías prioritarias.
+        Si es una carga Total, se verifica que estén todas las opciones para esa mesa.
 
-class FilaCSVImporter:
-    def __init__(self, seccion, circuito, mesa, distrito):
+        :param parcial: Booleano, sirve para describir si se quiere validar una carga parcial
+        (correspondiente a los partidos prioritarios).
+        :param categoria: Objeto Categoria que queremos verificar que este completo.
+        """
+        opciones_votadas = carga.listado_de_opciones()
+        opciones_de_la_categoria = opciones_de_carga
+        opciones_faltantes = set(opciones_de_la_categoria) - set(opciones_votadas)
+
+        if opciones_faltantes != set():
+            nombres_opciones_faltantes = list(Opcion.objects.filter(
+                id__in=opciones_faltantes).values_list('nombre', flat=True))
+            tipo_carga = "parcial" if es_parcial else "total"
+            raise DatosInvalidosError(
+                f'Los resultados para la carga {tipo_carga} para la categoría {categoria} '
+                f'deben estar completos. '
+                f'Faltan las opciones: {nombres_opciones_faltantes}.')
+
+    def validar_carga_parcial(self, carga_parcial, categoria, opciones_de_carga):
+        self.validar_carga(carga_parcial, categoria, opciones_de_carga, True)
+
+    def validar_carga_total(self, carga_total, categoria, opciones_de_carga):
+        self.validar_carga(carga_total, categoria, opciones_de_carga, False)
+
+
+class CeldaCSVImporter:
+    def __init__(self, seccion, circuito, mesa, distrito, codigo_lista, columna):
         self.mesa = mesa
         self.seccion = seccion
         self.circuito = circuito
         self.distrito = distrito
+        self.codigo_lista = codigo_lista
+        self.columna = columna
 
     def __str__(self):
-        return f"Mesa: {self.mesa} - sección: {self.seccion} - circuito: {self.circuito} - " \
-            f"distrito: {self.distrito}"
+        return (
+            f"Mesa: {self.mesa} - sección: {self.seccion} - circuito: {self.circuito} - "
+            f"distrito: {self.distrito} - lista: {self.codigo_lista} - columna: {self.columna}"
+        )

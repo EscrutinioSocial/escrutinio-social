@@ -57,7 +57,7 @@ class SeccionPolitica(models.Model):
     nombre = models.CharField(max_length=100)
 
     class Meta:
-        ordering = ('numero', )
+        ordering = ('numero',)
         verbose_name = 'Sección política'
         verbose_name_plural = 'Secciones políticas'
 
@@ -94,12 +94,12 @@ class Seccion(models.Model):
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
     class Meta:
-        ordering = ('numero', )
+        ordering = ('numero',)
         verbose_name = 'Sección electoral'
         verbose_name_plural = 'Secciones electorales'
 
     def resultados_url(self):
-        return reverse('resultados-categoria') + f'?seccion={self.id}'
+        return reverse('resultados-primera-categoria') + f'?seccion={self.id}'
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
@@ -131,13 +131,13 @@ class Circuito(models.Model):
     class Meta:
         verbose_name = 'Circuito electoral'
         verbose_name_plural = 'Circuitos electorales'
-        ordering = ('id', )
+        ordering = ('id',)
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
 
     def resultados_url(self):
-        return reverse('resultados-categoria') + f'?circuito={self.id}'
+        return reverse('resultados-primera-categoria') + f'?circuito={self.id}'
 
     def mesas(self, categoria):
         """
@@ -375,6 +375,7 @@ class MesaCategoria(models.Model):
         """
         Actualiza `self.orden_de_carga` a partir de las prioridades por seccion y categoria
         """
+        # evitar import circular
         from scheduling.models import mapa_prioridades_para_mesa_categoria
 
         en_circuito = MesaCategoria.objects.filter(
@@ -385,8 +386,9 @@ class MesaCategoria(models.Model):
 
         self.orden_de_llegada = identificadas + 1
         self.percentil = math.floor((identificadas * 100) / total) + 1
-        self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self) \
-            .valor_para(self.percentil-1, self.orden_de_llegada) * self.percentil
+        self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self).valor_para(
+            self.percentil-1, self.orden_de_llegada
+        ) * self.percentil
         self.save(update_fields=['orden_de_carga', 'orden_de_llegada', 'percentil'])
 
     def invalidar_cargas(self):
@@ -654,6 +656,13 @@ class Categoria(models.Model):
         )
     )
 
+    sensible = models.BooleanField(
+        default=False,
+        help_text=(
+            'Solo pueden visualizar los resultados de esta cagtegoría con permisos especiales.'
+        )
+    )
+
     requiere_cargas_parciales = models.BooleanField(default=False)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
@@ -724,7 +733,7 @@ class Categoria(models.Model):
     class Meta:
         verbose_name = 'Categoría'
         verbose_name_plural = 'Categorías'
-        ordering = ('id', )
+        ordering = ('id',)
 
     def __str__(self):
         return self.nombre
@@ -751,7 +760,6 @@ class CargasIncompatiblesError(Exception):
     Error que se produce si se pide la resta entre dos cargas incompatibles
     """
     pass
-
 
 
 class Carga(TimeStampedModel):
@@ -815,6 +823,10 @@ class Carga(TimeStampedModel):
         """ Devuelve una lista de los votos para cada opción. """
         return self.reportados.values_list('opcion', 'votos')
 
+    def listado_de_opciones(self):
+        """ Devuelve una lista de los ids de las opciones de esta carga. """
+        return self.reportados.values_list('opcion__id', flat=True)
+
     def save(self, *args, **kwargs):
         """
         si el fiscal es troll, la carga nace invalidada y ya procesada
@@ -826,7 +838,7 @@ class Carga(TimeStampedModel):
 
     def __str__(self):
         str_invalidada = ' (invalidada) ' if self.invalidada else ' '
-        return f'carga{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'
+        return f'carga {self.tipo}{str_invalidada}de {self.mesa} / {self.categoria} por {self.fiscal}'
 
     def __sub__(self, carga_2):
         # arranco obteniendo los votos ordenados por opcion, que me van a ser utiles varias veces
@@ -917,6 +929,7 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
     if instance.lugar_votacion:
         lugar = instance.lugar_votacion
         circuito = lugar.circuito
+
         seccion = circuito.seccion
         distrito = seccion.distrito
 

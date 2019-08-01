@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -243,6 +244,10 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
+        'csv_import': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     },
 }
 
@@ -326,19 +331,15 @@ PRIORIDADES_STANDARD_CATEGORIA = [
 # o en validaciones de carga, etc.
 # Por ejemplo:
 #
-# blancos = Opcion.objects.get(**OPCIONES_META['blancos'])
+# blanco = Opcion.objects.get(**OPCION_BLANCOS)
+OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None, 'codigo': '10000'}
+OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None, 'codigo': '10001'}
+OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
+OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
-OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None}
-OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
-OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'Total de votos', 'partido': None}
-OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'Total de sobres', 'partido': None}
-
-OPCIONES_META = {
-    'blancos': OPCION_BLANCOS,
-    'nulos': OPCION_NULOS,
-    'total': OPCION_TOTAL_VOTOS,
-    'sobres': OPCION_TOTAL_SOBRES,
-}
+# Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
+# Ver csv_import.py
+OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 
 # Opción para elegir ninguna proyección en el combo
 SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
@@ -347,11 +348,10 @@ CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
 
 CONSTANCE_CONFIG = {
-    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea ', float),
+    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
 }
 
 
-import sys
 TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
 
 # Para los tests no se importan los local settings.

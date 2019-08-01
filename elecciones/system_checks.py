@@ -20,23 +20,23 @@ def opciones_metadata(app_configs, **kwargs):
     en todas las categorías.
     """
     errors = []
-    opciones_metadata = [
+    opciones_en_settings = [
         'OPCION_NULOS',
         'OPCION_BLANCOS',
         'OPCION_TOTAL_VOTOS',
         'OPCION_TOTAL_SOBRES',
     ]
     # Deben existir las opciones en la base
-    for opcion_metadata in opciones_metadata:
+    for opcion_setting in opciones_en_settings:
         try:
-            opcion = Opcion.objects.get(**getattr(settings, opcion_metadata))
+            opcion = Opcion.objects.get(**getattr(settings, opcion_setting))
         except Opcion.DoesNotExist:
             errors.append(
                 Error(
-                    f'La opción definida en {opcion_metadata} no existe en la BD, o '
+                    f'La opción definida en {opcion_setting} no existe en la BD, o '
                     'está pero no correctamente.',
                     hint='Verificar que las opciones definidas en settings estén en la BD.',
-                    obj=opcion_metadata,
+                    obj=opcion_setting,
                     id='elecciones.E001',
                 )
             )
