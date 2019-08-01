@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'dbbackup',
     'constance',
     'constance.backends.database',
+    'djangoql',
 
     # 'material.admin',
     # 'django.contrib.admin',
@@ -69,6 +70,7 @@ INSTALLED_APPS = [
     'contacto',
     'antitrolling',
     'api',
+    'scheduling'
 ]
 
 MIDDLEWARE = [
@@ -105,26 +107,22 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-# Sobreescribir en local_settings.py si se instala localmente.
-# DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': 'db_name',
-#        'USER': 'postgres',
-#        'PASSWORD': '',
-#        'HOST': 'localhost' if os.environ.get('TRAVIS') == 'true' else 'db',
-#        'PORT': '',
-#    }
-# }
+# Si se instala localmente crear un archivo .env
+#
+# DB_NAME=db_name
+# DB_USER=postgres
+# DB_PASS=changeme
+# DB_HOST=db
+# DB_PORT=port
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASS'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': '',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASS'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT', ''),
     }
 }
 # Password validation
@@ -245,6 +243,10 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
+        'csv_import': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     },
 }
 
@@ -312,6 +314,16 @@ SCORING_TROLL_PROBLEMA_DESCARTADO = 200
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
 MESA_TAKE_WAIT_TIME = 2  # En minutos
 
+# Prioridades standard, a usar si no se definen prioridades específicas
+# para una categoría o circuito
+PRIORIDADES_STANDARD_SECCION = [
+    {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2},
+    {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 20},
+    {'desde_proporcion': 10, 'hasta_proporcion': 100, 'prioridad': 100},
+]
+PRIORIDADES_STANDARD_CATEGORIA = [
+    {'desde_proporcion': 0, 'hasta_proporcion': 100, 'prioridad': 100},
+]
 
 # Las siguientes constantes definen los criterios de filtro
 # para obtener aquellas instancias que se utilizan en el cálculo de resultados
@@ -319,11 +331,17 @@ MESA_TAKE_WAIT_TIME = 2  # En minutos
 # Por ejemplo:
 #
 # blanco = Opcion.objects.get(**OPCION_BLANCOS)
-OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None}
-OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
-OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None}
+OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None, 'codigo': '10000'}
+OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None, 'codigo': '10001'}
+OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
+# Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
+# Ver csv_import.py
+OPCIONES_CARGAS_TOTALES_COMPLETAS = True
+
+# Opción para elegir ninguna proyección en el combo
+SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
@@ -333,7 +351,12 @@ CONSTANCE_CONFIG = {
 }
 
 
-try:
-    from .local_settings import *  # noqa
-except ImportError:
-    pass
+import sys
+TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
+
+# Para los tests no se importan los local settings.
+if not TESTING:
+    try:
+        from .local_settings import *  # noqa
+    except ImportError:
+        pass

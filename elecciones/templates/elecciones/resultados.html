@@ -8,22 +8,32 @@
 {% block breadcrumbs %}
 <nav class="filtros">
   <div class="row">
-    <div class="col s5">
+    <div class="col s3">
       <label>Tipo de agregación</label>
       <select id='tipoDeAgregacion' name='tipoDeAgregacion' class="browser-default">
           {% for value, descripcion in tipos_de_agregaciones %}
               <option value="{{ value }}" {% if tipos_de_agregaciones_seleccionado == value %}selected{% endif %}>
-                      {{ descripcion }}
+                  {{ descripcion }}
               </option>
           {% endfor %}
       </select>
     </div>
-    <div class="col s5">
+    <div class="col s3">
       <label>Opción a considerar</label>
       <select id='opcionaConsiderar' name='opcionaConsiderar' class="browser-default">
           {% for value, descripcion in opciones_a_considerar %}
               <option value="{{ value }}" {% if opciones_a_considerar_seleccionado == value %}selected{% endif %}>{{ descripcion }}</option>
           {% endfor %}
+      </select>
+    </div>
+    <div class="col s3">
+      <label>Tipo de proyeccion</label>
+      <select id='tecnicaDeProyeccion' name='tecnicaDeProyeccion' class="browser-default">
+        {% for id, nombre in tecnicas_de_proyeccion %}
+          <option value="{{ id }}" {% if tecnicas_de_proyeccion_seleccionado == id %}selected{% endif %}>
+            {{ nombre }}
+          </option>
+        {% endfor %}
       </select>
     </div>
   </div>
@@ -133,14 +143,14 @@
                     <i class="small material-icons">people_outline</i>
                     <span>Electores</span>
                 </th>
-                <td title="Electores">{{ resultados.electores}} </td>
+                <td title="Electores">{{ resultados.electores}}</td>
             </tr>
             <tr>
                 <th title="Escrutados">
                     <i class="small material-icons">person_outline</i>
                     <span>Escrutados</span>
                 </th>
-                <td title="Escrutados">{{ resultados.electores_en_mesas_escrutadas }} </td>
+                <td title="Escrutados">{{ resultados.electores_en_mesas_escrutadas }}</td>
             </tr>
             <tr>
                 <th title="% Escrutado">
@@ -154,14 +164,14 @@
                     <i class="small material-icons">person</i>
                     <span>Votantes</span>
                 </th>
-                <td title="Votantes">{{ resultados.votantes }} </td>
+                <td title="Votantes">{{ resultados.votantes }}</td>
             </tr>
             <tr>
                 <th title="Positivos">
                     <i class="small material-icons">person_add</i>
                     <span>Positivos</span>
                 </th>
-                <td title="Positivos">{{ resultados.positivos}}</td>
+                <td title="Positivos">{{ resultados.total_positivos}}</td>
             </tr>
             <tr>
                 <th title="% Participación">

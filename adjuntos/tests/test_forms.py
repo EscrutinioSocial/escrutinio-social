@@ -1,7 +1,7 @@
 import pytest
 from django.http import QueryDict
 from django.core.files.uploadedfile import SimpleUploadedFile
-from adjuntos.forms import IdentificacionForm, BaseUploadForm
+from adjuntos.forms import IdentificacionForm, PreIdentificacionForm, BaseUploadForm
 
 from elecciones.tests.factories import (
     DistritoFactory,
@@ -117,3 +117,45 @@ def test_base_form_file_size(settings, size, valid):
     file_data.update(file_field=file)
     form = BaseUploadForm(files=file_data)
     assert form.is_valid() is valid
+
+
+def test_preidentificacion_nok(db):
+    m1 = MesaFactory()
+    m2 = MesaFactory()
+    form = PreIdentificacionForm({
+        'circuito': m1.circuito.id,
+        'seccion': m2.circuito.seccion.id,
+        'distrito': m2.circuito.seccion.distrito.id,
+    })
+    assert not form.is_valid()
+    assert form.errors['circuito'] == ['Este circuito no pertenece a la sección']
+
+def test_preidentificacion_ok(db):
+    m1 = MesaFactory()
+    form = PreIdentificacionForm({
+        'circuito': m1.circuito.id,
+        'seccion': m1.circuito.seccion.id,
+        'distrito': m1.circuito.seccion.distrito.id,
+    })
+    assert form.is_valid()
+
+
+def test_preidentificacion_parcial_ok(db):
+    m1 = MesaFactory()
+    form = PreIdentificacionForm({
+        'circuito': m1.circuito.id,
+        'seccion': m1.circuito.seccion.id,
+        'distrito': m1.circuito.seccion.distrito.id
+    })
+    assert form.is_valid()
+
+    form = PreIdentificacionForm({
+        'seccion': m1.circuito.seccion.id,
+        'distrito': m1.circuito.seccion.distrito.id
+    })
+    assert form.is_valid()
+
+    form = PreIdentificacionForm({
+        'distrito': m1.circuito.seccion.distrito.id
+    })
+    assert form.is_valid()
