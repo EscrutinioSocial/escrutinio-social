@@ -320,12 +320,15 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
         context = self.get_context_data()
         attachment_form = AgregarAttachmentsForm()
         initial = {}
-        if request.user and request.user.fiscal.seccion:
+        if request.user:
             fiscal = request.user.fiscal
-            initial = {
-                'seccion':fiscal.seccion,
-                'distrito': fiscal.seccion.distrito
-            }
+            if fiscal.seccion:
+                # Si el fiscal tiene una sección precargada tomamos los datos de ahí.
+                initial['seccion'] = fiscal.seccion
+                initial['distrito_precargado'] = fiscal.seccion.distrito
+            elif fiscal.distrito:
+                # Si no tiene sección, pero sí un distrito, vamos con eso.
+                initial['distrito'] = fiscal.distrito
         pre_identificacion_form = PreIdentificacionForm(initial=initial)
         context['attachment_form'] = attachment_form
         context['pre_identificacion_form'] = pre_identificacion_form

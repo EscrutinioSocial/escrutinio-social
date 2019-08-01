@@ -21,7 +21,7 @@ from elecciones.tests.factories import (
 
 PATH_ARCHIVOS_TEST = os.path.dirname(os.path.abspath(__file__)) + '/archivos/'
 CATEGORIAS = [('Presidente y vice', True), ('Gobernador y vice', True),
-              ('Intendentes, Concejales y Consejeros Escolares', False),
+              ('Intendente, Concejales y Consejeros Escolares', False),
               ('Senadores Nacionales', True), ('Diputados Nacionales', True),
               ('Senadores Provinciales', True), ('Diputados Provinciales', True)]
 
@@ -207,7 +207,7 @@ def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
 def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_total.csv', usr_unidad_basica).procesar()
-    assert "Los resultados para la carga total para la categoría Intendentes, Concejales y Consejeros Escolares deben estar completos. " \
+    assert "Los resultados para la carga total para la categoría Intendente, Concejales y Consejeros Escolares deben estar completos. " \
            "Faltan las opciones: ['JpC']." in str(e.value)
 
 def test_caracteres_alfabeticos_en_votos(db, usr_unidad_basica, carga_inicial):

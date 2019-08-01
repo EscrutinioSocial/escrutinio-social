@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.text import get_text_list
@@ -19,7 +19,6 @@ from .models import (
 from .resultados import Sumarizador, Proyecciones
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
-
 
 class StaffOnlyMixing:
     """
@@ -41,6 +40,13 @@ class VisualizadoresOnlyMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or not request.user.fiscal.esta_en_grupo('visualizadores'):
             return self.handle_no_permission()
+
+        pk = kwargs.get('pk')
+        categoria = get_object_or_404(Categoria, id=pk)
+
+        if categoria.sensible and not request.user.fiscal.esta_en_grupo('visualizadores_sensible'):
+            return self.handle_no_permission()
+
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -110,6 +116,14 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
+def resultados_default(request):
+
+    e = Categoria.objects.filter(sensible=False).first()
+    if e is None:
+        raise EnvironmentError("Debe exisitr una categoría no sensible")
+    return redirect('resultados-categoria', args=[e.id])
+
+
 class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     """
     Vista principal para el cálculo de resultados
@@ -140,6 +154,8 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
             if tecnica_de_proyeccion
             else Sumarizador(*parametros_sumarizacion)
         )
+
+        self.ocultar_sensibles = not request.user.fiscal.esta_en_grupo('visualizadores_sensible')
 
         return super().get(request, *args, **kwargs)
 
@@ -209,7 +225,10 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         # Para el cálculo se filtran categorías activas que estén relacionadas
         # a las mesas.
         mesas = self.sumarizador.mesas(categoria)
-        context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
+        categorias = Categoria.para_mesas(mesas)
+        if self.ocultar_sensibles:
+            categorias = categorias.exclude(sensible=True)
 
+        context['categorias'] = categorias.order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('numero')
         return context
