@@ -53,6 +53,7 @@ def registrar_prioridad_categoria(categoria):
         prioridad_scheduling_actual.delete()
 
     # paso 2: si la categoría tiene seteada una prioridad, creo una nueva PrioridadScheduling para ella
+    #         OJO - acá se confía en que las prioridades no pueden ser 0
     if categoria.prioridad:
         nueva_prioridad_scheduling = PrioridadScheduling(
             categoria=categoria, desde_proporcion=0, hasta_proporcion=100, prioridad=categoria.prioridad)
@@ -60,7 +61,36 @@ def registrar_prioridad_categoria(categoria):
 
 
 def registrar_prioridades_seccion(seccion):
-    pass
+    # paso 1: borro las prioridades que haya registradas para esta sección
+    for prioridad_scheduling_actual in PrioridadScheduling.objects.filter(seccion=seccion):
+        prioridad_scheduling_actual.delete()
+
+    # paso 2: agrego las prioridades para las que haya valores seteados en la sección
+    #         OJO - acá se confía en que ni prioridades ni cantidades mínimas pueden ser 0
+
+    # hasta 2%
+    if seccion.prioridad_hasta_2 or seccion.cantidad_minima_prioridad_hasta_2:
+        # la prioridad no puede ser null; si no viene, se asigna el default
+        nueva_prioridad = seccion.prioridad_hasta_2
+        if not nueva_prioridad:
+            mapa_settings_seccion = mapa_prioridades_desde_setting(settings.PRIORIDADES_STANDARD_SECCION)
+            nueva_prioridad = mapa_settings_seccion.registros_ordenados()[0].prioridad
+        nueva_prioridad_scheduling = PrioridadScheduling(
+            seccion=seccion, desde_proporcion=0, hasta_proporcion=2, 
+            prioridad=nueva_prioridad, hasta_cantidad=seccion.cantidad_minima_prioridad_hasta_2)
+        nueva_prioridad_scheduling.save()
+
+    # de 2% a 10%
+    if seccion.prioridad_2_a_10:
+        nueva_prioridad_scheduling = PrioridadScheduling(
+            seccion=seccion, desde_proporcion=2, hasta_proporcion=10, prioridad=seccion.prioridad_2_a_10)
+        nueva_prioridad_scheduling.save()
+
+    # de 10% a 100%
+    if seccion.prioridad_10_a_100:
+        nueva_prioridad_scheduling = PrioridadScheduling(
+            seccion=seccion, desde_proporcion=10, hasta_proporcion=100, prioridad=seccion.prioridad_10_a_100)
+        nueva_prioridad_scheduling.save()
 
 
 class RangosDeProporcionesSeSolapanError(Exception):

@@ -4,7 +4,7 @@ from datetime import timedelta
 from collections import defaultdict
 
 from django.conf import settings
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import Sum, Count, Q
 from django.db.models.signals import post_save
@@ -97,14 +97,18 @@ class Seccion(models.Model):
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(1000)])
     # estos son los nuevos atributos que intervienen en el modelo actual de scheduling
     prioridad_hasta_2 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
     cantidad_minima_prioridad_hasta_2 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
     prioridad_2_a_10 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
     prioridad_10_a_100 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
 
+    # Tracker de cambios en los atributos relacionados con la prioridad, 
+    # usado en la función que dispara en el post_save        
+    tracker = FieldTracker(fields=[
+        'prioridad_hasta_2', 'cantidad_minima_prioridad_hasta_2', 'prioridad_2_a_10', 'prioridad_10_a_100'])
 
     class Meta:
         ordering = ('numero',)
@@ -669,7 +673,7 @@ class Categoria(models.Model):
 
     requiere_cargas_parciales = models.BooleanField(default=False)
     prioridad = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
 
     # Tracker de cambios en el atributo prioridad, usado en la función que dispara en el post_save        
     tracker = FieldTracker(fields=['prioridad'])
@@ -967,3 +971,15 @@ def actualizar_prioridad_scheduling_categoria(sender, instance, created, **kwarg
 
     if created or instance.tracker.has_changed('prioridad'):
         registrar_prioridad_categoria(instance)
+
+
+@receiver(post_save, sender=Seccion)
+def actualizar_prioridad_scheduling_seccion(sender, instance, created, **kwargs):
+    from scheduling.models import registrar_prioridades_seccion
+
+    # 'prioridad_hasta_2', 'cantidad_minima_prioridad_hasta_2', 'prioridad_2_a_10', 'prioridad_10_a_100'
+    if created or instance.tracker.has_changed('prioridad_hasta_2') \
+        or instance.tracker.has_changed('cantidad_minima_prioridad_hasta_2') \
+            or instance.tracker.has_changed('prioridad_2_a_10')  \
+                or instance.tracker.has_changed('prioridad_10_a_100'):
+        registrar_prioridades_seccion(instance)
