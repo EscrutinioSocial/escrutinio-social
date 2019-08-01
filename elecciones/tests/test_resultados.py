@@ -251,7 +251,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.votantes() == 265
     assert resultados.electores_en_mesas_escrutadas() == 320
     assert resultados.porcentaje_escrutado() == f'{100 * 320 / total_electores:.2f}'
-    assert resultados.porcentaje_participacion() == f'{100 * 265 / total_electores:.2f}'
+    assert resultados.porcentaje_participacion() == f'{100 * 265/ 320:.2f}'  # Es sobre escrutado.
 
     columna_datos = [
         ('Electores', resultados.electores()),
