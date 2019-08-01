@@ -9,15 +9,6 @@
 {% block js %}
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
-{# Incluimos explícitamente esto por un bug en dal: #}
-{#   https://github.com/yourlabs/django-autocomplete-light/issues/1079 #}
-<script type="text/javascript" src="{% static 'autocomplete_light/jquery.init.js' %}"></script>
-<script type="text/javascript" src="{% static 'vendor/select2/dist/js/select2.full.js' %}"></script>
-<script type="text/javascript" src="{% static 'vendor/select2/dist/js/i18n/es.js' %}"></script>
-<script type="text/javascript" src="{% static 'autocomplete_light/autocomplete.init.js' %}"></script>
-<script type="text/javascript" src="{% static 'autocomplete_light/forward.js' %}"></script>
-<script type="text/javascript" src="{% static 'autocomplete_light/select2.js' %}"></script>
-<script type="text/javascript" src="{% static 'autocomplete_light/jquery.post-setup.js' %}"></script>
 <script language="javascript">
   function cambioSeccion(event){
       if(event.clean){
@@ -32,31 +23,33 @@
 	  updateField('seccion', "{% url 'autocomplete-seccion' %}");
       }
   }
-  function updateField(target,base_url){
-      var mesa_nro = $(":input[name=mesa]").select2('data')[0].text
-      if(! isFinite(mesa_nro)){
+  function updateField(src,base_url){
+      var nro = $(src).val();
+      var distrito = $("#id_distrito").val();
+      var seccion = $("#id_seccion").val();
+      var circuito = $("#id_circuito").val();
+      var mesa = $("#id_mesa").val();
+      var params = {'distrito':distrito,'seccion':seccion,'circuito':circuito,'mesa':mesa};
+      if(! isFinite(nro)){
 	  return null;
       }
-      var distrito_id = $(":input[name=distrito]").val();
-      var url = base_url+'?forward={"mesa":"'+mesa_nro+'","distrito":"'+distrito_id+'","desdeMesa": "1"}';
-      var targetSelect = $(':input[name='+target+']');
+      var url = base_url+'?q='+nro+'&forward='+JSON.stringify(params);
     $.ajax({
       	  type: 'GET',
       	  url: url
     }).then(function (data) {
-	var op = data['results'][0];
-	var event = jQuery.Event("changed")
-	event.clean = false;
-	if(data['results'].length==1){
-      	    var option = new Option(op['text'], op['id'], true, true);
-      	    targetSelect.append(option).trigger(event);
-      	    targetSelect.trigger(
-		{
-                    type: 'select2:select',
-                    params: { data: op }
-		}
-	    )
+	options = data['results'];
+	var op = ""
+	if(options.length==1){
+	    op = options[0].text;
 	}
+	else if(options.length<=0){
+	    op = "No es un valor válido";
+	}
+	else {
+	    op = "Más de un valor válido";
+	}
+	$(src).wrap('<span id="'+src+'-content">'+op+'</span>');
     });
   }
 </script>
@@ -204,9 +197,31 @@ $(document).ready(function() {
 {{ block.super }}
 <script type="text/javascript">
   $(document).ready(function(){
-      // Esto no existe más.
-      $('#id_status_container').attr('tabindex', 6);
+      $('#id_distrito').attr('tabindex', 1);
+      $('#id_seccion').attr('tabindex', 2);
+      $('#id_circuito').attr('tabindex', 3);
+      $('#id_mesa').attr('tabindex', 4);
       $('.modal').modal();
+      $('#id_distrito').on('blur',function(e){
+	  updateField(
+	      '#id_distrito',
+	      "{% url 'autocomplete-distrito' %}"
+	  )});
+      $('#id_seccion').on('blur',function(e){
+	  updateField(
+	      '#id_seccion',
+	      "{% url 'autocomplete-seccion' %}",
+	  )});
+      $('#id_circuito').on('blur',function(e){
+	  updateField(
+	      '#id_circuito',
+	      "{% url 'autocomplete-circuito' %}"
+	  )});
+      $('#id_mesa').on('blur',function(e){
+	  updateField(
+	      '#id_mesa',
+	      "{% url 'autocomplete-mesa' %}"
+	  )});
   });
 </script>
 

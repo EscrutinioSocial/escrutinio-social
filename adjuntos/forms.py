@@ -5,63 +5,37 @@ from django.core.validators import FileExtensionValidator
 from .models import Identificacion, PreIdentificacion, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
-from dal import autocomplete
 
+from dal import autocomplete
 
 class IdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar mesa
     """
+
     distrito = forms.ModelChoiceField(
         queryset = Distrito.objects.all(),
-        widget = autocomplete.ModelSelect2(
-            url = 'autocomplete-distrito',
-            attrs = {
-                'data-minimum-input-length': 1,
-            },
-        )
+        widget = forms.widgets.TextInput()
     )
-    
+
     seccion = forms.ModelChoiceField(
         queryset = Seccion.objects.all(),
-        widget = autocomplete.ModelSelect2(
-            url = 'autocomplete-seccion',
-            attrs = {
-                'data-minimum-input-length': 2,
-                'onChange': 'cambioSeccion({"type":"changed","clean":true})',
-            },
-            forward = ['distrito','circuito','mesa'],
-        )
+        widget = forms.widgets.TextInput()
     )
     
     circuito = forms.ModelChoiceField(
         queryset = Circuito.objects.all(),
-        widget = autocomplete.ModelSelect2(
-            url = 'autocomplete-circuito',
-            attrs = {
-                'data-minimum-input-length': 2,
-            },
-            forward = ['distrito','seccion','mesa'],
-        )
+        widget = forms.widgets.TextInput()
     )
-    
+
     mesa = forms.ModelChoiceField(
         queryset = Mesa.objects.all(),
-        widget = autocomplete.ModelSelect2(
-            url = 'autocomplete-mesa',
-            attrs = {
-                'data-minimum-input-length': 0,
-                'onChange': 'cambioMesa();',
-            },
-            forward = ['distrito','seccion','circuito'],
-        )
+        widget = forms.widgets.TextInput()
     )
-    
-
     
     class Meta:
         model = Identificacion
-        fields = ['distrito','mesa','seccion','circuito']
+        fields = ['distrito','seccion','circuito','mesa']
         
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')

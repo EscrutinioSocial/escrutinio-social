@@ -476,10 +476,19 @@ class AutocompleteBaseListView(ListView):
 
     def get(self, request, *args, **kwargs):
         try:
-            data = {'options': [{'value': o.id, 'text': str(o)} for o in self.get_queryset()]}
+            data = {'options': [{'id': o.id, 'text': str(o), 'selected_text': str(o)} for o in self.get_queryset(request)]}
         except:
             return JsonResponse(data={},status=500)
         return JsonResponse(data, status=200, safe=False)
+
+class DistritoBaseListView(AutocompleteBaseListView):
+    model = Distrito
+    
+    def get_queryset(self,request):
+        qs = Distrito.objects.all()
+        if request.GET['id']:
+            qs = qs.filter(numero=request.GET['id'])
+        return qs
 
 
 class DistritoListView(autocomplete.Select2QuerySetView):
@@ -488,7 +497,7 @@ class DistritoListView(autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Distrito.objects.all()
         if self.q:
-            qs = qs.filter(nombre__istartswith=self.q)
+            qs = qs.filter(numero=self.q)
         return qs
 
 
