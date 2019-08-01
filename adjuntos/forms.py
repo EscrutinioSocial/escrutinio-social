@@ -7,24 +7,6 @@ from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
 from dal import autocomplete
 
-class MesaField(forms.ModelChoiceField):
-    """
-    Campo para elegir una mesa, que permite configurar la URL, la accion a
-    realizar (con javascript) 
-    """
-    def __init__(self,**kwargs):
-        onChange = {
-                'onChange': 'updateCircuito();updateSeccion();'
-        }
-        attrs = kwargs.pop('attrs', onChange)
-        url = kwargs.pop('url', 'autocomplete-md')
-        forward = kwargs.pop('forward', ['distrito'])
-        self.widget = autocomplete.ModelSelect2(
-            url = url,
-            attrs = attrs,
-            forward = forward
-        )
-        super().__init__(queryset=Mesa.objects.all(), **kwargs)
 
 class IdentificacionForm(forms.ModelForm):
     """
@@ -35,7 +17,7 @@ class IdentificacionForm(forms.ModelForm):
         widget = autocomplete.ModelSelect2(
             url = 'autocomplete-distrito',
             attrs = {
-                'data-minimum-input-length': 3,
+                'data-minimum-input-length': 1,
             },
         )
     )
@@ -44,19 +26,37 @@ class IdentificacionForm(forms.ModelForm):
         queryset = Seccion.objects.all(),
         widget = autocomplete.ModelSelect2(
             url = 'autocomplete-seccion',
-            forward = ['distrito','mesa']
+            attrs = {
+                'data-minimum-input-length': 2,
+            },
+            forward = ['distrito','circuito','mesa']
         )
     )
     
     circuito = forms.ModelChoiceField(
         queryset = Circuito.objects.all(),
         widget = autocomplete.ModelSelect2(
-            url = 'autocomplete-cmd',
-            forward = ['distrito','mesa']
+            url = 'autocomplete-circuito',
+            attrs = {
+                'data-minimum-input-length': 2,
+            },
+            forward = ['distrito','seccion','mesa']
         )
     )
     
-    mesa = MesaField()
+    mesa = forms.ModelChoiceField(
+        queryset = Mesa.objects.all(),
+        widget = autocomplete.ModelSelect2(
+            url = 'autocomplete-mesa',
+            attrs = {
+                'data-minimum-input-length': 1,
+                'onChange': 'updateCircuito();updateSeccion();',
+            },
+            forward = ['distrito','seccion','circuito']
+        )
+    )
+    
+
     
     class Meta:
         model = Identificacion

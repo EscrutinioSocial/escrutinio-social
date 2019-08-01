@@ -11,14 +11,14 @@
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script language="javascript">
   function updateCircuito(){
-      var url ="{% url 'autocomplete-cmd' %}";
+      var url ="{% url 'autocomplete-circuito' %}";
       var mesa_nro = $("#id_mesa").val();
       var distrito_id = $("#id_distrito").val();
       var req_url = url+'?forward={"mesa":"'+mesa_nro+'","distrito":"'+distrito_id+'"}';
       updateField('#id_circuito',req_url);
   }
   function updateSeccion(){
-      var url ="{% url 'autocomplete-smd' %}";
+      var url ="{% url 'autocomplete-seccion' %}";
       var mesa_nro = $("#id_mesa").val();
       var distrito_id = $("#id_distrito").val();
       var req_url = url+'?forward={"mesa":"'+mesa_nro+'","distrito":"'+distrito_id+'"}';
@@ -31,12 +31,13 @@
       	  url: url
     }).then(function (data) {
 	var op = data['results'][0];
+	if(data['results'].length==1){
       	    var option = new Option(op['text'], op['id'], true, true);
       	    targetSelect.append(option).trigger('change');
       	    targetSelect.trigger({
                 type: 'select2:select',
                 params: {data: op}
-            })}
+            })}}
 	   );
   }
 </script>

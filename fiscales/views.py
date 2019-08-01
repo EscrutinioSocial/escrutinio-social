@@ -15,7 +15,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, F
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
 from .models import Fiscal, CodigoReferido
@@ -482,7 +482,6 @@ class AutocompleteBaseListView(ListView):
         return JsonResponse(data, status=200, safe=False)
 
 
-
 class DistritoListView(autocomplete.Select2QuerySetView):
     model = Distrito
 
@@ -492,116 +491,62 @@ class DistritoListView(autocomplete.Select2QuerySetView):
             qs = qs.filter(nombre__istartswith=self.q)
         return qs
 
+
 class SeccionListView(autocomplete.Select2QuerySetView):
     model = Seccion
 
     def get_queryset(self):
         qs = Seccion.objects.all()
+        lookups = Q()
         distrito = self.forwarded.get('distrito',None)
-        if distrito:
-            qs = qs.filter(distrito_id=distrito)
         if self.q:
-            qs = qs.filter(nombre__istartswith=self.q)
-        return qs
+            lookups = Q(nombre__istartswith=self.q)|Q(numero__istartswith=self.q)
+        if distrito:
+            lookups &= Q(distrito_id=distrito)
+        mesa = self.forwarded.get('mesa',None)
+        if mesa:
+            nro = Mesa.objects.get(id=mesa).numero
+            mesas = Mesa.objects.filter(numero=nro).values('circuito__seccion_id')
+            lookups &= Q(id__in=mesas)
+        return qs.filter(lookups)
 
 class CircuitoListView(autocomplete.Select2QuerySetView):
     model = Circuito
 
     def get_queryset(self):
         qs = Circuito.objects.all()
+        lookups = Q()
+        if self.q:
+            lookups = Q(nombre__istartswith=self.q)|Q(numero__istartswith=self.q)
         seccion = self.forwarded.get('seccion',None)
         if seccion:
-            qs = qs.filter(seccion_id=seccion)
-        if self.q:
-            qs = qs.filter(nombre__istartswith=self.q)
-        return qs
+            lookups &= Q(seccion_id=seccion)
+        distrito = self.forwarded.get('distrito',None)
+        if distrito:
+            lookups &= Q(seccion__distrito_id=distrito)
+        mesa = self.forwarded.get('mesa',None)
+        if mesa:
+            nro = Mesa.objects.get(id=mesa).numero
+            mesas = Mesa.objects.filter(numero=nro).values('circuito_id')
+            lookups &= Q(id__in=mesas)
+        return qs.filter(lookups)
 
 class MesaListView(autocomplete.Select2QuerySetView):
     model = Mesa
-
+    
     def get_queryset(self):
         qs = Mesa.objects.all()
+        lookups = Q()
+        if self.q:
+            lookups &= Q(numero=self.q)
         circuito = self.forwarded.get('circuito',None)
         if circuito:
-            qs = qs.filter(circuito_id=circuito)
-        if self.q:
-            qs = qs.filter(numero__istartswith=self.q)
-        return qs
-
-
-class MesaDistritoListView(autocomplete.Select2QuerySetView):
-    
-    def get_queryset(self):
-        qs = Mesa.objects.all()
+            lookups &= Q(circuito_id=circuito)
+        seccion = self.forwarded.get('seccion',None)
+        if seccion:
+            lookups &= Q(circuito__seccion_id=seccion)
         distrito = self.forwarded.get('distrito',None)
         if distrito:
-            qs = qs.filter(circuito__seccion__distrito_id=distrito)
-        if self.q:
-            qs = qs.filter(numero__istartswith=self.q)
-        return qs
-
-    
-
-class CircuitoFromMesaDistrito(autocomplete.Select2QuerySetView):
-    """Devuelve información sobre circuito y sección a partir de 
-    (números de) Mesa y Distrito."""
-    model = Circuito
-
-    def get_queryset(self):
-        qs = Circuito.objects.all()
-        lookups = Q()
-        distrito = self.forwarded.get('distrito',None)
-        if distrito:
-            lookups = Q(seccion__distrito__id=distrito)
-        mesa = self.forwarded.get('mesa',None)
-        if mesa:
-            mesa = Mesa.objects.get(id=mesa)
-            lookups = Q(id=mesa.circuito_id)
-        if self.q:
-            lookups = Q(nombre__istartswith=self.q)
+            lookups &= Q(circuito__seccion__distrito_id=distrito)
         return qs.filter(lookups)
-
-class SeccionFromMesaDistrito(autocomplete.Select2QuerySetView):
-    """Devuelve información sobre Sección y sección a partir de 
-    (números de) Mesa y Distrito."""
-    model = Seccion
-
-    def get_queryset(self):
-        qs = Seccion.objects.all()
-        lookups = Q()
-        distrito = self.forwarded.get('distrito',None)
-        if distrito:
-            lookups = Q(seccion__distrito__id=distrito)
-        mesa = self.forwarded.get('mesa',None)
-        if mesa:
-            mesa = Mesa.objects.get(id=mesa)
-            lookups = Q(id=mesa.circuito.seccion_id)
-        if self.q:
-            lookups = Q(nombre__istartswith=self.q)
-        return qs.filter(lookups)
-
-    
-class CircuitoFromMesaSeccion(AutocompleteBaseListView):
-    model = Circuito
-    
-    def get_queryset(self):
-        qs = super().get_queryset()
-        distrito = self.request.GET['distrito']
-        seccion_nro = self.request.GET['seccion']
-        mesa_nro = self.request.GET['mesa']
-        mesas= Mesa.objects.filter(numero=mesa_nro).values('circuito_id')
-        secciones = Seccion.objects.filter(numero=seccion_nro,distrito_id=distrito).values('id')
-        return qs.filter(seccion_id__in=secciones,id__in=mesas).distinct()
-
-class SeccionFromMesaCircuito(ListView):
-    model = Seccion
-    
-    def get_queryset(self):
-        qs = super().get_queryset()
-        distrito = self.request.GET['distrito']
-        circuito_nro = self.request.GET['circuito']
-        mesa_nro = self.request.GET['mesa']
-        mesas = Mesa.objects.filter(numero=mesa).values('circuito_id')
-        circuitos = Circuito.objects.filter(numero=circuito_nro,id__in=mesas).values('seccion_id')
-        return qs.filter(id__in=circuitos,distrito_id=distrito).distinct()
 
