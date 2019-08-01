@@ -9,43 +9,62 @@
 {% block js %}
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
+{# Incluimos explícitamente esto por un bug en dal: #}
+{#   https://github.com/yourlabs/django-autocomplete-light/issues/1079 #}
+<script type="text/javascript" src="{% static 'autocomplete_light/jquery.init.js' %}"></script>
+<script type="text/javascript" src="{% static 'vendor/select2/dist/js/select2.full.js' %}"></script>
+<script type="text/javascript" src="{% static 'vendor/select2/dist/js/i18n/es.js' %}"></script>
+<script type="text/javascript" src="{% static 'autocomplete_light/autocomplete.init.js' %}"></script>
+<script type="text/javascript" src="{% static 'autocomplete_light/forward.js' %}"></script>
+<script type="text/javascript" src="{% static 'autocomplete_light/select2.js' %}"></script>
+<script type="text/javascript" src="{% static 'autocomplete_light/jquery.post-setup.js' %}"></script>
 <script language="javascript">
-  function updateCircuito(){
-      var url ="{% url 'autocomplete-circuito' %}";
-      var mesa_nro = $("#id_mesa").val();
-      var distrito_id = $("#id_distrito").val();
-      var req_url = url+'?forward={"mesa":"'+mesa_nro+'","distrito":"'+distrito_id+'"}';
-      updateField('#id_circuito',req_url);
+  function cambioSeccion(event){
+      if(event.clean){
+	  $(':input[name=circuito]').val(null).trigger('change');
+	  $(':input[name=mesa]').val(null).trigger('change');
+      }
   }
-  function updateSeccion(){
-      var url ="{% url 'autocomplete-seccion' %}";
-      var mesa_nro = $("#id_mesa").val();
-      var distrito_id = $("#id_distrito").val();
-      var req_url = url+'?forward={"mesa":"'+mesa_nro+'","distrito":"'+distrito_id+'"}';
-      updateField('#id_seccion',req_url);
+  function cambioMesa(){
+      mesa = $(':input[name=mesa]').val();
+      if(mesa){
+	  updateField('circuito',"{% url 'autocomplete-circuito' %}");
+	  updateField('seccion', "{% url 'autocomplete-seccion' %}");
+      }
   }
-  function updateField(target,url){
-    var targetSelect = $(target);
+  function updateField(target,base_url){
+      var mesa_nro = $(":input[name=mesa]").select2('data')[0].text
+      if(! isFinite(mesa_nro)){
+	  return null;
+      }
+      var distrito_id = $(":input[name=distrito]").val();
+      var url = base_url+'?forward={"mesa":"'+mesa_nro+'","distrito":"'+distrito_id+'","desdeMesa": "1"}';
+      var targetSelect = $(':input[name='+target+']');
     $.ajax({
       	  type: 'GET',
       	  url: url
     }).then(function (data) {
 	var op = data['results'][0];
+	var event = jQuery.Event("changed")
+	event.clean = false;
 	if(data['results'].length==1){
       	    var option = new Option(op['text'], op['id'], true, true);
-      	    targetSelect.append(option).trigger('change');
-      	    targetSelect.trigger({
-                type: 'select2:select',
-                params: {data: op}
-            })}}
-	   );
+      	    targetSelect.append(option).trigger(event);
+      	    targetSelect.trigger(
+		{
+                    type: 'select2:select',
+                    params: { data: op }
+		}
+	    )
+	}
+    });
   }
 </script>
 {% block extrajs %}{% endblock %}
 {% endblock %}
 
 {% block extrahead %}
-<link href="/static/css/select2-materialize.css" type="text/css" media="screen" rel="stylesheet">
+<link href={% static "css/select2-materialize.css" %} type="text/css" media="screen" rel="stylesheet">
 <style type="text/css">
 .content {
   padding-bottom: 0px;
@@ -128,7 +147,6 @@ $(document).ready(function() {
               <div class="card-title">¿De qué mesa es esta acta?</div> 
               {% form form=form %}
 	      {% endform %}
-	      {{form.media.js}}
             {% endblock card-content %}
           </div>
           <div class="card-action">
@@ -186,6 +204,7 @@ $(document).ready(function() {
 {{ block.super }}
 <script type="text/javascript">
   $(document).ready(function(){
+      // Esto no existe más.
       $('#id_status_container').attr('tabindex', 6);
       $('.modal').modal();
   });

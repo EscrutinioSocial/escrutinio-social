@@ -347,7 +347,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
             pre_identificacion.fiscal = fiscal
             pre_identificacion.save()
             kwargs.update({'pre_identificacion': pre_identificacion})
-            super().post(request, *args, **kwargs)
+            return super().post(request, *args, **kwargs)
 
         return self.form_invalid(form, pre_identificacion_form, **kwargs)
 

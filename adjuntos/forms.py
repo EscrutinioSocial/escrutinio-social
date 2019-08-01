@@ -28,8 +28,9 @@ class IdentificacionForm(forms.ModelForm):
             url = 'autocomplete-seccion',
             attrs = {
                 'data-minimum-input-length': 2,
+                'onChange': 'cambioSeccion({"type":"changed","clean":true})',
             },
-            forward = ['distrito','circuito','mesa']
+            forward = ['distrito','circuito','mesa'],
         )
     )
     
@@ -40,7 +41,7 @@ class IdentificacionForm(forms.ModelForm):
             attrs = {
                 'data-minimum-input-length': 2,
             },
-            forward = ['distrito','seccion','mesa']
+            forward = ['distrito','seccion','mesa'],
         )
     )
     
@@ -49,10 +50,10 @@ class IdentificacionForm(forms.ModelForm):
         widget = autocomplete.ModelSelect2(
             url = 'autocomplete-mesa',
             attrs = {
-                'data-minimum-input-length': 1,
-                'onChange': 'updateCircuito();updateSeccion();',
+                'data-minimum-input-length': 0,
+                'onChange': 'cambioMesa();',
             },
-            forward = ['distrito','seccion','circuito']
+            forward = ['distrito','seccion','circuito'],
         )
     )
     

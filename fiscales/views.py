@@ -500,13 +500,13 @@ class SeccionListView(autocomplete.Select2QuerySetView):
         lookups = Q()
         distrito = self.forwarded.get('distrito',None)
         if self.q:
-            lookups = Q(nombre__istartswith=self.q)|Q(numero__istartswith=self.q)
+            lookups = Q(nombre__istartswith=self.q) | Q(numero__istartswith=self.q)
         if distrito:
             lookups &= Q(distrito_id=distrito)
         mesa = self.forwarded.get('mesa',None)
-        if mesa:
-            nro = Mesa.objects.get(id=mesa).numero
-            mesas = Mesa.objects.filter(numero=nro).values('circuito__seccion_id')
+        desdeMesa = self.forwarded.get('desdeMesa',None)
+        if mesa and desdeMesa:
+            mesas = Mesa.objects.filter(numero=mesa).values('circuito__seccion_id')
             lookups &= Q(id__in=mesas)
         return qs.filter(lookups)
 
@@ -517,7 +517,7 @@ class CircuitoListView(autocomplete.Select2QuerySetView):
         qs = Circuito.objects.all()
         lookups = Q()
         if self.q:
-            lookups = Q(nombre__istartswith=self.q)|Q(numero__istartswith=self.q)
+            lookups = Q(nombre__istartswith=self.q) | Q(numero__istartswith=self.q)
         seccion = self.forwarded.get('seccion',None)
         if seccion:
             lookups &= Q(seccion_id=seccion)
@@ -525,9 +525,9 @@ class CircuitoListView(autocomplete.Select2QuerySetView):
         if distrito:
             lookups &= Q(seccion__distrito_id=distrito)
         mesa = self.forwarded.get('mesa',None)
-        if mesa:
-            nro = Mesa.objects.get(id=mesa).numero
-            mesas = Mesa.objects.filter(numero=nro).values('circuito_id')
+        desdeMesa = self.forwarded.get('desdeMesa',None)
+        if mesa and desdeMesa:
+            mesas = Mesa.objects.filter(numero=mesa).values('circuito_id')
             lookups &= Q(id__in=mesas)
         return qs.filter(lookups)
 
