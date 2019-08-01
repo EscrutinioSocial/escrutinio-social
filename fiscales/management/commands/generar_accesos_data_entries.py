@@ -13,12 +13,12 @@ class Command(BaseCommand):
         parser.add_argument('--prefijo', default='usr', type=str, help='Prefijo de los usuarios al que se agrega _ y el nro de serie.')
         parser.add_argument('--cantidad', type=int, help='Cantidad de usuarios a crear.')
         parser.add_argument('--grupo', default='fiscales con acceso al bot', type=str, help='En qué grupo se agregan.')
-        parser.add_argument('--id_seccion', type=int, help='Id de la sección a la que corresponde el usuario.')
-        parser.add_argument('--id_distrito', type=int, help='Id del distrito a la que corresponde el usuario.')
+        parser.add_argument('--nro_seccion', type=str, help='Nro de la sección a la que corresponde el usuario.')
+        parser.add_argument('--nro_distrito', type=str, help='Nro del distrito a la que corresponde el usuario.')
 
 
     def crear_acceso(self, prefijo, indice, grupo, distrito, seccion, sobre_escribir=True):
-        username = slugify(f'{prefijo}_{indice:02d}')
+        username = slugify(f'{prefijo}_{indice:03d}')
 
         user, created = User.objects.get_or_create(username=username)
         user.is_staff= True
@@ -52,10 +52,10 @@ class Command(BaseCommand):
         cantidad = options['cantidad']
         nombre_grupo = options['grupo']
         grupo = Group.objects.get(name=nombre_grupo)
-        id_seccion = options['id_seccion']
-        seccion = Seccion.objects.get(id=id_seccion) if id_seccion else None
-        id_distrito = options['id_distrito']
-        distrito = Distrito.objects.get(id=id_distrito) if id_distrito else None
+        nro_seccion = options['nro_seccion']
+        nro_distrito = options['nro_distrito']
+        seccion = Seccion.objects.get(numero=nro_seccion, distrito__numero=nro_distrito) if nro_seccion and nro_distrito else None
+        distrito = Distrito.objects.get(numero=nro_distrito) if nro_distrito else None
 
         for i in range(cantidad):
             user, clave = self.crear_acceso(
