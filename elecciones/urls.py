@@ -3,7 +3,6 @@ from django.conf.urls import url
 from . import views, data_views
 from fancy_cache import cache_page
 from django.contrib.auth.decorators import login_required
-from elecciones.resultados import Sumarizador
 
 cached = cache_page(300)
 
