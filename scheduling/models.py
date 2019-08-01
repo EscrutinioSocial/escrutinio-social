@@ -40,6 +40,28 @@ class PrioridadScheduling(models.Model):
         return mapa
 
 
+# funciones para mantener las instancias de PrioridadScheduling
+# **OJO**: se limitan a lo necesario para la UI de Categoria y Seccion tal cual se la está implementando
+# Carlos Lombardi, 2019.07.31
+def registrar_prioridad_categoria(categoria):
+    # se podría optimizar para modificar el registro existente, pero prefiero
+    # una implementación más sencilla: si había un registro lo borro, si hace falta que haya lo agrego
+
+    # paso 1: si había una PrioridadScheduling para esta Categoria, la borro
+    prioridad_scheduling_actual = PrioridadScheduling.objects.filter(categoria=categoria).first()
+    if prioridad_scheduling_actual:
+        prioridad_scheduling_actual.delete()
+
+    # paso 2: si la categoría tiene seteada una prioridad, creo una nueva PrioridadScheduling para ella
+    if categoria.prioridad:
+        nueva_prioridad_scheduling = PrioridadScheduling(
+            categoria=categoria, desde_proporcion=0, hasta_proporcion=100, prioridad=categoria.prioridad)
+        nueva_prioridad_scheduling.save()
+
+
+def registrar_prioridades_seccion(seccion):
+    pass
+
 
 class RangosDeProporcionesSeSolapanError(Exception):
     pass
