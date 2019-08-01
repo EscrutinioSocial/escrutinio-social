@@ -326,11 +326,19 @@ PRIORIDADES_STANDARD_CATEGORIA = [
 # o en validaciones de carga, etc.
 # Por ejemplo:
 #
-# blanco = Opcion.objects.get(**OPCION_BLANCOS)
+# blancos = Opcion.objects.get(**OPCIONES_META['blancos'])
+
 OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None}
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'Total de votos', 'partido': None}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'Total de sobres', 'partido': None}
+
+OPCIONES_META = {
+    'blancos': OPCION_BLANCOS,
+    'nulos': OPCION_NULOS,
+    'total': OPCION_TOTAL_VOTOS,
+    'sobres': OPCION_TOTAL_SOBRES,
+}
 
 # Opción para elegir ninguna proyección en el combo
 SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')

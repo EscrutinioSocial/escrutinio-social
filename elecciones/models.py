@@ -120,7 +120,7 @@ class Circuito(models.Model):
 
     Distrito -> Sección -> **Circuito** -> Lugar de votación -> Mesa
     """
-    seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
+    seccion = models.ForeignKey(Seccion, related_name='circuitos', on_delete=models.CASCADE)
     localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
 
     numero = models.CharField(max_length=10)
@@ -158,7 +158,7 @@ class LugarVotacion(models.Model):
     Distrito -> Sección -> Circuito -> **Lugar de votación** -> Mesa
     """
 
-    circuito = models.ForeignKey(Circuito, related_name='escuelas', on_delete=models.CASCADE)
+    circuito = models.ForeignKey(Circuito, related_name='lugares_votacion', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, blank=True)
@@ -382,7 +382,7 @@ class MesaCategoria(models.Model):
         )
         total = en_circuito.count()
         identificadas = en_circuito.identificadas().count()
-        
+
         self.orden_de_llegada = identificadas + 1
         self.percentil = math.floor((identificadas * 100) / total) + 1
         self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self) \
@@ -426,7 +426,7 @@ class MesaCategoria(models.Model):
         self.status = status
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
-                
+
 class Mesa(models.Model):
     """
     Define la mesa de votación que pertenece a un class:`LugarDeVotación`.
@@ -662,6 +662,9 @@ class Categoria(models.Model):
 
     def get_opcion_total_votos(self):
         return self.opciones.get(**settings.OPCION_TOTAL_VOTOS)
+
+    def get_opcion_nulos(self):
+        return self.opciones.get(**settings.OPCION_NULOS)
 
     def get_opcion_total_sobres(self):
         return self.opciones.get(**settings.OPCION_TOTAL_SOBRES)
@@ -912,10 +915,16 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
     if instance.lugar_votacion:
-
-        circuito = instance.lugar_votacion.circuito
+        lugar = instance.lugar_votacion
+        circuito = lugar.circuito
         seccion = circuito.seccion
         distrito = seccion.distrito
+
+        electores = Mesa.objects.filter(
+            lugar_votacion=lugar
+        ).aggregate(v=Sum('electores'))['v'] or 0
+        lugar.electores = electores
+        lugar.save(update_fields=['electores'])
 
         # circuito
         electores = Mesa.objects.filter(
