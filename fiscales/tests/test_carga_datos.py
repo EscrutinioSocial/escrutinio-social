@@ -371,7 +371,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     # categoria1 debería aparecer primero porque su mesa categoria tiene un orden_de_carga más grande
     assert nombre_categoria in str(response.content)
 
-    tupla_opciones_electores = [(opcion1.id, mesa.electores // 2), (opcion2.id, mesa.electores // 2)]
+    tupla_opciones_electores = [(opcion1.id, mesa.electores // 2, False), (opcion2.id, mesa.electores // 2, False)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
 
     with django_assert_num_queries(32):
@@ -440,6 +440,8 @@ def _construir_request_data_para_carga_de_resultados(tuplas_opcion_electores):
         request_data[key] = str(tupla[0])
         key = f'form-{index}-votos'
         request_data[key] = str(tupla[1])
+        key = f'form-{index}-valor-previo'
+        request_data[key] = str(tupla[2])
     request_data['form-TOTAL_FORMS'] = str(len(tuplas_opcion_electores))
     request_data['form-INITIAL_FORMS'] = '0'
     request_data['form-MIN_NUM_FORMS'] = str(len(tuplas_opcion_electores))

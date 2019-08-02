@@ -1,4 +1,5 @@
 from functools import partial
+from django.conf import settings
 from django import forms
 from django.forms import modelformset_factory, BaseModelFormSet
 from material import Layout, Row, Fieldset
@@ -291,6 +292,18 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         self.datos_previos = kwargs.pop('datos_previos')
         super().__init__(*args, **kwargs)
 
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+
+        """
+        en este campo hidden se guarda el valor de los datos enviados por si es
+        necesario dar un warning al usuario. Si el usuario los envía por segunda
+        vez, se compara que los datos enviados son los mismos para así guardarlos
+        """
+        form.fields["valor-previo"] = forms.BooleanField(label="",
+                                            required=False,
+                                            widget=forms.HiddenInput)
+
     def clean(self):
         super().clean()
         suma = 0
@@ -315,6 +328,54 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
 
         if errors:
             form.add_error('votos', ValidationError(errors))
+
+        #warnings
+        warnings = []
+
+        for form in self.forms:
+            data = form.data.copy()
+            cantidad_forms = form.data['form-TOTAL_FORMS']
+            mismosDatos = True
+            for i in range(int(cantidad_forms)):
+                mismosDatos = mismosDatos and (data['form-'+str(i)+'-valor-previo']
+                                                == data['form-'+str(i)+'-votos'])
+
+            if not mismosDatos:
+                #todos 0
+                if (form.cleaned_data.get('opcion').nombre_corto
+                                == settings.OPCION_FRENTE_DE_TODOS['nombre_corto']):
+                    if form.cleaned_data.get('votos') == 0:
+                        warnings.append('La cantidad de votos del Frente de Todos es cero.')
+
+                #cambiemos 0
+                if (form.cleaned_data.get('opcion').nombre_corto
+                                == settings.OPCION_CAMBIEMOS['nombre_corto']):
+                    if form.cleaned_data.get('votos') == 0:
+                        warnings.append('La cantidad de votos de Cambiemos es cero.')
+
+                # sobres > mesa.electores && total_votos > sobres
+                if (form.cleaned_data.get('opcion').nombre_corto
+                                == settings.OPCION_TOTAL_SOBRES['nombre_corto']):
+
+                    if form.cleaned_data.get('votos') > self.mesa.electores:
+                        warnings.append('La cantidad de sobres es mayor a la '
+                            f'cantidad de electores de la mesa: {self.mesa.electores}')
+
+                    if suma > form.cleaned_data.get('votos'):
+                        warnings.append('La cantidad de votos es mayor a la '
+                                    f'cantidad de sobres.')
+
+            # guardo los datos en una variable auxiliar para comprobar si hubo
+            # cambios al confirmar el warning
+            for i in range(int(cantidad_forms)):
+                data['form-'+str(i)+'-valor-previo'] = data['form-'+str(i)+'-votos']
+
+            form.data = data
+
+        if warnings:
+            warnings.append('¿Confirma que están cargados correctamente los '
+                                    f'valores que figuran en el acta?')
+            raise forms.ValidationError(warnings)
 
 
 votomesareportadoformset_factory = partial(

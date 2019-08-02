@@ -91,6 +91,9 @@ $(document).ready(function(){
         {% endform %}
       {% endfor %}
     </div>
+    {% if formset.non_form_errors %}
+      <div style='color: red'>{{formset.non_form_errors}}</div>
+    {% endif %}
 {% endblock card-content %}
 
 {% block card-action %}

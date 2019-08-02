@@ -80,16 +80,15 @@ def test_formset_carga_valida_votos_para_opcion(db):
 
     VMRFormSet = votomesareportadoformset_factory(min_num=2)
     data = _construir_request_data_para_carga_de_resultados(
-        [(o1.id, 10), (o2.id, 5)]
+        [(o1.id, 10, False), (o2.id, 5, False)]
     )
     formset = VMRFormSet(data=data, mesa=m, datos_previos=votos_para_opcion)
     assert formset.is_valid()
     data = _construir_request_data_para_carga_de_resultados(
-        [(o1.id, 5), (o2.id, 5)]
+        [(o1.id, 5, False), (o2.id, 5, False)]
     )
     formset = VMRFormSet(data=data, mesa=m, datos_previos=votos_para_opcion)
     assert not formset.is_valid()
 
     # error en el campo votos  del primer form, correspondiente a o1.
     assert formset.errors[0]['votos'][0] == 'El valor confirmado que tenemos para esta opción es 10'
-
