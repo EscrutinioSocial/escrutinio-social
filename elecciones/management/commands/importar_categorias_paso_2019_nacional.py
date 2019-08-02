@@ -60,7 +60,8 @@ class Command(BaseCommand):
             nombre = row['opcion_nombre']
             nombre_corto = row['opcion_nombre_corto'][:20]
             orden = row['opcion_orden']
-            opcion_codigo = row['opcion_codigo']
+            opcion_codigo = row['opcion_codigo'] if 'opcion_codigo' in row else None
+            opcion_codigo = opcion_codigo if opcion_codigo else codigo # Si no tiene uso el del partido.
             defaults = {
                 'nombre': nombre,
                 'nombre_corto': nombre_corto,
