@@ -60,7 +60,7 @@ class Command(BaseCommand):
             nombre = row['opcion_nombre']
             nombre_corto = row['opcion_nombre_corto'][:20]
             orden = row['opcion_orden']
-            opcion_codigo = codigo # XXX No tenemos código de opción provincial?
+            opcion_codigo = row['opcion_codigo']
             defaults = {
                 'nombre': nombre,
                 'nombre_corto': nombre_corto,
