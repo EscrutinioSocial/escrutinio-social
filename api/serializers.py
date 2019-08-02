@@ -70,3 +70,4 @@ class OpcionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
     nombre_corto = serializers.CharField()
+    codigo = serializers.CharField()

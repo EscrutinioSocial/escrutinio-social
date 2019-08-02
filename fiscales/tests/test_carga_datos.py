@@ -252,7 +252,7 @@ def test_formset_reusa_metadata(db, fiscal_client, admin_user):
     o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, orden=1)
     cat1 = CategoriaFactory(opciones=[o1])
     mc = MesaCategoriaFactory(categoria=cat1, status=MesaCategoria.STATUS.total_consolidada_dc)
-    carga = CargaFactory(mesa_categoria=mc, tipo='identificada')
+    carga = CargaFactory(mesa_categoria=mc, tipo='total')
     VotoMesaReportadoFactory(carga=carga, opcion=o1, votos=10)
 
     # otra categoria incluye la misma metadata.
@@ -271,6 +271,15 @@ def test_formset_reusa_metadata(db, fiscal_client, admin_user):
     assert response.context['formset'][0].fields['votos'].widget.attrs['readonly'] is True
 
     assert response.context['formset'][1].initial['votos'] is None
+
+
+def test_carga_envia_datos_previos_al_formset(db, fiscal_client, admin_user, mocker):
+    sentinela = mocker.MagicMock()
+    mocker.patch('elecciones.models.MesaCategoria.datos_previos', return_value=sentinela)
+    mc = MesaCategoriaFactory()
+    mc.take(admin_user.fiscal)
+    response = fiscal_client.get(reverse('carga-total', args=[mc.id]))
+    assert response.context['formset'].datos_previos is sentinela
 
 
 def test_detalle_mesa_categoria(db, fiscal_client):

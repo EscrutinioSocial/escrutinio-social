@@ -270,15 +270,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     # tenemos la lista de opciones ordenadas como la lista
     opciones = categoria.opciones_actuales(solo_prioritarias)
 
-    # este diccionario es el que contiene informacion "pre completada"
-    # de una carga. si una opcion está en este dict, el campo se inicializará
-    # con su clave.
-    votos_para_opcion = dict(mesa.metadata())
-    if tipo == 'total' and mesa_categoria.status == MesaCategoria.STATUS.parcial_consolidada_dc:
-        # una carga total con parcial consolidada reutiliza los datos ya cargados
-        votos_para_opcion.update(
-            dict(mesa_categoria.carga_testigo.opcion_votos())
-        )
+    datos_previos = mesa_categoria.datos_previos(tipo)
 
     # obtenemos la clase para el formset seteando tantas filas como opciones
     # existen. Como extra=0, el formset tiene un tamaño fijo
@@ -287,9 +279,11 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     )
 
     def fix_opciones(formset):
-        # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
-        # se podria hacer "disabled" pero ese caso quita el valor del
-        # cleaned_data y luego lo exige por ser requerido.
+        """
+        función auxiliar que deja sólo la opcion correspondiente a cada fila en los
+        choicefields de cada formulario, configura widget readonly necesarios
+        y la índice de la navegación con tabs
+        """
         first_autofoco = None
         for i, (opcion, form) in enumerate(zip(opciones, formset), 1):
             form.fields['opcion'].choices = [(opcion.id, str(opcion))]
@@ -298,7 +292,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             # por sobre los combo de "opcion"
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
 
-            if votos_para_opcion.get(opcion.id):
+            if datos_previos.get(opcion.id):
                 # los campos que ya conocemos (metadata o cargas parciales consolidadas)
                 # los marcamos como sólo lectura
                 form.fields['votos'].widget.attrs['readonly'] = True
@@ -315,8 +309,10 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     data = request.POST if request.method == 'POST' else None
 
     qs = VotoMesaReportado.objects.none()
-    initial = [{'opcion': o, 'votos': votos_para_opcion.get(o.id)} for o in opciones]
-    formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
+    initial = [{'opcion': o, 'votos': datos_previos.get(o.id)} for o in opciones]
+    formset = VotoMesaReportadoFormset(
+        data, queryset=qs, initial=initial, mesa=mesa, datos_previos=datos_previos
+    )
     fix_opciones(formset)
 
     is_valid = False
@@ -349,15 +345,16 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             # misma mesa-categoría.
             # Ahora no podría darte IntegrityError porque esta vista sólo crea objetos
             # y ya no hay constraint.
-            # Lo dejo por si queremos canalizar algun otro tipo de excepción.
+            # Lo dejamos para enterarnos de algun otro tipo de excepción.
             capture_exception(e)
-        redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+        redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', args=[mesa.id])
         return redirect(redirect_to)
 
-    # Llega hasta acá si hubo error.
-    template_carga = 'carga.html' if not desde_ub else 'carga_ub.html'
+    # Llega hasta acá si hubo error o viene de un GET
     return render(
-        request, "fiscales/" + template_carga, {
+        request,
+        'fiscales/carga.html' if not desde_ub else 'fiscales/carga_ub.html',
+        {
             'formset': formset,
             'categoria': categoria,
             'object': mesa,
