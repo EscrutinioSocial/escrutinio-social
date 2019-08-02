@@ -20,6 +20,8 @@ from model_utils.models import TimeStampedModel
 logger = logging.getLogger("e-va")
 
 
+MAX_INT_DB = 2147483647
+
 class Distrito(models.Model):
     """
     Define el distrito o circunscripción electoral. Es la subdivisión más
@@ -98,11 +100,11 @@ class Seccion(models.Model):
         default=0, null=True, blank=True, validators=[MaxValueValidator(1000)])
     # estos son los nuevos atributos que intervienen en el modelo actual de scheduling
     prioridad_hasta_2 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)])
     prioridad_2_a_10 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)])
     prioridad_10_a_100 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)])
     cantidad_minima_prioridad_hasta_2 = models.PositiveIntegerField(
         default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
 
@@ -411,8 +413,9 @@ class MesaCategoria(models.Model):
         """
         from scheduling.models import mapa_prioridades_para_mesa_categoria
 
-        self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self) \
+        orden_calculado = mapa_prioridades_para_mesa_categoria(self) \
             .valor_para(self.percentil-1, self.orden_de_llegada) * self.percentil
+        self.orden_de_carga = min(orden_calculado, MAX_INT_DB)
 
     def invalidar_cargas(self):
         """
@@ -713,7 +716,7 @@ class Categoria(models.Model):
 
     requiere_cargas_parciales = models.BooleanField(default=False)
     prioridad = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)])
 
     # Tracker de cambios en el atributo prioridad, usado en la función que dispara en el post_save        
     tracker = FieldTracker(fields=['prioridad'])

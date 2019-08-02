@@ -163,6 +163,25 @@ def test_orden_de_carga_cantidad_mesas_prioritarias(db, settings):
     verificar_valores_scheduling_mesacat(mesas[19], pv, 64, 20, 640000)
 
 
+def test_orden_de_carga_overflow_numerico(db, settings):
+    """
+    Se verifica que ante prioridades altas, el orden_de_carga que entrega la aplicación
+    no supera el límite de un entero en la base de datos.
+    """
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
+    fiscal = nuevo_fiscal()
+    seccion, circuito, lugar_votacion = crear_seccion("Algún lado")
+    pv = CategoriaFactory(nombre="PV")
+    categorias = [pv]
+
+    PrioridadSchedulingFactory(seccion=seccion, desde_proporcion=0, hasta_proporcion=100, prioridad=1000000)
+    PrioridadSchedulingFactory(categoria=pv, desde_proporcion=0, hasta_proporcion=100, prioridad=1000000)
+
+    [mesas] = crear_mesas([lugar_votacion], categorias, 50)
+    identificar_mesa(mesas[0], fiscal)
+    verificar_valores_scheduling_mesacat(mesas[0], pv, 1, 1, 2**31-1)
+
+
 def test_secuencia_carga_secciones_standard_prioritaria(db, settings):
     """
     Se verifica la secuencia con la que se asignan mesas considerando dos secciones,
