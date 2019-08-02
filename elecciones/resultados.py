@@ -397,7 +397,7 @@ class Resultados():
         return porcentaje(self.resultados.electores_en_mesas_escrutadas, self.resultados.electores)
 
     def porcentaje_participacion(self):
-        return porcentaje(self.votantes(), self.resultados.electores)
+        return porcentaje(self.votantes(), self.resultados.electores_en_mesas_escrutadas)
 
     def total_mesas_escrutadas(self):
         return self.resultados.total_mesas_escrutadas

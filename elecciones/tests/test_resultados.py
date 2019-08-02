@@ -46,7 +46,8 @@ def carta_marina(db):
 @pytest.fixture()
 def setup_groups(db, admin_user):
     groups = [
-        'validadores', 'unidades basicas', 'visualizadores', 'supervisores', 'fiscales con acceso al bot'
+        'validadores', 'unidades basicas', 'visualizadores', 'supervisores', 'fiscales con acceso al bot',
+        'visualizadores_sensible'
     ]
     for nombre in groups:
         g = Group.objects.create(name=nombre)
@@ -250,7 +251,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.votantes() == 265
     assert resultados.electores_en_mesas_escrutadas() == 320
     assert resultados.porcentaje_escrutado() == f'{100 * 320 / total_electores:.2f}'
-    assert resultados.porcentaje_participacion() == f'{100 * 265 / total_electores:.2f}'
+    assert resultados.porcentaje_participacion() == f'{100 * 265/ 320:.2f}'  # Es sobre escrutado.
 
     columna_datos = [
         ('Electores', resultados.electores()),
@@ -698,4 +699,40 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
     # El usuario validador intenta cargar un acta, sí debería poder
     client.login(username=u_validador.username, password='password')
     response = client.get(reverse('siguiente-accion'))
+    assert response.status_code == 200
+
+def test_categorias_sensible(setup_groups, client):
+    u_visualizador = UserFactory()
+    _ = FiscalFactory(user=u_visualizador)
+    g_visualizadores = Group.objects.get(name='visualizadores')
+    u_visualizador.groups.add(g_visualizadores)
+
+    u_visualizador_sensible = UserFactory()
+    _ = FiscalFactory(user=u_visualizador_sensible)
+    g_visualizadores_sensible = Group.objects.get(name='visualizadores_sensible')
+    u_visualizador_sensible.groups.add(g_visualizadores_sensible)
+    u_visualizador_sensible.groups.add(g_visualizadores)
+
+    c = CategoriaFactory(nombre='default', sensible=False)
+    c_url = reverse('resultados-categoria', args=[c.id])
+
+    c = CategoriaFactory(nombre='default-sensible', sensible=True)
+    c_sensible_url = reverse('resultados-categoria', args=[c.id])
+
+    # El usuario visualizador intenta ver resultado sensible, no debería poder.
+    client.login(username=u_visualizador.username, password='password')
+    response = client.get(c_sensible_url)
+    assert response.status_code == 403
+
+    # Sí debería poder ver resultados.
+    response = client.get(c_url)
+    assert response.status_code == 200
+
+    # El usuario visualizador sensible puede ver resultado sensible.
+    client.login(username=u_visualizador_sensible.username, password='password')
+    response = client.get(c_sensible_url)
+    assert response.status_code == 200
+
+    # El usuario visualizador sensible puede ver resultado no sensible.
+    response = client.get(c_url)
     assert response.status_code == 200

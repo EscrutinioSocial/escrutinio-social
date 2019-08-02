@@ -13,7 +13,7 @@ from django.db.models import Sum
 from django.db.models.signals import post_save, pre_delete
 from django.contrib.contenttypes.models import ContentType
 from annoying.functions import get_object_or_None
-from elecciones.models import Seccion
+from elecciones.models import Seccion, Distrito
 
 from contacto.models import DatoDeContacto
 from model_utils.models import TimeStampedModel
@@ -103,6 +103,7 @@ class Fiscal(models.Model):
         'auth.User', null=True, blank=True, related_name='fiscal', on_delete=models.SET_NULL
     )
     seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
+    distrito = models.ForeignKey(Distrito, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
     referente = models.ForeignKey('Fiscal', related_name='referidos', null=True, blank=True, on_delete=models.SET_NULL)
     referente_certeza = models.PositiveIntegerField(default=100, help_text='El código no era exacto?')

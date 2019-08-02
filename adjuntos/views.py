@@ -321,8 +321,12 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
             fiscal = request.user.fiscal
             context['desde_ub'] = True
             if fiscal.seccion:
+                # Si el fiscal tiene una sección precargada tomamos los datos de ahí.
                 context['seccion_precargada'] = fiscal.seccion
                 context['distrito_precargado'] = fiscal.seccion.distrito
+            elif fiscal.distrito:
+                # Si no tiene sección, pero sí un distrito, vamos con eso.
+                context['distrito_precargado'] = fiscal.distrito
 
         return self.render_to_response(context)
 
