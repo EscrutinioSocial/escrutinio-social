@@ -44,6 +44,16 @@ class FiscalForm(forms.ModelForm):
         exclude = []
 
 
+class ReferidoForm(forms.Form):
+    url = forms.CharField()
+    url.label = ''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['url'].widget.attrs['readonly'] = True
+
+
+
 class MisDatosForm(FiscalForm):
 
     class Meta:
@@ -73,15 +83,6 @@ class FiscalxDNI(forms.ModelForm):
     dni = ARDNIField(required=True)
 
 
-class FiscalForm(forms.ModelForm):
-
-    dni = ARDNIField(required=False)
-
-    class Meta:
-        model = Fiscal
-        exclude = []
-
-
 class QuieroSerFiscalForm(forms.Form):
 
     MENSAJE_ERROR_CODIGO_REF = 'Codigo de referido debe ser de 4 letras y/o números'
@@ -101,10 +102,10 @@ class QuieroSerFiscalForm(forms.Form):
     email_confirmacion = forms.EmailField(required=True, label="Confirmar email")
     apellido = forms.CharField(required=True, label="Apellido", max_length=50)
     nombres = forms.CharField(required=True, label="Nombres", max_length=100)
-    dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento')
+    dni = ARDNIField(required=True, label="DNI", help_text='Ingresá tu Nº de documento sin puntos.')
     telefono_area = forms.CharField(
-        label='Código de área (sin 0 adelante)',
-        help_text='Por ejemplo: 11 para CABA, 221 para La Plata, 351 para Córdoba, etc',
+        label='Código de área (sin 0 adelante).',
+        help_text='Por ejemplo: 11 para CABA, 221 para La Plata, 351 para Córdoba, etc.',
         required=True,
         validators=[
             MaxLengthValidator(MAX_DIGITOS_COD_AREA),
@@ -113,7 +114,7 @@ class QuieroSerFiscalForm(forms.Form):
     )
     telefono_local = forms.CharField(
         label='Teléfono',
-        help_text='Ingresá tu teléfono sin el 15',
+        help_text='Ingresá tu teléfono sin el 15, ni guiones ni espacios.',
         required=True,
         validators=[
             MaxLengthValidator(MAX_DIGITOS_TELEFONO_LOCAL),
@@ -135,12 +136,13 @@ class QuieroSerFiscalForm(forms.Form):
                                                'required': True,
                                            }))
     seccion = forms.CharField(widget=forms.HiddenInput(attrs={'id': 'seccion', 'name': 'seccion'}))
-    referido_por_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
-    referido_por_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
+    referente_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
+    referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
+
     referido_por_codigo = forms.CharField(
         required=False,
         label="Código de referencia",
-        help_text="Si no sabes qué es, dejalo en blanco"
+        help_text="Si no sabes qué es, dejalo en blanco."
     )
 
     password = forms.CharField(
@@ -168,7 +170,7 @@ class QuieroSerFiscalForm(forms.Form):
         ),
         Fieldset(
             'Referencia',
-            Row('referido_por_nombres', 'referido_por_apellido', 'referido_por_codigo')
+            Row('referente_nombres', 'referente_apellido', 'referido_por_codigo')
         )
     )
 
@@ -213,6 +215,12 @@ class QuieroSerFiscalForm(forms.Form):
                     self.MENSAJE_ERROR_TELEFONO_INVALIDO
                 )
 
+    def clean_referente_apellido(self):
+        return self.cleaned_data.get('referente_apellido', '').strip() or None
+
+    def clean_referente_nombres(self):
+        return self.cleaned_data.get('referente_nombres', '').strip() or None
+
     def clean_password(self):
         password = self.cleaned_data.get('password')
         if password:
@@ -238,6 +246,7 @@ class QuieroSerFiscalForm(forms.Form):
         if referido_por_codigo:
             if len(referido_por_codigo) != self.CARACTERES_REF_CODIGO:
                 raise ValidationError(self.MENSAJE_ERROR_CODIGO_REF)
+            referido_por_codigo = referido_por_codigo.upper()
         return referido_por_codigo
 
 
@@ -267,26 +276,35 @@ class VotoMesaModelForm(forms.ModelForm):
 class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
 
     def __init__(self, *args, **kwargs):
+        """
+        Se reciben dos parámetros extra, ``mesa`` y  ``datos_previos``, útiles para la
+        validación.
+
+        ``mesa`` se utiliza para verificar que la cantidad de votos no supera la cantidad de electores
+
+        ``datos_previos`` es un diccionario en la forma {opcion_id: votos_previos, ...}
+        donde viene los valores de una carga parcial u opciones meta, tal cual se presentan
+        pre-inicializados en el formset. Acá se reciben para verificar que estos datos
+        no fueron adulterados para el requests "POST"
+        """
         self.mesa = kwargs.pop('mesa')
+        self.datos_previos = kwargs.pop('datos_previos')
         super().__init__(*args, **kwargs)
-        self.warnings = []
 
     def clean(self):
         super().clean()
         suma = 0
-        positivos = 0
-        total = 0
-        form_opcion_total = None
         for form in self.forms:
-            if not form.cleaned_data.get('opcion').tipo == Opcion.TIPOS.metadata:
-                suma += form.cleaned_data.get('votos') or 0
+            opcion = form.cleaned_data.get('opcion')
+            votos = form.cleaned_data.get('votos')
+            if not opcion.tipo == Opcion.TIPOS.metadata:
+                suma += votos
 
-        # if suma > positivos:
-        #     #form_opcion_total.add_error(
-        #     #    'votos', 'La sumatoria no se corresponde con el total'
-        #     #)
-        #     form_opcion_positivos.add_error('votos',
-        #         f'Positivos deberia ser igual o mayor a {suma}')
+            previos = self.datos_previos.get(opcion.id, None)
+            if previos and previos != votos:
+                form.add_error('votos', ValidationError(
+                    f'El valor confirmado que tenemos para esta opción es {previos}'
+                ))
 
         errors = []
         if suma > self.mesa.electores:

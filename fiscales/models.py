@@ -1,25 +1,81 @@
 import re
 import uuid
+import random
+import string
 from django.db import models
+from django.urls import reverse
 from django.conf import settings
+from django.db import transaction
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.auth.models import User
 from django.dispatch import receiver
 from django.db.models import Sum
 from django.db.models.signals import post_save, pre_delete
-from elecciones.models import Seccion
 from django.contrib.contenttypes.models import ContentType
+from annoying.functions import get_object_or_None
+from elecciones.models import Seccion, Distrito
+
 from contacto.models import DatoDeContacto
+from model_utils.models import TimeStampedModel
 from model_utils.fields import StatusField
+from django.db.utils import IntegrityError
 from model_utils import Choices
 from django.contrib.auth.models import Group
 
 from antitrolling.models import (
-    registrar_fiscal_no_es_troll, marcar_fiscal_troll, EventoScoringTroll, crear_evento_marca_explicita_como_troll
+    crear_evento_marca_explicita_como_troll,
+    marcar_fiscal_troll,
+    registrar_fiscal_no_es_troll,
 )
 from antitrolling.efecto import efecto_determinacion_fiscal_troll
 
-TOTAL = 'Total General'
+
+class CodigoReferido(TimeStampedModel):
+    # hay al menos 1 código de referido por fiscal
+    fiscal = models.ForeignKey('Fiscal', related_name='codigos_de_referidos', on_delete=models.CASCADE)
+    codigo = models.CharField(
+        max_length=4, unique=True, help_text='Código con el que el fiscal puede referir a otres'
+    )
+    activo = models.BooleanField(default=True)
+
+    @classmethod
+    def fiscales_para(cls, codigo, nombre=None, apellido=None):
+        """
+        Devuelve una lista de fiscales candidatos
+        """
+        codigo_ref = get_object_or_None(CodigoReferido, codigo=codigo.upper())
+        if codigo_ref and codigo_ref.activo:
+            # codigo valido vigente
+            return [(codigo_ref.fiscal, 100)]
+        if codigo_ref and not codigo_ref.activo:
+            # codigo valido no activo
+            return [(codigo_ref.fiscal, 25)]
+        elif nombre and apellido:
+            qs = Fiscal.objects.filter(nombres__icontains=nombre, apellido__icontains=apellido)
+            if qs.exists():
+                return [(f, 75) for f in qs]
+        return [(None, 100)]
+
+    def save(self, *args, **kwargs):
+        """
+        Genera un código único de 4 dígitos alfanuméricos
+        """
+        intentos = 5
+        while True:
+            intentos -= 1
+            try:
+                if not self.codigo:
+                    self.codigo = ''.join(random.sample(string.ascii_uppercase + string.digits, 4))
+                with transaction.atomic():
+                    super().save(*args, kwargs)
+                break
+            except IntegrityError:
+                self.codigo = None
+                # se crea un código random unico.
+                # Si falla muchas veces algo feo está pasando.
+                if intentos:
+                    continue
+                raise
 
 
 class Fiscal(models.Model):
@@ -47,14 +103,40 @@ class Fiscal(models.Model):
         'auth.User', null=True, blank=True, related_name='fiscal', on_delete=models.SET_NULL
     )
     seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
-    referido_codigo = models.CharField(max_length=4, blank=True, null=True, unique=True)
-    referido_por_nombres = models.CharField(max_length=100, blank=True, null=True)
-    referido_por_apellido = models.CharField(max_length=100, blank=True, null=True)
-    referido_por_codigo = models.CharField(max_length=4, blank=True, null=True)
+    distrito = models.ForeignKey(Distrito, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
+
+    referente = models.ForeignKey('Fiscal', related_name='referidos', null=True, blank=True, on_delete=models.SET_NULL)
+    referente_certeza = models.PositiveIntegerField(default=100, help_text='El código no era exacto?')
+    # Se pone en true cuando quien lo refirió indica que sí lo conoce.
+    referencia_confirmada = models.BooleanField(default=False)
+
+    # otra metadata del supuesto referente
+    referente_nombres = models.CharField(max_length=50, blank=True, null=True)
+    referente_apellido = models.CharField(max_length=30, blank=True, null=True)
+
+    # el materialized path de referencias
+    referido_por_codigos = models.CharField(max_length=250, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'), )
+
+    def crear_codigo_de_referidos(self):
+        self.codigos_de_referidos.filter(activo=True).update(activo=False)
+        return CodigoReferido.objects.create(fiscal=self)
+
+    def ultimo_codigo(self):
+        """devuelve el último código activo"""
+        cod_ref = self.codigos_de_referidos.filter(activo=True).last()
+        if cod_ref:
+            return cod_ref.codigo
+
+    def ultimo_codigo_url(self):
+        """
+        devuelve la url absoluta con último código activo
+        """
+        url = reverse('quiero-validar', args=[self.ultimo_codigo()])
+        return f'{settings.FULL_SITE_URL}{url}'
 
     def agregar_dato_de_contacto(self, tipo, valor):
         type_ = ContentType.objects.get_for_model(self)
@@ -75,6 +157,7 @@ class Fiscal(models.Model):
         return f'{self.nombres} {self.apellido}'
 
     def esta_en_grupo(self, nombre_grupo):
+
         grupo = Group.objects.get(name=nombre_grupo)
 
         return grupo in self.user.groups.all()
@@ -101,7 +184,7 @@ class Fiscal(models.Model):
     @property
     def esta_en_grupo_unidades_basicas(self):
         return self.esta_en_grupo('unidades basicas')
-        
+
     def scoring_troll(self):
         return self.eventos_scoring_troll.aggregate(v=Sum('variacion'))['v'] or 0
 
@@ -127,20 +210,18 @@ class Fiscal(models.Model):
         """
         Un UE decidió, explícitamente, quitarme la marca de troll.
         Este es el único caso en que un fiscal pierde la marca de troll, no hay eventos automáticos para esto.
-        Por eso este método incluye todas las consecuencias del acto de desmarcar, 
+        Por eso este método incluye todas las consecuencias del acto de desmarcar,
         al contrario de la decisión de marcar que puede ser manual o automática.
         """
         era_troll = self.troll
         self.troll = False
         self.save(update_fields=['troll'])
-        if (era_troll):
+        if era_troll:
             registrar_fiscal_no_es_troll(self, nuevo_scoring, actor)
 
 
-
-
 @receiver(post_save, sender=Fiscal)
-def crear_user_para_fiscal(sender, instance=None, created=False, **kwargs):
+def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, **kwargs):
     """
     Cuando se crea o actualiza una instancia de ``Fiscal`` en estado confirmado
     que no tiene usuario asociado, automáticamente se crea uno ``auth.User``
@@ -155,10 +236,11 @@ def crear_user_para_fiscal(sender, instance=None, created=False, **kwargs):
             email=instance.emails[0] if instance.emails else ""
         )
 
-        # user.set_password(settings.DEFAULT_PASS_PREFIX + instance.dni[-3:])
         user.save()
         instance.user = user
         instance.save(update_fields=['user'])
+    if not instance.codigos_de_referidos.exists():
+        instance.crear_codigo_de_referidos()
 
 
 @receiver(pre_delete, sender=Fiscal)

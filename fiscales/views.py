@@ -17,7 +17,7 @@ from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
-from .models import Fiscal
+from .models import Fiscal, CodigoReferido
 from elecciones.models import (
     Mesa,
     Carga,
@@ -32,11 +32,12 @@ from .acciones import siguiente_accion
 from django.template.loader import render_to_string
 from html2text import html2text
 from django.core.mail import send_mail
-from sentry_sdk import capture_exception
+from sentry_sdk import capture_exception, capture_message
 from .forms import (
     MisDatosForm,
     votomesareportadoformset_factory,
     QuieroSerFiscalForm,
+    ReferidoForm,
 )
 from contacto.views import ConContactosMixin
 from problemas.models import Problema
@@ -44,8 +45,6 @@ from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
 
-from secrets import choice
-from string import ascii_letters, digits
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
@@ -94,28 +93,39 @@ class QuieroSerFiscal(FormView):
     template_name = 'fiscales/quiero-validar.html'
     form_class = QuieroSerFiscalForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['referido_por_codigo'] = self.kwargs.get('codigo_ref', None)
+        return initial
+
     def form_valid(self, form):
         data = form.cleaned_data
         fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
         fiscal.nombres = data['nombres']
         fiscal.apellido = data['apellido']
         fiscal.seccion_id = data['seccion']
-        fiscal.referido_por_nombres = data['referido_por_nombres']
-        fiscal.referido_por_apellido = data['referido_por_apellido']
+        fiscal.referente_nombres = data['referente_nombres']
+        fiscal.referente_apellido = data['referente_apellido']
         if data['referido_por_codigo']:
-            fiscal.referido_por_codigo = data['referido_por_codigo'].upper()
-        fiscal.referido_codigo = generar_codigo_confirmacion()
+            codigo = data['referido_por_codigo']
+            referente, certeza = CodigoReferido.fiscales_para(codigo)[0]
+            fiscal.referente = referente
+            fiscal.referente_certeza = certeza
+            if referente:
+                fiscal.referido_por_codigos = f'{referente.referido_por_codigos}-{codigo}'
+            else:
+                fiscal.referido_por_codigos = codigo
         fiscal.save()
         telefono = data['telefono_area'] + data['telefono_local']
         fiscal.agregar_dato_de_contacto('teléfono', telefono)
         fiscal.agregar_dato_de_contacto('email', data['email'])
         fiscal.user.set_password(data['password'])
-
         fiscal.user.save()
-
         self.enviar_correo_confirmacion(fiscal, data['email'])
 
-        self.success_url = reverse('quiero-validar-gracias', kwargs={'codigo_ref': fiscal.referido_codigo})
+        # se guarda el fiscal en la sesión para que se consuma en la página de agradecimiento
+        self.request.session['fiscal_id'] = fiscal.id
+        self.success_url = reverse('quiero-validar-gracias')
         return super().form_valid(form)
 
     def enviar_correo_confirmacion(self, fiscal, email):
@@ -140,28 +150,26 @@ class QuieroSerFiscal(FormView):
         )
 
 
-def generar_codigo_confirmacion():
-    """
-    Genera un código único de 4 dígitos alfanuméricos y chequea que sea único en la base de una manera
-    no muy a salvo de problemas de concurrencia.
-
-    En caso de surgir un problema de naturaleza concurrente, lo salvará la constraint de la base.
-    """
-    codigo = generar_codigo_random()
-    fiscal_mismo_codigo = Fiscal.objects.filter(referido_codigo=codigo).first()
-    while fiscal_mismo_codigo is not None:
-        codigo = generar_codigo_random()
-        fiscal_mismo_codigo = Fiscal.objects.filter(referido_codigo=codigo).first()
-    return codigo
+def quiero_validar_gracias(request):
+    fiscal = get_object_or_None(Fiscal, id=request.session.get('fiscal_id'))
+    return render(request, 'fiscales/quiero-validar-gracias.html', {'fiscal': fiscal})
 
 
-def generar_codigo_random():
-    alphabet = ascii_letters + digits
-    return ''.join(choice(alphabet) for i in range(QuieroSerFiscalForm.CARACTERES_REF_CODIGO)).upper()
+@login_required
+def referidos(request):
+    fiscal = request.user.fiscal
+    if request.method == 'POST':
+        if 'link' in request.POST:
+            fiscal.crear_codigo_de_referidos()
+        elif 'conozco' in request.POST:
+            # TODO ver como dejar traza de esto
+            referidos_confirmados = request.POST.getlist('referido')
+            fiscal.referidos.filter(id__in=referidos_confirmados).update(referencia_confirmada=True)
+            fiscal.referidos.exclude(id__in=referidos_confirmados).update(referencia_confirmada=False)
 
+    form = ReferidoForm(initial={'url': fiscal.ultimo_codigo_url()})
+    return render(request, 'fiscales/referidos.html', {'form': form, 'referidos': fiscal.referidos.all()})
 
-def quiero_validar_gracias(request, codigo_ref):
-    return render(request, 'fiscales/quiero-validar-gracias.html', {'codigo_ref': codigo_ref})
 
 
 def confirmar_email(request, uuid):
@@ -170,7 +178,7 @@ def confirmar_email(request, uuid):
         texto = mark_safe('El código de confirmación es inválido. '
                           'Por favor copiá y pegá el link que te enviamos'
                           ' por email en la barra de direcciones'
-                          'Si seguís con problemas, env '
+                          'Si seguís con problemas, envía un mail a '
                           '<a href="mailto:{email}">'
                           '{email}</a>'.format(email=settings.DEFAULT_FROM_EMAIL))
 
@@ -222,7 +230,7 @@ def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
     mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente()
     if mesacategoria:
-        mesacategoria.take()
+        mesacategoria.take(request.user.fiscal)
         return carga(request, mesacategoria.id, desde_ub=True)
 
     # si es None, lo llevamos a subir un adjunto
@@ -230,13 +238,30 @@ def cargar_desde_ub(request, mesa_id, tipo='total'):
 
 
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')), login_url=NO_PERMISSION_REDIRECT)
+@user_passes_test(
+    lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')),
+    login_url=NO_PERMISSION_REDIRECT
+)
 def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     """
     Es la vista que muestra y procesa el formset de carga de datos para una categoría-mesa.
     """
-    fiscal = get_object_or_404(Fiscal, user=request.user)
+    fiscal = request.user.fiscal
     mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
+
+    # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
+    if mesa_categoria.taken_by != fiscal:
+        capture_message(
+            f"""
+            Intento de cargar mesa-categoria {mesa_categoria.id}
+
+            taken_by: {mesa_categoria.taken_by}
+            fiscal: {fiscal} ({fiscal.id})
+            """
+        )
+        # TO DO: quizas sumar puntos al score anti-trolling?
+        raise PermissionDenied('no te toca cargar acá')
+
     # en carga parcial sólo se cargan opciones prioritarias
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
@@ -245,15 +270,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     # tenemos la lista de opciones ordenadas como la lista
     opciones = categoria.opciones_actuales(solo_prioritarias)
 
-    # este diccionario es el que contiene informacion "pre completada"
-    # de una carga. si una opcion está en este dict, el campo se inicializará
-    # con su clave.
-    votos_para_opcion = dict(mesa.metadata())
-    if tipo == 'total' and mesa_categoria.status == MesaCategoria.STATUS.parcial_consolidada_dc:
-        # una carga total con parcial consolidada reutiliza los datos ya cargados
-        votos_para_opcion.update(
-            dict(mesa_categoria.carga_testigo.opcion_votos())
-        )
+    datos_previos = mesa_categoria.datos_previos(tipo)
 
     # obtenemos la clase para el formset seteando tantas filas como opciones
     # existen. Como extra=0, el formset tiene un tamaño fijo
@@ -262,9 +279,11 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     )
 
     def fix_opciones(formset):
-        # hack para dejar sólo la opcion correspondiente a cada fila en los choicefields
-        # se podria hacer "disabled" pero ese caso quita el valor del
-        # cleaned_data y luego lo exige por ser requerido.
+        """
+        función auxiliar que deja sólo la opcion correspondiente a cada fila en los
+        choicefields de cada formulario, configura widget readonly necesarios
+        y la índice de la navegación con tabs
+        """
         first_autofoco = None
         for i, (opcion, form) in enumerate(zip(opciones, formset), 1):
             form.fields['opcion'].choices = [(opcion.id, str(opcion))]
@@ -273,7 +292,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             # por sobre los combo de "opcion"
             form.fields['opcion'].widget.attrs['tabindex'] = 99 + i
 
-            if votos_para_opcion.get(opcion.id):
+            if datos_previos.get(opcion.id):
                 # los campos que ya conocemos (metadata o cargas parciales consolidadas)
                 # los marcamos como sólo lectura
                 form.fields['votos'].widget.attrs['readonly'] = True
@@ -290,8 +309,10 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     data = request.POST if request.method == 'POST' else None
 
     qs = VotoMesaReportado.objects.none()
-    initial = [{'opcion': o, 'votos': votos_para_opcion.get(o.id)} for o in opciones]
-    formset = VotoMesaReportadoFormset(data, queryset=qs, initial=initial, mesa=mesa)
+    initial = [{'opcion': o, 'votos': datos_previos.get(o.id)} for o in opciones]
+    formset = VotoMesaReportadoFormset(
+        data, queryset=qs, initial=initial, mesa=mesa, datos_previos=datos_previos
+    )
     fix_opciones(formset)
 
     is_valid = False
@@ -324,15 +345,16 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             # misma mesa-categoría.
             # Ahora no podría darte IntegrityError porque esta vista sólo crea objetos
             # y ya no hay constraint.
-            # Lo dejo por si queremos canalizar algun otro tipo de excepción.
+            # Lo dejamos para enterarnos de algun otro tipo de excepción.
             capture_exception(e)
-        redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+        redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', args=[mesa.id])
         return redirect(redirect_to)
 
-    # Llega hasta acá si hubo error.
-    template_carga = 'carga.html' if not desde_ub else 'carga_ub.html'
+    # Llega hasta acá si hubo error o viene de un GET
     return render(
-        request, "fiscales/" + template_carga, {
+        request,
+        'fiscales/carga.html' if not desde_ub else 'fiscales/carga_ub.html',
+        {
             'formset': formset,
             'categoria': categoria,
             'object': mesa,
