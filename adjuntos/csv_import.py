@@ -250,8 +250,9 @@ class CSVImporter:
                                               f'encontrado asociado la categoría '
                                               f'{categoria_bd.nombre}, revise que sea '
                                               f'el correcto.')
-                opcion_categoria = opcion_bd.categoriaopcion_set. \
-                    filter(categoria=categoria_bd).first()
+                opcion_categoria = opcion_bd.categoriaopcion_set.filter(
+                    categoria=categoria_bd
+                ).first()
                 self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
                                   opcion_bd)
 
@@ -404,5 +405,7 @@ class CeldaCSVImporter:
         self.columna = columna
 
     def __str__(self):
-        return f"Mesa: {self.mesa} - sección: {self.seccion} - circuito: {self.circuito} - " \
+        return (
+            f"Mesa: {self.mesa} - sección: {self.seccion} - circuito: {self.circuito} - "
             f"distrito: {self.distrito} - lista: {self.codigo_lista} - columna: {self.columna}"
+        )
