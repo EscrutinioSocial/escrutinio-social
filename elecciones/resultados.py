@@ -472,23 +472,23 @@ class AvanceDeCarga(Sumarizador):
         )
 
         mesacats_sin_cargar = mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.sin_cargar) \
-            .filter(mesa__attachments__is_null=False))
+            .filter(mesa__attachments__is_null=False)
 
-        mesacats_carga_parcial_sin_consolidar = \ 
+        mesacats_carga_parcial_sin_consolidar = \
             mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_sin_consolidar) | \
                 mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_consolidada_csv)
 
-        mesacats_carga_parcial_consolidada = \ 
+        mesacats_carga_parcial_consolidada = \
             mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_consolidada_dc)
 
-        mesacats_carga_total_sin_consolidar = \ 
+        mesacats_carga_total_sin_consolidar = \
             mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_sin_consolidar) | \
                 mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_consolidada_csv)
 
-        mesacats_carga_total_consolidada = \ 
+        mesacats_carga_total_consolidada = \
             mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_consolidada_dc)
 
-        mesacats_conflicto_o_problema = \ 
+        mesacats_conflicto_o_problema = \
             mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_en_conflicto) | \
                 mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_en_conflicto) | \
                     mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.con_problemas)
