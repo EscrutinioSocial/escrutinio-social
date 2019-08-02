@@ -162,6 +162,7 @@ class LugarVotacion(models.Model):
     direccion = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, blank=True)
     ciudad = models.CharField(max_length=100, blank=True)
+    numero = models.CharField(max_length=10, help_text='Número de escuela', null=True, blank=True)    
 
     # electores es una denormalización. debe coincidir con la sumatoria de
     # los electores de cada mesa de la escuela
