@@ -248,6 +248,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     assert resultados.electores() == total_electores
     assert resultados.total_positivos() == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+    assert resultados.porcentaje_positivos() == '81.13'
     assert resultados.porcentaje_mesas_escrutadas() == '37.50'  # 3 de 8
     assert resultados.votantes() == 265
     assert resultados.electores_en_mesas_escrutadas() == 320
@@ -255,7 +256,11 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.porcentaje_participacion() == f'{100 * 265 / total_electores:.2f}'
 
     assert resultados.total_blancos() == 45
+    assert resultados.porcentaje_blancos() == '16.98'
+
     assert resultados.total_nulos() == 5
+    assert resultados.porcentaje_nulos() == '1.89'
+
     assert resultados.total_votos() == 265
     assert resultados.total_sobres() == 0
 
