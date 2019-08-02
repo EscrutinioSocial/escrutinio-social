@@ -44,13 +44,19 @@ class Command(BaseCommand):
         reader = DictReader(CSV.open())
 
         for c, row in enumerate(reader, 1):
-            print (c,row['distrito_nro'],row['seccion_nro'],row['circuito_nro'],row['escuela_nro'])
+            print(row['distrito_nro'], row['seccion_nro'], row['circuito_nro'], row['escuela_nro'])
+            nro_distrito = row['distrito_nro']
+            nro_seccion = row['seccion_nro']
             try:
-                distrito = Distrito.objects.get(numero=row['distrito_nro'])
-                seccion  = Seccion.objects.get (numero=row['seccion_nro'], distrito=distrito)
+                distrito = Distrito.objects.get(numero=nro_distrito)
+                seccion  = Seccion.objects.get(numero=nro_seccion, distrito=distrito)
                 circuito = Circuito.objects.get(numero=row['circuito_nro'].strip(), seccion=seccion)
-            except # era Distrito.DoesNotExist:
-                self.warning('No existe el distrito, seccion o circuito %s' % row)
+            except Distrito.DoesNotExist:
+                self.warning('No existe el distrito %s.' % nro_distrito)
+            except Seccion.DoesNotExist:
+                self.warning('No existe la sección %s en el distrito %s.' % (nro_seccion, nro_distrito))
+            except Circuito.DoesNotExist:
+                self.warning('No existe el circuito %s' % row)
 
             escuela, created = LugarVotacion.objects.update_or_create(
                 circuito=circuito,
