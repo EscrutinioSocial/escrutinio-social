@@ -84,7 +84,7 @@ $(document).ready(function() {
 
 {% block left-panel %}
   <div class="card">
-      <form method="POST" enctype="multipart/form-data">
+      <form method="POST" enctype="multipart/form-data" action="{{ action|default_if_none:"" }}">
           {% csrf_token %}
           <div class="card-content">
             {% block card-content %}
