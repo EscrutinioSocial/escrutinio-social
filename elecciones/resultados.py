@@ -422,11 +422,6 @@ class AvanceDeCarga(Sumarizador):
             ids_a_considerar=None
         )
 
-    @lru_cache(128)
-    def total_mesas(self):
-        # Está sólo para exponerlo.
-        return super().total_mesas()
-
     def mesas_con_o_sin_attachment(self, con_attachment):
         """
         Devuelve el conjunto de mesas de la categoría actual, con o sin attachment
@@ -460,9 +455,120 @@ class AvanceDeCarga(Sumarizador):
             if item['source'] == origen:
                 return item['count']
 
-    @lru_cache(128)
-    def cant_actas_con_identificacion_parcial(self):
-        IdentificacionParcial.objects.filter(...)
+    # @lru_cache(128)
+    # def cant_actas_con_identificacion_parcial(self):
+    #     IdentificacionParcial.objects.filter(...)
+
+
+    def calcular():
+        """
+        Realiza los cálculos necesarios y devuelve un AttrDict con la info obtenida
+        """
+        mesas_sin_identificar = self.mesas_a_considerar.filter(attachments__is_null=True)
+
+        mesacats_de_la_categoria = MesaCategoria.objects.filter(
+            mesa__in=self.mesas_a_considerar,
+            categoria=self.categoria
+        )
+
+        mesacats_sin_cargar = mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.sin_cargar) \
+            .filter(mesa__attachments__is_null=False))
+
+        mesacats_carga_parcial_sin_consolidar = \ 
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_sin_consolidar) | \
+                mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_consolidada_csv)
+
+        mesacats_carga_parcial_consolidada = \ 
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_consolidada_dc)
+
+        mesacats_carga_total_sin_consolidar = \ 
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_sin_consolidar) | \
+                mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_consolidada_csv)
+
+        mesacats_carga_total_consolidada = \ 
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_consolidada_dc)
+
+        mesacats_conflicto_o_problema = \ 
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_en_conflicto) | \
+                mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_en_conflicto) | \
+                    mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.con_problemas)
+
+        dato_total = DatoTotalAvanceDeCarga().para_mesas(self.mesas_a_considerar)
+        
+        return AttrDict({
+            "total": dato_total,
+            "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_sin_identificar),
+            "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_sin_cargar),
+            "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_sin_consolidar),
+            "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada),
+            "carga_total_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_sin_consolidar),
+            "carga_total_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_consolidada),
+            "carga_conflicto_o_problema": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_conflicto_o_problema),
+        })
+
+        # mesacats_de_la_categoria = MesaCategoria.filter(
+        #     mesa=OuterRef('pk'), categoria=self.categoria
+        # )
+        # self.mesas_a_considerar.filter(attachments__is_null=False) \ 
+        #     .annotate(mesa_categoria=mesacats_de_la_categoria[:1]) \
+        #         .filter(mesa_categoria.status=MesaCategoria.STATUS.sin_cargar)
+
+
+
+
+    def get_resultados(categoria):
+        """
+        Realiza la contabilidad para la categoría, invocando al método ``calcular``.
+        """
+        self.categoria = categoria
+        self.mesas_a_considerar = self.mesas(carga_totcarga_total_sin_consolidara)
+        return self.calcular()
+
+
+def porcentaje(parcial, total):
+    """
+    Función utilitaria para el cálculo de un porcentaje, así se hace igual en todos lados
+    """
+    return round((parcial * 100) / total, 2)
+
+
+class DatoAvanceDeCarga():
+    
+    def para_mesas(mesas):
+        self.cantidad_mesas = mesas.count()
+        self.cantidad_electores = mesas.aggregate(v=Sum('electores'))['v'] or 0
+        return self
+
+    def para_mesacats(mesa_cats):
+        self.cantidad_mesas = mesa_cats.count()
+        self.cantidad_electores = mesa_cats.aggregate(v=Sum('mesa__electores'))['v'] or 0
+        return self
+
+    def cantidad_mesas():
+        return self.cantidad_mesas
+
+    def cantidad_electores():
+        return self.cantidad_electores
+
+
+class DatoParcialAvanceDeCarga(DatoAvanceDeCarga):
+    def __init__(self, dato_total):
+        super.__init__(self)
+        self.dato_total = dato_total
+
+    def porcentaje_mesas():
+        return porcentaje(self.cantidad_mesas(), self.dato_total.cantidad_mesas())
+
+    def porcentaje_electores():
+        return porcentaje(self.cantidad_electores(), self.dato_total.cantidad_electores())
+
+
+class DatoTotalAvanceDeCarga(DatoAvanceDeCarga):
+    def porcentaje_mesas():
+        return 100.0
+
+    def porcentaje_electores():
+        return 100.0
 
 
 class Proyecciones(Sumarizador):
