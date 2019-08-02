@@ -1,19 +1,19 @@
 <tr>
     <td>Votos Positivos</td>
     <td>{{ resultados.total_positivos }}</td>
-    <td>{% widthratio resultados.total_positivos resultados.votantes 100 %}%</td>
+    <td>{{ resultados.porcentaje_positivos }}%</td>
 </tr>
 
 <tr>
     <td>Votos en blanco</td>
     <td>{{ resultados.total_blancos }}</td>
-    <td>{% widthratio resultados.total_blancos resultados.votantes 100 %}%</td>
+    <td>{{ resultados.porcentaje_blancos }}%</td>
 </tr>
 
 <tr>
     <td>Votos nulos</td>
     <td>{{ resultados.total_nulos }}</td>
-    <td>{% widthratio resultados.total_nulos resultados.votantes 100 %}%</td>
+    <td>{{ resultados.porcentaje_nulos }}%</td>
 </tr>
 
 <tr>

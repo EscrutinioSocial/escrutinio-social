@@ -417,6 +417,15 @@ class Resultados():
     def total_sobres(self):
         return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '--')
 
+    def porcentaje_positivos(self):
+        return porcentaje(self.total_positivos(), self.votantes())
+
+    def porcentaje_blancos(self):
+        return porcentaje(self.total_blancos(), self.votantes())
+
+    def porcentaje_nulos(self):
+        return porcentaje(self.total_nulos(), self.votantes())
+
 
 class Proyecciones(Sumarizador):
     """
