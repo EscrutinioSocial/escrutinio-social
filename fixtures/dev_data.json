@@ -40,14 +40,6 @@
   }
 },
 {
-  "model": "auth.group",
-  "pk": 6,
-  "fields": {
-    "name": "visualizadores_sensible",
-    "permissions": []
-  }
-},
-{
   "model": "auth.user",
   "pk": 1,
   "fields": {
@@ -829,7 +821,7 @@
     "tipo": "no_positivo",
     "nombre": "votos en blanco",
     "nombre_corto": "blanco",
-    "codigo": null,
+    "codigo": "10000",
     "partido": null,
     "orden": 10,
     "codigo_dne": null
@@ -881,7 +873,7 @@
     "tipo": "no_positivo",
     "nombre": "votos nulos",
     "nombre_corto": "nulos",
-    "codigo": null,
+    "codigo": "10001",
     "partido": null,
     "orden": 11,
     "codigo_dne": null
@@ -892,9 +884,9 @@
   "pk": 6,
   "fields": {
     "tipo": "metadata",
-    "nombre": "Total de votos",
+    "nombre": "total de votos",
     "nombre_corto": "total_votos",
-    "codigo": null,
+    "codigo": "10010",
     "partido": null,
     "orden": 12,
     "codigo_dne": null
@@ -905,7 +897,7 @@
   "pk": 7,
   "fields": {
     "tipo": "metadata",
-    "nombre": "Total de sobres",
+    "nombre": "total de sobres",
     "nombre_corto": "sobres",
     "codigo": null,
     "partido": null,
@@ -931,6 +923,7 @@
     "color": "black",
     "back_color": "white",
     "activa": true,
+    "sensible": false,
     "requiere_cargas_parciales": false,
     "prioridad": 0
   }
@@ -945,6 +938,7 @@
     "color": "black",
     "back_color": "white",
     "activa": true,
+    "sensible": false,
     "requiere_cargas_parciales": false,
     "prioridad": 0
   }
