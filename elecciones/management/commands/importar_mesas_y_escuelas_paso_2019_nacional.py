@@ -49,10 +49,10 @@ class Command(BaseCommand):
                 distrito = Distrito.objects.get(numero=row['distrito_nro'])
                 seccion  = Seccion.objects.get (numero=row['seccion_nro'], distrito=distrito)
                 circuito = Circuito.objects.get(numero=row['circuito_nro'].strip(), seccion=seccion)
-            except Distrito.DoesNotExist:
+            except # era Distrito.DoesNotExist:
                 self.warning('No existe el distrito, seccion o circuito %s' % row)
 
-            escuela, created = LugarVotacion.objects.get_or_create(
+            escuela, created = LugarVotacion.objects.update_or_create(
                 circuito=circuito,
                 nombre=row['escuela'],
                 direccion=row['direccion'],
@@ -82,7 +82,7 @@ class Command(BaseCommand):
             for mesa_nro in range(int(row['desde']), int(row['hasta']) + 1):
             #ojo habia caso mesas con numeros no consecutivos - prever
             #tal vez agregar las mesas en otra instancia y solo guardar los valores
-                mesa, created = Mesa.objects.get_or_create(numero=mesa_nro,lugar_votacion=escuela,circuito=circuito)  # EVITAR duplicados en limpiezas de escuelas y otros
+                mesa, created = Mesa.objects.update_or_create(numero=mesa_nro,lugar_votacion=escuela,circuito=circuito)  # EVITAR duplicados en limpiezas de escuelas y otros
 #                mesa.lugar_votacion=escuela
 #                mesa.circuito=circuito
                 #mesa.electores=escuela.electores/(int(row['hasta']) + 1- int(row['desde'])) # habria que guardar escuela.mesas en el modelo
