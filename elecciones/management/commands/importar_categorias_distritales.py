@@ -6,7 +6,7 @@ from csv import DictReader
 from elecciones.models import Partido, Opcion, Categoria, CategoriaOpcion, Mesa, MesaCategoria
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/categorias_distrito.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_distrito.csv'
 
 class BaseCommand(BaseCommand):
 
@@ -23,7 +23,7 @@ class BaseCommand(BaseCommand):
             self.warning(f'{object} ya existe', ending=ending)
 
 class Command(BaseCommand):
-    help = "Importar categorias por distrito, creando partidos, opciones y asociando mesas"
+    help = "Importar partidos y opciones."
 
     def handle(self, *args, **options):
         d='''partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_nombre,opcion_nombre_corto,partido_orden,opcion_orden,distrito_name (no se utiliza),cargo (no se utiliza),categoria_nombre,distrito_nro,candidato1ro (no se utiliza)

@@ -6,7 +6,7 @@ from csv import DictReader
 from elecciones.models import Partido, Opcion, Categoria, CategoriaOpcion, Mesa, MesaCategoria
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/categorias_nacionales.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_nacionales.csv'
 
 class BaseCommand(BaseCommand):
 
@@ -23,7 +23,7 @@ class BaseCommand(BaseCommand):
             self.warning(f'{object} ya existe', ending=ending)
 
 class Command(BaseCommand):
-    help = "Importar categorias nacionales, creando partidos, opciones y asociando mesas"
+    help = "Importar categorías nacionales, creando partidos, opciones y asociando mesas"
 
     def handle(self, *args, **options):
         d='''partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_nombre,opcion_nombre_corto,partido_orden,opcion_orden,categoria_nombre
@@ -33,23 +33,40 @@ class Command(BaseCommand):
         reader = DictReader(CSV.open())
         errores = []
         c = 0
-        for c,row in enumerate(reader,1):
+        for c, row in enumerate(reader, 1):
             print(row)
-            partido, created = Partido.objects.get_or_create(   
-                nombre=row['partido_nombre'],
-                nombre_corto=row['partido_nombre_corto'][:30],
-                codigo=row['partido_codigo'],
-                color=row['partido_color'],
-                orden=int(row['partido_orden'])
-                )
+            codigo = row['partido_codigo']
+            nombre = row['partido_nombre']
+            nombre_corto = row['partido_nombre_corto'][:30]
+            color = row['partido_color']
+            orden = int(row['partido_orden'])
+            defaults = {
+                'nombre': nombre,
+                'nombre_corto': nombre_corto,
+                'color': color,
+                'orden': orden,
+            }
+            partido, created = Partido.objects.get_or_create(codigo=codigo, defaults)
+            if not created:
+                partido.update(**defaults)
+            
             self.log(partido, created)
-                                                            
-            opcion, created = Opcion.objects.get_or_create(     
-                partido=partido,
-                nombre=row['opcion_nombre'],
-                nombre_corto=row['opcion_nombre_corto'][:20],
-                orden=row['opcion_orden'],
-                )
+            
+            nombre = row['opcion_nombre']
+            nombre_corto = row['opcion_nombre_corto'][:20]
+            orden = row['opcion_orden']
+            opcion_codigo = ???
+            defaults = {
+                nombre = nombre,
+                nombre_corto = nombre_corto,
+                orden = orden,
+            }        
+
+            opcion, created = Opcion.objects.get_or_create(partido=partido,
+                codigo=opcion_codigo,
+                defaults
+            )
+
             self.log(opcion, created)
             
             categoria, created = Categoria.objects.get_or_create(
