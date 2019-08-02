@@ -6,7 +6,7 @@ from csv import DictReader
 from elecciones.models import Distrito, Seccion, Circuito, LugarVotacion, Mesa, Categoria
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/escuelas.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/escuelas_1.csv'
 
 def to_float(val):
     try:
@@ -36,7 +36,7 @@ class Command(BaseCommand):
     1,32493,ESC Nº26 HIPOLITO YRIGOYEN,SAN JUAN AV 353 ,1,1,CIUDAD DE BUENOS AIRES,1,12,12,,
     1,32501,ESC Nº3 BERNARDINO RIVADAVIA,BOLIVAR 1235 ,1,1,CIUDAD DE BUENOS AIRES,21,30,10,,
     '''
-    help = "Importar escuelas total pais"
+    help = "Importar escuelas"
 
     def handle(self, *args, **options):
         fecha = datetime.datetime(2019, 5, 12, 8, 0)
@@ -50,7 +50,7 @@ class Command(BaseCommand):
                 seccion  = Seccion.objects.get (numero=row['seccion_nro'], distrito=distrito)
                 circuito = Circuito.objects.get(numero=row['circuito_nro'].strip(), seccion=seccion)
             except Distrito.DoesNotExist:
-                print ('No existe el distrito, seccion o circuito ', row)
+                self.warning('No existe el distrito, seccion o circuito %s' % row)
 
             escuela, created = LugarVotacion.objects.get_or_create(
                 circuito=circuito,

@@ -6,7 +6,8 @@ from csv import DictReader
 from elecciones.models import Partido, Opcion, Categoria, CategoriaOpcion, Mesa, MesaCategoria
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_nacionales.csv'
+CSV_NACIONAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_nacionales.csv'
+CSV_PROVINCIAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_provinciales.csv'
 
 class BaseCommand(BaseCommand):
 
@@ -25,12 +26,18 @@ class BaseCommand(BaseCommand):
 class Command(BaseCommand):
     help = "Importar categorías nacionales, creando partidos, opciones y asociando mesas"
 
+    def add_arguments(self, parser):
+        parser.add_argument('--provinciales', action="store_true", default=False, help='Indica si importa nacionales o distritales.')
+
     def handle(self, *args, **options):
+        provinciales = options['provinciales']
         d='''partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_nombre,opcion_nombre_corto,partido_orden,opcion_orden,categoria_nombre
         FRENTE DE TODOS,FRENTE DE TODOS,136,,CELESTE Y BLANCA A,CELESTE Y BLANCA A,1,1,Presidente y Vicepresidente
         '''
+        arch = CSV_PROVINCIAL if provinciales else CSV_NACIONAL
+
         self.stdout.write(self.style.SUCCESS('Leyendo CSV...'))
-        reader = DictReader(CSV.open())
+        reader = DictReader(arch.open())
         errores = []
         c = 0
         for c, row in enumerate(reader, 1):
@@ -46,35 +53,34 @@ class Command(BaseCommand):
                 'color': color,
                 'orden': orden,
             }
-            partido, created = Partido.objects.get_or_create(codigo=codigo, defaults)
-            if not created:
-                partido.update(**defaults)
+            partido, created = Partido.objects.update_or_create(codigo=codigo, defaults=defaults)
             
             self.log(partido, created)
             
             nombre = row['opcion_nombre']
             nombre_corto = row['opcion_nombre_corto'][:20]
             orden = row['opcion_orden']
-            opcion_codigo = ???
+            opcion_codigo = codigo # XXX No tenemos código de opción provincial?
             defaults = {
-                nombre = nombre,
-                nombre_corto = nombre_corto,
-                orden = orden,
+                'nombre': nombre,
+                'nombre_corto': nombre_corto,
+                'orden': orden,
             }        
 
-            opcion, created = Opcion.objects.get_or_create(partido=partido,
+            opcion, created = Opcion.objects.update_or_create(partido=partido,
                 codigo=opcion_codigo,
-                defaults
+                defaults=defaults
             )
-
             self.log(opcion, created)
             
             categoria, created = Categoria.objects.get_or_create(
-                nombre=row['categoria_nombre'],)
+                nombre=row['categoria_nombre'],
+                slug=row['categoria_slug']
+            )
             self.log(categoria, created)                  
             
-            mesas=Mesa.objects.all()
-            
+            mesas = Mesa.objects.all() if not provinciales else Mesa.objects.filter(circuito__seccion__distrito__numero=row['distrito_nro'])
+
             for mesa in mesas:
                 mesacategoria, created = MesaCategoria.objects.get_or_create(mesa=mesa, categoria=categoria)
                                              
@@ -85,7 +91,7 @@ class Command(BaseCommand):
             )
             self.log(categoriaopcion, created)
 
-        self.stdout.write(self.style.SUCCESS('Leyendo CSV OK.'))
+        self.stdout.write(self.style.SUCCESS('CVS leído.'))
             
                                                                 
 
