@@ -68,7 +68,7 @@ class IdentificacionCreateView(CreateView):
         attachment = get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
         fiscal = self.request.user.fiscal
         # Sólo el fiscal asignado al attachment puede identificar la foto.
-        if attachment.taken and attachment.taken_by != fiscal:
+        if attachment.taken_by != fiscal:
             capture_message(
                 f"""
                 Intento de asignar mesa de attachment {attachment.id} sin permiso
