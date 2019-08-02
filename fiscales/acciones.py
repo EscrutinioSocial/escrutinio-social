@@ -1,5 +1,6 @@
 from django.shortcuts import redirect, render
 from django.db import transaction
+from django.db.models import Q
 from constance import config
 
 from adjuntos.models import Attachment
@@ -33,7 +34,7 @@ def siguiente_accion(request):
         if foto:
             return IdentificacionDeFoto(request, foto)
     elif cant_cargas:
-        mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
+        mesacategoria = con_carga_pendiente.filter(~Q(mesa__attachments=None)).sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
         if mesacategoria:
             return CargaCategoriaEnActa(request, mesacategoria)
     return NoHayAccion(request)
