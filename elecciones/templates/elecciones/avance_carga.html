@@ -1,6 +1,16 @@
 {% extends "fiscales/base.html" %}
 {% load staticfiles %}
 
+{% block extrahead %}
+<style type="text/css">
+
+  .left-panel {
+      flex-basis: 100%;
+  }
+
+</style>
+{% endblock %}
+
 {% block title %} Avance de carga {% endblock %}
 
 {% block page_title %} Avance de carga para {{para|default:para}} {% endblock %}
@@ -35,15 +45,104 @@
 {% endblock head %}
 
 {% block sidenav_items %}
+<li><a href="{% url "avance-carga" primera_categoria %}">Todo</a></li>
 {% include "elecciones/arbol_distrito.html" %}
 {% endblock sidenav_items %}
 
 {% block left-panel %}
 <div class="card">
-  <p>
-    Left Panel
-  </p>
+  <div class="card-content">
+    <table border="1">
+      <thead> <!-- Header de la tabla -->
+	<!-- Mesa / Electores -->
+	<tr> <!-- Primera fila -->
+	  <!-- La primera celda va en blanco ya que se corresponde con los tipos
+	       de estado -->
+	  <td></td>
+	  <!-- La tabla tiene 5 columnas de la 1 a la 5 por lo tanto llenamos las
+	       celdas de las columnas 2 y 4; de esta manera en la siguiente
+	       fila llenamos en las columnas 2 y 3 Cantidad y porcentaje para
+	       la mesa y en 4 y 5 Cantidad y porcentaje para los electores. -->
+	  <td colspan="2" style="text-align: center;">Mesa</td>
+	  <td colspan="4" style="text-align: center;">Electores</td>
+	</tr>
+	<!-- Cantidad / Porcentajes -->
+	<tr> <!-- Segunda fila -->
+	  <!-- La primera celda va en blanco ya que se corresponde con los tipos
+	       de estado -->
+	  <td></td>
+	  <!-- Mesa: Cantidad / Porcentajes -->
+	  <td style="text-align: right;">Cantidad</td>
+	  <td style="text-align: right;">Porcentajes</td>
+	  <!-- Electores: Cantidad / Porcentajes -->
+	  <td style="text-align: right;">Cantidad</td>
+	  <td style="text-align: right;">Porcentajes</td>
+	</tr>
+      </thead>
+      <!-- A partir de acá van datos y por lo tanto todas las celdas deberían
+	tener datos -->
+      <tbody>
+	<tr>
+	  <td>Total mesa y electores</td>
+	  <td style="text-align: right;">200</td>
+	  <td style="text-align: right;">3%</td>
+	  <td style="text-align: right;">1000</td>
+	  <td style="text-align: right;">10%</td>
+	</tr>
+	<tr>
+	  <td>Sin identificar</td>
+	  <td style="text-align: right;">200</td>
+	  <td style="text-align: right;">3%</td>
+	  <td style="text-align: right;">1000</td>
+	  <td style="text-align: right;">10%</td>
+	</tr>
+	<tr>
+	  <td>Sin cargar</td>
+	  <td style="text-align: right;">200</td>
+	  <td style="text-align: right;">3%</td>
+	  <td style="text-align: right;">1000</td>
+	  <td style="text-align: right;">10%</td>
+	</tr>
+	<tr>
+	  <td>Carga prioritaria - sin consolidar</td>
+	  <td style="text-align: right;">200</td>
+	  <td style="text-align: right;">3%</td>
+	  <td style="text-align: right;">1000</td>
+	  <td style="text-align: right;">10%</td>
+	</tr>
+	<tr>
+	  <td>Carga prioritaria - consolidada</td>
+	  <td style="text-align: right;">200</td>
+	  <td style="text-align: right;">3%</td>
+	  <td style="text-align: right;">1000</td>
+	  <td style="text-align: right;">10%</td>
+	</tr>
+	<tr>
+	  <td>Carga total - sin consolidar</td>
+	  <td style="text-align: right;">200</td>
+	  <td style="text-align: right;">3%</td>
+	  <td style="text-align: right;">1000</td>
+	  <td style="text-align: right;">10%</td>
+	</tr>
+	<tr>
+	  <td>Carga total - consolidada</td>
+	  <td style="text-align: right;">200</td>
+	  <td style="text-align: right;">3%</td>
+	  <td style="text-align: right;">1000</td>
+	  <td style="text-align: right;">10%</td>
+	</tr>
+	<tr>
+	  <td>Conflictos o problemas</td>
+	  <td style="text-align: right;">200</td>
+	  <td style="text-align: right;">3%</td>
+	  <td style="text-align: right;">1000</td>
+	  <td style="text-align: right;">10%</td>
+	</tr>
+      </tbody>
+    </table>
+  </div>
 </div>
+
 {% endblock left-panel %}
 
 {% block messages %}
