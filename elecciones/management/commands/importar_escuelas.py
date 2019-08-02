@@ -51,8 +51,9 @@ class Command(BaseCommand):
         for c, row in enumerate(reader, 1):
             num_distrito=row['distrito_nro']
             nom_distrito=row['distrito_name']
-            distrito, created = Distrito.objects.get_or_create(numero=num_distrito,nombre=nom_distrito,electores=0,prioridad=3)
+            distrito, created = Distrito.objects.get_or_create(numero=num_distrito,nombre=nom_distrito)
             distrito.save()
+            print(num_distrito, nom_distrito, distrito.id, distrito)
             self.log(distrito, created)
 
             print ('row:',c) # para cuando algo falla
@@ -94,9 +95,9 @@ class Command(BaseCommand):
             for mesa_nro in range(int(row['desde']), int(row['hasta']) + 1):
             #ojo habia caso mesas con numeros no consecutivos - prever
             #tal vez agregar las mesas en otra instancia y solo guardar los valores
-                mesa, created = Mesa.objects.get_or_create(numero=mesa_nro)  # EVITAR duplicados en limpiezas de escuelas y otros
-                mesa.lugar_votacion=escuela
-                mesa.circuito=circuito
+                mesa, created = Mesa.objects.get_or_create(numero=mesa_nro,lugar_votacion=escuela,circuito=circuito)  # EVITAR duplicados en limpiezas de escuelas y otros
+#                mesa.lugar_votacion=escuela
+#                mesa.circuito=circuito
                 mesa.electores=escuela.electores/(int(row['hasta']) + 1- int(row['desde'])) # habria que guardar escuela.mesas en el modelo
                 mesa.save()
 
