@@ -43,14 +43,42 @@ class Command(BaseCommand):
             circuito_nro = row['circuito_nro']
             circuito_name = row['circuito_name']
 
-            distrito, created = Distrito.objects.get_or_create(nombre=distrito_name, numero=distrito_nro)
-            self.log(distrito, created)
-            
-            seccion, created = Seccion.objects.get_or_create(
-                distrito=distrito, nombre=seccion_name, numero=seccion_nro)
-            self.log(seccion, created)
+            try:
+                distrito = Distrito.objects.get(numero=distrito_nro)
 
-            circuito, created = Circuito.objects.get_or_create(
-                seccion=seccion, nombre=circuito_name, numero=circuito_nro)
-            self.log(circuito, created)
+                if distrito.nombre != distrito_name:
+                    distrito.nombre = distrito_name
+                    distrito.save(update_fields=['nombre'])
+            except Distrito.DoesNotExist:
+                distrito = Distrito.objects.create(nombre=distrito_name, numero=distrito_nro)
+                self.log(distrito, True)
 
+            try:
+                seccion = Seccion.objects.get(numero=seccion_nro)
+
+                if seccion.nombre != seccion_name:
+                    seccion.nombre = seccion_name
+                    seccion.save(update_fields=['nombre'])
+
+                if seccion.distrito != distrito:
+                    seccion.distrito = distrito
+                    seccion.save(update_fields=['distrito'])
+            except Seccion.DoesNotExist:
+                seccion = Seccion.objects.create(
+                    distrito=distrito, nombre=seccion_name, numero=seccion_nro)
+                self.log(seccion, True)
+
+            try:
+                circuito = Circuito.objects.get(numero=circuito_nro)
+
+                if circuito.nombre != circuito_name:
+                    circuito.nombre = circuito_name
+                    circuito.save(update_fields=['nombre'])
+
+                if circuito.seccion != seccion:
+                    circuito.seccion = seccion
+                    circuito.save(update_fields=['seccion'])
+            except Circuito.DoesNotExist:
+                circuito = Circuito.objects.create(
+                    seccion=seccion, nombre=circuito_name, numero=circuito_nro)
+                self.log(circuito, True)
