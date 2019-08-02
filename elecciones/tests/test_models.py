@@ -1,4 +1,5 @@
 import pytest
+from django.core.management import call_command
 
 from .factories import (
     VotoMesaReportadoFactory,
@@ -19,6 +20,7 @@ from elecciones.models import Mesa, MesaCategoria, Categoria, Carga, Opcion
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_carga, consumir_novedades_identificacion
 from problemas.models import Problema, ReporteDeProblema
+
 
 def consumir_novedades_y_actualizar_objetos(lista=None):
     consumir_novedades_carga()
@@ -47,26 +49,11 @@ def test_categorias_para_mesa(db):
     m5 = MesaFactory(categorias=[e1, e2])
 
     # no hay elecciones.comunes a todas las mesas
-    assert list(
-        Categoria.para_mesas([m1, m2, m3, m4, m5]).order_by('id')
-    ) == []
-
-    # no hay elecciones.comunes a todas las mesas
-    assert list(
-        Categoria.para_mesas([m1, m2, m3, m5]).order_by('id')
-    ) == [e1]
-
-    assert list(
-        Categoria.para_mesas([m1, m2, m5]).order_by('id')
-    ) == [e1, e2]
-
-    assert list(
-        Categoria.para_mesas([m1, m3]).order_by('id')
-    ) == [e1]
-
-    assert list(
-        Categoria.para_mesas([m2, m4]).order_by('id')
-    ) == []
+    assert not Categoria.para_mesas([m1, m2, m3, m4, m5]).exists()
+    assert list(Categoria.para_mesas([m1, m2, m3, m5]).order_by('id')) == [e1]
+    assert list(Categoria.para_mesas([m1, m2, m5]).order_by('id')) == [e1, e2]
+    assert list(Categoria.para_mesas([m1, m3]).order_by('id')) == [e1]
+    assert not Categoria.para_mesas([m2, m4]).exists()
 
 
 def test_fotos_de_mesa(db):
@@ -275,7 +262,7 @@ def test_carga_con_problemas(db):
     assert mc.carga_testigo == c1
 
     c2 = CargaFactory(mesa_categoria=mc, tipo='problema')
-    Problema.reportar_problema(FiscalFactory(), 'reporte 1', 
+    Problema.reportar_problema(FiscalFactory(), 'reporte 1',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, carga=c2)
     consumir_novedades_y_actualizar_objetos([mc])
 
@@ -288,7 +275,7 @@ def test_carga_con_problemas(db):
     assert mc in MesaCategoria.objects.con_carga_pendiente()
 
     c3 = CargaFactory(mesa_categoria=mc, tipo='problema')
-    Problema.reportar_problema(FiscalFactory(), 'reporte 2', 
+    Problema.reportar_problema(FiscalFactory(), 'reporte 2',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, carga=c3)
     consumir_novedades_y_actualizar_objetos([mc])
 
@@ -340,10 +327,10 @@ def test_problema_falta_foto(db):
     assert mc.carga_testigo == c1
 
     c2 = CargaFactory(mesa_categoria=mc, tipo='problema')
-    Problema.reportar_problema(FiscalFactory(), 'falta foto!', 
+    Problema.reportar_problema(FiscalFactory(), 'falta foto!',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.falta_foto, carga=c2)
     c3 = CargaFactory(mesa_categoria=mc, tipo='problema')
-    Problema.reportar_problema(FiscalFactory(), 'spam!', 
+    Problema.reportar_problema(FiscalFactory(), 'spam!',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, carga=c2)
     consumir_novedades_y_actualizar_objetos([mc])
 
@@ -434,3 +421,7 @@ def test_metadata_de_mesa(db, settings):
     )
     assert set(mesa.metadata()) == {(o1.id, 10), (o2.id, 0)}
 
+
+def test_system_check_for_dev_data(db):
+    call_command('loaddata', 'fixtures/dev_data.json')
+    call_command('check', deploy=True)
