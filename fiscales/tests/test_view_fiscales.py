@@ -1,23 +1,22 @@
-from unittest import mock
 from django.urls import reverse
 from http import HTTPStatus
 
+from elecciones.tests.test_resultados import fiscal_client, setup_groups
 from elecciones.tests.factories import (
     FiscalFactory,
     SeccionFactory,
 )
-
-from fiscales.views import generar_codigo_confirmacion, generar_codigo_random
-from fiscales.forms import QuieroSerFiscalForm
 from fiscales.models import Fiscal
+from fiscales.forms import ReferidoForm
+
 
 QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT = {
     "nombres": "Diego Armando",
     "apellido": "Maradona",
     "dni": "14276579",
     "distrito": "1",
-    "referido_por_nombres": "Hugo Rafael",
-    "referido_por_apellido": "Chavez",
+    "referente_nombres": "Hugo Rafael",
+    "referente_apellido": "Chavez",
     "referido_por_codigo": "BLVR",
     "telefono_local": "42631145",
     "telefono_area": "11",
@@ -28,49 +27,35 @@ QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT = {
 }
 
 
-def test_generar_codigo_random(db):
-    codigos = []
-    for index in range(10):
-        codigo = generar_codigo_confirmacion()
-        assert codigo not in codigos
-        codigos.append(codigo)
-        FiscalFactory(referido_codigo=codigo)
-
-
-def test_generar_codigo__check_unicidad(db):
-    with mock.patch("fiscales.views.generar_codigo_random") as mocked_random:
-        codigo_no_random = "pepe"
-        FiscalFactory(referido_codigo=codigo_no_random)
-        # lo hacemos si o si distinto
-        codigo_a_devolver = codigo_no_random + "_addendum"
-        mocked_random.side_effect = [codigo_no_random, codigo_a_devolver]
-        codigo = generar_codigo_confirmacion()
-        
-        assert codigo == codigo_a_devolver
-        mocked_random.call_count = 2
-
-
 def test_quiero_validar__camino_feliz(db, client):
     url_quiero_validar = reverse('quiero-validar')
     response = client.get(url_quiero_validar)
     assert response.status_code == HTTPStatus.OK
 
-    fiscales_antes = Fiscal.objects.count()
-    _assert_no_esta_fiscal_cargado_de_antemano()
+    assert not Fiscal.objects.exists()
 
     seccion = SeccionFactory()
     request_data = construir_request_data(seccion)
     response = client.post(url_quiero_validar, request_data)
 
-    fiscales_despues = Fiscal.objects.count()
-    assert fiscales_antes + 1 == fiscales_despues
+    assert Fiscal.objects.count() == 1
     _assert_fiscal_cargado_correctamente(seccion)
 
     fiscal = _get_fiscal()
-    url_gracias = reverse('quiero-validar-gracias', kwargs={'codigo_ref': fiscal.referido_codigo})
+    # se setea el fiscal
+    assert client.session['fiscal_id'] == fiscal.id
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('quiero-validar-gracias')
 
-    assert HTTPStatus.FOUND == response.status_code
-    assert url_gracias == response.url
+
+def test_quiero_validar_gracias(db, client):
+    f = FiscalFactory()
+    s = client.session
+    s['fiscal_id'] = f.id
+    s.save()
+    response = client.get(reverse('quiero-validar-gracias'))
+    assert response.context['fiscal'] == f
+    assert f.ultimo_codigo_url() in response.content.decode('utf8')
 
 
 def test_quiero_validar__error_validacion(db, client):
@@ -80,8 +65,7 @@ def test_quiero_validar__error_validacion(db, client):
     response = client.get(url_quiero_validar)
     assert response.status_code == HTTPStatus.OK
 
-    fiscales_antes = Fiscal.objects.count()
-    _assert_no_esta_fiscal_cargado_de_antemano()
+    assert not Fiscal.objects.exists()
 
     seccion = SeccionFactory()
     request_data = construir_request_data(seccion)
@@ -91,19 +75,18 @@ def test_quiero_validar__error_validacion(db, client):
     assert response.status_code == HTTPStatus.OK
     assert response.context['form'].errors
 
-    fiscales_despues = Fiscal.objects.count()
-    assert fiscales_antes == fiscales_despues
-    _assert_no_esta_fiscal_cargado_de_antemano()
+    assert not Fiscal.objects.exists()
 
 
-def _assert_no_esta_fiscal_cargado_de_antemano():
-    fiscal = _get_fiscal()
-    assert fiscal is None
+def test_quiero_validar_con_codigo(db, client):
+    url_quiero_validar = reverse('quiero-validar', args=['xxxx'])
+    response = client.get(url_quiero_validar)
+    assert response.context['form'].initial['referido_por_codigo'] == 'xxxx'
 
 
 def _get_fiscal():
     return Fiscal.objects.filter(
-        referido_por_codigo=QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['referido_por_codigo']
+        referido_por_codigos=QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['referido_por_codigo']
     ).first()
 
 
@@ -111,8 +94,7 @@ def _assert_fiscal_cargado_correctamente(seccion):
     fiscal = _get_fiscal()
 
     assert fiscal
-    assert fiscal.referido_codigo is not None
-    assert len(fiscal.referido_codigo) == QuieroSerFiscalForm.CARACTERES_REF_CODIGO
+    assert len(fiscal.referido_por_codigos) == 4
 
     assert fiscal.nombres == QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['nombres']
     assert fiscal.apellido == QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['apellido']
@@ -120,9 +102,9 @@ def _assert_fiscal_cargado_correctamente(seccion):
 
     assert fiscal.seccion == seccion
 
-    assert fiscal.referido_por_apellido == QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['referido_por_apellido']
-    assert fiscal.referido_por_nombres == QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['referido_por_nombres']
-    assert fiscal.referido_por_codigo == QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['referido_por_codigo']
+    assert fiscal.referente_apellido == QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['referente_apellido']
+    assert fiscal.referente_nombres == QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['referente_nombres']
+    assert fiscal.referido_por_codigos == QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['referido_por_codigo']
 
     assert QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['telefono_local'] in fiscal.telefonos[0]
     assert fiscal.telefonos[0].startswith(QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['telefono_area'])
@@ -136,3 +118,44 @@ def construir_request_data(seccion):
     data["seccion"] = seccion.id
     data["seccion_autocomplete"] = seccion.id
     return data
+
+
+def test_referidos_muestra_link_y_referidos(fiscal_client, admin_user):
+    fiscal = admin_user.fiscal
+    referidos_ids = {f.id for f in FiscalFactory.create_batch(2, referente=fiscal)}
+
+    # otros fiscales no afectan
+    FiscalFactory(referente=FiscalFactory())
+
+    assert set(fiscal.referidos.values_list('id', flat=True)) == referidos_ids
+
+    response = fiscal_client.get(reverse('referidos'))
+    assert response.status_code == 200
+    content = response.content.decode('utf8')
+    form = response.context['form']
+
+    assert isinstance(form, ReferidoForm)
+    assert form.initial['url'] == fiscal.ultimo_codigo_url()
+    assert set(response.context['referidos'].values_list('id', flat=True)) == referidos_ids
+    assert str(response.context['referidos'][0]) in content
+    assert str(response.context['referidos'][1]) in content
+
+
+def test_referidos_post_regenera_link(fiscal_client, admin_user, mocker):
+    crear_mock = mocker.patch('fiscales.models.Fiscal.crear_codigo_de_referidos')
+    response = fiscal_client.post(
+        reverse('referidos'), data={'link': ''}
+    )
+    assert response.status_code == 200
+    assert crear_mock.call_count == 1
+
+
+def test_referidos_post_confirma_conoce(fiscal_client, admin_user):
+    fiscal = admin_user.fiscal
+    referidos_ids = [f.id for f in FiscalFactory.create_batch(2, referente=fiscal)]
+    assert fiscal.referidos.filter(referencia_confirmada=True).count() == 0
+    response = fiscal_client.post(
+        reverse('referidos'), data={'conozco': '', 'referido': referidos_ids}
+    )
+    assert response.status_code == 200
+    assert fiscal.referidos.filter(referencia_confirmada=True).count() == 2

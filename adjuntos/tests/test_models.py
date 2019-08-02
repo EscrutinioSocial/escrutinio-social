@@ -2,10 +2,9 @@ import pytest
 from django.db import IntegrityError
 from elecciones.tests.factories import (
     AttachmentFactory,
-    MesaFactory,
+    FiscalFactory,
     IdentificacionFactory,
-    ProblemaFactory,
-    FiscalFactory
+    MesaFactory,
 )
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
@@ -21,11 +20,12 @@ def test_attachment_unico(db):
 
 
 def test_sin_identificar_excluye_taken(db):
+    f = FiscalFactory()
     a1 = IdentificacionFactory(status='identificada').attachment
     a2 = IdentificacionFactory(status='spam').attachment
     a3 = IdentificacionFactory(status='spam').attachment
     assert set(Attachment.sin_identificar_con_timeout()) == {a1, a2, a3}
-    a3.take()
+    a3.take(f)
     assert set(Attachment.sin_identificar_con_timeout(wait=2)) == {a1, a2}
 
 
@@ -71,12 +71,12 @@ def test_identificacion_consolidada_ninguno(db):
 
     i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
     f = FiscalFactory()
-    Problema.reportar_problema(f, 'reporte 1', 
+    Problema.reportar_problema(f, 'reporte 1',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, identificacion=i1)
     assert i1.problemas.first().problema.estado == Problema.ESTADOS.potencial
 
     i2 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
-    Problema.reportar_problema(f, 'reporte 2', 
+    Problema.reportar_problema(f, 'reporte 2',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, identificacion=i2)
 
     assert a.identificacion_testigo is None
@@ -100,7 +100,7 @@ def test_identificacion_consolidada_alguna(db):
     i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
     IdentificacionFactory(attachment=a, status='problema', mesa=None)
     i2 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
-    Problema.reportar_problema(FiscalFactory(), 'reporte 1', 
+    Problema.reportar_problema(FiscalFactory(), 'reporte 1',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, identificacion=i2)
     IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
 
@@ -143,12 +143,12 @@ def test_ciclo_de_vida_problemas_resolver(db):
 
     i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
     f = FiscalFactory()
-    Problema.reportar_problema(f, 'reporte 1', 
+    Problema.reportar_problema(f, 'reporte 1',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, identificacion=i1)
     assert i1.problemas.first().problema.estado == Problema.ESTADOS.potencial
 
     i2 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
-    Problema.reportar_problema(f, 'reporte 2', 
+    Problema.reportar_problema(f, 'reporte 2',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, identificacion=i2)
 
     assert i1.invalidada == False
@@ -191,12 +191,12 @@ def test_ciclo_de_vida_problemas_descartar(db):
 
     i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
     f = FiscalFactory()
-    Problema.reportar_problema(f, 'reporte 1', 
+    Problema.reportar_problema(f, 'reporte 1',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.spam, identificacion=i1)
     assert i1.problemas.first().problema.estado == Problema.ESTADOS.potencial
 
     i2 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
-    Problema.reportar_problema(f, 'reporte 2', 
+    Problema.reportar_problema(f, 'reporte 2',
         ReporteDeProblema.TIPOS_DE_PROBLEMA.ilegible, identificacion=i2)
 
     assert i1.invalidada == False

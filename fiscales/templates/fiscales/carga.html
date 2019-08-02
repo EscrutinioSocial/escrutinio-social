@@ -73,8 +73,7 @@ $(document).ready(function(){
 
 
 {% block breadcrumbs_items %}
-<a href="{{ object.get_absolute_url }}">{{ object }}</a>
-<a class="active">Acta</a>
+<a href="{{ object.get_absolute_url }}" class="active">{{ object.nombre_completo }}</a>
 {% endblock %}
 
 
@@ -82,7 +81,7 @@ $(document).ready(function(){
 
 
 {% block card-content %}
-    <div class="card-title"> Mesa {{ object.numero }}
+    <div class="card-title">
         <b style='background-color: {{ categoria.back_color }}; color: {{ categoria.color }}'>{{ categoria }}</b>
     </div>
     {{ formset.management_form }}

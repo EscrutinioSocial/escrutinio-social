@@ -27,12 +27,13 @@ def siguiente_accion(request):
     cant_fotos = attachments.count()
     cant_cargas = con_carga_pendiente.count()
 
-    if cant_fotos and not cant_cargas or cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA:
+    if (cant_fotos and not cant_cargas or
+            cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
         foto = attachments.order_by('?').first()
         if foto:
             return IdentificacionDeFoto(request, foto)
     elif cant_cargas:
-        mesacategoria = con_carga_pendiente.mas_prioritaria()
+        mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
         if mesacategoria:
             return CargaCategoriaEnActa(request, mesacategoria)
     return NoHayAccion(request)
@@ -45,12 +46,13 @@ class IdentificacionDeFoto():
     de guarda y redirige a la vista para su clasificación.
     """
 
-    def __init__(self, _request, _attachment):
-        self.attachment = _attachment
+    def __init__(self, request, attachment):
+        self.request = request
+        self.attachment = attachment
 
     def ejecutar(self):
         # Se marca el adjunto
-        self.attachment.take()
+        self.attachment.take(self.request.user.fiscal)
         # Se realiza el redirect
         return redirect('asignar-mesa', attachment_id=self.attachment.id)
 
@@ -63,12 +65,13 @@ class CargaCategoriaEnActa():
     de la configuracion de la categoría.
     """
 
-    def __init__(self, _request, mc):
+    def __init__(self, request, mc):
+        self.request = request
         self.mc = mc
 
     def ejecutar(self):
         # Se marca que se inicia una carga
-        self.mc.take()
+        self.mc.take(self.request.user.fiscal)
         if (self.mc.categoria.requiere_cargas_parciales and
                 self.mc.status[:2] < MesaCategoria.STATUS.parcial_consolidada_dc[:2]):
             # solo si la categoria requiere parciales y las parciales no estan consolidadas
@@ -78,10 +81,8 @@ class CargaCategoriaEnActa():
 
 class NoHayAccion():
 
-    def __init__(self, _request):
-        self.request = _request
+    def __init__(self, request):
+        self.request = request
 
     def ejecutar(self):
         return render(self.request, 'fiscales/sin-actas.html')
-
-
