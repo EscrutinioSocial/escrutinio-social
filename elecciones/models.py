@@ -120,7 +120,7 @@ class Circuito(models.Model):
 
     Distrito -> Sección -> **Circuito** -> Lugar de votación -> Mesa
     """
-    seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
+    seccion = models.ForeignKey(Seccion, related_name='circuitos', on_delete=models.CASCADE)
     localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
 
     numero = models.CharField(max_length=10)
@@ -158,7 +158,7 @@ class LugarVotacion(models.Model):
     Distrito -> Sección -> Circuito -> **Lugar de votación** -> Mesa
     """
 
-    circuito = models.ForeignKey(Circuito, related_name='escuelas', on_delete=models.CASCADE)
+    circuito = models.ForeignKey(Circuito, related_name='lugares_votacion', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, blank=True)
@@ -375,6 +375,7 @@ class MesaCategoria(models.Model):
         """
         Actualiza `self.orden_de_carga` a partir de las prioridades por seccion y categoria
         """
+        # evitar import circular
         from scheduling.models import mapa_prioridades_para_mesa_categoria
 
         en_circuito = MesaCategoria.objects.filter(
@@ -385,8 +386,9 @@ class MesaCategoria(models.Model):
 
         self.orden_de_llegada = identificadas + 1
         self.percentil = math.floor((identificadas * 100) / total) + 1
-        self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self) \
-            .valor_para(self.percentil-1, self.orden_de_llegada) * self.percentil
+        self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self).valor_para(
+            self.percentil-1, self.orden_de_llegada
+        ) * self.percentil
         self.save(update_fields=['orden_de_carga', 'orden_de_llegada', 'percentil'])
 
     def invalidar_cargas(self):
@@ -950,9 +952,17 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
     if instance.lugar_votacion:
-        circuito = instance.lugar_votacion.circuito
+        lugar = instance.lugar_votacion
+        circuito = lugar.circuito
+
         seccion = circuito.seccion
         distrito = seccion.distrito
+
+        electores = Mesa.objects.filter(
+            lugar_votacion=lugar
+        ).aggregate(v=Sum('electores'))['v'] or 0
+        lugar.electores = electores
+        lugar.save(update_fields=['electores'])
 
         # circuito
         electores = Mesa.objects.filter(
