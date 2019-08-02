@@ -623,6 +623,9 @@ def test_resultados_no_positivos(fiscal_client):
     assert resultados.total_blancos() == 10
     assert resultados.total_votos() == 100
     assert resultados.total_sobres() == 110
+    assert resultados.porcentaje_positivos() == '90.00'
+    assert resultados.porcentaje_blancos() == '10.00'
+    assert resultados.porcentaje_nulos() == '-'
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")

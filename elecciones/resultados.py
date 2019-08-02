@@ -406,25 +406,27 @@ class Resultados():
         return self.resultados.total_mesas
 
     def total_blancos(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre'], '--')
+        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre'], '-')
 
     def total_nulos(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre'], '--')
+        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre'], '-')
 
     def total_votos(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre'], '--')
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre'], '-')
 
     def total_sobres(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '--')
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '-')
 
     def porcentaje_positivos(self):
         return porcentaje(self.total_positivos(), self.votantes())
 
     def porcentaje_blancos(self):
-        return porcentaje(self.total_blancos(), self.votantes())
+        blancos = self.total_blancos()
+        return porcentaje(blancos, self.votantes()) if blancos != '-' else '-'
 
     def porcentaje_nulos(self):
-        return porcentaje(self.total_nulos(), self.votantes())
+        nulos = self.total_nulos()
+        return porcentaje(nulos, self.votantes()) if nulos != '-' else '-'
 
 
 class Proyecciones(Sumarizador):
