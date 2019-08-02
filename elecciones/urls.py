@@ -18,7 +18,11 @@ urlpatterns = [
         views.ResultadosCategoria.as_view(),
         name='resultados-categoria'
     ),
-
+    url(
+        '^avance_carga/(?P<pk>\d+)?$',
+        views.AvanceDeCargaCategoria.as_view(),
+        name='avance-carga'
+    ),
     url(r'^resultados-parciales-(?P<slug_categoria>[\w-]+).(?P<filetype>csv|xls)$',
         data_views.resultado_parcial_categoria, name='resultado-parcial-categoria'),
 

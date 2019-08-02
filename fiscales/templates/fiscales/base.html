@@ -67,6 +67,9 @@
 
 {% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_staff %}
 <li>
+    <a href="{% url "avance-carga"  primera_categoria %}" class="collapsible-header"
+        data-turbolinks="false">Avance de carga<i class="material-icons">insert_chart</i></a>
+<li>
     <a href="{% url "resultados-categoria"  primera_categoria %}" class="collapsible-header"
         data-turbolinks="false">Resultados<i class="material-icons">insert_chart</i></a>
 </li>

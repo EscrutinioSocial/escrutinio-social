@@ -1,0 +1,50 @@
+{% extends "fiscales/base.html" %}
+{% load staticfiles %}
+
+{% block title %} Avance de carga {% endblock %}
+
+{% block page_title %} Avance de carga para {{para|default:para}} {% endblock %}
+
+{% block breadcrumbs %}
+<div class="card">
+  <ul class="tabs">
+    {% for categoria in categorias %}
+    <li class="tab col s3" >
+      <a target="_self"
+	 href="{{categoria.get_absolute_url}}?{{ request.GET.urlencode }}"
+	 {% if categoria.id == object.id %}
+	 class="active"
+	 {% endif %}>
+	{{ categoria.nombre }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock breadcrumbs %}
+
+{% block head %}
+{{ block.super }}
+{% if show_plot %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endif %}
+<link href="/static/elecciones/resultados.css"
+      rel="stylesheet" type="text/css">
+<link href="/static/elecciones/arbol_distrito.css"
+      rel="stylesheet" type="text/css">
+{% endblock head %}
+
+{% block sidenav_items %}
+{% include "elecciones/arbol_distrito.html" %}
+{% endblock sidenav_items %}
+
+{% block left-panel %}
+<div class="card">
+  <p>
+    Left Panel
+  </p>
+</div>
+{% endblock left-panel %}
+
+{% block messages %}
+{% endblock messages %}

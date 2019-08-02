@@ -233,3 +233,106 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
 
         context['distritos'] = Distrito.objects.all().order_by('numero')
         return context
+
+
+class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
+    """
+    Vista principal avance de carga de actas.
+    """
+
+    template_name = "elecciones/avance_carga.html"
+
+    def get(self, request, *args, **kwargs):
+        nivel_de_agregacion = None
+        ids_a_considerar = None
+        for nivel in ['mesa', 'lugar_de_votacion', 'circuito', 'seccion', 'seccion_politica', 'distrito']:
+            if nivel in self.request.GET:
+                nivel_de_agregacion = nivel
+                ids_a_considerar = self.request.GET.getlist(nivel)
+
+        parametros_sumarizacion = [
+            self.get_tipo_de_agregacion(), 
+            self.get_opciones_a_considerar(), 
+            nivel_de_agregacion,
+            ids_a_considerar,
+        ]
+
+        tecnica_de_proyeccion = next((tecnica for tecnica in Proyecciones.tecnicas_de_proyeccion()
+                                     if str(tecnica.id) == self.get_tecnica_de_proyeccion()), None)
+
+        self.sumarizador = (
+            Proyecciones(tecnica_de_proyeccion, *parametros_sumarizacion)
+            if tecnica_de_proyeccion
+            else Sumarizador(*parametros_sumarizacion)
+        )
+
+        return super().get(request, *args, **kwargs)
+
+    def get_template_names(self):
+        return [self.kwargs.get("template_name", self.template_name)]
+
+    def get_resultados(self, categoria):
+        return self.sumarizador.get_resultados(categoria)
+
+    def get_tipo_de_agregacion(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('tipoDeAgregacion', Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas)
+
+    def get_opciones_a_considerar(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
+
+    def get_tecnica_de_proyeccion(self):
+        return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
+
+    def get_tecnicas_de_proyeccion(self):
+        return [settings.SIN_PROYECCION] + [(str(tecnica.id), tecnica.nombre)
+                                            for tecnica in Proyecciones.tecnicas_de_proyeccion()]
+
+    def get_plot_data(self, resultados):
+        return [{
+            'key': str(k),
+            'y': v["votos"],
+            'color': k.color if not isinstance(k, str) else '#CCCCCC'
+        } for k, v in resultados.tabla_positivos().items()]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tipos_de_agregaciones'] = Sumarizador.TIPOS_DE_AGREGACIONES
+        context['tipos_de_agregaciones_seleccionado'] = self.get_tipo_de_agregacion()
+        context['opciones_a_considerar'] = Sumarizador.OPCIONES_A_CONSIDERAR
+        context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
+        context['tecnicas_de_proyeccion'] = self.get_tecnicas_de_proyeccion()
+        context['tecnicas_de_proyeccion_seleccionado'] = self.get_tecnica_de_proyeccion()
+
+        if self.sumarizador.filtros:
+            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.sumarizador.filtros], " y ")
+        else:
+            context['para'] = 'todo el país'
+
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            pk = Categoria.objects.first().id
+        categoria = get_object_or_404(Categoria, id=pk)
+        context['object'] = categoria
+        context['categoria_id'] = categoria.id
+        context['resultados'] = self.get_resultados(categoria)
+        context['show_plot'] = settings.SHOW_PLOT
+
+        if settings.SHOW_PLOT:
+            chart = self.get_plot_data(context['resultados'])
+            context['plot_data'] = chart
+            context['chart_values'] = [v['y'] for v in chart]
+            context['chart_keys'] = [v['key'] for v in chart]
+            context['chart_colors'] = [v['color'] for v in chart]
+
+        # Las pestañas de categorías que se muestran son las que sean
+        # comunes a todas las mesas filtradas.
+
+        # Para el cálculo se filtran categorías activas que estén relacionadas
+        # a las mesas.
+        mesas = self.sumarizador.mesas(categoria)
+        context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
+
+        context['distritos'] = Distrito.objects.all().order_by('numero')
+        return context
