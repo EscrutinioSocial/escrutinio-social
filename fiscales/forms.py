@@ -266,7 +266,8 @@ class VotoMesaModelForm(forms.ModelForm):
             }
         )
         self.fields['votos'].label = ''
-        self.fields['votos'].required = False
+        self.fields['votos'].required = True
+        self.fields['votos'].widget.attrs = {'required':''}
 
     class Meta:
         model = VotoMesaReportado
@@ -297,6 +298,8 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         for form in self.forms:
             opcion = form.cleaned_data.get('opcion')
             votos = form.cleaned_data.get('votos')
+            if votos is None:
+                raise ValidationError(_('Invalid value'), code='invalid')
             if not opcion.tipo == Opcion.TIPOS.metadata:
                 suma += votos
 
@@ -307,7 +310,10 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
                 ))
 
         errors = []
-        if suma > self.mesa.electores:
+
+        # Controlamos que la suma de votos no sea mayor a cantidad de
+        # electores si conocemos la cantidad de electores de una mesa.
+        if self.mesa.electores > 0 and suma > self.mesa.electores:
             errors.append(
                 'El total de votos no puede ser mayor a la '
                 f'cantidad de electores de la mesa: {self.mesa.electores}'
