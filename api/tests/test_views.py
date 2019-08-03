@@ -205,7 +205,7 @@ def test_listar_categorias_default(admin_client):
     assert len(response.data) == 2
     categorias = [(cat['id'], cat['nombre'], cat['slug']) for cat in response.data]
     assert categorias == [
-        (pv.id, pv.nombre, pv.slug), 
+        (pv.id, pv.nombre, pv.slug),
         (gv.id, gv.nombre, gv.slug)
     ]
 
