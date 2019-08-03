@@ -159,6 +159,31 @@ def test_cargar_votos(admin_client):
 
     assert list(mesa_categoria_2.cargas.first().opcion_votos()) == [(opcion_1.id, 10)]
 
+    # Se pueden volver a cargar votos para la misma mesa (con o sin cambios)
+
+    data[0]['votos'] = 90
+    data[1]['votos'] = 60
+    response = admin_client.post(url, data, format='json')
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data['mensaje'] == 'Se cargaron los votos con éxito.'
+
+    assert Carga.objects.count() == 4
+    assert mesa_categoria_1.cargas.count() == 2
+    assert mesa_categoria_2.cargas.count() == 2
+
+    cargas = [list(mc.opcion_votos()) for mc in mesa_categoria_1.cargas.all()]
+    assert cargas == [
+        [(opcion_1.id, 90), (opcion_2.id, 60)],
+        [(opcion_1.id, 100), (opcion_2.id, 50)]
+    ]
+
+    cargas = [list(mc.opcion_votos()) for mc in mesa_categoria_2.cargas.all()]
+    assert cargas == [
+        [(opcion_1.id, 10)],
+        [(opcion_1.id, 10)]
+    ]
+
 
 def test_cargar_votos_faltan_prioritarias(admin_client):
     """
