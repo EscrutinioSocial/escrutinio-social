@@ -212,7 +212,7 @@ class Sumarizador():
             else:
                 # 3.2 Opciones no partidarias
                 # TODO ¿Puede realmente pasar que no vengan las opciones completas?
-                votos_no_positivos[opcion.nombre] = sum_votos if sum_votos else 0
+                votos_no_positivos[opcion.nombre.lower()] = sum_votos if sum_votos else 0
 
         return votos_positivos, votos_no_positivos
 
@@ -404,6 +404,29 @@ class Resultados():
 
     def total_mesas(self):
         return self.resultados.total_mesas
+
+    def total_blancos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre'], '-')
+
+    def total_nulos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre'], '-')
+
+    def total_votos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre'], '-')
+
+    def total_sobres(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '-')
+
+    def porcentaje_positivos(self):
+        return porcentaje(self.total_positivos(), self.votantes())
+
+    def porcentaje_blancos(self):
+        blancos = self.total_blancos()
+        return porcentaje(blancos, self.votantes()) if blancos != '-' else '-'
+
+    def porcentaje_nulos(self):
+        nulos = self.total_nulos()
+        return porcentaje(nulos, self.votantes()) if nulos != '-' else '-'
 
 
 class Proyecciones(Sumarizador):
