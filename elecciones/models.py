@@ -246,6 +246,8 @@ class MesaCategoriaQuerySet(models.QuerySet):
         Filtra instancias que tengan orden de carga definido
         (que se produce cuando hay un primer attachment consolidado).
         """
+        # Si bien parece redundante chequear orden de carga y attachment preferimos
+        # estar seguros de que no se cuele una mesa sin foto.
         return self.filter(orden_de_carga__isnull=False).exclude(mesa__attachments=None)
 
     def no_taken(self):
