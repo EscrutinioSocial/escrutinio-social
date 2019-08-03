@@ -169,7 +169,7 @@ def cargar_votos(request, id_mesa):
                     CategoriaOpcion, categoria=votos['categoria'], opcion=votos['opcion']
                 )
 
-                carga, created = Carga.objects.get_or_create(
+                carga, created = Carga.objects.create(
                     # Sabemos que el bot va a mandar sólo cargas parciales.
                     tipo=Carga.TIPOS.parcial, origen=Carga.SOURCES.telegram,
                     mesa_categoria=mesa_categoria, fiscal=request.user.fiscal
