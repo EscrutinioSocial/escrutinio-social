@@ -35,20 +35,29 @@ def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
 def test_siguiente_prioriza_estado_y_luego_coeficiente(db, django_assert_num_queries):
     f = FiscalFactory()
     c = CategoriaFactory(prioridad=1)
+    m1 = MesaFactory()
+    AttachmentFactory(mesa=m1)
     mc1 = MesaCategoriaFactory(
         status=MesaCategoria.STATUS.parcial_sin_consolidar,
         categoria=c,
-        orden_de_carga=1.0
+        orden_de_carga=1.0,
+        mesa=m1
     )
+    m2 = MesaFactory()
+    AttachmentFactory(mesa=m2)
     mc2 = MesaCategoriaFactory(
         categoria=c,
         status=MesaCategoria.STATUS.total_en_conflicto,
-        orden_de_carga=99.0
+        orden_de_carga=99.0,
+        mesa=m2
     )
+    m3 = MesaFactory()
+    AttachmentFactory(mesa=m3)
     mc3 = MesaCategoriaFactory(
         categoria=c,
         status=MesaCategoria.STATUS.total_en_conflicto,
-        orden_de_carga=2.0
+        orden_de_carga=2.0,
+        mesa=m3
     )
     with django_assert_num_queries(1):
         assert MesaCategoria.objects.siguiente() == mc1
@@ -117,8 +126,12 @@ def test_actualizar_orden_de_carga(db, total):
 
 
 def test_identificadas_excluye_sin_orden(db):
-    mc1 = MesaCategoriaFactory()
-    mc2 = MesaCategoriaFactory(orden_de_carga=0.1)
+    m1 = MesaFactory()
+    AttachmentFactory(mesa=m1)
+    mc1 = MesaCategoriaFactory(mesa=m1)
+    m2 = MesaFactory()
+    AttachmentFactory(mesa=m2)
+    mc2 = MesaCategoriaFactory(orden_de_carga=0.1, mesa=m2)
     assert mc1.orden_de_carga is None
     assert mc1 not in MesaCategoria.objects.identificadas()
     assert mc2 in MesaCategoria.objects.identificadas()
