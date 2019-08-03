@@ -501,6 +501,7 @@ class AvanceDeCarga(Sumarizador):
         return AttrDict({
             "total": dato_total,
             "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_sin_identificar),
+            "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
             "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_sin_cargar),
             "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_sin_consolidar),
             "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada),
@@ -526,12 +527,17 @@ class AvanceDeCarga(Sumarizador):
         return AvanceWrapper(self.calcular())
 
 
-    def no_calcular(self):
+    def calcular_fake(self):
+        """
+        Este lo usé para que se pudiera desarrollar el frontend mientras resolvía esta clase.
+        Lo dejo por eventuales refactors.
+        """
         dato_total = DatoTotalAvanceDeCarga().para_valores_fijos(1000, 50000)
         return AttrDict({
             "total": dato_total,
             "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
-            "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
+            "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
+            "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(150, 8000),
             "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
             "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
             "carga_total_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
@@ -599,6 +605,9 @@ class AvanceWrapper():
 
     def sin_identificar(self):
         return self.resultados.sin_identificar
+
+    def en_identificacion(self):
+        return self.resultados.en_identificacion
 
     def sin_cargar(self):
         return self.resultados.sin_cargar
