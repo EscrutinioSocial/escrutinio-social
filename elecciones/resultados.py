@@ -519,7 +519,7 @@ class AvanceDeCarga(Sumarizador):
         """
         self.categoria = categoria
         self.mesas_a_considerar = self.mesas(self.categoria)
-        return self.calcular()
+        return AvanceWrapper(self.calcular())
 
     def calcular(self):
         dato_total = DatoTotalAvanceDeCarga().para_valores_fijos(1000, 50000)
@@ -583,6 +583,36 @@ class DatoTotalAvanceDeCarga(DatoAvanceDeCarga):
 
     def porcentaje_electores(self):
         return 100.0
+
+
+class AvanceWrapper():
+    def __init__(self, resultados):
+        self.resultados = resultados
+    
+    def total(self):
+        return self.resultados.total
+
+    def sin_identificar(self):
+        return self.resultados.sin_identificar
+
+    def sin_cargar(self):
+        return self.resultados.sin_cargar
+
+    def carga_parcial_sin_consolidar(self):
+        return self.resultados.carga_parcial_sin_consolidar
+
+    def carga_parcial_consolidada(self):
+        return self.resultados.carga_parcial_consolidada
+
+    def carga_total_sin_consolidar(self):
+        return self.resultados.carga_total_sin_consolidar
+
+    def carga_total_consolidada(self):
+        return self.resultados.carga_total_consolidada
+
+    def conflicto_o_problema(self):
+        return self.resultados.conflicto_o_problema
+
 
 
 class Proyecciones(Sumarizador):
