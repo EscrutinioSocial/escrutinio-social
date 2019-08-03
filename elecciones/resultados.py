@@ -556,6 +556,7 @@ class DatoAvanceDeCarga():
     def para_valores_fijos(self, cantidad_mesas, cantidad_electores):
         self.cantidad_mesas = cantidad_mesas
         self.cantidad_electores = cantidad_electores
+        return self
 
     def cantidad_mesas(self):
         return self.cantidad_mesas
