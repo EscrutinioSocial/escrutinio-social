@@ -19,7 +19,7 @@ from .models import (
     AgrupacionCircuitos,
     AgrupacionCircuito,
 )
-from adjuntos.models import Identificacion
+from adjuntos.models import Identificacion, PreIdentificacion
 
 
 def porcentaje(numerador, denominador):
@@ -427,10 +427,39 @@ class AvanceDeCarga(Sumarizador):
         )
 
 
+    def lookups_de_preidentificaciones(self):
+        lookups = Q()
+        if self.filtros:
+            if self.filtros.model is Distrito:
+                lookups = Q(distrito__in=self.filtros)
+
+            elif self.filtros.model is Seccion:
+                lookups = Q(seccion__in=self.filtros)
+
+            elif self.filtros.model is Circuito:
+                lookups = Q(circuito__in=self.filtros)
+
+            elif self.filtros.model is SeccionPolitica or self.filtros.model is LugarVotacion or self.filtros.model is Mesa:
+                lookups = None
+
+        return lookups
+
+
     def calcular(self):
         """
         Realiza los cálculos necesarios y devuelve un AttrDict con la info obtenida
         """
+        # con preidentificación: depende de las preidentificaciones correspondientes a la unidad geográfica,
+        # esto no depende de las mesas
+        # ... puede haber más preidentificaciones que mesas, si hay dos fotos por mesa
+        # por eso no se informa porcentaje
+        cantidad_preidentificaciones = 0
+        lookups_preident = self.lookups_de_preidentificaciones()
+        if lookups_preident is not None:
+            cantidad_preidentificaciones = PreIdentificacion.objects.filter(lookups_preident).count()
+
+        # mesas sin identificar y en identificación: dependen de las identificaciones **válidas**
+        # y de los attachment
         identificaciones_validas_mesa = Identificacion.objects.filter(mesa=OuterRef('pk'), invalidada=False)
         mesas_con_marca_identificacion = self.mesas_a_considerar.annotate(
             tiene_identificaciones=Exists(identificaciones_validas_mesa))
@@ -477,6 +506,7 @@ class AvanceDeCarga(Sumarizador):
             "carga_total_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_sin_consolidar),
             "carga_total_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_consolidada),
             "conflicto_o_problema": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_conflicto_o_problema),
+            "preidentificaciones": cantidad_preidentificaciones
         })
 
         # mesacats_de_la_categoria = MesaCategoria.filter(
@@ -595,6 +625,9 @@ class AvanceWrapper():
 
     def conflicto_o_problema(self):
         return self.resultados.conflicto_o_problema
+
+    def preidentificaciones(self):
+        return self.resultados.preidentificaciones
 
 
 
