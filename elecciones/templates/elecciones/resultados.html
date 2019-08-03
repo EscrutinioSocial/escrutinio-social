@@ -117,9 +117,7 @@
                 </tr>
             </thead>
 
-            {% with resultados.tabla_no_positivos as tabla %}
-                {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True incluir_votos=True %}
-            {% endwith %}
+            {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True %}
         </table>
 
         {% if show_plot %}
@@ -176,7 +174,7 @@
             <tr>
                 <th title="% Participación">
                     <i class="small material-icons">timeline</i>
-                    <span>% Participacion</span>
+                    <span>% Participación sobre escrutado</span>
                 </th>
                 <td title="% Participación">{{ resultados.porcentaje_participacion}} %</td>
             </tr>

@@ -40,14 +40,6 @@
   }
 },
 {
-  "model": "auth.group",
-  "pk": 6,
-  "fields": {
-    "name": "visualizadores_sensible",
-    "permissions": []
-  }
-},
-{
   "model": "auth.user",
   "pk": 1,
   "fields": {
@@ -486,7 +478,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "electores": null,
+    "electores": 100,
     "geom": null,
     "estado_geolocalizacion": 0,
     "calidad": "",
@@ -503,7 +495,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "electores": null,
+    "electores": 100,
     "geom": null,
     "estado_geolocalizacion": 0,
     "calidad": "",
@@ -520,7 +512,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "electores": null,
+    "electores": 120,
     "geom": null,
     "estado_geolocalizacion": 0,
     "calidad": "",
@@ -537,7 +529,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "electores": null,
+    "electores": 120,
     "geom": null,
     "estado_geolocalizacion": 0,
     "calidad": "",
@@ -554,7 +546,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "electores": null,
+    "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
     "calidad": "",
@@ -571,7 +563,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "electores": null,
+    "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
     "calidad": "",
@@ -588,7 +580,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "electores": null,
+    "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
     "calidad": "",
@@ -605,7 +597,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "electores": null,
+    "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
     "calidad": "",
@@ -949,10 +941,10 @@
   "model": "elecciones.opcion",
   "pk": 1,
   "fields": {
-    "tipo": "positivo",
-    "nombre": "blanco",
+    "tipo": "no_positivo",
+    "nombre": "votos en blanco",
     "nombre_corto": "blanco",
-    "codigo": null,
+    "codigo": "10000",
     "partido": null,
     "orden": 10,
     "codigo_dne": null
@@ -964,8 +956,8 @@
   "fields": {
     "tipo": "positivo",
     "nombre": "opc1",
-    "nombre_corto": "",
-    "codigo": null,
+    "nombre_corto": "opc1",
+    "codigo": "001",
     "partido": 1,
     "orden": 2,
     "codigo_dne": null
@@ -977,8 +969,8 @@
   "fields": {
     "tipo": "positivo",
     "nombre": "opc2",
-    "nombre_corto": "",
-    "codigo": null,
+    "nombre_corto": "opc2",
+    "codigo": "002",
     "partido": 2,
     "orden": 3,
     "codigo_dne": null
@@ -990,8 +982,8 @@
   "fields": {
     "tipo": "positivo",
     "nombre": "opc3",
-    "nombre_corto": "",
-    "codigo": null,
+    "nombre_corto": "opc3",
+    "codigo": "003",
     "partido": 3,
     "orden": 4,
     "codigo_dne": null
@@ -1004,7 +996,7 @@
     "tipo": "no_positivo",
     "nombre": "votos nulos",
     "nombre_corto": "nulos",
-    "codigo": null,
+    "codigo": "10001",
     "partido": null,
     "orden": 11,
     "codigo_dne": null
@@ -1014,10 +1006,10 @@
   "model": "elecciones.opcion",
   "pk": 6,
   "fields": {
-    "tipo": "no_positivo",
+    "tipo": "metadata",
     "nombre": "total de votos",
     "nombre_corto": "total_votos",
-    "codigo": null,
+    "codigo": "10010",
     "partido": null,
     "orden": 12,
     "codigo_dne": null
@@ -1027,9 +1019,9 @@
   "model": "elecciones.opcion",
   "pk": 7,
   "fields": {
-    "tipo": "no_positivo",
+    "tipo": "metadata",
     "nombre": "total de sobres",
-    "nombre_corto": "total_sobres",
+    "nombre_corto": "sobres",
     "codigo": null,
     "partido": null,
     "orden": 13,
@@ -1054,6 +1046,7 @@
     "color": "black",
     "back_color": "white",
     "activa": true,
+    "sensible": false,
     "requiere_cargas_parciales": false,
     "prioridad": 0
   }
@@ -1068,6 +1061,7 @@
     "color": "black",
     "back_color": "white",
     "activa": true,
+    "sensible": false,
     "requiere_cargas_parciales": false,
     "prioridad": 0
   }
@@ -1141,6 +1135,60 @@
   "fields": {
     "categoria": 2,
     "opcion": 1,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 9,
+  "fields": {
+    "categoria": 2,
+    "opcion": 5,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 10,
+  "fields": {
+    "categoria": 1,
+    "opcion": 5,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 11,
+  "fields": {
+    "categoria": 2,
+    "opcion": 7,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 12,
+  "fields": {
+    "categoria": 2,
+    "opcion": 6,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 13,
+  "fields": {
+    "categoria": 1,
+    "opcion": 6,
+    "prioritaria": false
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 14,
+  "fields": {
+    "categoria": 1,
+    "opcion": 7,
     "prioritaria": false
   }
 },
