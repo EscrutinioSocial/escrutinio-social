@@ -10,6 +10,7 @@ from .models import (
     LugarVotacion,
     Mesa,
     Partido,
+    Carga,
     Opcion,
     CategoriaOpcion,
     Categoria,
@@ -265,6 +266,7 @@ class AgrupacionCircuitosAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Eleccion)
+admin.site.register(Carga)
 admin.site.register(Distrito, DistritoAdmin)
 admin.site.register(SeccionPolitica, SeccionPoliticaAdmin)
 admin.site.register(Seccion, SeccionAdmin)

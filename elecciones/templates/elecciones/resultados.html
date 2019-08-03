@@ -118,9 +118,7 @@
                 </tr>
             </thead>
 
-            {% with resultados.tabla_no_positivos as tabla %}
-                {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True incluir_votos=True %}
-            {% endwith %}
+            {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True %}
         </table>
 
         {% if show_plot %}
@@ -144,14 +142,14 @@
                     <i class="small material-icons">people_outline</i>
                     <span>Electores</span>
                 </th>
-                <td title="Electores">{{ resultados.electores}} </td>
+                <td title="Electores">{{ resultados.electores}}</td>
             </tr>
             <tr>
                 <th title="Escrutados">
                     <i class="small material-icons">person_outline</i>
                     <span>Escrutados</span>
                 </th>
-                <td title="Escrutados">{{ resultados.electores_en_mesas_escrutadas }} </td>
+                <td title="Escrutados">{{ resultados.electores_en_mesas_escrutadas }}</td>
             </tr>
             <tr>
                 <th title="% Escrutado">
@@ -165,19 +163,19 @@
                     <i class="small material-icons">person</i>
                     <span>Votantes</span>
                 </th>
-                <td title="Votantes">{{ resultados.votantes }} </td>
+                <td title="Votantes">{{ resultados.votantes }}</td>
             </tr>
             <tr>
                 <th title="Positivos">
                     <i class="small material-icons">person_add</i>
                     <span>Positivos</span>
                 </th>
-                <td title="Positivos">{{ resultados.positivos}}</td>
+                <td title="Positivos">{{ resultados.total_positivos}}</td>
             </tr>
             <tr>
                 <th title="% Participación">
                     <i class="small material-icons">timeline</i>
-                    <span>% Participacion</span>
+                    <span>% Participación sobre escrutado</span>
                 </th>
                 <td title="% Participación">{{ resultados.porcentaje_participacion}} %</td>
             </tr>

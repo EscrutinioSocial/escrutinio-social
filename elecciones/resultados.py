@@ -181,6 +181,7 @@ class Sumarizador():
         """
         return VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
+            carga__mesa_categoria__categoria=categoria,
             carga__es_testigo__isnull=False,
             **self.cargas_a_considerar_status_filter(categoria)
         )
@@ -201,7 +202,7 @@ class Sumarizador():
 
         # Sobreescribir los valores default (en 0) con los votos reportados
         votos_por_opcion.update(votos_reportados)
-        
+
         return votos_por_opcion.items()
 
     def agrupar_votos(self, votos_por_opcion):
@@ -215,7 +216,7 @@ class Sumarizador():
             else:
                 # 3.2 Opciones no partidarias
                 # TODO ¿Puede realmente pasar que no vengan las opciones completas?
-                votos_no_positivos[opcion.nombre] = sum_votos if sum_votos else 0
+                votos_no_positivos[opcion.nombre.lower()] = sum_votos if sum_votos else 0
 
         return votos_positivos, votos_no_positivos
 
@@ -318,7 +319,7 @@ class Resultados():
         nombre_opcion_sobres = settings.OPCION_TOTAL_SOBRES['nombre']
         return sum(
             votos for opcion, votos in self.resultados.votos_no_positivos.items()
-            if opcion not in (nombre_opcion_total, opcion != nombre_opcion_sobres)
+            if opcion not in (nombre_opcion_total, nombre_opcion_sobres)
         )
 
     @lru_cache(128)
@@ -407,6 +408,29 @@ class Resultados():
 
     def total_mesas(self):
         return self.resultados.total_mesas
+
+    def total_blancos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre'], '-')
+
+    def total_nulos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre'], '-')
+
+    def total_votos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre'], '-')
+
+    def total_sobres(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '-')
+
+    def porcentaje_positivos(self):
+        return porcentaje(self.total_positivos(), self.votantes())
+
+    def porcentaje_blancos(self):
+        blancos = self.total_blancos()
+        return porcentaje(blancos, self.votantes()) if blancos != '-' else '-'
+
+    def porcentaje_nulos(self):
+        nulos = self.total_nulos()
+        return porcentaje(nulos, self.votantes()) if nulos != '-' else '-'
 
 
 class AvanceDeCarga(Sumarizador):

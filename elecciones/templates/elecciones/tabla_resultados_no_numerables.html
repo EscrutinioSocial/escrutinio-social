@@ -1,14 +1,29 @@
-{% for partido, votos in  tabla.items %}
-    <tr {% if partido.color %}style="background-color: {{ partido.color}};"{% endif %}>
-        <td>{{ partido }}</td>
+<tr>
+    <td>Votos Positivos</td>
+    <td>{{ resultados.total_positivos }}</td>
+    <td>{{ resultados.porcentaje_positivos }}%</td>
+</tr>
 
-        {% if incluir_votos %}
-            <td id="votos_{{ partido.id|default:partido|lower }}"> {{ votos.votos }}</td>
-        {% endif %}
-        <td> {{ votos.porcentaje_total }}%</td>
-        {% if resultados.proyectado %}
-        	<td>  - -</td>
-        {% endif %}
+<tr>
+    <td>Votos en blanco</td>
+    <td>{{ resultados.total_blancos }}</td>
+    <td>{{ resultados.porcentaje_blancos }}%</td>
+</tr>
 
-    </tr>
-{% endfor %}
+<tr>
+    <td>Votos nulos</td>
+    <td>{{ resultados.total_nulos }}</td>
+    <td>{{ resultados.porcentaje_nulos }}%</td>
+</tr>
+
+<tr>
+    <td>Total de votos</td>
+    <td>{{ resultados.total_votos }}</td>
+    <td></td>
+</tr>
+
+<tr>
+    <td>Total de sobres</td>
+    <td>{{ resultados.total_sobres }}</td>
+    <td></td>
+</tr>

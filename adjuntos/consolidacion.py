@@ -113,8 +113,9 @@ def consolidar_cargas(mesa_categoria):
     # Me fijo si es un problema.
     cargas_que_reportan_problemas = cargas.filter(tipo=Carga.TIPOS.problema)
     if cargas_que_reportan_problemas.count() >= settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA:
-        status_resultante, carga_testigo_resultante = \
-            consolidar_cargas_con_problemas(cargas_que_reportan_problemas)
+        status_resultante, carga_testigo_resultante = consolidar_cargas_con_problemas(
+            cargas_que_reportan_problemas
+        )
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
 
@@ -127,8 +128,9 @@ def consolidar_cargas(mesa_categoria):
     # Analizo las parciales.
     cargas_parciales = cargas.filter(tipo=Carga.TIPOS.parcial)
     if cargas_parciales.exists():
-        status_resultante, carga_testigo_resultante = \
-            consolidar_cargas_por_tipo(cargas_parciales, Carga.TIPOS.parcial)
+        status_resultante, carga_testigo_resultante = consolidar_cargas_por_tipo(
+            cargas_parciales, Carga.TIPOS.parcial
+        )
 
     if status_resultante in statuses_que_permiten_analizar_carga_total:
         # Analizo las totales solo si no hay ninguna parcial, o si están consolidadas las parciales.
@@ -136,8 +138,9 @@ def consolidar_cargas(mesa_categoria):
         # todavía no se resolvió la parcial.
         cargas_totales = cargas.filter(tipo=Carga.TIPOS.total)
         if cargas_totales.exists():
-            status_resultante, carga_testigo_resultante = \
-                consolidar_cargas_por_tipo(cargas_totales, Carga.TIPOS.total)
+            status_resultante, carga_testigo_resultante = consolidar_cargas_por_tipo(
+                cargas_totales, Carga.TIPOS.total
+            )
 
     mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
     if status_resultante in statuses_que_requieren_computar_efecto_trolling:
