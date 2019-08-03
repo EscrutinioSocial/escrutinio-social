@@ -152,12 +152,19 @@ def test_cargar_votos(admin_client):
     assert mesa_categoria_1.cargas.count() == 1
     assert mesa_categoria_2.cargas.count() == 1
 
-    assert list(mesa_categoria_1.cargas.first().opcion_votos()) == [
-        (opcion_1.id, 100),
-        (opcion_2.id, 50)
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_1.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 100), (opcion_2.id, 50)]
     ]
 
-    assert list(mesa_categoria_2.cargas.first().opcion_votos()) == [(opcion_1.id, 10)]
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_2.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 10)]
+    ]
 
     # Se pueden volver a cargar votos para la misma mesa (con o sin cambios)
 
@@ -172,20 +179,18 @@ def test_cargar_votos(admin_client):
     assert mesa_categoria_1.cargas.count() == 2
     assert mesa_categoria_2.cargas.count() == 2
 
-    cargas = [
+    assert [
         list(mc.opcion_votos().order_by('opcion__orden'))
         for mc in mesa_categoria_1.cargas.order_by('-created').all()
-    ]
-    assert cargas == [
+    ] == [
         [(opcion_1.id, 90), (opcion_2.id, 60)],
         [(opcion_1.id, 100), (opcion_2.id, 50)]
     ]
 
-    cargas = [
+    assert [
         list(mc.opcion_votos().order_by('opcion__orden'))
         for mc in mesa_categoria_2.cargas.order_by('-created').all()
-    ]
-    assert cargas == [
+    ] == [
         [(opcion_1.id, 10)],
         [(opcion_1.id, 10)]
     ]
