@@ -195,22 +195,26 @@ def test_cargar_votos_faltan_prioritarias(admin_client):
 def test_listar_categorias_default(admin_client):
     url = reverse('categorias')
 
-    pv = factories.CategoriaFactory(prioridad=1)
     gv = factories.CategoriaFactory(prioridad=2)
+    pv = factories.CategoriaFactory(prioridad=1)
     factories.CategoriaFactory(prioridad=3)
 
     response = admin_client.get(url, format='json')
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 2
-    assert [cat['id'] for cat in response.data] == [pv.id, gv.id]
+    categorias = [(cat['id'], cat['nombre'], cat['slug']) for cat in response.data]
+    assert categorias == [
+        (pv.id, pv.nombre, pv.slug), 
+        (gv.id, gv.nombre, gv.slug)
+    ]
 
 
 def test_listar_categorias_con_prioridad(admin_client):
     url = reverse('categorias')
 
-    pv = factories.CategoriaFactory(prioridad=1)
     gv = factories.CategoriaFactory(prioridad=2)
+    pv = factories.CategoriaFactory(prioridad=1)
     dn = factories.CategoriaFactory(prioridad=3)
     factories.CategoriaFactory(prioridad=4)
 
@@ -218,8 +222,13 @@ def test_listar_categorias_con_prioridad(admin_client):
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 3
-    assert [(cat['id'], cat['nombre']) for cat in response.data] == [(pv.id, pv.nombre), (gv.id, gv.nombre),
-                                                                     (dn.id, dn.nombre)]
+    categorias = [(cat['id'], cat['nombre'], cat['slug']) for cat in response.data]
+    assert categorias == [
+        (pv.id, pv.nombre, pv.slug),
+        (gv.id, gv.nombre, gv.slug),
+        (dn.id, dn.nombre, dn.slug)
+    ]
+
 
 @pytest.mark.parametrize('prioridad', ['XX', False])
 def test_listar_categorias_con_prioridad_error(prioridad, admin_client):
