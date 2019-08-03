@@ -197,7 +197,7 @@ class Sumarizador():
 
         # Sobreescribir los valores default (en 0) con los votos reportados
         votos_por_opcion.update(votos_reportados)
-        
+
         return votos_por_opcion.items()
 
     def agrupar_votos(self, votos_por_opcion):
@@ -421,47 +421,49 @@ class Proyecciones(Sumarizador):
             **self.cargas_a_considerar_status_filter(self.categoria, 'mesacategoria__')
         )
 
-    def total_electores(self, agrupacion):
-        return (
-            self.mesas_a_considerar.filter(
-                circuito__in=Subquery(
-                    AgrupacionCircuito.objects.filter(agrupacion__id=agrupacion.id
-                                                      ).values_list('circuito_id', flat=True)
-                )
-            ).aggregate(electores=Sum('electores'))
-        )['electores']
+    def total_electores(self, id_agrupacion):
+        """
+        Calcula el total de electores en una agrupación de circuitos
+        """
+        circuito_subquery = AgrupacionCircuito.objects.filter(
+            agrupacion__id=id_agrupacion
+        ).values_list('circuito_id', flat=True)
 
-    def electores_en_mesas_escrutadas(self, agrupacion):
+        return self.mesas_a_considerar.filter(
+            circuito__in=Subquery(circuito_subquery)
+        ).aggregate(electores=Sum('electores'))['electores']
+
+    def electores_en_mesas_escrutadas(self, id_agrupacion):
         return (
             self.mesas_escrutadas().filter(
                 circuito__in=Subquery(
-                    AgrupacionCircuito.objects.filter(agrupacion__id=agrupacion.id
+                    AgrupacionCircuito.objects.filter(agrupacion__id=id_agrupacion
                                                       ).values_list('circuito_id', flat=True)
                 )
             ).aggregate(electores=Sum('electores'))
         )['electores']
 
+    @lru_cache(128)
     def agrupaciones_a_considerar(self, categoria, mesas):
         """
         Devuelve la lista de agrupaciones_a_considerar a considerar, descartando aquellas que no tienen aún
         el mínimo de mesas definido según la técnica de proyección.
-        """
-        mesas_por_agrupacion_subquery = (
-            self.mesas_escrutadas().filter(circuito__id__in=OuterRef('circuitos')
-                                           ).annotate(mesas_escrutadas=Count('pk')
-                                                      ).values_list('mesas_escrutadas', flat=True)
-        )
 
-        return (
-            AgrupacionCircuitos.objects.filter(proyeccion=self.tecnica).annotate(
-                mesas_escrutadas=Subquery(mesas_por_agrupacion_subquery[:1], output_field=IntegerField())
-            ).filter(minimo_mesas__lte=F('mesas_escrutadas'))
-        )
+        Atención: el query se realiza en realidad sobre AgrupacionCircuito, porque de otra manera la 
+        many to many entre AgrupacionCircuitos y Circuito impide hacer agregaciones.
+        """
+
+        return AgrupacionCircuito.objects.values("agrupacion").annotate(
+            mesas_escrutadas=Count(
+                "circuito__mesas",
+                filter=Q(circuito__mesas__id__in=self.mesas_escrutadas().values_list('id', flat=True))
+            )
+        ).filter(agrupacion__minimo_mesas__lte=F('mesas_escrutadas')).values_list('agrupacion', flat=True)
 
     def coeficientes_para_proyeccion(self):
         return {
-            agrupacion.id: self.total_electores(agrupacion) / self.electores_en_mesas_escrutadas(agrupacion)
-            for agrupacion in self.agrupaciones_a_considerar(self.categoria, self.mesas_a_considerar)
+            id_agrupacion: self.total_electores(id_agrupacion) / self.electores_en_mesas_escrutadas(id_agrupacion)
+            for id_agrupacion in self.agrupaciones_a_considerar(self.categoria, self.mesas_a_considerar)
         }
 
     def votos_por_opcion(self, categoria, mesas):
@@ -472,19 +474,15 @@ class Proyecciones(Sumarizador):
         correspondientes a agrupaciones que llegaron al mínimo de mesas requerido.
         """
 
-        agrupaciones_subquery = Subquery(
-            self.agrupaciones_a_considerar(categoria, mesas).filter(
-                pk__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones'))
-            ).values_list('id', flat=True)
-        )
-
+        agrupaciones_subquery = self.agrupaciones_a_considerar(categoria, mesas).filter(
+            agrupacion__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones'))
+        ).values_list('agrupacion', flat=True)
+        
         return self.votos_reportados(categoria, mesas).values_list('opcion__id').annotate(
-                id_agrupacion=agrupaciones_subquery
-            ).exclude(
-                id_agrupacion__isnull=True
-            ).annotate(
-                sum_votos=Sum('votos')
-            ).values_list('opcion__id', 'id_agrupacion', 'sum_votos')
+            id_agrupacion=Subquery(agrupaciones_subquery)
+        ).exclude(id_agrupacion__isnull=True).annotate(
+            sum_votos=Sum('votos')
+        ).values_list('opcion__id', 'id_agrupacion', 'sum_votos')
 
     def votos_por_agrupacion(self, votos_a_procesar):
         """

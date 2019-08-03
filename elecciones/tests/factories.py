@@ -235,3 +235,21 @@ class ProblemaFactory(DjangoModelFactory):
     mesa = factory.SubFactory(MesaFactory)
     attachment = factory.SubFactory(AttachmentFactory)
     estado = 'potencial'
+
+
+class TecnicaProyeccionFactory(DjangoModelFactory):
+
+    class Meta:
+        model = 'elecciones.TecnicaProyeccion'
+
+    nombre = factory.Sequence(lambda n: f'tecnica{n}')
+
+
+class AgrupacionCircuitosFactory(DjangoModelFactory):
+
+    class Meta:
+        model = 'elecciones.AgrupacionCircuitos'
+
+    proyeccion = factory.SubFactory(TecnicaProyeccionFactory)
+    nombre = factory.Sequence(lambda n: f'user{n}')
+    minimo_mesas = 1
