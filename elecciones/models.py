@@ -598,8 +598,10 @@ class Opcion(models.Model):
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
     # El código de opción corresponde con el nro de lista en los archivos CSV.
+    # Dado que muchas veces la justicia no le pone un código a las "sub listas"
+    # en las PASO, se termina sintentizando y podría ser largo.
     codigo = models.CharField(
-        max_length=10, help_text='Codigo de opción', null=True, blank=True, 
+        max_length=30, help_text='Codigo de opción', null=True, blank=True, 
         db_index=True
     )
     partido = models.ForeignKey(
