@@ -5,9 +5,11 @@ from pathlib import Path
 from csv import DictReader
 from elecciones.models import Partido, Opcion, Categoria, CategoriaOpcion, Mesa, MesaCategoria
 import datetime
+from django.db import transaction
 
 CSV_NACIONAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_nacionales.csv'
 CSV_PROVINCIAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_provinciales.csv'
+
 
 class BaseCommand(BaseCommand):
 
@@ -22,6 +24,7 @@ class BaseCommand(BaseCommand):
             self.success(f'creado {object}', ending=ending)
         else:
             self.warning(f'{object} ya existe', ending=ending)
+
 
 class Command(BaseCommand):
     help = "Importar categorías nacionales, creando partidos, opciones y asociando mesas"
@@ -54,9 +57,9 @@ class Command(BaseCommand):
                 'orden': orden,
             }
             partido, created = Partido.objects.update_or_create(codigo=codigo, defaults=defaults)
-            
+
             self.log(partido, created)
-            
+
             nombre = row['opcion_nombre']
             nombre_corto = row['opcion_nombre_corto'][:20]
             orden = row['opcion_orden']
@@ -73,18 +76,20 @@ class Command(BaseCommand):
                 defaults=defaults
             )
             self.log(opcion, created)
-            
+
             categoria, created = Categoria.objects.get_or_create(
                 nombre=row['categoria_nombre'],
                 slug=row['categoria_slug']
             )
-            self.log(categoria, created)                  
-            
+            self.log(categoria, created)
+
             mesas = Mesa.objects.all() if not provinciales else Mesa.objects.filter(circuito__seccion__distrito__numero=row['distrito_nro'])
 
-            for mesa in mesas:
-                mesacategoria, created = MesaCategoria.objects.get_or_create(mesa=mesa, categoria=categoria)
-                                             
+            with transaction.atomic():
+                for mesa in mesas:
+                    mesacategoria, created = MesaCategoria.objects.get_or_create(
+                        mesa=mesa, categoria=categoria
+                    )
 
             categoriaopcion, created = CategoriaOpcion.objects.get_or_create(
                 categoria=categoria,
@@ -93,6 +98,4 @@ class Command(BaseCommand):
             self.log(categoriaopcion, created)
 
         self.stdout.write(self.style.SUCCESS('CVS leído.'))
-            
-                                                                
 
