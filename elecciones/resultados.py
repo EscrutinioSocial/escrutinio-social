@@ -3,7 +3,7 @@ from functools import lru_cache
 from collections import OrderedDict
 from attrdict import AttrDict
 from model_utils import Choices
-from django.db.models import Q, F, Sum, Subquery, IntegerField, OuterRef, Count
+from django.db.models import Q, F, Sum, Subquery, IntegerField, OuterRef, Count, Exists
 from .models import (
     Eleccion,
     Distrito,
@@ -19,6 +19,7 @@ from .models import (
     AgrupacionCircuitos,
     AgrupacionCircuito,
 )
+from adjuntos.models import Identificacion
 
 
 def porcentaje(numerador, denominador):
@@ -425,49 +426,17 @@ class AvanceDeCarga(Sumarizador):
             ids_a_considerar=ids_a_considerar
         )
 
-    def mesas_con_o_sin_attachment(self, con_attachment):
-        """
-        Devuelve el conjunto de mesas de la categoría actual, con o sin attachment
-        asociado (de acuerdo al parámetro con_attachment).
-        """
-        lookups = self.lookups_de_mesas()
-
-        return Mesa.objects.filter(
-            categorias=self.categoria,
-            attachments__isnull=not con_attachment
-        ).filter(lookups).distinct()
-
-    @lru_cache(128)
-    def cant_mesas_con_actas(self):
-        return self.mesas_con_o_sin_attachment(True).count()
-
-    def cant_actas_parcialmente_identificadas_por_origen(self):
-        mesas_sin_attachment = self.mesas_con_o_sin_attachment(False)
-        cant = Identificacion.objects.filter(
-            status=Identificacion.STATUS.identificada,
-            invalidada=False,
-            mesa__in=Subquery(mesas_sin_attachment.values('pk'))
-        ).values('source').annotate(count=Count('source'))
-
-    @lru_cache(128)
-    def cant_actas_parcialmente_identificadas(self, origen):
-        """
-        Devuelve la cantidad de actas parcialmente identificadas del origen parámetro.
-        """
-        for item in self.cant_actas_parcialmente_identificadas_por_origen():
-            if item['source'] == origen:
-                return item['count']
-
-    # @lru_cache(128)
-    # def cant_actas_con_identificacion_parcial(self):
-    #     IdentificacionParcial.objects.filter(...)
-
 
     def calcular(self):
         """
         Realiza los cálculos necesarios y devuelve un AttrDict con la info obtenida
         """
-        mesas_sin_identificar = self.mesas_a_considerar.filter(attachments__isnull=True)
+        identificaciones_validas_mesa = Identificacion.objects.filter(mesa=OuterRef('pk'), invalidada=False)
+        mesas_con_marca_identificacion = self.mesas_a_considerar.annotate(
+            tiene_identificaciones=Exists(identificaciones_validas_mesa))
+        mesas_sin_identificar = mesas_con_marca_identificacion.filter(tiene_identificaciones=False)
+        mesas_en_identificacion = mesas_con_marca_identificacion.filter(
+            tiene_identificaciones=True, attachments__isnull=True)
 
         mesacats_de_la_categoria = MesaCategoria.objects.filter(
             mesa__in=self.mesas_a_considerar,
@@ -501,7 +470,7 @@ class AvanceDeCarga(Sumarizador):
         return AttrDict({
             "total": dato_total,
             "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_sin_identificar),
-            "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
+            "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_en_identificacion),
             "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_sin_cargar),
             "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_sin_consolidar),
             "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada),
@@ -546,7 +515,7 @@ class AvanceDeCarga(Sumarizador):
         })
 
 
-def porcentaje(parcial, total):
+def porcentaje_numerico(parcial, total):
     """
     Función utilitaria para el cálculo de un porcentaje, así se hace igual en todos lados
     """
@@ -582,10 +551,10 @@ class DatoParcialAvanceDeCarga(DatoAvanceDeCarga):
         self.dato_total = dato_total
 
     def porcentaje_mesas(self):
-        return porcentaje(self.cantidad_mesas(), self.dato_total.cantidad_mesas())
+        return porcentaje_numerico(self.cantidad_mesas(), self.dato_total.cantidad_mesas())
 
     def porcentaje_electores(self):
-        return porcentaje(self.cantidad_electores(), self.dato_total.cantidad_electores())
+        return porcentaje_numerico(self.cantidad_electores(), self.dato_total.cantidad_electores())
 
 
 class DatoTotalAvanceDeCarga(DatoAvanceDeCarga):
