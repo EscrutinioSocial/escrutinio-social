@@ -544,25 +544,25 @@ def porcentaje(parcial, total):
 
 class DatoAvanceDeCarga():
     def para_mesas(self, mesas):
-        self.cantidad_mesas = mesas.count()
-        self.cantidad_electores = mesas.aggregate(v=Sum('electores'))['v'] or 0
+        self.la_cantidad_mesas = mesas.count()
+        self.la_cantidad_electores = mesas.aggregate(v=Sum('electores'))['v'] or 0
         return self
 
     def para_mesacats(self, mesa_cats):
-        self.cantidad_mesas = mesa_cats.count()
-        self.cantidad_electores = mesa_cats.aggregate(v=Sum('mesa__electores'))['v'] or 0
+        self.la_cantidad_mesas = mesa_cats.count()
+        self.la_cantidad_electores = mesa_cats.aggregate(v=Sum('mesa__electores'))['v'] or 0
         return self
 
     def para_valores_fijos(self, cantidad_mesas, cantidad_electores):
-        self.cantidad_mesas = cantidad_mesas
-        self.cantidad_electores = cantidad_electores
+        self.la_cantidad_mesas = cantidad_mesas
+        self.la_cantidad_electores = cantidad_electores
         return self
 
     def cantidad_mesas(self):
-        return self.cantidad_mesas
+        return self.la_cantidad_mesas
 
     def cantidad_electores(self):
-        return self.cantidad_electores
+        return self.la_cantidad_electores
 
 
 class DatoParcialAvanceDeCarga(DatoAvanceDeCarga):
