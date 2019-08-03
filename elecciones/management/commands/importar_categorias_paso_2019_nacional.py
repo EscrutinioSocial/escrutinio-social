@@ -83,13 +83,15 @@ class Command(BaseCommand):
             )
             self.log(categoria, created)
 
-            mesas = Mesa.objects.all() if not provinciales else Mesa.objects.filter(circuito__seccion__distrito__numero=row['distrito_nro'])
+            if created:
+                # Se asocian las mesas a la categoría sólo cuando se crea la categoría.
+                mesas = Mesa.objects.all() if not provinciales else Mesa.objects.filter(circuito__seccion__distrito__numero=row['distrito_nro'])
 
-            with transaction.atomic():
-                for mesa in mesas:
-                    mesacategoria, created = MesaCategoria.objects.get_or_create(
-                        mesa=mesa, categoria=categoria
-                    )
+                with transaction.atomic():
+                    for mesa in mesas:
+                        mesacategoria, created = MesaCategoria.objects.get_or_create(
+                            mesa=mesa, categoria=categoria
+                        )
 
             categoriaopcion, created = CategoriaOpcion.objects.get_or_create(
                 categoria=categoria,
