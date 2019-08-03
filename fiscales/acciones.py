@@ -1,6 +1,5 @@
 from django.shortcuts import redirect, render
 from django.db import transaction
-from django.db.models import Q
 from constance import config
 
 from adjuntos.models import Attachment
