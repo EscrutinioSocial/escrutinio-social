@@ -122,8 +122,8 @@ def test_cargar_votos(admin_client):
     mesa_categoria_1 = factories.MesaCategoriaFactory(mesa=mesa, categoria=categoria_1)
     mesa_categoria_2 = factories.MesaCategoriaFactory(mesa=mesa, categoria=categoria_2)
 
-    opcion_1 = factories.OpcionFactory()
-    opcion_2 = factories.OpcionFactory()
+    opcion_1 = factories.OpcionFactory(orden=1)
+    opcion_2 = factories.OpcionFactory(orden=2)
 
     factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1, prioritaria=True)
     factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2, prioritaria=True)
@@ -172,13 +172,19 @@ def test_cargar_votos(admin_client):
     assert mesa_categoria_1.cargas.count() == 2
     assert mesa_categoria_2.cargas.count() == 2
 
-    cargas = [list(mc.opcion_votos()) for mc in mesa_categoria_1.cargas.all()]
+    cargas = [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_1.cargas.order_by('-created').all()
+    ]
     assert cargas == [
         [(opcion_1.id, 90), (opcion_2.id, 60)],
         [(opcion_1.id, 100), (opcion_2.id, 50)]
     ]
 
-    cargas = [list(mc.opcion_votos()) for mc in mesa_categoria_2.cargas.all()]
+    cargas = [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_2.cargas.order_by('-created').all()
+    ]
     assert cargas == [
         [(opcion_1.id, 10)],
         [(opcion_1.id, 10)]
