@@ -22,6 +22,7 @@ logger = logging.getLogger("e-va")
 
 MAX_INT_DB = 2147483647
 
+
 class Distrito(models.Model):
     """
     Define el distrito o circunscripción electoral. Es la subdivisión más
@@ -29,7 +30,7 @@ class Distrito(models.Model):
 
     **Distrito** -> Sección -> Circuito -> Lugar de votación -> Mesa
     """
-    numero = models.CharField(null=True, max_length=10)
+    numero = models.CharField(null=True, max_length=10, db_index=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
@@ -84,7 +85,7 @@ class Seccion(models.Model):
     seccion_politica = models.ForeignKey(
         SeccionPolitica, null=True, blank=True, on_delete=models.CASCADE, related_name='secciones'
     )
-    numero = models.CharField(null=True, max_length=10)
+    numero = models.CharField(null=True, max_length=10, db_index=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     proyeccion_ponderada = models.BooleanField(
@@ -94,24 +95,34 @@ class Seccion(models.Model):
             'por circuitos para esta sección'
         )
     )
-    # esta es la prioridad del "viejo" modelo de scheduling, está deprecada a la espera del refactor 
+    # esta es la prioridad del "viejo" modelo de scheduling, está deprecada a la espera del refactor
     # que permita borrarla
     prioridad = models.PositiveIntegerField(
         default=0, null=True, blank=True, validators=[MaxValueValidator(1000)])
     # estos son los nuevos atributos que intervienen en el modelo actual de scheduling
     prioridad_hasta_2 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)]
+    )
     prioridad_2_a_10 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)]
+    )
     prioridad_10_a_100 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)]
+    )
     cantidad_minima_prioridad_hasta_2 = models.PositiveIntegerField(
-        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)])
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)]
+    )
 
-    # Tracker de cambios en los atributos relacionados con la prioridad, 
-    # usado en la función que dispara en el post_save        
-    tracker = FieldTracker(fields=[
-        'prioridad_hasta_2', 'cantidad_minima_prioridad_hasta_2', 'prioridad_2_a_10', 'prioridad_10_a_100'])
+    # Tracker de cambios en los atributos relacionados con la prioridad,
+    # usado en la función que dispara en el post_save
+    tracker = FieldTracker(
+        fields=[
+            'prioridad_hasta_2',
+            'cantidad_minima_prioridad_hasta_2',
+            'prioridad_2_a_10',
+            'prioridad_10_a_100'
+        ]
+    )
 
     class Meta:
         ordering = ('numero',)
@@ -119,7 +130,7 @@ class Seccion(models.Model):
         verbose_name_plural = 'Secciones electorales'
 
     def resultados_url(self):
-        return reverse('resultados-categoria') + f'?seccion={self.id}'
+        return reverse('resultados-primera-categoria') + f'?seccion={self.id}'
 
     def __str__(self):
         return f"{self.numero} - {self.nombre}"
@@ -140,10 +151,10 @@ class Circuito(models.Model):
 
     Distrito -> Sección -> **Circuito** -> Lugar de votación -> Mesa
     """
-    seccion = models.ForeignKey(Seccion, on_delete=models.CASCADE)
+    seccion = models.ForeignKey(Seccion, related_name='circuitos', on_delete=models.CASCADE)
     localidad_cabecera = models.CharField(max_length=100, null=True, blank=True)
 
-    numero = models.CharField(max_length=10)
+    numero = models.CharField(max_length=10, db_index=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
@@ -157,7 +168,7 @@ class Circuito(models.Model):
         return f"{self.numero} - {self.nombre}"
 
     def resultados_url(self):
-        return reverse('resultados-categoria') + f'?circuito={self.id}'
+        return reverse('resultados-primera-categoria') + f'?circuito={self.id}'
 
     def mesas(self, categoria):
         """
@@ -178,11 +189,12 @@ class LugarVotacion(models.Model):
     Distrito -> Sección -> Circuito -> **Lugar de votación** -> Mesa
     """
 
-    circuito = models.ForeignKey(Circuito, related_name='escuelas', on_delete=models.CASCADE)
+    circuito = models.ForeignKey(Circuito, related_name='lugares_votacion', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, blank=True)
     ciudad = models.CharField(max_length=100, blank=True)
+    numero = models.CharField(max_length=10, help_text='Número de escuela', null=True, blank=True)
 
     # electores es una denormalización. debe coincidir con la sumatoria de
     # los electores de cada mesa de la escuela
@@ -266,7 +278,9 @@ class MesaCategoriaQuerySet(models.QuerySet):
         Filtra instancias que tengan orden de carga definido
         (que se produce cuando hay un primer attachment consolidado).
         """
-        return self.filter(orden_de_carga__isnull=False)
+        # Si bien parece redundante chequear orden de carga y attachment preferimos
+        # estar seguros de que no se cuele una mesa sin foto.
+        return self.filter(orden_de_carga__isnull=False).exclude(mesa__attachments=None)
 
     def no_taken(self):
         """
@@ -395,12 +409,15 @@ class MesaCategoria(models.Model):
         """
         Actualiza `self.orden_de_carga` a partir de las prioridades por seccion y categoria
         """
+        # evitar import circular
+        from scheduling.models import mapa_prioridades_para_mesa_categoria
+
         en_circuito = MesaCategoria.objects.filter(
             categoria=self.categoria, mesa__circuito=self.mesa.circuito
         )
         total = en_circuito.count()
         identificadas = en_circuito.identificadas().count()
-        
+
         self.orden_de_llegada = identificadas + 1
         self.percentil = math.floor((identificadas * 100) / total) + 1
         self.recalcular_orden_de_carga()
@@ -411,11 +428,12 @@ class MesaCategoria(models.Model):
         Actualiza el valor de `self.orden_de_carga` a partir de las prioridades por seccion y categoria,
         **sin** disparar el `save` correspondiente
         """
+        # evitar import circular
         from scheduling.models import mapa_prioridades_para_mesa_categoria
 
-        orden_calculado = mapa_prioridades_para_mesa_categoria(self) \
-            .valor_para(self.percentil-1, self.orden_de_llegada) * self.percentil
-        self.orden_de_carga = min(orden_calculado, MAX_INT_DB)
+        prioridades = mapa_prioridades_para_mesa_categoria(self)
+        valor_para = prioridades.valor_para(self.percentil - 1, self.orden_de_llegada)
+        self.orden_de_carga = min(valor_para * self.percentil, MAX_INT_DB)
 
     def invalidar_cargas(self):
         """
@@ -444,6 +462,26 @@ class MesaCategoria(models.Model):
         for item in qs.values('firma', 'tipo').annotate(total=Count('firma')):
             result[item['tipo']][item['firma']] = item['total']
         return result
+
+    def datos_previos(self, tipo_carga):
+        """
+        Devuelve un diccionario que contiene informacion confirmada
+        (proveniente de campos de metadata o prioritarios compartidos)
+        para "pre completar" una carga.
+
+            {opcion.id: cantidad_votos, ...}
+
+        Si una opcion está en este diccionario, su campo votos
+        se inicilizará con la cantidad de votos y será de sólo lectura,
+        validando además que coincidan cuando la carga se guarda.
+        """
+        datos = dict(self.mesa.metadata())
+        if tipo_carga == 'total' and self.status == MesaCategoria.STATUS.parcial_consolidada_dc:
+            # una carga total con parcial consolidada reutiliza los datos ya cargados
+            datos.update(
+                dict(self.carga_testigo.opcion_votos())
+            )
+        return datos
 
     class Meta:
         unique_together = ('mesa', 'categoria')
@@ -482,9 +520,6 @@ class MesaCategoria(models.Model):
         for mesa_cat in mesa_cats:
             mesa_cat.recalcular_orden_de_carga()
         cls.objects.bulk_update(mesa_cats, ['orden_de_carga'])
-        
-
-
 
 
 class Mesa(models.Model):
@@ -588,7 +623,7 @@ class Mesa(models.Model):
         return f'{self.numero}'
 
     def nombre_completo(self):
-        return self.lugar_votacion.nombre_completo() + " - " + self.numero
+        return self.lugar_votacion.nombre_completo() + " - Mesa N°" + self.numero
 
 
 class Partido(models.Model):
@@ -597,7 +632,7 @@ class Partido(models.Model):
     """
     orden = models.PositiveIntegerField(help_text='Orden opcion')
     numero = models.PositiveIntegerField(null=True, blank=True)
-    codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True)
+    codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True, db_index=True)
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=30, default='')
     color = models.CharField(max_length=30, default='', blank=True)
@@ -635,7 +670,12 @@ class Opcion(models.Model):
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=20, default='')
     # El código de opción corresponde con el nro de lista en los archivos CSV.
-    codigo = models.CharField(max_length=10, help_text='Codigo de opción', null=True, blank=True)
+    # Dado que muchas veces la justicia no le pone un código a las "sub listas"
+    # en las PASO, se termina sintentizando y podría ser largo.
+    codigo = models.CharField(
+        max_length=30, help_text='Codigo de opción', null=True, blank=True,
+        db_index=True
+    )
     partido = models.ForeignKey(
         Partido, null=True, on_delete=models.SET_NULL, blank=True, related_name='opciones'
     )  # blanco, / recurrido / etc
@@ -700,7 +740,7 @@ class Categoria(models.Model):
     """
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
     slug = models.SlugField(max_length=100, unique=True)
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100, db_index=True)
     opciones = models.ManyToManyField(Opcion, through='CategoriaOpcion', related_name='categorias')
     color = models.CharField(max_length=10, default='black', help_text='Color para CSS (ej, red o #FF0000)')
     back_color = models.CharField(
@@ -714,11 +754,18 @@ class Categoria(models.Model):
         )
     )
 
+    sensible = models.BooleanField(
+        default=False,
+        help_text=(
+            'Solo pueden visualizar los resultados de esta cagtegoría con permisos especiales.'
+        )
+    )
+
     requiere_cargas_parciales = models.BooleanField(default=False)
     prioridad = models.PositiveIntegerField(
         default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)])
 
-    # Tracker de cambios en el atributo prioridad, usado en la función que dispara en el post_save        
+    # Tracker de cambios en el atributo prioridad, usado en la función que dispara en el post_save
     tracker = FieldTracker(fields=['prioridad'])
 
     def get_opcion_blancos(self):
@@ -875,11 +922,15 @@ class Carga(TimeStampedModel):
         self.save(update_fields=['firma'])
 
     def opcion_votos(self):
-        """ Devuelve una lista de los votos para cada opción. """
+        """
+        Devuelve una lista de los votos para cada opción.
+        """
         return self.reportados.values_list('opcion', 'votos')
 
     def listado_de_opciones(self):
-        """ Devuelve una lista de los ids de las opciones de esta carga. """
+        """
+        Devuelve una lista de los ids de las opciones de esta carga.
+        """
         return self.reportados.values_list('opcion__id', flat=True)
 
     def save(self, *args, **kwargs):
@@ -902,11 +953,12 @@ class Carga(TimeStampedModel):
 
         # antes que nada: si las cargas son incomparables, o los conjuntos de opciones no coinciden,
         # la comparación se considera incorrecta
-        if (self.mesa_categoria != carga_2.mesa_categoria) or (self.tipo != carga_2.tipo):
+        if self.mesa_categoria != carga_2.mesa_categoria or self.tipo != carga_2.tipo:
             raise CargasIncompatiblesError("las cargas no coinciden en mesa, categoría o tipo")
+
         opciones_1 = [ov.opcion.id for ov in reportados_1]
         opciones_2 = [ov.opcion.id for ov in reportados_2]
-        if (opciones_1 != opciones_2):
+        if opciones_1 != opciones_2:
             raise CargasIncompatiblesError("las cargas no coinciden en sus opciones")
 
         diferencia = sum(abs(r1.votos - r2.votos) for r1, r2 in zip(reportados_1, reportados_2))
@@ -982,9 +1034,17 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
     En general, esto sólo debería ocurrir en la configuración inicial del sistema.
     """
     if instance.lugar_votacion:
-        circuito = instance.lugar_votacion.circuito
+        lugar = instance.lugar_votacion
+        circuito = lugar.circuito
+
         seccion = circuito.seccion
         distrito = seccion.distrito
+
+        electores = Mesa.objects.filter(
+            lugar_votacion=lugar
+        ).aggregate(v=Sum('electores'))['v'] or 0
+        lugar.electores = electores
+        lugar.save(update_fields=['electores'])
 
         # circuito
         electores = Mesa.objects.filter(

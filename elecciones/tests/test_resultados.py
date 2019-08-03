@@ -46,7 +46,8 @@ def carta_marina(db):
 @pytest.fixture()
 def setup_groups(db, admin_user):
     groups = [
-        'validadores', 'unidades basicas', 'visualizadores', 'supervisores', 'fiscales con acceso al bot'
+        'validadores', 'unidades basicas', 'visualizadores', 'supervisores', 'fiscales con acceso al bot',
+        'visualizadores_sensible'
     ]
     for nombre in groups:
         g = Group.objects.create(name=nombre)
@@ -171,7 +172,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     o4.save()
 
     blanco = categoria.get_opcion_blancos()
-
+    nulo = categoria.get_opcion_nulos()
     total = categoria.get_opcion_total_votos()
 
     mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
@@ -201,7 +202,8 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     VotoMesaReportadoFactory(carga=c2, opcion=total, votos=120)
 
     # votaron 45 / 100 personas
-    VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=45)
+    VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=40)
+    VotoMesaReportadoFactory(carga=c3, opcion=nulo, votos=5)
     VotoMesaReportadoFactory(carga=c3, opcion=total, votos=45)
 
     c1.actualizar_firma()
@@ -246,11 +248,21 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
 
     assert resultados.electores() == total_electores
     assert resultados.total_positivos() == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+    assert resultados.porcentaje_positivos() == '81.13'
     assert resultados.porcentaje_mesas_escrutadas() == '37.50'  # 3 de 8
     assert resultados.votantes() == 265
     assert resultados.electores_en_mesas_escrutadas() == 320
     assert resultados.porcentaje_escrutado() == f'{100 * 320 / total_electores:.2f}'
-    assert resultados.porcentaje_participacion() == f'{100 * 265 / total_electores:.2f}'
+    assert resultados.porcentaje_participacion() == f'{100 * 265/ 320:.2f}'  # Es sobre escrutado.
+
+    assert resultados.total_blancos() == 45
+    assert resultados.porcentaje_blancos() == '16.98'
+
+    assert resultados.total_nulos() == 5
+    assert resultados.porcentaje_nulos() == '1.89'
+
+    assert resultados.total_votos() == 265
+    assert resultados.total_sobres() == 0
 
     columna_datos = [
         ('Electores', resultados.electores()),
@@ -592,8 +604,9 @@ def test_resultados_no_positivos(fiscal_client):
 
     opcion_blanco = OpcionFactory(**settings.OPCION_BLANCOS)
     opcion_total = OpcionFactory(**settings.OPCION_TOTAL_VOTOS)
+    opcion_sobres = OpcionFactory(**settings.OPCION_TOTAL_SOBRES)
 
-    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total])
+    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total, opcion_sobres])
 
     m1 = MesaFactory(categorias=[e1], electores=200)
     c1 = CargaFactory(mesa_categoria__categoria=e1, mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial)
@@ -601,6 +614,7 @@ def test_resultados_no_positivos(fiscal_client):
     VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=40)
     VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c1, votos=10)
     VotoMesaReportadoFactory(opcion=opcion_total, carga=c1, votos=100)
+    VotoMesaReportadoFactory(opcion=opcion_sobres, carga=c1, votos=110)
     c1.actualizar_firma()
     consumir_novedades_y_actualizar_objetos()
 
@@ -608,11 +622,15 @@ def test_resultados_no_positivos(fiscal_client):
         reverse('resultados-categoria', args=[e1.id]) + '?opcionaConsiderar=prioritarias'
     )
 
-    assert opcion_blanco.nombre in response.content.decode('utf8')
-    no_positivos = response.context['resultados'].tabla_no_positivos()
+    resultados = response.context['resultados']
 
-    assert no_positivos[opcion_blanco.nombre] == {'porcentaje_total': '10.00', 'votos': 10}
-    assert no_positivos['Votos Positivos']['votos'] == 90
+    assert resultados.total_positivos() == 90
+    assert resultados.total_blancos() == 10
+    assert resultados.total_votos() == 100
+    assert resultados.total_sobres() == 110
+    assert resultados.porcentaje_positivos() == '90.00'
+    assert resultados.porcentaje_blancos() == '10.00'
+    assert resultados.porcentaje_nulos() == '-'
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
@@ -698,4 +716,40 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
     # El usuario validador intenta cargar un acta, sí debería poder
     client.login(username=u_validador.username, password='password')
     response = client.get(reverse('siguiente-accion'))
+    assert response.status_code == 200
+
+def test_categorias_sensible(setup_groups, client):
+    u_visualizador = UserFactory()
+    _ = FiscalFactory(user=u_visualizador)
+    g_visualizadores = Group.objects.get(name='visualizadores')
+    u_visualizador.groups.add(g_visualizadores)
+
+    u_visualizador_sensible = UserFactory()
+    _ = FiscalFactory(user=u_visualizador_sensible)
+    g_visualizadores_sensible = Group.objects.get(name='visualizadores_sensible')
+    u_visualizador_sensible.groups.add(g_visualizadores_sensible)
+    u_visualizador_sensible.groups.add(g_visualizadores)
+
+    c = CategoriaFactory(nombre='default', sensible=False)
+    c_url = reverse('resultados-categoria', args=[c.id])
+
+    c = CategoriaFactory(nombre='default-sensible', sensible=True)
+    c_sensible_url = reverse('resultados-categoria', args=[c.id])
+
+    # El usuario visualizador intenta ver resultado sensible, no debería poder.
+    client.login(username=u_visualizador.username, password='password')
+    response = client.get(c_sensible_url)
+    assert response.status_code == 403
+
+    # Sí debería poder ver resultados.
+    response = client.get(c_url)
+    assert response.status_code == 200
+
+    # El usuario visualizador sensible puede ver resultado sensible.
+    client.login(username=u_visualizador_sensible.username, password='password')
+    response = client.get(c_sensible_url)
+    assert response.status_code == 200
+
+    # El usuario visualizador sensible puede ver resultado no sensible.
+    response = client.get(c_url)
     assert response.status_code == 200
