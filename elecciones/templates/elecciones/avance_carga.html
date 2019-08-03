@@ -8,6 +8,10 @@
       flex-basis: 100%;
   }
 
+  table.striped > tbody > tr:nth-child(odd) {
+      background-color: rgba(170, 213, 213, 0.3);
+  }
+  
 </style>
 {% endblock %}
 
@@ -21,7 +25,7 @@
     {% for categoria in categorias %}
     <li class="tab col s3" >
       <a target="_self"
-	 href="{{categoria.get_absolute_url}}?{{ request.GET.urlencode }}"
+	 href="{{ categoria.get_absolute_url }}?{{ request.GET.urlencode }}"
 	 {% if categoria.id == object.id %}
 	 class="active"
 	 {% endif %}>
@@ -50,33 +54,33 @@
 {% endblock sidenav_items %}
 
 {% block left-panel %}
-<div class="card">
+<div class="card" >
   <div class="card-content">
-    <table border="1">
+    <table class="bordered centered striped" >
       <thead> <!-- Header de la tabla -->
 	<!-- Mesa / Electores -->
 	<tr> <!-- Primera fila -->
 	  <!-- La primera celda va en blanco ya que se corresponde con los tipos
 	       de estado -->
-	  <td></td>
+	  <th></th>
 	  <!-- La tabla tiene 5 columnas de la 1 a la 5 por lo tanto llenamos las
 	       celdas de las columnas 2 y 4; de esta manera en la siguiente
 	       fila llenamos en las columnas 2 y 3 Cantidad y porcentaje para
 	       la mesa y en 4 y 5 Cantidad y porcentaje para los electores. -->
-	  <td colspan="2" style="text-align: center;">Mesa</td>
-	  <td colspan="4" style="text-align: center;">Electores</td>
+	  <th colspan="2" style="text-align: center;">Mesa</th>
+	  <th colspan="4" style="text-align: center;">Electores</th>
 	</tr>
 	<!-- Cantidad / Porcentajes -->
 	<tr> <!-- Segunda fila -->
 	  <!-- La primera celda va en blanco ya que se corresponde con los tipos
 	       de estado -->
-	  <td></td>
+	  <th></th>
 	  <!-- Mesa: Cantidad / Porcentajes -->
-	  <td style="text-align: right;">Cantidad</td>
-	  <td style="text-align: right;">Porcentajes</td>
+	  <th style="text-align: right;">Cantidad</th>
+	  <th style="text-align: right;">Porcentajes</th>
 	  <!-- Electores: Cantidad / Porcentajes -->
-	  <td style="text-align: right;">Cantidad</td>
-	  <td style="text-align: right;">Porcentajes</td>
+	  <th style="text-align: right;">Cantidad</th>
+	  <th style="text-align: right;">Porcentajes</th>
 	</tr>
       </thead>
       <!-- A partir de acá van datos y por lo tanto todas las celdas deberían
@@ -84,65 +88,128 @@
       <tbody>
 	<tr>
 	  <td>Total mesa y electores</td>
-	  <td style="text-align: right;">200</td>
-	  <td style="text-align: right;">3%</td>
-	  <td style="text-align: right;">1000</td>
-	  <td style="text-align: right;">10%</td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.porcentaje_electores }}
+	  </td>
 	</tr>
 	<tr>
 	  <td>Sin identificar</td>
-	  <td style="text-align: right;">200</td>
-	  <td style="text-align: right;">3%</td>
-	  <td style="text-align: right;">1000</td>
-	  <td style="text-align: right;">10%</td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar.porcentaje_electores }}
+	  </td>
 	</tr>
 	<tr>
 	  <td>Sin cargar</td>
-	  <td style="text-align: right;">200</td>
-	  <td style="text-align: right;">3%</td>
-	  <td style="text-align: right;">1000</td>
-	  <td style="text-align: right;">10%</td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.porcentaje_electores }}
+	  </td>
 	</tr>
 	<tr>
-	  <td>Carga prioritaria - sin consolidar</td>
-	  <td style="text-align: right;">200</td>
-	  <td style="text-align: right;">3%</td>
-	  <td style="text-align: right;">1000</td>
-	  <td style="text-align: right;">10%</td>
+	  <td>Carga parcial - sin consolidar</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.porcentaje_electores }}
+	  </td>
 	</tr>
 	<tr>
-	  <td>Carga prioritaria - consolidada</td>
-	  <td style="text-align: right;">200</td>
-	  <td style="text-align: right;">3%</td>
-	  <td style="text-align: right;">1000</td>
-	  <td style="text-align: right;">10%</td>
+	  <td>Carga parcial - consolidada</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada.porcentaje_electores }}
+	  </td>
 	</tr>
 	<tr>
 	  <td>Carga total - sin consolidar</td>
-	  <td style="text-align: right;">200</td>
-	  <td style="text-align: right;">3%</td>
-	  <td style="text-align: right;">1000</td>
-	  <td style="text-align: right;">10%</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.porcentaje_electores }}
+	  </td>
 	</tr>
 	<tr>
 	  <td>Carga total - consolidada</td>
-	  <td style="text-align: right;">200</td>
-	  <td style="text-align: right;">3%</td>
-	  <td style="text-align: right;">1000</td>
-	  <td style="text-align: right;">10%</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada.porcentaje_electores }}
+	  </td>
 	</tr>
 	<tr>
 	  <td>Conflictos o problemas</td>
-	  <td style="text-align: right;">200</td>
-	  <td style="text-align: right;">3%</td>
-	  <td style="text-align: right;">1000</td>
-	  <td style="text-align: right;">10%</td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.porcentaje_electores }}
+	  </td>
 	</tr>
       </tbody>
     </table>
   </div>
 </div>
-
 {% endblock left-panel %}
 
 {% block messages %}
