@@ -228,6 +228,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.votantes() == 220
     assert resultados.electores() == 800
 
+
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
     # se crean 3 secciones electorales
@@ -324,7 +325,6 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     assert positivos[o2.partido]['proyeccion'] == '43.42'
 
 
-@pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados_simple(fiscal_client):
     s1, s2 = SeccionFactory.create_batch(2)
     o1, o2 = OpcionFactory.create_batch(2)
@@ -348,6 +348,7 @@ def test_resultados_proyectados_simple(fiscal_client):
     response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
 
     positivos = response.context['resultados'].tabla_positivos()
+    print(positivos)
     assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
     assert positivos[o1.partido]['proyeccion'] == '58.33'
