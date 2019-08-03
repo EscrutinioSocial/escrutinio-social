@@ -250,7 +250,7 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
                 nivel_de_agregacion = nivel
                 ids_a_considerar = self.request.GET.getlist(nivel)
 
-        self.sumarizador = AvanceDeCarga()
+        self.sumarizador = AvanceDeCarga(nivel_de_agregacion, ids_a_considerar)
         return super().get(request, *args, **kwargs)
 
     def get_template_names(self):

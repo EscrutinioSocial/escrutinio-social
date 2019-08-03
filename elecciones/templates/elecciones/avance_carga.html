@@ -25,7 +25,7 @@
     {% for categoria in categorias %}
     <li class="tab col s3" >
       <a target="_self"
-	 href="{{ categoria.get_absolute_url }}?{{ request.GET.urlencode }}"
+	 href="{{ categoria.get_url_avance_de_carga }}?{{ request.GET.urlencode }}"
 	 {% if categoria.id == object.id %}
 	 class="active"
 	 {% endif %}>

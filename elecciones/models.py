@@ -669,6 +669,9 @@ class Categoria(models.Model):
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
 
+    def get_url_avance_de_carga(self):
+        return reverse('avance-carga', args=[self.id])
+
     def opciones_actuales(self, solo_prioritarias=False):
         """
         Devuelve las opciones asociadas a la categoría en el orden dado

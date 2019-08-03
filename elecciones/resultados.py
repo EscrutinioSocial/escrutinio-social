@@ -413,12 +413,16 @@ class AvanceDeCarga(Sumarizador):
     Esta clase contiene información sobre el avance de carga.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        nivel_de_agregacion=None,
+        ids_a_considerar=None
+    ):
         super().__init__(
             tipo_de_agregacion=Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas,
             opciones_a_considerar=Sumarizador.OPCIONES_A_CONSIDERAR.todas,
-            nivel_de_agregacion=None,
-            ids_a_considerar=None
+            nivel_de_agregacion=nivel_de_agregacion,
+            ids_a_considerar=ids_a_considerar
         )
 
     def mesas_con_o_sin_attachment(self, con_attachment):
@@ -459,7 +463,7 @@ class AvanceDeCarga(Sumarizador):
     #     IdentificacionParcial.objects.filter(...)
 
 
-    def calcular_mal(self):
+    def calcular(self):
         """
         Realiza los cálculos necesarios y devuelve un AttrDict con la info obtenida
         """
@@ -521,7 +525,8 @@ class AvanceDeCarga(Sumarizador):
         self.mesas_a_considerar = self.mesas(self.categoria)
         return AvanceWrapper(self.calcular())
 
-    def calcular(self):
+
+    def no_calcular(self):
         dato_total = DatoTotalAvanceDeCarga().para_valores_fijos(1000, 50000)
         return AttrDict({
             "total": dato_total,
