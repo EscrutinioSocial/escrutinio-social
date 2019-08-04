@@ -296,6 +296,6 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         # a las mesas.
         mesas = self.sumarizador.mesas(categoria)
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
-        context['distritos'] = Distrito.objects.all().order_by('numero')
+        context['distritos'] = Distrito.objects.all().order_by('nombre')
 
         return context
