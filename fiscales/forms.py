@@ -85,10 +85,10 @@ class FiscalxDNI(forms.ModelForm):
 
 class QuieroSerFiscalForm(forms.Form):
 
-    MENSAJE_ERROR_CODIGO_REF = 'Codigo de referido debe ser de 4 letras y/o números'
-    MENSAJE_ERROR_TELEFONO_INVALIDO = 'Teléfono no es válido. Chequeá código de área y teléfono local'
-    MENSAJE_ERROR_DNI_REPETIDO = 'Ya se encuentra un usuario registrado con ese dni'
-    MENSAJE_ERROR_PASSWORD_NO_IGUALES = "Las contraseñas no coinciden"
+    MENSAJE_ERROR_CODIGO_REF = 'Codigo de referido debe ser de 4 letras y/o números.'
+    MENSAJE_ERROR_TELEFONO_INVALIDO = 'Teléfono no es válido. Chequeá código de área y teléfono.'
+    MENSAJE_ERROR_DNI_REPETIDO = 'Ya se encuentra un usuario registrado con ese DNI.'
+    MENSAJE_ERROR_PASSWORD_NO_IGUALES = "Las contraseñas no coinciden."
 
     CARACTERES_REF_CODIGO = 4
     CANTIDAD_DIGITOS_NUMERACION_ARGENTINA = 10
@@ -125,7 +125,7 @@ class QuieroSerFiscalForm(forms.Form):
     distrito = forms.ModelChoiceField(
         required=True,
         label='Provincia',
-        queryset=Distrito.objects.all().order_by('numero')
+        queryset=Distrito.objects.all().order_by('nombre')
     )
 
     seccion_autocomplete = forms.CharField(label="Departamento o Municipio",

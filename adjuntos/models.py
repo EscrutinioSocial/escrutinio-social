@@ -268,7 +268,7 @@ class Identificacion(TimeStampedModel):
 
     fiscal = models.ForeignKey('fiscales.Fiscal', blank=True, on_delete=models.CASCADE)
     mesa = models.ForeignKey(
-        'elecciones.Mesa', null=True, blank=True, on_delete=models.SET_NULL
+        'elecciones.Mesa', related_name='identificaciones', null=True, blank=True, on_delete=models.SET_NULL
     )
     attachment = models.ForeignKey(
         Attachment, related_name='identificaciones', on_delete=models.CASCADE

@@ -361,7 +361,8 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             'is_valid': is_valid or request.method == 'GET',
             'recibir_problema': 'problema',
             'dato_id': mesa_categoria.id,
-            'form_problema': IdentificacionDeProblemaForm()
+            'form_problema': IdentificacionDeProblemaForm(),
+            'action': reverse('procesar-acta-mesa', args=[mesa.id]) if desde_ub else None,
         }
     )
 

@@ -3,7 +3,7 @@ from functools import lru_cache
 from collections import OrderedDict
 from attrdict import AttrDict
 from model_utils import Choices
-from django.db.models import Q, F, Sum, Subquery, IntegerField, OuterRef, Count
+from django.db.models import Q, F, Sum, Subquery, IntegerField, OuterRef, Count, Exists
 from .models import (
     Eleccion,
     Distrito,
@@ -19,6 +19,7 @@ from .models import (
     AgrupacionCircuitos,
     AgrupacionCircuito,
 )
+from adjuntos.models import Identificacion, PreIdentificacion
 
 
 def porcentaje(numerador, denominador):
@@ -131,12 +132,7 @@ class Sumarizador():
         elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
             return Mesa.objects.filter(id__in=self.ids_a_considerar)
 
-    @lru_cache(128)
-    def mesas(self, categoria):
-        """
-        Considerando los filtros posibles, devuelve el conjunto de mesas
-        asociadas a la categoría dada.
-        """
+    def lookups_de_mesas(self):
         lookups = Q()
         if self.filtros:
             if self.filtros.model is Distrito:
@@ -156,7 +152,15 @@ class Sumarizador():
 
             elif self.filtros.model is Mesa:
                 lookups = Q(id__in=self.filtros)
+        return lookups
 
+    @lru_cache(128)
+    def mesas(self, categoria):
+        """
+        Considerando los filtros posibles, devuelve el conjunto de mesas
+        asociadas a la categoría dada.
+        """
+        lookups = self.lookups_de_mesas()
         return Mesa.objects.filter(categorias=categoria).filter(lookups).distinct()
 
     @lru_cache(128)
@@ -212,7 +216,7 @@ class Sumarizador():
             else:
                 # 3.2 Opciones no partidarias
                 # TODO ¿Puede realmente pasar que no vengan las opciones completas?
-                votos_no_positivos[opcion.nombre] = sum_votos if sum_votos else 0
+                votos_no_positivos[opcion.nombre.lower()] = sum_votos if sum_votos else 0
 
         return votos_positivos, votos_no_positivos
 
@@ -404,6 +408,251 @@ class Resultados():
 
     def total_mesas(self):
         return self.resultados.total_mesas
+
+    def total_blancos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre'], '-')
+
+    def total_nulos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre'], '-')
+
+    def total_votos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre'], '-')
+
+    def total_sobres(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '-')
+
+    def porcentaje_positivos(self):
+        return porcentaje(self.total_positivos(), self.votantes())
+
+    def porcentaje_blancos(self):
+        blancos = self.total_blancos()
+        return porcentaje(blancos, self.votantes()) if blancos != '-' else '-'
+
+    def porcentaje_nulos(self):
+        nulos = self.total_nulos()
+        return porcentaje(nulos, self.votantes()) if nulos != '-' else '-'
+
+
+class AvanceDeCarga(Sumarizador):
+    """
+    Esta clase contiene información sobre el avance de carga.
+    """
+
+    def __init__(
+        self,
+        nivel_de_agregacion=None,
+        ids_a_considerar=None
+    ):
+        super().__init__(
+            tipo_de_agregacion=Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas,
+            opciones_a_considerar=Sumarizador.OPCIONES_A_CONSIDERAR.todas,
+            nivel_de_agregacion=nivel_de_agregacion,
+            ids_a_considerar=ids_a_considerar
+        )
+
+
+    def lookups_de_preidentificaciones(self):
+        lookups = Q()
+        if self.filtros:
+            if self.filtros.model is Distrito:
+                lookups = Q(distrito__in=self.filtros)
+
+            elif self.filtros.model is Seccion:
+                lookups = Q(seccion__in=self.filtros)
+
+            elif self.filtros.model is Circuito:
+                lookups = Q(circuito__in=self.filtros)
+
+            elif self.filtros.model is SeccionPolitica or self.filtros.model is LugarVotacion or self.filtros.model is Mesa:
+                lookups = None
+
+        return lookups
+
+
+    def calcular(self):
+        """
+        Realiza los cálculos necesarios y devuelve un AttrDict con la info obtenida
+        """
+        # con preidentificación: depende de las preidentificaciones correspondientes a la unidad geográfica,
+        # esto no depende de las mesas
+        # ... puede haber más preidentificaciones que mesas, si hay dos fotos por mesa
+        # por eso no se informa porcentaje
+        cantidad_preidentificaciones = 0
+        lookups_preident = self.lookups_de_preidentificaciones()
+        if lookups_preident is not None:
+            cantidad_preidentificaciones = PreIdentificacion.objects.filter(lookups_preident).count()
+
+        # mesas sin identificar y en identificación: dependen de las identificaciones **válidas**
+        # y de los attachment
+        identificaciones_validas_mesa = Identificacion.objects.filter(mesa=OuterRef('pk'), invalidada=False)
+        mesas_con_marca_identificacion = self.mesas_a_considerar.annotate(
+            tiene_identificaciones=Exists(identificaciones_validas_mesa))
+        mesas_sin_identificar = mesas_con_marca_identificacion.filter(tiene_identificaciones=False)
+        mesas_en_identificacion = mesas_con_marca_identificacion.filter(
+            tiene_identificaciones=True, attachments__isnull=True)
+
+        mesacats_de_la_categoria = MesaCategoria.objects.filter(
+            mesa__in=self.mesas_a_considerar,
+            categoria=self.categoria
+        )
+
+        mesacats_sin_cargar = mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.sin_cargar) \
+            .filter(mesa__attachments__isnull=False)
+
+        mesacats_carga_parcial_sin_consolidar = \
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_sin_consolidar) | \
+                mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_consolidada_csv)
+
+        mesacats_carga_parcial_consolidada = \
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_consolidada_dc)
+
+        mesacats_carga_total_sin_consolidar = \
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_sin_consolidar) | \
+                mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_consolidada_csv)
+
+        mesacats_carga_total_consolidada = \
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_consolidada_dc)
+
+        mesacats_conflicto_o_problema = \
+            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_en_conflicto) | \
+                mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_en_conflicto) | \
+                    mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.con_problemas)
+
+        dato_total = DatoTotalAvanceDeCarga().para_mesas(self.mesas_a_considerar)
+        
+        return AttrDict({
+            "total": dato_total,
+            "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_sin_identificar),
+            "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_en_identificacion),
+            "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_sin_cargar),
+            "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_sin_consolidar),
+            "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada),
+            "carga_total_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_sin_consolidar),
+            "carga_total_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_consolidada),
+            "conflicto_o_problema": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_conflicto_o_problema),
+            "preidentificaciones": cantidad_preidentificaciones
+        })
+
+        # mesacats_de_la_categoria = MesaCategoria.filter(
+        #     mesa=OuterRef('pk'), categoria=self.categoria
+        # )
+        # self.mesas_a_considerar.filter(attachments__isnull=False) \ 
+        #     .annotate(mesa_categoria=mesacats_de_la_categoria[:1]) \
+        #         .filter(mesa_categoria.status=MesaCategoria.STATUS.sin_cargar)
+
+
+    def get_resultados(self, categoria):
+        """
+        Realiza la contabilidad para la categoría, invocando al método ``calcular``.
+        """
+        self.categoria = categoria
+        self.mesas_a_considerar = self.mesas(self.categoria)
+        return AvanceWrapper(self.calcular())
+
+
+    def calcular_fake(self):
+        """
+        Este lo usé para que se pudiera desarrollar el frontend mientras resolvía esta clase.
+        Lo dejo por eventuales refactors.
+        """
+        dato_total = DatoTotalAvanceDeCarga().para_valores_fijos(1000, 50000)
+        return AttrDict({
+            "total": dato_total,
+            "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
+            "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
+            "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(150, 8000),
+            "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
+            "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
+            "carga_total_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
+            "carga_total_consolidada": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
+            "conflicto_o_problema": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
+        })
+
+
+def porcentaje_numerico(parcial, total):
+    """
+    Función utilitaria para el cálculo de un porcentaje, así se hace igual en todos lados
+    """
+    return 0 if total == 0 else round((parcial * 100) / total, 2)
+
+
+class DatoAvanceDeCarga():
+    def para_mesas(self, mesas):
+        self.la_cantidad_mesas = mesas.count()
+        self.la_cantidad_electores = mesas.aggregate(v=Sum('electores'))['v'] or 0
+        return self
+
+    def para_mesacats(self, mesa_cats):
+        self.la_cantidad_mesas = mesa_cats.count()
+        self.la_cantidad_electores = mesa_cats.aggregate(v=Sum('mesa__electores'))['v'] or 0
+        return self
+
+    def para_valores_fijos(self, cantidad_mesas, cantidad_electores):
+        self.la_cantidad_mesas = cantidad_mesas
+        self.la_cantidad_electores = cantidad_electores
+        return self
+
+    def cantidad_mesas(self):
+        return self.la_cantidad_mesas
+
+    def cantidad_electores(self):
+        return self.la_cantidad_electores
+
+
+class DatoParcialAvanceDeCarga(DatoAvanceDeCarga):
+    def __init__(self, dato_total):
+        super().__init__()
+        self.dato_total = dato_total
+
+    def porcentaje_mesas(self):
+        return porcentaje_numerico(self.cantidad_mesas(), self.dato_total.cantidad_mesas())
+
+    def porcentaje_electores(self):
+        return porcentaje_numerico(self.cantidad_electores(), self.dato_total.cantidad_electores())
+
+
+class DatoTotalAvanceDeCarga(DatoAvanceDeCarga):
+    def porcentaje_mesas(self):
+        return 100.0
+
+    def porcentaje_electores(self):
+        return 100.0
+
+
+class AvanceWrapper():
+    def __init__(self, resultados):
+        self.resultados = resultados
+    
+    def total(self):
+        return self.resultados.total
+
+    def sin_identificar(self):
+        return self.resultados.sin_identificar
+
+    def en_identificacion(self):
+        return self.resultados.en_identificacion
+
+    def sin_cargar(self):
+        return self.resultados.sin_cargar
+
+    def carga_parcial_sin_consolidar(self):
+        return self.resultados.carga_parcial_sin_consolidar
+
+    def carga_parcial_consolidada(self):
+        return self.resultados.carga_parcial_consolidada
+
+    def carga_total_sin_consolidar(self):
+        return self.resultados.carga_total_sin_consolidar
+
+    def carga_total_consolidada(self):
+        return self.resultados.carga_total_consolidada
+
+    def conflicto_o_problema(self):
+        return self.resultados.conflicto_o_problema
+
+    def preidentificaciones(self):
+        return self.resultados.preidentificaciones
+
 
 
 class Proyecciones(Sumarizador):

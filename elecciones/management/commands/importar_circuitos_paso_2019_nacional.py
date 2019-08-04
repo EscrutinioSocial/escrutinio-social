@@ -6,7 +6,7 @@ from csv import DictReader
 from elecciones.models import Seccion, Circuito, Distrito
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/circuitos_paso_nacional_2019.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/circuitos.csv'
 
 
 def to_float(val):
@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 self.log(distrito, True)
 
             try:
-                seccion = Seccion.objects.get(numero=seccion_nro)
+                seccion = Seccion.objects.get(numero=seccion_nro, distrito=distrito)
 
                 if seccion.nombre != seccion_name:
                     seccion.nombre = seccion_name
@@ -69,7 +69,7 @@ class Command(BaseCommand):
                 self.log(seccion, True)
 
             try:
-                circuito = Circuito.objects.get(numero=circuito_nro)
+                circuito = Circuito.objects.get(numero=circuito_nro, seccion=seccion)
 
                 if circuito.nombre != circuito_name:
                     circuito.nombre = circuito_name

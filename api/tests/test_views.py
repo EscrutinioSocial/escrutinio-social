@@ -122,8 +122,8 @@ def test_cargar_votos(admin_client):
     mesa_categoria_1 = factories.MesaCategoriaFactory(mesa=mesa, categoria=categoria_1)
     mesa_categoria_2 = factories.MesaCategoriaFactory(mesa=mesa, categoria=categoria_2)
 
-    opcion_1 = factories.OpcionFactory()
-    opcion_2 = factories.OpcionFactory()
+    opcion_1 = factories.OpcionFactory(orden=1)
+    opcion_2 = factories.OpcionFactory(orden=2)
 
     factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1, prioritaria=True)
     factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2, prioritaria=True)
@@ -152,12 +152,48 @@ def test_cargar_votos(admin_client):
     assert mesa_categoria_1.cargas.count() == 1
     assert mesa_categoria_2.cargas.count() == 1
 
-    assert list(mesa_categoria_1.cargas.first().opcion_votos()) == [
-        (opcion_1.id, 100),
-        (opcion_2.id, 50)
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_1.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 100), (opcion_2.id, 50)]
     ]
 
-    assert list(mesa_categoria_2.cargas.first().opcion_votos()) == [(opcion_1.id, 10)]
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_2.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 10)]
+    ]
+
+    # Se pueden volver a cargar votos para la misma mesa (con o sin cambios)
+
+    data[0]['votos'] = 90
+    data[1]['votos'] = 60
+    response = admin_client.post(url, data, format='json')
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data['mensaje'] == 'Se cargaron los votos con éxito.'
+
+    assert Carga.objects.count() == 4
+    assert mesa_categoria_1.cargas.count() == 2
+    assert mesa_categoria_2.cargas.count() == 2
+
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_1.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 90), (opcion_2.id, 60)],
+        [(opcion_1.id, 100), (opcion_2.id, 50)]
+    ]
+
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_2.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 10)],
+        [(opcion_1.id, 10)]
+    ]
 
 
 def test_cargar_votos_faltan_prioritarias(admin_client):
@@ -195,22 +231,26 @@ def test_cargar_votos_faltan_prioritarias(admin_client):
 def test_listar_categorias_default(admin_client):
     url = reverse('categorias')
 
-    pv = factories.CategoriaFactory(prioridad=1)
     gv = factories.CategoriaFactory(prioridad=2)
+    pv = factories.CategoriaFactory(prioridad=1)
     factories.CategoriaFactory(prioridad=3)
 
     response = admin_client.get(url, format='json')
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 2
-    assert [cat['id'] for cat in response.data] == [pv.id, gv.id]
+    categorias = [(cat['id'], cat['nombre'], cat['slug']) for cat in response.data]
+    assert categorias == [
+        (pv.id, pv.nombre, pv.slug),
+        (gv.id, gv.nombre, gv.slug)
+    ]
 
 
 def test_listar_categorias_con_prioridad(admin_client):
     url = reverse('categorias')
 
-    pv = factories.CategoriaFactory(prioridad=1)
     gv = factories.CategoriaFactory(prioridad=2)
+    pv = factories.CategoriaFactory(prioridad=1)
     dn = factories.CategoriaFactory(prioridad=3)
     factories.CategoriaFactory(prioridad=4)
 
@@ -218,8 +258,13 @@ def test_listar_categorias_con_prioridad(admin_client):
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 3
-    assert [(cat['id'], cat['nombre']) for cat in response.data] == [(pv.id, pv.nombre), (gv.id, gv.nombre),
-                                                                     (dn.id, dn.nombre)]
+    categorias = [(cat['id'], cat['nombre'], cat['slug']) for cat in response.data]
+    assert categorias == [
+        (pv.id, pv.nombre, pv.slug),
+        (gv.id, gv.nombre, gv.slug),
+        (dn.id, dn.nombre, dn.slug)
+    ]
+
 
 @pytest.mark.parametrize('prioridad', ['XX', False])
 def test_listar_categorias_con_prioridad_error(prioridad, admin_client):
