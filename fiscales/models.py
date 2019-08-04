@@ -104,9 +104,8 @@ class Fiscal(models.Model):
     )
     seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
-    # Campos para control de doble logueo.
+    # Campo para control de doble logueo.
     session_key = models.CharField(max_length=32, null=True, blank=True)
-    last_seen = models.DateTimeField(null=True, blank=True)
 
     distrito = models.ForeignKey(Distrito, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 

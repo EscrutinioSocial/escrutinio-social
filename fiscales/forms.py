@@ -26,8 +26,8 @@ class AuthenticationFormCustomError(AuthenticationForm):
         _("This account is inactive."),
     }
     already_logged_message = (
-        'Ya hay un usuario sesionado con esta cuenta. Si sos vos mismo espera '
-        f'{int(settings.SESSION_TIMEOUT / 60)} minutos y volvé a intentarlo.'
+        'Ya hay un usuario/a sesionado con esta cuenta. Si sos vos mismo/a esperá '
+        f'{int(settings.SESSION_COOKIE_AGE / 60)} minutos y volvé a intentarlo.'
     )
 
 
@@ -37,9 +37,9 @@ class AuthenticationFormCustomError(AuthenticationForm):
 
     def confirm_login_allowed(self, user):
         session_existente = user.fiscal.session_key
-        last_seen = user.fiscal.last_seen
         ahora = timezone.now()
-        timeout = last_seen + timedelta(seconds=settings.SESSION_TIMEOUT) if last_seen else None
+        last_seen = XXX lo tengo en la cookie?
+        timeout = last_seen + timedelta(seconds=settings.SESSION_COOKIE_AGE) if last_seen else None
         if session_existente and last_seen and ahora < timeout:
             raise forms.ValidationError(
                 _(self.already_logged_message),
