@@ -2,7 +2,8 @@ import pytest
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
-from elecciones.models import Categoria, MesaCategoria, Carga
+from elecciones.models import Categoria, MesaCategoria, Carga, Seccion, AgrupacionCircuitos
+
 from .factories import (
     UserFactory,
     CategoriaFactory,
@@ -16,6 +17,8 @@ from .factories import (
     IdentificacionFactory,
     VotoMesaReportadoFactory,
     CargaFactory,
+    TecnicaProyeccionFactory,
+    AgrupacionCircuitosFactory,
 )
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
@@ -41,6 +44,18 @@ def carta_marina(db):
         MesaFactory(numero=7, lugar_votacion__circuito=c4, electores=90),
         MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90),
     )
+
+
+@pytest.fixture()
+def tecnica_proyeccion(carta_marina):
+    """
+    Crea una técnica de proyección para las mesas existentes, agrupadas por sección.
+    """
+    proyeccion = TecnicaProyeccionFactory()
+    for seccion in Seccion.objects.all():
+        AgrupacionCircuitosFactory(proyeccion=proyeccion).circuitos.set(seccion.circuitos.all())
+
+    return proyeccion
 
 
 @pytest.fixture()
@@ -276,6 +291,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
         assert f'<td title="{variable}">{valor}</td>' in content
 
 
+
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
     # se crean 3 secciones electorales
@@ -374,34 +390,43 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     assert positivos[o2.partido]['proyeccion'] == '43.42'
 
 
-@pytest.mark.skip(reason="proyecciones sera re-escrito")
-def test_resultados_proyectados_simple(fiscal_client):
-    s1, s2 = SeccionFactory.create_batch(2)
+def test_resultados_proyectados_simple(carta_marina, tecnica_proyeccion, fiscal_client):
+    s1, s2 = Seccion.objects.all()
     o1, o2 = OpcionFactory.create_batch(2)
-    e1 = CategoriaFactory(opciones=[o1, o2])
+    categoria = CategoriaFactory(opciones=[o1, o2])
 
-    m1, *_ = MesaFactory.create_batch(
-        3, categorias=[e1], lugar_votacion__circuito__seccion=s1, electores=200
-    )
-    m2 = MesaFactory(categorias=[e1], lugar_votacion__circuito__seccion=s2, electores=200)
+    # m1, *_ = MesaFactory.create_batch(
+    #     3, categorias=[categoria], lugar_votacion__circuito__seccion=s1, electores=200
+    # )
+    mesas = carta_marina
+    m1 = mesas[0]
+    m2 = mesas[4]
+    for mesa in mesas: 
+        MesaCategoriaFactory(mesa=mesa, categoria=categoria)
+    
+    c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
+    VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=40)
+    VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=30)
 
-    c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=e1)
-    VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=100)
-    VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=50)
-    c2 = CargaFactory(mesa_categoria__mesa=m2, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=e1)
-    VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=50)
-    VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=100)
+    c2 = CargaFactory(mesa_categoria__mesa=m2, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
+    VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=30)
+    VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=40)
+
     c1.actualizar_firma()
     c2.actualizar_firma()
     consumir_novedades_y_actualizar_objetos([m1, m2])
 
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas&tecnicaDeProyeccion={tecnica_proyeccion.id}'
+    )
 
     positivos = response.context['resultados'].tabla_positivos()
-    assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
-    assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
-    assert positivos[o1.partido]['proyeccion'] == '58.33'
-    assert positivos[o2.partido]['proyeccion'] == '41.67'
+    print(positivos)
+    assert positivos[o1.partido]['votos'] == 296 # = 40 *440/100 + 30 * 360 / 90
+    assert positivos[o2.partido]['votos'] == 292 # = 30 *440/100 + 40 * 360 / 90
+    assert positivos[o1.partido]['porcentaje_positivos'] == '50.34' # = 296 / (296+292)
+    assert positivos[o2.partido]['porcentaje_positivos'] == '49.66' # = 292 / (296+292)
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
@@ -635,11 +660,11 @@ def test_resultados_no_positivos(fiscal_client):
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_excluye_metadata(fiscal_client):
-    s1, s2 = SeccionFactory.create_batch(2)
+    s1, s2 = Seccion.objects.all()
     o1, o2 = OpcionFactory.create_batch(2)
-    o3 = OpcionFactory(partido=None, tipo='no_positivo')
-    o4 = OpcionFactory(nombre='TOTAL', partido=None, tipo='metadata')
-    e1 = CategoriaFactory(opciones=[o1, o2, o3, o4])
+    opcion_blanco = OpcionFactory(**settings.OPCION_BLANCOS)
+    opcion_total = OpcionFactory(**settings.OPCION_TOTAL_VOTOS)
+    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total])
 
     m1, *_ = MesaFactory.create_batch(
         3, categorias=[e1], lugar_votacion__circuito__seccion=s1, electores=200
@@ -649,15 +674,15 @@ def test_resultados_excluye_metadata(fiscal_client):
     c1 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=e1, tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=100)
     VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=50)
-    VotoMesaReportadoFactory(opcion=o3, carga=c1, votos=10)
-    VotoMesaReportadoFactory(opcion=o4, carga=c1, votos=160)
+    VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c1, votos=10)
+    VotoMesaReportadoFactory(opcion=opcion_total, carga=c1, votos=160)
     c1.actualizar_firma()
 
     c2 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=e1, tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=50)
     VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=100)
-    VotoMesaReportadoFactory(opcion=o3, carga=c2, votos=10)
-    VotoMesaReportadoFactory(opcion=o4, carga=c2, votos=160)
+    VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c2, votos=10)
+    VotoMesaReportadoFactory(opcion=opcion_total, carga=c2, votos=160)
     c2.actualizar_firma()
     consumir_novedades_y_actualizar_objetos()
 

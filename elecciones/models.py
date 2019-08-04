@@ -288,9 +288,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         Devuelve la intancia más prioritaria del queryset
         """
-        return self.order_by(
-            'status', 'orden_de_carga', 'id'
-        ).first()
+        return self.order_by('status', 'orden_de_carga', 'id').first()
 
     def siguiente(self):
         """
@@ -452,6 +450,7 @@ class MesaCategoria(models.Model):
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
 
+
 class Mesa(models.Model):
     """
     Define la mesa de votación que pertenece a un class:`LugarDeVotación`.
@@ -468,7 +467,7 @@ class Mesa(models.Model):
     categorias = models.ManyToManyField('Categoria', through='MesaCategoria')
     numero = models.CharField(max_length=10)
     es_testigo = models.BooleanField(default=False)
-    circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
+    circuito = models.ForeignKey(Circuito, null=True, related_name='mesas', on_delete=models.SET_NULL)
     lugar_votacion = models.ForeignKey(
         LugarVotacion,
         verbose_name='Lugar de votacion',
@@ -802,23 +801,15 @@ class Carga(TimeStampedModel):
     para las opciones válidas en la mesa-categoría.
     """
     invalidada = models.BooleanField(null=False, default=False)
-    TIPOS = Choices(
-        'problema',
-        'parcial',
-        'total'
-    )
+    TIPOS = Choices('problema', 'parcial', 'total')
     tipo = models.CharField(max_length=50, choices=TIPOS)
 
     SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
 
-    mesa_categoria = models.ForeignKey(
-        MesaCategoria, related_name='cargas', on_delete=models.CASCADE
-    )
+    mesa_categoria = models.ForeignKey(MesaCategoria, related_name='cargas', on_delete=models.CASCADE)
     fiscal = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
-    firma = models.CharField(
-        max_length=300, null=True, blank=True, editable=False
-    )
+    firma = models.CharField(max_length=300, null=True, blank=True, editable=False)
     procesada = models.BooleanField(default=False)
 
     @property
@@ -935,11 +926,7 @@ class AgrupacionCircuitos(models.Model):
     nombre = models.CharField(max_length=100)
     proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.CASCADE, related_name='agrupaciones')
     minimo_mesas = models.PositiveIntegerField(default=1)
-    circuitos = models.ManyToManyField(
-        Circuito,
-        through='AgrupacionCircuito',
-        related_name='agrupaciones'
-    )
+    circuitos = models.ManyToManyField(Circuito, through='AgrupacionCircuito', related_name='agrupaciones')
 
     class Meta:
         verbose_name = 'Agrupación de Circuitos'
@@ -976,22 +963,19 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
         lugar.save(update_fields=['electores'])
 
         # circuito
-        electores = Mesa.objects.filter(
-            lugar_votacion__circuito=circuito,
-        ).aggregate(v=Sum('electores'))['v'] or 0
+        electores = Mesa.objects.filter(lugar_votacion__circuito=circuito, ).aggregate(v=Sum('electores')
+                                                                                       )['v'] or 0
         circuito.electores = electores
         circuito.save(update_fields=['electores'])
 
         # seccion
-        electores = Mesa.objects.filter(
-            lugar_votacion__circuito__seccion=seccion
-        ).aggregate(v=Sum('electores'))['v'] or 0
+        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion=seccion
+                                        ).aggregate(v=Sum('electores'))['v'] or 0
         seccion.electores = electores
         seccion.save(update_fields=['electores'])
 
         # distrito
-        electores = Mesa.objects.filter(
-            lugar_votacion__circuito__seccion__distrito=distrito
-        ).aggregate(v=Sum('electores'))['v'] or 0
+        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion__distrito=distrito
+                                        ).aggregate(v=Sum('electores'))['v'] or 0
         distrito.electores = electores
         distrito.save(update_fields=['electores'])
