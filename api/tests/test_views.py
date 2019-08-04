@@ -7,8 +7,12 @@ from rest_framework.test import APIClient
 
 from elecciones.tests import factories
 from elecciones.models import Carga
-from adjuntos.models import hash_file
+from adjuntos.models import Attachment, hash_file
 
+from elecciones.tests.factories import (
+    DistritoFactory,
+    SeccionFactory
+)
 
 @pytest.fixture
 def admin_client(admin_user):
@@ -22,7 +26,6 @@ def admin_client(admin_user):
     client.credentials(HTTP_AUTHORIZATION='Bearer ' + response.data['access'])
 
     return client
-
 
 def test_subir_acta(admin_client, datadir):
     """
@@ -41,6 +44,52 @@ def test_subir_acta(admin_client, datadir):
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.data['foto_digest'] == hash_file(foto.open('rb'))
 
+def test_subir_acta_preidentifica_distrito(admin_user, admin_client, datadir):
+    """
+    Prueba de subir una imagen y que quede la PreIdentificación de distrito.
+    """
+    url = reverse('actas')
+    distrito = DistritoFactory()
+    admin_user.fiscal.distrito = distrito
+    admin_user.fiscal.save()
+
+    foto = (datadir / 'acta.jpeg')
+    response = admin_client.post(url, {'foto': foto.open('rb')})
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    response = admin_client.post(url, {'foto': foto.open('rb')})
+
+    foto_digest = response.data['foto_digest']
+
+    attachment = Attachment.objects.get(foto_digest=foto_digest)
+
+    assert attachment.pre_identificacion is not None
+    assert attachment.pre_identificacion.distrito == admin_user.fiscal.distrito
+
+def test_subir_acta_preidentifica_seccion(admin_user, admin_client, datadir):
+    """
+    Prueba de subir una imagen y que quede la PreIdentificación de seccion
+    """
+    url = reverse('actas')
+    seccion = SeccionFactory()
+    admin_user.fiscal.seccion = seccion
+    admin_user.fiscal.save()
+
+    foto = (datadir / 'acta.jpeg')
+    response = admin_client.post(url, {'foto': foto.open('rb')})
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    response = admin_client.post(url, {'foto': foto.open('rb')})
+
+    foto_digest = response.data['foto_digest']
+
+    attachment = Attachment.objects.get(foto_digest=foto_digest)
+
+    assert attachment.pre_identificacion is not None
+    assert attachment.pre_identificacion.seccion == admin_user.fiscal.seccion
+    assert attachment.pre_identificacion.distrito == admin_user.fiscal.seccion.distrito
 
 def test_subir_acta_invalid_ext(admin_client, datadir):
     """
