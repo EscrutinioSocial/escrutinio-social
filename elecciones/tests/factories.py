@@ -1,5 +1,4 @@
 import factory
-from factory.fuzzy import FuzzyText
 import random
 from PIL import Image
 from io import BytesIO
@@ -73,6 +72,7 @@ class CategoriaFactory(DjangoModelFactory):
             crear_opcion_desde_dict_si_no_existe(settings.OPCION_BLANCOS)
             crear_opcion_desde_dict_si_no_existe(settings.OPCION_TOTAL_VOTOS)
             crear_opcion_desde_dict_si_no_existe(settings.OPCION_TOTAL_SOBRES)
+            crear_opcion_desde_dict_si_no_existe(settings.OPCION_NULOS)
 
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc1'))
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc2'))
@@ -178,7 +178,6 @@ class FiscalFactory(DjangoModelFactory):
     estado = 'CONFIRMADO'
     apellido = fake.last_name()
     nombres = fake.first_name()
-    referido_codigo = FuzzyText(length=4)
     dni = factory.Sequence(lambda n: f'{n}00000{n}')
 
 
@@ -237,3 +236,21 @@ class ProblemaFactory(DjangoModelFactory):
     mesa = factory.SubFactory(MesaFactory)
     attachment = factory.SubFactory(AttachmentFactory)
     estado = 'potencial'
+
+
+class TecnicaProyeccionFactory(DjangoModelFactory):
+
+    class Meta:
+        model = 'elecciones.TecnicaProyeccion'
+
+    nombre = factory.Sequence(lambda n: f'tecnica{n}')
+
+
+class AgrupacionCircuitosFactory(DjangoModelFactory):
+
+    class Meta:
+        model = 'elecciones.AgrupacionCircuitos'
+
+    proyeccion = factory.SubFactory(TecnicaProyeccionFactory)
+    nombre = factory.Sequence(lambda n: f'user{n}')
+    minimo_mesas = 1

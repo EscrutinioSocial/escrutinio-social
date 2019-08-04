@@ -1,10 +1,13 @@
 from fiscales.tests.test_view_fiscales import construir_request_data
-from fiscales.forms import QuieroSerFiscalForm
+from fiscales.forms import QuieroSerFiscalForm, votomesareportadoformset_factory
 
 from elecciones.tests.factories import (
     FiscalFactory,
+    MesaFactory,
+    OpcionFactory,
     SeccionFactory,
 )
+from .test_carga_datos import _construir_request_data_para_carga_de_resultados
 
 
 def test_quiero_ser_fiscal_form__data_ok(db):
@@ -43,7 +46,7 @@ def test_quiero_ser_fiscal_form__dni_repetido(db):
     seccion = SeccionFactory()
     request_data = construir_request_data(seccion)
 
-    FiscalFactory(dni=request_data['dni'], referido_codigo="1234")
+    FiscalFactory(dni=request_data['dni'])
 
     form = QuieroSerFiscalForm(data=request_data)
     assert not form.is_valid()
@@ -68,3 +71,25 @@ def test_quiero_ser_fiscal_form__limpieza_de_ceros_telefono_area(db):
     form = QuieroSerFiscalForm(data=request_data)
     assert form.is_valid()
     assert form.cleaned_data.get("telefono_area") == "11"
+
+
+def test_formset_carga_valida_votos_para_opcion(db):
+    m = MesaFactory()
+    o1, o2 = OpcionFactory(), OpcionFactory()
+    votos_para_opcion = {o1.id: 10}
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=2)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 10), (o2.id, 5)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos=votos_para_opcion)
+    assert formset.is_valid()
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 5), (o2.id, 5)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos=votos_para_opcion)
+    assert not formset.is_valid()
+
+    # error en el campo votos  del primer form, correspondiente a o1.
+    assert formset.errors[0]['votos'][0] == 'El valor confirmado que tenemos para esta opción es 10'
+

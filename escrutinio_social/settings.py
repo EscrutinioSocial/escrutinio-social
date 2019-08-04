@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +43,10 @@ INSTALLED_APPS = [
     'material.theme.lightblue',
     'material',
     'dbbackup',
+    'constance',
+    'constance.backends.database',
+    'djangoql',
+
     # 'material.admin',
     # 'django.contrib.admin',
     'material.frontend',
@@ -59,14 +64,15 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # nuestras apps
-    #'fiscales',
     'fiscales.apps.FiscalesAppConfig',  # Hay que ponerlo así para que cargue el app_ready()
+    'elecciones.apps.EleccionesAppConfig',
     'adjuntos',
     'problemas',
     'contacto',
     'api',
-    'elecciones',
     'antitrolling',
+    'scheduling'
+
 ]
 
 MIDDLEWARE = [
@@ -89,11 +95,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'constance.context_processors.config',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # 'elecciones.context_processors.contadores'
             ],
         },
     },
@@ -104,26 +110,22 @@ WSGI_APPLICATION = 'escrutinio_social.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-# Sobreescribir en local_settings.py si se instala localmente.
-# DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': 'db_name',
-#        'USER': 'postgres',
-#        'PASSWORD': '',
-#        'HOST': 'localhost' if os.environ.get('TRAVIS') == 'true' else 'db',
-#        'PORT': '',
-#    }
-# }
+# Si se instala localmente crear un archivo .env
+#
+# DB_NAME=db_name
+# DB_USER=postgres
+# DB_PASS=changeme
+# DB_HOST=db
+# DB_PORT=port
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASS'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': '',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASS'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT', ''),
     }
 }
 # Password validation
@@ -244,6 +246,10 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
+        'csv_import': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     },
 }
 
@@ -300,15 +306,27 @@ PAUSA_CONSOLIDACION = 15
 # Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll
 SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 500
 
-# Cuanto aumenta el scoring de troll por una identificacion distinta a la confirmada
+# Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada
 SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 200
-# Cuanto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
+# Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
 SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA = 200
+# Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.
+SCORING_TROLL_PROBLEMA_DESCARTADO = 200
 
 # Tiempos de 'taken', para adjuntos y para mesas.
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
 MESA_TAKE_WAIT_TIME = 2  # En minutos
 
+# Prioridades standard, a usar si no se definen prioridades específicas
+# para una categoría o circuito
+PRIORIDADES_STANDARD_SECCION = [
+    {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2},
+    {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 20},
+    {'desde_proporcion': 10, 'hasta_proporcion': 100, 'prioridad': 100},
+]
+PRIORIDADES_STANDARD_CATEGORIA = [
+    {'desde_proporcion': 0, 'hasta_proporcion': 100, 'prioridad': 100},
+]
 
 # Las siguientes constantes definen los criterios de filtro
 # para obtener aquellas instancias que se utilizan en el cálculo de resultados
@@ -316,9 +334,9 @@ MESA_TAKE_WAIT_TIME = 2  # En minutos
 # Por ejemplo:
 #
 # blanco = Opcion.objects.get(**OPCION_BLANCOS)
-OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None}
-OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None}
-OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None}
+OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None, 'codigo': '10000'}
+OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None, 'codigo': '10001'}
+OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
 # Cada cuanto tiempo actualizar el campo last_seen de un Fiscal.
@@ -327,8 +345,26 @@ LAST_SEEN_UPDATE_INTERVAL = 2*60  # en segundos.
 # Cuando expira una sesión.
 SESSION_TIMEOUT = 10*60  # en segundos.
 
+# Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
+# Ver csv_import.py
+OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 
-try:
-    from .local_settings import *  # noqa
-except ImportError:
-    pass
+# Opción para elegir ninguna proyección en el combo
+SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
+
+CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
+
+CONSTANCE_CONFIG = {
+    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
+}
+
+
+TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
+
+# Para los tests no se importan los local settings.
+if not TESTING:
+    try:
+        from .local_settings import *  # noqa
+    except ImportError:
+        pass

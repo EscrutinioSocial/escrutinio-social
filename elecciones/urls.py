@@ -3,7 +3,7 @@ from django.conf.urls import url
 from . import views, data_views
 from fancy_cache import cache_page
 from django.contrib.auth.decorators import login_required
-from elecciones.resultados import Sumarizador
+
 
 cached = cache_page(300)
 
@@ -13,6 +13,11 @@ urlpatterns = [
     url('^escuelas/(?P<pk>\d+)$',
         views.EscuelaDetailView.as_view(), name='detalle_escuela'),
     url('^mapa/$', login_required(cached(views.Mapa.as_view())), name='mapa'),
+    url(
+        '^avance_carga/(?P<pk>\d+)?$',
+        views.AvanceDeCargaCategoria.as_view(),
+        name='avance-carga'
+    ),
     url(
         '^resultados/(?P<pk>\d+)?$',
         views.ResultadosCategoria.as_view(),

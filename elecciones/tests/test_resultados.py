@@ -2,7 +2,8 @@ import pytest
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
-from elecciones.models import (Categoria, MesaCategoria, Carga, Opcion)
+from elecciones.models import Categoria, MesaCategoria, Carga, Seccion, AgrupacionCircuitos
+
 from .factories import (
     UserFactory,
     CategoriaFactory,
@@ -16,6 +17,8 @@ from .factories import (
     IdentificacionFactory,
     VotoMesaReportadoFactory,
     CargaFactory,
+    TecnicaProyeccionFactory,
+    AgrupacionCircuitosFactory,
 )
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
@@ -32,21 +35,34 @@ def carta_marina(db):
     c1, c2 = CircuitoFactory.create_batch(2, seccion=s1)
     c3, c4 = CircuitoFactory.create_batch(2, seccion=s2)
     return (
-        MesaFactory(numero=1, lugar_votacion__circuito=c1,
-                    electores=100), MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
-        MesaFactory(numero=3, lugar_votacion__circuito=c2,
-                    electores=120), MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
-        MesaFactory(numero=5, lugar_votacion__circuito=c3,
-                    electores=90), MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
-        MesaFactory(numero=7, lugar_votacion__circuito=c4,
-                    electores=90), MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90)
+        MesaFactory(numero=1, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
+        MesaFactory(numero=3, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
+        MesaFactory(numero=5, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
+        MesaFactory(numero=7, lugar_votacion__circuito=c4, electores=90),
+        MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90),
     )
+
+
+@pytest.fixture()
+def tecnica_proyeccion(carta_marina):
+    """
+    Crea una técnica de proyección para las mesas existentes, agrupadas por sección.
+    """
+    proyeccion = TecnicaProyeccionFactory()
+    for seccion in Seccion.objects.all():
+        AgrupacionCircuitosFactory(proyeccion=proyeccion).circuitos.set(seccion.circuitos.all())
+
+    return proyeccion
 
 
 @pytest.fixture()
 def setup_groups(db, admin_user):
     groups = [
-        'validadores', 'unidades basicas', 'visualizadores', 'supervisores', 'fiscales con acceso al bot'
+        'validadores', 'unidades basicas', 'visualizadores', 'supervisores', 'fiscales con acceso al bot',
+        'visualizadores_sensible'
     ]
     for nombre in groups:
         g = Group.objects.create(name=nombre)
@@ -67,6 +83,20 @@ def url_resultados(carta_marina):
     return reverse('resultados-categoria', args=[c.id])
 
 
+def test_resultados_pide_login(db, client, url_resultados):
+    response = client.get(url_resultados)
+    assert response.status_code == 302
+    query = f'?next={url_resultados}'
+    assert response.url == reverse('login') + query
+
+
+def test_resultados_pide_visualizador(db, fiscal_client, admin_user, url_resultados):
+    g = Group.objects.get(name='visualizadores')
+    admin_user.groups.remove(g)
+    response = fiscal_client.get(url_resultados)
+    assert response.status_code == 403          # permission denied
+
+
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
     # implicitamente está creada la categoria default que tiene todo el padron
@@ -84,7 +114,7 @@ def test_electores_filtro_mesa(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados, {'mesa': mesa1.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
-    assert b'<td title="Electores">120 </td>' in response.content
+    assert b'<td title="Electores">120</td>' in response.content
 
 
 def test_electores_filtro_mesa_multiple_categoria(fiscal_client):
@@ -97,7 +127,7 @@ def test_electores_filtro_mesa_multiple_categoria(fiscal_client):
     response = fiscal_client.get(url, {'mesa': mesa1.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
-    assert b'<td title="Electores">120 </td>' in response.content
+    assert b'<td title="Electores">120</td>' in response.content
 
 
 def test_electores_filtro_escuela(url_resultados, fiscal_client):
@@ -108,7 +138,7 @@ def test_electores_filtro_escuela(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados, {'lugar_de_votacion': e.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 200
-    assert b'<td title="Electores">200 </td>' in response.content
+    assert b'<td title="Electores">200</td>' in response.content
 
 
 def test_electores_filtro_circuito(url_resultados, fiscal_client):
@@ -117,7 +147,7 @@ def test_electores_filtro_circuito(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados, {'circuito': mesa1.lugar_votacion.circuito.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
-    assert b'<td title="Electores">120 </td>' in response.content
+    assert b'<td title="Electores">120</td>' in response.content
 
 
 def test_electores_filtro_seccion(url_resultados, fiscal_client):
@@ -126,7 +156,7 @@ def test_electores_filtro_seccion(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados, {'seccion': mesa1.lugar_votacion.circuito.seccion.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
-    assert b'<td title="Electores">120 </td>' in response.content
+    assert b'<td title="Electores">120</td>' in response.content
 
 
 def test_electores_filtro_distrito(url_resultados, fiscal_client):
@@ -136,19 +166,19 @@ def test_electores_filtro_distrito(url_resultados, fiscal_client):
     )
     resultados = response.context['resultados']
     assert resultados.electores() == 90
-    assert b'<td title="Electores">90 </td>' in response.content
+    assert b'<td title="Electores">90</td>' in response.content
 
 
 def test_electores_sin_filtro(url_resultados, fiscal_client):
     response = fiscal_client.get(url_resultados)
     resultados = response.context['resultados']
     assert resultados.electores() == 800
-    assert b'<td title="Electores">800 </td>' in response.content
+    assert b'<td title="Electores">800</td>' in response.content
 
 
 def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # resultados para mesa 1
-    m1, _, m3, *_ = carta_marina
+    m1, m2, m3, *otras_mesas = carta_marina
     categoria = m1.categorias.get()  # sólo default
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
@@ -157,14 +187,16 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     o4.save()
 
     blanco = categoria.get_opcion_blancos()
-
+    nulo = categoria.get_opcion_nulos()
     total = categoria.get_opcion_total_votos()
 
     mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
+    mc2 = MesaCategoria.objects.get(mesa=m2, categoria=categoria)
     mc3 = MesaCategoria.objects.get(mesa=m3, categoria=categoria)
     c1 = CargaFactory(mesa_categoria=mc1, tipo=Carga.TIPOS.parcial)
     c2 = CargaFactory(mesa_categoria=mc3, tipo=Carga.TIPOS.parcial)
-    consumir_novedades_y_actualizar_objetos([m1, m3])
+    c3 = CargaFactory(mesa_categoria=mc2, tipo=Carga.TIPOS.parcial)
+    consumir_novedades_y_actualizar_objetos([m1, m2, m3])
 
     VotoMesaReportadoFactory(carga=c1, opcion=o1, votos=20)
     VotoMesaReportadoFactory(carga=c1, opcion=o2, votos=30)
@@ -183,25 +215,27 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # votaron 120/120 personas
     VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=0)
     VotoMesaReportadoFactory(carga=c2, opcion=total, votos=120)
+
+    # votaron 45 / 100 personas
+    VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=40)
+    VotoMesaReportadoFactory(carga=c3, opcion=nulo, votos=5)
+    VotoMesaReportadoFactory(carga=c3, opcion=total, votos=45)
+
     c1.actualizar_firma()
     c2.actualizar_firma()
+    c3.actualizar_firma()
     assert c1.es_testigo.exists()
     assert c2.es_testigo.exists()
+    assert c3.es_testigo.exists()
 
     response = fiscal_client.get(
         url_resultados + f'?opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
     )
     resultados = response.context['resultados']
+
     positivos = resultados.tabla_positivos()
-
-    assert resultados.porcentaje_mesas_escrutadas() == '25.00'  # 2 de 8
-
     # se ordena de acuerdo al que va ganando
     assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
-
-    total_positivos = resultados.total_positivos()
-
-    assert total_positivos == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
 
     # cuentas
     assert positivos[o3.partido]['votos'] == 40 + 50
@@ -225,8 +259,37 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
 
-    assert resultados.votantes() == 220
-    assert resultados.electores() == 800
+    total_electores = sum(m.electores for m in carta_marina)
+
+    assert resultados.electores() == total_electores
+    assert resultados.total_positivos() == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+    assert resultados.porcentaje_positivos() == '81.13'
+    assert resultados.porcentaje_mesas_escrutadas() == '37.50'  # 3 de 8
+    assert resultados.votantes() == 265
+    assert resultados.electores_en_mesas_escrutadas() == 320
+    assert resultados.porcentaje_escrutado() == f'{100 * 320 / total_electores:.2f}'
+    assert resultados.porcentaje_participacion() == f'{100 * 265/ 320:.2f}'  # Es sobre escrutado.
+
+    assert resultados.total_blancos() == 45
+    assert resultados.porcentaje_blancos() == '16.98'
+
+    assert resultados.total_nulos() == 5
+    assert resultados.porcentaje_nulos() == '1.89'
+
+    assert resultados.total_votos() == 265
+    assert resultados.total_sobres() == 0
+
+    columna_datos = [
+        ('Electores', resultados.electores()),
+        ('Escrutados', resultados.electores_en_mesas_escrutadas()),
+        ('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
+        ('Votantes', resultados.votantes()),
+        ('Positivos', resultados.total_positivos()),
+        ('% Participación', f'{resultados.porcentaje_participacion()} %'),
+    ]
+    for variable, valor in columna_datos:
+        assert f'<td title="{variable}">{valor}</td>' in content
+
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
@@ -238,7 +301,7 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     # s3 200 votantes
 
     # Se crean 8 mesas (5 en s1, 2 en s2 y 1 en s3). Todas tienen 200 electores
-    ms1, ms2, ms3 = (
+    ms1, _, ms3 = (
         MesaFactory.create_batch(5, lugar_votacion__circuito__seccion=s1, electores=200),
         MesaFactory.create_batch(2, lugar_votacion__circuito__seccion=s2, electores=200),
         MesaFactory.create_batch(1, lugar_votacion__circuito__seccion=s3, electores=200)
@@ -259,8 +322,10 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
     blanco = categoria.opciones.get(nombre='blanco')
 
-    # simulo que van entrandom resultados en las mesas 1 (la primera de la seccion 1) y 3 (la primera de la seccion 3)
-    # Resultados de la mesa 1: 120 votos en la mesa 1 para el partido 1, 80 para el 2, 0 para el 3 y en blanco
+    # simulo que van entraron resultados en las mesas 1 (la primera de la seccion 1)
+    # y 3 (la primera de la seccion 3).
+    #
+    # Resultados de la mesa 1: 120 votos partido 1, 80 para el 2, 0 para el 3 y 0 en blanco
     c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=categoria)
     consumir_novedades_y_actualizar_objetos([m1])
 
@@ -325,34 +390,43 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     assert positivos[o2.partido]['proyeccion'] == '43.42'
 
 
-@pytest.mark.skip(reason="proyecciones sera re-escrito")
-def test_resultados_proyectados_simple(fiscal_client):
-    s1, s2 = SeccionFactory.create_batch(2)
+def test_resultados_proyectados_simple(carta_marina, tecnica_proyeccion, fiscal_client):
+    s1, s2 = Seccion.objects.all()
     o1, o2 = OpcionFactory.create_batch(2)
-    e1 = CategoriaFactory(opciones=[o1, o2])
+    categoria = CategoriaFactory(opciones=[o1, o2])
 
-    m1, *_ = MesaFactory.create_batch(
-        3, categorias=[e1], lugar_votacion__circuito__seccion=s1, electores=200
-    )
-    m2 = MesaFactory(categorias=[e1], lugar_votacion__circuito__seccion=s2, electores=200)
+    # m1, *_ = MesaFactory.create_batch(
+    #     3, categorias=[categoria], lugar_votacion__circuito__seccion=s1, electores=200
+    # )
+    mesas = carta_marina
+    m1 = mesas[0]
+    m2 = mesas[4]
+    for mesa in mesas: 
+        MesaCategoriaFactory(mesa=mesa, categoria=categoria)
+    
+    c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
+    VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=40)
+    VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=30)
 
-    c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=e1)
-    VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=100)
-    VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=50)
-    c2 = CargaFactory(mesa_categoria__mesa=m2, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=e1)
-    VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=50)
-    VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=100)
+    c2 = CargaFactory(mesa_categoria__mesa=m2, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
+    VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=30)
+    VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=40)
+
     c1.actualizar_firma()
     c2.actualizar_firma()
     consumir_novedades_y_actualizar_objetos([m1, m2])
 
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas&tecnicaDeProyeccion={tecnica_proyeccion.id}'
+    )
 
     positivos = response.context['resultados'].tabla_positivos()
-    assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
-    assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
-    assert positivos[o1.partido]['proyeccion'] == '58.33'
-    assert positivos[o2.partido]['proyeccion'] == '41.67'
+    print(positivos)
+    assert positivos[o1.partido]['votos'] == 296 # = 40 *440/100 + 30 * 360 / 90
+    assert positivos[o2.partido]['votos'] == 292 # = 30 *440/100 + 40 * 360 / 90
+    assert positivos[o1.partido]['porcentaje_positivos'] == '50.34' # = 296 / (296+292)
+    assert positivos[o2.partido]['porcentaje_positivos'] == '49.66' # = 292 / (296+292)
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
@@ -477,7 +551,8 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     consumir_novedades_y_actualizar_objetos()
 
     # TODO dependiendo de lo que se quiera la url podria ser algo como por ejemplo:
-    # response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) + '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias')
+    # response = fiscal_client.get(reverse('resultados-categoria', args=[categoria.id]) +
+    #       '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias')
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
         '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=prioritarias'
@@ -554,8 +629,9 @@ def test_resultados_no_positivos(fiscal_client):
 
     opcion_blanco = OpcionFactory(**settings.OPCION_BLANCOS)
     opcion_total = OpcionFactory(**settings.OPCION_TOTAL_VOTOS)
+    opcion_sobres = OpcionFactory(**settings.OPCION_TOTAL_SOBRES)
 
-    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total])
+    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total, opcion_sobres])
 
     m1 = MesaFactory(categorias=[e1], electores=200)
     c1 = CargaFactory(mesa_categoria__categoria=e1, mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial)
@@ -563,6 +639,7 @@ def test_resultados_no_positivos(fiscal_client):
     VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=40)
     VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c1, votos=10)
     VotoMesaReportadoFactory(opcion=opcion_total, carga=c1, votos=100)
+    VotoMesaReportadoFactory(opcion=opcion_sobres, carga=c1, votos=110)
     c1.actualizar_firma()
     consumir_novedades_y_actualizar_objetos()
 
@@ -570,20 +647,24 @@ def test_resultados_no_positivos(fiscal_client):
         reverse('resultados-categoria', args=[e1.id]) + '?opcionaConsiderar=prioritarias'
     )
 
-    assert opcion_blanco.nombre in response.content.decode('utf8')
-    no_positivos = response.context['resultados'].tabla_no_positivos()
+    resultados = response.context['resultados']
 
-    assert no_positivos[opcion_blanco.nombre] == {'porcentaje_total': '10.00', 'votos': 10}
-    assert no_positivos['Votos Positivos']['votos'] == 90
+    assert resultados.total_positivos() == 90
+    assert resultados.total_blancos() == 10
+    assert resultados.total_votos() == 100
+    assert resultados.total_sobres() == 110
+    assert resultados.porcentaje_positivos() == '90.00'
+    assert resultados.porcentaje_blancos() == '10.00'
+    assert resultados.porcentaje_nulos() == '-'
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_excluye_metadata(fiscal_client):
-    s1, s2 = SeccionFactory.create_batch(2)
+    s1, s2 = Seccion.objects.all()
     o1, o2 = OpcionFactory.create_batch(2)
-    o3 = OpcionFactory(partido=None, tipo='no_positivo')
-    o4 = OpcionFactory(nombre='TOTAL', partido=None, tipo='metadata')
-    e1 = CategoriaFactory(opciones=[o1, o2, o3, o4])
+    opcion_blanco = OpcionFactory(**settings.OPCION_BLANCOS)
+    opcion_total = OpcionFactory(**settings.OPCION_TOTAL_VOTOS)
+    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total])
 
     m1, *_ = MesaFactory.create_batch(
         3, categorias=[e1], lugar_votacion__circuito__seccion=s1, electores=200
@@ -593,15 +674,15 @@ def test_resultados_excluye_metadata(fiscal_client):
     c1 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=e1, tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=100)
     VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=50)
-    VotoMesaReportadoFactory(opcion=o3, carga=c1, votos=10)
-    VotoMesaReportadoFactory(opcion=o4, carga=c1, votos=160)
+    VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c1, votos=10)
+    VotoMesaReportadoFactory(opcion=opcion_total, carga=c1, votos=160)
     c1.actualizar_firma()
 
     c2 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=e1, tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=50)
     VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=100)
-    VotoMesaReportadoFactory(opcion=o3, carga=c2, votos=10)
-    VotoMesaReportadoFactory(opcion=o4, carga=c2, votos=160)
+    VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c2, votos=10)
+    VotoMesaReportadoFactory(opcion=opcion_total, carga=c2, votos=160)
     c2.actualizar_firma()
     consumir_novedades_y_actualizar_objetos()
 
@@ -640,11 +721,11 @@ def test_actualizar_electores(carta_marina):
 
 def test_permisos_vistas(setup_groups, url_resultados, client):
     u_visualizador = UserFactory()
-    visualizador = FiscalFactory(user=u_visualizador)
+    FiscalFactory(user=u_visualizador)
     g_visualizadores = Group.objects.get(name='visualizadores')
     u_visualizador.groups.add(g_visualizadores)
     u_validador = UserFactory()
-    validador = FiscalFactory(user=u_validador)
+    FiscalFactory(user=u_validador)
     g_validadores = Group.objects.get(name='validadores')
     u_validador.groups.add(g_validadores)
 
@@ -660,4 +741,40 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
     # El usuario validador intenta cargar un acta, sí debería poder
     client.login(username=u_validador.username, password='password')
     response = client.get(reverse('siguiente-accion'))
+    assert response.status_code == 200
+
+def test_categorias_sensible(setup_groups, client):
+    u_visualizador = UserFactory()
+    _ = FiscalFactory(user=u_visualizador)
+    g_visualizadores = Group.objects.get(name='visualizadores')
+    u_visualizador.groups.add(g_visualizadores)
+
+    u_visualizador_sensible = UserFactory()
+    _ = FiscalFactory(user=u_visualizador_sensible)
+    g_visualizadores_sensible = Group.objects.get(name='visualizadores_sensible')
+    u_visualizador_sensible.groups.add(g_visualizadores_sensible)
+    u_visualizador_sensible.groups.add(g_visualizadores)
+
+    c = CategoriaFactory(nombre='default', sensible=False)
+    c_url = reverse('resultados-categoria', args=[c.id])
+
+    c = CategoriaFactory(nombre='default-sensible', sensible=True)
+    c_sensible_url = reverse('resultados-categoria', args=[c.id])
+
+    # El usuario visualizador intenta ver resultado sensible, no debería poder.
+    client.login(username=u_visualizador.username, password='password')
+    response = client.get(c_sensible_url)
+    assert response.status_code == 403
+
+    # Sí debería poder ver resultados.
+    response = client.get(c_url)
+    assert response.status_code == 200
+
+    # El usuario visualizador sensible puede ver resultado sensible.
+    client.login(username=u_visualizador_sensible.username, password='password')
+    response = client.get(c_sensible_url)
+    assert response.status_code == 200
+
+    # El usuario visualizador sensible puede ver resultado no sensible.
+    response = client.get(c_url)
     assert response.status_code == 200

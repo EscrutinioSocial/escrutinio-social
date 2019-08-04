@@ -9,10 +9,11 @@ class ActaSerializer(serializers.Serializer):
     foto = serializers.ImageField(help_text='La foto del acta', write_only=True)
     foto_digest = serializers.CharField(read_only=True)
 
-    def save(self):
+    def save(self, subido_por):
         foto = self.validated_data['foto']
 
         attachment = Attachment()
+        attachment.subido_por = subido_por
         attachment.foto.save(foto.name, foto, save=False)
         attachment.save()
 
@@ -59,6 +60,7 @@ class ListarCategoriasQuerySerializer(serializers.Serializer):
 class CategoriaSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
+    slug = serializers.SlugField()
 
 
 class ListarOpcionesQuerySerializer(serializers.Serializer):
@@ -69,3 +71,4 @@ class OpcionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
     nombre_corto = serializers.CharField()
+    codigo = serializers.CharField()
