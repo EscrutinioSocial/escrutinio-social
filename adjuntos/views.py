@@ -321,8 +321,12 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
             fiscal = request.user.fiscal
             context['desde_ub'] = True
             if fiscal.seccion:
+                # Si el fiscal tiene una sección precargada tomamos los datos de ahí.
                 context['seccion_precargada'] = fiscal.seccion
                 context['distrito_precargado'] = fiscal.seccion.distrito
+            elif fiscal.distrito:
+                # Si no tiene sección, pero sí un distrito, vamos con eso.
+                context['distrito_precargado'] = fiscal.distrito
 
         return self.render_to_response(context)
 
@@ -387,8 +391,8 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             messages.error(self.request, f'{adjunto.name} ignorado. {str(e)}')
         return None
 
-    def mostrar_mensaje_tipo_archivo_invalido(self, f):
-        messages.warning(self.request, f'{f.name} ignorado. No es un archivo CSV')
+    def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
+        messages.warning(self.request, f'{nombre_archivo} ignorado. No es un archivo CSV')
 
     def mostrar_mensaje_archivos_cargados(self, c):
         messages.success(self.request, f'Subiste {c} archivos CSV. Gracias!')

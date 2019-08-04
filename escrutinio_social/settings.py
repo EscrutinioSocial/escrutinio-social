@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -63,7 +64,7 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # nuestras apps
-    'elecciones',
+    'elecciones.apps.EleccionesAppConfig',
     'fiscales',
     'adjuntos',
     'problemas',
@@ -317,9 +318,9 @@ MESA_TAKE_WAIT_TIME = 2  # En minutos
 # Prioridades standard, a usar si no se definen prioridades específicas
 # para una categoría o circuito
 PRIORIDADES_STANDARD_SECCION = [
-    {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2},
-    {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 20},
-    {'desde_proporcion': 10, 'hasta_proporcion': 100, 'prioridad': 100},
+    {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 4},
+    {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 40},
+    {'desde_proporcion': 10, 'hasta_proporcion': 100, 'prioridad': 200},
 ]
 PRIORIDADES_STANDARD_CATEGORIA = [
     {'desde_proporcion': 0, 'hasta_proporcion': 100, 'prioridad': 100},
@@ -347,11 +348,10 @@ CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
 
 CONSTANCE_CONFIG = {
-    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea ', float),
+    'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
 }
 
 
-import sys
 TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
 
 # Para los tests no se importan los local settings.

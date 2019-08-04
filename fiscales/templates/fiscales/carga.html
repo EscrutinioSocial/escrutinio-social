@@ -23,7 +23,14 @@
   -moz-appearance: none;
   text-indent: 1px;
   text-overflow: '';
-  text-align: right;
+  padding: 0;
+  height: 2rem;
+  text-align-last: right;
+
+}
+
+.carga-acta-inline > dmc-select select > option {
+  direction: rtl;
 }
 
 .carga-acta-inline > dmc-select select::-ms-expand {
@@ -41,6 +48,15 @@
 
 .carga-acta-inline .row .col {
   padding: 0 .1rem;
+}
+
+.carga-acta-inline .input-field {
+  margin-top: 0;
+}
+
+.carga-acta-inline .input-field > input {
+  margin: 0;
+  height: 2rem;
 }
 
 .card-content {
@@ -73,8 +89,7 @@ $(document).ready(function(){
 
 
 {% block breadcrumbs_items %}
-<a href="{{ object.get_absolute_url }}">{{ object }}</a>
-<a class="active">Acta</a>
+<a href="{{ object.get_absolute_url }}" class="active">{{ object.nombre_completo }}</a>
 {% endblock %}
 
 
@@ -82,7 +97,7 @@ $(document).ready(function(){
 
 
 {% block card-content %}
-    <div class="card-title"> Mesa {{ object.numero }}
+    <div class="card-title">
         <b style='background-color: {{ categoria.back_color }}; color: {{ categoria.color }}'>{{ categoria }}</b>
     </div>
     {{ formset.management_form }}

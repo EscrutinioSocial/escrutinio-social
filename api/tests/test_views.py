@@ -7,8 +7,12 @@ from rest_framework.test import APIClient
 
 from elecciones.tests import factories
 from elecciones.models import Carga
-from adjuntos.models import hash_file
+from adjuntos.models import Attachment, hash_file
 
+from elecciones.tests.factories import (
+    DistritoFactory,
+    SeccionFactory
+)
 
 @pytest.fixture
 def admin_client(admin_user):
@@ -22,7 +26,6 @@ def admin_client(admin_user):
     client.credentials(HTTP_AUTHORIZATION='Bearer ' + response.data['access'])
 
     return client
-
 
 def test_subir_acta(admin_client, datadir):
     """
@@ -41,6 +44,52 @@ def test_subir_acta(admin_client, datadir):
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.data['foto_digest'] == hash_file(foto.open('rb'))
 
+def test_subir_acta_preidentifica_distrito(admin_user, admin_client, datadir):
+    """
+    Prueba de subir una imagen y que quede la PreIdentificación de distrito.
+    """
+    url = reverse('actas')
+    distrito = DistritoFactory()
+    admin_user.fiscal.distrito = distrito
+    admin_user.fiscal.save()
+
+    foto = (datadir / 'acta.jpeg')
+    response = admin_client.post(url, {'foto': foto.open('rb')})
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    response = admin_client.post(url, {'foto': foto.open('rb')})
+
+    foto_digest = response.data['foto_digest']
+
+    attachment = Attachment.objects.get(foto_digest=foto_digest)
+
+    assert attachment.pre_identificacion is not None
+    assert attachment.pre_identificacion.distrito == admin_user.fiscal.distrito
+
+def test_subir_acta_preidentifica_seccion(admin_user, admin_client, datadir):
+    """
+    Prueba de subir una imagen y que quede la PreIdentificación de seccion
+    """
+    url = reverse('actas')
+    seccion = SeccionFactory()
+    admin_user.fiscal.seccion = seccion
+    admin_user.fiscal.save()
+
+    foto = (datadir / 'acta.jpeg')
+    response = admin_client.post(url, {'foto': foto.open('rb')})
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    response = admin_client.post(url, {'foto': foto.open('rb')})
+
+    foto_digest = response.data['foto_digest']
+
+    attachment = Attachment.objects.get(foto_digest=foto_digest)
+
+    assert attachment.pre_identificacion is not None
+    assert attachment.pre_identificacion.seccion == admin_user.fiscal.seccion
+    assert attachment.pre_identificacion.distrito == admin_user.fiscal.seccion.distrito
 
 def test_subir_acta_invalid_ext(admin_client, datadir):
     """
@@ -122,8 +171,8 @@ def test_cargar_votos(admin_client):
     mesa_categoria_1 = factories.MesaCategoriaFactory(mesa=mesa, categoria=categoria_1)
     mesa_categoria_2 = factories.MesaCategoriaFactory(mesa=mesa, categoria=categoria_2)
 
-    opcion_1 = factories.OpcionFactory()
-    opcion_2 = factories.OpcionFactory()
+    opcion_1 = factories.OpcionFactory(orden=1)
+    opcion_2 = factories.OpcionFactory(orden=2)
 
     factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1, prioritaria=True)
     factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2, prioritaria=True)
@@ -152,12 +201,48 @@ def test_cargar_votos(admin_client):
     assert mesa_categoria_1.cargas.count() == 1
     assert mesa_categoria_2.cargas.count() == 1
 
-    assert list(mesa_categoria_1.cargas.first().opcion_votos()) == [
-        (opcion_1.id, 100),
-        (opcion_2.id, 50)
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_1.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 100), (opcion_2.id, 50)]
     ]
 
-    assert list(mesa_categoria_2.cargas.first().opcion_votos()) == [(opcion_1.id, 10)]
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_2.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 10)]
+    ]
+
+    # Se pueden volver a cargar votos para la misma mesa (con o sin cambios)
+
+    data[0]['votos'] = 90
+    data[1]['votos'] = 60
+    response = admin_client.post(url, data, format='json')
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data['mensaje'] == 'Se cargaron los votos con éxito.'
+
+    assert Carga.objects.count() == 4
+    assert mesa_categoria_1.cargas.count() == 2
+    assert mesa_categoria_2.cargas.count() == 2
+
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_1.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 90), (opcion_2.id, 60)],
+        [(opcion_1.id, 100), (opcion_2.id, 50)]
+    ]
+
+    assert [
+        list(mc.opcion_votos().order_by('opcion__orden'))
+        for mc in mesa_categoria_2.cargas.order_by('-created').all()
+    ] == [
+        [(opcion_1.id, 10)],
+        [(opcion_1.id, 10)]
+    ]
 
 
 def test_cargar_votos_faltan_prioritarias(admin_client):
@@ -195,22 +280,26 @@ def test_cargar_votos_faltan_prioritarias(admin_client):
 def test_listar_categorias_default(admin_client):
     url = reverse('categorias')
 
-    pv = factories.CategoriaFactory(prioridad=1)
     gv = factories.CategoriaFactory(prioridad=2)
+    pv = factories.CategoriaFactory(prioridad=1)
     factories.CategoriaFactory(prioridad=3)
 
     response = admin_client.get(url, format='json')
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 2
-    assert [cat['id'] for cat in response.data] == [pv.id, gv.id]
+    categorias = [(cat['id'], cat['nombre'], cat['slug']) for cat in response.data]
+    assert categorias == [
+        (pv.id, pv.nombre, pv.slug),
+        (gv.id, gv.nombre, gv.slug)
+    ]
 
 
 def test_listar_categorias_con_prioridad(admin_client):
     url = reverse('categorias')
 
-    pv = factories.CategoriaFactory(prioridad=1)
     gv = factories.CategoriaFactory(prioridad=2)
+    pv = factories.CategoriaFactory(prioridad=1)
     dn = factories.CategoriaFactory(prioridad=3)
     factories.CategoriaFactory(prioridad=4)
 
@@ -218,8 +307,13 @@ def test_listar_categorias_con_prioridad(admin_client):
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 3
-    assert [(cat['id'], cat['nombre']) for cat in response.data] == [(pv.id, pv.nombre), (gv.id, gv.nombre),
-                                                                     (dn.id, dn.nombre)]
+    categorias = [(cat['id'], cat['nombre'], cat['slug']) for cat in response.data]
+    assert categorias == [
+        (pv.id, pv.nombre, pv.slug),
+        (gv.id, gv.nombre, gv.slug),
+        (dn.id, dn.nombre, dn.slug)
+    ]
+
 
 @pytest.mark.parametrize('prioridad', ['XX', False])
 def test_listar_categorias_con_prioridad_error(prioridad, admin_client):
@@ -244,7 +338,12 @@ def test_listar_opciones_default(admin_client):
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 2
-    assert [(opc['id'], opc['nombre']) for opc in response.data] == [(o1.id, o1.nombre), (o4.id, o4.nombre)]
+
+    opciones = [(opc['id'], opc['nombre'], opc['nombre_corto'], opc['codigo']) for opc in response.data]
+    assert opciones == [
+        (o1.id, o1.nombre, o1.nombre_corto, o1.codigo),
+        (o4.id, o4.nombre, o4.nombre_corto, o4.codigo)
+    ]
 
 
 def test_listar_opciones_todas(admin_client):
@@ -262,11 +361,13 @@ def test_listar_opciones_todas(admin_client):
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 4
-    assert [(opc['id'], opc['nombre']) for opc in response.data] == [
-        (o1.id, o1.nombre),
-        (o3.id, o3.nombre),
-        (o2.id, o2.nombre),
-        (o4.id, o4.nombre),
+
+    opciones = [(opc['id'], opc['nombre'], opc['nombre_corto'], opc['codigo']) for opc in response.data]
+    assert opciones == [
+        (o1.id, o1.nombre, o1.nombre_corto, o1.codigo),
+        (o3.id, o3.nombre, o3.nombre_corto, o3.codigo),
+        (o2.id, o2.nombre, o2.nombre_corto, o2.codigo),
+        (o4.id, o4.nombre, o4.nombre_corto, o4.codigo),
     ]
 
 

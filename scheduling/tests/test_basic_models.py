@@ -167,6 +167,23 @@ def test_hasta_cantidad(proporcion, orden_de_llegada, prioridad):
     assert mapa.valor_para(proporcion, orden_de_llegada) == prioridad
 
 
+@pytest.mark.parametrize('proporcion, orden_de_llegada, prioridad', [
+    [0, 1, 2],
+    [5, 6, 2],
+    [8, 9, 20],
+    [12, 13, 100],
+])
+def test_mapa_prioridades_redefiniendo_solo_hasta_cantidad(proporcion, orden_de_llegada, prioridad):
+    mapa_d = MapaPrioridades()
+    mapa_d.agregar_registro(RegistroDePrioridad(0, 2, 2))
+    mapa_d.agregar_registro(RegistroDePrioridad(2, 10, 20))
+    mapa_d.agregar_registro(RegistroDePrioridad(10, 100, 100))
+    mapa_1 = MapaPrioridades()
+    mapa_1.agregar_registro(RegistroDePrioridad(0, 2, None, 7))
+    mapa = MapaPrioridadesConDefault(mapa_1, mapa_d)
+    assert mapa.valor_para(proporcion, orden_de_llegada) == prioridad
+
+
 def test_mapa_desde_estructura():
     estruc = [
         {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2, 'hasta_cantidad': 7},

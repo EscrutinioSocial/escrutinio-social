@@ -60,6 +60,7 @@ class ListarCategoriasQuerySerializer(serializers.Serializer):
 class CategoriaSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
+    slug = serializers.SlugField()
 
 
 class ListarOpcionesQuerySerializer(serializers.Serializer):
@@ -70,3 +71,4 @@ class OpcionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
     nombre_corto = serializers.CharField()
+    codigo = serializers.CharField()

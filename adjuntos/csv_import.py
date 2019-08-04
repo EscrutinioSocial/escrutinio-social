@@ -11,14 +11,28 @@ from escrutinio_social.settings import OPCION_TOTAL_SOBRES, OPCION_TOTAL_VOTOS
 from fiscales.models import Fiscal
 import logging
 
-# Primer dato: nombre de la columna, segundo: si es parte de una categoría o no.
-COLUMNAS_DEFAULT = [('seccion', False), ('distrito', False), ('circuito', False), ('nro de mesa', False),
-                    ('nro de lista', False), ('presidente y vice', True), ('gobernador y vice', True),
-                    ('senadores nacionales', True), ('diputados nacionales', True),
-                    ('senadores provinciales', True),
-                    ('diputados provinciales', True),
-                    ('intendentes, concejales y consejeros escolares', True),
-                    ('cantidad de electores del padron', False), ('cantidad de sobres en la urna', False)]
+# Primer dato: nombre de la columna, segundo: si es parte de una categoría o no,
+# tercero, si es obligatorio o puede no estar (dado que en distintas provincias se votan distintas
+# categorías).
+COLUMNAS_DEFAULT = [
+    # Identificación de la mesa.
+    ('seccion', False, True), ('distrito', False, True),
+    ('circuito', False, True), ('nro de mesa', False, True),
+    # Opción.
+    ('nro de lista', False, True),
+    # Categorías electivas.
+    ('presidente y vice', True, True),
+    ('gobernador y vice', True, False),
+    ('senadores nacionales', True, False),
+    ('diputados nacionales', True, False),
+    ('senadores provinciales', True, False),
+    ('diputados provinciales', True, False),
+    ('legisladores provinciales', True, False),  # Para el caso de legislatura unicameral.
+    ('intendente, concejales y consejeros escolares', True, False),
+    # Metadata.
+    ('cantidad de electores del padron', False, True),
+    ('cantidad de sobres en la urna', False, True),
+]
 
 
 # Excepciones custom, por si se quieren manejar
@@ -92,20 +106,23 @@ class CSVImporter:
 
     def validar_columnas(self):
         """
-        Valida que estén las columnas en el archivo y que no hayan columnas repetidas.
+        Valida que estén las columnas obligatorias en el archivo y que no hayan columnas repetidas.
         """
-        headers = list(elem[0] for elem in COLUMNAS_DEFAULT)
-        # normalizar las columnas para evitar comparaciones con espacios/acentos
+        # Normalizamos las columnas para evitar comparaciones con espacios/acentos.
         self.df.columns = self.df.columns.str.strip().str.lower().str.replace('ó', 'o')
-        # validar la existencia de los headers mandatorios
-        todas_las_columnas = all(elem in self.df.columns for elem in headers)
-        if not todas_las_columnas:
-            faltantes = [columna for columna in headers if columna not in self.df.columns]
+
+        headers_obligatorios = list(elem[0] for elem in COLUMNAS_DEFAULT if elem[2])
+
+        # Validamos la existencia de los headers mandatorios.
+        columnas_obligatorias = all(elem in self.df.columns for elem in headers_obligatorios)
+        if not columnas_obligatorias:
+            faltantes = [columna for columna in headers_obligatorios if columna not in self.df.columns]
             raise ColumnasInvalidasError(f'Faltan las columnas: {faltantes} en el archivo.')
-        # las columnas duplicadas en Panda se especifican como ‘X’, ‘X.1’, …’X.N’
+
+        # Las columnas duplicadas en Panda se especifican como ‘X’, ‘X.1’, …’X.N’
         columnas_candidatas = [columna.replace('.1', '') for columna in self.df.columns
                                if columna.endswith('.1')]
-        columnas_duplicadas = any(elem in columnas_candidatas for elem in headers)
+        columnas_duplicadas = any(elem in columnas_candidatas for elem in headers_obligatorios)
         if columnas_duplicadas:
             raise ColumnasInvalidasError('Hay columnas duplicadas en el archivo.')
 
@@ -233,8 +250,9 @@ class CSVImporter:
                                               f'encontrado asociado la categoría '
                                               f'{categoria_bd.nombre}, revise que sea '
                                               f'el correcto.')
-                opcion_categoria = opcion_bd.categoriaopcion_set. \
-                    filter(categoria=categoria_bd).first()
+                opcion_categoria = opcion_bd.categoriaopcion_set.filter(
+                    categoria=categoria_bd
+                ).first()
                 self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
                                   opcion_bd)
 
@@ -387,5 +405,7 @@ class CeldaCSVImporter:
         self.columna = columna
 
     def __str__(self):
-        return f"Mesa: {self.mesa} - sección: {self.seccion} - circuito: {self.circuito} - " \
+        return (
+            f"Mesa: {self.mesa} - sección: {self.seccion} - circuito: {self.circuito} - "
             f"distrito: {self.distrito} - lista: {self.codigo_lista} - columna: {self.columna}"
+        )
