@@ -20,7 +20,7 @@ class Command(BaseCommand):
             # estrictamente, el nombre no deberia importar para el filtro
             # si viene nombre en el criterio lo usamos como default
             # ver !111
-            nombre = criterio_dict.pop('nombre', nombre_default)
+            nombre = criterio_dict['nombre'] if 'nombre' in criterio_dict else nombre_default
 
             opcion, creada = Opcion.objects.get_or_create(
                 **criterio_dict,

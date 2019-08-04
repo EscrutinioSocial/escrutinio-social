@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.shortcuts import get_object_or_404
 
 from django.db import transaction
@@ -160,25 +162,29 @@ def cargar_votos(request, id_mesa):
     mesa = get_object_or_404(Mesa, id=id_mesa)
     serializer = VotoSerializer(data=request.data, many=True, allow_empty=False)
     if serializer.is_valid():
-        data = serializer.validated_data
+        data = defaultdict(list)
+        for v in serializer.validated_data:
+            data[v['categoria']].append((v['opcion'], v['votos']))
 
         with transaction.atomic():
-            for votos in data:
-                mesa_categoria = get_object_or_404(MesaCategoria, mesa=mesa, categoria=votos['categoria'])
-                categoria_opcion = get_object_or_404(
-                    CategoriaOpcion, categoria=votos['categoria'], opcion=votos['opcion']
-                )
-
+            for categoria, opcion_votos in data.items():
+                mesa_categoria = get_object_or_404(MesaCategoria, mesa=mesa, categoria=categoria)
                 carga = Carga.objects.create(
                     # Sabemos que el bot va a mandar sólo cargas parciales.
                     tipo=Carga.TIPOS.parcial, origen=Carga.SOURCES.telegram,
                     mesa_categoria=mesa_categoria, fiscal=request.user.fiscal
                 )
-                VotoMesaReportado.objects.create(
-                    carga=carga,
-                    opcion=categoria_opcion.opcion,
-                    votos=votos['votos']
-                )
+
+                for opcion, votos in opcion_votos:
+                    categoria_opcion = get_object_or_404(
+                        CategoriaOpcion, categoria=categoria, opcion=opcion
+                    )
+
+                    VotoMesaReportado.objects.create(
+                        carga=carga,
+                        opcion=categoria_opcion.opcion,
+                        votos=votos
+                    )
 
         # TODO: se deberían devolver los recursos creados
         return Response({"mensaje": "Se cargaron los votos con éxito."}, status=201)
