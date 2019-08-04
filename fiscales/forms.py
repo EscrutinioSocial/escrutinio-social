@@ -83,21 +83,12 @@ class FiscalxDNI(forms.ModelForm):
     dni = ARDNIField(required=True)
 
 
-class FiscalForm(forms.ModelForm):
-
-    dni = ARDNIField(required=False)
-
-    class Meta:
-        model = Fiscal
-        exclude = []
-
-
 class QuieroSerFiscalForm(forms.Form):
 
-    MENSAJE_ERROR_CODIGO_REF = 'Codigo de referido debe ser de 4 letras y/o números'
-    MENSAJE_ERROR_TELEFONO_INVALIDO = 'Teléfono no es válido. Chequeá código de área y teléfono local'
-    MENSAJE_ERROR_DNI_REPETIDO = 'Ya se encuentra un usuario registrado con ese dni'
-    MENSAJE_ERROR_PASSWORD_NO_IGUALES = "Las contraseñas no coinciden"
+    MENSAJE_ERROR_CODIGO_REF = 'Codigo de referido debe ser de 4 letras y/o números.'
+    MENSAJE_ERROR_TELEFONO_INVALIDO = 'Teléfono no es válido. Chequeá código de área y teléfono.'
+    MENSAJE_ERROR_DNI_REPETIDO = 'Ya se encuentra un usuario registrado con ese DNI.'
+    MENSAJE_ERROR_PASSWORD_NO_IGUALES = "Las contraseñas no coinciden."
 
     CARACTERES_REF_CODIGO = 4
     CANTIDAD_DIGITOS_NUMERACION_ARGENTINA = 10
@@ -134,7 +125,7 @@ class QuieroSerFiscalForm(forms.Form):
     distrito = forms.ModelChoiceField(
         required=True,
         label='Provincia',
-        queryset=Distrito.objects.all().order_by('numero')
+        queryset=Distrito.objects.all().order_by('nombre')
     )
 
     seccion_autocomplete = forms.CharField(label="Departamento o Municipio",
@@ -285,26 +276,35 @@ class VotoMesaModelForm(forms.ModelForm):
 class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
 
     def __init__(self, *args, **kwargs):
+        """
+        Se reciben dos parámetros extra, ``mesa`` y  ``datos_previos``, útiles para la
+        validación.
+
+        ``mesa`` se utiliza para verificar que la cantidad de votos no supera la cantidad de electores
+
+        ``datos_previos`` es un diccionario en la forma {opcion_id: votos_previos, ...}
+        donde viene los valores de una carga parcial u opciones meta, tal cual se presentan
+        pre-inicializados en el formset. Acá se reciben para verificar que estos datos
+        no fueron adulterados para el requests "POST"
+        """
         self.mesa = kwargs.pop('mesa')
+        self.datos_previos = kwargs.pop('datos_previos')
         super().__init__(*args, **kwargs)
-        self.warnings = []
 
     def clean(self):
         super().clean()
         suma = 0
-        positivos = 0
-        total = 0
-        form_opcion_total = None
         for form in self.forms:
-            if not form.cleaned_data.get('opcion').tipo == Opcion.TIPOS.metadata:
-                suma += form.cleaned_data.get('votos') or 0
+            opcion = form.cleaned_data.get('opcion')
+            votos = form.cleaned_data.get('votos')
+            if not opcion.tipo == Opcion.TIPOS.metadata:
+                suma += votos
 
-        # if suma > positivos:
-        #     #form_opcion_total.add_error(
-        #     #    'votos', 'La sumatoria no se corresponde con el total'
-        #     #)
-        #     form_opcion_positivos.add_error('votos',
-        #         f'Positivos deberia ser igual o mayor a {suma}')
+            previos = self.datos_previos.get(opcion.id, None)
+            if previos and previos != votos:
+                form.add_error('votos', ValidationError(
+                    f'El valor confirmado que tenemos para esta opción es {previos}'
+                ))
 
         errors = []
         if suma > self.mesa.electores:

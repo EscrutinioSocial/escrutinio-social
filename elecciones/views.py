@@ -1,46 +1,24 @@
-import itertools
 from django.conf import settings
-from functools import lru_cache
-from collections import defaultdict, OrderedDict
-from attrdict import AttrDict
-from django.http import JsonResponse
-from datetime import timedelta
-from django.utils import timezone
-from django.template.loader import render_to_string
-from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Q, F, Sum, Count, Subquery
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from djgeojson.views import GeoJSONLayerView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, HttpResponseForbidden
-from django.utils.functional import cached_property
-from django.views import View
-from django.contrib.auth.models import User
-from fiscales.models import Fiscal
-from django.db.models import Sum, IntegerField, Case, When
+from django.contrib.auth.mixins import AccessMixin
 from .models import (
     Distrito,
     Seccion,
     Circuito,
     Categoria,
-    Partido,
-    Opcion,
-    VotoMesaReportado,
     LugarVotacion,
-    MesaCategoria,
     Mesa,
 )
 from .resultados import Sumarizador, Proyecciones
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
-
 
 class StaffOnlyMixing:
     """
@@ -53,17 +31,23 @@ class StaffOnlyMixing:
         return super().dispatch(*args, **kwargs)
 
 
-class VisualizadoresOnlyMixin:
+class VisualizadoresOnlyMixin(AccessMixin):
     """
     Mixin para que sólo usuarios visualizadores
     accedan a la vista.
     """
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.fiscal.esta_en_grupo('visualizadores'):
-            return super().dispatch(request, *args, **kwargs)
+        if not request.user.is_authenticated or not request.user.fiscal.esta_en_grupo('visualizadores'):
+            return self.handle_no_permission()
 
-        return HttpResponseForbidden()
+        pk = kwargs.get('pk')
+        categoria = get_object_or_404(Categoria, id=pk)
+
+        if categoria.sensible and not request.user.fiscal.esta_en_grupo('visualizadores_sensible'):
+            return self.handle_no_permission()
+
+        return super().dispatch(request, *args, **kwargs)
 
 
 class LugaresVotacionGeoJSON(GeoJSONLayerView):
@@ -132,6 +116,14 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
+def resultados_default(request):
+
+    e = Categoria.objects.filter(sensible=False).first()
+    if e is None:
+        raise EnvironmentError("Debe exisitr una categoría no sensible")
+    return redirect('resultados-categoria', args=[e.id])
+
+
 class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     """
     Vista principal para el cálculo de resultados
@@ -148,8 +140,8 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
                 ids_a_considerar = self.request.GET.getlist(nivel)
 
         parametros_sumarizacion = [
-            self.get_tipo_de_agregacion(), 
-            self.get_opciones_a_considerar(), 
+            self.get_tipo_de_agregacion(),
+            self.get_opciones_a_considerar(),
             nivel_de_agregacion,
             ids_a_considerar,
         ]
@@ -162,6 +154,8 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
             if tecnica_de_proyeccion
             else Sumarizador(*parametros_sumarizacion)
         )
+
+        self.ocultar_sensibles = not request.user.fiscal.esta_en_grupo('visualizadores_sensible')
 
         return super().get(request, *args, **kwargs)
 
@@ -203,7 +197,9 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['tecnicas_de_proyeccion_seleccionado'] = self.get_tecnica_de_proyeccion()
 
         if self.sumarizador.filtros:
-            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.sumarizador.filtros], " y ")
+            context['para'] = get_text_list([
+                objeto.nombre_completo() for objeto in self.sumarizador.filtros
+            ], " y ")
         else:
             context['para'] = 'todo el país'
 
@@ -229,7 +225,10 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         # Para el cálculo se filtran categorías activas que estén relacionadas
         # a las mesas.
         mesas = self.sumarizador.mesas(categoria)
-        context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
+        categorias = Categoria.para_mesas(mesas)
+        if self.ocultar_sensibles:
+            categorias = categorias.exclude(sensible=True)
 
+        context['categorias'] = categorias.order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('numero')
         return context

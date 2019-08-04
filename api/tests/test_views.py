@@ -244,7 +244,12 @@ def test_listar_opciones_default(admin_client):
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 2
-    assert [(opc['id'], opc['nombre']) for opc in response.data] == [(o1.id, o1.nombre), (o4.id, o4.nombre)]
+
+    opciones = [(opc['id'], opc['nombre'], opc['nombre_corto'], opc['codigo']) for opc in response.data]
+    assert opciones == [
+        (o1.id, o1.nombre, o1.nombre_corto, o1.codigo),
+        (o4.id, o4.nombre, o4.nombre_corto, o4.codigo)
+    ]
 
 
 def test_listar_opciones_todas(admin_client):
@@ -262,11 +267,13 @@ def test_listar_opciones_todas(admin_client):
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 4
-    assert [(opc['id'], opc['nombre']) for opc in response.data] == [
-        (o1.id, o1.nombre),
-        (o3.id, o3.nombre),
-        (o2.id, o2.nombre),
-        (o4.id, o4.nombre),
+
+    opciones = [(opc['id'], opc['nombre'], opc['nombre_corto'], opc['codigo']) for opc in response.data]
+    assert opciones == [
+        (o1.id, o1.nombre, o1.nombre_corto, o1.codigo),
+        (o3.id, o3.nombre, o3.nombre_corto, o3.codigo),
+        (o2.id, o2.nombre, o2.nombre_corto, o2.codigo),
+        (o4.id, o4.nombre, o4.nombre_corto, o4.codigo),
     ]
 
 
