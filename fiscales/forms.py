@@ -37,10 +37,12 @@ class AuthenticationFormCustomError(AuthenticationForm):
 
     def confirm_login_allowed(self, user):
         session_existente = user.fiscal.session_key
+        session = self.request.session
         ahora = timezone.now()
-        last_seen = XXX lo tengo en la cookie?
-        timeout = last_seen + timedelta(seconds=settings.SESSION_COOKIE_AGE) if last_seen else None
-        if session_existente and last_seen and ahora < timeout:
+        timeout = session.get_expiry_date()
+        print("AHORA ", ahora)
+        print("Timeout", timeout)
+        if session_existente and ahora < timeout:
             raise forms.ValidationError(
                 _(self.already_logged_message),
                 code='already_logged'
