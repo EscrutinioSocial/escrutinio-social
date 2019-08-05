@@ -125,9 +125,6 @@ class Command(BaseCommand):
 
                 # si es de capital entonces vota a intendente
                 if numero_de_seccion == 1:
-                    # capital se pondera por circuitos
-                    seccion.proyeccion_ponderada = True
-                    seccion.save(update_fields=['proyeccion_ponderada'])
                     mesa.categoria_add(categoria_intendente_cordoba)
                     self.success('Se agregó la mesa a la categoria a intendente')
 
