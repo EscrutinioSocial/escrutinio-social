@@ -39,6 +39,7 @@ git+https://github.com/mgaitan/pytest-cov.git@260-cov-fail-under-float
 pytest-django==3.5.1
 pytest-mock==1.10.4
 psycopg2_binary==2.8.2
+gunicorn==19.9.0
 sentry-sdk==0.10.2
 django-excel==0.0.10
 pyexcel==0.5.13
