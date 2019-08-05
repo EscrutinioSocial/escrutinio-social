@@ -26,7 +26,7 @@ class AuthenticationFormCustomError(AuthenticationForm):
         _("This account is inactive."),
     }
     already_logged_message = (
-        'Ya hay un usuario sesionado con esta cuenta. Si sos vos mismo espera '
+        'Ya hay un usuario sesionado/a con esta cuenta. Si sos vos mismo/a esperá '
         f'{int(settings.SESSION_TIMEOUT / 60)} minutos y volvé a intentarlo.'
     )
 
