@@ -365,7 +365,8 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             'is_valid': is_valid or request.method == 'GET',
             'recibir_problema': 'problema',
             'dato_id': mesa_categoria.id,
-            'form_problema': IdentificacionDeProblemaForm()
+            'form_problema': IdentificacionDeProblemaForm(),
+            'action': reverse('procesar-acta-mesa', args=[mesa.id]) if desde_ub else None,
         }
     )
 
@@ -585,10 +586,10 @@ class MesaListView(AjaxListView):
         if self.q:
             lookups &= Q(numero=self.q)
         circuito = self.forwarded.get('circuito',None)
-        if circuito:
+        if circuito and circuito != "-1":
             lookups &= Q(circuito_id=circuito)
         seccion = self.forwarded.get('seccion',None)
-        if seccion:
+        if seccion and seccion != "-1":
             lookups &= Q(circuito__seccion_id=seccion)
         distrito = self.forwarded.get('distrito',None)
         if distrito:

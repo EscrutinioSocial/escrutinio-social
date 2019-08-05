@@ -19,12 +19,6 @@
   padding-bottom: 0px;
 }
 
-.darkroom-image-container {
-  overflow: auto;
-}
-.resultado-select{
-    border-bottom: none !important;
-}
 .left-panel {
 
   flex-basis: 30%;
@@ -91,14 +85,15 @@ $(document).ready(function() {
 
 {% block left-panel %}
   <div class="card">
-      <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-	<div class="card-content">
-          {% block card-content %}
-          <div class="card-title">¿De qué mesa es esta acta?</div> 
-	  {% form %}{% endform %}
-	  {% endblock card-content %}
-	</div>
+      <form method="POST" enctype="multipart/form-data" {% if action %}action="{{action}}"{% endif %}>
+          {% csrf_token %}
+          <div class="card-content">
+            {% block card-content %}
+              <div class="card-title">¿De qué mesa es esta acta?</div>
+              {% form %}
+	      {% endform %}
+            {% endblock card-content %}
+          </div>
           <div class="card-action">
             {% block card-action %}
             <div class="right-align">

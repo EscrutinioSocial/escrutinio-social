@@ -16,7 +16,7 @@ from .models import (
     LugarVotacion,
     Mesa,
 )
-from .resultados import Sumarizador, Proyecciones
+from .resultados import Sumarizador, Proyecciones, AvanceDeCarga
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
@@ -40,7 +40,6 @@ class VisualizadoresOnlyMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or not request.user.fiscal.esta_en_grupo('visualizadores'):
             return self.handle_no_permission()
-
         pk = kwargs.get('pk')
         categoria = get_object_or_404(Categoria, id=pk)
 
@@ -116,20 +115,18 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
-def resultados_default(request):
-
-    e = Categoria.objects.filter(sensible=False).first()
-    if e is None:
-        raise EnvironmentError("Debe exisitr una categoría no sensible")
-    return redirect('resultados-categoria', args=[e.id])
-
-
 class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
     """
     Vista principal para el cálculo de resultados
     """
 
     template_name = "elecciones/resultados.html"
+
+    def dispatch(self, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            return redirect('resultados-categoria', pk=Categoria.objects.first().id)
+        return super().dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         nivel_de_agregacion = None
@@ -231,4 +228,74 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
 
         context['categorias'] = categorias.order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('numero')
+        return context
+
+
+class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
+    """
+    Vista principal avance de carga de actas.
+    """
+
+    template_name = "elecciones/avance_carga.html"
+
+    def dispatch(self, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            return redirect('avance-carga', pk=Categoria.objects.first().id)
+        return super().dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+
+        nivel_de_agregacion = None
+        ids_a_considerar = None
+        for nivel in ['mesa', 'lugar_de_votacion', 'circuito', 'seccion', 'seccion_politica', 'distrito']:
+            if nivel in self.request.GET:
+                nivel_de_agregacion = nivel
+                ids_a_considerar = self.request.GET.getlist(nivel)
+
+        self.sumarizador = AvanceDeCarga(nivel_de_agregacion, ids_a_considerar)
+        return super().get(request, *args, **kwargs)
+
+    def get_template_names(self):
+        return [self.kwargs.get("template_name", self.template_name)]
+
+    def get_resultados(self, categoria):
+        return self.sumarizador.get_resultados(categoria)
+
+    def get_tipo_de_agregacion(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('tipoDeAgregacion', Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas)
+
+    def get_opciones_a_considerar(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
+
+    def get_tecnica_de_proyeccion(self):
+        return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
+
+    def get_tecnicas_de_proyeccion(self):
+        return [settings.SIN_PROYECCION] + [(str(tecnica.id), tecnica.nombre)
+                                            for tecnica in Proyecciones.tecnicas_de_proyeccion()]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if self.sumarizador.filtros:
+            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.sumarizador.filtros], " y ")
+        else:
+            context['para'] = 'todo el país'
+
+        pk = self.kwargs.get('pk')
+
+        categoria = get_object_or_404(Categoria, id=pk)
+        context['object'] = categoria
+        context['categoria_id'] = categoria.id
+        context['resultados'] = self.get_resultados(categoria)
+
+        # Para el cálculo se filtran categorías activas que estén relacionadas
+        # a las mesas.
+        mesas = self.sumarizador.mesas(categoria)
+        context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
+        context['distritos'] = Distrito.objects.all().order_by('nombre')
+
         return context

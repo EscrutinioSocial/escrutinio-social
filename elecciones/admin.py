@@ -21,6 +21,7 @@ from .models import (
     AgrupacionCircuitos,
     AgrupacionCircuito,
 )
+from .forms import CategoriaForm, SeccionForm
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
 
@@ -206,12 +207,20 @@ class SeccionPoliticaAdmin(admin.ModelAdmin):
 
 class SeccionAdmin(admin.ModelAdmin):
     list_display = ['numero', 'nombre', 'distrito', 'seccion_politica']
-
     search_fields = (
         'nombre',
         'numero',
     )
-
+    form = SeccionForm
+    fieldsets = (
+        (None, {
+            'fields': ('distrito', 'seccion_politica', 'numero', 'nombre', 'electores', 'proyeccion_ponderada')
+        }),
+        ('Prioridades', {
+            'fields': ('prioridad_hasta_2', 'prioridad_2_a_10', 'prioridad_10_a_100', 'cantidad_minima_prioridad_hasta_2'),
+            'classes': ['wide']
+        }),
+    )
 
 class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = [
@@ -241,6 +250,7 @@ class CategoriaAdmin(admin.ModelAdmin):
     list_display = ['nombre', 'activa', 'color', 'back_color']
     search_fields = ['nombre']
     list_filter = ['activa']
+    form = CategoriaForm
 
 
 class CategoriaOpcionAdmin(admin.ModelAdmin):

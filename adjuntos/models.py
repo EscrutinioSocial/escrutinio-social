@@ -164,7 +164,7 @@ class Attachment(TimeStampedModel):
 
         self.pre_identificacion = PreIdentificacion.objects.create(
             fiscal = self.subido_por,
-            distrito = self.subido_por.seccion.distrito if self.subido_por.seccion else None,
+            distrito = self.subido_por.seccion.distrito if self.subido_por.seccion else self.subido_por.distrito,
             seccion = self.subido_por.seccion
         )
 
@@ -178,14 +178,14 @@ class Attachment(TimeStampedModel):
         """
         if self.foto and not self.foto_digest:
             # FIXME
-            # sólo se calcula el digest cuando no hay uno previo.
+            # Sólo se calcula el digest cuando no hay uno previo.
             # esto impide recalcular el digest si eventualmente cambia
             # la imagen por algun motivo
             # Mejor seria verificar con un MonitorField si la foto cambió
             # y sólo en ese caso actualizar el hash.
             self.foto.file.open()
             self.foto_digest = hash_file(self.foto.file)
-            self.crear_pre_identificacion_si_corresponde()
+        self.crear_pre_identificacion_si_corresponde()
         super().save(*args, **kwargs)
 
     @classmethod
@@ -268,7 +268,7 @@ class Identificacion(TimeStampedModel):
 
     fiscal = models.ForeignKey('fiscales.Fiscal', blank=True, on_delete=models.CASCADE)
     mesa = models.ForeignKey(
-        'elecciones.Mesa', null=True, blank=True, on_delete=models.SET_NULL
+        'elecciones.Mesa', related_name='identificaciones', null=True, blank=True, on_delete=models.SET_NULL
     )
     attachment = models.ForeignKey(
         Attachment, related_name='identificaciones', on_delete=models.CASCADE

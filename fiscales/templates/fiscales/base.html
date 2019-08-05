@@ -65,14 +65,19 @@
 
 <li></li>
 
-{% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_staff %}
+{% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_superuser %}
 <li>
-    <a href="{% url "resultados-primera-categoria" %}" class="collapsible-header"
+    <a href="{% url "avance-carga" %}" class="collapsible-header"
+        data-turbolinks="false">Avance de carga<i class="material-icons">insert_chart</i></a>
+</li>
+
+<li>
+    <a href="{% url "resultados-categoria" %}" class="collapsible-header"
         data-turbolinks="false">Resultados<i class="material-icons">insert_chart</i></a>
 </li>
 
 <li>
-    <a href="{% url "resultados-primera-categoria" %}?proyectado=✓" target="_blank" class="collapsible-header"
+    <a href="{% url "resultados-categoria" %}?proyectado=✓" target="_blank" class="collapsible-header"
         data-turbolinks="false">Proyección<i class="material-icons">pie_chart</i></a>
 </li>
 {% endif %}

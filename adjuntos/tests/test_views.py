@@ -146,6 +146,48 @@ def test_preidentificacion_create_view_post(fiscal_client):
     assert pre_identificacion.seccion == mesa_1.circuito.seccion
     assert pre_identificacion.distrito == mesa_1.circuito.seccion.distrito
 
+def test_preidentificacion_seccion_y_distrito_create_view_post(fiscal_client):
+    content = open('adjuntos/tests/acta.jpg','rb')
+    file = SimpleUploadedFile('acta.jpg', content.read(), content_type="image/jpeg")
+
+    mesa_1 = MesaFactory()
+    data = {
+        'file_field': (file,),
+        'seccion': mesa_1.circuito.seccion.id,
+        'distrito': mesa_1.circuito.seccion.distrito.id,
+    }
+    response = fiscal_client.post(reverse('agregar-adjuntos'), data)
+    assert response.status_code == HTTPStatus.FOUND
+
+    attachment = Attachment.objects.all().first()
+
+    assert attachment.pre_identificacion is not None
+    assert attachment.status == Attachment.STATUS.sin_identificar
+
+    pre_identificacion = attachment.pre_identificacion
+    assert pre_identificacion.seccion == mesa_1.circuito.seccion
+    assert pre_identificacion.distrito == mesa_1.circuito.seccion.distrito
+
+def test_preidentificacion_solo_distrito_create_view_post(fiscal_client):
+    content = open('adjuntos/tests/acta.jpg','rb')
+    file = SimpleUploadedFile('acta.jpg', content.read(), content_type="image/jpeg")
+
+    mesa_1 = MesaFactory()
+    data = {
+        'file_field': (file,),
+        'distrito': mesa_1.circuito.seccion.distrito.id,
+    }
+    response = fiscal_client.post(reverse('agregar-adjuntos'), data)
+    assert response.status_code == HTTPStatus.FOUND
+
+    attachment = Attachment.objects.all().first()
+
+    assert attachment.pre_identificacion is not None
+    assert attachment.status == Attachment.STATUS.sin_identificar
+
+    pre_identificacion = attachment.pre_identificacion
+    assert pre_identificacion.distrito == mesa_1.circuito.seccion.distrito
+
 
 def test_preidentificacion_sin_datos(fiscal_client):
     content = open('adjuntos/tests/acta.jpg','rb')
