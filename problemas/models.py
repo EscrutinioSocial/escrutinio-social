@@ -11,23 +11,19 @@ class ReporteDeProblema(TimeStampedModel):
 
     TIPOS_DE_PROBLEMA = Choices(
         ('spam', 'La foto no es ni de un acta ni de un certificado. Parece subida maliciosamente.'),
-        ('invalida', 'Falla alguna validación del sistema que no debería fallar.'),
         ('ilegible', 'La foto es de un acta pero no la puedo leer con claridad.'),
         ('falta_foto', 'La parte que es necesario cargar no está entre las fotos presentes.'),
         ('falta_identificador', 'El sistema no tiene la sección, circuito o mesa. Indicá el dato faltante en la descripción.' ),
         ('falta_lista', ("El sistema no tiene una de las opciones que aparecen en el acta o"
                          "certificado. Indicá el dato faltante en la descripción.")
         ),
-        ('otro', 'Si el problema no encaja en ninguna de las anteriores; describilo en la descripción.')
+        ('otro', 'El problema no encaja en ninguna de las anteriores; describilo en la descripción.')
     )
 
-    # Inválidas: si la información que contiene no puede cargarse de acuerdo a las validaciones del sistema.
-    #     Es decir, cuando el acta viene con un error de validación en la propia acta o la foto no contiene
-    #     todos los datos de identificación.
     # Spam: cuando no corresponde a un acta de escrutinio, o se sospecha que es con un objetivo malicioso.
     # Ilegible: es un acta, pero la parte pertinente de la información no se puede leer.
     # Falta foto: la parte que es necesario cargar no está entre las fotos presentes.
-    # Falta identificador: Es genérico para señalar
+    # Falta identificador: Es genérico para señalar la ausencia de una opción de localización de la mesa.
 
     tipo_de_problema = models.CharField(max_length=100, null=True, blank=False,
                                         choices=TIPOS_DE_PROBLEMA,
