@@ -2,8 +2,6 @@ from functools import partial
 from django import forms
 from django.forms import modelformset_factory, BaseModelFormSet
 from material import Layout, Row, Fieldset
-from .models import Fiscal
-from elecciones.models import VotoMesaReportado, Categoria, Opcion, Distrito
 from localflavor.ar.forms import ARDNIField
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
@@ -14,7 +12,12 @@ from django.utils import timezone
 from django.conf import settings
 from django.utils.html import format_html
 
+from dal import autocomplete
+
 import phonenumbers
+
+from .models import Fiscal
+from elecciones.models import VotoMesaReportado, Categoria, Opcion, Distrito, Seccion
 
 
 class AuthenticationFormCustomError(AuthenticationForm):
@@ -147,17 +150,21 @@ class QuieroSerFiscalForm(forms.Form):
     distrito = forms.ModelChoiceField(
         required=True,
         label='Provincia',
-        queryset=Distrito.objects.all().order_by('nombre')
+        queryset=Distrito.objects.all().order_by('numero'),
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-distrito-simple',
+        ),
     )
 
-    seccion_autocomplete = forms.CharField(label="Departamento o Municipio",
-                                           widget=forms.TextInput(attrs={
-                                               'class': 'autocomplete',
-                                               'id': 'seccion-autocomplete',
-                                               'autocomplete': 'off',
-                                               'required': True,
-                                           }))
-    seccion = forms.CharField(widget=forms.HiddenInput(attrs={'id': 'seccion', 'name': 'seccion'}))
+    seccion = forms.ModelChoiceField(
+        queryset=Seccion.objects.all(),
+        required=False,
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-seccion-simple',
+            forward=['distrito']
+        ),
+    )
+    
     referente_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
     referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
 
@@ -184,7 +191,7 @@ class QuieroSerFiscalForm(forms.Form):
             Row('nombres', 'apellido', 'dni'),
             Row('email', 'email_confirmacion'),
             Row('password', 'password_confirmacion'),
-            Row('distrito', 'seccion_autocomplete')
+            Row('distrito', 'seccion')
         ),
         Fieldset(
             'Teléfono celular',

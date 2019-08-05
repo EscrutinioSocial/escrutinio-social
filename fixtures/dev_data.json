@@ -386,6 +386,16 @@
   }
 },
 {
+  "model": "elecciones.distrito",
+  "pk": 2,
+  "fields": {
+    "numero": "2",
+    "nombre": "Otro",
+    "electores": 0,
+    "prioridad": 0
+  }
+},
+{
   "model": "elecciones.seccion",
   "pk": 1,
   "fields": {
@@ -415,6 +425,32 @@
     "prioridad_2_a_10": null,
     "prioridad_10_a_100": null,
     "cantidad_minima_prioridad_hasta_2": null
+  }
+},
+{
+  "model": "elecciones.seccion",
+  "pk": 3,
+  "fields": {
+    "distrito": 2,
+    "seccion_politica": null,
+    "numero": "3",
+    "nombre": "Tres Cruces",
+    "electores": 0,
+    "proyeccion_ponderada": false,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.seccion",
+  "pk": 4,
+  "fields": {
+    "distrito": 2,
+    "seccion_politica": null,
+    "numero": "4",
+    "nombre": "Cuatro Vientos",
+    "electores": 0,
+    "proyeccion_ponderada": false,
+    "prioridad": 0
   }
 },
 {
@@ -462,6 +498,54 @@
     "numero": "4",
     "nombre": "Circuito 2.4",
     "electores": 180,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 5,
+  "fields": {
+    "seccion": 3,
+    "localidad_cabecera": "Trencitos",
+    "numero": "1",
+    "nombre": "Uno Tres",
+    "electores": 0,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 6,
+  "fields": {
+    "seccion": 3,
+    "localidad_cabecera": "Dumesnil",
+    "numero": "2",
+    "nombre": "Docemil",
+    "electores": 0,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 7,
+  "fields": {
+    "seccion": 4,
+    "localidad_cabecera": "Ventosa",
+    "numero": "3",
+    "nombre": "Cuatrero",
+    "electores": 0,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.circuito",
+  "pk": 8,
+  "fields": {
+    "seccion": 4,
+    "localidad_cabecera": "Cualunqueful",
+    "numero": "4",
+    "nombre": "Cualenquef\u00fa",
+    "electores": 0,
     "prioridad": 0
   }
 },
@@ -860,6 +944,45 @@
     "lugar_votacion": 8,
     "url": "",
     "electores": 90,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 9,
+  "fields": {
+    "numero": "1",
+    "es_testigo": false,
+    "circuito": 5,
+    "lugar_votacion": 1,
+    "url": "",
+    "electores": null,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 10,
+  "fields": {
+    "numero": "2",
+    "es_testigo": false,
+    "circuito": 6,
+    "lugar_votacion": 1,
+    "url": "",
+    "electores": null,
+    "prioridad": 0
+  }
+},
+{
+  "model": "elecciones.mesa",
+  "pk": 11,
+  "fields": {
+    "numero": "2",
+    "es_testigo": false,
+    "circuito": 7,
+    "lugar_votacion": 1,
+    "url": "",
+    "electores": null,
     "prioridad": 0
   }
 },
