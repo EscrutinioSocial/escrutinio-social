@@ -97,6 +97,22 @@ def test_resultados_pide_visualizador(db, fiscal_client, admin_user, url_resulta
     assert response.status_code == 403          # permission denied
 
 
+def test_doble_login(db, setup_groups, client):
+    u = UserFactory()
+    FiscalFactory(user=u)
+    g_validadores = Group.objects.get(name='validadores')
+    u.groups.add(g_validadores)
+
+    client.login(username=u.username, password='password')
+    response = client.get('/')
+    assert response.status_code == 302
+
+    # No debería dejar entrar la segunda.
+    client.login(username=u.username, password='password')
+    response = client.get('/')
+    assert response.status_code == 200
+
+
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
     # implicitamente está creada la categoria default que tiene todo el padron
@@ -738,6 +754,7 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
     response = client.get(url_resultados, {'distrito': 1})
     assert response.status_code == 200
 
+    client.logout()
     # El usuario validador intenta cargar un acta, sí debería poder
     client.login(username=u_validador.username, password='password')
     response = client.get(reverse('siguiente-accion'))
@@ -769,6 +786,8 @@ def test_categorias_sensible(setup_groups, client):
     # Sí debería poder ver resultados.
     response = client.get(c_url)
     assert response.status_code == 200
+
+    client.logout()
 
     # El usuario visualizador sensible puede ver resultado sensible.
     client.login(username=u_visualizador_sensible.username, password='password')

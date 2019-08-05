@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.contrib.sessions.models import Session
 from django.contrib.auth import logout
-
+from django.shortcuts import render
 
 
 class OneSessionPerUserMiddleware:
