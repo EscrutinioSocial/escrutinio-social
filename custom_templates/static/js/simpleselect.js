@@ -36,6 +36,9 @@ function initializeSimpleSelect(field,base_url,fwd){
 
 function updateField(field,base_url,forward){
     var nro = $("#"+field+"_input").val();
+    if (isFinite(nro)){
+	nro = parseInt(nro);
+    }
     function get_val(field){return $("#id_"+field).val()}
     var params = forward.reduce((obj, x) => (obj[x] = get_val(x), obj),{});
     var url = base_url+'?q='+nro+'&forward='+JSON.stringify(params);
