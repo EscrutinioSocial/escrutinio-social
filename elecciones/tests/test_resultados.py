@@ -422,11 +422,10 @@ def test_resultados_proyectados_simple(carta_marina, tecnica_proyeccion, fiscal_
     )
 
     positivos = response.context['resultados'].tabla_positivos()
-    print(positivos)
-    assert positivos[o1.partido]['votos'] == 296 # = 40 *440/100 + 30 * 360 / 90
-    assert positivos[o2.partido]['votos'] == 292 # = 30 *440/100 + 40 * 360 / 90
-    assert positivos[o1.partido]['porcentaje_positivos'] == '50.34' # = 296 / (296+292)
-    assert positivos[o2.partido]['porcentaje_positivos'] == '49.66' # = 292 / (296+292)
+    assert positivos[o1.partido]['votos'] == 296  # = 40 *440/100 + 30 * 360 / 90
+    assert positivos[o2.partido]['votos'] == 292  # = 30 *440/100 + 40 * 360 / 90
+    assert positivos[o1.partido]['porcentaje_positivos'] == '50.34'  # = 296 / (296+292)
+    assert positivos[o2.partido]['porcentaje_positivos'] == '49.66'  # = 292 / (296+292)
 
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
