@@ -21,6 +21,16 @@ class OneSessionPerUserMiddleware:
                 logout(request)
                 return render(request, 'fiscales/sesion-expirada.html')
 
+            # Me fijo si hay que actualizarle el last_seen
+            last_seen = request.session.get(self.LAST_SEEN_KEY)
+            ahora = timezone.now()
+            timeout = last_seen + \
+                timedelta(seconds=settings.LAST_SEEN_UPDATE_INTERVAL) if last_seen else None
+
+            if not last_seen or ahora > timeout:
+                # Me actualizo el last_seen en la bd.
+                fiscal.update_last_seen(ahora)
+
         response = self.get_response(request)
 
         return response

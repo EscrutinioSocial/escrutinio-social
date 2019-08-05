@@ -12,6 +12,11 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='fiscal',
+            name='last_seen',
+            field=models.DateTimeField(null=True, blank=True),
+        ),
+        migrations.AddField(
+            model_name='fiscal',
             name='session_key',
             field=models.CharField(blank=True, max_length=32, null=True),
         ),

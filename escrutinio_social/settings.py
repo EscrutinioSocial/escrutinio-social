@@ -339,13 +339,13 @@ OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
+# Cada cuanto tiempo actualizar el campo last_seen de un Fiscal.
+LAST_SEEN_UPDATE_INTERVAL = 2*60  # en segundos.
 
-SESSION_COOKIE_AGE = 10 * 60  # Si pasás este tiempo sin hacer un request, te desloguea
-SESSION_SAVE_EVERY_REQUEST = True
+# Cuando expira una sesión.
+SESSION_TIMEOUT = 10*60  # en segundos.
 
-
-
-# Flag para decidir si las categoríaas pertenecientes a totales de los CSV tienen que estar completas.
+# Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
 # Ver csv_import.py
 OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 
