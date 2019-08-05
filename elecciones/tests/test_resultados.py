@@ -97,22 +97,6 @@ def test_resultados_pide_visualizador(db, fiscal_client, admin_user, url_resulta
     assert response.status_code == 403          # permission denied
 
 
-def test_doble_login(db, setup_groups, client):
-    u = UserFactory()
-    FiscalFactory(user=u)
-    g_validadores = Group.objects.get(name='validadores')
-    u.groups.add(g_validadores)
-
-    client.login(username=u.username, password='password')
-    response = client.get('/')
-    assert response.status_code == 302
-
-    # No debería dejar entrar la segunda.
-    client.login(username=u.username, password='password')
-    response = client.get('/')
-    assert response.status_code == 200
-
-
 def test_total_electores_en_categoria(carta_marina):
     # la sumatoria de todas las mesas de la categoria
     # implicitamente está creada la categoria default que tiene todo el padron
