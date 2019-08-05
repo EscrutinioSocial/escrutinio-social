@@ -537,7 +537,7 @@ class SeccionListView(AjaxListView):
         if ident is not None:
             return qs.filter(id=ident)
         if self.q:
-            lookups = Q(nombre__istartswith=self.q) | Q(numero__istartswith=self.q)
+            lookups = Q(numero__iexact=self.q)            
         if distrito:
             lookups &= Q(distrito_id=distrito)
         mesa = self.forwarded.get('mesa',None)
@@ -557,7 +557,7 @@ class CircuitoListView(AjaxListView):
         if ident is not None:
             return qs.filter(id=ident)
         if self.q:
-            lookups = Q(nombre__istartswith=self.q) | Q(numero__istartswith=self.q)
+            lookups = Q(numero__iexact=self.q)
         seccion = self.forwarded.get('seccion',None)
         if seccion and seccion != "-1":
             lookups &= Q(seccion_id=seccion)
@@ -584,7 +584,7 @@ class MesaListView(AjaxListView):
         qs = Mesa.objects.all()
         lookups = Q()
         if self.q:
-            lookups &= Q(numero=self.q)
+            lookups &= Q(numero__iexact=self.q)
         circuito = self.forwarded.get('circuito',None)
         if circuito and circuito != "-1":
             lookups &= Q(circuito_id=circuito)

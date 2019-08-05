@@ -1,5 +1,10 @@
-function displayResult(field,value,options){
-    var op = value;
+/*
+Esta función simplemente setea los valores y textos correspondiente de
+los inputs asociados al campo. Si hay una única opción válida se usan
+esos valores.
+*/
+function displayResult(field,default_value,options){
+    var op = default_value;
     var val = "-1";
     var txt = "";
     if(options.length==1){
@@ -24,6 +29,10 @@ function displayResult(field,value,options){
     }
 }
 
+/*
+Inicialización de los inputs asociados a un campo. Tomamos el id del
+objeto del input "#id_field".
+*/
 function initializeSimpleSelect(field,base_url,fwd){
     var value = $("#id_"+field).val();
     if(isFinite(value) && value != "-1") {
@@ -40,7 +49,6 @@ function initializeSimpleSelect(field,base_url,fwd){
     }
 }
 
-
 function updateFieldUrl(field,url,params){
     var url = url+'?forward='+JSON.stringify(params);
     $.ajax({
@@ -52,7 +60,17 @@ function updateFieldUrl(field,url,params){
     });
 }
 
-function updateField(field,base_url,forward){
+/*
+Dado un nombre de campo y una URL hacemos la petición AJAX para
+obtener las opciones posibles para ese campo; el parámetro `forward`
+toma una lista de diccionarios de campos relacionados que pasamos en
+la petición. Finalmente, `on_after` es una función que se llama luego
+de mostrar los resultados.
+
+TODO: filtrar los parámetros de `forward` que usamos para no 
+tener que hacer chequeos en la vista de django. 
+*/
+function updateField(field,base_url,forward,on_after=null){
     var nro = $("#"+field+"_input").val();
     if (isFinite(nro)){
 	nro = parseInt(nro);
@@ -66,6 +84,8 @@ function updateField(field,base_url,forward){
     }).then(function (data) {
 	options = data['results'];
 	displayResult(field,nro,options);
-	return true;
+	if(on_after){
+	    on_after();
+	}
     });
 }

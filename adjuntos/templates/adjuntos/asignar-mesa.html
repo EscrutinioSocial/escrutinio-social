@@ -11,12 +11,15 @@
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script src="{% static 'js/simpleselect.js' %}"></script>
 <script>
+  /*
+   
+   */
   function cambioMesa(){
       var mesa = $('#id_mesa').val();
       var circuito = $('#id_circuito').val();
       var seccion = $('#id_seccion').val();
       if(mesa != "-1"){
-	  var params = {'mesa':mesa,'desdeMesa':'1'};
+	  var params = {'mesa': mesa, 'desdeMesa': '1'};
 	  if(circuito == "-1"){
 	      updateFieldUrl('circuito',"{% url 'autocomplete-circuito' %}",params);
 	  }
@@ -169,12 +172,7 @@ $(document).ready(function() {
 {{ block.super }}
 <script type="text/javascript">
   $(document).ready(function(){
-      $('#distrito_input').attr('tabindex', 1);
-      $('#seccion_input').attr('tabindex', 2);
-      $('#circuito_input').attr('tabindex', 3);
-      $('#mesa_input').attr('tabindex', 4);
       $('.modal').modal();
-      const forward = ['distrito', 'seccion', 'circuito', 'mesa']
       initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
       initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
       initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
@@ -205,9 +203,14 @@ $(document).ready(function() {
 	      'mesa',
 	      "{% url 'autocomplete-mesa' %}",
 	      ['distrito','seccion','circuito'],
+	      cambioMesa
 	  );
-	  cambioMesa();
       });
+      $('#distrito_input').attr('tabindex', 1);
+      $('#seccion_input').attr('tabindex', 2);
+      $('#circuito_input').attr('tabindex', 3);
+      $('#mesa_input').attr('tabindex', 4);
+      $('#distrito_input').focus();
   });
 </script>
 

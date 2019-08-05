@@ -15,9 +15,9 @@
 	   {% if bound_field.value != None %} value=" " {% endif %} />
   </div>
   <div class="input-field col s9 inline" >
-    <input id="{{bound_field.name}}-resultado" readonly class="resultado-select">
+    <input id="{{bound_field.name}}-resultado" readonly class="resultado-select" tabindex="-1">
     {# We may put some icon to be more explicit about the outcome of the query #}
-    {#  <i class="material-icons suffix" id="{{widget_name}}-icon"></i> #}
+    {#  <i class="material-icons suffix"></i> #}
   </div>
   {% endpart %}
   {% part field help_text %}{% if field.help_text %}
