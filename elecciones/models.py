@@ -88,13 +88,6 @@ class Seccion(models.Model):
     numero = models.CharField(null=True, max_length=10, db_index=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
-    proyeccion_ponderada = models.BooleanField(
-        default=False,
-        help_text=(
-            'Si está marcado, el cálculo de proyeccion se agrupará '
-            'por circuitos para esta sección'
-        )
-    )
     # esta es la prioridad del "viejo" modelo de scheduling, está deprecada a la espera del refactor
     # que permita borrarla
     prioridad = models.PositiveIntegerField(
