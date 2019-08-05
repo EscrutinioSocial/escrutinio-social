@@ -10,6 +10,22 @@
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script src="{% static 'js/simpleselect.js' %}"></script>
+<script>
+  function cambioMesa(){
+      var mesa = $('#id_mesa').val();
+      var circuito = $('#id_circuito').val();
+      var seccion = $('#id_seccion').val();
+      if(mesa != "-1"){
+	  var params = {'mesa':mesa,'desdeMesa':'1'};
+	  if(circuito == "-1"){
+	      updateFieldUrl('circuito',"{% url 'autocomplete-circuito' %}",params);
+	  }
+	  if(seccion == "-1"){
+	      updateFieldUrl('seccion', "{% url 'autocomplete-seccion' %}",params);
+	  }
+      }
+  }
+</script>
 {% block extrajs %}{% endblock %}
 {% endblock %}
 
@@ -162,27 +178,32 @@ $(document).ready(function() {
 	  updateField(
 	      'distrito',
 	      "{% url 'autocomplete-distrito' %}",
-	      []
+	      [],
+	      null
 	  );
       });
       $('#seccion_input').on('blur',function(e){
 	  updateField(
 	      'seccion',
 	      "{% url 'autocomplete-seccion' %}",
-	      ['distrito']
+	      ['distrito'],
+	      null
 	  )});
       $('#circuito_input').on('blur',function(e){
 	  updateField(
 	      'circuito',
 	      "{% url 'autocomplete-circuito' %}",
-	      ['distrito','seccion']
+	      ['distrito','seccion'],
+	      null
 	  )});
       $('#mesa_input').on('blur',function(e){
 	  updateField(
 	      'mesa',
 	      "{% url 'autocomplete-mesa' %}",
-	      ['distrito','seccion','circuito']
-	  )});
+	      ['distrito','seccion','circuito'],
+	  );
+	  cambioMesa();
+      });
   });
 </script>
 

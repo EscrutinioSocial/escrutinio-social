@@ -543,7 +543,7 @@ class SeccionListView(AjaxListView):
         mesa = self.forwarded.get('mesa',None)
         desdeMesa = self.forwarded.get('desdeMesa',None)
         if mesa and desdeMesa:
-            mesas = Mesa.objects.filter(numero=mesa).values('circuito__seccion_id')
+            mesas = Mesa.objects.filter(id=mesa).values('circuito__seccion_id')
             lookups &= Q(id__in=mesas)
         return qs.filter(lookups)
 
@@ -559,7 +559,7 @@ class CircuitoListView(AjaxListView):
         if self.q:
             lookups = Q(nombre__istartswith=self.q) | Q(numero__istartswith=self.q)
         seccion = self.forwarded.get('seccion',None)
-        if seccion:
+        if seccion and seccion != "-1":
             lookups &= Q(seccion_id=seccion)
         distrito = self.forwarded.get('distrito',None)
         if distrito:
@@ -567,7 +567,7 @@ class CircuitoListView(AjaxListView):
         mesa = self.forwarded.get('mesa',None)
         desdeMesa = self.forwarded.get('desdeMesa',None)
         if mesa and desdeMesa:
-            mesas = Mesa.objects.filter(numero=mesa).values('circuito_id')
+            mesas = Mesa.objects.filter(id=mesa).values('circuito_id')
             lookups &= Q(id__in=mesas)
         return qs.filter(lookups)
 

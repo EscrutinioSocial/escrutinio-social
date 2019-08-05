@@ -16,11 +16,17 @@ function displayResult(field,value,options){
     $("#"+field+"-resultado").val(op);
     $("#id_"+field).val(val);
     $("#"+field+"_input").val(txt);
+    if (txt != "") {
+	$($('label[for='+field+'_input]')[0]).addClass("active");
+    }
+    else {
+	$($('label[for='+field+'_input]')[0]).removeClass("active");
+    }
 }
 
 function initializeSimpleSelect(field,base_url,fwd){
     var value = $("#id_"+field).val();
-    if(isFinite(value)) {
+    if(isFinite(value) && value != "-1") {
 	var url = base_url+'?ident='+value;
 	$.ajax({
       	    type: 'GET',
@@ -32,6 +38,18 @@ function initializeSimpleSelect(field,base_url,fwd){
 	    }
 	});
     }
+}
+
+
+function updateFieldUrl(field,url,params){
+    var url = url+'?forward='+JSON.stringify(params);
+    $.ajax({
+      	type: 'GET',
+      	url: url
+    }).then(function (data) {
+	options = data['results'];
+	displayResult(field,"",options);
+    });
 }
 
 function updateField(field,base_url,forward){
@@ -48,6 +66,6 @@ function updateField(field,base_url,forward){
     }).then(function (data) {
 	options = data['results'];
 	displayResult(field,nro,options);
+	return true;
     });
 }
-
