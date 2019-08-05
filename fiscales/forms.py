@@ -9,6 +9,10 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import ValidationError, MinLengthValidator, MaxLengthValidator
 from django.contrib.auth import password_validation
+from datetime import timedelta
+from django.utils import timezone
+from django.conf import settings
+from django.utils.html import format_html
 
 import phonenumbers
 
@@ -22,10 +26,28 @@ class AuthenticationFormCustomError(AuthenticationForm):
         'inactive':
         _("This account is inactive."),
     }
+    already_logged_message = (
+        format_html('Ya hay un usuario sesionado/a con esta cuenta. Si sos vos mismo/a esperá '
+        f'{int(settings.SESSION_TIMEOUT / 60)} minutos y volvé a intentarlo. '
+        'También podés probar <a href="/logout">cerrando sesión</a>.')
+    )
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].label = 'Nombre de usuario o DNI'
+
+    def confirm_login_allowed(self, user):
+        session_existente = user.fiscal.session_key
+        last_seen = user.fiscal.last_seen
+        ahora = timezone.now()
+        timeout = last_seen + timedelta(seconds=settings.SESSION_TIMEOUT) if last_seen else None
+        if session_existente and last_seen and ahora < timeout:
+            raise forms.ValidationError(
+                _(self.already_logged_message),
+                code='already_logged'
+            )
+        return super().confirm_login_allowed(user)
 
 
 def opciones_actuales():
@@ -85,10 +107,10 @@ class FiscalxDNI(forms.ModelForm):
 
 class QuieroSerFiscalForm(forms.Form):
 
-    MENSAJE_ERROR_CODIGO_REF = 'Codigo de referido debe ser de 4 letras y/o números'
-    MENSAJE_ERROR_TELEFONO_INVALIDO = 'Teléfono no es válido. Chequeá código de área y teléfono local'
-    MENSAJE_ERROR_DNI_REPETIDO = 'Ya se encuentra un usuario registrado con ese dni'
-    MENSAJE_ERROR_PASSWORD_NO_IGUALES = "Las contraseñas no coinciden"
+    MENSAJE_ERROR_CODIGO_REF = 'Codigo de referido debe ser de 4 letras y/o números.'
+    MENSAJE_ERROR_TELEFONO_INVALIDO = 'Teléfono no es válido. Chequeá código de área y teléfono.'
+    MENSAJE_ERROR_DNI_REPETIDO = 'Ya se encuentra un usuario registrado con ese DNI.'
+    MENSAJE_ERROR_PASSWORD_NO_IGUALES = "Las contraseñas no coinciden."
 
     CARACTERES_REF_CODIGO = 4
     CANTIDAD_DIGITOS_NUMERACION_ARGENTINA = 10
@@ -125,7 +147,7 @@ class QuieroSerFiscalForm(forms.Form):
     distrito = forms.ModelChoiceField(
         required=True,
         label='Provincia',
-        queryset=Distrito.objects.all().order_by('numero')
+        queryset=Distrito.objects.all().order_by('nombre')
     )
 
     seccion_autocomplete = forms.CharField(label="Departamento o Municipio",

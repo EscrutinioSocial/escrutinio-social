@@ -23,7 +23,14 @@
   -moz-appearance: none;
   text-indent: 1px;
   text-overflow: '';
-  text-align: right;
+  padding: 0;
+  height: 2rem;
+  text-align-last: right;
+
+}
+
+.carga-acta-inline > dmc-select select > option {
+  direction: rtl;
 }
 
 .carga-acta-inline > dmc-select select::-ms-expand {
@@ -41,6 +48,15 @@
 
 .carga-acta-inline .row .col {
   padding: 0 .1rem;
+}
+
+.carga-acta-inline .input-field {
+  margin-top: 0;
+}
+
+.carga-acta-inline .input-field > input {
+  margin: 0;
+  height: 2rem;
 }
 
 .card-content {

@@ -64,14 +64,15 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # nuestras apps
+    'fiscales.apps.FiscalesAppConfig',  # Hay que ponerlo así para que cargue el app_ready()
     'elecciones.apps.EleccionesAppConfig',
-    'fiscales',
     'adjuntos',
     'problemas',
     'contacto',
-    'antitrolling',
     'api',
+    'antitrolling',
     'scheduling'
+
 ]
 
 MIDDLEWARE = [
@@ -82,6 +83,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'fiscales.middleware.OneSessionPerUserMiddleware'
 ]
 
 ROOT_URLCONF = 'escrutinio_social.urls'
@@ -318,9 +320,9 @@ MESA_TAKE_WAIT_TIME = 2  # En minutos
 # Prioridades standard, a usar si no se definen prioridades específicas
 # para una categoría o circuito
 PRIORIDADES_STANDARD_SECCION = [
-    {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 2},
-    {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 20},
-    {'desde_proporcion': 10, 'hasta_proporcion': 100, 'prioridad': 100},
+    {'desde_proporcion': 0, 'hasta_proporcion': 2, 'prioridad': 4},
+    {'desde_proporcion': 2, 'hasta_proporcion': 10, 'prioridad': 40},
+    {'desde_proporcion': 10, 'hasta_proporcion': 100, 'prioridad': 200},
 ]
 PRIORIDADES_STANDARD_CATEGORIA = [
     {'desde_proporcion': 0, 'hasta_proporcion': 100, 'prioridad': 100},
@@ -336,6 +338,12 @@ OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'vo
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None, 'codigo': '10001'}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
+
+# Cada cuanto tiempo actualizar el campo last_seen de un Fiscal.
+LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
+
+# Cuando expira una sesión.
+SESSION_TIMEOUT = 5 * 60  # en segundos.
 
 # Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
 # Ver csv_import.py
