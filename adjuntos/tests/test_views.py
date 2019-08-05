@@ -134,7 +134,7 @@ def test_preidentificacion_create_view_post(fiscal_client):
         'distrito': mesa_1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('agregar-adjuntos'), data)
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.FOUND
 
     attachment = Attachment.objects.all().first()
 
@@ -157,7 +157,7 @@ def test_preidentificacion_seccion_y_distrito_create_view_post(fiscal_client):
         'distrito': mesa_1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('agregar-adjuntos'), data)
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.FOUND
 
     attachment = Attachment.objects.all().first()
 
@@ -178,7 +178,7 @@ def test_preidentificacion_solo_distrito_create_view_post(fiscal_client):
         'distrito': mesa_1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('agregar-adjuntos'), data)
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.FOUND
 
     attachment = Attachment.objects.all().first()
 
@@ -206,7 +206,6 @@ def test_preidentificacion_sin_datos(fiscal_client):
 
 
 def test_preidentificacion_con_datos_de_fiscal(fiscal_client):
-    content = open('adjuntos/tests/acta.jpg','rb')
     mesa = MesaFactory()
     seccion = mesa.circuito.seccion
 
@@ -215,9 +214,8 @@ def test_preidentificacion_con_datos_de_fiscal(fiscal_client):
     fiscal.seccion = seccion
     fiscal.save()
     fiscal.refresh_from_db()
-
-    distrito_preset = f"presetOption('id_distrito','{seccion.distrito}','{seccion.distrito.id}');"
-    seccion_preset =  f"presetOption('id_seccion','{seccion}','{seccion.id}');"
+    distrito_preset = f'<input id="id_distrito" name="distrito" type="hidden" tabindex="-1" value="{seccion.distrito.id}"/>'
+    seccion_preset =  f'<input id="id_seccion" name="seccion" type="hidden" tabindex="-1" value="{seccion.id}"/>'
 
     response = fiscal_client.get(reverse('agregar-adjuntos'))
     content = response.content.decode('utf8')

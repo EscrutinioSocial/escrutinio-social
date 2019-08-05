@@ -373,7 +373,6 @@
     "numero": "1",
     "nombre": "Secci\u00f3n 1",
     "electores": 440,
-    "proyeccion_ponderada": false,
     "prioridad": 0
   }
 },
@@ -386,7 +385,6 @@
     "numero": "2",
     "nombre": "Secci\u00f3n 2",
     "electores": 360,
-    "proyeccion_ponderada": false,
     "prioridad": 0
   }
 },
@@ -1282,3 +1280,4 @@
   }
 }
 ]
+

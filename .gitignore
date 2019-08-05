@@ -116,3 +116,4 @@ ENV/
 crawl-resultados
 .DS_Store
 .idea
+*~

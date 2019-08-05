@@ -63,6 +63,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
 
+    # django-autocomplete-light
+    'dal',
+    'dal_select2',
+    
     # nuestras apps
     'fiscales.apps.FiscalesAppConfig',  # Hay que ponerlo así para que cargue el app_ready()
     'elecciones.apps.EleccionesAppConfig',
