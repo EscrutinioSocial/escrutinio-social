@@ -103,6 +103,11 @@ class Fiscal(models.Model):
         'auth.User', null=True, blank=True, related_name='fiscal', on_delete=models.SET_NULL
     )
     seccion = models.ForeignKey(Seccion, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
+
+    # Campos para control de doble logueo.
+    session_key = models.CharField(max_length=32, null=True, blank=True)
+    last_seen = models.DateTimeField(null=True, blank=True)
+
     distrito = models.ForeignKey(Distrito, related_name='fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
     referente = models.ForeignKey('Fiscal', related_name='referidos', null=True, blank=True, on_delete=models.SET_NULL)
@@ -120,6 +125,14 @@ class Fiscal(models.Model):
     class Meta:
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'), )
+
+    def update_last_seen(self, cuando):
+        self.last_seen = cuando
+        self.save(update_fields=['last_seen'])
+
+    def update_session_key(self, session_key):
+        self.session_key = session_key
+        self.save(update_fields=['session_key'])
 
     def crear_codigo_de_referidos(self):
         self.codigos_de_referidos.filter(activo=True).update(activo=False)

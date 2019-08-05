@@ -738,6 +738,7 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
     response = client.get(url_resultados, {'distrito': 1})
     assert response.status_code == 200
 
+    client.logout()
     # El usuario validador intenta cargar un acta, sí debería poder
     client.login(username=u_validador.username, password='password')
     response = client.get(reverse('siguiente-accion'))
@@ -769,6 +770,8 @@ def test_categorias_sensible(setup_groups, client):
     # Sí debería poder ver resultados.
     response = client.get(c_url)
     assert response.status_code == 200
+
+    client.logout()
 
     # El usuario visualizador sensible puede ver resultado sensible.
     client.login(username=u_visualizador_sensible.username, password='password')
