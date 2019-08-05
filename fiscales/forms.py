@@ -164,7 +164,7 @@ class QuieroSerFiscalForm(forms.Form):
             forward=['distrito']
         ),
     )
-    
+
     referente_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
     referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
 
@@ -175,12 +175,13 @@ class QuieroSerFiscalForm(forms.Form):
     )
 
     password = forms.CharField(
-        label=_("Password"),
+        label='Elegí una contraseña',
+        help_text='No uses la de tu email o redes sociales',
         widget=forms.PasswordInput,
         strip=False,
     )
     password_confirmacion = forms.CharField(
-        label=_("Password confirmation"),
+        label='Repetir la contraseña',
         strip=False,
         widget=forms.PasswordInput,
     )
