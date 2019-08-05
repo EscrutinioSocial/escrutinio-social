@@ -693,6 +693,10 @@ class Opcion(models.Model):
         return '#FFFFFF'
 
     @classmethod
+    def opciones_no_partidarias(cls):
+        return ['OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_TOTAL_SOBRES', 'OPCION_NULOS']
+
+    @classmethod
     def blancos(cls):
         return cls.objects.get(**settings.OPCION_BLANCOS)
 

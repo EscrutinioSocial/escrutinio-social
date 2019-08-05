@@ -56,20 +56,18 @@ class CategoriaFactory(DjangoModelFactory):
 
         if not create:
             return
+
+        # Toda categoría debe tener las opciones no partidarias
+        for nombre in Opcion.opciones_no_partidarias():
+            opcion, _ = Opcion.objects.get_or_create(**getattr(settings, nombre))
+            CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion)
+
         if extracted is not None:
             #
             for opcion in extracted:
                 CategoriaOpcionFactory(categoria=self, opcion=opcion)
         else:
-            # Por defecto una categoria tiene todas las opciones comunes
-            # y cuatro opciones partidarias
-            for nombre in ['BLANCOS', 'TOTAL_VOTOS', 'TOTAL_SOBRES', 'NULOS']:
-                opcion, _ = Opcion.objects.get_or_create(
-                    **getattr(settings, f'OPCION_{nombre}'),
-                    defaults={'nombre': nombre}         # estrictamente, el nombre no importa
-                )
-                CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion)
-
+            # Por defecto se crean cuatro opciones partidarias
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc1'))
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc2'))
             CategoriaOpcionFactory(categoria=self, opcion=OpcionFactory(nombre='opc3'))
