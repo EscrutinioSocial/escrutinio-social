@@ -91,7 +91,7 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     a = AttachmentFactory()
     data = {
         'status': 'problema',
-        'tipo_de_problema': 'invalida',
+        'tipo_de_problema': 'falta_lista',
         'descripcion': 'Un problema'
     }
     response = fiscal_client.post(reverse('asignar-problema', args=[a.id]), data)
