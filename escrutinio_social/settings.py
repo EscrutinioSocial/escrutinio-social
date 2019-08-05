@@ -340,8 +340,9 @@ OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 
 
-SESSION_COOKIE_AGE = 3 * 60  # Si pasás este tiempo sin hacer un request, te desloguea.
+SESSION_COOKIE_AGE = 10 * 60  # Si pasás este tiempo sin hacer un request, te desloguea
 SESSION_SAVE_EVERY_REQUEST = True
+
 
 
 # Flag para decidir si las categoríaas pertenecientes a totales de los CSV tienen que estar completas.
