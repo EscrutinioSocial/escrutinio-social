@@ -331,7 +331,6 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
         for valor, status in enumerate(config.PRIORIDAD_STATUS.split()):
             whens.append(models.When(status=status, then=models.Value(valor)))
-        import ipdb; ipdb.set_trace()
         return self.annotate(
             prioridad_status=models.Case(
                 *whens,
