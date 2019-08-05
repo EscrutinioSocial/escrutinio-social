@@ -39,7 +39,7 @@ objeto del input "#id_field".
 */
 function initializeSimpleSelect(field,base_url,fwd){
     var value = $("#id_"+field).val();
-    if(isFinite(value) && value != "-1") {
+    if(isFinite(value) && value != "-1" && value!="") {
 	var url = base_url+'?ident='+value;
 	$.ajax({
       	    type: 'GET',
