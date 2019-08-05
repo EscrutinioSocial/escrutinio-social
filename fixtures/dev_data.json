@@ -436,7 +436,6 @@
     "numero": "3",
     "nombre": "Tres Cruces",
     "electores": 0,
-    "proyeccion_ponderada": false,
     "prioridad": 0
   }
 },
@@ -449,7 +448,6 @@
     "numero": "4",
     "nombre": "Cuatro Vientos",
     "electores": 0,
-    "proyeccion_ponderada": false,
     "prioridad": 0
   }
 },
