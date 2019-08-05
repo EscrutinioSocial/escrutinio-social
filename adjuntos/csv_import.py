@@ -266,7 +266,7 @@ class CSVImporter:
         if self.dato_ausente(self.cantidad_sobres_mesa):
             return
 
-        opcion_sobres = carga.mesa_categoria.categoria.get_opcion_total_sobres()
+        opcion_sobres = Opcion.sobres()
 
         cantidad_votos = int(self.cantidad_sobres_mesa)
         VotoMesaReportado.objects.create(carga=carga,

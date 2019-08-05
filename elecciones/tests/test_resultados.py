@@ -2,7 +2,7 @@ import pytest
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
-from elecciones.models import Categoria, MesaCategoria, Carga
+from elecciones.models import Categoria, MesaCategoria, Carga, Opcion
 from .factories import (
     UserFactory,
     CategoriaFactory,
@@ -171,9 +171,9 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     o4.partido = o1.partido
     o4.save()
 
-    blanco = categoria.get_opcion_blancos()
+    blanco = Opcion.blancos()
 
-    total = categoria.get_opcion_total_votos()
+    total = Opcion.total_votos()
 
     mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
     mc2 = MesaCategoria.objects.get(mesa=m2, categoria=categoria)
@@ -450,7 +450,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
     # opciones a partido
-    blanco = categoria.get_opcion_blancos()
+    blanco = Opcion.blancos()
 
     c1 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria, tipo=Carga.TIPOS.total)
     VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=20)
@@ -507,7 +507,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
     # opciones a partido
-    blanco = categoria.get_opcion_blancos()
+    blanco = Opcion.blancos()
 
     c1 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria)
     VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=20)
@@ -591,8 +591,8 @@ def test_siguiente_accion_cargar_acta(fiscal_client):
 def test_resultados_no_positivos(fiscal_client):
     o1, o2 = OpcionFactory.create_batch(2)
 
-    opcion_blanco = OpcionFactory(**settings.OPCION_BLANCOS)
-    opcion_total = OpcionFactory(**settings.OPCION_TOTAL_VOTOS)
+    opcion_blanco = Opcion.blancos()
+    opcion_total = Opcion.total_votos()
 
     e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total])
 

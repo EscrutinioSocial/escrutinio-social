@@ -102,7 +102,6 @@ class Sumarizador():
                     MesaCategoria.STATUS.parcial_consolidada_csv,
                     MesaCategoria.STATUS.parcial_sin_consolidar,
                 )
-
         return lookups
 
     @property
@@ -298,7 +297,7 @@ class Resultados():
                 for opciones_partido in self.resultados.votos_positivos.values()
             )
         else:
-            nombre_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre']
+            nombre_opcion_total = Opcion.total_votos().nombre
             total = self.resultados.votos_no_positivos[nombre_opcion_total]
             total_no_positivos = self.total_no_positivos()
             total_positivos = total - total_no_positivos
@@ -311,8 +310,8 @@ class Resultados():
         Devuelve el total de votos no positivos, sumando los votos a cada opción no partidaria
         y excluyendo la opción que corresponde a totales (como el total de votantes o de sobres).
         """
-        nombre_opcion_total = settings.OPCION_TOTAL_VOTOS['nombre']
-        nombre_opcion_sobres = settings.OPCION_TOTAL_SOBRES['nombre']
+        nombre_opcion_total = Opcion.total_votos().nombre
+        nombre_opcion_sobres = Opcion.sobres().nombre
         return sum(
             votos for opcion, votos in self.resultados.votos_no_positivos.items()
             if opcion not in (nombre_opcion_total, nombre_opcion_sobres)
