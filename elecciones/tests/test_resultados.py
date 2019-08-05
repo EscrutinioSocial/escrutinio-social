@@ -401,9 +401,9 @@ def test_resultados_proyectados_simple(carta_marina, tecnica_proyeccion, fiscal_
     mesas = carta_marina
     m1 = mesas[0]
     m2 = mesas[4]
-    for mesa in mesas: 
+    for mesa in mesas:
         MesaCategoriaFactory(mesa=mesa, categoria=categoria)
-    
+
     c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
     VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=40)
     VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=30)

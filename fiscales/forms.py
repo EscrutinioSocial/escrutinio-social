@@ -35,21 +35,25 @@ class AuthenticationFormCustomError(AuthenticationForm):
         'También podés probar <a href="/logout">cerrando sesión</a>.')
     )
 
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].label = 'Nombre de usuario o DNI'
 
     def confirm_login_allowed(self, user):
-        session_existente = user.fiscal.session_key
-        last_seen = user.fiscal.last_seen
-        ahora = timezone.now()
-        timeout = last_seen + timedelta(seconds=settings.SESSION_TIMEOUT) if last_seen else None
-        if session_existente and last_seen and ahora < timeout:
-            raise forms.ValidationError(
-                _(self.already_logged_message),
-                code='already_logged'
-            )
+        try:
+            fiscal = user.fiscal
+            session_existente = fiscal.session_key
+            last_seen = fiscal.last_seen
+            ahora = timezone.now()
+            timeout = last_seen + timedelta(seconds=settings.SESSION_TIMEOUT) if last_seen else None
+            if session_existente and last_seen and ahora < timeout:
+                raise forms.ValidationError(
+                    _(self.already_logged_message),
+                    code='already_logged'
+                )
+        except Fiscal.DoesNotExist:
+            # no es usuario fiscal.
+            pass
         return super().confirm_login_allowed(user)
 
 
