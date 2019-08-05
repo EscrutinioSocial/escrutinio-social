@@ -52,7 +52,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-08-05T12:32:33.614Z",
+    "last_login": "2019-07-30T17:19:15.715Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -208,9 +208,6 @@
     "troll": false,
     "user": 1,
     "seccion": null,
-    "session_key": "q09j7d2v3saqr2hyq2vpoylog3dd8f41",
-    "last_seen": "2019-08-05T12:41:51.645Z",
-    "distrito": null,
     "referente": null,
     "referente_certeza": 100,
     "referencia_confirmada": false,
@@ -234,9 +231,6 @@
     "troll": false,
     "user": 2,
     "seccion": null,
-    "session_key": null,
-    "last_seen": null,
-    "distrito": null,
     "referente": null,
     "referente_certeza": 100,
     "referencia_confirmada": false,
@@ -260,9 +254,6 @@
     "troll": false,
     "user": 6,
     "seccion": null,
-    "session_key": null,
-    "last_seen": null,
-    "distrito": null,
     "referente": null,
     "referente_certeza": 100,
     "referencia_confirmada": false,
@@ -286,9 +277,6 @@
     "troll": false,
     "user": 5,
     "seccion": null,
-    "session_key": null,
-    "last_seen": null,
-    "distrito": null,
     "referente": null,
     "referente_certeza": 100,
     "referencia_confirmada": false,
@@ -312,9 +300,6 @@
     "troll": false,
     "user": 4,
     "seccion": null,
-    "session_key": null,
-    "last_seen": null,
-    "distrito": null,
     "referente": null,
     "referente_certeza": 100,
     "referencia_confirmada": false,
@@ -338,9 +323,6 @@
     "troll": false,
     "user": 3,
     "seccion": null,
-    "session_key": null,
-    "last_seen": null,
-    "distrito": null,
     "referente": null,
     "referente_certeza": 100,
     "referencia_confirmada": false,
@@ -364,9 +346,6 @@
     "troll": false,
     "user": 7,
     "seccion": null,
-    "session_key": null,
-    "last_seen": null,
-    "distrito": null,
     "referente": null,
     "referente_certeza": 100,
     "referencia_confirmada": false,
@@ -386,16 +365,6 @@
   }
 },
 {
-  "model": "elecciones.distrito",
-  "pk": 2,
-  "fields": {
-    "numero": "2",
-    "nombre": "Otro",
-    "electores": 0,
-    "prioridad": 0
-  }
-},
-{
   "model": "elecciones.seccion",
   "pk": 1,
   "fields": {
@@ -404,11 +373,7 @@
     "numero": "1",
     "nombre": "Secci\u00f3n 1",
     "electores": 440,
-    "prioridad": 0,
-    "prioridad_hasta_2": null,
-    "prioridad_2_a_10": null,
-    "prioridad_10_a_100": null,
-    "cantidad_minima_prioridad_hasta_2": null
+    "prioridad": 0
   }
 },
 {
@@ -420,34 +385,6 @@
     "numero": "2",
     "nombre": "Secci\u00f3n 2",
     "electores": 360,
-    "prioridad": 0,
-    "prioridad_hasta_2": null,
-    "prioridad_2_a_10": null,
-    "prioridad_10_a_100": null,
-    "cantidad_minima_prioridad_hasta_2": null
-  }
-},
-{
-  "model": "elecciones.seccion",
-  "pk": 3,
-  "fields": {
-    "distrito": 2,
-    "seccion_politica": null,
-    "numero": "3",
-    "nombre": "Tres Cruces",
-    "electores": 0,
-    "prioridad": 0
-  }
-},
-{
-  "model": "elecciones.seccion",
-  "pk": 4,
-  "fields": {
-    "distrito": 2,
-    "seccion_politica": null,
-    "numero": "4",
-    "nombre": "Cuatro Vientos",
-    "electores": 0,
     "prioridad": 0
   }
 },
@@ -500,54 +437,6 @@
   }
 },
 {
-  "model": "elecciones.circuito",
-  "pk": 5,
-  "fields": {
-    "seccion": 3,
-    "localidad_cabecera": "Trencitos",
-    "numero": "1",
-    "nombre": "Uno Tres",
-    "electores": 0,
-    "prioridad": 0
-  }
-},
-{
-  "model": "elecciones.circuito",
-  "pk": 6,
-  "fields": {
-    "seccion": 3,
-    "localidad_cabecera": "Dumesnil",
-    "numero": "2",
-    "nombre": "Docemil",
-    "electores": 0,
-    "prioridad": 0
-  }
-},
-{
-  "model": "elecciones.circuito",
-  "pk": 7,
-  "fields": {
-    "seccion": 4,
-    "localidad_cabecera": "Ventosa",
-    "numero": "3",
-    "nombre": "Cuatrero",
-    "electores": 0,
-    "prioridad": 0
-  }
-},
-{
-  "model": "elecciones.circuito",
-  "pk": 8,
-  "fields": {
-    "seccion": 4,
-    "localidad_cabecera": "Cualunqueful",
-    "numero": "4",
-    "nombre": "Cualenquef\u00fa",
-    "electores": 0,
-    "prioridad": 0
-  }
-},
-{
   "model": "elecciones.lugarvotacion",
   "pk": 1,
   "fields": {
@@ -556,7 +445,6 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "numero": null,
     "electores": 100,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -574,7 +462,6 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "numero": null,
     "electores": 100,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -592,7 +479,6 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "numero": null,
     "electores": 120,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -610,7 +496,6 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "numero": null,
     "electores": 120,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -628,7 +513,6 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "numero": null,
     "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -646,7 +530,6 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "numero": null,
     "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -664,7 +547,6 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "numero": null,
     "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -682,7 +564,6 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
-    "numero": null,
     "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -942,45 +823,6 @@
     "lugar_votacion": 8,
     "url": "",
     "electores": 90,
-    "prioridad": 0
-  }
-},
-{
-  "model": "elecciones.mesa",
-  "pk": 9,
-  "fields": {
-    "numero": "1",
-    "es_testigo": false,
-    "circuito": 5,
-    "lugar_votacion": 1,
-    "url": "",
-    "electores": null,
-    "prioridad": 0
-  }
-},
-{
-  "model": "elecciones.mesa",
-  "pk": 10,
-  "fields": {
-    "numero": "2",
-    "es_testigo": false,
-    "circuito": 6,
-    "lugar_votacion": 1,
-    "url": "",
-    "electores": null,
-    "prioridad": 0
-  }
-},
-{
-  "model": "elecciones.mesa",
-  "pk": 11,
-  "fields": {
-    "numero": "2",
-    "es_testigo": false,
-    "circuito": 7,
-    "lugar_votacion": 1,
-    "url": "",
-    "electores": null,
     "prioridad": 0
   }
 },
@@ -1438,3 +1280,4 @@
   }
 }
 ]
+
