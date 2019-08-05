@@ -1,12 +1,15 @@
 import pytest
 from django.core.management import call_command
-
+from django.conf import settings
+from random import shuffle
+from constance.test import override_config
 from .factories import (
     VotoMesaReportadoFactory,
     CategoriaFactory,
     AttachmentFactory,
     MesaFactory,
     MesaCategoriaFactory,
+    MesaCategoriaDefaultFactory,
     CargaFactory,
     IdentificacionFactory,
     CategoriaOpcionFactory,
@@ -425,3 +428,21 @@ def test_metadata_de_mesa(db, settings):
 def test_system_check_for_dev_data(db):
     call_command('loaddata', 'fixtures/dev_data.json')
     call_command('check', deploy=True)
+
+
+def test_orden_por_prioridad_status(db):
+    statuses = [s[0] for s in settings.MC_STATUS_CHOICE]
+
+    # creo una mesa para cada status
+    mcs = []
+    for s in statuses:
+        mcs.append(MesaCategoriaFactory(status=s).id)
+    # el factory indirectamente crea otra mesa categoria para la default
+    # las borro
+    MesaCategoria.objects.exclude(id__in=mcs).delete()
+
+    shuffle(statuses)
+    with override_config(PRIORIDAD_STATUS='\n'.join(statuses)):
+        mesas_result = MesaCategoria.objects.anotar_prioridad_status(
+            ).order_by('prioridad_status')
+    assert [m.status for m in mesas_result] == statuses
