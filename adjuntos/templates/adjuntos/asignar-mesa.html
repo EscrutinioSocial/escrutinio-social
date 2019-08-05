@@ -31,6 +31,10 @@
 
 {% block extrahead %}
 <style type="text/css">
+.resultado-select{
+    border-bottom: none !important;
+}
+
 .content {
   padding-bottom: 0px;
 }
@@ -174,7 +178,7 @@ $(document).ready(function() {
       initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
       initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
       initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
-      $('#distrito_input').on('blur',function(e){
+      $('#distrito_input').on('focusout',function(e){
 	  updateField(
 	      'distrito',
 	      "{% url 'autocomplete-distrito' %}",
@@ -182,21 +186,21 @@ $(document).ready(function() {
 	      null
 	  );
       });
-      $('#seccion_input').on('blur',function(e){
+      $('#seccion_input').on('focusout',function(e){
 	  updateField(
 	      'seccion',
 	      "{% url 'autocomplete-seccion' %}",
 	      ['distrito'],
 	      null
 	  )});
-      $('#circuito_input').on('blur',function(e){
+      $('#circuito_input').on('focusout',function(e){
 	  updateField(
 	      'circuito',
 	      "{% url 'autocomplete-circuito' %}",
 	      ['distrito','seccion'],
 	      null
 	  )});
-      $('#mesa_input').on('blur',function(e){
+      $('#mesa_input').on('focusout',function(e){
 	  updateField(
 	      'mesa',
 	      "{% url 'autocomplete-mesa' %}",

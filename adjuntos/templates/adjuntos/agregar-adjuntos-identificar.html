@@ -8,6 +8,11 @@
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script src="{% static 'js/simpleselect.js' %}"></script>
+<style type="text/css">
+.resultado-select{
+    border-bottom: none !important;
+}
+</style>
 {% block extrajs %}{% endblock %}
 {% endblock %}
 
@@ -53,20 +58,20 @@
       initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
       initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
       initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
-      $('#distrito_input').on('blur',function(e){
+      $('#distrito_input').on('focusout',function(e){
 	  updateField(
 	      'distrito',
 	      "{% url 'autocomplete-distrito' %}",
 	      []
 	  );
       });
-      $('#seccion_input').on('blur',function(e){
+      $('#seccion_input').on('focusout',function(e){
 	  updateField(
 	      'seccion',
 	      "{% url 'autocomplete-seccion' %}",
 	      ['distrito']
 	  )});
-      $('#circuito_input').on('blur',function(e){
+      $('#circuito_input').on('focusout',function(e){
 	  updateField(
 	      'circuito',
 	      "{% url 'autocomplete-circuito' %}",
