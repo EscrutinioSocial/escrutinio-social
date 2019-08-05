@@ -4,7 +4,7 @@ from datetime import timedelta
 from collections import defaultdict
 
 from django.conf import settings
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import Sum, Count, Q
 from django.db.models.signals import post_save
@@ -12,11 +12,15 @@ from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone
 from djgeojson.fields import PointField
-from model_utils import Choices
+from model_utils import Choices, FieldTracker
 from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
 
+
 logger = logging.getLogger("e-va")
+
+
+MAX_INT_DB = 2147483647
 
 
 class Distrito(models.Model):
@@ -91,7 +95,34 @@ class Seccion(models.Model):
             'por circuitos para esta sección'
         )
     )
-    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
+    # esta es la prioridad del "viejo" modelo de scheduling, está deprecada a la espera del refactor
+    # que permita borrarla
+    prioridad = models.PositiveIntegerField(
+        default=0, null=True, blank=True, validators=[MaxValueValidator(1000)])
+    # estos son los nuevos atributos que intervienen en el modelo actual de scheduling
+    prioridad_hasta_2 = models.PositiveIntegerField(
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)]
+    )
+    prioridad_2_a_10 = models.PositiveIntegerField(
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)]
+    )
+    prioridad_10_a_100 = models.PositiveIntegerField(
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)]
+    )
+    cantidad_minima_prioridad_hasta_2 = models.PositiveIntegerField(
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000), MinValueValidator(1)]
+    )
+
+    # Tracker de cambios en los atributos relacionados con la prioridad,
+    # usado en la función que dispara en el post_save
+    tracker = FieldTracker(
+        fields=[
+            'prioridad_hasta_2',
+            'cantidad_minima_prioridad_hasta_2',
+            'prioridad_2_a_10',
+            'prioridad_10_a_100'
+        ]
+    )
 
     class Meta:
         ordering = ('numero',)
@@ -163,7 +194,7 @@ class LugarVotacion(models.Model):
     direccion = models.CharField(max_length=100)
     barrio = models.CharField(max_length=100, blank=True)
     ciudad = models.CharField(max_length=100, blank=True)
-    numero = models.CharField(max_length=10, help_text='Número de escuela', null=True, blank=True)    
+    numero = models.CharField(max_length=10, help_text='Número de escuela', null=True, blank=True)
 
     # electores es una denormalización. debe coincidir con la sumatoria de
     # los electores de cada mesa de la escuela
@@ -288,9 +319,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         Devuelve la intancia más prioritaria del queryset
         """
-        return self.order_by(
-            'status', 'orden_de_carga', 'id'
-        ).first()
+        return self.order_by('status', 'orden_de_carga', 'id').first()
 
     def siguiente(self):
         """
@@ -389,10 +418,20 @@ class MesaCategoria(models.Model):
 
         self.orden_de_llegada = identificadas + 1
         self.percentil = math.floor((identificadas * 100) / total) + 1
-        self.orden_de_carga = mapa_prioridades_para_mesa_categoria(self).valor_para(
-            self.percentil-1, self.orden_de_llegada
-        ) * self.percentil
+        self.recalcular_orden_de_carga()
         self.save(update_fields=['orden_de_carga', 'orden_de_llegada', 'percentil'])
+
+    def recalcular_orden_de_carga(self):
+        """
+        Actualiza el valor de `self.orden_de_carga` a partir de las prioridades por seccion y categoria,
+        **sin** disparar el `save` correspondiente
+        """
+        # evitar import circular
+        from scheduling.models import mapa_prioridades_para_mesa_categoria
+
+        prioridades = mapa_prioridades_para_mesa_categoria(self)
+        valor_para = prioridades.valor_para(self.percentil - 1, self.orden_de_llegada)
+        self.orden_de_carga = min(valor_para * self.percentil, MAX_INT_DB)
 
     def invalidar_cargas(self):
         """
@@ -452,6 +491,36 @@ class MesaCategoria(models.Model):
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
 
+
+    @classmethod
+    def recalcular_orden_de_carga_para_categoria(cls, categoria):
+        """
+        Recalcula el orden_de_carga de las MesaCategoria correspondientes a la categoría indicada
+        que estén pendientes de carga.
+        Se usa como acción derivada del cambio de prioridades en la categoría.
+        """
+        mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \
+            .sin_consolidar_por_doble_carga().filter(categoria=categoria)
+        cls.recalcular_orden_de_carga_mesas(mesa_cats_a_actualizar)
+
+    @classmethod
+    def recalcular_orden_de_carga_para_seccion(cls, seccion):
+        """
+        Recalcula el orden_de_carga de las MesaCategoria correspondientes a la sección indicada
+        que estén pendientes de carga.
+        Se usa como acción derivada del cambio de prioridades en la categoría.
+        """
+        mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \
+            .sin_consolidar_por_doble_carga().filter(mesa__circuito__seccion=seccion)
+        cls.recalcular_orden_de_carga_mesas(mesa_cats_a_actualizar)
+
+    @classmethod
+    def recalcular_orden_de_carga_mesas(cls, mesa_cats):
+        for mesa_cat in mesa_cats:
+            mesa_cat.recalcular_orden_de_carga()
+        cls.objects.bulk_update(mesa_cats, ['orden_de_carga'])
+
+
 class Mesa(models.Model):
     """
     Define la mesa de votación que pertenece a un class:`LugarDeVotación`.
@@ -468,7 +537,7 @@ class Mesa(models.Model):
     categorias = models.ManyToManyField('Categoria', through='MesaCategoria')
     numero = models.CharField(max_length=10)
     es_testigo = models.BooleanField(default=False)
-    circuito = models.ForeignKey(Circuito, null=True, on_delete=models.SET_NULL)
+    circuito = models.ForeignKey(Circuito, null=True, related_name='mesas', on_delete=models.SET_NULL)
     lugar_votacion = models.ForeignKey(
         LugarVotacion,
         verbose_name='Lugar de votacion',
@@ -603,7 +672,7 @@ class Opcion(models.Model):
     # Dado que muchas veces la justicia no le pone un código a las "sub listas"
     # en las PASO, se termina sintentizando y podría ser largo.
     codigo = models.CharField(
-        max_length=30, help_text='Codigo de opción', null=True, blank=True, 
+        max_length=30, help_text='Codigo de opción', null=True, blank=True,
         db_index=True
     )
     partido = models.ForeignKey(
@@ -692,7 +761,11 @@ class Categoria(models.Model):
     )
 
     requiere_cargas_parciales = models.BooleanField(default=False)
-    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
+    prioridad = models.PositiveIntegerField(
+        default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)])
+
+    # Tracker de cambios en el atributo prioridad, usado en la función que dispara en el post_save
+    tracker = FieldTracker(fields=['prioridad'])
 
     def get_opcion_blancos(self):
         return self.opciones.get(**settings.OPCION_BLANCOS)
@@ -708,6 +781,9 @@ class Categoria(models.Model):
 
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
+
+    def get_url_avance_de_carga(self):
+        return reverse('avance-carga', args=[self.id])
 
     def opciones_actuales(self, solo_prioritarias=False):
         """
@@ -799,23 +875,15 @@ class Carga(TimeStampedModel):
     para las opciones válidas en la mesa-categoría.
     """
     invalidada = models.BooleanField(null=False, default=False)
-    TIPOS = Choices(
-        'problema',
-        'parcial',
-        'total'
-    )
+    TIPOS = Choices('problema', 'parcial', 'total')
     tipo = models.CharField(max_length=50, choices=TIPOS)
 
     SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
 
-    mesa_categoria = models.ForeignKey(
-        MesaCategoria, related_name='cargas', on_delete=models.CASCADE
-    )
+    mesa_categoria = models.ForeignKey(MesaCategoria, related_name='cargas', on_delete=models.CASCADE)
     fiscal = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
-    firma = models.CharField(
-        max_length=300, null=True, blank=True, editable=False
-    )
+    firma = models.CharField(max_length=300, null=True, blank=True, editable=False)
     procesada = models.BooleanField(default=False)
 
     @property
@@ -932,11 +1000,7 @@ class AgrupacionCircuitos(models.Model):
     nombre = models.CharField(max_length=100)
     proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.CASCADE, related_name='agrupaciones')
     minimo_mesas = models.PositiveIntegerField(default=1)
-    circuitos = models.ManyToManyField(
-        Circuito,
-        through='AgrupacionCircuito',
-        related_name='agrupaciones'
-    )
+    circuitos = models.ManyToManyField(Circuito, through='AgrupacionCircuito', related_name='agrupaciones')
 
     class Meta:
         verbose_name = 'Agrupación de Circuitos'
@@ -973,22 +1037,40 @@ def actualizar_electores(sender, instance=None, created=False, **kwargs):
         lugar.save(update_fields=['electores'])
 
         # circuito
-        electores = Mesa.objects.filter(
-            lugar_votacion__circuito=circuito,
-        ).aggregate(v=Sum('electores'))['v'] or 0
+        electores = Mesa.objects.filter(lugar_votacion__circuito=circuito, ).aggregate(v=Sum('electores')
+                                                                                       )['v'] or 0
         circuito.electores = electores
         circuito.save(update_fields=['electores'])
 
         # seccion
-        electores = Mesa.objects.filter(
-            lugar_votacion__circuito__seccion=seccion
-        ).aggregate(v=Sum('electores'))['v'] or 0
+        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion=seccion
+                                        ).aggregate(v=Sum('electores'))['v'] or 0
         seccion.electores = electores
         seccion.save(update_fields=['electores'])
 
         # distrito
-        electores = Mesa.objects.filter(
-            lugar_votacion__circuito__seccion__distrito=distrito
-        ).aggregate(v=Sum('electores'))['v'] or 0
+        electores = Mesa.objects.filter(lugar_votacion__circuito__seccion__distrito=distrito
+                                        ).aggregate(v=Sum('electores'))['v'] or 0
         distrito.electores = electores
         distrito.save(update_fields=['electores'])
+
+
+@receiver(post_save, sender=Categoria)
+def actualizar_prioridades_categoria(sender, instance, created, **kwargs):
+    from scheduling.models import registrar_prioridad_categoria
+
+    if created or instance.tracker.has_changed('prioridad'):
+        registrar_prioridad_categoria(instance)
+        MesaCategoria.recalcular_orden_de_carga_para_categoria(instance)
+
+
+@receiver(post_save, sender=Seccion)
+def actualizar_prioridades_seccion(sender, instance, created, **kwargs):
+    from scheduling.models import registrar_prioridades_seccion
+
+    if created or instance.tracker.has_changed('prioridad_hasta_2') \
+        or instance.tracker.has_changed('cantidad_minima_prioridad_hasta_2') \
+            or instance.tracker.has_changed('prioridad_2_a_10')  \
+                or instance.tracker.has_changed('prioridad_10_a_100'):
+        registrar_prioridades_seccion(instance)
+        MesaCategoria.recalcular_orden_de_carga_para_seccion(instance)

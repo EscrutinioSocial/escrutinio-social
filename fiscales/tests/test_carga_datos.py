@@ -392,7 +392,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     tupla_opciones_electores = [(opcion1.id, mesa.electores // 2, False), (opcion2.id, mesa.electores // 2, False)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
 
-    with django_assert_num_queries(32):
+    with django_assert_num_queries(34):
         response = fiscal_client.post(url_carga, request_data)
 
     # tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa

@@ -14,12 +14,15 @@ urlpatterns = [
         views.EscuelaDetailView.as_view(), name='detalle_escuela'),
     url('^mapa/$', login_required(cached(views.Mapa.as_view())), name='mapa'),
     url(
-        '^resultados/(?P<pk>\d+)$',
+        '^avance_carga/(?P<pk>\d+)?$',
+        views.AvanceDeCargaCategoria.as_view(),
+        name='avance-carga'
+    ),
+    url(
+        '^resultados/(?P<pk>\d+)?$',
         views.ResultadosCategoria.as_view(),
         name='resultados-categoria'
     ),
-    url('^resultados/$', views.resultados_default,
-        name='resultados-primera-categoria'),
 
     url(r'^resultados-parciales-(?P<slug_categoria>[\w-]+).(?P<filetype>csv|xls)$',
         data_views.resultado_parcial_categoria, name='resultado-parcial-categoria'),

@@ -1,0 +1,246 @@
+{% extends "fiscales/base.html" %}
+{% load staticfiles %}
+
+{% block extrahead %}
+<style type="text/css">
+
+  .left-panel {
+      flex-basis: 100%;
+  }
+
+  table.striped > tbody > tr:nth-child(odd) {
+      background-color: rgba(170, 213, 213, 0.3);
+  }
+  
+</style>
+{% endblock %}
+
+{% block title %} Avance de carga {% endblock %}
+
+{% block page_title %} Avance de carga para {{para|default:para}} {% endblock %}
+
+{% block breadcrumbs %}
+<div class="card">
+  <ul class="tabs">
+    {% for categoria in categorias %}
+    <li class="tab col s3" >
+      <a target="_self"
+	 href="{{ categoria.get_url_avance_de_carga }}?{{ request.GET.urlencode }}"
+	 {% if categoria.id == object.id %}
+	 class="active"
+	 {% endif %}>
+	{{ categoria.nombre }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock breadcrumbs %}
+
+{% block head %}
+{{ block.super }}
+{% if show_plot %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endif %}
+<link href="/static/elecciones/resultados.css"
+      rel="stylesheet" type="text/css">
+<link href="/static/elecciones/arbol_distrito.css"
+      rel="stylesheet" type="text/css">
+{% endblock head %}
+
+{% block sidenav_items %}
+<li><a href="{% url "avance-carga" primera_categoria %}">Todo el país</a></li>
+{% include "elecciones/arbol_distrito.html" %}
+{% endblock sidenav_items %}
+
+{% block left-panel %}
+<div class="card" >
+  <div class="card-content">
+    <table class="bordered centered striped" >
+      <thead> <!-- Header de la tabla -->
+	<!-- Mesa / Electores -->
+	<tr> <!-- Primera fila -->
+	  <!-- La primera celda va en blanco ya que se corresponde con los tipos
+	       de estado -->
+	  <th></th>
+	  <!-- La tabla tiene 5 columnas de la 1 a la 5 por lo tanto llenamos las
+	       celdas de las columnas 2 y 4; de esta manera en la siguiente
+	       fila llenamos en las columnas 2 y 3 Cantidad y porcentaje para
+	       la mesa y en 4 y 5 Cantidad y porcentaje para los electores. -->
+	  <th colspan="2" style="text-align: center;">Mesa</th>
+	  <th colspan="4" style="text-align: center;">Electores</th>
+	</tr>
+	<!-- Cantidad / Porcentajes -->
+	<tr> <!-- Segunda fila -->
+	  <!-- La primera celda va en blanco ya que se corresponde con los tipos
+	       de estado -->
+	  <th></th>
+	  <!-- Mesa: Cantidad / Porcentajes -->
+	  <th style="text-align: right;">Cantidad</th>
+	  <th style="text-align: right;">Porcentajes</th>
+	  <!-- Electores: Cantidad / Porcentajes -->
+	  <th style="text-align: right;">Cantidad</th>
+	  <th style="text-align: right;">Porcentajes</th>
+	</tr>
+      </thead>
+      <!-- A partir de acá van datos y por lo tanto todas las celdas deberían
+	tener datos -->
+      <tbody>
+	<tr>
+	  <td>Total mesa y electores</td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.porcentaje_electores }}
+	  </td>
+	</tr>
+	<tr>
+	  <td>Sin identificar</td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar.porcentaje_electores }}
+	  </td>
+	</tr>
+	<tr>
+		<td>En proceso de identificación</td>
+		<td style="text-align: right;">
+			{{ resultados.en_identificacion.cantidad_mesas }}
+		</td>
+		<td style="text-align: right;">
+			{{ resultados.en_identificacion.porcentaje_mesas }}
+		</td>
+		<td style="text-align: right;">
+			{{ resultados.en_identificacion.cantidad_electores }}
+		</td>
+		<td style="text-align: right;">
+			{{ resultados.en_identificacion.porcentaje_electores }}
+		</td>
+	</tr>
+	<tr>
+	  <td>Sin cargar</td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.porcentaje_electores }}
+	  </td>
+	</tr>
+	<tr>
+	  <td>Carga parcial - sin consolidar</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.porcentaje_electores }}
+	  </td>
+	</tr>
+	<tr>
+	  <td>Carga parcial - consolidada</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada.porcentaje_electores }}
+	  </td>
+	</tr>
+	<tr>
+	  <td>Carga total - sin consolidar</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.porcentaje_electores }}
+	  </td>
+	</tr>
+	<tr>
+	  <td>Carga total - consolidada</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada.porcentaje_electores }}
+	  </td>
+	</tr>
+	<tr>
+	  <td>Conflictos o problemas</td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.porcentaje_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.cantidad_electores }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.porcentaje_electores }}
+	  </td>
+	</tr>
+	<tr style="height: 50px;">
+	</tr>
+	<tr>
+		<td>Pre-identificación desde CSV</td>
+		<td style="text-align: right;">
+			{{ resultados.preidentificaciones }}
+		</td>
+		<td style="text-align: right;">
+			imágenes
+		</td>
+		<td style="text-align: right;">
+		</td>
+		<td style="text-align: right;">
+		</td>
+	</tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock left-panel %}
+
+{% block messages %}
+{% endblock messages %}
