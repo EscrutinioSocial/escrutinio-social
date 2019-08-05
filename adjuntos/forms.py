@@ -6,8 +6,7 @@ from .models import Identificacion, PreIdentificacion, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
 
-from dal import autocomplete
-
+from .widgets import Select
 class IdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar mesa
@@ -15,24 +14,24 @@ class IdentificacionForm(forms.ModelForm):
 
     distrito = forms.ModelChoiceField(
         queryset = Distrito.objects.all(),
-        widget = forms.widgets.TextInput()
+        widget = Select()
     )
 
     seccion = forms.ModelChoiceField(
         queryset = Seccion.objects.all(),
-        widget = forms.widgets.TextInput()
+        widget = Select()
     )
     
     circuito = forms.ModelChoiceField(
         queryset = Circuito.objects.all(),
-        widget = forms.widgets.TextInput()
+        widget = Select()
     )
 
     mesa = forms.ModelChoiceField(
         queryset = Mesa.objects.all(),
-        widget = forms.widgets.TextInput()
+        widget = Select()
     )
-    
+
     class Meta:
         model = Identificacion
         fields = ['distrito','seccion','circuito','mesa']
@@ -72,31 +71,20 @@ class PreIdentificacionForm(forms.ModelForm):
     Este formulario se utiliza para asignar una pre identificación a un adjunto.
     """
     distrito = forms.ModelChoiceField(
-        queryset=Distrito.objects.all(),
-        widget=autocomplete.ModelSelect2(
-            url='autocomplete-distrito',
-            attrs={
-                'data-minimum-input-length': 3,
-            },
-        )
+        queryset = Distrito.objects.all(),
+        widget = Select(),
     )
-    
+
     seccion = forms.ModelChoiceField(
-        queryset=Seccion.objects.all(),
-        required=False,
-        widget=autocomplete.ModelSelect2(
-            url='autocomplete-seccion',
-            forward=['distrito']
-        )
+        queryset = Seccion.objects.all(),
+        widget = Select(),
+        required = False,
     )
     
     circuito = forms.ModelChoiceField(
-        queryset=Circuito.objects.all(),
-        required=False,
-        widget=autocomplete.ModelSelect2(
-            url='autocomplete-circuito',
-            forward=['seccion']
-        )
+        queryset = Circuito.objects.all(),
+        widget = Select(),
+        required = False,      
     )
 
     class Meta:

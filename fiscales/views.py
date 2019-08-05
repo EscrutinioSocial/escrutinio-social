@@ -107,7 +107,7 @@ class QuieroSerFiscal(FormView):
         fiscal = Fiscal(estado='AUTOCONFIRMADO', dni=data['dni'])
         fiscal.nombres = data['nombres']
         fiscal.apellido = data['apellido']
-        fiscal.seccion_id = data['seccion']
+        fiscal.seccion = data['seccion']
         fiscal.referente_nombres = data['referente_nombres']
         fiscal.referente_apellido = data['referente_apellido']
         if data['referido_por_codigo']:
@@ -488,23 +488,53 @@ class DistritoBaseListView(AutocompleteBaseListView):
         return qs
 
 
-class DistritoListView(autocomplete.Select2QuerySetView):
+class AjaxListView(autocomplete.Select2QuerySetView):
+    def get_result_label(self, item):
+        return item.nombre
+
+    def get_selected_result_label(self, item):
+        return item.numero
+
+class DistritoSimpleListView(autocomplete.Select2QuerySetView):
     model = Distrito
 
-    def get_queryset(self):
-        qs = Distrito.objects.all()
-        if self.q:
-            qs = qs.filter(numero=self.q)
-        return qs
-
-
-class SeccionListView(autocomplete.Select2QuerySetView):
+class SeccionSimpleListView(autocomplete.Select2QuerySetView):
     model = Seccion
 
     def get_queryset(self):
         qs = Seccion.objects.all()
         lookups = Q()
         distrito = self.forwarded.get('distrito',None)
+        if distrito:
+            lookups &= Q(distrito_id=distrito)
+        return qs.filter(lookups)
+    
+
+    
+class DistritoListView(AjaxListView):
+    model = Distrito
+
+    def get_queryset(self):
+        qs = Distrito.objects.all()
+        lookups = Q()
+        ident = self.request.GET.get('ident',None)
+        if ident is not None:
+            return qs.filter(id=ident)
+        if self.q:
+            lookups = Q(numero=self.q) | Q(nombre__istartswith=self.q)
+        return qs.filter(lookups)
+
+
+class SeccionListView(AjaxListView):
+    model = Seccion
+
+    def get_queryset(self):
+        qs = Seccion.objects.all()
+        lookups = Q()
+        distrito = self.forwarded.get('distrito',None)
+        ident = self.request.GET.get('ident',None)
+        if ident is not None:
+            return qs.filter(id=ident)
         if self.q:
             lookups = Q(nombre__istartswith=self.q) | Q(numero__istartswith=self.q)
         if distrito:
@@ -516,12 +546,15 @@ class SeccionListView(autocomplete.Select2QuerySetView):
             lookups &= Q(id__in=mesas)
         return qs.filter(lookups)
 
-class CircuitoListView(autocomplete.Select2QuerySetView):
+class CircuitoListView(AjaxListView):
     model = Circuito
-
+    
     def get_queryset(self):
         qs = Circuito.objects.all()
         lookups = Q()
+        ident = self.request.GET.get('ident',None)
+        if ident is not None:
+            return qs.filter(id=ident)
         if self.q:
             lookups = Q(nombre__istartswith=self.q) | Q(numero__istartswith=self.q)
         seccion = self.forwarded.get('seccion',None)
@@ -537,8 +570,14 @@ class CircuitoListView(autocomplete.Select2QuerySetView):
             lookups &= Q(id__in=mesas)
         return qs.filter(lookups)
 
-class MesaListView(autocomplete.Select2QuerySetView):
+class MesaListView(AjaxListView):
     model = Mesa
+
+    def get_result_label(self, item):
+        return item.lugar_votacion.nombre
+
+    def get_selected_result_label(self, item):
+        return item.numero
     
     def get_queryset(self):
         qs = Mesa.objects.all()

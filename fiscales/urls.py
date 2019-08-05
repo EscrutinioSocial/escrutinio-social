@@ -8,11 +8,8 @@ urlpatterns = [
     url('^_autocomplete/c$', views.CircuitoListView.as_view(), name='autocomplete-circuito'),
     url('^_autocomplete/m$', views.MesaListView.as_view(), name='autocomplete-mesa'),
 
-    url('^_autocomplete/getd$', views.DistritoBaseListView.as_view(), name='autocomplete-distrito-get'),
-    url('^_autocomplete/gets$', views.DistritoBaseListView.as_view(), name='autocomplete-seccion-get'),
-    url('^_autocomplete/getc$', views.DistritoBaseListView.as_view(), name='autocomplete-circuito-get'),
-    url('^_autocomplete/getm$', views.DistritoBaseListView.as_view(), name='autocomplete-mesa-get'),
-
+    url('^_autocomplete_simple/d$', views.DistritoSimpleListView.as_view(), name='autocomplete-distrito-simple'),
+    url('^_autocomplete_simple/s$', views.SeccionSimpleListView.as_view(), name='autocomplete-seccion-simple'),
     
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
     url('^referidos$', views.referidos, name='referidos'),

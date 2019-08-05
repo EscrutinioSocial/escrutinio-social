@@ -9,55 +9,11 @@
 {% block js %}
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
-<script language="javascript">
-  function cambioSeccion(event){
-      if(event.clean){
-	  $(':input[name=circuito]').val(null).trigger('change');
-	  $(':input[name=mesa]').val(null).trigger('change');
-      }
-  }
-  function cambioMesa(){
-      mesa = $(':input[name=mesa]').val();
-      if(mesa){
-	  updateField('circuito',"{% url 'autocomplete-circuito' %}");
-	  updateField('seccion', "{% url 'autocomplete-seccion' %}");
-      }
-  }
-  function updateField(src,base_url){
-      var nro = $(src).val();
-      var distrito = $("#id_distrito").val();
-      var seccion = $("#id_seccion").val();
-      var circuito = $("#id_circuito").val();
-      var mesa = $("#id_mesa").val();
-      var params = {'distrito':distrito,'seccion':seccion,'circuito':circuito,'mesa':mesa};
-      if(! isFinite(nro)){
-	  return null;
-      }
-      var url = base_url+'?q='+nro+'&forward='+JSON.stringify(params);
-    $.ajax({
-      	  type: 'GET',
-      	  url: url
-    }).then(function (data) {
-	options = data['results'];
-	var op = ""
-	if(options.length==1){
-	    op = options[0].text;
-	}
-	else if(options.length<=0){
-	    op = "No es un valor válido";
-	}
-	else {
-	    op = "Más de un valor válido";
-	}
-	$(src).wrap('<span id="'+src+'-content">'+op+'</span>');
-    });
-  }
-</script>
+<script src="{% static 'js/simpleselect.js' %}"></script>
 {% block extrajs %}{% endblock %}
 {% endblock %}
 
 {% block extrahead %}
-<link href={% static "css/select2-materialize.css" %} type="text/css" media="screen" rel="stylesheet">
 <style type="text/css">
 .content {
   padding-bottom: 0px;
@@ -66,7 +22,9 @@
 .darkroom-image-container {
   overflow: auto;
 }
-
+.resultado-select{
+    border-bottom: none !important;
+}
 .left-panel {
 
   flex-basis: 30%;
@@ -134,24 +92,23 @@ $(document).ready(function() {
 {% block left-panel %}
   <div class="card">
       <form method="POST" enctype="multipart/form-data">
-          {% csrf_token %}
-          <div class="card-content">
-            {% block card-content %}
-              <div class="card-title">¿De qué mesa es esta acta?</div> 
-              {% form form=form %}
-	      {% endform %}
-            {% endblock card-content %}
-          </div>
+        {% csrf_token %}
+	<div class="card-content">
+          {% block card-content %}
+          <div class="card-title">¿De qué mesa es esta acta?</div> 
+	  {% form %}{% endform %}
+	  {% endblock card-content %}
+	</div>
           <div class="card-action">
             {% block card-action %}
-              <div class="right-align">
-                  <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
-                      Guardar
-                  </button>
-                  <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
-                      Problema
-	                </a>
-              </div>
+            <div class="right-align">
+              <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
+                Guardar
+              </button>
+              <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
+                Problema
+	      </a>
+            </div>
             {% endblock card-action %}
           </div>
       </form>
@@ -197,30 +154,39 @@ $(document).ready(function() {
 {{ block.super }}
 <script type="text/javascript">
   $(document).ready(function(){
-      $('#id_distrito').attr('tabindex', 1);
-      $('#id_seccion').attr('tabindex', 2);
-      $('#id_circuito').attr('tabindex', 3);
-      $('#id_mesa').attr('tabindex', 4);
+      $('#distrito_input').attr('tabindex', 1);
+      $('#seccion_input').attr('tabindex', 2);
+      $('#circuito_input').attr('tabindex', 3);
+      $('#mesa_input').attr('tabindex', 4);
       $('.modal').modal();
-      $('#id_distrito').on('blur',function(e){
+      const forward = ['distrito', 'seccion', 'circuito', 'mesa']
+      initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
+      initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
+      initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
+      $('#distrito_input').on('blur',function(e){
 	  updateField(
-	      '#id_distrito',
-	      "{% url 'autocomplete-distrito' %}"
-	  )});
-      $('#id_seccion').on('blur',function(e){
+	      'distrito',
+	      "{% url 'autocomplete-distrito' %}",
+	      []
+	  );
+      });
+      $('#seccion_input').on('blur',function(e){
 	  updateField(
-	      '#id_seccion',
+	      'seccion',
 	      "{% url 'autocomplete-seccion' %}",
+	      ['distrito']
 	  )});
-      $('#id_circuito').on('blur',function(e){
+      $('#circuito_input').on('blur',function(e){
 	  updateField(
-	      '#id_circuito',
-	      "{% url 'autocomplete-circuito' %}"
+	      'circuito',
+	      "{% url 'autocomplete-circuito' %}",
+	      ['distrito','seccion']
 	  )});
-      $('#id_mesa').on('blur',function(e){
+      $('#mesa_input').on('blur',function(e){
 	  updateField(
-	      '#id_mesa',
-	      "{% url 'autocomplete-mesa' %}"
+	      'mesa',
+	      "{% url 'autocomplete-mesa' %}",
+	      ['distrito','seccion','circuito']
 	  )});
   });
 </script>

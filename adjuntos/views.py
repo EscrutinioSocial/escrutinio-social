@@ -325,7 +325,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
             if fiscal.seccion:
                 # Si el fiscal tiene una sección precargada tomamos los datos de ahí.
                 initial['seccion'] = fiscal.seccion
-                initial['distrito_precargado'] = fiscal.seccion.distrito
+                initial['distrito'] = fiscal.seccion.distrito
             elif fiscal.distrito:
                 # Si no tiene sección, pero sí un distrito, vamos con eso.
                 initial['distrito'] = fiscal.distrito

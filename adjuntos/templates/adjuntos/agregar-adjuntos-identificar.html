@@ -4,6 +4,12 @@
 {% block extrahead %}
 <link href="/static/css/select2-materialize.css" type="text/css" media="screen" rel="stylesheet">
 {% endblock %}
+{% block js %}
+{{ block.super }}
+<script src="{% static 'js/sidenav.js' %}"></script>
+<script src="{% static 'js/simpleselect.js' %}"></script>
+{% block extrajs %}{% endblock %}
+{% endblock %}
 
 {% block page_title %}Subir actas y pre identificarlas{% endblock %}
 
@@ -34,6 +40,38 @@
 
     </div>
 </div>
-{{ pre_identificacion_form.media.js }}
 
 {% endblock %}
+{% block messages %}
+{{ block.super }}
+<script type="text/javascript">
+  $(document).ready(function(){
+      $('#distrito_input').attr('tabindex', 1);
+      $('#seccion_input').attr('tabindex', 2);
+      $('#circuito_input').attr('tabindex', 3);
+      const forward = ['distrito', 'seccion', 'circuito', 'mesa']
+      initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
+      initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
+      initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
+      $('#distrito_input').on('blur',function(e){
+	  updateField(
+	      'distrito',
+	      "{% url 'autocomplete-distrito' %}",
+	      []
+	  );
+      });
+      $('#seccion_input').on('blur',function(e){
+	  updateField(
+	      'seccion',
+	      "{% url 'autocomplete-seccion' %}",
+	      ['distrito']
+	  )});
+      $('#circuito_input').on('blur',function(e){
+	  updateField(
+	      'circuito',
+	      "{% url 'autocomplete-circuito' %}",
+	      ['distrito','seccion']
+	  )});
+  });
+</script>
+{% endblock messages %}
