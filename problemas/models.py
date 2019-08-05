@@ -14,9 +14,9 @@ class ReporteDeProblema(TimeStampedModel):
         ('invalida', 'Falla alguna validación del sistema que no debería fallar.'),
         ('ilegible', 'La foto es de un acta pero no la puedo leer con claridad.'),
         ('falta_foto', 'La parte que es necesario cargar no está entre las fotos presentes.'),
-        ('falta_identificador', 'El sistema no tiene la sección, circuito o mesa. Indicar el dato faltante en la descripción.' ),
+        ('falta_identificador', 'El sistema no tiene la sección, circuito o mesa. Indicá el dato faltante en la descripción.' ),
         ('falta_lista', ("El sistema no tiene una de las opciones que aparecen en el acta o"
-                         "certificado. Indicar el dato faltante en la descripción.")
+                         "certificado. Indicá el dato faltante en la descripción.")
         ),
         ('otro', 'Si el problema no encaja en ninguna de las anteriores; describilo en la descripción.')
     )
