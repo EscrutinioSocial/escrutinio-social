@@ -40,6 +40,14 @@
   }
 },
 {
+  "model": "auth.group",
+  "pk": 6,
+  "fields": {
+    "name": "visualizadores_sensible",
+    "permissions": []
+  }
+},
+{
   "model": "auth.user",
   "pk": 1,
   "fields": {
@@ -58,7 +66,8 @@
       2,
       3,
       4,
-      5
+      5,
+      6
     ],
     "user_permissions": []
   }
@@ -159,6 +168,27 @@
     "date_joined": "2019-07-13T12:31:35Z",
     "groups": [
       5
+    ],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 7,
+  "fields": {
+    "password": "pbkdf2_sha256$150000$BhwCvPzMgPNP$KPKsJ4lZHSw4Ymp+khCNMi5UVWNolmt9tAuc96ZQ02Q=",
+    "last_login": "2019-07-13T14:33:01.393Z",
+    "is_superuser": false,
+    "username": "visualizador_sensible",
+    "first_name": "Usuario",
+    "last_name": "Visualizador Sensible",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2019-07-13T12:23:00Z",
+    "groups": [
+      3,
+      6
     ],
     "user_permissions": []
   }
@@ -302,6 +332,29 @@
   }
 },
 {
+  "model": "fiscales.fiscal",
+  "pk": 7,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "44934047-355e-4e4a-8a65-2ebcd36cbfe0",
+    "email_confirmado": false,
+    "apellido": "Usuario",
+    "nombres": "Visualizador Sensible",
+    "tipo_dni": "DNI",
+    "dni": "00000005",
+    "troll": false,
+    "user": 7,
+    "seccion": null,
+    "referente": null,
+    "referente_certeza": 100,
+    "referencia_confirmada": false,
+    "referente_nombres": null,
+    "referente_apellido": null,
+    "referido_por_codigos": null
+  }
+},
+{
   "model": "elecciones.distrito",
   "pk": 1,
   "fields": {
@@ -320,7 +373,6 @@
     "numero": "1",
     "nombre": "Secci\u00f3n 1",
     "electores": 440,
-    "proyeccion_ponderada": false,
     "prioridad": 0
   }
 },
@@ -333,7 +385,6 @@
     "numero": "2",
     "nombre": "Secci\u00f3n 2",
     "electores": 360,
-    "proyeccion_ponderada": false,
     "prioridad": 0
   }
 },
@@ -1229,3 +1280,4 @@
   }
 }
 ]
+

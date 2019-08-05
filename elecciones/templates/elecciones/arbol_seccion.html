@@ -10,7 +10,7 @@
         </div>
         <div class="collapsible-body">
             <ul>
-                {% for circuito in seccion.circuito_set.all %}
+            	{% for circuito in seccion.circuitos.all %}
                 <li id="circuito-{{circuito.id}}">
                     <a
                         href="{{ request.path }}?circuito={{ circuito.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">

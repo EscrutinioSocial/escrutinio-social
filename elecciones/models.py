@@ -88,13 +88,6 @@ class Seccion(models.Model):
     numero = models.CharField(null=True, max_length=10, db_index=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
-    proyeccion_ponderada = models.BooleanField(
-        default=False,
-        help_text=(
-            'Si está marcado, el cálculo de proyeccion se agrupará '
-            'por circuitos para esta sección'
-        )
-    )
     # esta es la prioridad del "viejo" modelo de scheduling, está deprecada a la espera del refactor
     # que permita borrarla
     prioridad = models.PositiveIntegerField(
@@ -699,6 +692,26 @@ class Opcion(models.Model):
             return self.partido.color
         return '#FFFFFF'
 
+    @classmethod
+    def opciones_no_partidarias(cls):
+        return ['OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_TOTAL_SOBRES', 'OPCION_NULOS']
+
+    @classmethod
+    def blancos(cls):
+        return cls.objects.get(**settings.OPCION_BLANCOS)
+
+    @classmethod
+    def total_votos(cls):
+        return cls.objects.get(**settings.OPCION_TOTAL_VOTOS)
+
+    @classmethod
+    def nulos(cls):
+        return cls.objects.get(**settings.OPCION_NULOS)
+
+    @classmethod
+    def sobres(cls):
+        return cls.objects.get(**settings.OPCION_TOTAL_SOBRES)
+
     def __str__(self):
         if self.partido:
             return f'{self.partido.codigo} - {self.nombre}'  # {self.partido.nombre_corto}
@@ -766,18 +779,6 @@ class Categoria(models.Model):
 
     # Tracker de cambios en el atributo prioridad, usado en la función que dispara en el post_save
     tracker = FieldTracker(fields=['prioridad'])
-
-    def get_opcion_blancos(self):
-        return self.opciones.get(**settings.OPCION_BLANCOS)
-
-    def get_opcion_total_votos(self):
-        return self.opciones.get(**settings.OPCION_TOTAL_VOTOS)
-
-    def get_opcion_nulos(self):
-        return self.opciones.get(**settings.OPCION_NULOS)
-
-    def get_opcion_total_sobres(self):
-        return self.opciones.get(**settings.OPCION_TOTAL_SOBRES)
 
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])

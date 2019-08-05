@@ -63,15 +63,20 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
 
+    # django-autocomplete-light
+    'dal',
+    'dal_select2',
+    
     # nuestras apps
+    'fiscales.apps.FiscalesAppConfig',  # Hay que ponerlo así para que cargue el app_ready()
     'elecciones.apps.EleccionesAppConfig',
-    'fiscales',
     'adjuntos',
     'problemas',
     'contacto',
-    'antitrolling',
     'api',
+    'antitrolling',
     'scheduling'
+
 ]
 
 MIDDLEWARE = [
@@ -82,6 +87,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'fiscales.middleware.OneSessionPerUserMiddleware'
 ]
 
 ROOT_URLCONF = 'escrutinio_social.urls'
@@ -336,6 +342,12 @@ OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'vo
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None, 'codigo': '10001'}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
+
+# Cada cuanto tiempo actualizar el campo last_seen de un Fiscal.
+LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
+
+# Cuando expira una sesión.
+SESSION_TIMEOUT = 5 * 60  # en segundos.
 
 # Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
 # Ver csv_import.py

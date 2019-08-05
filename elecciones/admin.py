@@ -214,7 +214,7 @@ class SeccionAdmin(admin.ModelAdmin):
     form = SeccionForm
     fieldsets = (
         (None, {
-            'fields': ('distrito', 'seccion_politica', 'numero', 'nombre', 'electores', 'proyeccion_ponderada')
+            'fields': ('distrito', 'seccion_politica', 'numero', 'nombre', 'electores')
         }),
         ('Prioridades', {
             'fields': ('prioridad_hasta_2', 'prioridad_2_a_10', 'prioridad_10_a_100', 'cantidad_minima_prioridad_hasta_2'),
