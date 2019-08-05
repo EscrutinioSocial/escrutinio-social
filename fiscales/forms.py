@@ -10,6 +10,7 @@ from django.contrib.auth import password_validation
 from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
+from django.utils.html import format_html
 
 from dal import autocomplete
 
@@ -29,8 +30,9 @@ class AuthenticationFormCustomError(AuthenticationForm):
         _("This account is inactive."),
     }
     already_logged_message = (
-        'Ya hay un usuario sesionado/a con esta cuenta. Si sos vos mismo/a esperá '
-        f'{int(settings.SESSION_TIMEOUT / 60)} minutos y volvé a intentarlo.'
+        format_html('Ya hay un usuario sesionado/a con esta cuenta. Si sos vos mismo/a esperá '
+        f'{int(settings.SESSION_TIMEOUT / 60)} minutos y volvé a intentarlo. '
+        'También podés probar <a href="/logout">cerrando sesión</a>.')
     )
 
 

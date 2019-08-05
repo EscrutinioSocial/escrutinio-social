@@ -347,7 +347,7 @@ OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': '
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
 
 # Cuando expira una sesión.
-SESSION_TIMEOUT = 10 * 60  # en segundos.
+SESSION_TIMEOUT = 5 * 60  # en segundos.
 
 # Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
 # Ver csv_import.py
