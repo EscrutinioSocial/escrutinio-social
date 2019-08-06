@@ -389,7 +389,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     # categoria1 debería aparecer primero porque su mesa categoria tiene un orden_de_carga más grande
     assert nombre_categoria in str(response.content)
 
-    tupla_opciones_electores = [(opcion1.id, mesa.electores // 2, False), (opcion2.id, mesa.electores // 2, False)]
+    tupla_opciones_electores = [(opcion1.id, mesa.electores // 2, mesa.electores // 2), (opcion2.id, mesa.electores // 2, mesa.electores // 2)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
 
     with django_assert_num_queries(36):

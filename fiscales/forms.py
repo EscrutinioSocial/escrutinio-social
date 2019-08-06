@@ -335,7 +335,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         necesario dar un warning al usuario. Si el usuario los envía por segunda
         vez, se compara que los datos enviados son los mismos para así guardarlos
         """
-        form.fields["valor-previo"] = forms.BooleanField(label="",
+        form.fields["valor-previo"] = forms.IntegerField(label="",
                                             required=False,
                                             widget=forms.HiddenInput)
 
@@ -372,50 +372,46 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         #warnings
         warnings = []
 
-        for form in self.forms:
-            data = form.data.copy()
-            cantidad_forms = form.data['form-TOTAL_FORMS']
-            mismosDatos = True
-            for i in range(int(cantidad_forms)):
-                mismosDatos = mismosDatos and (data['form-'+str(i)+'-valor-previo']
-                                                == data['form-'+str(i)+'-votos'])
+        cantidad_forms = self.data['form-TOTAL_FORMS']
+        mismos_datos = True
+        for i in range(int(cantidad_forms)):
+            mismos_datos = mismos_datos and (self.data['form-'+str(i)+'-valor-previo']
+                                            == self.data['form-'+str(i)+'-votos'])
 
-            if not mismosDatos:
+        if not mismos_datos:
+            for form in self.forms:
+                opcion = form.cleaned_data.get('opcion')
+                votos = form.cleaned_data.get('votos')
                 #todos 0
-                if (form.cleaned_data.get('opcion').nombre_corto
-                                == settings.OPCION_FRENTE_DE_TODOS['nombre_corto']):
-                    if form.cleaned_data.get('votos') == 0:
-                        warnings.append('La cantidad de votos del Frente de Todos es cero.')
+                if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_NOSOTROS:
+                    if votos == 0:
+                        warnings.append('La cantidad de votos de Todos es cero.')
 
-                #cambiemos 0
-                if (form.cleaned_data.get('opcion').nombre_corto
-                                == settings.OPCION_CAMBIEMOS['nombre_corto']):
-                    if form.cleaned_data.get('votos') == 0:
-                        warnings.append('La cantidad de votos de Cambiemos es cero.')
+                #jxc 0
+                if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_ELLOS:
+                    if votos == 0:
+                        warnings.append('La cantidad de votos de JxC es cero.')
 
                 # sobres > mesa.electores && total_votos > sobres
-                if (form.cleaned_data.get('opcion').nombre_corto
-                                == settings.OPCION_TOTAL_SOBRES['nombre_corto']):
-
-                    if form.cleaned_data.get('votos') > self.mesa.electores:
+                if opcion.nombre_corto == Opcion.sobres().nombre_corto:
+                    if votos and votos > self.mesa.electores:
                         warnings.append('La cantidad de sobres es mayor a la '
                             f'cantidad de electores de la mesa: {self.mesa.electores}')
 
-                    if suma > form.cleaned_data.get('votos'):
+                    if votos and suma > votos:
                         warnings.append('La cantidad de votos es mayor a la '
                                     f'cantidad de sobres.')
 
-            # guardo los datos en una variable auxiliar para comprobar si hubo
-            # cambios al confirmar el warning
-            for i in range(int(cantidad_forms)):
-                data['form-'+str(i)+'-valor-previo'] = data['form-'+str(i)+'-votos']
+                # guardo los datos en una variable auxiliar para comprobar si hubo
+                # cambios al confirmar el warning
+                data = form.data.copy()
+                for i in range(int(cantidad_forms)):
+                    data['form-'+str(i)+'-valor-previo'] = data['form-'+str(i)+'-votos']
 
-            form.data = data
+                form.data = data
 
-        if warnings:
-            warnings.append('¿Confirma que están cargados correctamente los '
-                                    f'valores que figuran en el acta?')
-            raise forms.ValidationError(warnings)
+            if warnings:
+                raise forms.ValidationError(warnings)
 
 
 votomesareportadoformset_factory = partial(
