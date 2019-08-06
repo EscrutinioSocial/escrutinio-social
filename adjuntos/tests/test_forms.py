@@ -24,7 +24,7 @@ def test_identificacion_nuevo_choices(db):
 
     form = IdentificacionForm()
 
-    # los querysets (opciones validas) son todos los disponibles
+    # los querysets (opciones validas) están vacíos, excepto distrito
     distrito_qs = form.fields['distrito'].queryset
     distritos = list(Distrito.objects.all())
     assert list(distrito_qs) == distritos
@@ -36,13 +36,14 @@ def test_identificacion_nuevo_choices(db):
     assert list(mesa_qs) == list(Mesa.objects.all())
 
     # pero las opciones para seccion, circuito, mesa están vacias
-    # y se completan a dinámicamente cuando se elige el padre
     opciones_base = [('', '---------')]
+    # y se completan dinámicamente cuando se elige el padre
     opciones_d = [(d2.id, str(d2)), (d.id, str(d))]
+    
     assert list(form.fields['distrito'].choices) == opciones_base + opciones_d
-    assert list(form.fields['seccion'].choices) == opciones_base
-    assert list(form.fields['circuito'].choices) == opciones_base
-    assert list(form.fields['mesa'].choices) == opciones_base
+    assert list(form.fields['seccion'].choices) == opciones_base + [(o.id,str(o)) for o in list(seccion_qs)]
+    assert list(form.fields['circuito'].choices) == opciones_base + [(o.id,str(o)) for o in list(circuito_qs)]
+    assert list(form.fields['mesa'].choices) == opciones_base + [(o.id,str(o)) for o in list(mesa_qs)]
 
 
 def test_identificacion_valida_jerarquia(db):

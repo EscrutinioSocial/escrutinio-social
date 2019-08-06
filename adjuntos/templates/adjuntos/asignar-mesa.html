@@ -1,15 +1,48 @@
 {% extends "fiscales/base.html" %}
-{% load i18n material_form material_frontend %}
+{% load l10n i18n material_form material_frontend %}
 {% load staticfiles %}
 
 {% block breadcrumbs_items %}
 <a href="{{ object.get_absolute_url }}">{{ object }}</a>
 <a class="active">Acta</a>
 {% endblock %}
-
+{% block js %}
+{{ block.super }}
+<script src="{% static 'js/sidenav.js' %}"></script>
+<script src="{% static 'js/simpleselect.js' %}"></script>
+<script>
+  /* 
+   Si pudimos determinar la mesa unívocamente, actualizamos la
+   sección y el circuito (si están vacíos). 
+ */
+  function cambioMesa(){
+      var mesa = $('#id_mesa').val();
+      var circuito = $('#id_circuito').val();
+      var seccion = $('#id_seccion').val();
+      if(mesa != "-1"){
+	  var params = {'mesa': mesa, 'desdeMesa': '1'};
+	  if(circuito == "-1"){
+	      updateFieldUrl('circuito',"{% url 'autocomplete-circuito' %}",params);
+	  }
+	  if(seccion == "-1"){
+	      updateFieldUrl('seccion', "{% url 'autocomplete-seccion' %}",params);
+	  }
+      }
+  }
+</script>
+{% block extrajs %}{% endblock %}
+{% endblock %}
 
 {% block extrahead %}
 <style type="text/css">
+.resultado-select{
+    border-bottom: none !important;
+}
+
+.requerido > label {
+    font-weight: 600 !important;
+    color: light-gray;
+}
 .content {
   padding-bottom: 0px;
 }
@@ -85,19 +118,24 @@ $(document).ready(function() {
           <div class="card-content">
             {% block card-content %}
               <div class="card-title">¿De qué mesa es esta acta?</div>
-              {% include "adjuntos/asignar-mesa-form.html" %}
+              {% form %}
+	      {% endform %}
+	      {% if form.errors %}
+	      <div class="grey-text text-darken-1">Si no podés identificar la imagen, podés
+		reportarlo con el botón “Problema”.</div>
+	      {% endif %}
             {% endblock card-content %}
           </div>
           <div class="card-action">
             {% block card-action %}
-              <div class="right-align">
-                  <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
-                      Guardar
-                  </button>
-                  <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
-                      Problema
-	                </a>
-              </div>
+            <div class="right-align">
+              <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
+                Guardar
+              </button>
+              <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
+                Problema
+	      </a>
+            </div>
             {% endblock card-action %}
           </div>
       </form>
@@ -143,8 +181,46 @@ $(document).ready(function() {
 {{ block.super }}
 <script type="text/javascript">
   $(document).ready(function(){
-      $('#id_status_container').attr('tabindex', 6);
       $('.modal').modal();
+      initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
+      initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
+      initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
+      $('#distrito_input').on('focusout',function(e){
+	  updateField(
+	      'distrito',
+	      "{% url 'autocomplete-distrito' %}",
+	      [],
+	      null
+	  );
+      });
+      $('#seccion_input').on('focusout',function(e){
+	  updateField(
+	      'seccion',
+	      "{% url 'autocomplete-seccion' %}",
+	      ['distrito'],
+	      null
+	  )});
+      $('#circuito_input').on('focusout',function(e){
+	  updateField(
+	      'circuito',
+	      "{% url 'autocomplete-circuito' %}",
+	      ['distrito','seccion'],
+	      null
+	  )});
+      $('#mesa_input').on('focusout',function(e){
+	  updateField(
+	      'mesa',
+	      "{% url 'autocomplete-mesa' %}",
+	      ['distrito','seccion','circuito'],
+	      cambioMesa
+	  );
+      });
+      $('#distrito_input').attr('tabindex', 1);
+      $('#seccion_input').attr('tabindex', 2);
+      $('#circuito_input').attr('tabindex', 3);
+      $('#mesa_input').attr('tabindex', 4);
+      $('#distrito_input').focus();
   });
 </script>
+
 {% endblock messages %}
