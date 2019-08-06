@@ -77,19 +77,22 @@ class PreIdentificacionForm(forms.ModelForm):
     """
     distrito = forms.ModelChoiceField(
         queryset = Distrito.objects.all(),
-        widget = Select(),
+        widget = Select(
+            attrs = {'class': 'requerido'}
+        ),
     )
 
     seccion = forms.ModelChoiceField(
+        required = False,
         queryset = Seccion.objects.all(),
         widget = Select(),
-        required = False,
+        label = 'Sección',
     )
     
     circuito = forms.ModelChoiceField(
+        required = False,
         queryset = Circuito.objects.all(),
         widget = Select(),
-        required = False,      
     )
 
     class Meta:
@@ -106,7 +109,7 @@ class PreIdentificacionForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        circuito = cleaned_data.get('circuito')
+        circuito = cleaned_data.get('circuito') 
         seccion = cleaned_data.get('seccion')
         distrito = cleaned_data.get('distrito')
         if seccion and seccion.distrito != distrito:

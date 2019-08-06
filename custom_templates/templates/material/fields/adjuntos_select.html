@@ -10,7 +10,7 @@
              {% endattrs %}>{{ bound_field.label }}</label>
     {% endpart %}
     {% part field control %}
-    <input id="id_{{bound_field.name}}" name="{{bound_field.name}}" type="hidden" tabindex="-1"{% if bound_field.value != None %} value="{{ bound_field.value|stringformat:'s' }}"{% endif %}/>
+    <input id="id_{{bound_field.name}}" name="{{bound_field.name}}" type="hidden" tabindex="-1"{% if bound_field.value != None %} value="{{ bound_field.value|stringformat:'s' }}{% else %}-1{% endif %}"/>
     <input id="{{bound_field.name}}_input" name="{{bound_field.name}}_input" type="text"
 	   {% if bound_field.value != None %} value=" " {% endif %} />
     {% endpart %}
@@ -24,7 +24,7 @@
       {% include  'material/field_errors.html' %}
     </div>
     {% else %}
-    <input id="{{bound_field.name}}-resultado" readonly class="resultado-select" tabindex="-1"/>
+    <input id="{{bound_field.name}}-resultado" readonly class="resultado-select" tabindex="-1" value=""/>
     {# We may put some icon to be more explicit about the outcome of the query #}
     {#  <i class="material-icons suffix"></i> #}
     {% endif %}{% endpart %}{{ hidden_initial }}

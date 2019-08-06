@@ -182,9 +182,9 @@ $(document).ready(function() {
 <script type="text/javascript">
   $(document).ready(function(){
       $('.modal').modal();
-      initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
-      initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
-      initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
+      initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}");
+      initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}");
+      initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}");
       $('#distrito_input').on('focusout',function(e){
 	  updateField(
 	      'distrito',

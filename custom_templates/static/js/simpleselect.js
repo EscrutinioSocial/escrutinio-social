@@ -3,32 +3,36 @@ Esta función simplemente setea los valores y textos correspondiente de
 los inputs asociados al campo. Si hay una única opción válida se usan
 esos valores.
 */
-function displayResult(field,default_value,options){
+function displayResult(field,default_value,options=[]){
     var op = default_value;
-    var val = "-1";
+    var val = "";
     var txt = "";
     if(options.length==1){
 	op = options[0].text;
 	val = options[0].id;
 	txt = options[0].selected_text;
-	$("#"+field+"-resultado").removeClass("error");
     }
     else if(options.length==0){
 	op = "No es un valor válido";
-	$("#"+field+"-resultado").addClass("error");
     }
     else {
 	op = "Más de un valor válido";
     }
     $("#"+field+"-resultado").val(op);
-    $("#id_"+field).val(val);
+    if(val != ""){
+	$("#id_"+field).val(val);
+    }
     $("#"+field+"_input").val(txt);
     if (txt != "") {
 	$($('label[for='+field+'_input]')[0]).addClass("active");
 	$('#errors_for_'+field).addClass("hide");
 	$("#"+field+"-resultado").removeClass("hide");
+	$("#"+field+"-resultado").removeClass("error");
     }
     else {
+	if($("#"+field+"-resultado").hasClass("requerido")){
+	    $("#"+field+"-resultado").addClass("error");
+	}
 	$($('label[for='+field+'_input]')[0]).removeClass("active");
     }
 }
@@ -37,9 +41,9 @@ function displayResult(field,default_value,options){
 Inicialización de los inputs asociados a un campo. Tomamos el id del
 objeto del input "#id_field".
 */
-function initializeSimpleSelect(field,base_url,fwd){
+function initializeSimpleSelect(field,base_url){
     var value = $("#id_"+field).val();
-    if(isFinite(value) && value != "-1" && value!="") {
+    if(value != -1 && value!="" && isFinite(value)) {
 	var url = base_url+'?ident='+value;
 	$.ajax({
       	    type: 'GET',
