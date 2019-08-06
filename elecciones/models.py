@@ -308,11 +308,36 @@ class MesaCategoriaQuerySet(models.QuerySet):
     def con_carga_pendiente(self):
         return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
+    def anotar_prioridad_status(self):
+        """
+        Dados los status posibles anota el querset
+        ``prioridad_status`` con un valor entero (0, 1, 2, ...)
+        que se corresponde con el índice del status en la constante
+        ``config.PRIORIDAD_STATUS``, que es configurable via Constance.
+        Sirve para poder ordenar por "prioridad de status"::
+
+            >>> qs.anotar_prioridad_status().order_by('prioridad_status')
+
+        Por defecto, esta prioridad es la definida por el orden definido
+        en ``settings.MC_STATUS_CHOICE``.
+        """
+        whens = []
+        for valor, status in enumerate(config.PRIORIDAD_STATUS.split()):
+            whens.append(models.When(status=status, then=models.Value(valor)))
+        return self.annotate(
+            prioridad_status=models.Case(
+                *whens,
+                output_field=models.IntegerField(),
+            )
+        )
+
     def mas_prioritaria(self):
         """
         Devuelve la intancia más prioritaria del queryset
         """
-        return self.order_by('status', 'orden_de_carga', 'id').first()
+        return self.anotar_prioridad_status().order_by(
+            'prioridad_status', 'orden_de_carga', 'id'
+        ).first()
 
     def siguiente(self):
         """
@@ -325,18 +350,6 @@ class MesaCategoriaQuerySet(models.QuerySet):
         Devuelve mesacat con carga pendiente más prioritaria, que no tenga cargas del fiscal indicado
         """
         return self.con_carga_pendiente().sin_cargas_del_fiscal(fiscal).mas_prioritaria()
-
-    def anotar_prioridad_status(self):
-        whens = []
-
-        for valor, status in enumerate(config.PRIORIDAD_STATUS.split()):
-            whens.append(models.When(status=status, then=models.Value(valor)))
-        return self.annotate(
-            prioridad_status=models.Case(
-                *whens,
-                output_field=models.IntegerField(),
-            )
-        )
 
 
 class MesaCategoria(models.Model):
@@ -391,6 +404,7 @@ class MesaCategoria(models.Model):
         self.taken = None
         self.taken_by = None
         self.save(update_fields=['taken', 'taken_by'])
+
 
     def actualizar_orden_de_carga(self):
         """

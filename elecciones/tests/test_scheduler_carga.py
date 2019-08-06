@@ -1,6 +1,7 @@
 import pytest
 from datetime import timedelta
 from django.utils import timezone
+
 from elecciones.tests.factories import (
     AttachmentFactory,
     CategoriaFactory,
@@ -12,8 +13,22 @@ from elecciones.tests.factories import (
     MesaFactory,
 )
 from elecciones.models import MesaCategoria, Mesa
+
 from adjuntos.consolidacion import consumir_novedades_identificacion
 from problemas.models import Problema, ReporteDeProblema
+
+
+@pytest.fixture
+def setup_constance(db):
+    """
+    Cuando se pide alguna config, Constance realiza por unica vez el setup
+    de los definiciones por default de todas aquellas que no hayan sido explicitamente
+    modificadas.
+    Este fixture tiene el fin de forzar esa inilizacion para
+    no afectar artificialmente el computo cuando se mide el numero de queries
+    """
+    from constance import config
+    config.PRIORIDAD_STATUS
 
 
 def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
@@ -32,7 +47,8 @@ def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
     assert mc2.orden_de_carga is not None
 
 
-def test_siguiente_prioriza_estado_y_luego_coeficiente(db, django_assert_num_queries):
+def test_siguiente_prioriza_estado_y_luego_coeficiente(db, setup_constance, django_assert_num_queries):
+
     f = FiscalFactory()
     c = CategoriaFactory(prioridad=1)
     m1 = MesaFactory()
@@ -59,8 +75,9 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, django_assert_num_que
         orden_de_carga=2.0,
         mesa=m3
     )
-    with django_assert_num_queries(1):
+    with django_assert_num_queries(3):
         assert MesaCategoria.objects.siguiente() == mc1
+
     mc1.take(f)
     assert MesaCategoria.objects.siguiente() == mc3
     mc3.take(f)
