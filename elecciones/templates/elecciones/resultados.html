@@ -70,7 +70,7 @@
             ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
         </h4>
         {% if request.GET.circuito != null %}
-        <a href="../mesas_circuito/{{object.id}}?{{ request.GET.urlencode }}">Ver mesas del circuito</a>
+        <a href="{% url 'mesas-circuito' object.id %}?{{ request.GET.urlencode }}">Ver mesas del circuito</a>
         {% endif %}
         <table class="bordered" id="tabla_resultados">
             <colgroup>
