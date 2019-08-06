@@ -1,25 +1,46 @@
 from django import forms
+from django.conf import settings
 from django.core.validators import FileExtensionValidator
 
 from .models import Identificacion, PreIdentificacion, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from problemas.models import ReporteDeProblema
-from django.conf import settings
 
-
+from .widgets import Select
 class IdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar mesa
     """
-    distrito = forms.ModelChoiceField(queryset=Distrito.objects.all())
-    seccion = forms.ModelChoiceField(queryset=Seccion.objects.all())
-    circuito = forms.ModelChoiceField(queryset=Circuito.objects.all())
-    mesa = forms.ModelChoiceField(queryset=Mesa.objects.all())
+
+    distrito = forms.ModelChoiceField(
+        queryset = Distrito.objects.all(),
+        widget = Select(
+            attrs = {'class': 'requerido'}
+        ),
+    )
+
+    seccion = forms.ModelChoiceField(
+        queryset = Seccion.objects.all(),
+        widget = Select(),
+        label = 'Sección',
+    )
+    
+    circuito = forms.ModelChoiceField(
+        queryset = Circuito.objects.all(),
+        widget = Select()
+    )
+
+    mesa = forms.ModelChoiceField(
+        queryset = Mesa.objects.all(),
+        widget = Select(
+            attrs = {'class': 'requerido'}
+        ),
+    )
 
     class Meta:
         model = Identificacion
-        fields = ['distrito', 'seccion', 'circuito', 'mesa']
-
+        fields = ['distrito','seccion','circuito','mesa']
+        
     def __init__(self, *args, **kwargs):
         instance = kwargs.get('instance')
         if instance and instance.mesa:
@@ -27,12 +48,8 @@ class IdentificacionForm(forms.ModelForm):
             kwargs['initial']['seccion'] = seccion = circuito.seccion
             kwargs['initial']['distrito'] = distrito = seccion.distrito
         super().__init__(*args, **kwargs)
-        self.fields['distrito'].widget.attrs['autofocus'] = True
-        self.fields['seccion'].choices = (('', '---------'),)
-        self.fields['seccion'].label = 'Sección'
-        self.fields['mesa'].choices = (('', '---------'),)
-        self.fields['circuito'].choices = (('', '---------'),)
-            
+
+
     def clean(self):
         cleaned_data = super().clean()
         mesa = cleaned_data.get('mesa')
@@ -58,9 +75,22 @@ class PreIdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar una pre identificación a un adjunto.
     """
-    distrito = forms.ModelChoiceField(queryset=Distrito.objects.all())
-    seccion = forms.ModelChoiceField(queryset=Seccion.objects.all(), required=False)
-    circuito = forms.ModelChoiceField(queryset=Circuito.objects.all(),required=False)
+    distrito = forms.ModelChoiceField(
+        queryset = Distrito.objects.all(),
+        widget = Select(),
+    )
+
+    seccion = forms.ModelChoiceField(
+        queryset = Seccion.objects.all(),
+        widget = Select(),
+        required = False,
+    )
+    
+    circuito = forms.ModelChoiceField(
+        queryset = Circuito.objects.all(),
+        widget = Select(),
+        required = False,      
+    )
 
     class Meta:
         model = PreIdentificacion
@@ -73,10 +103,6 @@ class PreIdentificacionForm(forms.ModelForm):
             kwargs['initial']['seccion'] = seccion = circuito.seccion
             kwargs['initial']['distrito'] = distrito = seccion.distrito
         super().__init__(*args, **kwargs)
-        self.fields['distrito'].widget.attrs['autofocus'] = True
-        self.fields['seccion'].choices = (('', '---------'),)
-        self.fields['seccion'].label = 'Sección'
-        self.fields['circuito'].choices = (('', '---------'),)
 
     def clean(self):
         cleaned_data = super().clean()

@@ -1,0 +1,26 @@
+  {% load l10n material_form material_form_internal %}
+    {% part bound_field.field %}
+    <div class="row">
+            <div{% attrs bound_field 'group' %}
+                    id="id_{{ bound_field.html_name }}_container"
+                    class="autocomplete-field select2 col s12{% if field.required %} required{% endif %}{% if bound_field.errors %} has-error{% endif %}"
+            {% endattrs %}>
+                    {% part field prefix %}{% endpart %}{% part field label %}
+                            <label{% attrs bound_field 'label' %}
+                                    for="{{ bound_field.id_for_label }}"
+                            {% endattrs %}>{{ bound_field.label }}</label>
+                    {% endpart %}
+                    {% part field control %}
+                            <div class="section">
+                                    {{ bound_field }}
+                            </div>
+                    {% endpart %}
+                    {% part field help_text %}{% if field.help_text %}
+                            <div class="help-block">{{ bound_field.help_text|safe }}</div>
+                    {% endif %}{% endpart %}{% part field errors %}
+                            {% if bound_field.errors %}
+                                    {% include  'material/field_errors.html' %}
+                            {% endif %}{% endpart %}{{ hidden_initial }}
+            </div>
+    </div>
+    {% endpart %}

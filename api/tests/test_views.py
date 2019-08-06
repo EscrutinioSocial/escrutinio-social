@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from elecciones.tests import factories
-from elecciones.models import Carga
+from elecciones.models import Carga, Opcion
 from adjuntos.models import Attachment, hash_file
 
 from elecciones.tests.factories import (
@@ -360,7 +360,7 @@ def test_listar_opciones_todas(admin_client):
     response = admin_client.get(url, data={'solo_prioritarias': False}, format='json')
 
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.data) == 4
+    assert len(response.data) == 8
 
     opciones = [(opc['id'], opc['nombre'], opc['nombre_corto'], opc['codigo']) for opc in response.data]
     assert opciones == [
@@ -368,7 +368,11 @@ def test_listar_opciones_todas(admin_client):
         (o3.id, o3.nombre, o3.nombre_corto, o3.codigo),
         (o2.id, o2.nombre, o2.nombre_corto, o2.codigo),
         (o4.id, o4.nombre, o4.nombre_corto, o4.codigo),
-    ]
+    ] + [(
+        opcion.id, opcion.nombre, opcion.nombre_corto, opcion.codigo
+    ) for opcion in [
+        Opcion.blancos(), Opcion.total_votos(), Opcion.sobres(), Opcion.nulos()
+    ]]
 
 
 @pytest.mark.parametrize('valor', ['No booleano', 42])

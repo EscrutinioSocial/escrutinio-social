@@ -1,9 +1,8 @@
 from functools import partial
+from django.conf import settings
 from django import forms
 from django.forms import modelformset_factory, BaseModelFormSet
 from material import Layout, Row, Fieldset
-from .models import Fiscal
-from elecciones.models import VotoMesaReportado, Categoria, Opcion, Distrito
 from localflavor.ar.forms import ARDNIField
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
@@ -12,8 +11,14 @@ from django.contrib.auth import password_validation
 from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
+from django.utils.html import format_html
+
+from dal import autocomplete
 
 import phonenumbers
+
+from .models import Fiscal
+from elecciones.models import VotoMesaReportado, Categoria, Opcion, Distrito, Seccion
 
 
 class AuthenticationFormCustomError(AuthenticationForm):
@@ -26,25 +31,30 @@ class AuthenticationFormCustomError(AuthenticationForm):
         _("This account is inactive."),
     }
     already_logged_message = (
-        'Ya hay un usuario sesionado/a con esta cuenta. Si sos vos mismo/a esperá '
-        f'{int(settings.SESSION_TIMEOUT / 60)} minutos y volvé a intentarlo.'
+        format_html('Ya hay un usuario sesionado/a con esta cuenta. Si sos vos mismo/a esperá '
+        f'{int(settings.SESSION_TIMEOUT / 60)} minutos y volvé a intentarlo. '
+        'También podés probar <a href="/logout">cerrando sesión</a>.')
     )
-
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].label = 'Nombre de usuario o DNI'
 
     def confirm_login_allowed(self, user):
-        session_existente = user.fiscal.session_key
-        last_seen = user.fiscal.last_seen
-        ahora = timezone.now()
-        timeout = last_seen + timedelta(seconds=settings.SESSION_TIMEOUT) if last_seen else None
-        if session_existente and last_seen and ahora < timeout:
-            raise forms.ValidationError(
-                _(self.already_logged_message),
-                code='already_logged'
-            )
+        try:
+            fiscal = user.fiscal
+            session_existente = fiscal.session_key
+            last_seen = fiscal.last_seen
+            ahora = timezone.now()
+            timeout = last_seen + timedelta(seconds=settings.SESSION_TIMEOUT) if last_seen else None
+            if session_existente and last_seen and ahora < timeout:
+                raise forms.ValidationError(
+                    _(self.already_logged_message),
+                    code='already_logged'
+                )
+        except Fiscal.DoesNotExist:
+            # no es usuario fiscal.
+            pass
         return super().confirm_login_allowed(user)
 
 
@@ -145,17 +155,21 @@ class QuieroSerFiscalForm(forms.Form):
     distrito = forms.ModelChoiceField(
         required=True,
         label='Provincia',
-        queryset=Distrito.objects.all().order_by('nombre')
+        queryset=Distrito.objects.all().order_by('numero'),
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-distrito-simple',
+        ),
     )
 
-    seccion_autocomplete = forms.CharField(label="Departamento o Municipio",
-                                           widget=forms.TextInput(attrs={
-                                               'class': 'autocomplete',
-                                               'id': 'seccion-autocomplete',
-                                               'autocomplete': 'off',
-                                               'required': True,
-                                           }))
-    seccion = forms.CharField(widget=forms.HiddenInput(attrs={'id': 'seccion', 'name': 'seccion'}))
+    seccion = forms.ModelChoiceField(
+        queryset=Seccion.objects.all(),
+        required=False,
+        widget=autocomplete.ModelSelect2(
+            url='autocomplete-seccion-simple',
+            forward=['distrito']
+        ),
+    )
+
     referente_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
     referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
 
@@ -166,12 +180,13 @@ class QuieroSerFiscalForm(forms.Form):
     )
 
     password = forms.CharField(
-        label=_("Password"),
+        label='Elegí una contraseña',
+        help_text='No uses la de tu email o redes sociales',
         widget=forms.PasswordInput,
         strip=False,
     )
     password_confirmacion = forms.CharField(
-        label=_("Password confirmation"),
+        label='Repetir la contraseña',
         strip=False,
         widget=forms.PasswordInput,
     )
@@ -182,7 +197,7 @@ class QuieroSerFiscalForm(forms.Form):
             Row('nombres', 'apellido', 'dni'),
             Row('email', 'email_confirmacion'),
             Row('password', 'password_confirmacion'),
-            Row('distrito', 'seccion_autocomplete')
+            Row('distrito', 'seccion')
         ),
         Fieldset(
             'Teléfono celular',
@@ -286,7 +301,8 @@ class VotoMesaModelForm(forms.ModelForm):
             }
         )
         self.fields['votos'].label = ''
-        self.fields['votos'].required = False
+        self.fields['votos'].required = True
+        self.fields['votos'].widget.attrs = {'required':''}
 
     class Meta:
         model = VotoMesaReportado
@@ -311,12 +327,26 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         self.datos_previos = kwargs.pop('datos_previos')
         super().__init__(*args, **kwargs)
 
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+
+        """
+        en este campo hidden se guarda el valor de los datos enviados por si es
+        necesario dar un warning al usuario. Si el usuario los envía por segunda
+        vez, se compara que los datos enviados son los mismos para así guardarlos
+        """
+        form.fields["valor-previo"] = forms.IntegerField(label="",
+                                            required=False,
+                                            widget=forms.HiddenInput)
+
     def clean(self):
         super().clean()
         suma = 0
         for form in self.forms:
             opcion = form.cleaned_data.get('opcion')
             votos = form.cleaned_data.get('votos')
+            if votos is None:
+                raise ValidationError(_('Invalid value'), code='invalid')
             if not opcion.tipo == Opcion.TIPOS.metadata:
                 suma += votos
 
@@ -327,7 +357,10 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
                 ))
 
         errors = []
-        if suma > self.mesa.electores:
+
+        # Controlamos que la suma de votos no sea mayor a cantidad de
+        # electores si conocemos la cantidad de electores de una mesa.
+        if self.mesa.electores > 0 and suma > self.mesa.electores:
             errors.append(
                 'El total de votos no puede ser mayor a la '
                 f'cantidad de electores de la mesa: {self.mesa.electores}'
@@ -335,6 +368,50 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
 
         if errors:
             form.add_error('votos', ValidationError(errors))
+
+        #warnings
+        warnings = []
+
+        cantidad_forms = self.data['form-TOTAL_FORMS']
+        mismos_datos = True
+        for i in range(int(cantidad_forms)):
+            mismos_datos = mismos_datos and (self.data['form-'+str(i)+'-valor-previo']
+                                            == self.data['form-'+str(i)+'-votos'])
+
+        if not mismos_datos:
+            for form in self.forms:
+                opcion = form.cleaned_data.get('opcion')
+                votos = form.cleaned_data.get('votos')
+                #todos 0
+                if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_NOSOTROS:
+                    if votos == 0:
+                        warnings.append(f'La cantidad de votos de {opcion.nombre_corto} es cero.')
+
+                #jxc 0
+                if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_ELLOS:
+                    if votos == 0:
+                        warnings.append(f'La cantidad de votos de {opcion.nombre_corto} es cero.')
+
+                # sobres > mesa.electores && total_votos > sobres
+                if opcion == Opcion.sobres():
+                    if votos and votos > self.mesa.electores:
+                        warnings.append('La cantidad de sobres es mayor a la '
+                            f'cantidad de electores de la mesa: {self.mesa.electores}')
+
+                    if votos and suma > votos:
+                        warnings.append('La cantidad de votos es mayor a la '
+                                    f'cantidad de sobres.')
+
+                # guardo los datos en una variable auxiliar para comprobar si hubo
+                # cambios al confirmar el warning
+                data = form.data.copy()
+                for i in range(int(cantidad_forms)):
+                    data['form-'+str(i)+'-valor-previo'] = data['form-'+str(i)+'-votos']
+
+                form.data = data
+
+            if warnings:
+                raise forms.ValidationError(warnings)
 
 
 votomesareportadoformset_factory = partial(

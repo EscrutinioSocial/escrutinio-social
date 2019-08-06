@@ -29,6 +29,7 @@ from problemas.forms import IdentificacionDeProblemaForm
 
 from .forms import AgregarAttachmentsForm, AgregarAttachmentsCSV, IdentificacionForm
 from .models import Attachment, Identificacion
+from elecciones.models import Distrito
 
 
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
@@ -81,20 +82,25 @@ class IdentificacionCreateView(CreateView):
             raise PermissionDenied()
         return attachment
 
+    def get_initial(self):
+        initial = super(CreateView, self).get_initial()
+        pre_identificacion = self.attachment.pre_identificacion
+        if pre_identificacion is None:
+            return initial
+        if pre_identificacion.distrito is not None:
+            initial['distrito'] = pre_identificacion.distrito
+        if pre_identificacion.seccion is not None:
+            initial['seccion'] = pre_identificacion.seccion
+        if pre_identificacion.circuito is not None:
+            initial['circuito'] = pre_identificacion.circuito
+        return initial
+    
     def get_context_data(self, **kwargs):
         context = super(IdentificacionCreateView,self).get_context_data(**kwargs)
         context['attachment'] = self.attachment
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
-        context['pre_identificacion'] = False
-        pre_identificacion = self.attachment.pre_identificacion
-        if pre_identificacion and pre_identificacion.seccion is not None:
-            pre_identificacion = self.attachment.pre_identificacion
-            context['seccion_precargada'] = pre_identificacion.seccion
-            context['distrito_precargado'] = pre_identificacion.distrito
-            if pre_identificacion.circuito is not None:
-                context['circuito_precargado'] = pre_identificacion.circuito
         return context
 
     def form_valid(self, form):
@@ -108,7 +114,6 @@ class IdentificacionCreateView(CreateView):
             f'Identificada mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito}',
         )
         return super().form_valid(form)
-
 
 class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
     template_name = "adjuntos/asignar-mesa-ub.html"
@@ -314,22 +319,22 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data()
         attachment_form = AgregarAttachmentsForm()
-        pre_identificacion_form = PreIdentificacionForm()
-        context['attachment_form'] = attachment_form
-        context['pre_identificacion_form'] = pre_identificacion_form
+        initial = {}
         if request.user:
             fiscal = request.user.fiscal
-            context['desde_ub'] = True
             if fiscal.seccion:
                 # Si el fiscal tiene una sección precargada tomamos los datos de ahí.
-                context['seccion_precargada'] = fiscal.seccion
-                context['distrito_precargado'] = fiscal.seccion.distrito
+                initial['seccion'] = fiscal.seccion
+                initial['distrito'] = fiscal.seccion.distrito
             elif fiscal.distrito:
                 # Si no tiene sección, pero sí un distrito, vamos con eso.
-                context['distrito_precargado'] = fiscal.distrito
+                initial['distrito'] = fiscal.distrito
+        pre_identificacion_form = PreIdentificacionForm(initial=initial)
+        context['attachment_form'] = attachment_form
+        context['pre_identificacion_form'] = pre_identificacion_form
 
         return self.render_to_response(context)
-
+    
     def post(self, request, *args, **kwargs):
         form_class = AgregarAttachmentsForm
         form = self.get_form(form_class)
@@ -345,7 +350,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
             pre_identificacion.fiscal = fiscal
             pre_identificacion.save()
             kwargs.update({'pre_identificacion': pre_identificacion})
-            super().post(request, *args, **kwargs)
+            return super().post(request, *args, **kwargs)
 
         return self.form_invalid(form, pre_identificacion_form, **kwargs)
 
@@ -396,3 +401,4 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
 
     def mostrar_mensaje_archivos_cargados(self, c):
         messages.success(self.request, f'Subiste {c} archivos CSV. Gracias!')
+

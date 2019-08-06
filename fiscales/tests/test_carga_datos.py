@@ -210,7 +210,7 @@ def test_formset_en_carga_total_muestra_todos(db, fiscal_client, admin_user):
     mc.take(admin_user.fiscal)
     totales = reverse('carga-total', args=[mc.id])
     response = fiscal_client.get(totales)
-    assert len(response.context['formset']) == 2
+    assert len(response.context['formset']) == 2 + len(Opcion.opciones_no_partidarias())
     assert response.context['formset'][0].fields['opcion'].choices == [(o2.id, str(o2))]
     assert response.context['formset'][1].fields['opcion'].choices == [(o.id, str(o))]
 
@@ -247,7 +247,7 @@ def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, admi
     response = fiscal_client.get(totales)
 
     # tenemos las tres opciones en orden
-    assert len(response.context['formset']) == 4
+    assert len(response.context['formset']) == 4 + len(Opcion.opciones_no_partidarias())
     assert response.context['formset'][0].initial['opcion'] == o2
     assert response.context['formset'][1].initial['opcion'] == o3
     assert response.context['formset'][2].initial['opcion'] == o1
@@ -279,7 +279,7 @@ def test_formset_reusa_metadata(db, fiscal_client, admin_user):
 
     mc2.take(admin_user.fiscal)
     response = fiscal_client.get(reverse('carga-total', args=[mc2.id]))
-    assert len(response.context['formset']) == 2
+    assert len(response.context['formset']) == 2 + len(Opcion.opciones_no_partidarias())
     assert response.context['formset'][0].initial['opcion'] == o1
     assert response.context['formset'][1].initial['opcion'] == o2
 
@@ -389,10 +389,10 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     # categoria1 debería aparecer primero porque su mesa categoria tiene un orden_de_carga más grande
     assert nombre_categoria in str(response.content)
 
-    tupla_opciones_electores = [(opcion1.id, mesa.electores // 2), (opcion2.id, mesa.electores // 2)]
+    tupla_opciones_electores = [(opcion1.id, mesa.electores // 2, mesa.electores // 2), (opcion2.id, mesa.electores // 2, mesa.electores // 2)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
 
-    with django_assert_num_queries(34):
+    with django_assert_num_queries(36):
         response = fiscal_client.post(url_carga, request_data)
 
     # tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
@@ -458,6 +458,8 @@ def _construir_request_data_para_carga_de_resultados(tuplas_opcion_electores):
         request_data[key] = str(tupla[0])
         key = f'form-{index}-votos'
         request_data[key] = str(tupla[1])
+        key = f'form-{index}-valor-previo'
+        request_data[key] = str(tupla[2])
     request_data['form-TOTAL_FORMS'] = str(len(tuplas_opcion_electores))
     request_data['form-INITIAL_FORMS'] = '0'
     request_data['form-MIN_NUM_FORMS'] = str(len(tuplas_opcion_electores))
