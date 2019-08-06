@@ -463,7 +463,7 @@ def test_resultados_parciales_paso( carta_marina
     for variable, valor in columna_datos:
         assert f'<td title="{variable}">{valor}</td>' in content
 
-@pytest.mark.skip(reason="proyecciones sera re-escrito")
+
 def test_resultados_proyectados(fiscal_client):
     # se crean 3 secciones electorales
     s1, s2, s3 = SeccionFactory.create_batch(3)
@@ -579,31 +579,46 @@ def test_resultados_proyectados_simple(carta_marina, fiscal_client):
     mesas = carta_marina
     m1 = mesas[0]
     m2 = mesas[4]
+    m3 = mesas[5]
     for mesa in mesas:
         MesaCategoriaFactory(mesa=mesa, categoria=categoria)
 
     c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
-    VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=40)
-    VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=30)
+    cargar_votos(c1, {o1: 40, o2: 30})
 
     c2 = CargaFactory(mesa_categoria__mesa=m2, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
-    VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=30)
-    VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=40)
+    cargar_votos(c2, {o1: 30, o2: 60})
 
-    c1.actualizar_firma()
-    c2.actualizar_firma()
+    c3 = CargaFactory(mesa_categoria__mesa=m3, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
+    cargar_votos(c3, {o1: 30, o2: 60})
+
     consumir_novedades_y_actualizar_objetos([m1, m2])
+
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
+    )
+
+    # Sin proyecciones, tenemos 100 votos para la opción 1 y 150 para la opción 2.
+    positivos = response.context['resultados'].tabla_positivos()
+    assert positivos[o1.partido]['votos'] == 100
+    assert positivos[o2.partido]['votos'] == 150
+    assert positivos[o1.partido]['porcentaje_positivos'] == '40.00'  # = 100 / 250
+    assert positivos[o2.partido]['porcentaje_positivos'] == '60.00'  # = 150 / 250
 
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
         f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas&tecnicaDeProyeccion={tecnica.id}'
     )
 
+    # En la cuenta anterior, la sección 2 esta sobrerepresentada porque tiene más mesas cargadas.
+    # Para proyectar los votos de s1 se multiplican por 4 (porque hay cargada 1 mesa de 4)
+    # Los votos de s2 se multiplican por 2.
     positivos = response.context['resultados'].tabla_positivos()
-    assert positivos[o1.partido]['votos'] == 296  # = 40 *440/100 + 30 * 360 / 90
-    assert positivos[o2.partido]['votos'] == 292  # = 30 *440/100 + 40 * 360 / 90
-    assert positivos[o1.partido]['porcentaje_positivos'] == '50.34'  # = 296 / (296+292)
-    assert positivos[o2.partido]['porcentaje_positivos'] == '49.66'  # = 292 / (296+292)
+    assert positivos[o1.partido]['votos'] == 280  # = 40 * (4/1) + 60 * (4/2)
+    assert positivos[o2.partido]['votos'] == 360  # = 30 * (4/1) + 40 * (4/2)
+    assert positivos[o1.partido]['porcentaje_positivos'] == '43.75'  # = 280 / 640
+    assert positivos[o2.partido]['porcentaje_positivos'] == '56.25'  # = 360 / 640
 
 
 def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fiscal_client):
