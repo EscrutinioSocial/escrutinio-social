@@ -334,33 +334,49 @@ class Resultados():
         Devuelve toda la información sobre los votos positivos para mostrar.
         Para cada partido incluye:
             - votos: total de votos del partido
-            - detalle: los votos de cada opción dentro del partido (recordar que es una PASO).
+            - detalle: los votos de cada opción dentro del partido (recordar que
+              es una PASO).
                 Para cada opción incluye:
                     - votos: cantidad de votos para esta opción.
                     - porcentaje: porcentaje sobre el total del del partido.
-                    - porcentaje_positivos: porcentaje sobre el total de votos positivos.
+                    - porcentaje_positivos: porcentaje sobre el total de votos
+                      positivos.
+                    - porcentaje_sin_nulos: porcentaje sobre el total de votos
+                      positivos y en blanco.
                     - porcentaje_total: porcentaje sobre el total de votos.
         """
         votos_positivos = {}
+        blancos = self.total_blancos() if self.total_blancos() != '-' else 0
         for partido, votos_por_opcion in self.resultados.votos_positivos.items():
             total_partido = sum(filter(None, votos_por_opcion.values()))
             votos_positivos[partido] = {
                 'votos': total_partido,
-                'porcentaje_positivos': porcentaje(total_partido, self.total_positivos()),
+                'porcentaje_positivos':
+                porcentaje( total_partido, self.total_positivos()),
+                'porcentaje_sin_nulos':
+                porcentaje( total_partido
+                            , self.total_positivos() + blancos),
                 'porcentaje_total': porcentaje(total_partido, self.votantes()),
                 'detalle': {
                     opcion: {
-                        'votos': votos_opcion,
-                        'porcentaje': porcentaje(votos_opcion, total_partido),
-                        'porcentaje_positivos': porcentaje(votos_opcion, self.total_positivos()),
-                        'porcentaje_total': porcentaje(votos_opcion, self.votantes()),
+                    'votos': votos_opcion,
+                    'porcentaje':
+                        porcentaje(votos_opcion, total_partido),
+                    'porcentaje_positivos':
+                        porcentaje(votos_opcion, self.total_positivos()),
+                    'porcentaje_sin_nulos':
+                        porcentaje(votos_opcion,
+                            self.total_positivos() + blancos),
+                    'porcentaje_total':
+                        porcentaje( votos_opcion, self.votantes()),
                     }
                     for opcion, votos_opcion in votos_por_opcion.items()
                 }
             }
 
         return OrderedDict(
-            sorted(votos_positivos.items(), key=lambda partido: float(partido[1]["votos"]), reverse=True)
+            sorted( votos_positivos.items()
+                  , key=lambda partido: float(partido[1]["votos"]), reverse=True)
         )
 
     @lru_cache(128)

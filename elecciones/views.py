@@ -209,6 +209,14 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['resultados'] = self.get_resultados(categoria)
         context['show_plot'] = settings.SHOW_PLOT
 
+        # Agregamos al contexto el modo de elección; para cada partido decidimos
+        # que porcentaje vamos a visualizar (porcentaje_positivos o
+        # porcentaje_sin_nulos) dependiendo del tipo de elección.
+        context['modo_eleccion']  = settings.MODO_ELECCION
+        # Para no hardcodear las opciones en el html las agregamos al contexto.
+        context['modo_paso']      = settings.ME_OPCION_PASO
+        context['modo_generales'] = settings.ME_OPCION_GEN
+
         if settings.SHOW_PLOT:
             chart = self.get_plot_data(context['resultados'])
             context['plot_data'] = chart

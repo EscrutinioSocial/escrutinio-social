@@ -356,6 +356,18 @@ OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 # Opción para elegir ninguna proyección en el combo
 SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
 
+# Constantes para configurar el modo de visualización de los porcentajes de votos
+# de cada partido, habiendo dos opciones:
+# El porcentaje de votos se calcula sobre el total de votos afirmativos y en
+# blanco.
+ME_OPCION_PASO = 'PASO'
+# El porcentaje de votos se calcula sobre el total de votos afirmativos.
+ME_OPCION_GEN  = 'GENERALES'
+
+# Seteamos el modo de elección; la manera en que visualización de porcentajes de
+# votos de la elección. Las opciones posibles son: ME_OPCION_PASO y ME_OPCION_GEN
+MODO_ELECCION = ME_OPCION_PASO
+
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
 
