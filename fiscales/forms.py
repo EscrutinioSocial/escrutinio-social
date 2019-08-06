@@ -35,21 +35,25 @@ class AuthenticationFormCustomError(AuthenticationForm):
         'También podés probar <a href="/logout">cerrando sesión</a>.')
     )
 
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['username'].label = 'Nombre de usuario o DNI'
 
     def confirm_login_allowed(self, user):
-        session_existente = user.fiscal.session_key
-        last_seen = user.fiscal.last_seen
-        ahora = timezone.now()
-        timeout = last_seen + timedelta(seconds=settings.SESSION_TIMEOUT) if last_seen else None
-        if session_existente and last_seen and ahora < timeout:
-            raise forms.ValidationError(
-                _(self.already_logged_message),
-                code='already_logged'
-            )
+        try:
+            fiscal = user.fiscal
+            session_existente = fiscal.session_key
+            last_seen = fiscal.last_seen
+            ahora = timezone.now()
+            timeout = last_seen + timedelta(seconds=settings.SESSION_TIMEOUT) if last_seen else None
+            if session_existente and last_seen and ahora < timeout:
+                raise forms.ValidationError(
+                    _(self.already_logged_message),
+                    code='already_logged'
+                )
+        except Fiscal.DoesNotExist:
+            # no es usuario fiscal.
+            pass
         return super().confirm_login_allowed(user)
 
 
@@ -164,7 +168,7 @@ class QuieroSerFiscalForm(forms.Form):
             forward=['distrito']
         ),
     )
-    
+
     referente_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
     referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
 
@@ -175,12 +179,13 @@ class QuieroSerFiscalForm(forms.Form):
     )
 
     password = forms.CharField(
-        label=_("Password"),
+        label='Elegí una contraseña',
+        help_text='No uses la de tu email o redes sociales',
         widget=forms.PasswordInput,
         strip=False,
     )
     password_confirmacion = forms.CharField(
-        label=_("Password confirmation"),
+        label='Repetir la contraseña',
         strip=False,
         widget=forms.PasswordInput,
     )

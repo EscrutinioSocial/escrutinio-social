@@ -11,9 +11,10 @@
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script src="{% static 'js/simpleselect.js' %}"></script>
 <script>
-  /*
-   
-   */
+  /* 
+   Si pudimos determinar la mesa unívocamente, actualizamos la
+   sección y el circuito (si están vacíos). 
+ */
   function cambioMesa(){
       var mesa = $('#id_mesa').val();
       var circuito = $('#id_circuito').val();
@@ -38,6 +39,10 @@
     border-bottom: none !important;
 }
 
+.requerido > label {
+    font-weight: 600 !important;
+    color: light-gray;
+}
 .content {
   padding-bottom: 0px;
 }
@@ -115,6 +120,10 @@ $(document).ready(function() {
               <div class="card-title">¿De qué mesa es esta acta?</div>
               {% form %}
 	      {% endform %}
+	      {% if form.errors %}
+	      <div class="grey-text text-darken-1">Si no podés identificar la imagen, podés
+		reportarlo con el botón “Problema”.</div>
+	      {% endif %}
             {% endblock card-content %}
           </div>
           <div class="card-action">

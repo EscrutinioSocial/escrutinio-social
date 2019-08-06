@@ -11,9 +11,11 @@ function displayResult(field,default_value,options){
 	op = options[0].text;
 	val = options[0].id;
 	txt = options[0].selected_text;
+	$("#"+field+"-resultado").removeClass("error");
     }
     else if(options.length==0){
 	op = "No es un valor válido";
+	$("#"+field+"-resultado").addClass("error");
     }
     else {
 	op = "Más de un valor válido";
@@ -23,6 +25,8 @@ function displayResult(field,default_value,options){
     $("#"+field+"_input").val(txt);
     if (txt != "") {
 	$($('label[for='+field+'_input]')[0]).addClass("active");
+	$('#errors_for_'+field).addClass("hide");
+	$("#"+field+"-resultado").removeClass("hide");
     }
     else {
 	$($('label[for='+field+'_input]')[0]).removeClass("active");
@@ -35,7 +39,7 @@ objeto del input "#id_field".
 */
 function initializeSimpleSelect(field,base_url,fwd){
     var value = $("#id_"+field).val();
-    if(isFinite(value) && value != "-1") {
+    if(isFinite(value) && value != "-1" && value!="") {
 	var url = base_url+'?ident='+value;
 	$.ajax({
       	    type: 'GET',

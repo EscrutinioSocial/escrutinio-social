@@ -6,6 +6,7 @@ from elecciones.tests.factories import (
     FiscalFactory,
     SeccionFactory,
 )
+from django.contrib.auth.models import Group
 from fiscales.models import Fiscal
 from fiscales.forms import ReferidoForm
 
@@ -25,6 +26,34 @@ QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT = {
     "password": "diego1986",
     "password_confirmacion": "diego1986",
 }
+
+
+def test_choice_home_admin(db, client, admin_user):
+    # no logueado
+    response = client.get('')
+    assert response.status_code == 302
+    assert response.url == reverse('login')
+
+    client.login(username=admin_user.username, password='password')
+    response = client.get('')
+    assert response.status_code == 302
+    assert response.url == reverse('admin:index')
+
+
+def test_choice_home_validador_o_nada(db, admin_user, fiscal_client):
+    # admin es validador
+    response = fiscal_client.get('')
+    assert response.status_code == 302
+    assert response.url == reverse('siguiente-accion')
+
+    # admin no es ni validador ni staff
+    g = Group.objects.get(name='validadores')
+    admin_user.groups.remove(g)
+    admin_user.is_staff = False
+    admin_user.save()
+    response = fiscal_client.get('')
+    assert response.status_code == 302
+    assert response.url == reverse('bienvenido')
 
 
 def test_quiero_validar__camino_feliz(db, client):

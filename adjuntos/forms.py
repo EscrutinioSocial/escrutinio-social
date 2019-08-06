@@ -14,12 +14,15 @@ class IdentificacionForm(forms.ModelForm):
 
     distrito = forms.ModelChoiceField(
         queryset = Distrito.objects.all(),
-        widget = Select()
+        widget = Select(
+            attrs = {'class': 'requerido'}
+        ),
     )
 
     seccion = forms.ModelChoiceField(
         queryset = Seccion.objects.all(),
-        widget = Select()
+        widget = Select(),
+        label = 'Sección',
     )
     
     circuito = forms.ModelChoiceField(
@@ -29,7 +32,9 @@ class IdentificacionForm(forms.ModelForm):
 
     mesa = forms.ModelChoiceField(
         queryset = Mesa.objects.all(),
-        widget = Select()
+        widget = Select(
+            attrs = {'class': 'requerido'}
+        ),
     )
 
     class Meta:

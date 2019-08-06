@@ -78,9 +78,7 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     m = MesaFactory(numero='4012', lugar_votacion__circuito=c1, electores=100, circuito=c1)
     o2 = OpcionFactory(orden=3, codigo='Todes')
     o3 = OpcionFactory(orden=2, codigo='Juntos')
-    votos = OpcionFactory(orden=0, **settings.OPCION_TOTAL_VOTOS)
-    sobres = OpcionFactory(orden=1, codigo='0', **settings.OPCION_TOTAL_SOBRES)
-    c = CategoriaFactory(opciones=[o2, o3, votos, sobres], nombre='Otra categoria')
+    c = CategoriaFactory(opciones=[o2, o3], nombre='Otra categoria')
     CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True)
     MesaCategoriaFactory(mesa=m, categoria=c)
 
@@ -116,17 +114,17 @@ def carga_inicial(db):
             CategoriaOpcionFactory(categoria=categoria_bd, prioritaria=False, opcion=c2019)
         if prioritaria:
             # Adecuamos las opciones prioritarias.
-            total_votos = categoria_bd.get_opcion_total_votos()
+            total_votos = Opcion.total_votos()
             total_votos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=total_votos)
             total_votos_cat_opcion.prioritaria = True
             total_votos_cat_opcion.save()
 
-            blancos = categoria_bd.get_opcion_blancos()
+            blancos = Opcion.blancos()
             blancos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=blancos)
             blancos_cat_opcion.prioritaria = True
             blancos_cat_opcion.save()
 
-            nulos = categoria_bd.get_opcion_nulos()
+            nulos = Opcion.nulos()
             nulos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=nulos)
             nulos_cat_opcion.prioritaria = True
             nulos_cat_opcion.save()

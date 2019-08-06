@@ -65,10 +65,15 @@ def choice_home(request):
     user = request.user
     if not user.is_authenticated:
         return redirect('login')
-    fiscal = get_object_or_404(Fiscal, user=request.user)
-    if fiscal.esta_en_grupo('validadores'):
-        return redirect('siguiente-accion')
+    try:
+        fiscal = user.fiscal
+    except Fiscal.DoesNotExist:
+        fiscal = None
 
+    if fiscal and fiscal.esta_en_grupo('validadores'):
+        return redirect('siguiente-accion')
+    elif user.is_staff:
+        return redirect('admin:index')
     return redirect('bienvenido')
 
 
@@ -481,7 +486,7 @@ class AutocompleteBaseListView(ListView):
 
 class DistritoBaseListView(AutocompleteBaseListView):
     model = Distrito
-    
+
     def get_queryset(self,request):
         qs = Distrito.objects.all()
         if request.GET['id']:
@@ -509,9 +514,9 @@ class SeccionSimpleListView(autocomplete.Select2QuerySetView):
         if distrito:
             lookups &= Q(distrito_id=distrito)
         return qs.filter(lookups)
-    
 
-    
+
+
 class DistritoListView(AjaxListView):
     model = Distrito
 
@@ -537,7 +542,7 @@ class SeccionListView(AjaxListView):
         if ident is not None:
             return qs.filter(id=ident)
         if self.q:
-            lookups = Q(numero__iexact=self.q)            
+            lookups = Q(numero__iexact=self.q)
         if distrito:
             lookups &= Q(distrito_id=distrito)
         mesa = self.forwarded.get('mesa',None)
@@ -549,7 +554,7 @@ class SeccionListView(AjaxListView):
 
 class CircuitoListView(AjaxListView):
     model = Circuito
-    
+
     def get_queryset(self):
         qs = Circuito.objects.all()
         lookups = Q()
@@ -579,7 +584,7 @@ class MesaListView(AjaxListView):
 
     def get_selected_result_label(self, item):
         return item.numero
-    
+
     def get_queryset(self):
         qs = Mesa.objects.all()
         lookups = Q()
