@@ -96,7 +96,7 @@ def test_formset_carga_valida_votos_para_opcion(db):
 
 def test_formset_carga_warning_sobres_mayor_mesa_electores(db):
     m = MesaFactory()
-    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres')
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres', nombre='total de sobres')
 
     VMRFormSet = votomesareportadoformset_factory(min_num=1)
     data = _construir_request_data_para_carga_de_resultados(
@@ -119,7 +119,7 @@ def test_formset_carga_warning_sobres_mayor_mesa_electores(db):
 
 def test_formset_carga_warning_suma_votos_mayor_sobres(db):
     m = MesaFactory()
-    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres')
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres', nombre='total de sobres')
     o2 = OpcionFactory()
     o3 = OpcionFactory()
 

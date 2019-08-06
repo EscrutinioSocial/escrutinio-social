@@ -385,15 +385,15 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
                 #todos 0
                 if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_NOSOTROS:
                     if votos == 0:
-                        warnings.append('La cantidad de votos de Todos es cero.')
+                        warnings.append(f'La cantidad de votos de {opcion.nombre_corto} es cero.')
 
                 #jxc 0
                 if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_ELLOS:
                     if votos == 0:
-                        warnings.append('La cantidad de votos de JxC es cero.')
+                        warnings.append(f'La cantidad de votos de {opcion.nombre_corto} es cero.')
 
                 # sobres > mesa.electores && total_votos > sobres
-                if opcion.nombre_corto == Opcion.sobres().nombre_corto:
+                if opcion == Opcion.sobres():
                     if votos and votos > self.mesa.electores:
                         warnings.append('La cantidad de sobres es mayor a la '
                             f'cantidad de electores de la mesa: {self.mesa.electores}')
