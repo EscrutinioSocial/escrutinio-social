@@ -12,16 +12,6 @@
 <link href="{% static 'elecciones/arbol_distrito.css' %}" rel="stylesheet" type="text/css">
 <link href="{% static 'css/darkroom.css' %}" rel="stylesheet" type="text/css" />
 
-<style>
-.right-panel {
-    flex-basis: 100%;
-    min-width: 350px;
-    margin-left: 0.375rem;
-    margin-right: 0.375rem;
-}
-</style>
-
-
 {% endblock %}
 
 {% block sidenav_items %}
@@ -71,6 +61,13 @@
 {% endblock %}
 
 {% block right-panel %}
+
+<script type="application/javascript">
+    $(document).ready(function(){ 
+        $("div.right-panel").css("flex-basis", "100%") 
+    });
+</script>
+
 <script src="{% static 'js/fabric.js' %}"></script>
 <script src="{% static 'js/darkroom.js' %}"></script>
 
