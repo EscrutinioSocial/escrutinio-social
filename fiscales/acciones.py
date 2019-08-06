@@ -72,8 +72,14 @@ class CargaCategoriaEnActa():
     def ejecutar(self):
         # Se marca que se inicia una carga
         self.mc.take(self.request.user.fiscal)
-        if (self.mc.categoria.requiere_cargas_parciales and
-                self.mc.status[:2] < MesaCategoria.STATUS.parcial_consolidada_dc[:2]):
+        if (
+            self.mc.categoria.requiere_cargas_parciales and
+            self.mc.status in [
+                    MesaCategoria.STATUS.sin_cargar,
+                    MesaCategoria.STATUS.parcial_sin_consolidar,
+                    MesaCategoria.STATUS.parcial_en_conflicto,
+                    MesaCategoria.STATUS.parcial_consolidada_csv,
+                ]):
             # solo si la categoria requiere parciales y las parciales no estan consolidadas
             return redirect('carga-parcial', mesacategoria_id=self.mc.id)
         return redirect('carga-total', mesacategoria_id=self.mc.id)

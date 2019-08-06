@@ -25,7 +25,7 @@ class AuthenticationFormCustomError(AuthenticationForm):
     error_messages = {
         'invalid_login': (
             'Por favor introduzca un nombre de usuario y una contraseña correctos. '
-            'Prueba tu DNI o teléfono sin puntos, guiones ni espacios.'
+            'Probá tu DNI sin puntos, guiones ni espacios.'
         ),
         'inactive':
         _("This account is inactive."),
