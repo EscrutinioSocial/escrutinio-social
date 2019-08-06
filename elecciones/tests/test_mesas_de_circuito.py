@@ -86,7 +86,7 @@ def test_mesa_de_circuito__sidebar_mesas(carta_marina, fiscal_client):
     assert f'<li id="mesa-{mesa2.id}" >' in content
 
 
-def test_mesa_de_circuito__navegacion_categorías(fiscal_client):
+def test_mesa_de_circuito__navegacion_categorias(fiscal_client):
     categoria1 = CategoriaFactory(nombre='cat1')
     categoria2 = CategoriaFactory(nombre='cat2')
 
@@ -104,8 +104,8 @@ def test_mesa_de_circuito__navegacion_categorías(fiscal_client):
     content = html.unescape(response.content.decode('utf-8'))
     assert response.context['mensaje_no_hay_info'] in content
 
-    link_categoria_1 = f"   href=\"/elecciones/mesas_circuito/{categoria1.id}{query_string_mesa_1}\""
-    link_categoria_2 = f"   href=\"/elecciones/mesas_circuito/{categoria2.id}{query_string_mesa_1}\""
+    link_categoria_1 = f"   href=\"/elecciones/resultados/mesas_circuito/{categoria1.id}{query_string_mesa_1}\""
+    link_categoria_2 = f"   href=\"/elecciones/resultados/mesas_circuito/{categoria2.id}{query_string_mesa_1}\""
 
     assert link_categoria_1 in content
     assert link_categoria_2 in content
