@@ -1,0 +1,101 @@
+{% extends "elecciones/resultados.html" %}
+{% load staticfiles %}
+{% load i18n material_form material_frontend staticfiles %}
+
+{% block title %}Mesas del circuito{% endblock %}
+
+{% block page_title %}Mesas para {{circuito_seleccionado.nombre_completo}}{% endblock %}
+
+{% block head %}
+{{ block.super }}
+<link href="{% static 'elecciones/resultados.css' %}" rel="stylesheet" type="text/css">
+<link href="{% static 'elecciones/arbol_distrito.css' %}" rel="stylesheet" type="text/css">
+<link href="{% static 'css/darkroom.css' %}" rel="stylesheet" type="text/css" />
+
+{% endblock %}
+
+{% block sidenav_items %}
+<li>
+    <a href="{% url 'resultados-categoria' object.id %}?circuito={{ circuito_seleccionado.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}"">
+        <i class="material-icons">arrow_back</i>Volver a {{circuito_seleccionado.nombre}}
+    </a>
+</li>
+<br>
+{% for mesa in mesas %}
+<ul>
+    <li id="mesa-{{mesa.id}}" {% if mesa.id == mesa_seleccionada.id %}class="active"{% endif %}>
+        <a href="{{ request.path }}?mesa={{ mesa.id }}&{{ url_params }}">
+            Mesa {{ mesa.numero }}
+        </a>
+    </li>
+</ul>
+{% endfor %}
+{% endblock %}
+
+{% block left-panel %}
+<ul class="tabs">
+    {% for categoria in categorias %}
+    <li class="tab col s3">
+        <a target="_self"
+            href="{% url 'mesas-circuito' categoria.id %}?{{ request.GET.urlencode }}"
+            {% if categoria.id == object.id %}class="active"{% endif %}>{{ categoria.nombre }}</a>
+    </li>
+    {% endfor %}
+</ul>
+<div class="card" id="{{categoria.slug}}" data-id="{{ categoria.id }}">
+    <div class="card-content" id="frame{{categoria.id}}">
+        {% if resultados %}
+        <table class="highlight bordered {% if responsive %}responsive-table{% endif %}">
+            {% for r in resultados %}
+                <tr>
+                    <th>{{ r.opcion }}</th>
+                    <td>{{ r.votos }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>{{ mensaje_no_hay_info }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block right-panel %}
+
+<script type="application/javascript">
+    $(document).ready(function(){ 
+        $("div.right-panel").css("flex-basis", "100%") 
+    });
+</script>
+
+<script src="{% static 'js/fabric.js' %}"></script>
+<script src="{% static 'js/darkroom.js' %}"></script>
+
+<div class="acta card">
+
+    <div class="card-content">
+
+        <ul class="tabs">
+            {% for title, foto in mesa_seleccionada.fotos %}
+            <li class="tab col s3"><a {% if forloop.counter == 1 %}class="active" {% endif %}
+                    href="#foto{{ forloop.counter }}">{{ title }}</a></li>
+            {% endfor %}
+        </ul>
+        {% for title, foto in mesa_seleccionada.fotos %}
+        <div id="foto{{ forloop.counter }}" class="col s12 acta-container">
+            <img id="target{{ forloop.counter }}" src="{{ foto.thumbnail.960x.url }}">
+            <script>
+                new Darkroom('#target{{ forloop.counter }}', {
+                    plugins: {
+                        save: false,
+                        crop: false
+                    }
+                });
+            </script>
+        </div>
+        {% endfor %}
+
+    </div>
+
+</div>
+{% endblock right-panel %}

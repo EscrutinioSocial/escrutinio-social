@@ -23,7 +23,11 @@ urlpatterns = [
         views.ResultadosCategoria.as_view(),
         name='resultados-categoria'
     ),
-
+    url(
+        '^resultados/mesas_circuito/(?P<pk>\d+)?$',
+        views.MesasDeCircuito.as_view(),
+        name='mesas-circuito'
+    ),
     url(r'^resultados-parciales-(?P<slug_categoria>[\w-]+).(?P<filetype>csv|xls)$',
         data_views.resultado_parcial_categoria, name='resultado-parcial-categoria'),
 
