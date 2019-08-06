@@ -45,8 +45,8 @@
     {% if show_plot %}
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     {% endif %}
-    <link href="/static/elecciones/resultados.css" rel="stylesheet" type="text/css">
-    <link href="/static/elecciones/arbol_distrito.css" rel="stylesheet" type="text/css">
+    <link href="{% static 'elecciones/resultados.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'elecciones/arbol_distrito.css' %}" rel="stylesheet" type="text/css">
  {% endblock %}
 
 {% block sidenav_items %}
