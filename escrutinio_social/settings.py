@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 import sys
+from model_utils import Choices
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -66,7 +67,7 @@ INSTALLED_APPS = [
     # django-autocomplete-light
     'dal',
     'dal_select2',
-    
+
     # nuestras apps
     'fiscales.apps.FiscalesAppConfig',  # Hay que ponerlo así para que cargue el app_ready()
     'elecciones.apps.EleccionesAppConfig',
@@ -361,11 +362,39 @@ OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 # Opción para elegir ninguna proyección en el combo
 SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
 
+MC_STATUS_CHOICE = Choices(
+    # no hay cargas
+    ('sin_cargar', 'sin cargar'),
+    # carga parcial única (no csv) o no coincidente
+    ('parcial_sin_consolidar', 'parcial sin consolidar'),
+    # no hay dos cargas mínimas coincidentes, pero una es de csv.
+    # cargas parcial divergentes sin consolidar
+    ('parcial_en_conflicto', 'parcial en conflicto'),
+    ('parcial_consolidada_csv', 'parcial consolidada CSV'),
+    # carga parcial consolidada por multicarga
+    ('parcial_consolidada_dc', 'parcial consolidada doble carga'),
+    ('total_sin_consolidar', 'total sin consolidar'),
+    ('total_en_conflicto', 'total en conflicto'),
+    ('total_consolidada_csv', 'total consolidada CSV'),
+    ('total_consolidada_dc', 'total consolidada doble carga'),
+    # No siguen en la carga.
+    ('con_problemas', 'con problemas')
+)
+
+
+CONSTANCE_ADDITIONAL_FIELDS = {
+    'status_text': [
+        'elecciones.fields.StatusTextField', {
+            'widget': 'django.forms.Textarea'
+        },
+    ]
+}
+
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
-
 CONSTANCE_CONFIG = {
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
+    'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text')
 }
 
 

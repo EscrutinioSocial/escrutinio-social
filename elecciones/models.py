@@ -15,7 +15,7 @@ from djgeojson.fields import PointField
 from model_utils import Choices, FieldTracker
 from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
-
+from constance import config
 
 logger = logging.getLogger("e-va")
 
@@ -308,11 +308,36 @@ class MesaCategoriaQuerySet(models.QuerySet):
     def con_carga_pendiente(self):
         return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
+    def anotar_prioridad_status(self):
+        """
+        Dados los status posibles anota el querset
+        ``prioridad_status`` con un valor entero (0, 1, 2, ...)
+        que se corresponde con el índice del status en la constante
+        ``config.PRIORIDAD_STATUS``, que es configurable via Constance.
+        Sirve para poder ordenar por "prioridad de status"::
+
+            >>> qs.anotar_prioridad_status().order_by('prioridad_status')
+
+        Por defecto, esta prioridad es la definida por el orden definido
+        en ``settings.MC_STATUS_CHOICE``.
+        """
+        whens = []
+        for valor, status in enumerate(config.PRIORIDAD_STATUS.split()):
+            whens.append(models.When(status=status, then=models.Value(valor)))
+        return self.annotate(
+            prioridad_status=models.Case(
+                *whens,
+                output_field=models.IntegerField(),
+            )
+        )
+
     def mas_prioritaria(self):
         """
         Devuelve la intancia más prioritaria del queryset
         """
-        return self.order_by('status', 'orden_de_carga', 'id').first()
+        return self.anotar_prioridad_status().order_by(
+            'prioridad_status', 'orden_de_carga', 'id'
+        ).first()
 
     def siguiente(self):
         """
@@ -337,24 +362,8 @@ class MesaCategoria(models.Model):
     """
     objects = MesaCategoriaQuerySet.as_manager()
 
-    STATUS = Choices(
-        # no hay cargas
-        ('00_sin_cargar', 'sin_cargar', 'sin cargar'),
-        # carga parcial única (no csv) o no coincidente
-        ('10_parcial_sin_consolidar', 'parcial_sin_consolidar', 'parcial sin consolidar'),
-        # no hay dos cargas mínimas coincidentes, pero una es de csv.
-        # cargas parcial divergentes sin consolidar
-        ('20_parcial_en_conflicto', 'parcial_en_conflicto', 'parcial en conflicto'),
-        ('30_parcial_consolidada_csv', 'parcial_consolidada_csv', 'parcial consolidada CSV'),
-        # carga parcial consolidada por multicarga
-        ('40_parcial_consolidada_dc', 'parcial_consolidada_dc', 'parcial consolidada doble carga'),
-        ('50_total_sin_consolidar', 'total_sin_consolidar', 'total sin consolidar'),
-        ('60_total_en_conflicto', 'total_en_conflicto', 'total en conflicto'),
-        ('70_total_consolidada_csv', 'total_consolidada_csv', 'total consolidada CSV'),
-        ('80_total_consolidada_dc', 'total_consolidada_dc', 'total consolidada doble carga'),
-        # No siguen en la carga.
-        ('90_con_problemas', 'con_problemas', 'con problemas')
-    )
+    STATUS = settings.MC_STATUS_CHOICE
+
     status = StatusField(default=STATUS.sin_cargar)
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
@@ -395,6 +404,7 @@ class MesaCategoria(models.Model):
         self.taken = None
         self.taken_by = None
         self.save(update_fields=['taken', 'taken_by'])
+
 
     def actualizar_orden_de_carga(self):
         """
