@@ -363,15 +363,15 @@ OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
 
 MC_STATUS_CHOICE = Choices(
-    # no hay cargas
-    ('sin_cargar', 'sin cargar'),
-    # carga parcial única (no csv) o no coincidente
-    ('parcial_sin_consolidar', 'parcial sin consolidar'),
-    # no hay dos cargas mínimas coincidentes, pero una es de csv.
-    # cargas parcial divergentes sin consolidar
+    # Cargas parcial divergentes sin consolidar
     ('parcial_en_conflicto', 'parcial en conflicto'),
+    # Carga parcial única (no CSV) o no coincidente.
+    ('parcial_sin_consolidar', 'parcial sin consolidar'),
+    # No hay cargas.
+    ('sin_cargar', 'sin cargar'),
+    # No hay dos cargas mínimas coincidentes, pero una es de CSV.
     ('parcial_consolidada_csv', 'parcial consolidada CSV'),
-    # carga parcial consolidada por multicarga
+    # Carga parcial consolidada por multicarga.
     ('parcial_consolidada_dc', 'parcial consolidada doble carga'),
     ('total_sin_consolidar', 'total sin consolidar'),
     ('total_en_conflicto', 'total en conflicto'),

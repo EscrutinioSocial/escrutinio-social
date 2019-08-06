@@ -313,12 +313,12 @@ class MesaCategoriaQuerySet(models.QuerySet):
         Dados los status posibles anota el querset
         ``prioridad_status`` con un valor entero (0, 1, 2, ...)
         que se corresponde con el índice del status en la constante
-        ``config.PRIORIDAD_STATUS``, que es configurable via Constance.
+        ``config.PRIORIDAD_STATUS``, que es configurable vía Constance.
         Sirve para poder ordenar por "prioridad de status"::
 
             >>> qs.anotar_prioridad_status().order_by('prioridad_status')
 
-        Por defecto, esta prioridad es la definida por el orden definido
+        Por defecto, esta prioridad sale del orden definido
         en ``settings.MC_STATUS_CHOICE``.
         """
         whens = []
@@ -333,7 +333,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def mas_prioritaria(self):
         """
-        Devuelve la intancia más prioritaria del queryset
+        Devuelve la intancia más prioritaria del queryset.
         """
         return self.anotar_prioridad_status().order_by(
             'prioridad_status', 'orden_de_carga', 'id'
