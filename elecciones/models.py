@@ -552,6 +552,9 @@ class Mesa(models.Model):
     electores = models.PositiveIntegerField(null=True, blank=True)
     prioridad = models.PositiveIntegerField(default=0)
 
+    class Meta:
+        unique_together = ('circuito', 'numero')
+
     def categoria_add(self, categoria):
         MesaCategoria.objects.get_or_create(mesa=self, categoria=categoria)
 
