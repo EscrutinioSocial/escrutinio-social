@@ -178,12 +178,14 @@ class Sumarizador():
         Me quedo con los votos reportados pertenecientes a las "cargas testigo"
         de las mesas que corresponden de acuerdo a los parámetros y la categoría.
         """
-        return VotoMesaReportado.objects.filter(
+        votos_reportados = VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
             carga__mesa_categoria__categoria=categoria,
             carga__es_testigo__isnull=False,
             **self.cargas_a_considerar_status_filter(categoria)
         )
+
+        return votos_reportados
 
     def votos_por_opcion(self, categoria, mesas):
         """
@@ -449,7 +451,6 @@ class AvanceDeCarga(Sumarizador):
             ids_a_considerar=ids_a_considerar
         )
 
-
     def lookups_de_preidentificaciones(self):
         lookups = Q()
         if self.filtros:
@@ -466,7 +467,6 @@ class AvanceDeCarga(Sumarizador):
                 lookups = None
 
         return lookups
-
 
     def calcular(self):
         """
@@ -499,23 +499,23 @@ class AvanceDeCarga(Sumarizador):
             .filter(mesa__attachments__isnull=False)
 
         mesacats_carga_parcial_sin_consolidar = \
-            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_sin_consolidar) | \
-                mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_consolidada_csv)
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_sin_consolidar) | \
+                mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_consolidada_csv)
 
         mesacats_carga_parcial_consolidada = \
-            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_consolidada_dc)
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_consolidada_dc)
 
         mesacats_carga_total_sin_consolidar = \
-            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_sin_consolidar) | \
-                mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_consolidada_csv)
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_sin_consolidar) | \
+                mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_consolidada_csv)
 
         mesacats_carga_total_consolidada = \
-            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_consolidada_dc)
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_consolidada_dc)
 
         mesacats_conflicto_o_problema = \
-            mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.parcial_en_conflicto) | \
-                mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.total_en_conflicto) | \
-                    mesacats_de_la_categoria.filter(status = MesaCategoria.STATUS.con_problemas)
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_en_conflicto) | \
+                mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_en_conflicto) | \
+                    mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.con_problemas)
 
         dato_total = DatoTotalAvanceDeCarga().para_mesas(self.mesas_a_considerar)
         
@@ -532,14 +532,6 @@ class AvanceDeCarga(Sumarizador):
             "preidentificaciones": cantidad_preidentificaciones
         })
 
-        # mesacats_de_la_categoria = MesaCategoria.filter(
-        #     mesa=OuterRef('pk'), categoria=self.categoria
-        # )
-        # self.mesas_a_considerar.filter(attachments__isnull=False) \ 
-        #     .annotate(mesa_categoria=mesacats_de_la_categoria[:1]) \
-        #         .filter(mesa_categoria.status=MesaCategoria.STATUS.sin_cargar)
-
-
     def get_resultados(self, categoria):
         """
         Realiza la contabilidad para la categoría, invocando al método ``calcular``.
@@ -547,7 +539,6 @@ class AvanceDeCarga(Sumarizador):
         self.categoria = categoria
         self.mesas_a_considerar = self.mesas(self.categoria)
         return AvanceWrapper(self.calcular())
-
 
     def calcular_fake(self):
         """
@@ -651,7 +642,6 @@ class AvanceWrapper():
 
     def preidentificaciones(self):
         return self.resultados.preidentificaciones
-
 
 
 class Proyecciones(Sumarizador):
