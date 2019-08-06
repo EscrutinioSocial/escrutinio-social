@@ -382,7 +382,7 @@ class Resultados():
         }
 
         # Esta key es especial porque la vista la muestra directamente en pantalla.
-        tabla_no_positivos["Votos Positivos"] = {
+        tabla_no_positivos[settings.KEY_VOTOS_POSITIVOS] = {
             "votos": self.total_positivos(),
             "porcentaje_total": porcentaje(self.total_positivos(), self.votantes())
         }
