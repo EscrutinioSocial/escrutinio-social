@@ -238,41 +238,44 @@ class MesasDeCircuito(ResultadosCategoria):
 
     template_name = "elecciones/mesas_circuito.html"
 
+    def dispatch(self, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            pk = Categoria.objects.first().id
+        mesa_id = self.request.GET.get('mesa')
+        if mesa_id is None:
+            circuito = get_object_or_404(Circuito, id=self.request.GET.get('circuito'))
+            mesa_id = circuito.mesas.all().order_by("numero").first().id
+            url_params = self.request.GET.copy()
+            url_params['mesa'] = mesa_id
+            query_string = parse.urlencode(url_params)
+            url_base = reverse('mesas-circuito', args=[pk])
+            # agregamos el mesa_id de la primer mesa al query string
+            redirect_url = f"{url_base}?{query_string}"
+            return redirect(redirect_url)
+        return super().dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         categoria = context['object']
-        circuito_id = self._obtener_circuito()
-        circuito = get_object_or_404(Circuito, id=circuito_id)
+        circuito = get_object_or_404(Circuito, id=self.request.GET.get('circuito'))
         context['circuito_seleccionado'] = circuito
         mesas = circuito.mesas.all().order_by("numero")
         context['mesas'] = mesas
-        mesa = self._obtener_informacion_mesa(mesas)
+        mesa = Mesa.objects.get(id=self.request.GET.get('mesa'))
         context['resultados'] = self.sumarizador.votos_reportados(
             categoria,
             mesas.filter(id=mesa.id)
         )
         context['mesa_seleccionada'] = mesa
         context['mensaje_no_hay_info'] = f'No hay datos para la categoría {categoria} en la mesa {mesa}'
-        context['url_params'] = self._construir_url_params(self.request.GET.copy())
-
+        context['url_params'] = self._evitar_duplicado_mesa_en_query_string(self.request.GET.copy())
         return context
 
-    def _construir_url_params(self, url_params_original):
+    def _evitar_duplicado_mesa_en_query_string(self, url_params_original):
         if 'mesa' in url_params_original:
             del url_params_original['mesa']
         return parse.urlencode(url_params_original)
-
-    def _obtener_informacion_mesa(self, mesas):
-        """
-        Devolvemos la mesa dependiendo si en el URL viene cargado.
-        Si no viene cargado, devolvemos la primer mesa del circuito
-        """
-        mesa_id = self.request.GET.get('mesa')
-        mesa = mesas.first() if mesa_id is None else Mesa.objects.get(id=mesa_id)
-        return mesa
-
-    def _obtener_circuito(self):
-        return self.request.GET.get('circuito')
 
 
 class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):

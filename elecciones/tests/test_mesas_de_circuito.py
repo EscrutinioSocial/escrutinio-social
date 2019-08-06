@@ -45,8 +45,23 @@ def test_resultados__generacion_url_ver_mesas_circuito(fiscal_client):
     # como ahora en la URL hay especificado un circuito, debería aparecer el link de "Ver las mesas..."
     assert response.status_code == 200
     assert texto_mesas_link in response.content.decode('utf8')
-    url_mesa_distrito = f"./mesas_circuito/{categoria.id}"
+    url_mesa_distrito = reverse('mesas-circuito', args=[categoria.id])
     assert url_mesa_distrito in response.content.decode('utf8')
+
+
+def test_mesa_de_circuito__dispatch_primera_mesa_numero(carta_marina, fiscal_client):
+    mesa1, mesa2, *otras_mesas = carta_marina
+    categoria = mesa1.categorias.get()
+    query_string_circuito = (
+        f'?circuito={mesa1.circuito.id}'
+        '&tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
+        )
+    url_circuito = reverse('mesas-circuito', args=[categoria.id]) + query_string_circuito
+    response = fiscal_client.get(url_circuito)
+
+    assert response.status_code == 302
+    assert url_circuito in response.url
+    assert f"mesa={mesa1.id}" in response.url
 
 
 def test_mesa_de_circuito__sidebar_mesas(carta_marina, fiscal_client):
@@ -55,7 +70,7 @@ def test_mesa_de_circuito__sidebar_mesas(carta_marina, fiscal_client):
     categoria = mesa1.categorias.get()
 
     query_string_circuito = (
-        f'?circuito={mesa1.circuito.id}'
+        f'?circuito={mesa1.circuito.id}&mesa={mesa1.id}'
         '&tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
         )
     url_circuito = reverse('mesas-circuito', args=[categoria.id]) + query_string_circuito
