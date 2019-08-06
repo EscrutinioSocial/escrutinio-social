@@ -94,7 +94,7 @@ class IdentificacionCreateView(CreateView):
         if pre_identificacion.circuito is not None:
             initial['circuito'] = pre_identificacion.circuito
         return initial
-    
+
     def get_context_data(self, **kwargs):
         context = super(IdentificacionCreateView,self).get_context_data(**kwargs)
         context['attachment'] = self.attachment
@@ -238,7 +238,6 @@ class AgregarAdjuntos(FormView):
 
         return self.form_invalid(form)
 
-
     def procesar_adjunto(self, adjunto, subido_por, pre_identificacion=None):
         if adjunto.content_type not in self.types:
             self.mostrar_mensaje_tipo_archivo_invalido(adjunto.name)
@@ -255,7 +254,14 @@ class AgregarAdjuntos(FormView):
             instance.save()
             return instance
         except IntegrityError:
-            messages.warning(self.request, f'{adjunto.name} ya existe en el sistema')
+            messages.warning(
+                self.request, (
+                    f'El archivo {adjunto.name} ya fue subido con anterioridad. <br>'
+                    'Verificá si era el que querías subir y, si lo era, '
+                    'no tenés que hacer nada.<br> ¡Gracias!'
+                ),
+                extra_tags='safe'
+            )
         return None
 
     def mostrar_mensaje_archivos_cargados(self, contador):
@@ -334,7 +340,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
         context['pre_identificacion_form'] = pre_identificacion_form
 
         return self.render_to_response(context)
-    
+
     def post(self, request, *args, **kwargs):
         form_class = AgregarAttachmentsForm
         form = self.get_form(form_class)

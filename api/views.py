@@ -69,6 +69,8 @@ def subir_acta(request):
             with transaction.atomic():
                 attachment = serializer.save(subido_por=request.user.fiscal)
         except IntegrityError:
+            # la imagen ya existe.
+            # se obtiene la instancia conocida con el mismo hash
             foto = serializer.validated_data['foto']
             foto.seek(0)
             attachment = Attachment.objects.filter(foto_digest=hash_file(foto)).first()
