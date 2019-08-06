@@ -10,7 +10,7 @@ def validar_status(value):
         raise ValidationError('Faltan o sobran status. Poné uno por línea.')
 
 
-class StatusTextFields(CharField):
+class StatusTextField(CharField):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.validators.append(validar_status)

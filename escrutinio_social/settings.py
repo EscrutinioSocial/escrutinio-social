@@ -379,7 +379,7 @@ MC_STATUS_CHOICE = Choices(
 
 CONSTANCE_ADDITIONAL_FIELDS = {
     'status_text': [
-        'elecciones.fields.StatusTextFields', {
+        'elecciones.fields.StatusTextField', {
             'widget': 'django.forms.Textarea'
         },
     ]
