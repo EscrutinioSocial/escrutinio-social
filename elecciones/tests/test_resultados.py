@@ -402,10 +402,11 @@ def test_resultados_proyectados(fiscal_client):
     assert positivos[o2.partido]['porcentaje_positivos'] == '43.42'
 
 
-def test_resultados_proyectados_simple(carta_marina, tecnica_proyeccion, fiscal_client):
+def test_resultados_proyectados_simple(carta_marina, fiscal_client):
     s1, s2 = Seccion.objects.all()
     o1, o2 = OpcionFactory.create_batch(2)
     categoria = CategoriaFactory(opciones=[o1, o2])
+    tecnica = tecnica_proyeccion()
 
     mesas = carta_marina
     m1 = mesas[0]
@@ -427,7 +428,7 @@ def test_resultados_proyectados_simple(carta_marina, tecnica_proyeccion, fiscal_
 
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
-        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas&tecnicaDeProyeccion={tecnica_proyeccion.id}'
+        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas&tecnicaDeProyeccion={tecnica.id}'
     )
 
     positivos = response.context['resultados'].tabla_positivos()
