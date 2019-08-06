@@ -244,7 +244,7 @@ class MesasDeCircuito(ResultadosCategoria):
         circuito_id = self._obtener_circuito()
         circuito = get_object_or_404(Circuito, id=circuito_id)
         context['circuito_seleccionado'] = circuito
-        mesas = circuito.mesa_set.all().order_by("numero")
+        mesas = circuito.mesas.all().order_by("numero")
         context['mesas'] = mesas
         mesa = self._obtener_informacion_mesa(mesas)
         context['resultados'] = self.sumarizador.votos_reportados(

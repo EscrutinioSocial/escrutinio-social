@@ -177,9 +177,6 @@ class Sumarizador():
         """
         Me quedo con los votos reportados pertenecientes a las "cargas testigo"
         de las mesas que corresponden de acuerdo a los parámetros y la categoría.
-
-        No está filtrando por categoría en este método (ver cargas_a_considerar_status_filter).
-        El que sí lo hace es votos_reportados_categoria
         """
 
         votos_reportados = VotoMesaReportado.objects.filter(

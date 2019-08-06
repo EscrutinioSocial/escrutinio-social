@@ -742,6 +742,7 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
     response = client.get(reverse('siguiente-accion'))
     assert response.status_code == 200
 
+
 def test_categorias_sensible(setup_groups, client):
     u_visualizador = UserFactory()
     _ = FiscalFactory(user=u_visualizador)

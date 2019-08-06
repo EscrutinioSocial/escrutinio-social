@@ -27,7 +27,7 @@
 {% block sidenav_items %}
 {% for mesa in mesas %}
 <ul>
-    <li id="mesa-{{mesa.id}}" {% if mesa.id == mesa_seleccionada.id %} class=" active" {% endif %}>
+    <li id="mesa-{{mesa.id}}" {% if mesa.id == mesa_seleccionada.id %}class="active"{% endif %}>
         <a href="{{ request.path }}?mesa={{ mesa.id }}&{{ url_params }}">
             Mesa {{ mesa.numero }}
         </a>
@@ -42,7 +42,7 @@
     <li class="tab col s3">
         <a target="_self"
             href="{% url 'mesas-circuito' categoria.id %}?{{ request.GET.urlencode }}"
-            {% if categoria.id == object.id %}class=" active" {% endif %}>{{ categoria.nombre }}</a>
+            {% if categoria.id == object.id %}class="active"{% endif %}>{{ categoria.nombre }}</a>
     </li>
     {% endfor %}
 </ul>
