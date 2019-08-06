@@ -167,7 +167,7 @@ class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         return o.scoring_troll()
 
     def es_staff(o):
-        return o.user.is_staff
+        return o.user.is_staff if o.user else False
 
     es_staff.boolean = True
 
