@@ -176,7 +176,12 @@ def test_electores_sin_filtro(url_resultados, fiscal_client):
     assert b'<td title="Electores">800</td>' in response.content
 
 
-def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
+def test_resultados_parciales_generales( carta_marina
+                                       , url_resultados, fiscal_client):
+    # Seteamos el modo de elección como PASO; por lo tanto
+    # los porcentajes que deberíamos visualizar son los porcentaje_sin_nulos
+    settings.MODO_ELECCION = settings.ME_OPCION_GEN
+
     # resultados para mesa 1
     m1, m2, m3, *otras_mesas = carta_marina
     categoria = m1.categorias.get()  # sólo default
@@ -237,13 +242,28 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     # se ordena de acuerdo al que va ganando
     assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
 
+    total_positivos = resultados.total_positivos()
+    total_blancos   = resultados.total_blancos()
+
+    assert total_positivos == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+    assert total_blancos   == 45    # 5 + 0
+
     # cuentas
     assert positivos[o3.partido]['votos'] == 40 + 50
-    assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'  # (40 + 50) / total_positivos
+    # (40 + 50) / total_positivos
+    assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'
+    # (40 + 50) / total_positivos + total_blanco
+    assert positivos[o3.partido]['porcentaje_sin_nulos'] == '34.62'
     assert positivos[o2.partido]['votos'] == 30 + 40
-    assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'  # (30 + 40) / total_positivos
+    # (30 + 40) / total_positivos
+    assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'
+    # (30 + 40) / total_positivos + total_blanco
+    assert positivos[o2.partido]['porcentaje_sin_nulos'] == '26.92'
     assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
-    assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'  # (20 + 5 + 10 + 20) / total_positivos
+    # (20 + 5 + 10 + 20) / total_positivos
+    assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'
+    # (20 + 5 + 10 + 20) / total_positivos + total_blanco
+    assert positivos[o1.partido]['porcentaje_sin_nulos'] == '21.15'
 
     # todos los positivos suman 100
     assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
@@ -258,6 +278,12 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert f'<td id="votos_{o1.partido.id}" class="dato">55</td>' in content
     assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
     assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
+
+
+    # Deberíamos visualizar los porcentajes positivos.
+    assert f'<td id="porcentaje_{o1.partido.id}" class="dato">25.58%</td>' in content
+    assert f'<td id="porcentaje_{o2.partido.id}" class="dato">32.56%</td>' in content
+    assert f'<td id="porcentaje_{o3.partido.id}" class="dato">41.86%</td>' in content
 
     total_electores = sum(m.electores for m in carta_marina)
 
@@ -277,6 +303,7 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     assert resultados.porcentaje_nulos() == '1.89'
 
     assert resultados.total_votos() == 265
+    assert resultados.electores() == 800
     assert resultados.total_sobres() == 0
 
     columna_datos = [
@@ -290,7 +317,146 @@ def test_resultados_parciales(carta_marina, url_resultados, fiscal_client):
     for variable, valor in columna_datos:
         assert f'<td title="{variable}">{valor}</td>' in content
 
+def test_resultados_parciales_paso( carta_marina
+                                       , url_resultados, fiscal_client):
+    # Seteamos el modo de elección como PASO; por lo tanto
+    # los porcentajes que deberíamos visualizar son los porcentaje_sin_nulos
+    settings.MODO_ELECCION = settings.ME_OPCION_PASO
 
+    # resultados para mesa 1
+    m1, m2, m3, *otras_mesas = carta_marina
+    categoria = m1.categorias.get()  # sólo default
+    # opciones a partido
+    o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
+    # la opción 4 pasa a ser del mismo partido que la 1
+    o4.partido = o1.partido
+    o4.save()
+
+    blanco = Opcion.blancos()
+    total = Opcion.total_votos()
+    nulos = Opcion.nulos()
+
+    mc1 = MesaCategoria.objects.get(mesa=m1, categoria=categoria)
+    mc2 = MesaCategoria.objects.get(mesa=m2, categoria=categoria)
+    mc3 = MesaCategoria.objects.get(mesa=m3, categoria=categoria)
+    c1 = CargaFactory(mesa_categoria=mc1, tipo=Carga.TIPOS.parcial)
+    c2 = CargaFactory(mesa_categoria=mc3, tipo=Carga.TIPOS.parcial)
+    c3 = CargaFactory(mesa_categoria=mc2, tipo=Carga.TIPOS.parcial)
+    consumir_novedades_y_actualizar_objetos([m1, m2, m3])
+
+    VotoMesaReportadoFactory(carga=c1, opcion=o1, votos=20)
+    VotoMesaReportadoFactory(carga=c1, opcion=o2, votos=30)
+    VotoMesaReportadoFactory(carga=c1, opcion=o3, votos=40)
+    VotoMesaReportadoFactory(carga=c1, opcion=o4, votos=5)
+
+    # votaron 95/100 personas
+    VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=5)
+    VotoMesaReportadoFactory(carga=c1, opcion=total, votos=100)
+
+    VotoMesaReportadoFactory(carga=c2, opcion=o1, votos=10)
+    VotoMesaReportadoFactory(carga=c2, opcion=o2, votos=40)
+    VotoMesaReportadoFactory(carga=c2, opcion=o3, votos=50)
+    VotoMesaReportadoFactory(carga=c2, opcion=o4, votos=20)
+
+    # votaron 120/120 personas
+    VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=0)
+    VotoMesaReportadoFactory(carga=c2, opcion=total, votos=120)
+
+    # votaron 45 / 100 personas
+    VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=40)
+    VotoMesaReportadoFactory(carga=c3, opcion=nulos, votos=5)
+    VotoMesaReportadoFactory(carga=c3, opcion=total, votos=45)
+
+    c1.actualizar_firma()
+    c2.actualizar_firma()
+    c3.actualizar_firma()
+    assert c1.es_testigo.exists()
+    assert c2.es_testigo.exists()
+    assert c3.es_testigo.exists()
+
+    response = fiscal_client.get(
+        url_resultados + f'?opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
+    )
+    resultados = response.context['resultados']
+
+    positivos = resultados.tabla_positivos()
+    # se ordena de acuerdo al que va ganando
+    assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
+
+    total_positivos = resultados.total_positivos()
+    total_blancos   = resultados.total_blancos()
+
+    assert total_positivos == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+    assert total_blancos   == 45    # 5 + 0
+
+    # cuentas
+    assert positivos[o3.partido]['votos'] == 40 + 50
+    # (40 + 50) / total_positivos
+    assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'
+    # (40 + 50) / total_positivos + total_blanco
+    assert positivos[o3.partido]['porcentaje_sin_nulos'] == '34.62'
+    assert positivos[o2.partido]['votos'] == 30 + 40
+    # (30 + 40) / total_positivos
+    assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'
+    # (30 + 40) / total_positivos + total_blanco
+    assert positivos[o2.partido]['porcentaje_sin_nulos'] == '26.92'
+    assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
+    # (20 + 5 + 10 + 20) / total_positivos
+    assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'
+    # (20 + 5 + 10 + 20) / total_positivos + total_blanco
+    assert positivos[o1.partido]['porcentaje_sin_nulos'] == '21.15'
+
+    # todos los positivos suman 100
+    assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
+
+    # votos de partido 1 son iguales a los de o1 + o4
+    assert positivos[o1.partido]['votos'] == sum(
+        x['votos'] for x in positivos[o4.partido]['detalle'].values()
+    )
+
+    content = response.content.decode('utf8')
+
+    assert f'<td id="votos_{o1.partido.id}" class="dato">55</td>' in content
+    assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
+    assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
+
+
+    # Deberíamos visualizar los porcentajes sin nulos.
+    assert f'<td id="porcentaje_{o1.partido.id}" class="dato">21.15%</td>' in content
+    assert f'<td id="porcentaje_{o2.partido.id}" class="dato">26.92%</td>' in content
+    assert f'<td id="porcentaje_{o3.partido.id}" class="dato">34.62%</td>' in content
+
+    total_electores = sum(m.electores for m in carta_marina)
+
+    assert resultados.electores() == total_electores
+    assert resultados.total_positivos() == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
+    assert resultados.porcentaje_positivos() == '81.13'
+    assert resultados.porcentaje_mesas_escrutadas() == '37.50'  # 3 de 8
+    assert resultados.votantes() == 265
+    assert resultados.electores_en_mesas_escrutadas() == 320
+    assert resultados.porcentaje_escrutado() == f'{100 * 320 / total_electores:.2f}'
+    assert resultados.porcentaje_participacion() == f'{100 * 265/ 320:.2f}'  # Es sobre escrutado.
+
+    assert resultados.total_blancos() == 45
+    assert resultados.porcentaje_blancos() == '16.98'
+
+    assert resultados.total_nulos() == 5
+    assert resultados.porcentaje_nulos() == '1.89'
+
+    assert resultados.total_votos() == 265
+    assert resultados.electores() == 800
+    assert resultados.total_sobres() == 0
+
+    columna_datos = [
+        ('Electores', resultados.electores()),
+        ('Escrutados', resultados.electores_en_mesas_escrutadas()),
+        ('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
+        ('Votantes', resultados.votantes()),
+        ('Positivos', resultados.total_positivos()),
+        ('% Participación', f'{resultados.porcentaje_participacion()} %'),
+    ]
+    for variable, valor in columna_datos:
+        assert f'<td title="{variable}">{valor}</td>' in content
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
 def test_resultados_proyectados(fiscal_client, url_resultados):
