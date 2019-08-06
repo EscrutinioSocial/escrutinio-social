@@ -8,7 +8,7 @@ from elecciones.tests.factories import (
     SeccionFactory,
 )
 from .test_carga_datos import _construir_request_data_para_carga_de_resultados
-
+from elecciones.models import Opcion
 
 def test_quiero_ser_fiscal_form__data_ok(db):
     seccion = SeccionFactory()
@@ -80,12 +80,12 @@ def test_formset_carga_valida_votos_para_opcion(db):
 
     VMRFormSet = votomesareportadoformset_factory(min_num=2)
     data = _construir_request_data_para_carga_de_resultados(
-        [(o1.id, 10), (o2.id, 5)]
+        [(o1.id, 10, 10), (o2.id, 5, 5)]
     )
     formset = VMRFormSet(data=data, mesa=m, datos_previos=votos_para_opcion)
     assert formset.is_valid()
     data = _construir_request_data_para_carga_de_resultados(
-        [(o1.id, 5), (o2.id, 5)]
+        [(o1.id, 5, 5), (o2.id, 5, 5)]
     )
     formset = VMRFormSet(data=data, mesa=m, datos_previos=votos_para_opcion)
     assert not formset.is_valid()
@@ -93,3 +93,73 @@ def test_formset_carga_valida_votos_para_opcion(db):
     # error en el campo votos  del primer form, correspondiente a o1.
     assert formset.errors[0]['votos'][0] == 'El valor confirmado que tenemos para esta opción es 10'
 
+
+def test_formset_carga_warning_sobres_mayor_mesa_electores(db):
+    m = MesaFactory()
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres', nombre='total de sobres')
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 101, 0)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert not formset.is_valid()
+    assert len(formset.non_form_errors()) == 1
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 101, 101)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert formset.is_valid()
+    assert len(formset.non_form_errors()) == 0
+
+
+def test_formset_carga_warning_suma_votos_mayor_sobres(db):
+    m = MesaFactory()
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres', nombre='total de sobres')
+    o2 = OpcionFactory()
+    o3 = OpcionFactory()
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 80, 0), (o2.id, 40, 0), (o3.id, 41, 0)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert not formset.is_valid()
+    assert len(formset.non_form_errors()) == 1
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 80, 80), (o2.id, 40, 40), (o3.id, 41, 41)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert formset.is_valid()
+    assert len(formset.non_form_errors()) == 0
+
+def test_formset_carga_warning_cero_votos(db):
+    m = MesaFactory()
+    o1 = OpcionFactory(partido__codigo="136")
+    o2 = OpcionFactory(partido__codigo="135")
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 0, 20), (o2.id, 0, 20)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert not formset.is_valid()
+    assert len(formset.non_form_errors()) == 2
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 0, 0), (o2.id, 0, 0)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert formset.is_valid()
+    assert len(formset.non_form_errors()) == 0

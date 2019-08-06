@@ -29,8 +29,9 @@ urlpatterns = [
     url(r'^quiero-validar/(?P<codigo_ref>\w+)?$', QuieroSerFiscal.as_view(), name='quiero-validar'),
     url(r'^quiero-validar/gracias/$', quiero_validar_gracias, name='quiero-validar-gracias'),
     url(r'^quiero-validar/confirmar-email/(?P<uuid>[0-9a-f-]+)$', confirmar_email, name='confirmar-email'),
-    url(r'^login/$', auth_views.LoginView.as_view(authentication_form=AuthenticationFormCustomError), name='login'),
-
+    url(r'^login/$', auth_views.LoginView.as_view(
+        authentication_form=AuthenticationFormCustomError
+    ), name='login'),
     url(r'', include(frontend_urls)),
     url(r'', include('django.contrib.auth.urls')),
     url(r'^hijack/', include('hijack.urls')),

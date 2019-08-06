@@ -135,7 +135,7 @@ def test_siguiente_happy_path_parcial_y_total(db, fiscal_client, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa, status='identificada')
-    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, orden_de_carga=1, 
+    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, orden_de_carga=1,
         mesa=mesa
     )
     response = fiscal_client.get(reverse('siguiente-accion'))
@@ -389,10 +389,10 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     # categoria1 debería aparecer primero porque su mesa categoria tiene un orden_de_carga más grande
     assert nombre_categoria in str(response.content)
 
-    tupla_opciones_electores = [(opcion1.id, mesa.electores // 2), (opcion2.id, mesa.electores // 2)]
+    tupla_opciones_electores = [(opcion1.id, mesa.electores // 2, mesa.electores // 2), (opcion2.id, mesa.electores // 2, mesa.electores // 2)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
 
-    with django_assert_num_queries(36):
+    with django_assert_num_queries(38):
         response = fiscal_client.post(url_carga, request_data)
 
     # tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
@@ -458,6 +458,8 @@ def _construir_request_data_para_carga_de_resultados(tuplas_opcion_electores):
         request_data[key] = str(tupla[0])
         key = f'form-{index}-votos'
         request_data[key] = str(tupla[1])
+        key = f'form-{index}-valor-previo'
+        request_data[key] = str(tupla[2])
     request_data['form-TOTAL_FORMS'] = str(len(tuplas_opcion_electores))
     request_data['form-INITIAL_FORMS'] = '0'
     request_data['form-MIN_NUM_FORMS'] = str(len(tuplas_opcion_electores))

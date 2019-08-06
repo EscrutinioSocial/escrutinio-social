@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 import sys
+from model_utils import Choices
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -66,7 +67,7 @@ INSTALLED_APPS = [
     # django-autocomplete-light
     'dal',
     'dal_select2',
-    
+
     # nuestras apps
     'fiscales.apps.FiscalesAppConfig',  # Hay que ponerlo así para que cargue el app_ready()
     'elecciones.apps.EleccionesAppConfig',
@@ -342,6 +343,11 @@ OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'vo
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None, 'codigo': '10001'}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
+KEY_VOTOS_POSITIVOS = 'Votos Positivos'
+
+#codigo de partidos para validaciones
+CODIGO_PARTIDO_NOSOTROS = '136'
+CODIGO_PARTIDO_ELLOS = '135'
 
 # Cada cuanto tiempo actualizar el campo last_seen de un Fiscal.
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
@@ -368,11 +374,38 @@ ME_OPCION_GEN  = 'GENERALES'
 # votos de la elección. Las opciones posibles son: ME_OPCION_PASO y ME_OPCION_GEN
 MODO_ELECCION = ME_OPCION_PASO
 
+MC_STATUS_CHOICE = Choices(
+    # Cargas parcial divergentes sin consolidar
+    ('parcial_en_conflicto', 'parcial en conflicto'),
+    # Carga parcial única (no CSV) o no coincidente.
+    ('parcial_sin_consolidar', 'parcial sin consolidar'),
+    # No hay cargas.
+    ('sin_cargar', 'sin cargar'),
+    # No hay dos cargas mínimas coincidentes, pero una es de CSV.
+    ('parcial_consolidada_csv', 'parcial consolidada CSV'),
+    # Carga parcial consolidada por multicarga.
+    ('parcial_consolidada_dc', 'parcial consolidada doble carga'),
+    ('total_sin_consolidar', 'total sin consolidar'),
+    ('total_en_conflicto', 'total en conflicto'),
+    ('total_consolidada_csv', 'total consolidada CSV'),
+    ('total_consolidada_dc', 'total consolidada doble carga'),
+    # No siguen en la carga.
+    ('con_problemas', 'con problemas')
+)
+
+CONSTANCE_ADDITIONAL_FIELDS = {
+    'status_text': [
+        'elecciones.fields.StatusTextField', {
+            'widget': 'django.forms.Textarea'
+        },
+    ]
+}
+
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
-
 CONSTANCE_CONFIG = {
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
+    'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text')
 }
 
 

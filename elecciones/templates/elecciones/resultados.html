@@ -45,8 +45,8 @@
     {% if show_plot %}
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     {% endif %}
-    <link href="/static/elecciones/resultados.css" rel="stylesheet" type="text/css">
-    <link href="/static/elecciones/arbol_distrito.css" rel="stylesheet" type="text/css">
+    <link href="{% static 'elecciones/resultados.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'elecciones/arbol_distrito.css' %}" rel="stylesheet" type="text/css">
  {% endblock %}
 
 {% block sidenav_items %}
@@ -69,7 +69,9 @@
         <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
             ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
         </h4>
-
+        {% if request.GET.circuito != null %}
+        <a href="{% url 'mesas-circuito' object.id %}?{{ request.GET.urlencode }}">Ver mesas del circuito</a>
+        {% endif %}
         <table class="bordered" id="tabla_resultados">
             <colgroup>
                 <col id="partido" />

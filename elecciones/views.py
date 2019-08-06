@@ -1,3 +1,6 @@
+import itertools
+from urllib import parse
+
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect
@@ -237,6 +240,50 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['categorias'] = categorias.order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('numero')
         return context
+
+
+class MesasDeCircuito(ResultadosCategoria):
+
+    template_name = "elecciones/mesas_circuito.html"
+
+    def dispatch(self, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            pk = Categoria.objects.first().id
+        mesa_id = self.request.GET.get('mesa')
+        if mesa_id is None:
+            circuito = get_object_or_404(Circuito, id=self.request.GET.get('circuito'))
+            mesa_id = circuito.mesas.all().order_by("numero").first().id
+            url_params = self.request.GET.copy()
+            url_params['mesa'] = mesa_id
+            query_string = parse.urlencode(url_params)
+            url_base = reverse('mesas-circuito', args=[pk])
+            # agregamos el mesa_id de la primer mesa al query string
+            redirect_url = f"{url_base}?{query_string}"
+            return redirect(redirect_url)
+        return super().dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        categoria = context['object']
+        circuito = get_object_or_404(Circuito, id=self.request.GET.get('circuito'))
+        context['circuito_seleccionado'] = circuito
+        mesas = circuito.mesas.all().order_by("numero")
+        context['mesas'] = mesas
+        mesa = Mesa.objects.get(id=self.request.GET.get('mesa'))
+        context['resultados'] = self.sumarizador.votos_reportados(
+            categoria,
+            mesas.filter(id=mesa.id)
+        )
+        context['mesa_seleccionada'] = mesa
+        context['mensaje_no_hay_info'] = f'No hay datos para la categoría {categoria} en la mesa {mesa}'
+        context['url_params'] = self._evitar_duplicado_mesa_en_query_string(self.request.GET.copy())
+        return context
+
+    def _evitar_duplicado_mesa_en_query_string(self, url_params_original):
+        if 'mesa' in url_params_original:
+            del url_params_original['mesa']
+        return parse.urlencode(url_params_original)
 
 
 class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):

@@ -26,6 +26,23 @@ from .test_models import consumir_novedades_y_actualizar_objetos
 from elecciones.resultados import Sumarizador
 
 
+def tecnica_proyeccion():
+    """
+    Crea una técnica de proyección para las mesas existentes, agrupadas por sección.
+    """
+    proyeccion = TecnicaProyeccionFactory()
+    for seccion in Seccion.objects.all():
+        AgrupacionCircuitosFactory(proyeccion=proyeccion).circuitos.set(seccion.circuitos.all())
+
+    return proyeccion
+
+
+def cargar_votos(carga, votos):
+    for opcion, cant_votos in votos.items():
+        VotoMesaReportadoFactory(opcion=opcion, carga=carga, votos=cant_votos)
+    carga.actualizar_firma()
+
+
 @pytest.fixture()
 def carta_marina(db):
     """
@@ -44,18 +61,6 @@ def carta_marina(db):
         MesaFactory(numero=7, lugar_votacion__circuito=c4, electores=90),
         MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90),
     )
-
-
-@pytest.fixture()
-def tecnica_proyeccion(carta_marina):
-    """
-    Crea una técnica de proyección para las mesas existentes, agrupadas por sección.
-    """
-    proyeccion = TecnicaProyeccionFactory()
-    for seccion in Seccion.objects.all():
-        AgrupacionCircuitosFactory(proyeccion=proyeccion).circuitos.set(seccion.circuitos.all())
-
-    return proyeccion
 
 
 @pytest.fixture()
@@ -459,7 +464,7 @@ def test_resultados_parciales_paso( carta_marina
         assert f'<td title="{variable}">{valor}</td>' in content
 
 @pytest.mark.skip(reason="proyecciones sera re-escrito")
-def test_resultados_proyectados(fiscal_client, url_resultados):
+def test_resultados_proyectados(fiscal_client):
     # se crean 3 secciones electorales
     s1, s2, s3 = SeccionFactory.create_batch(3)
     # s1 1000 votantes    # La matanza! :D
@@ -486,38 +491,50 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     categoria = Categoria.objects.get()
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
-    blanco = categoria.opciones.get(nombre='blanco')
+
+    tecnica = tecnica_proyeccion()
 
     # simulo que van entraron resultados en las mesas 1 (la primera de la seccion 1)
     # y 3 (la primera de la seccion 3).
     #
     # Resultados de la mesa 1: 120 votos partido 1, 80 para el 2, 0 para el 3 y 0 en blanco
     c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=categoria)
+    cargar_votos(c1, {
+        o1: 120,  # 50% de los votos
+        o2: 80,  # 40%
+        o3: 0,
+        Opcion.blancos(): 0,
+        Opcion.total_votos(): 200,
+        Opcion.sobres(): 200,
+    })
     consumir_novedades_y_actualizar_objetos([m1])
-
-    VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=120)  # 50% de los votos
-    VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=80)  # 40%
-    VotoMesaReportadoFactory(opcion=o3, carga=c1, votos=0)
-    VotoMesaReportadoFactory(opcion=blanco, carga=c1, votos=0)
 
     # Resultados de la mesa 3: 79 votos al partido 1, 121 al partido 2 (cero los demas)
     c2 = CargaFactory(mesa_categoria__mesa=m3, tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=categoria)
+    cargar_votos(c2, {
+        o1: 79,
+        o2: 121,
+        o3: 0,
+        Opcion.blancos(): 0,
+        Opcion.total_votos(): 200,
+        Opcion.sobres(): 200,
+    })
+
     consumir_novedades_y_actualizar_objetos([m1, m3])
-    VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=79)
-    VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=121)
-    VotoMesaReportadoFactory(opcion=o3, carga=c2, votos=0)
-    VotoMesaReportadoFactory(opcion=blanco, carga=c2, votos=0)
-    c1.actualizar_firma()
-    c2.actualizar_firma()
+
 
     # ###################
     # Totales sin proyectar:
     # o1 (partido 1): 120 + 79 = 199 votos
     # o2 (partido 2): 80 + 121 = 201 votos
     # sin proyeccion va ganando o2 por 2 votos
-    response = fiscal_client.get(url_resultados)
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=prioritarias'
+    )
     positivos = response.context['resultados'].tabla_positivos()
-    assert list(positivos.keys()) == [o2.partido, o1.partido, o3.partido]
+
+    assert list(positivos.keys()) == [o2.partido, o1.partido, o3.partido, o4.partido]
 
     # cuentas
     assert positivos[o2.partido]['votos'] == 201
@@ -529,16 +546,13 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     assert 'proyeccion' not in positivos[o1.partido]
 
     # cuando se proyecta, o1 gana porque va ganando en s1 que es la mas populosa
-    response = fiscal_client.get(url_resultados + '?tipodesumarizacion=2')
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=prioritarias&tecnicaDeProyeccion={tecnica.id}'
+    )
     positivos = response.context['resultados'].tabla_positivos()
+    print(positivos)
     assert list(positivos.keys()) == [o1.partido, o2.partido, o3.partido]
-
-    # la contabilidad absoluta es la misma
-    assert positivos[o2.partido]['votos'] == 201
-    assert positivos[o1.partido]['votos'] == 199
-    assert positivos[o3.partido]['votos'] == 0
-    assert positivos[o2.partido]['porcentaje_positivos'] == '50.25'
-    assert positivos[o1.partido]['porcentaje_positivos'] == '49.75'
 
     # PROYECCION:
     # la seccion 3 esta sobre representada por el momento (está al 100%)
@@ -552,18 +566,16 @@ def test_resultados_proyectados(fiscal_client, url_resultados):
     # p3 = 521 / 1200 = 43.42%
     # OJO NO SE PUEDE PROYECTAR LA SECCION 2, no tiene ni una mesa
     # OJO, si el % de mesas es bajo la proyeccion puede ser ruidosa
-    assert positivos[o1.partido]['proyeccion'] == '56.58'
-    assert positivos[o2.partido]['proyeccion'] == '43.42'
+    assert positivos[o1.partido]['porcentaje_positivos'] == '56.58'
+    assert positivos[o2.partido]['porcentaje_positivos'] == '43.42'
 
 
-def test_resultados_proyectados_simple(carta_marina, tecnica_proyeccion, fiscal_client):
+def test_resultados_proyectados_simple(carta_marina, fiscal_client):
     s1, s2 = Seccion.objects.all()
     o1, o2 = OpcionFactory.create_batch(2)
     categoria = CategoriaFactory(opciones=[o1, o2])
+    tecnica = tecnica_proyeccion()
 
-    # m1, *_ = MesaFactory.create_batch(
-    #     3, categorias=[categoria], lugar_votacion__circuito__seccion=s1, electores=200
-    # )
     mesas = carta_marina
     m1 = mesas[0]
     m2 = mesas[4]
@@ -584,7 +596,7 @@ def test_resultados_proyectados_simple(carta_marina, tecnica_proyeccion, fiscal_
 
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]) +
-        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas&tecnicaDeProyeccion={tecnica_proyeccion.id}'
+        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas&tecnicaDeProyeccion={tecnica.id}'
     )
 
     positivos = response.context['resultados'].tabla_positivos()
@@ -592,59 +604,6 @@ def test_resultados_proyectados_simple(carta_marina, tecnica_proyeccion, fiscal_
     assert positivos[o2.partido]['votos'] == 292  # = 30 *440/100 + 40 * 360 / 90
     assert positivos[o1.partido]['porcentaje_positivos'] == '50.34'  # = 296 / (296+292)
     assert positivos[o2.partido]['porcentaje_positivos'] == '49.66'  # = 292 / (296+292)
-
-
-@pytest.mark.skip(reason="proyecciones sera re-escrito")
-def test_resultados_proyectados_usa_circuito(fiscal_client):
-    # 2 secciones. 1 ponderada con 2 circuitos
-    s1 = SeccionFactory(proyeccion_ponderada=True)
-    c1, c2 = CircuitoFactory.create_batch(2, seccion=s1)
-    c3 = CircuitoFactory()
-
-    o1, o2 = OpcionFactory.create_batch(2)
-    e1 = CategoriaFactory(opciones=[o1, o2])
-
-    ms1, ms2, ms3 = (
-        MesaFactory.create_batch(4, categorias=[e1], lugar_votacion__circuito=c1, electores=200),
-        MesaFactory.create_batch(2, categorias=[e1], lugar_votacion__circuito=c2, electores=200),
-        MesaFactory.create_batch(2, categorias=[e1], lugar_votacion__circuito=c3, electores=200)
-    )
-    c1 = CargaFactory(mesa_categoria__mesa=ms1[0], tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=e1)
-    VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=70)
-    VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=90)
-
-    c2 = CargaFactory(mesa_categoria__mesa=ms2[0], tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=e1)
-    VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=90)
-    VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=70)
-
-    c3 = CargaFactory(mesa_categoria__mesa=ms3[0], tipo=Carga.TIPOS.parcial, mesa_categoria__categoria=e1)
-    VotoMesaReportadoFactory(opcion=o1, carga=c3, votos=80)
-    VotoMesaReportadoFactory(opcion=o2, carga=c3, votos=80)
-    c1.actualizar_firma()
-    c2.actualizar_firma()
-    c3.actualizar_firma()
-
-    consumir_novedades_y_actualizar_objetos()
-
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
-    positivos = response.context['resultados'].tabla_positivos()
-
-    assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
-    assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
-    assert positivos[o2.partido]['proyeccion'] == '51.56'
-    assert positivos[o1.partido]['proyeccion'] == '48.44'
-
-    s1.proyeccion_ponderada = False
-    s1.save()
-
-    # proyeccion sin ponderar circuitos
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
-    positivos = response.context['resultados'].tabla_positivos()
-
-    assert positivos[o1.partido]['porcentaje_positivos'] == '50.00'
-    assert positivos[o2.partido]['porcentaje_positivos'] == '50.00'
-    assert positivos[o2.partido]['proyeccion'] == '50.00'
-    assert positivos[o1.partido]['proyeccion'] == '50.00'
 
 
 def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fiscal_client):
@@ -822,13 +781,10 @@ def test_resultados_no_positivos(fiscal_client):
     assert resultados.porcentaje_nulos() == '0.00'
 
 
-@pytest.mark.skip(reason="proyecciones sera re-escrito")
-def test_resultados_excluye_metadata(fiscal_client):
+def test_resultados_excluye_metadata(fiscal_client, carta_marina):
     s1, s2 = Seccion.objects.all()
     o1, o2 = OpcionFactory.create_batch(2)
-    opcion_blanco = OpcionFactory(**settings.OPCION_BLANCOS)
-    opcion_total = OpcionFactory(**settings.OPCION_TOTAL_VOTOS)
-    e1 = CategoriaFactory(opciones=[o1, o2, opcion_blanco, opcion_total])
+    e1 = CategoriaFactory(opciones=[o1, o2])
 
     m1, *_ = MesaFactory.create_batch(
         3, categorias=[e1], lugar_votacion__circuito__seccion=s1, electores=200
@@ -836,37 +792,50 @@ def test_resultados_excluye_metadata(fiscal_client):
     m2 = MesaFactory(categorias=[e1], lugar_votacion__circuito__seccion=s2, electores=200)
 
     c1 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=e1, tipo=Carga.TIPOS.total)
-    VotoMesaReportadoFactory(opcion=o1, carga=c1, votos=100)
-    VotoMesaReportadoFactory(opcion=o2, carga=c1, votos=50)
-    VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c1, votos=10)
-    VotoMesaReportadoFactory(opcion=opcion_total, carga=c1, votos=160)
-    c1.actualizar_firma()
+    cargar_votos(c1, {
+        o1: 100,
+        o2: 50,
+        Opcion.blancos(): 10,
+        Opcion.total_votos(): 160,
+    })
 
     c2 = CargaFactory(mesa_categoria__mesa=m2, mesa_categoria__categoria=e1, tipo=Carga.TIPOS.total)
-    VotoMesaReportadoFactory(opcion=o1, carga=c2, votos=50)
-    VotoMesaReportadoFactory(opcion=o2, carga=c2, votos=100)
-    VotoMesaReportadoFactory(opcion=opcion_blanco, carga=c2, votos=10)
-    VotoMesaReportadoFactory(opcion=opcion_total, carga=c2, votos=160)
-    c2.actualizar_firma()
+    cargar_votos(c2, {
+        o1: 50,
+        o2: 100,
+        Opcion.blancos(): 10,
+        Opcion.total_votos(): 160,
+    })
     consumir_novedades_y_actualizar_objetos()
 
-    response = fiscal_client.get(reverse('resultados-categoria', args=[e1.id]) + '?tipodesumarizacion=2')
+    tecnica = tecnica_proyeccion()
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[e1.id]) +
+        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas&tecnicaDeProyeccion={tecnica.id}'
+    )
+
     resultados = response.context['resultados']
     positivos = resultados.tabla_positivos()
     no_positivos = resultados.tabla_no_positivos()
 
-    assert positivos[o1.partido]['votos'] == 150
-    assert positivos[o2.partido]['votos'] == 150
-    assert no_positivos['Votos Positivos']['votos'] == 300
+    # PROYECCION:
+    # la seccion 2 esta sobre representada por el momento (está al 100%)
+    # en la seccion 1 todo se multiplica x 3 (tengo 1 de 3 mesas)
+    # proyeccion de la seccion 1 es partido 1 = 100 * 3 (3=mesas totales/mesas actuales) = 300
+    #                               partido 2 =  50 * 3 = 150
+    # proyeccion o1 = 350 + 50 = 350
+    # proyeccion o2 = 150 + 100 = 250
+    # votos proyectados = 1200
+    # %o1 = 350 / 600 = 56.58%
+    # %o2 = 250 / 600 = 41.67%
+    assert positivos[o1.partido]['detalle'][o1]['porcentaje_positivos'] == '58.33'
+    assert positivos[o2.partido]['detalle'][o2]['porcentaje_positivos'] == '41.67'
 
-    assert positivos[o1.partido]['detalle'][o1]['porcentaje_positivos'] == '50.00'
-    assert positivos[o2.partido]['detalle'][o2]['porcentaje_positivos'] == '50.00'
-    # TODO proyecciones sera re escrito
-    # assert positivos[o1.partido]['proyeccion'] == '58.33'
-    # assert positivos[o2.partido]['proyeccion'] == '41.67'
-
-    assert no_positivos[o3.nombre] == {'porcentaje_total': '6.25', 'votos': 20}
-    assert list(no_positivos.keys()) == [o3.nombre, 'Votos Positivos']
+    # Votos en blanco proyectados = 10 * 3 (s1) + 10 (s2) = 40
+    # %blancos = 40 / (600 + 40) = 6.25%
+    # %positivos = 600 / (600 + 40) = 93.75%
+    assert no_positivos[Opcion.blancos().nombre]['porcentaje_total'] == '6.25'
+    assert no_positivos[settings.KEY_VOTOS_POSITIVOS]['porcentaje_total'] == '93.75'
 
 
 def test_actualizar_electores(carta_marina):
@@ -907,6 +876,7 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
     client.login(username=u_validador.username, password='password')
     response = client.get(reverse('siguiente-accion'))
     assert response.status_code == 200
+
 
 def test_categorias_sensible(setup_groups, client):
     u_visualizador = UserFactory()

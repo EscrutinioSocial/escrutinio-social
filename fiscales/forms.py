@@ -1,4 +1,5 @@
 from functools import partial
+from django.conf import settings
 from django import forms
 from django.forms import modelformset_factory, BaseModelFormSet
 from material import Layout, Row, Fieldset
@@ -24,7 +25,7 @@ class AuthenticationFormCustomError(AuthenticationForm):
     error_messages = {
         'invalid_login': (
             'Por favor introduzca un nombre de usuario y una contraseña correctos. '
-            'Prueba tu DNI o teléfono sin puntos, guiones ni espacios.'
+            'Probá tu DNI sin puntos, guiones ni espacios.'
         ),
         'inactive':
         _("This account is inactive."),
@@ -326,6 +327,18 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         self.datos_previos = kwargs.pop('datos_previos')
         super().__init__(*args, **kwargs)
 
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+
+        """
+        en este campo hidden se guarda el valor de los datos enviados por si es
+        necesario dar un warning al usuario. Si el usuario los envía por segunda
+        vez, se compara que los datos enviados son los mismos para así guardarlos
+        """
+        form.fields["valor-previo"] = forms.IntegerField(label="",
+                                            required=False,
+                                            widget=forms.HiddenInput)
+
     def clean(self):
         super().clean()
         suma = 0
@@ -355,6 +368,50 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
 
         if errors:
             form.add_error('votos', ValidationError(errors))
+
+        #warnings
+        warnings = []
+
+        cantidad_forms = self.data['form-TOTAL_FORMS']
+        mismos_datos = True
+        for i in range(int(cantidad_forms)):
+            mismos_datos = mismos_datos and (self.data['form-'+str(i)+'-valor-previo']
+                                            == self.data['form-'+str(i)+'-votos'])
+
+        if not mismos_datos:
+            for form in self.forms:
+                opcion = form.cleaned_data.get('opcion')
+                votos = form.cleaned_data.get('votos')
+                #todos 0
+                if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_NOSOTROS:
+                    if votos == 0:
+                        warnings.append(f'La cantidad de votos de {opcion.nombre_corto} es cero.')
+
+                #jxc 0
+                if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_ELLOS:
+                    if votos == 0:
+                        warnings.append(f'La cantidad de votos de {opcion.nombre_corto} es cero.')
+
+                # sobres > mesa.electores && total_votos > sobres
+                if opcion == Opcion.sobres():
+                    if votos and votos > self.mesa.electores:
+                        warnings.append('La cantidad de sobres es mayor a la '
+                            f'cantidad de electores de la mesa: {self.mesa.electores}')
+
+                    if votos and suma > votos:
+                        warnings.append('La cantidad de votos es mayor a la '
+                                    f'cantidad de sobres.')
+
+                # guardo los datos en una variable auxiliar para comprobar si hubo
+                # cambios al confirmar el warning
+                data = form.data.copy()
+                for i in range(int(cantidad_forms)):
+                    data['form-'+str(i)+'-valor-previo'] = data['form-'+str(i)+'-votos']
+
+                form.data = data
+
+            if warnings:
+                raise forms.ValidationError(warnings)
 
 
 votomesareportadoformset_factory = partial(
