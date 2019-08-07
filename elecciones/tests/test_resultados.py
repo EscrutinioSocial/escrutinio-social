@@ -184,7 +184,7 @@ def test_electores_sin_filtro(url_resultados, fiscal_client):
 def test_resultados_parciales_generales( carta_marina
                                        , url_resultados, fiscal_client):
     # Seteamos el modo de elección como PASO; por lo tanto
-    # los porcentajes que deberíamos visualizar son los porcentaje_sin_nulos
+    # los porcentajes que deberíamos visualizar son los porcentaje_validos
     settings.MODO_ELECCION = settings.ME_OPCION_GEN
 
     # resultados para mesa 1
@@ -258,17 +258,17 @@ def test_resultados_parciales_generales( carta_marina
     # (40 + 50) / total_positivos
     assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'
     # (40 + 50) / total_positivos + total_blanco
-    assert positivos[o3.partido]['porcentaje_sin_nulos'] == '34.62'
+    assert positivos[o3.partido]['porcentaje_validos'] == '34.62'
     assert positivos[o2.partido]['votos'] == 30 + 40
     # (30 + 40) / total_positivos
     assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'
     # (30 + 40) / total_positivos + total_blanco
-    assert positivos[o2.partido]['porcentaje_sin_nulos'] == '26.92'
+    assert positivos[o2.partido]['porcentaje_validos'] == '26.92'
     assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
     # (20 + 5 + 10 + 20) / total_positivos
     assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'
     # (20 + 5 + 10 + 20) / total_positivos + total_blanco
-    assert positivos[o1.partido]['porcentaje_sin_nulos'] == '21.15'
+    assert positivos[o1.partido]['porcentaje_validos'] == '21.15'
 
     # todos los positivos suman 100
     assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
@@ -325,7 +325,7 @@ def test_resultados_parciales_generales( carta_marina
 def test_resultados_parciales_paso( carta_marina
                                        , url_resultados, fiscal_client):
     # Seteamos el modo de elección como PASO; por lo tanto
-    # los porcentajes que deberíamos visualizar son los porcentaje_sin_nulos
+    # los porcentajes que deberíamos visualizar son los porcentaje_validos
     settings.MODO_ELECCION = settings.ME_OPCION_PASO
 
     # resultados para mesa 1
@@ -399,17 +399,17 @@ def test_resultados_parciales_paso( carta_marina
     # (40 + 50) / total_positivos
     assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'
     # (40 + 50) / total_positivos + total_blanco
-    assert positivos[o3.partido]['porcentaje_sin_nulos'] == '34.62'
+    assert positivos[o3.partido]['porcentaje_validos'] == '34.62'
     assert positivos[o2.partido]['votos'] == 30 + 40
     # (30 + 40) / total_positivos
     assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'
     # (30 + 40) / total_positivos + total_blanco
-    assert positivos[o2.partido]['porcentaje_sin_nulos'] == '26.92'
+    assert positivos[o2.partido]['porcentaje_validos'] == '26.92'
     assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
     # (20 + 5 + 10 + 20) / total_positivos
     assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'
     # (20 + 5 + 10 + 20) / total_positivos + total_blanco
-    assert positivos[o1.partido]['porcentaje_sin_nulos'] == '21.15'
+    assert positivos[o1.partido]['porcentaje_validos'] == '21.15'
 
     # todos los positivos suman 100
     assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0

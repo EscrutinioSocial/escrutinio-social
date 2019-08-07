@@ -343,7 +343,7 @@ class Resultados():
                     - porcentaje: porcentaje sobre el total del del partido.
                     - porcentaje_positivos: porcentaje sobre el total de votos
                       positivos.
-                    - porcentaje_sin_nulos: porcentaje sobre el total de votos
+                    - porcentaje_validos: porcentaje sobre el total de votos
                       positivos y en blanco.
                     - porcentaje_total: porcentaje sobre el total de votos.
         """
@@ -354,14 +354,14 @@ class Resultados():
             votos_positivos[partido] = {
                 'votos': total_partido,
                 'porcentaje_positivos': porcentaje(total_partido, self.total_positivos()),
-                'porcentaje_sin_nulos': porcentaje(total_partido, self.total_positivos() + blancos),
+                'porcentaje_validos': porcentaje(total_partido, self.total_positivos() + blancos),
                 'porcentaje_total': porcentaje(total_partido, self.votantes()),
                 'detalle': {
                     opcion: {
                         'votos': votos_opcion,
                         'porcentaje': porcentaje(votos_opcion, total_partido),
                         'porcentaje_positivos': porcentaje(votos_opcion, self.total_positivos()),
-                        'porcentaje_sin_nulos': porcentaje(votos_opcion, self.total_positivos() + blancos),
+                        'porcentaje_validos': porcentaje(votos_opcion, self.total_positivos() + blancos),
                         'porcentaje_total': porcentaje(votos_opcion, self.votantes()),
                     }
                     for opcion, votos_opcion in votos_por_opcion.items()
