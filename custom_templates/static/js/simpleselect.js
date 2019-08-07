@@ -5,32 +5,32 @@ esos valores.
 */
 function displayResult(field,default_value,options){
     var op = default_value;
-    var val = "-1";
+    var val = -1;
     var txt = "";
-    if(options.length==1){
+    if(options.length == 1){
 	op = options[0].text;
 	val = options[0].id;
 	txt = options[0].selected_text;
-	$("#"+field+"-resultado").removeClass("error");
-    }
-    else if(options.length==0){
-	op = "No es un valor válido";
-	$("#"+field+"-resultado").addClass("error");
     }
     else {
-	op = "Más de un valor válido";
+	op = "";
+    }
+    /* Si val es -1 entonces estamos ante un error. 
+     */
+    if (val == -1){
+	if (!($("#"+field+"_input").is(':focus'))) {
+	    $($('label[for='+field+'_input]')[0]).removeClass("active");
+	}
+    }
+    else {
+	$($('label[for='+field+'_input]')[0]).addClass("active");
+	$("#"+field+"-resultado").removeClass("hide");
+	$('#errors_for_'+field).addClass("hide");
     }
     $("#"+field+"-resultado").val(op);
     $("#id_"+field).val(val);
     $("#"+field+"_input").val(txt);
-    if (txt != "") {
-	$($('label[for='+field+'_input]')[0]).addClass("active");
-	$('#errors_for_'+field).addClass("hide");
-	$("#"+field+"-resultado").removeClass("hide");
-    }
-    else {
-	$($('label[for='+field+'_input]')[0]).removeClass("active");
-    }
+    return true;
 }
 
 /*
