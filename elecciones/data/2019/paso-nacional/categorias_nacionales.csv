@@ -1,11 +1,11 @@
-partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_nombre,opcion_nombre_corto,partido_orden,opcion_codigo,opcion_orden,categoria_nombre,categoria_slug
-Frente de Todos,Frente de Todos,136,,Celeste y Blanca A,Celeste y Blanca A,1,136A,1,Presidente y Vicepresidente,Presidente y Vicepresidente
-Frente Patriota,Frente Patriota,132,,Celeste,Celeste,2,132A,2,Presidente y Vicepresidente,Presidente y Vicepresidente
-Frente Nos,Frente Nos,131,,Celeste 2019 A,Celeste 2019 A,3,131A,3,Presidente y Vicepresidente,Presidente y Vicepresidente
-Frente de Izquierda y de Trabajadores,Frente de Izquierda y de Trabajadores,133,,Unidad A,Unidad A,4,133A,4,Presidente y Vicepresidente,Presidente y Vicepresidente
-Consenso Federal,Consenso Federal,137,,Consenso Para El Futuro,Consenso Para El Futuro,5,137A,5,Presidente y Vicepresidente,Presidente y Vicepresidente
-Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,87,,Despertar,Despertar,6,87A,6,Presidente y Vicepresidente,Presidente y Vicepresidente
-Juntos por el Cambio,Juntos por el Cambio,135,,Juntos Somos El Cambio,Juntos Somos El Cambio,7,135A,7,Presidente y Vicepresidente,Presidente y Vicepresidente
-Partido Autonomista,Partido Autonomista,36,,Valores Y Experiencia,Valores Y Experiencia,8,36A,8,Presidente y Vicepresidente,Presidente y Vicepresidente
-Movimiento Al Socialismo,Movimiento Al Socialismo,13,,Unidad De La Izquierda,Unidad De La Izquierda,9,13A,9,Presidente y Vicepresidente,Presidente y Vicepresidente
-Movimiento De Acción Vecinal,Movimiento De Acción Vecinal,57,,Compromiso Vecinal,Compromiso Vecinal,10,57A,10,Presidente y Vicepresidente,Presidente y Vicepresidente
+aux,partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_codigo,opcion_orden,opcion_nombre,opcion_nombre_corto,tipo,distrito,cargo,id_subcategoriacargo,Alias de lista,Column,partido_orden,categoria_nombre,categoria_slug,categoria_prioridad
+certificado nacional,Movimiento al socialismo,Movimiento al socialismo,13,,13,1,13 Lista 1 A unidad de la izquierda,13 Lista 1 A unidad de la izquierda,Distrital,Distrito Único,Presidente-Vice,,MANUELA JIMENA CASTAÑEIRA,FALSE,109,Presidente-Vice,P,1
+certificado nacional,PARTIDO AUTONOMISTA,PARTIDO AUTONOMISTA,36,,36,2,36 A valores y experiencia,36 A valores y experiencia,Distrital,Distrito Único,Presidente-Vice,,JOSE ANTONIO ROMERO FERIS,FALSE,110,Presidente-Vice,P,1
+certificado nacional,MOVIMIENTO DE ACCIÓN VECINAL,MOVIMIENTO DE ACCIÓN VECINAL,57,,57,3,57 compromiso vecinal lista a,57 compromiso vecinal lista a,Distrital,Distrito Único,Presidente-Vice,,RAUL HUMBERTO ALBARRACIN,FALSE,111,Presidente-Vice,P,1
+certificado nacional,Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,87,,87,4,87 lista a despertar,87 lista a despertar,Distrital,Distrito Único,Presidente-Vice,,JOSE LUIS ESPERT,FALSE,228,Presidente-Vice,P,1
+certificado nacional,frente nos,frente nos,131,,131,5,131 A - Celeste 2019,131 A - Celeste 2019,Distrital,Distrito Único,Presidente-Vice,,JUAN JOSE GOMEZ CENTURION,FALSE,117,Presidente-Vice,P,1
+certificado nacional,frente patriota,frente patriota,132,,132,6,132 A- Celeste,132 A- Celeste,Distrital,Distrito Único,Presidente-Vice,,ALEJANDRO CARLOS BIONDINI,FALSE,112,Presidente-Vice,P,1
+certificado nacional,frente de izquierda de trabajadores,frente de izquierda de trabajadores,133,,133,7,133 Unidad A,133 Unidad A,Distrital,Distrito Único,Presidente-Vice,,NICOLAS DEL CAÑO,FALSE,113,Presidente-Vice,P,1
+certificado nacional,juntos por el cambio,juntos por el cambio,135,,135,8,135 A Juntos Somos el cambio,135 A Juntos Somos el cambio,Distrital,Distrito Único,Presidente-Vice,,MAURICIO MACRI,FALSE,114,Presidente-Vice,P,1
+certificado nacional,frente de todos,frente de todos,136,,136,9,136 A - Celeste y Blanca,136 A - Celeste y Blanca,Distrital,Distrito Único,Presidente-Vice,,ALBERTO ANGEL FERNANDEZ,FALSE,115,Presidente-Vice,P,1
+certificado nacional,consenso federal,consenso federal,137,,137,10,137 A - Consenso para el futuro,137 A - Consenso para el futuro,Distrital,Distrito Único,Presidente-Vice,,ROBERTO LAVAGNA,FALSE,116,Presidente-Vice,P,1
