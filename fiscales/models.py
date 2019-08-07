@@ -116,8 +116,8 @@ class Fiscal(models.Model):
     referencia_confirmada = models.BooleanField(default=False)
 
     # otra metadata del supuesto referente
-    referente_nombres = models.CharField(max_length=50, blank=True, null=True)
-    referente_apellido = models.CharField(max_length=30, blank=True, null=True)
+    referente_nombres = models.CharField(max_length=100, blank=True, null=True)
+    referente_apellido = models.CharField(max_length=50, blank=True, null=True)
 
     # el materialized path de referencias
     referido_por_codigos = models.CharField(max_length=250, blank=True, null=True)
