@@ -250,7 +250,7 @@ class Attachment(TimeStampedModel):
         return result
 
     def __str__(self):
-        return f'{self.foto} ({self.mimetype})'
+        return f'{self.id} {self.foto} ({self.mimetype})'
 
 
 class Identificacion(TimeStampedModel):
@@ -301,7 +301,7 @@ class PreIdentificacion(TimeStampedModel):
     Este modelo se usa para asociar a los attachment información de identificación que no es completa.
     No confundir con Identificacion ni con el status de identificación de una mesa.
     """
-    
+
     fiscal = models.ForeignKey(
         'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
     )

@@ -44,7 +44,7 @@ class Command(BaseCommand):
         reader = DictReader(CSV.open())
 
         for c, row in enumerate(reader, 1):
-            print(row['distrito_nro'], row['seccion_nro'], row['circuito_nro'], row['escuela_nro'])
+            print(row['distrito_nro'], row['seccion_nro'], row['circuito_nro'], row['escuela_nro'], row['localidad'], row['escuela_nro'])
             nro_distrito = row['distrito_nro']
             nro_seccion = row['seccion_nro']
             try:
@@ -63,14 +63,15 @@ class Command(BaseCommand):
                 nombre=row['escuela'],
                 direccion=row['direccion'],
                 numero=row['escuela_nro'],
-                electores=row['electores'],
+                electores=row['electores'] or 10000,
                 ciudad=row['localidad'] or '',
 #                barrio=row['Barrio'] or ''
                 )
 
 #            escuela.electores = int(row['electores']) #no los tenemos aca
             
-            coordenadas = [to_float(row['longitud']), to_float(row['latitud'])]
+            #coordenadas = [to_float(row['longitud']), to_float(row['latitud'])]
+            coordenadas = (None, None)
             if coordenadas[0] and coordenadas[1]:
                 geom = {'type': 'Point', 'coordinates': coordenadas}
                 if row['estado_geolocalizacion'] == 'Match':
