@@ -278,17 +278,17 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
         # TO DO: quizas sumar puntos al score anti-trolling?
         raise PermissionDenied('no te toca cargar acá')
 
-    # en carga parcial sólo se cargan opciones prioritarias
+    # En carga parcial sólo se cargan opciones prioritarias.
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
 
-    # tenemos la lista de opciones ordenadas como la lista
+    # Tenemos la lista de opciones ordenadas como la lista.
     opciones = categoria.opciones_actuales(solo_prioritarias)
 
     datos_previos = mesa_categoria.datos_previos(tipo)
 
-    # obtenemos la clase para el formset seteando tantas filas como opciones
+    # Obtenemos la clase para el formset seteando tantas filas como opciones
     # existen. Como extra=0, el formset tiene un tamaño fijo
     VotoMesaReportadoFormset = votomesareportadoformset_factory(
         min_num=opciones.count()
@@ -296,7 +296,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
 
     def fix_opciones(formset):
         """
-        función auxiliar que deja sólo la opcion correspondiente a cada fila en los
+        Función auxiliar que deja sólo la opcion correspondiente a cada fila en los
         choicefields de cada formulario, configura widget readonly necesarios
         y la índice de la navegación con tabs
         """
@@ -319,7 +319,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     first_autofoco = True
                     form.fields['votos'].widget.attrs['autofocus'] = True
 
-            # todos los campos son requeridos
+            # Todos los campos son requeridos
             form.fields['votos'].required = True
 
     data = request.POST if request.method == 'POST' else None
@@ -375,7 +375,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
         redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', args=[mesa.id])
         return redirect(redirect_to)
 
-# Llega hasta acá si hubo error o viene de un GET
+    # Llega hasta acá si hubo error o viene de un GET
     return render(
         request,
         'fiscales/carga.html' if not desde_ub else 'fiscales/carga_ub.html',

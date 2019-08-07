@@ -374,23 +374,27 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     IdentificacionFactory(
         mesa=mesa,
         status=Identificacion.STATUS.identificada,
-        source=Identificacion.SOURCES.web,
+        source=Identificacion.SOURCES.csv,
     )
+    consumir_novedades_identificacion()
     assert MesaCategoria.objects.count() == 2
 
     for mc in MesaCategoria.objects.all():
         mc.actualizar_orden_de_carga()
 
-    nombre_categoria = "Un nombre especifico"
+    nombre_categoria = "Un nombre en particular" # Sin tilde que si no falla el 'in' más abajo.
     categoria_1.nombre = nombre_categoria
     categoria_1.save(update_fields=['nombre'])
+
+    categoria_2.nombre = 'Otro nombre'
+    categoria_2.save(update_fields=['nombre'])
 
     url_carga = reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
     response = fiscal_client.get(url_carga)
 
+    # Nos aseguramos que haya cargado el template específico para UB. No es una redirección.
     assert response.status_code == HTTPStatus.OK
-    # nos aseguramos que haya cargado el template específico para UB
-    assert reverse('agregar-adjuntos-ub') in str(response.content)
+    assert url_carga in str(response.content)
     # categoria1 debería aparecer primero porque su mesa categoria tiene un orden_de_carga más grande
     assert nombre_categoria in str(response.content)
 
@@ -399,28 +403,34 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     with django_assert_num_queries(51):
         response = fiscal_client.post(url_carga, request_data)
 
-    # tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
+    # Tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
     carga = Carga.objects.get()
     assert carga.tipo == Carga.TIPOS.total
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
 
+    # Hacemos el get hacia donde nos manda el redirect. Esto hace el take.
+    response = fiscal_client.get(response.url)
+
+    # Posteamos los nuevos datos.
     response = fiscal_client.post(url_carga, request_data)
 
-    consumir_novedades_y_actualizar_objetos([carga.mesa_categoria])
+    carga.refresh_from_db()
 
     cargas = Carga.objects.all()
     assert len(cargas) == 2
     assert carga.tipo == Carga.TIPOS.total
+
+    # Me lleva a continuar con el workflow.
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
 
-    # ya no tiene más categorías, debe dirigirnos a subir-adjunto
-    response = fiscal_client.post(url_carga)
-
-    # # la mesa no tiene más categorías, nos devuelve a la pantalla de carga de adjuntos
+    # La mesa no tiene más categorías, nos devuelve a la pantalla de carga de adjuntos.
+    
     assert response.status_code == 302
-    assert response.url == reverse('agregar-adjuntos-ub')
+    # Hacemos el get hacia donde nos manda el redirect.
+    response = fiscal_client.get(response.url)
+    assert response.url == reverse('agregar-adjuntos-ub') 
 
 
 def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
