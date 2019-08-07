@@ -8,6 +8,7 @@
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script src="{% static 'js/simpleselect.js' %}"></script>
+<script src="{% static 'js/identificacion.js' %}"></script>
 <style type="text/css">
 .resultado-select{
     border-bottom: none !important;
@@ -37,7 +38,7 @@
             <div class="card-action">
               <div class="right-align">
                 {% block submit_row %}
-                <button type="submit" class="waves-effect waves-light btn white-text">Subir</button>
+                <button id="boton-enviar" type="submit" class="waves-effect waves-light btn white-text">Subir</button>
                 {% endblock %}
               </div>
             </div>
@@ -50,33 +51,22 @@
 {% block messages %}
 {{ block.super }}
 <script type="text/javascript">
+  var url_distrito = "{% url 'autocomplete-distrito' %}";
+  var url_seccion  = "{% url 'autocomplete-seccion' %}";
+  var url_circuito = "{% url 'autocomplete-circuito' %}";
+  var fields = [
+      ['distrito', updateDistrito(url_distrito),url_distrito,[]],
+      ['seccion',  updateSeccion(url_seccion),url_seccion,['distrito']],
+      ['circuito', updateCircuito(url_circuito),url_circuito,['distrito','seccion']],
+  ];
   $(document).ready(function(){
+      $('.modal').modal();
+      fields.map(e => initializeSimpleSelect(e[0],e[2],e[3]));
+      fields.map(e => $('#'+e[0]+'_input').on("mouseout",e[1]));
+      fields.map(e => $('#'+e[0]+'_input').on("focusout",e[1]));
       $('#distrito_input').attr('tabindex', 1);
-      $('#seccion_input').attr('tabindex', 2);
+      $('#seccion_input').attr('tabindex',  2);
       $('#circuito_input').attr('tabindex', 3);
-      const forward = ['distrito', 'seccion', 'circuito', 'mesa']
-      initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
-      initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
-      initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
-      $('#distrito_input').on('focusout',function(e){
-	  updateField(
-	      'distrito',
-	      "{% url 'autocomplete-distrito' %}",
-	      []
-	  );
-      });
-      $('#seccion_input').on('focusout',function(e){
-	  updateField(
-	      'seccion',
-	      "{% url 'autocomplete-seccion' %}",
-	      ['distrito']
-	  )});
-      $('#circuito_input').on('focusout',function(e){
-	  updateField(
-	      'circuito',
-	      "{% url 'autocomplete-circuito' %}",
-	      ['distrito','seccion']
-	  )});
   });
 </script>
 {% endblock messages %}

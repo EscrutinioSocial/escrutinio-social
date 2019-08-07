@@ -10,26 +10,7 @@
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script src="{% static 'js/simpleselect.js' %}"></script>
-<script>
-  /* 
-   Si pudimos determinar la mesa unívocamente, actualizamos la
-   sección y el circuito (si están vacíos). 
- */
-  function cambioMesa(){
-      var mesa = $('#id_mesa').val();
-      var circuito = $('#id_circuito').val();
-      var seccion = $('#id_seccion').val();
-      if(mesa != "-1"){
-	  var params = {'mesa': mesa, 'desdeMesa': '1'};
-	  if(circuito == "-1"){
-	      updateFieldUrl('circuito',"{% url 'autocomplete-circuito' %}",params);
-	  }
-	  if(seccion == "-1"){
-	      updateFieldUrl('seccion', "{% url 'autocomplete-seccion' %}",params);
-	  }
-      }
-  }
-</script>
+<script src="{% static 'js/identificacion.js' %}"></script>
 {% block extrajs %}{% endblock %}
 {% endblock %}
 
@@ -129,7 +110,7 @@ $(document).ready(function() {
           <div class="card-action">
             {% block card-action %}
             <div class="right-align">
-              <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
+              <button id="boton-enviar" class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
                 Guardar
               </button>
               <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
@@ -180,41 +161,21 @@ $(document).ready(function() {
 {% block messages %}
 {{ block.super }}
 <script type="text/javascript">
+  var url_distrito = "{% url 'autocomplete-distrito' %}";
+  var url_seccion  = "{% url 'autocomplete-seccion' %}";
+  var url_circuito = "{% url 'autocomplete-circuito' %}";
+  var url_mesa = "{% url 'autocomplete-mesa' %}";
+  var fields = [
+      ['distrito', updateDistrito(url_distrito),url_distrito,[]],
+      ['seccion',  updateSeccion(url_seccion),url_seccion,['distrito']],
+      ['circuito', updateCircuito(url_circuito),url_circuito,['distrito','seccion']],
+      ['mesa', updateMesa(url_mesa,url_seccion,url_circuito),null,null]
+  ];
   $(document).ready(function(){
       $('.modal').modal();
-      initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
-      initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
-      initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
-      $('#distrito_input').on('focusout',function(e){
-	  updateField(
-	      'distrito',
-	      "{% url 'autocomplete-distrito' %}",
-	      [],
-	      null
-	  );
-      });
-      $('#seccion_input').on('focusout',function(e){
-	  updateField(
-	      'seccion',
-	      "{% url 'autocomplete-seccion' %}",
-	      ['distrito'],
-	      null
-	  )});
-      $('#circuito_input').on('focusout',function(e){
-	  updateField(
-	      'circuito',
-	      "{% url 'autocomplete-circuito' %}",
-	      ['distrito','seccion'],
-	      null
-	  )});
-      $('#mesa_input').on('focusout',function(e){
-	  updateField(
-	      'mesa',
-	      "{% url 'autocomplete-mesa' %}",
-	      ['distrito','seccion','circuito'],
-	      cambioMesa
-	  );
-      });
+      fields.map(e => (e[2]) ? initializeSimpleSelect(e[0],e[2],e[3]) : null);
+      fields.map(e => $('#'+e[0]+'_input').on("mouseout",e[1]));
+      fields.map(e => $('#'+e[0]+'_input').on("focusout",e[1]));
       $('#distrito_input').attr('tabindex', 1);
       $('#seccion_input').attr('tabindex', 2);
       $('#circuito_input').attr('tabindex', 3);
