@@ -773,7 +773,6 @@ class Eleccion(models.Model):
     """
     fecha = models.DateTimeField()
     nombre = models.CharField(max_length=100)
-    # Se usan para referencia en otros lugares, no aquí.
 
     def __str__(self):
         return f'{self.nombre}'
@@ -1091,7 +1090,7 @@ class ConfiguracionComputoDistrito(models.Model):
     distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE)
     agregacion = models.CharField(max_length=30,choices=TIPOS_DE_AGREGACIONES)
     opciones = models.CharField(max_length=30,choices=OPCIONES_A_CONSIDERAR)
-    proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.SET_NULL, null=True)
+    proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.SET_NULL, default=None, null=True, blank=True)
     
     class Meta:
         verbose_name = 'Configuración para cómputo por distrito'
