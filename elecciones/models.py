@@ -1070,6 +1070,11 @@ class ConfiguracionComputo(models.Model):
         ordering = ('nombre', )
         verbose_name = 'Configuración para cómputo'
         verbose_name_plural = 'Configuraciones para cómputo'
+        constraints = [
+            models.UniqueConstraint(fields=['nombre'],
+                                    name='nombre_unico'
+            )
+        ]
 
     def __str__(self):
         return f'Configuración de cómputo {self.nombre}'
@@ -1088,6 +1093,11 @@ class ConfiguracionComputoDistrito(models.Model):
     class Meta:
         verbose_name = 'Configuración para cómputo por distrito'
         verbose_name_plural = 'Configuraciones para cómputo por distrito'
+        constraints = [
+            models.UniqueConstraint(fields=['configuracion','distrito'],
+                                    name='distrito_unico'
+                                    )
+        ]
 
     @property
     def fiscal(self):

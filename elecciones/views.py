@@ -12,6 +12,8 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
 from djgeojson.views import GeoJSONLayerView
 from django.contrib.auth.mixins import AccessMixin
+from constance import config
+
 from .models import (
     Distrito,
     Seccion,
@@ -27,7 +29,6 @@ from .models import (
     NIVELES_DE_AGREGACION,
 )
 from .resultados import Sumarizador, Proyecciones, AvanceDeCarga, NIVEL_DE_AGREGACION
-from .forms import ConfiguracionComputoForm, ConfiguracionDistritoForm, ConfiguracionFormSet
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
@@ -368,6 +369,12 @@ class ResultadosComputoCategoria(ResultadosCategoria):
 
     template_name = "elecciones/resultados_computo.html"
 
+    def dispatch(self, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            return redirect('resultados-computo', pk=Categoria.objects.first().id)
+        return super().dispatch(*args, **kwargs)
+
     def get(self, request, *args, **kwargs):
         nivel_de_agregacion = None
         id_a_considerar = None
@@ -386,10 +393,20 @@ class ResultadosComputoCategoria(ResultadosCategoria):
         fiscal = request.user.fiscal
         entidad = NIVEL_DE_AGREGACION[nivel].objects.get(id=id_a_considerar)
         distr = entidad if nivel==NIVELES_DE_AGREGACION.distrito else entidad.distrito
+
+        ## Configuracion por fiscal, ponele que usamos la primera que tenga.
+        ## Si no tiene ninguna, usamos la global.
         conf = ConfiguracionComputoDistrito.objects.filter(
-            configuracion__fiscal=fiscal,
-            distrito=distr
+                configuracion__fiscal=fiscal,
+                distrito=distr
         ).first()
+
+        if conf is None:
+            conf = ConfiguracionComputoDistrito.objects.filter(
+                configuracion__nombre=config.CONFIGURACION_COMPUTO_PUBLICA,
+                distrito=distr
+            ).first()
+        
         ids_a_considerar = [id_a_considerar]
         
         self.agregacion = conf.agregacion
@@ -459,4 +476,15 @@ class ResultadosComputoCategoria(ResultadosCategoria):
 
         context['categorias'] = categorias.order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('numero')
+        context['computo'] = True
         return context
+
+    
+    def get_tipo_de_agregacion(self):
+        return self.agregacion
+
+    def get_opciones_a_considerar(self):
+        return self.opciones
+
+    def get_tecnica_de_proyeccion(self):
+        return self.tecnica_de_proyeccion
