@@ -259,16 +259,19 @@ class TecnicaProyeccionAdmin(admin.ModelAdmin):
 
 
 class AgrupacionCircuitoInline(admin.TabularInline):
+    # TODO quitar este modelo intermedio inutil y relacionar directamente con  circuito
     model = AgrupacionCircuito
     raw_id_fields = ['circuito']
-    extra = 3
+    extra = 1
+    verbose_name = "Circuitos"
+    verbose_name_plural = "Circuitos en esta Agrupación"
 
 
 class AgrupacionCircuitosAdmin(admin.ModelAdmin):
     search_fields = ['proyeccion', 'nombre']
     ordering = ['proyeccion']
-    list_filter = ('proyeccion', )
-    inlines = (AgrupacionCircuitoInline, )
+    list_filter = ['proyeccion']
+    inlines = [AgrupacionCircuitoInline]
 
 
 class VotoMesaReportadoInline(admin.TabularInline):
