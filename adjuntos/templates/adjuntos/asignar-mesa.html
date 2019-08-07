@@ -166,10 +166,7 @@ $(document).ready(function() {
   var url_circuito = "{% url 'autocomplete-circuito' %}";
   var url_mesa = "{% url 'autocomplete-mesa' %}";
   var fields = [
-      ['distrito', updateDistrito(url_distrito),url_distrito,[]],
-      ['seccion',  updateSeccion(url_seccion),url_seccion,['distrito']],
-      ['circuito', updateCircuito(url_circuito),url_circuito,['distrito','seccion']],
-      ['mesa', updateMesa(url_mesa,url_seccion,url_circuito),null,null]
+      ['distrito', updateDistrito(url_distrito),url_distrito,[]]
   ];
   $(document).ready(function(){
       $('.modal').modal();
@@ -177,10 +174,21 @@ $(document).ready(function() {
       fields.map(e => $('#'+e[0]+'_input').on("mouseout",e[1]));
       fields.map(e => $('#'+e[0]+'_input').on("focusout",e[1]));
       $('#distrito_input').attr('tabindex', 1);
-      $('#seccion_input').attr('tabindex', 2);
-      $('#circuito_input').attr('tabindex', 3);
-      $('#mesa_input').attr('tabindex', 4);
-      $('#distrito_input').focus();
+      $('#id_seccion').attr('tabindex', 2);
+      $('#id_circuito').attr('tabindex', 3);
+      $('#id_mesa').attr('tabindex', 4);
+      if($('#distrito_input').val()==""){
+	  $('#distrito_input').focus();
+      }
+      else if($('#id_seccion').val()==""){
+	  $('#id_seccion').focus();
+      }
+      else if($('#id_circuito').val()==""){
+	  $('#id_circuito').focus();
+      }
+      else if($('#id_mesa').val()==""){
+	  $('#id_mesa').focus();
+      }
   });
 </script>
 

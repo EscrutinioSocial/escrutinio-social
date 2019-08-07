@@ -28,9 +28,9 @@ def test_identificacion_create_view_post(fiscal_client, admin_user):
     a = AttachmentFactory()
     a.take(admin_user.fiscal)
     data = {
-        'mesa': m1.id,
-        'circuito': m1.circuito.id,
-        'seccion': m1.circuito.seccion.id,
+        'mesa': m1.numero,
+        'circuito': m1.circuito.numero,
+        'seccion': m1.circuito.seccion.numero,
         'distrito': m1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('asignar-mesa', args=[a.id]), data)
@@ -62,9 +62,9 @@ def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client, adm
     attachment = AttachmentFactory()
     attachment.take(admin_user.fiscal)
     data = {
-        'mesa': mesa_1.id,
-        'circuito': mesa_1.circuito.id,
-        'seccion': mesa_1.circuito.seccion.id,
+        'mesa': mesa_1.numero,
+        'circuito': mesa_1.circuito.numero,
+        'seccion': mesa_1.circuito.seccion.numero,
         'distrito': mesa_1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('asignar-mesa-ub', args=[attachment.id]), data)
