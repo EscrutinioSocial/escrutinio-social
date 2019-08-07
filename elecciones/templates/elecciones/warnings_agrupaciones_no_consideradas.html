@@ -1,0 +1,12 @@
+<section id="agrupaciones_no_consideradas">
+    <span class="atencion">Atención: Hay {{agrupaciones|length}} agrupacion(es) de circuitos que no fueron consideradas 
+        por no llegar al mínimo de mesas requerido para la proyección:
+    </span>
+    <ul class="agrupaciones browser-default">
+        {% for nombre, minimo_mesas, mesas_escrutadas in agrupaciones %}
+            <li>
+                {{nombre}} (escrutadas {{mesas_escrutadas}}, se requieren {{minimo_mesas}})
+            </li>
+        {% endfor %}
+    </ul>
+</section>

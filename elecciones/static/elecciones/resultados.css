@@ -61,3 +61,19 @@ tr.fila_detalle > td.dato {
 #metadata th span {
   vertical-align: 6px;
 }
+
+#agrupaciones_no_consideradas {
+    margin: 1em 0.5em;
+    padding: 0.5em;
+    background-color: lightgoldenrodyellow;
+}
+
+#agrupaciones_no_consideradas .atencion {
+    font-weight: 500
+}
+
+#agrupaciones_no_consideradas .agrupaciones {
+    margin: 0.8em 0;
+    padding-left: 1.5em;
+}
+

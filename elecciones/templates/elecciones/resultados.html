@@ -81,9 +81,6 @@
           		  {% endif %}
           		  <col id="porc_agrupacion"/>
           		  <col id="porc_partido"/>
-          		  {% if resultados.proyectado %}
-          		  <col id="proyeccion"/>
-          		  {% endif %}
             </colgroup>
             <thead>
                 <tr>
@@ -130,6 +127,9 @@
 
     {% else %}
         <h5>Aún no hay mesas escrutadas en {{para}}</h5>
+    {% endif %}
+    {% if resultados.data.agrupaciones_no_consideradas %}
+        {% include "elecciones/warnings_agrupaciones_no_consideradas.html" with agrupaciones=resultados.data.agrupaciones_no_consideradas %}
     {% endif %}
     </div>
 </div>

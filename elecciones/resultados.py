@@ -287,6 +287,13 @@ class Resultados():
         self.opciones_a_considerar = opciones_a_considerar
         self.resultados = resultados
 
+    def data(self):
+        """
+        Devuelve los datos de resultados 'crudos' para permitir que los distintos sumarizadores
+        pasen información al template directamente sin obligar a que esta clase oficie de pasamanos.
+        """
+        return dict(self.resultados)
+
     @lru_cache(128)
     def total_positivos(self):
         """
