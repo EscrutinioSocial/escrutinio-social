@@ -188,7 +188,28 @@ $(document).ready(function() {
       }
       else if($('#id_mesa').val()==""){
 	  $('#id_mesa').focus();
-      }
+      };
+      $('#btn-reportar').on('click',function(e){
+	  var form = $('#problema-imagen');
+	  $.ajax({
+              type: $(form).attr('method'),
+              url: $(form).attr('action'),
+              data: form.serialize(),
+              context: form,
+              success: function(data, status) {
+	   	  $(form).submit();
+              },
+	      error: function (request, type, errorThrown) {
+		  var json = $.parseJSON(request.responseText);
+		  $.map(json, function( val, i ) {
+		      if(val){
+			  $('#'+i).removeClass('hide');
+		      }
+		  });
+              }
+	  });
+	  return false;
+      });
   });
 </script>
 

@@ -403,14 +403,11 @@ class ReporteDeProblemaCreateView(CreateView):
             MesaCategoria, id=self.kwargs['mesacategoria_id']
         )
 
-    def form_invalid(self, form):
-        messages.info(
-            self.request,
-            f'No se registró el reporte. Corroborá haber elegido una opción.',
-            extra_tags="problema"
-        )
-        return redirect('siguiente-accion')
-
+    def form_invalid(self,form):            
+        tipo = bool(form.errors['tipo_de_problema'])
+        descripcion = bool(form.errors['descripcion'])
+        return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
+    
     def form_valid(self, form):
         fiscal = self.request.user.fiscal
         carga = form.save(commit=False)

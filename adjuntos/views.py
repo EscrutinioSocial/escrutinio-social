@@ -13,6 +13,7 @@ from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView, FormView
+from django.core.serializers import serialize
 
 from sentry_sdk import capture_message
 
@@ -142,14 +143,11 @@ class ReporteDeProblemaCreateView(CreateView):
     def attachment(self):
         return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
 
-    def form_invalid(self, form):
-        messages.info(
-            self.request,
-            f'No se registró el reporte. Corroborá haber elegido una opción.',
-            extra_tags="problema"
-        )
-        return redirect('siguiente-accion')
-
+    def form_invalid(self,form):
+        tipo = bool(form.errors['tipo_de_problema'])
+        descripcion = bool(form.errors['descripcion'])
+        return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
+    
     def form_valid(self, form):
         fiscal = self.request.user.fiscal
         identificacion = form.save(commit=False)
