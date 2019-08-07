@@ -271,8 +271,7 @@ class Sumarizador():
 
     def get_resultados(self, categoria):
         """
-        Realiza la contabilidad para la categoría, invocando al método
-        ``calcular``.
+        Realiza la contabilidad para la categoría, invocando al método ``calcular``.
         """
         self.categoria = categoria
         self.mesas_a_considerar = self.mesas(categoria)
@@ -287,6 +286,13 @@ class Resultados():
     def __init__(self, opciones_a_considerar, resultados):
         self.opciones_a_considerar = opciones_a_considerar
         self.resultados = resultados
+
+    def data(self):
+        """
+        Devuelve los datos de resultados 'crudos' para permitir que los distintos sumarizadores
+        pasen información al template directamente sin obligar a que esta clase oficie de pasamanos.
+        """
+        return dict(self.resultados)
 
     @lru_cache(128)
     def total_positivos(self):
@@ -714,10 +720,30 @@ class Proyecciones(Sumarizador):
         return self.total_mesas(id_agrupacion) / self.cant_mesas_escrutadas(id_agrupacion)
 
     @lru_cache(128)
+    def agrupaciones_no_consideradas(self, categoria, mesas):
+        """
+        Devuelve la lista de agrupaciones que fueron descartadas por no tener el mínimo de mesas exigido.
+
+        Atención: el query se realiza en realidad sobre AgrupacionCircuito, porque de otra manera la
+        many to many entre AgrupacionCircuitos y Circuito impide hacer agregaciones.
+        """
+
+        return AgrupacionCircuito.objects.values("agrupacion").annotate(
+            mesas_escrutadas=Count(
+                "circuito__mesas",
+                filter=Q(circuito__mesas__id__in=self.mesas_escrutadas().values_list('id', flat=True))
+            )
+        ).filter(agrupacion__minimo_mesas__gt=F('mesas_escrutadas')).values_list(
+            'agrupacion__nombre', 'agrupacion__minimo_mesas', 'mesas_escrutadas'
+        )
+
+
+
+    @lru_cache(128)
     def agrupaciones_a_considerar(self, categoria, mesas):
         """
-        Devuelve la lista de agrupaciones_a_considerar a considerar, descartando aquellas que no tienen aún
-        el mínimo de mesas definido según la técnica de proyección.
+        Devuelve la lista de agrupaciones que se incluyen en la proyección, descartando aquellas 
+        que no tienen aún el mínimo de mesas definido según la técnica de proyección.
 
         Atención: el query se realiza en realidad sobre AgrupacionCircuito, porque de otra manera la
         many to many entre AgrupacionCircuitos y Circuito impide hacer agregaciones.
@@ -789,6 +815,15 @@ class Proyecciones(Sumarizador):
                 )
 
         return votos_positivos_proyectados, votos_no_positivos_proyectados
+
+    def calcular(self, categoria, mesas):
+        """
+        Extiende los cómputos del sumarizador para agregar las agrupaciones que no fueron consideradas en la
+        proyección por no alcanzar el mínimo de mesas requerido.
+        """
+        computos = super().calcular(categoria, mesas)
+        computos["agrupaciones_no_consideradas"] = self.agrupaciones_no_consideradas(categoria, mesas)
+        return computos
 
     @classmethod
     def tecnicas_de_proyeccion(cls):

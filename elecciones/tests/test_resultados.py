@@ -26,13 +26,17 @@ from .test_models import consumir_novedades_y_actualizar_objetos
 from elecciones.resultados import Sumarizador
 
 
-def tecnica_proyeccion():
+def tecnica_proyeccion(minimo_mesas=1):
     """
     Crea una técnica de proyección para las mesas existentes, agrupadas por sección.
     """
     proyeccion = TecnicaProyeccionFactory()
     for seccion in Seccion.objects.all():
-        AgrupacionCircuitosFactory(proyeccion=proyeccion).circuitos.set(seccion.circuitos.all())
+        AgrupacionCircuitosFactory(
+            nombre=seccion.nombre,
+            proyeccion=proyeccion,
+            minimo_mesas=minimo_mesas
+        ).circuitos.set(seccion.circuitos.all())
 
     return proyeccion
 
@@ -181,8 +185,7 @@ def test_electores_sin_filtro(url_resultados, fiscal_client):
     assert b'<td title="Electores">800</td>' in response.content
 
 
-def test_resultados_parciales_generales( carta_marina
-                                       , url_resultados, fiscal_client):
+def test_resultados_parciales_generales(carta_marina, url_resultados, fiscal_client):
     # Seteamos el modo de elección como PASO; por lo tanto
     # los porcentajes que deberíamos visualizar son los porcentaje_validos
     settings.MODO_ELECCION = settings.ME_OPCION_GEN
@@ -322,8 +325,8 @@ def test_resultados_parciales_generales( carta_marina
     for variable, valor in columna_datos:
         assert f'<td title="{variable}">{valor}</td>' in content
 
-def test_resultados_parciales_paso( carta_marina
-                                       , url_resultados, fiscal_client):
+
+def test_resultados_parciales_paso(carta_marina, url_resultados, fiscal_client):
     # Seteamos el modo de elección como PASO; por lo tanto
     # los porcentajes que deberíamos visualizar son los porcentaje_validos
     settings.MODO_ELECCION = settings.ME_OPCION_PASO
@@ -551,7 +554,6 @@ def test_resultados_proyectados(fiscal_client):
         f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=prioritarias&tecnicaDeProyeccion={tecnica.id}'
     )
     positivos = response.context['resultados'].tabla_positivos()
-    print(positivos)
     assert list(positivos.keys()) == [o1.partido, o2.partido, o3.partido]
 
     # PROYECCION:
@@ -619,6 +621,54 @@ def test_resultados_proyectados_simple(carta_marina, fiscal_client):
     assert positivos[o2.partido]['votos'] == 360  # = 30 * (4/1) + 40 * (4/2)
     assert positivos[o1.partido]['porcentaje_positivos'] == '43.75'  # = 280 / 640
     assert positivos[o2.partido]['porcentaje_positivos'] == '56.25'  # = 360 / 640
+
+
+def test_proyeccion_con_agrupaciones_no_consideradas(carta_marina, fiscal_client):
+    s1, s2 = Seccion.objects.all()
+    o1, o2 = OpcionFactory.create_batch(2)
+    categoria = CategoriaFactory(opciones=[o1, o2])
+    tecnica = tecnica_proyeccion(minimo_mesas=2)
+
+    mesas = carta_marina
+    m1 = mesas[0]
+    m2 = mesas[4]
+    m3 = mesas[5]
+    for mesa in mesas:
+        MesaCategoriaFactory(mesa=mesa, categoria=categoria)
+
+    # Se carga una mesa de la seccion 1
+    c1 = CargaFactory(mesa_categoria__mesa=m1, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
+    cargar_votos(c1, {o1: 40, o2: 30})
+
+    # Y dos mesas de la seccion 2
+    c2 = CargaFactory(mesa_categoria__mesa=m2, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
+    cargar_votos(c2, {o1: 30, o2: 60})
+
+    c3 = CargaFactory(mesa_categoria__mesa=m3, tipo=Carga.TIPOS.total, mesa_categoria__categoria=categoria)
+    cargar_votos(c3, {o1: 30, o2: 60})
+
+    consumir_novedades_y_actualizar_objetos([m1, m2])
+
+    response = fiscal_client.get(
+        reverse('resultados-categoria', args=[categoria.id]) +
+        f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas&tecnicaDeProyeccion={tecnica.id}'
+    )
+
+    # Las mesas de la sección 1 no serán tenidas en cuenta.
+    resultados = response.context['resultados']
+    positivos = resultados.tabla_positivos()
+    assert positivos[o1.partido]['votos'] == 120  # = 30 * (4/2)
+    assert positivos[o2.partido]['votos'] == 240  # = 60 * (4/2)
+    assert positivos[o1.partido]['porcentaje_positivos'] == '33.33'  # = 280 / 640
+    assert positivos[o2.partido]['porcentaje_positivos'] == '66.67'  # = 360 / 640
+
+    agrupaciones_no_consideradas = resultados.resultados['agrupaciones_no_consideradas']
+    assert agrupaciones_no_consideradas.count() == 1
+
+    nombre_agrupacion, minimo_mesas, mesas_escrutadas = agrupaciones_no_consideradas.first()
+    assert s1.nombre in nombre_agrupacion
+    assert minimo_mesas == 2
+    assert mesas_escrutadas == 1
 
 
 def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fiscal_client):
