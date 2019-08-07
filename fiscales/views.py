@@ -30,6 +30,7 @@ from elecciones.models import (
     VotoMesaReportado
 )
 from .acciones import siguiente_accion
+from adjuntos.consolidacion import consolidar_cargas 
 
 from dal import autocomplete
 
@@ -237,7 +238,13 @@ def realizar_siguiente_accion(request):
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
 def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
-    mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente()
+
+    if request.method == 'GET':
+        mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente_para_ub()
+    else:
+        mesa_cat_id = request.session.pop('mesa_categoria_id', None)
+        mesacategoria = MesaCategoria.objects.get(id=mesa_cat_id)
+
     if mesacategoria:
         mesacategoria.take(request.user.fiscal)
         return carga(request, mesacategoria.id, desde_ub=True)
@@ -328,6 +335,9 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     if request.method == 'POST':
         is_valid = formset.is_valid()
 
+    if desde_ub:
+        request.session['mesa_categoria_id'] = mesa_categoria.id
+
     if is_valid:
         try:
             with transaction.atomic():
@@ -337,7 +347,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     mesa_categoria=mesa_categoria,
                     tipo=tipo,
                     fiscal=fiscal,
-                    origen=Carga.SOURCES.web
+                    origen=Carga.SOURCES.web if not desde_ub else Carga.SOURCES.csv
                 )
                 reportados = []
                 for form in formset:
@@ -345,8 +355,13 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     vmr.carga = carga
                     reportados.append(vmr)
                 VotoMesaReportado.objects.bulk_create(reportados)
+                
                 # Libero el token sobre la mc
                 mesa_categoria.release()
+                # si viene desde_ub, consolidamos la carga
+                if desde_ub:
+                    consolidar_cargas(mesa_categoria)
+
             carga.actualizar_firma()
             messages.success(request, f'Guardada categoría {categoria} para {mesa}')
         except Exception as e:
@@ -356,10 +371,11 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             # y ya no hay constraint.
             # Lo dejamos para enterarnos de algun otro tipo de excepción.
             capture_exception(e)
+
         redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', args=[mesa.id])
         return redirect(redirect_to)
 
-    # Llega hasta acá si hubo error o viene de un GET
+# Llega hasta acá si hubo error o viene de un GET
     return render(
         request,
         'fiscales/carga.html' if not desde_ub else 'fiscales/carga_ub.html',

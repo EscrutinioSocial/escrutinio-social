@@ -299,6 +299,12 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
 
+    def sin_consolidar_por_csv(self):
+        """
+        Excluye las instancias no consolidadas con doble carga.
+        """
+        return self.exclude(status=MesaCategoria.STATUS.total_consolidada_csv)
+
     def sin_cargas_del_fiscal(self, fiscal):
         """
         Excluye las instancias que tengan alguna carga del fiscal indicado
@@ -344,6 +350,12 @@ class MesaCategoriaQuerySet(models.QuerySet):
         Devuelve mesacat con carga pendiente más prioritaria
         """
         return self.con_carga_pendiente().mas_prioritaria()
+
+    def siguiente_para_ub(self):
+        """
+        Devuelve mesacat con carga pendiente más prioritaria
+        """
+        return self.con_carga_pendiente().sin_consolidar_por_csv().mas_prioritaria()
 
     def siguiente_para_fiscal(self, fiscal):
         """
