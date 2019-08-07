@@ -661,10 +661,10 @@ def test_proyeccion_con_agrupaciones_no_consideradas(carta_marina, fiscal_client
     assert positivos[o2.partido]['votos'] == 240  # = 60 * (4/2)
     assert positivos[o1.partido]['porcentaje_positivos'] == '33.33'  # = 280 / 640
     assert positivos[o2.partido]['porcentaje_positivos'] == '66.67'  # = 360 / 640
-    
+
     agrupaciones_no_consideradas = resultados.resultados['agrupaciones_no_consideradas']
     assert agrupaciones_no_consideradas.count() == 1
-    
+
     nombre_agrupacion, minimo_mesas, mesas_escrutadas = agrupaciones_no_consideradas.first()
     assert s1.nombre in nombre_agrupacion
     assert minimo_mesas == 2
