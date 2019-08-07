@@ -49,7 +49,7 @@ class Command(BaseCommand):
                 distrito = Distrito.objects.get(numero=row['distrito_nro'])
                 seccion  = Seccion.objects.get (numero=row['seccion_nro'], distrito=distrito)
                 circuito = Circuito.objects.get(numero=row['circuito_nro'].strip(), seccion=seccion)
-            except # era Distrito.DoesNotExist:
+            except: # era Distrito.DoesNotExist:
                 print ('No existe el distrito, seccion o circuito ', row)
 
             escuela, created = LugarVotacion.objects.update_or_create( #era get_or_create
