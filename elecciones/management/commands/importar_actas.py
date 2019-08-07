@@ -18,7 +18,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-
         imaps = settings.IMAPS
         for imap in imaps:
 

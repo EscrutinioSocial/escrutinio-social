@@ -504,6 +504,13 @@ class AjaxListView(autocomplete.Select2QuerySetView):
 class DistritoSimpleListView(autocomplete.Select2QuerySetView):
     model = Distrito
 
+    def get_queryset(self):
+        qs = Distrito.objects.all()
+        lookups = Q()
+        if self.q:
+            lookups &= Q(numero=self.q) | Q(nombre__istartswith=self.q)
+        return qs.filter(lookups)
+
 class SeccionSimpleListView(autocomplete.Select2QuerySetView):
     model = Seccion
 
