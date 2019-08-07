@@ -1,4 +1,3 @@
-import itertools
 from urllib import parse
 
 from django.conf import settings
@@ -9,7 +8,6 @@ from django.utils.decorators import method_decorator
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, FormView
 from djgeojson.views import GeoJSONLayerView
 from django.contrib.auth.mixins import AccessMixin
 from constance import config
@@ -128,9 +126,9 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
-class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
+class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
     """
-    Vista principal para el cálculo de resultados
+    Clase base para subclasear vistas de resultados
     """
 
     template_name = "elecciones/resultados.html"
@@ -146,6 +144,54 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         self.ocultar_sensibles = not request.user.fiscal.esta_en_grupo('visualizadores_sensible')
 
         return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if self.sumarizador.filtros:
+            context['para'] = get_text_list([
+                objeto.nombre_completo() for objeto in self.sumarizador.filtros
+            ], " y ")
+        else:
+            context['para'] = 'todo el país'
+
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            pk = Categoria.objects.first().id
+        categoria = get_object_or_404(Categoria, id=pk)
+        context['object'] = categoria
+        context['categoria_id'] = categoria.id
+        context['resultados'] = self.get_resultados(categoria)
+        context['show_plot'] = settings.SHOW_PLOT
+
+        # Agregamos al contexto el modo de elección; para cada partido decidimos
+        # que porcentaje vamos a visualizar (porcentaje_positivos o
+        # porcentaje_validos) dependiendo del tipo de elección.
+        context['modo_eleccion']  = settings.MODO_ELECCION
+        # Para no hardcodear las opciones en el html las agregamos al contexto.
+        context['modo_paso']      = settings.ME_OPCION_PASO
+        context['modo_generales'] = settings.ME_OPCION_GEN
+
+        if settings.SHOW_PLOT:
+            chart = self.get_plot_data(context['resultados'])
+            context['plot_data'] = chart
+            context['chart_values'] = [v['y'] for v in chart]
+            context['chart_keys'] = [v['key'] for v in chart]
+            context['chart_colors'] = [v['color'] for v in chart]
+
+        # Las pestañas de categorías que se muestran son las que sean
+        # comunes a todas las mesas filtradas.
+
+        # Para el cálculo se filtran categorías activas que estén relacionadas
+        # a las mesas.
+        mesas = self.sumarizador.mesas(categoria)
+        categorias = Categoria.para_mesas(mesas)
+        if self.ocultar_sensibles:
+            categorias = categorias.exclude(sensible=True)
+
+        context['categorias'] = categorias.order_by('id')
+        context['distritos'] = Distrito.objects.all().order_by('numero')
+        return context
 
     def create_sumarizador(self):
         return create_sumarizador(
@@ -197,6 +243,11 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
             'color': k.color if not isinstance(k, str) else '#CCCCCC'
         } for k, v in resultados.tabla_positivos().items()]
 
+
+class ResultadosCategoria(ResultadosCategoriaBase):
+    """
+    Vista principal para el cálculo de resultados
+    """
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['tipos_de_agregaciones'] = TIPOS_DE_AGREGACIONES
@@ -205,50 +256,6 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
         context['tecnicas_de_proyeccion'] = self.get_tecnicas_de_proyeccion()
         context['tecnicas_de_proyeccion_seleccionado'] = self.get_tecnica_de_proyeccion()
-
-        if self.sumarizador.filtros:
-            context['para'] = get_text_list([
-                objeto.nombre_completo() for objeto in self.sumarizador.filtros
-            ], " y ")
-        else:
-            context['para'] = 'todo el país'
-
-        pk = self.kwargs.get('pk')
-        if pk is None:
-            pk = Categoria.objects.first().id
-        categoria = get_object_or_404(Categoria, id=pk)
-        context['object'] = categoria
-        context['categoria_id'] = categoria.id
-        context['resultados'] = self.get_resultados(categoria)
-        context['show_plot'] = settings.SHOW_PLOT
-
-        # Agregamos al contexto el modo de elección; para cada partido decidimos
-        # que porcentaje vamos a visualizar (porcentaje_positivos o
-        # porcentaje_validos) dependiendo del tipo de elección.
-        context['modo_eleccion']  = settings.MODO_ELECCION
-        # Para no hardcodear las opciones en el html las agregamos al contexto.
-        context['modo_paso']      = settings.ME_OPCION_PASO
-        context['modo_generales'] = settings.ME_OPCION_GEN
-
-        if settings.SHOW_PLOT:
-            chart = self.get_plot_data(context['resultados'])
-            context['plot_data'] = chart
-            context['chart_values'] = [v['y'] for v in chart]
-            context['chart_keys'] = [v['key'] for v in chart]
-            context['chart_colors'] = [v['color'] for v in chart]
-
-        # Las pestañas de categorías que se muestran son las que sean
-        # comunes a todas las mesas filtradas.
-
-        # Para el cálculo se filtran categorías activas que estén relacionadas
-        # a las mesas.
-        mesas = self.sumarizador.mesas(categoria)
-        categorias = Categoria.para_mesas(mesas)
-        if self.ocultar_sensibles:
-            categorias = categorias.exclude(sensible=True)
-
-        context['categorias'] = categorias.order_by('id')
-        context['distritos'] = Distrito.objects.all().order_by('numero')
         return context
 
 
@@ -365,7 +372,7 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         return context
 
 
-class ResultadosComputoCategoria(ResultadosCategoria):
+class ResultadosComputoCategoria(ResultadosCategoriaBase):
 
     template_name = "elecciones/resultados_computo.html"
 
@@ -380,48 +387,60 @@ class ResultadosComputoCategoria(ResultadosCategoria):
         Crea un sumarizador basado en una configuración guardada en la base
         """
         nivel_de_agregacion, ids_a_considerar = self.get_filtro_por_nivel()
+        fiscal = self.request.user.fiscal
 
         # Tenemos que considerar todo el país.
         if nivel_de_agregacion is None or ids_a_considerar is None or len(ids_a_considerar) > 1:
-            raise Exception("Tenemos que implementarlo")
+            # Configuracion por fiscal, ponele que usamos la primera que tenga.
+            configuracion_combinada = ConfiguracionComputo.objects.filter(fiscal=fiscal).first()
+
+            # Si no tiene ninguna, usamos la global.
+            if configuracion_combinada is None:
+                configuracion_combinada = ConfiguracionComputo.objects.first()
+
+            self.configuracion_combinada = configuracion_combinada
+            return create_sumarizador(configuracion_combinada=configuracion_combinada)
+        else:
+            self.configuracion_combinada = None
 
         # Recién ahora averiguamos cómo computar:
-        fiscal = self.request.user.fiscal
         entidad = NIVEL_DE_AGREGACION[nivel_de_agregacion].objects.get(id=ids_a_considerar[0])
         distrito = entidad if nivel_de_agregacion == NIVELES_DE_AGREGACION.distrito else entidad.distrito
 
         # Configuracion por fiscal, ponele que usamos la primera que tenga.
         # Si no tiene ninguna, usamos la global.
-        conf = ConfiguracionComputoDistrito.objects.filter(
+        configuracion_distrito = ConfiguracionComputoDistrito.objects.filter(
                 configuracion__fiscal=fiscal,
                 distrito=distrito
         ).first()
 
-        if conf is None:
-            conf = ConfiguracionComputoDistrito.objects.filter(
+        if configuracion_distrito is None:
+            configuracion_distrito = ConfiguracionComputoDistrito.objects.filter(
                 configuracion__nombre=config.CONFIGURACION_COMPUTO_PUBLICA,
                 distrito=distrito
             ).first()
 
-        self.agregacion = conf.agregacion
-        self.opciones = conf.opciones
-        self.tecnica_de_proyeccion = conf.proyeccion
+        self.agregacion = configuracion_distrito.agregacion
+        self.opciones = configuracion_distrito.opciones
+        self.tecnica_de_proyeccion = configuracion_distrito.proyeccion
 
         return create_sumarizador(
             parametros_sumarizacion=[
-                self.agregacion,
-                self.opciones,
                 nivel_de_agregacion,
                 ids_a_considerar,
             ],
-            tecnica_de_proyeccion=self.tecnica_de_proyeccion
+            configuracion_distrito=configuracion_distrito,
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tipo_de_agregacion'] = TIPOS_DE_AGREGACIONES[self.agregacion]
-        context['opciones'] = OPCIONES_A_CONSIDERAR[self.opciones]
-        context['tecnica_de_proyeccion'] = self.tecnica_de_proyeccion
+
+        if (self.configuracion_combinada):
+            context['configuracion_computo'] = self.configuracion_combinada.nombre
+        else:
+            context['tipo_de_agregacion'] = TIPOS_DE_AGREGACIONES[self.agregacion]
+            context['opciones'] = OPCIONES_A_CONSIDERAR[self.opciones]
+            context['tecnica_de_proyeccion'] = self.tecnica_de_proyeccion
 
         if self.sumarizador.filtros:
             context['para'] = get_text_list([

@@ -2,10 +2,8 @@ from django.conf import settings
 from functools import lru_cache
 from collections import OrderedDict
 from attrdict import AttrDict
-from model_utils import Choices
-from django.db.models import Q, F, Sum, Subquery, IntegerField, OuterRef, Count, Exists
+from django.db.models import Q, F, Sum, Subquery, OuterRef, Count, Exists
 from .models import (
-    Eleccion,
     Distrito,
     SeccionPolitica,
     Seccion,
@@ -16,11 +14,9 @@ from .models import (
     MesaCategoria,
     Mesa,
     TecnicaProyeccion,
-    AgrupacionCircuitos,
     AgrupacionCircuito,
     TIPOS_DE_AGREGACIONES,
     OPCIONES_A_CONSIDERAR,
-    NIVELES_AGREGACION,
     NIVELES_DE_AGREGACION,
 )
 from adjuntos.models import Identificacion, PreIdentificacion
@@ -35,9 +31,41 @@ NIVEL_DE_AGREGACION = {
 }
 
 
-def create_sumarizador(parametros_sumarizacion, tecnica_de_proyeccion=None):
-    return Proyecciones(tecnica_de_proyeccion, *parametros_sumarizacion
-                        ) if tecnica_de_proyeccion else Sumarizador(*parametros_sumarizacion)
+def create_sumarizador(
+    parametros_sumarizacion=None,
+    tecnica_de_proyeccion=None,
+    configuracion_combinada=None,
+    configuracion_distrito=None
+):
+    # Si nos llega una configuracion combinada creamos un SumarizadorIdem
+    if configuracion_combinada:
+        return SumarizadorCombinado(configuracion_combinada)
+
+    # Si nos llega una configuracion por distrito tomamos su información
+    if configuracion_distrito:
+        tecnica_de_proyeccion = configuracion_distrito.proyeccion
+        # En caso de no tener parámetros de sumarización, toda la info sale la conf
+        if (parametros_sumarizacion is None):
+            parametros_sumarizacion = [
+                configuracion_distrito.agregacion,
+                configuracion_distrito.opciones,
+                NIVELES_DE_AGREGACION.distrito[0],
+                configuracion_distrito.distrito
+            ]
+        # Otra opción es recibir el nivel de agregación y los ids a considerar en forma manual
+        elif (len(parametros_sumarizacion) == 2):
+            parametros_sumarizacion = [
+                configuracion_distrito.agregacion,
+                configuracion_distrito.opciones,
+                *parametros_sumarizacion
+            ]
+
+    # En caso contrario se usa la técnica de proyección y parámetros recibidos.
+    # Si hay una técnica de proyección se usa Proyecciones y si no se usa un Sumarizador normal.
+    return Proyecciones(
+        tecnica_de_proyeccion,
+        *parametros_sumarizacion
+    ) if tecnica_de_proyeccion else Sumarizador(*parametros_sumarizacion)
 
 
 def porcentaje(numerador, denominador):
@@ -827,3 +855,30 @@ class Proyecciones(Sumarizador):
     @classmethod
     def tecnicas_de_proyeccion(cls):
         return TecnicaProyeccion.objects.all()
+
+
+class SumarizadorCombinado():
+    def __init__(self, configuracion):
+        self.configuracion = configuracion
+
+    @property
+    def filtros(self):
+        """
+        El sumarizador combinado siempre es para el total país.
+        """
+        return
+
+    def mesas(self, categoria):
+        """
+            Devuelve todas las mesas para la categoría especificada
+        """
+        return Mesa.objects.filter(categorias=categoria).distinct()
+
+    def get_resultados(self, categoria):
+        resultados = list(
+            create_sumarizador(configuracion_distrito=configuracion_distrito).get_resultados(categoria)
+            for configuracion_distrito in self.configuracion.configuraciones.all()
+        )
+
+        return resultados[0]
+
