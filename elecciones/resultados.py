@@ -18,9 +18,21 @@ from .models import (
     TecnicaProyeccion,
     AgrupacionCircuitos,
     AgrupacionCircuito,
+    TIPOS_DE_AGREGACIONES,
+    OPCIONES_A_CONSIDERAR,
+    NIVELES_AGREGACION,
+    NIVELES_DE_AGREGACION,
 )
 from adjuntos.models import Identificacion, PreIdentificacion
 
+NIVEL_DE_AGREGACION = {
+    NIVELES_DE_AGREGACION.distrito: Distrito,
+    NIVELES_DE_AGREGACION.seccion_politica: SeccionPolitica,
+    NIVELES_DE_AGREGACION.seccion: Seccion,
+    NIVELES_DE_AGREGACION.circuito : Circuito,
+    NIVELES_DE_AGREGACION.lugar_de_votacion: LugarVotacion,
+    NIVELES_DE_AGREGACION.mesa: Mesa
+}
 
 def porcentaje(numerador, denominador):
     """
@@ -38,9 +50,6 @@ class Sumarizador():
     """
     Esta clase encapsula el cómputo de resultados.
     """
-    TIPOS_DE_AGREGACIONES = Choices('todas_las_cargas', 'solo_consolidados', 'solo_consolidados_doble_carga')
-    OPCIONES_A_CONSIDERAR = Choices('prioritarias', 'todas')
-
     def __init__(
         self,
         tipo_de_agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas,
@@ -71,15 +80,15 @@ class Sumarizador():
         """
         lookups = dict()
 
-        if self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga:
-            if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
+        if self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga:
+            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status'] = MesaCategoria.STATUS.total_consolidada_dc
             else:
                 lookups[f'{prefix}status'] = MesaCategoria.STATUS.parcial_consolidada_dc
 
-        elif self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.solo_consolidados:
+        elif self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.solo_consolidados:
             # Doble carga y CSV.
-            if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
+            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status__in'] = (
                     MesaCategoria.STATUS.total_consolidada_dc,
                     MesaCategoria.STATUS.total_consolidada_csv,
@@ -90,8 +99,8 @@ class Sumarizador():
                     MesaCategoria.STATUS.parcial_consolidada_csv,
                 )
 
-        elif self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.todas_las_cargas:
-            if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
+        elif self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.todas_las_cargas:
+            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status__in'] = (
                     MesaCategoria.STATUS.total_consolidada_dc,
                     MesaCategoria.STATUS.total_consolidada_csv,
@@ -113,23 +122,9 @@ class Sumarizador():
         if not self.ids_a_considerar:
             return
 
-        if self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.distrito:
-            return Distrito.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion_politica:
-            return SeccionPolitica.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion:
-            return Seccion.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.circuito:
-            return Circuito.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.lugar_de_votacion:
-            return LugarVotacion.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
-            return Mesa.objects.filter(id__in=self.ids_a_considerar)
+        modelo = NIVEL_DE_AGREGACION.get(self.nivel_de_agregacion, None)
+        if modelo:
+            return modelo.objects.filter(id__in=self.ids_a_considerar)
 
     def lookups_de_mesas(self):
         lookups = Q()
@@ -297,7 +292,7 @@ class Resultados():
         En el caso self.self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias
         obtiene la opción de total
         """
-        if self.opciones_a_considerar == Sumarizador.OPCIONES_A_CONSIDERAR.todas:
+        if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
             total_positivos = sum(
                 sum(votos for votos in opciones_partido.values() if votos)
                 for opciones_partido in self.resultados.votos_positivos.values()
@@ -461,8 +456,8 @@ class AvanceDeCarga(Sumarizador):
         ids_a_considerar=None
     ):
         super().__init__(
-            tipo_de_agregacion=Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas,
-            opciones_a_considerar=Sumarizador.OPCIONES_A_CONSIDERAR.todas,
+            tipo_de_agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas,
+            opciones_a_considerar=OPCIONES_A_CONSIDERAR.todas,
             nivel_de_agregacion=nivel_de_agregacion,
             ids_a_considerar=ids_a_considerar
         )
