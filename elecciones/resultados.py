@@ -306,7 +306,7 @@ class Resultados():
             nombre_opcion_total = Opcion.total_votos().nombre
             total = self.resultados.votos_no_positivos[nombre_opcion_total]
             total_no_positivos = self.total_no_positivos()
-            total_positivos = total - total_no_positivos
+            total_positivos = max(total - total_no_positivos, 0)
 
         return total_positivos
 
@@ -343,7 +343,7 @@ class Resultados():
                     - porcentaje: porcentaje sobre el total del del partido.
                     - porcentaje_positivos: porcentaje sobre el total de votos
                       positivos.
-                    - porcentaje_sin_nulos: porcentaje sobre el total de votos
+                    - porcentaje_validos: porcentaje sobre el total de votos
                       positivos y en blanco.
                     - porcentaje_total: porcentaje sobre el total de votos.
         """
@@ -353,32 +353,23 @@ class Resultados():
             total_partido = sum(filter(None, votos_por_opcion.values()))
             votos_positivos[partido] = {
                 'votos': total_partido,
-                'porcentaje_positivos':
-                porcentaje( total_partido, self.total_positivos()),
-                'porcentaje_sin_nulos':
-                porcentaje( total_partido
-                            , self.total_positivos() + blancos),
+                'porcentaje_positivos': porcentaje(total_partido, self.total_positivos()),
+                'porcentaje_validos': porcentaje(total_partido, self.total_positivos() + blancos),
                 'porcentaje_total': porcentaje(total_partido, self.votantes()),
                 'detalle': {
                     opcion: {
-                    'votos': votos_opcion,
-                    'porcentaje':
-                        porcentaje(votos_opcion, total_partido),
-                    'porcentaje_positivos':
-                        porcentaje(votos_opcion, self.total_positivos()),
-                    'porcentaje_sin_nulos':
-                        porcentaje(votos_opcion,
-                            self.total_positivos() + blancos),
-                    'porcentaje_total':
-                        porcentaje( votos_opcion, self.votantes()),
+                        'votos': votos_opcion,
+                        'porcentaje': porcentaje(votos_opcion, total_partido),
+                        'porcentaje_positivos': porcentaje(votos_opcion, self.total_positivos()),
+                        'porcentaje_validos': porcentaje(votos_opcion, self.total_positivos() + blancos),
+                        'porcentaje_total': porcentaje(votos_opcion, self.votantes()),
                     }
                     for opcion, votos_opcion in votos_por_opcion.items()
                 }
             }
 
         return OrderedDict(
-            sorted( votos_positivos.items()
-                  , key=lambda partido: float(partido[1]["votos"]), reverse=True)
+            sorted(votos_positivos.items(), key=lambda partido: float(partido[1]["votos"]), reverse=True)
         )
 
     @lru_cache(128)
@@ -534,7 +525,7 @@ class AvanceDeCarga(Sumarizador):
                     mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.con_problemas)
 
         dato_total = DatoTotalAvanceDeCarga().para_mesas(self.mesas_a_considerar)
-        
+
         return AttrDict({
             "total": dato_total,
             "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_sin_identificar),
@@ -628,7 +619,7 @@ class DatoTotalAvanceDeCarga(DatoAvanceDeCarga):
 class AvanceWrapper():
     def __init__(self, resultados):
         self.resultados = resultados
-    
+
     def total(self):
         return self.resultados.total
 
@@ -664,7 +655,6 @@ class Proyecciones(Sumarizador):
     """
     Esta clase encapsula el cómputo de proyecciones.
     """
-
     def __init__(self, tecnica, *args):
         self.tecnica = tecnica
         super().__init__(*args)
@@ -676,27 +666,52 @@ class Proyecciones(Sumarizador):
             **self.cargas_a_considerar_status_filter(self.categoria, 'mesacategoria__')
         )
 
+    def circuito_subquery(self, id_agrupacion):
+        """
+        Construye un subquery que permite filtrar mesas por id_agrupacion
+        """
+        return Subquery(AgrupacionCircuito.objects.filter(
+            agrupacion__id=id_agrupacion).values_list('circuito_id', flat=True))
+
     def total_electores(self, id_agrupacion):
         """
         Calcula el total de electores en una agrupación de circuitos
         """
-        circuito_subquery = AgrupacionCircuito.objects.filter(
-            agrupacion__id=id_agrupacion
-        ).values_list('circuito_id', flat=True)
-
         return self.mesas_a_considerar.filter(
-            circuito__in=Subquery(circuito_subquery)
+            circuito__in=self.circuito_subquery(id_agrupacion)
         ).aggregate(electores=Sum('electores'))['electores']
 
     def electores_en_mesas_escrutadas(self, id_agrupacion):
-        return (
-            self.mesas_escrutadas().filter(
-                circuito__in=Subquery(
-                    AgrupacionCircuito.objects.filter(agrupacion__id=id_agrupacion
-                                                      ).values_list('circuito_id', flat=True)
-                )
-            ).aggregate(electores=Sum('electores'))
-        )['electores']
+        """
+        Calcula el total de electores en las mesas escrutadas de una agrupación de circuitos
+        """
+        return self.mesas_escrutadas().filter(
+            circuito__in=self.circuito_subquery(id_agrupacion)
+        ).aggregate(electores=Sum('electores'))['electores']
+
+    def total_mesas(self, id_agrupacion):
+        """
+        Calcula el total de mesas en una agrupación de circuitos
+        """
+        return self.mesas_a_considerar.filter(circuito__in=self.circuito_subquery(id_agrupacion)).count()
+
+    def cant_mesas_escrutadas(self, id_agrupacion):
+        """
+        Calcula el total de electores en las mesas escrutadas de una agrupación de circuitos
+        """
+        return self.mesas_escrutadas().filter(circuito__in=self.circuito_subquery(id_agrupacion)).count()
+
+    def coeficiente_para_proyeccion(self, id_agrupacion):
+        """
+        Devuelve el coeficiente o factor de ponderación para una agrupación de circuitos.
+        Idealmente debería surgir de la división entre la totalidad de votantes en la agrupación, 
+        dividido por la cantidad de votantes en las mesas escrutadas, pero ante la imposibilidad
+        de contar con esos datos estamos dividiendo directamente la cantidad de mesas.
+        """
+        # TODO Considerar ambas formas de proyectar y hacerlo configurable para los distritos
+        # en los que se cuente con la información de electores por mesa.
+        # return self.total_electores(id_agrupacion) / self.electores_en    _mesas_escrutadas(id_agrupacion)
+        return self.total_mesas(id_agrupacion) / self.cant_mesas_escrutadas(id_agrupacion)
 
     @lru_cache(128)
     def agrupaciones_a_considerar(self, categoria, mesas):
@@ -704,7 +719,7 @@ class Proyecciones(Sumarizador):
         Devuelve la lista de agrupaciones_a_considerar a considerar, descartando aquellas que no tienen aún
         el mínimo de mesas definido según la técnica de proyección.
 
-        Atención: el query se realiza en realidad sobre AgrupacionCircuito, porque de otra manera la 
+        Atención: el query se realiza en realidad sobre AgrupacionCircuito, porque de otra manera la
         many to many entre AgrupacionCircuitos y Circuito impide hacer agregaciones.
         """
 
@@ -717,7 +732,7 @@ class Proyecciones(Sumarizador):
 
     def coeficientes_para_proyeccion(self):
         return {
-            id_agrupacion: self.total_electores(id_agrupacion) / self.electores_en_mesas_escrutadas(id_agrupacion)
+            id_agrupacion: self.coeficiente_para_proyeccion(id_agrupacion)
             for id_agrupacion in self.agrupaciones_a_considerar(self.categoria, self.mesas_a_considerar)
         }
 
@@ -732,7 +747,7 @@ class Proyecciones(Sumarizador):
         agrupaciones_subquery = self.agrupaciones_a_considerar(categoria, mesas).filter(
             agrupacion__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones'))
         ).values_list('agrupacion', flat=True)
-        
+
         return self.votos_reportados(categoria, mesas).values_list('opcion__id').annotate(
             id_agrupacion=Subquery(agrupaciones_subquery)
         ).exclude(id_agrupacion__isnull=True).annotate(

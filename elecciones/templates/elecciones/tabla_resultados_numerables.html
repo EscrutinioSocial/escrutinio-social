@@ -15,7 +15,7 @@
   <td><!-- porcentajes de opciones !--></td>
   {% if modo_eleccion == modo_paso %}
   <!-- En el caso de que las elecciones sean PASO !-->
-  <td id="porcentaje_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.porcentaje_sin_nulos }}%</td>
+  <td id="porcentaje_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.porcentaje_validos }}%</td>
   {% endif %}
   {% if modo_eleccion == modo_generales %}
   <!-- En el caso de que las elecciones sean GENERALES !-->
