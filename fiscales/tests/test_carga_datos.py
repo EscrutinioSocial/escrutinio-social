@@ -355,70 +355,82 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     """
     categoria_1 = CategoriaFactory()
     categoria_2 = CategoriaFactory()
-    mesa = MesaFactory(categorias=[categoria_1, categoria_2])
-    AttachmentFactory(mesa=mesa)
 
-    MesaCategoriaFactory(categoria=categoria_1, mesa=mesa, orden_de_carga=1)
-    MesaCategoriaFactory(categoria=categoria_2, mesa=mesa, orden_de_carga=2)
+    mesa = MesaFactory(categorias=[categoria_1, categoria_2])
+
+    mesa_categoria_1 = MesaCategoriaFactory(mesa=mesa, categoria=categoria_1, orden_de_carga=1)
+    mesa_categoria_2 = MesaCategoriaFactory(mesa=mesa, categoria=categoria_2, orden_de_carga=2)
+
+    opcion_1 = OpcionFactory(orden=1)
+    opcion_2 = OpcionFactory(orden=2)
+
+    CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1, prioritaria=True)
+    CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2, prioritaria=True)
+    CategoriaOpcionFactory(categoria=categoria_2, opcion=opcion_1, prioritaria=True)
+    CategoriaOpcionFactory(categoria=categoria_2, opcion=opcion_2, prioritaria=True)
+
+    AttachmentFactory(mesa=mesa)
 
     IdentificacionFactory(
         mesa=mesa,
         status=Identificacion.STATUS.identificada,
-        source=Identificacion.SOURCES.web,
+        source=Identificacion.SOURCES.csv,
     )
+    consumir_novedades_identificacion()
     assert MesaCategoria.objects.count() == 2
 
     for mc in MesaCategoria.objects.all():
         mc.actualizar_orden_de_carga()
 
-    nombre_categoria = "Un nombre especifico"
+    nombre_categoria = "Un nombre en particular" # Sin tilde que si no falla el 'in' más abajo.
     categoria_1.nombre = nombre_categoria
     categoria_1.save(update_fields=['nombre'])
 
-    opcion1 = categoria_1.opciones_actuales().get(nombre="opc1")
-    opcion2 = categoria_1.opciones_actuales().get(nombre="opc2")
-    opcion3 = categoria_2.opciones_actuales().get(nombre="opc1")
-    opcion4 = categoria_2.opciones_actuales().get(nombre="opc2")
+    categoria_2.nombre = 'Otro nombre'
+    categoria_2.save(update_fields=['nombre'])
 
     url_carga = reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
     response = fiscal_client.get(url_carga)
 
+    # Nos aseguramos que haya cargado el template específico para UB. No es una redirección.
     assert response.status_code == HTTPStatus.OK
-    # nos aseguramos que haya cargado el template específico para UB
-    assert reverse('agregar-adjuntos-ub') in str(response.content)
+    assert url_carga in str(response.content)
     # categoria1 debería aparecer primero porque su mesa categoria tiene un orden_de_carga más grande
     assert nombre_categoria in str(response.content)
 
-    tupla_opciones_electores = [(opcion1.id, mesa.electores // 2, mesa.electores // 2), (opcion2.id, mesa.electores // 2, mesa.electores // 2)]
+    tupla_opciones_electores = [(opcion_1.id, mesa.electores // 2, mesa.electores // 2), (opcion_2.id, mesa.electores // 2, mesa.electores // 2)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
-
-    with django_assert_num_queries(38):
+    with django_assert_num_queries(51):
         response = fiscal_client.post(url_carga, request_data)
 
-    # tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
+    # Tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
     carga = Carga.objects.get()
-
     assert carga.tipo == Carga.TIPOS.total
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
 
-    tupla_opciones_electores = [(opcion3.id, mesa.electores // 2), (opcion4.id, mesa.electores // 2)]
+    # Hacemos el get hacia donde nos manda el redirect. Esto hace el take.
+    response = fiscal_client.get(response.url)
 
+    # Posteamos los nuevos datos.
     response = fiscal_client.post(url_carga, request_data)
 
-    consumir_novedades_y_actualizar_objetos([carga.mesa_categoria])
+    carga.refresh_from_db()
 
-    # ya no tiene más categorías, debe dirigirnos a subir-adjunto
     cargas = Carga.objects.all()
     assert len(cargas) == 2
     assert carga.tipo == Carga.TIPOS.total
+
+    # Me lleva a continuar con el workflow.
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
 
-    response = fiscal_client.post(url_carga)
-
-    # la mesa no tiene más categorías, nos devuelve a la pantalla de carga de adjuntos
-    assert response.url == reverse('agregar-adjuntos-ub')
+    # La mesa no tiene más categorías, nos devuelve a la pantalla de carga de adjuntos.
+    
+    assert response.status_code == 302
+    # Hacemos el get hacia donde nos manda el redirect.
+    response = fiscal_client.get(response.url)
+    assert response.url == reverse('agregar-adjuntos-ub') 
 
 
 def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
