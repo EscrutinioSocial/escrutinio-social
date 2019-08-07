@@ -29,10 +29,16 @@ NIVEL_DE_AGREGACION = {
     NIVELES_DE_AGREGACION.distrito: Distrito,
     NIVELES_DE_AGREGACION.seccion_politica: SeccionPolitica,
     NIVELES_DE_AGREGACION.seccion: Seccion,
-    NIVELES_DE_AGREGACION.circuito : Circuito,
+    NIVELES_DE_AGREGACION.circuito: Circuito,
     NIVELES_DE_AGREGACION.lugar_de_votacion: LugarVotacion,
     NIVELES_DE_AGREGACION.mesa: Mesa
 }
+
+
+def create_sumarizador(parametros_sumarizacion, tecnica_de_proyeccion=None):
+    return Proyecciones(tecnica_de_proyeccion, *parametros_sumarizacion
+                        ) if tecnica_de_proyeccion else Sumarizador(*parametros_sumarizacion)
+
 
 def porcentaje(numerador, denominador):
     """
@@ -731,8 +737,6 @@ class Proyecciones(Sumarizador):
         ).filter(agrupacion__minimo_mesas__gt=F('mesas_escrutadas')).values_list(
             'agrupacion__nombre', 'agrupacion__minimo_mesas', 'mesas_escrutadas'
         )
-
-
 
     @lru_cache(128)
     def agrupaciones_a_considerar(self, categoria, mesas):

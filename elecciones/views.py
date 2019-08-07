@@ -28,7 +28,7 @@ from .models import (
     NIVELES_AGREGACION,
     NIVELES_DE_AGREGACION,
 )
-from .resultados import Sumarizador, Proyecciones, AvanceDeCarga, NIVEL_DE_AGREGACION
+from .resultados import Proyecciones, AvanceDeCarga, NIVEL_DE_AGREGACION, create_sumarizador
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
@@ -142,6 +142,24 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
+        self.sumarizador = self.create_sumarizador()
+        self.ocultar_sensibles = not request.user.fiscal.esta_en_grupo('visualizadores_sensible')
+
+        return super().get(request, *args, **kwargs)
+
+    def create_sumarizador(self):
+        return create_sumarizador(
+            parametros_sumarizacion=[
+                self.get_tipo_de_agregacion(),
+                self.get_opciones_a_considerar(),
+                *self.get_filtro_por_nivel()
+            ],
+            tecnica_de_proyeccion=next(
+                (tecnica for tecnica in Proyecciones.tecnicas_de_proyeccion()
+                 if str(tecnica.id) == self.get_tecnica_de_proyeccion()), None)
+        )
+
+    def get_filtro_por_nivel(self):
         nivel_de_agregacion = None
         ids_a_considerar = None
         for nivel in reversed(NIVELES_AGREGACION):
@@ -149,25 +167,7 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
                 nivel_de_agregacion = nivel
                 ids_a_considerar = self.request.GET.getlist(nivel)
 
-        parametros_sumarizacion = [
-            self.get_tipo_de_agregacion(),
-            self.get_opciones_a_considerar(),
-            nivel_de_agregacion,
-            ids_a_considerar,
-        ]
-
-        tecnica_de_proyeccion = next((tecnica for tecnica in Proyecciones.tecnicas_de_proyeccion()
-                                     if str(tecnica.id) == self.get_tecnica_de_proyeccion()), None)
-
-        self.sumarizador = (
-            Proyecciones(tecnica_de_proyeccion, *parametros_sumarizacion)
-            if tecnica_de_proyeccion
-            else Sumarizador(*parametros_sumarizacion)
-        )
-
-        self.ocultar_sensibles = not request.user.fiscal.esta_en_grupo('visualizadores_sensible')
-
-        return super().get(request, *args, **kwargs)
+        return (nivel_de_agregacion, ids_a_considerar)
 
     def get_template_names(self):
         return [self.kwargs.get("template_name", self.template_name)]
@@ -310,10 +310,9 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-
         nivel_de_agregacion = None
         ids_a_considerar = None
-        for nivel in reversed(NIVELES_AGREGRACION):
+        for nivel in reversed(NIVELES_AGREGACION):
             if nivel in self.request.GET:
                 nivel_de_agregacion = nivel
                 ids_a_considerar = self.request.GET.getlist(nivel)
@@ -376,56 +375,47 @@ class ResultadosComputoCategoria(ResultadosCategoria):
             return redirect('resultados-computo', pk=Categoria.objects.first().id)
         return super().dispatch(*args, **kwargs)
 
-    def get(self, request, *args, **kwargs):
-        nivel_de_agregacion = None
-        id_a_considerar = None
-
-        for nivel in reversed(NIVELES_AGREGACION):
-            if nivel in self.request.GET:
-                nivel_de_agregacion = nivel
-                id_a_considerar = self.request.GET[nivel]
-                break
+    def create_sumarizador(self):
+        """
+        Crea un sumarizador basado en una configuración guardada en la base
+        """
+        nivel_de_agregacion, ids_a_considerar = self.get_filtro_por_nivel()
 
         # Tenemos que considerar todo el país.
-        if nivel_de_agregacion is None or id_a_considerar is None:
+        if nivel_de_agregacion is None or ids_a_considerar is None or len(ids_a_considerar) > 1:
             raise Exception("Tenemos que implementarlo")
 
         # Recién ahora averiguamos cómo computar:
-        fiscal = request.user.fiscal
-        entidad = NIVEL_DE_AGREGACION[nivel].objects.get(id=id_a_considerar)
-        distr = entidad if nivel == NIVELES_DE_AGREGACION.distrito else entidad.distrito
+        fiscal = self.request.user.fiscal
+        entidad = NIVEL_DE_AGREGACION[nivel_de_agregacion].objects.get(id=ids_a_considerar[0])
+        distrito = entidad if nivel_de_agregacion == NIVELES_DE_AGREGACION.distrito else entidad.distrito
 
         # Configuracion por fiscal, ponele que usamos la primera que tenga.
         # Si no tiene ninguna, usamos la global.
         conf = ConfiguracionComputoDistrito.objects.filter(
                 configuracion__fiscal=fiscal,
-                distrito=distr
+                distrito=distrito
         ).first()
 
         if conf is None:
             conf = ConfiguracionComputoDistrito.objects.filter(
                 configuracion__nombre=config.CONFIGURACION_COMPUTO_PUBLICA,
-                distrito=distr
+                distrito=distrito
             ).first()
-
-        ids_a_considerar = [id_a_considerar]
 
         self.agregacion = conf.agregacion
         self.opciones = conf.opciones
         self.tecnica_de_proyeccion = conf.proyeccion
 
-        parametros_sumarizacion = [
-            self.agregacion,
-            self.opciones,
-            nivel_de_agregacion,
-            ids_a_considerar,
-        ]
-
-        self.sumarizador = Proyecciones(self.tecnica_de_proyeccion, *parametros_sumarizacion)
-
-        self.ocultar_sensibles = not request.user.fiscal.esta_en_grupo('visualizadores_sensible')
-
-        return super().get(request, *args, **kwargs)
+        return create_sumarizador(
+            parametros_sumarizacion=[
+                self.agregacion,
+                self.opciones,
+                nivel_de_agregacion,
+                ids_a_considerar,
+            ],
+            tecnica_de_proyeccion=self.tecnica_de_proyeccion
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -478,7 +468,6 @@ class ResultadosComputoCategoria(ResultadosCategoria):
         context['distritos'] = Distrito.objects.all().order_by('numero')
         context['computo'] = True
         return context
-
 
     def get_tipo_de_agregacion(self):
         return self.agregacion

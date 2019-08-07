@@ -44,6 +44,7 @@ NIVELES_DE_AGREGACION = Choices(
 
 NIVELES_AGREGACION = [x[0] for x in NIVELES_DE_AGREGACION]
 
+
 class Distrito(models.Model):
     """
     Define el distrito o circunscripción electoral. Es la subdivisión más
@@ -1056,6 +1057,7 @@ class AgrupacionCircuitos(models.Model):
 class AgrupacionCircuito(models.Model):
     circuito = models.ForeignKey('Circuito', on_delete=models.CASCADE)
     agrupacion = models.ForeignKey('AgrupacionCircuitos', on_delete=models.CASCADE)
+
 
 class ConfiguracionComputo(models.Model):
     """
