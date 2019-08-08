@@ -19,14 +19,14 @@
   <form method="POST" action="{% url recibir_problema dato_id %}" enctype="multipart/form-data" id="problema-imagen">
     <div class="modal-content">
       <h4>Reportar problema en la imagen</h4>
-      <div id="errores-problema" class="row error">
-	<span id="problema_tipo" class="hide s8"><small>Debés seleccionar un tipo de problema.</small></span>
-	<span id="problema_descripcion" class="hide s8"><small>Debés describir en pocas palabras el problema.</small></span>
-      </div>
       {% csrf_token %}
       <input type="hidden" name="url_back" value="{{request.path}}"/>
       {% form form=form_problema %}
       {% endform %}
+      <div id="errores-problema" class="row error">
+	<span id="problema_tipo" class="hide s8"><small>Debés seleccionar un tipo de problema.</small></span>
+	<span id="problema_descripcion" class="hide s8"><small>Debés describir en pocas palabras el problema.</small></span>
+      </div>
       <div class="modal-footer" style="padding-right: 5%;" >
         <a href="#!" class="modal-close waves-effect waves-green btn-flat">Volver</a>
         <button class="btn waves-effect waves-light btn white-text red" type="submit" id="btn-reportar" tabindex="7">
