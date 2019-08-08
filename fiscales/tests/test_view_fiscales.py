@@ -14,8 +14,6 @@ from django.contrib.auth.models import Group
 from fiscales.models import Fiscal
 from fiscales.forms import ReferidoForm
 
-from elecciones.models import Seccion
-
 
 QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT = {
     "nombres": "Diego Armando",
