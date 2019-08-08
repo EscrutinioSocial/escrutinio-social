@@ -248,3 +248,15 @@ class AgrupacionCircuitosFactory(DjangoModelFactory):
     proyeccion = factory.SubFactory(TecnicaProyeccionFactory)
     nombre = factory.Sequence(lambda n: f'user{n}')
     minimo_mesas = 1
+
+
+class ConfiguracionComputoFactory(DjangoModelFactory):
+    class Meta:
+        model = 'elecciones.ConfiguracionComputo'
+
+    fiscal = factory.SubFactory(FiscalFactory)
+
+
+class ConfiguracionComputoDistritoFactory(DjangoModelFactory):
+    class Meta:
+        model = 'elecciones.ConfiguracionComputoDistrito'
