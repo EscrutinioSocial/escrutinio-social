@@ -35,7 +35,14 @@ from elecciones.models import Distrito
 
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
 MENSAJE_SOLO_UN_ACTA = 'Se debe subir una sola acta'
-
+CSV_MIMETYPES = (
+    'application/csv.ms-excel',
+    'application/csv.msexcel',
+    'application/csv',
+    'text/csv',
+    'text/plain',
+    'application/vnd.ms-excel',
+    )
 
 class IdentificacionCreateView(CreateView):
     """
@@ -383,7 +390,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
     url_to_post = 'agregar-adjuntos-csv'
 
     def __init__(self):
-        super().__init__(types=('text/csv','text/plain','application/vnd.ms-excel',))
+        super().__init__(types=CSV_MIMETYPES)
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
