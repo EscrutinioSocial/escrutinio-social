@@ -259,10 +259,10 @@ class="material-icons">videocam</i></a>
   // Get the <span> element that closes the modal
   var close_span = document.getElementsByClassName("close-modal-content")[0];
 
-  primer = "{{request.user.fiscal.primer_ingreso}}"=="True"?true:false
-  "{{request.user.fiscal.quitar_marca_primer_ingreso}}"
+  primer_ingreso = "{{request.user.fiscal.ingreso_alguna_vez}}" == "False" ? true : false
+  "{{ request.user.fiscal.marcar_ingreso_alguna_vez }}"
 
-  if(primer){
+  if (primer_ingreso){
     modal_video_instructivo.style.display = "block";
   }
 
