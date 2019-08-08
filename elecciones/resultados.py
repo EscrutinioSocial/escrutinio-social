@@ -49,8 +49,8 @@ def create_sumarizador(
             parametros_sumarizacion = [
                 configuracion_distrito.agregacion,
                 configuracion_distrito.opciones,
-                NIVELES_DE_AGREGACION.distrito[0],
-                configuracion_distrito.distrito
+                NIVELES_DE_AGREGACION.distrito,
+                [configuracion_distrito.distrito.id]
             ]
         # Otra opción es recibir el nivel de agregación y los ids a considerar en forma manual
         elif (len(parametros_sumarizacion) == 2):
@@ -80,6 +80,13 @@ def porcentaje(numerador, denominador):
     return '-'
 
 
+def porcentaje_numerico(parcial, total):
+    """
+    Función utilitaria para el cálculo de un porcentaje, así se hace igual en todos lados
+    """
+    return 0 if total == 0 else round((parcial * 100) / total, 2)
+
+
 class Sumarizador():
     """
     Esta clase encapsula el cómputo de resultados.
@@ -99,9 +106,12 @@ class Sumarizador():
         Por último, los ids_a_considerar son los ids de unidades de el nivel `nivel_de_agregacion`
         que deben considerarse. Si es None se consideran todos.
         """
-        self.tipo_de_agregacion = tipo_de_agregacion  # Es una de TIPOS_DE_AGREGACIONES
+        # Es una de TIPOS_DE_AGREGACIONES
+        self.tipo_de_agregacion = tipo_de_agregacion
+        
         # Es una de OPCIONES_A_CONSIDERAR
         self.opciones_a_considerar = opciones_a_considerar
+        
         self.nivel_de_agregacion = nivel_de_agregacion
 
         self.ids_a_considerar = ids_a_considerar
@@ -601,13 +611,6 @@ class AvanceDeCarga(Sumarizador):
         })
 
 
-def porcentaje_numerico(parcial, total):
-    """
-    Función utilitaria para el cálculo de un porcentaje, así se hace igual en todos lados
-    """
-    return 0 if total == 0 else round((parcial * 100) / total, 2)
-
-
 class DatoAvanceDeCarga():
     def para_mesas(self, mesas):
         self.la_cantidad_mesas = mesas.count()
@@ -858,6 +861,7 @@ class Proyecciones(Sumarizador):
 
 
 class SumarizadorCombinado():
+
     def __init__(self, configuracion):
         self.configuracion = configuracion
 
