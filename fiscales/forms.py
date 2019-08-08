@@ -12,6 +12,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from dal import autocomplete
 
@@ -367,7 +368,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
             )
 
         if errors:
-            form.add_error('votos', ValidationError(errors))
+            raise forms.ValidationError(errors)
 
         #warnings
         warnings = []
@@ -411,6 +412,8 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
                 form.data = data
 
             if warnings:
+                warnings[-1] = mark_safe( warnings[-1] +
+                    '<br><br>¿Confirma que están cargados correctamente los valores que figuran en el acta?')
                 raise forms.ValidationError(warnings)
 
 
