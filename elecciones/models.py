@@ -884,6 +884,10 @@ class CategoriaOpcion(models.Model):
         prioritaria = ' (es prioritaria)' if self.prioritaria else ''
         return f'{self.categoria} - {self.opcion} {prioritaria}'
 
+    def set_prioritaria(self):
+        self.prioritaria = True
+        self.save(update_fields=['prioritaria'])
+
 
 class CargasIncompatiblesError(Exception):
     """
