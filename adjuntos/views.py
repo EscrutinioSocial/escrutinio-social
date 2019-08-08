@@ -42,7 +42,10 @@ CSV_MIMETYPES = (
     'text/csv',
     'text/plain',
     'application/vnd.ms-excel',
-    )
+    'application/x-csv',
+    'text/comma-separated-values',
+    'text/x-comma-separated-values',
+)
 
 class IdentificacionCreateView(CreateView):
     """
