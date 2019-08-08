@@ -524,6 +524,7 @@ class DistritoSimpleListView(autocomplete.Select2QuerySetView):
             lookups &= Q(numero=self.q) | Q(nombre__istartswith=self.q)
         return qs.filter(lookups)
 
+
 class SeccionSimpleListView(autocomplete.Select2QuerySetView):
     model = Seccion
 
@@ -533,8 +534,10 @@ class SeccionSimpleListView(autocomplete.Select2QuerySetView):
         distrito = self.forwarded.get('distrito',None)
         if distrito:
             lookups &= Q(distrito_id=distrito)
-        return qs.filter(lookups)
+        if self.q:
+            lookups &= Q(numero=self.q) | Q(nombre__istartswith=self.q)
 
+        return qs.filter(lookups)
 
 
 class DistritoListView(AjaxListView):
