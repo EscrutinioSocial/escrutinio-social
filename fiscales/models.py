@@ -121,6 +121,8 @@ class Fiscal(models.Model):
 
     # el materialized path de referencias
     referido_por_codigos = models.CharField(max_length=250, blank=True, null=True)
+    # para saber si hay que capacitarlo
+    primer_ingreso = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = 'Fiscales'
@@ -231,6 +233,14 @@ class Fiscal(models.Model):
         self.save(update_fields=['troll'])
         if era_troll:
             registrar_fiscal_no_es_troll(self, nuevo_scoring, actor)
+
+    def quitar_marca_primer_ingreso(self):
+        """
+        Luego de haber ingresado por primera vez, se quita está marca. En principio la marca de primer 
+        ingreso se usa para capacitar al validador.
+        """
+        self.primer_ingreso = False
+        self.save(update_fields=['primer_ingreso'])
 
 
 @receiver(post_save, sender=Fiscal)
