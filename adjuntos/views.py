@@ -383,7 +383,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
     url_to_post = 'agregar-adjuntos-csv'
 
     def __init__(self):
-        super().__init__(types='text/csv')
+        super().__init__(types=('text/csv','text/plain','application/vnd.ms-excel',))
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
