@@ -16,7 +16,7 @@
 
 {% block sidenav_items %}
 <li>
-    <a href="{% url 'resultados-categoria' object.id %}?circuito={{ circuito_seleccionado.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}"">
+    <a href="{% url 'resultados-categoria' object.id %}?circuito={{ circuito_seleccionado.id }}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}">
         <i class="material-icons">arrow_back</i>Volver a {{circuito_seleccionado.nombre}}
     </a>
 </li>
