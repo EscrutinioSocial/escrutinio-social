@@ -308,7 +308,7 @@ class ResultadosExport(ResultadosCategoria):
 
         for voto_mesa in votos:
             mesa = voto_mesa.carga.mesa
-            opcion = voto_mesa.opcion.nombre
+            opcion = voto_mesa.opcion.codigo
             votos = voto_mesa.votos
             fila = [mesa.lugar_votacion.circuito.seccion.nombre,
                     mesa.lugar_votacion.circuito.seccion.numero,
