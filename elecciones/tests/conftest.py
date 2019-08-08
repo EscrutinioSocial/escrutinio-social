@@ -34,3 +34,9 @@ def fiscal_client(db, admin_user, setup_groups, client):
 def url_resultados(carta_marina):
     c = CategoriaFactory(nombre='default')
     return reverse('resultados-categoria', args=[c.id])
+
+
+@pytest.fixture()
+def url_resultados_computo(carta_marina):
+    c = CategoriaFactory(nombre='default')
+    return reverse('resultados-computo', args=[c.id])

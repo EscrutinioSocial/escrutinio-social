@@ -22,7 +22,7 @@ from .test_models import consumir_novedades_y_actualizar_objetos
 from .utils import create_carta_marina, cargar_votos, tecnica_proyeccion
 
 
-def test_configuracion_combinada(db, url_resultados, fiscal_client):
+def test_configuracion_combinada(db, fiscal_client, url_resultados_computo):
     # Seteamos el modo de elección como PASO; por lo tanto
     # los porcentajes que deberíamos visualizar son los porcentaje_validos
     settings.MODO_ELECCION = settings.ME_OPCION_GEN
@@ -80,27 +80,24 @@ def test_configuracion_combinada(db, url_resultados, fiscal_client):
         opciones=OPCIONES_A_CONSIDERAR.todas,
     )
 
-    # Para el último distrito consideramos todas las cargas, 
+    # Para el último distrito consideramos todas las cargas,
     # pero utilizamos una proyección que exige dos mesas por agrupacion circuito
     ConfiguracionComputoDistritoFactory(
         configuracion=configuracion_combinada,
-        distrito=d1,
+        distrito=d3,
         agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas,
         opciones=OPCIONES_A_CONSIDERAR.todas,
         proyeccion=tecnica_proyeccion(minimo_mesas=2),
     )
 
-
-    # response = fiscal_client.get(
-    #     url_resultados + f'?opcionaConsiderar={OPCIONES_A_CONSIDERAR.prioritarias}'
-    # )
-    # resultados = response.context['resultados']
+    response = fiscal_client.get(url_resultados_computo)
+    resultados = response.context['resultados']
 
     # positivos = resultados.tabla_positivos()
     # # se ordena de acuerdo al que va ganando
     # assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
 
-    # total_positivos = resultados.total_positivos()
+    assert resultados.total_positivos() == 620
     # total_blancos   = resultados.total_blancos()
 
     # assert total_positivos == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
@@ -173,4 +170,3 @@ def test_configuracion_combinada(db, url_resultados, fiscal_client):
     # ]
     # for variable, valor in columna_datos:
     #     assert f'<td title="{variable}">{valor}</td>' in content
-    assert False

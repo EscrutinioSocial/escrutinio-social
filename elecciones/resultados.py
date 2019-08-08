@@ -317,13 +317,12 @@ class Sumarizador():
         return Resultados(self.opciones_a_considerar, self.calcular(categoria, self.mesas_a_considerar))
 
 
-class Resultados():
+class ResultadosBase():
     """
-    Esta clase contiene los resultados.
+    Clase base para el comportamiento común entre los resultados de una sumarización / proyección y 
+    la sumatoria de muchos resultados en un ResultadoCombinado
     """
-
-    def __init__(self, opciones_a_considerar, resultados):
-        self.opciones_a_considerar = opciones_a_considerar
+    def __init__(self, resultados):
         self.resultados = resultados
 
     def data(self):
@@ -332,6 +331,67 @@ class Resultados():
         pasen información al template directamente sin obligar a que esta clase oficie de pasamanos.
         """
         return dict(self.resultados)
+
+    @lru_cache(128)
+    def votantes(self):
+        """
+        Total de personas que votaron.
+        """
+        return self.total_positivos() + self.total_no_positivos()
+
+    def electores(self):
+        return self.resultados.electores
+
+    def electores_en_mesas_escrutadas(self):
+        return self.resultados.electores_en_mesas_escrutadas
+
+    def porcentaje_mesas_escrutadas(self):
+        return self.resultados.porcentaje_mesas_escrutadas
+
+    def porcentaje_escrutado(self):
+        return porcentaje(self.resultados.electores_en_mesas_escrutadas, self.resultados.electores)
+
+    def porcentaje_participacion(self):
+        return porcentaje(self.votantes(), self.resultados.electores_en_mesas_escrutadas)
+
+    def total_mesas_escrutadas(self):
+        return self.resultados.total_mesas_escrutadas
+
+    def total_mesas(self):
+        return self.resultados.total_mesas
+
+    def total_blancos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre'], '-')
+
+    def total_nulos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre'], '-')
+
+    def total_votos(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre'], '-')
+
+    def total_sobres(self):
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '-')
+
+    def porcentaje_positivos(self):
+        return porcentaje(self.total_positivos(), self.votantes())
+
+    def porcentaje_blancos(self):
+        blancos = self.total_blancos()
+        return porcentaje(blancos, self.votantes()) if blancos != '-' else '-'
+
+    def porcentaje_nulos(self):
+        nulos = self.total_nulos()
+        return porcentaje(nulos, self.votantes()) if nulos != '-' else '-'
+
+
+class Resultados(ResultadosBase):
+    """
+    Esta clase contiene los resultados de una sumarización o proyección.
+    """
+
+    def __init__(self, opciones_a_considerar, resultados):
+        super().__init__(resultados)
+        self.opciones_a_considerar = opciones_a_considerar
 
     @lru_cache(128)
     def total_positivos(self):
@@ -367,13 +427,6 @@ class Resultados():
             votos for opcion, votos in self.resultados.votos_no_positivos.items()
             if opcion not in (nombre_opcion_total, nombre_opcion_sobres)
         )
-
-    @lru_cache(128)
-    def votantes(self):
-        """
-        Total de personas que votaron.
-        """
-        return self.total_positivos() + self.total_no_positivos()
 
     @lru_cache(128)
     def tabla_positivos(self):
@@ -441,49 +494,25 @@ class Resultados():
 
         return tabla_no_positivos
 
-    def electores(self):
-        return self.resultados.electores
 
-    def electores_en_mesas_escrutadas(self):
-        return self.resultados.electores_en_mesas_escrutadas
+class ResultadoCombinado(ResultadosBase):
+    _total_positivos = 0
+    _total_no_positivos = 0
 
-    def porcentaje_mesas_escrutadas(self):
-        return self.resultados.porcentaje_mesas_escrutadas
+    def __init__(self):
+        super().__init__(AttrDict())
 
-    def porcentaje_escrutado(self):
-        return porcentaje(self.resultados.electores_en_mesas_escrutadas, self.resultados.electores)
+    def __add__(self, other):
+        self._total_positivos += other.total_positivos()
+        self._total_no_positivos += other.total_no_positivos()
+        self.resultados = other.resultados
+        return self
 
-    def porcentaje_participacion(self):
-        return porcentaje(self.votantes(), self.resultados.electores_en_mesas_escrutadas)
+    def total_positivos(self):
+        return self._total_positivos
 
-    def total_mesas_escrutadas(self):
-        return self.resultados.total_mesas_escrutadas
-
-    def total_mesas(self):
-        return self.resultados.total_mesas
-
-    def total_blancos(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre'], '-')
-
-    def total_nulos(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre'], '-')
-
-    def total_votos(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre'], '-')
-
-    def total_sobres(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '-')
-
-    def porcentaje_positivos(self):
-        return porcentaje(self.total_positivos(), self.votantes())
-
-    def porcentaje_blancos(self):
-        blancos = self.total_blancos()
-        return porcentaje(blancos, self.votantes()) if blancos != '-' else '-'
-
-    def porcentaje_nulos(self):
-        nulos = self.total_nulos()
-        return porcentaje(nulos, self.votantes()) if nulos != '-' else '-'
+    def total_no_positivos(self):
+        return self._total_no_positivos
 
 
 class AvanceDeCarga(Sumarizador):
@@ -879,10 +908,7 @@ class SumarizadorCombinado():
         return Mesa.objects.filter(categorias=categoria).distinct()
 
     def get_resultados(self, categoria):
-        resultados = list(
+        return sum((
             create_sumarizador(configuracion_distrito=configuracion_distrito).get_resultados(categoria)
             for configuracion_distrito in self.configuracion.configuraciones.all()
-        )
-
-        return resultados[0]
-
+        ), ResultadoCombinado())
