@@ -434,6 +434,7 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['computo'] = True
 
         if (self.configuracion_combinada):
             context['configuracion_computo'] = self.configuracion_combinada.nombre
@@ -442,50 +443,6 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
             context['opciones'] = OPCIONES_A_CONSIDERAR[self.opciones]
             context['tecnica_de_proyeccion'] = self.tecnica_de_proyeccion
 
-        if self.sumarizador.filtros:
-            context['para'] = get_text_list([
-                objeto.nombre_completo() for objeto in self.sumarizador.filtros
-            ], " y ")
-        else:
-            context['para'] = 'todo el país'
-
-        pk = self.kwargs.get('pk')
-        if pk is None:
-            pk = Categoria.objects.first().id
-        categoria = get_object_or_404(Categoria, id=pk)
-        context['object'] = categoria
-        context['categoria_id'] = categoria.id
-        context['resultados'] = self.get_resultados(categoria)
-        context['show_plot'] = settings.SHOW_PLOT
-
-        # Agregamos al contexto el modo de elección; para cada partido decidimos
-        # que porcentaje vamos a visualizar (porcentaje_positivos o
-        # porcentaje_sin_nulos) dependiendo del tipo de elección.
-        context['modo_eleccion']  = settings.MODO_ELECCION
-        # Para no hardcodear las opciones en el html las agregamos al contexto.
-        context['modo_paso']      = settings.ME_OPCION_PASO
-        context['modo_generales'] = settings.ME_OPCION_GEN
-
-        if settings.SHOW_PLOT:
-            chart = self.get_plot_data(context['resultados'])
-            context['plot_data'] = chart
-            context['chart_values'] = [v['y'] for v in chart]
-            context['chart_keys'] = [v['key'] for v in chart]
-            context['chart_colors'] = [v['color'] for v in chart]
-
-        # Las pestañas de categorías que se muestran son las que sean
-        # comunes a todas las mesas filtradas.
-
-        # Para el cálculo se filtran categorías activas que estén relacionadas
-        # a las mesas.
-        mesas = self.sumarizador.mesas(categoria)
-        categorias = Categoria.para_mesas(mesas)
-        if self.ocultar_sensibles:
-            categorias = categorias.exclude(sensible=True)
-
-        context['categorias'] = categorias.order_by('id')
-        context['distritos'] = Distrito.objects.all().order_by('numero')
-        context['computo'] = True
         return context
 
     def get_tipo_de_agregacion(self):
