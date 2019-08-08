@@ -5,14 +5,14 @@
 {% block breadcrumbs_items %}
 <a href="{{ object.get_absolute_url }}">{{ object }}</a>
 <a class="active">Acta</a>
-<a href="https://www.youtube.com/embed/tgbNymZ7vqY" id="btnVideoInstructivo">Video instructivo<i
+<a href="{{ url_video_instructivo }}" id="btnVideoInstructivo">Video instructivo<i
 class="material-icons">videocam</i></a>
 
 <div id="modalVideoInstructivo" class="modal-video">
  <!-- Video instructivo como ventana modal. -->
   <div class="modal-content">
     <span class="close-modal-content">&times;</span>
-     <iframe width="560" height="420" src="https://www.youtube.com/embed/tgbNymZ7vqY">
+     <iframe width="560" height="420" src="{{ url_video_instructivo }}">
      </iframe> 
   </div>
 </div>
@@ -259,10 +259,10 @@ class="material-icons">videocam</i></a>
   // Get the <span> element that closes the modal
   var close_span = document.getElementsByClassName("close-modal-content")[0];
 
-  primer_ingreso = "{{request.user.fiscal.ingreso_alguna_vez}}" == "False" ? true : false
+  primer_ingreso = "{{ request.user.fiscal.ingreso_alguna_vez }}" == "False" ? true : false
   "{{ request.user.fiscal.marcar_ingreso_alguna_vez }}"
 
-  if (primer_ingreso){
+  if (primer_ingreso) {
     modal_video_instructivo.style.display = "block";
   }
 

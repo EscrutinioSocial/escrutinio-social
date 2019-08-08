@@ -14,6 +14,7 @@ from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView, FormView
 from django.core.serializers import serialize
+from django.conf import settings
 
 from sentry_sdk import capture_message
 
@@ -112,6 +113,7 @@ class IdentificacionCreateView(CreateView):
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
+        context['url_video_instructivo'] = settings.URL_VIDEO_INSTRUCTIVO
         return context
 
     def form_valid(self, form):

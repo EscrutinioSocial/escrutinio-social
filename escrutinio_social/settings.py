@@ -411,6 +411,7 @@ CONSTANCE_CONFIG = {
     'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text')
 }
 
+URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/tgbNymZ7vqY'
 
 TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
 
