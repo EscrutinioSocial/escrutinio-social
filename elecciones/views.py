@@ -12,6 +12,8 @@ from djgeojson.views import GeoJSONLayerView
 from django.contrib.auth.mixins import AccessMixin
 from constance import config
 
+import django_excel as excel
+
 from .models import (
     Distrito,
     Seccion,
@@ -303,6 +305,39 @@ class MesasDeCircuito(ResultadosCategoria):
         return parse.urlencode(url_params_original)
 
 
+class ResultadosExport(ResultadosCategoria):
+
+    def get_context_data(self, **kwargs):
+        pk = self.kwargs.get('pk')
+        categoria = get_object_or_404(Categoria, id=pk)
+        self.filetype = self.kwargs.get('filetype')
+        mesas = self.sumarizador.mesas(categoria)
+        votos = self.sumarizador.votos_reportados(categoria, mesas)
+        return {'votos': votos}
+
+    def render_to_response(self, context, **response_kwargs):
+        votos = context['votos']
+
+        headers = ['seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa',
+                   'opcion', 'votos']
+        csv_list = [headers]
+
+        for voto_mesa in votos:
+            mesa = voto_mesa.carga.mesa
+            opcion = voto_mesa.opcion.codigo
+            votos = voto_mesa.votos
+            fila = [mesa.lugar_votacion.circuito.seccion.nombre,
+                    mesa.lugar_votacion.circuito.seccion.numero,
+                    mesa.lugar_votacion.circuito.nombre,
+                    mesa.lugar_votacion.circuito.numero,
+                    mesa.lugar_votacion.nombre,
+                    mesa.numero,
+                    opcion,
+                    votos]
+            csv_list.append(fila)
+        return excel.make_response(excel.pe.Sheet(csv_list), self.filetype)
+
+
 class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
     """
     Vista principal avance de carga de actas.
@@ -368,7 +403,6 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         mesas = self.sumarizador.mesas(categoria)
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('nombre')
-
         return context
 
 

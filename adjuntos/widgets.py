@@ -13,3 +13,10 @@ class Select(forms.widgets.Input):
         context = super().get_context(name, value, attrs)
         context['widget']['type'] = self.input_type
         return context
+
+    def clean(self,value):
+        val = super().clean(value)
+        if val == "" or val == -1 or val == "-1":
+            return None
+        else:
+            return val

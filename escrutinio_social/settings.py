@@ -345,14 +345,17 @@ OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 KEY_VOTOS_POSITIVOS = 'Votos Positivos'
 
-#codigo de partidos para validaciones
+NOMBRE_CATEGORIA_PRESI_Y_VICE = 'Presidente y Vicepresidente'
+NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y Vice Provincia de Buenos Aires'
+
+# Código de partidos principales para validaciones.
 CODIGO_PARTIDO_NOSOTROS = '136'
 CODIGO_PARTIDO_ELLOS = '135'
 
-# Cada cuanto tiempo actualizar el campo last_seen de un Fiscal.
+# Cada cuánto tiempo actualizar el campo last_seen de un Fiscal.
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
 
-# Cuando expira una sesión.
+# Cuándo expira una sesión.
 SESSION_TIMEOUT = 5 * 60  # en segundos.
 
 # Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
@@ -409,6 +412,7 @@ CONSTANCE_CONFIG = {
     'CONFIGURACION_COMPUTO_PUBLICA': ('inicial', 'Nombre de la configuración que se utiliza para publicar resultados.'),
 }
 
+URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/tgbNymZ7vqY'
 
 TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
 

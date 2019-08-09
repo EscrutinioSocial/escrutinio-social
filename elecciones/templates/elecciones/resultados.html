@@ -124,6 +124,7 @@
             <div id="columnchart-{{object.id}}"></div>
         {% endif %}
 
+        <a href="{% url 'resultados-export' object.id 'csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>
 
     {% else %}
         <h5>Aún no hay mesas escrutadas en {{para}}</h5>

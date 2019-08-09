@@ -12,6 +12,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from dal import autocomplete
 
@@ -171,7 +172,7 @@ class QuieroSerFiscalForm(forms.Form):
     )
 
     referente_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
-    referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
+    referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=50)
 
     referido_por_codigo = forms.CharField(
         required=False,
@@ -367,7 +368,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
             )
 
         if errors:
-            form.add_error('votos', ValidationError(errors))
+            raise forms.ValidationError(errors)
 
         #warnings
         warnings = []
@@ -411,6 +412,8 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
                 form.data = data
 
             if warnings:
+                warnings[-1] = mark_safe( warnings[-1] +
+                    '<br><br>¿Confirma que están cargados correctamente los valores que figuran en el acta?')
                 raise forms.ValidationError(warnings)
 
 

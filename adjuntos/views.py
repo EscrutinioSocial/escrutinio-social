@@ -13,6 +13,8 @@ from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView, FormView
+from django.core.serializers import serialize
+from django.conf import settings
 
 from sentry_sdk import capture_message
 
@@ -34,7 +36,17 @@ from elecciones.models import Distrito
 
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
 MENSAJE_SOLO_UN_ACTA = 'Se debe subir una sola acta'
-
+CSV_MIMETYPES = (
+    'application/csv.ms-excel',
+    'application/csv.msexcel',
+    'application/csv',
+    'text/csv',
+    'text/plain',
+    'application/vnd.ms-excel',
+    'application/x-csv',
+    'text/comma-separated-values',
+    'text/x-comma-separated-values',
+)
 
 class IdentificacionCreateView(CreateView):
     """
@@ -90,9 +102,9 @@ class IdentificacionCreateView(CreateView):
         if pre_identificacion.distrito is not None:
             initial['distrito'] = pre_identificacion.distrito
         if pre_identificacion.seccion is not None:
-            initial['seccion'] = pre_identificacion.seccion
+            initial['seccion'] = pre_identificacion.seccion.numero
         if pre_identificacion.circuito is not None:
-            initial['circuito'] = pre_identificacion.circuito
+            initial['circuito'] = pre_identificacion.circuito.numero
         return initial
 
     def get_context_data(self, **kwargs):
@@ -101,6 +113,7 @@ class IdentificacionCreateView(CreateView):
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
+        context['url_video_instructivo'] = settings.URL_VIDEO_INSTRUCTIVO
         return context
 
     def form_valid(self, form):
@@ -142,14 +155,11 @@ class ReporteDeProblemaCreateView(CreateView):
     def attachment(self):
         return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
 
-    def form_invalid(self, form):
-        messages.info(
-            self.request,
-            f'No se registró el reporte. Corroborá haber elegido una opción.',
-            extra_tags="problema"
-        )
-        return redirect('siguiente-accion')
-
+    def form_invalid(self,form):
+        tipo = bool(form.errors['tipo_de_problema'])
+        descripcion = bool(form.errors['descripcion'])
+        return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
+    
     def form_valid(self, form):
         fiscal = self.request.user.fiscal
         identificacion = form.save(commit=False)
@@ -385,7 +395,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
     url_to_post = 'agregar-adjuntos-csv'
 
     def __init__(self):
-        super().__init__(types='text/csv')
+        super().__init__(types=CSV_MIMETYPES)
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
