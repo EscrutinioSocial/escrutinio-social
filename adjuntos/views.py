@@ -357,9 +357,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
         pre_identificacion_form = PreIdentificacionForm(self.request.POST)
         files = request.FILES.getlist('file_field')
 
-        if form.is_valid():
-            if not pre_identificacion_form.is_valid():
-                return self.form_invalid(form, pre_identificacion_form)
+        if form.is_valid() and pre_identificacion_form.is_valid():
 
             fiscal = request.user.fiscal
             pre_identificacion = pre_identificacion_form.save(commit=False)
@@ -367,6 +365,9 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
             pre_identificacion.save()
             kwargs.update({'pre_identificacion': pre_identificacion})
             return super().post(request, *args, **kwargs)
+
+        if not pre_identificacion_form.is_valid():
+            messages.warning(self.request, f'Hubo algún error en la identificación. No se subió ningún archivo.')
 
         return self.form_invalid(form, pre_identificacion_form, **kwargs)
 

@@ -6,7 +6,8 @@ esos valores.
 function displayResult(field,default_value,options=[]){
     var op = default_value;
     var val = -1;
-    var txt = "";
+    var txt = $('#'+field+'_input').val();
+    var required = $('#'+field+'_input').prop('required');
     if(options.length == 1){
 	op = options[0].text;
 	val = options[0].id;
@@ -17,15 +18,18 @@ function displayResult(field,default_value,options=[]){
     }
     /* Si val es -1 entonces estamos ante un error. 
      */
-    if (val == -1){
-	if (!($("#"+field+"_input").is(':focus'))) {
+    if (val == -1 && !($.trim(txt) == "")){
+	if (!($("#"+field+"_input").is(':focus')) && txt == "")  {
 	    $($('label[for='+field+'_input]')[0]).removeClass("active");
+	}
+	if (txt != "" || txt != " " || required){
+	    $('#inline-error-for-'+field).removeClass("hide");
 	}
     }
     else {
 	$($('label[for='+field+'_input]')[0]).addClass("active");
 	$("#"+field+"-resultado").removeClass("hide");
-	$('#errors_for_'+field).addClass("hide");
+	$('#inline-error-for-'+field).addClass("hide");
     }
     $("#"+field+"-resultado").val(op);
     if(val != ""){

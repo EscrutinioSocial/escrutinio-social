@@ -214,8 +214,8 @@ def test_preidentificacion_con_datos_de_fiscal(fiscal_client):
     fiscal.seccion = seccion
     fiscal.save()
     fiscal.refresh_from_db()
-    distrito_preset = f'<input id="id_distrito" name="distrito" type="hidden" tabindex="-1" value="{seccion.distrito.id}"/>'
-    seccion_preset =  f'<input id="id_seccion" name="seccion" type="hidden" tabindex="-1" value="{seccion.id}"/>'
+    distrito_preset = f'<input id="id_distrito" name="distrito" type="hidden" tabindex="-1" value="{seccion.distrito.id}" />'
+    seccion_preset =  f'<input id="id_seccion" name="seccion" type="hidden" tabindex="-1" value="{seccion.id}" />'
 
     response = fiscal_client.get(reverse('agregar-adjuntos'))
     content = response.content.decode('utf8')

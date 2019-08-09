@@ -2,7 +2,7 @@
 {% part bound_field.field %}
 <div class="row">
   <div {% attrs bound_field 'group' %}
-       class="input-field col s3 required {{field.widget.attrs.class}}" id="id_{{bound_field.name}}_container"
+       class="input-field col s3 {{field.widget.attrs.class}}" id="id_{{bound_field.name}}_container"
        {% endattrs %}>
     {% part field prefix %}{% endpart %}{% part field label %}
     <label{% attrs bound_field 'label' %}
@@ -10,7 +10,7 @@
              {% endattrs %}>{{ bound_field.label }}</label>
     {% endpart %}
     {% part field control %}
-    <input id="id_{{bound_field.name}}" name="{{bound_field.name}}" type="hidden" tabindex="-1"{% if bound_field.value != None %} value="{{ bound_field.value|stringformat:'s' }}{% else %}-1{% endif %}"/>
+    <input id="id_{{bound_field.name}}" name="{{bound_field.name}}" type="hidden" tabindex="-1" value="{% if bound_field.value != None %}{{ bound_field.value|stringformat:'s' }}{% else %}-1{% endif %}" {% if bound_field.required %}required {% endif %}/>
     <input id="{{bound_field.name}}_input" name="{{bound_field.name}}_input" type="text"
 	   {% if bound_field.value != None %} value=" " {% endif %} />
     {% endpart %}
@@ -19,6 +19,9 @@
     <input id="{{bound_field.name}}-resultado" readonly class="resultado-select" tabindex="-1"/>
     {# We may put some icon to be more explicit about the outcome of the query #}
     {#  <i class="material-icons suffix"></i> #}
+    <div class="errors hide" id="inline-error-for-{{bound_field.name}}">
+      <small class="error">No es una opción válida. {% if field.widget.attrs.required is not True %}Si envías el formulario, no se registrará este valor.{% endif %} </small>
+    </div>
     {% part field help_text %}{% if field.help_text %}
     <div class="help-block">{{ bound_field.help_text|safe }}</div>
     {% endif %}{% endpart %}{% part field errors %}
