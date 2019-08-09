@@ -120,9 +120,9 @@ def test_avance_de_carga_sencillo(db, settings):
     verificar_resultado(resultados.sin_identificar(), 2, 370, 20, 25.52)
     verificar_resultado(resultados.en_identificacion(), 1, 170, 10, 11.72)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 2, 230, 20, 15.86)
-    verificar_resultado(resultados.carga_parcial_consolidada(), 1, 100, 10, 6.9)
+    verificar_resultado(resultados.carga_parcial_consolidada_dc(), 1, 100, 10, 6.9)
     verificar_resultado(resultados.carga_total_sin_consolidar(), 0, 0, 0, 0)
-    verificar_resultado(resultados.carga_total_consolidada(), 0, 0, 0, 0)
+    verificar_resultado(resultados.carga_total_consolidada_dc(), 0, 0, 0, 0)
 
 
 def test_avance_de_carga_dos_categorias(db, settings):
@@ -171,7 +171,7 @@ def test_avance_de_carga_dos_categorias(db, settings):
     verificar_resultado(resultados.en_identificacion(), 0, 0, 0, 0)
     verificar_resultado(resultados.sin_cargar(), 2, 350, 20, 24.14)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 1, 160, 10, 11.03)
-    verificar_resultado(resultados.carga_parcial_consolidada(), 6, 750, 60, 51.72)
+    verificar_resultado(resultados.carga_parcial_consolidada_dc(), 6, 750, 60, 51.72)
     # categoría gv
     resultados = vorwaerts.get_resultados(gv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
@@ -179,7 +179,7 @@ def test_avance_de_carga_dos_categorias(db, settings):
     verificar_resultado(resultados.en_identificacion(), 0, 0, 0, 0)
     verificar_resultado(resultados.sin_cargar(), 4, 660, 40, 45.52)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 3, 390, 30, 26.9)
-    verificar_resultado(resultados.carga_parcial_consolidada(), 2, 210, 20, 14.48)
+    verificar_resultado(resultados.carga_parcial_consolidada_dc(), 2, 210, 20, 14.48)
 
 
 def test_avance_de_carga_dos_circuitos(db, settings):
@@ -250,14 +250,14 @@ def test_avance_de_carga_dos_circuitos(db, settings):
     verificar_resultado(resultados.sin_identificar(), 0, 0, 0, 0)
     verificar_resultado(resultados.sin_cargar(), 3, 540, 30, 37.24)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 1, 160, 10, 11.03)
-    verificar_resultado(resultados.carga_parcial_consolidada(), 6, 750, 60, 51.72)
+    verificar_resultado(resultados.carga_parcial_consolidada_dc(), 6, 750, 60, 51.72)
     # categoría gv
     resultados = vorwaerts.get_resultados(gv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
     verificar_resultado(resultados.sin_identificar(), 0, 0, 0, 0)
     verificar_resultado(resultados.sin_cargar(), 5, 850, 50, 58.62)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 3, 390, 30, 26.9)
-    verificar_resultado(resultados.carga_parcial_consolidada(), 2, 210, 20, 14.48)
+    verificar_resultado(resultados.carga_parcial_consolidada_dc(), 2, 210, 20, 14.48)
 
     # resultados circuito 2
     vorwaerts = AvanceDeCarga(Eleccion.NIVELES_AGREGACION.circuito, [circuito_2.id])
@@ -267,11 +267,11 @@ def test_avance_de_carga_dos_circuitos(db, settings):
     verificar_resultado(resultados.sin_identificar(), 2, 400, 10, 10)
     verificar_resultado(resultados.sin_cargar(), 3, 600, 15, 15)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 0, 0, 0, 0)
-    verificar_resultado(resultados.carga_parcial_consolidada(), 15, 3000, 75, 75)
+    verificar_resultado(resultados.carga_parcial_consolidada_dc(), 15, 3000, 75, 75)
     # categoría gv
     resultados = vorwaerts.get_resultados(gv)
     verificar_resultado(resultados.total(), 20, 4000, 100, 100)
     verificar_resultado(resultados.sin_identificar(), 2, 400, 10, 10)
     verificar_resultado(resultados.sin_cargar(), 0, 0, 0, 0)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 6, 1200, 30, 30)
-    verificar_resultado(resultados.carga_parcial_consolidada(), 12, 2400, 60, 60)
+    verificar_resultado(resultados.carga_parcial_consolidada_dc(), 12, 2400, 60, 60)
