@@ -497,12 +497,11 @@ class ResultadoCombinado(ResultadosBase):
 
     def __init__(self):
         super().__init__(AttrDict({
-            "total_mesas": 0,
-            "total_mesas_escrutadas": 0,
-            "electores": 0,
-            "electores_en_mesas_escrutadas": 0,
-            # "votos_positivos": votos_positivos,
-            # "votos_no_positivos": votos_no_positivos,
+            'total_mesas': 0,
+            'total_mesas_escrutadas': 0,
+            'electores': 0,
+            'electores_en_mesas_escrutadas': 0,
+            'votos_positivos': {},
 
             'votos_no_positivos': {opcion['nombre']: 0 for opcion in [
                 settings.OPCION_BLANCOS,
@@ -521,6 +520,15 @@ class ResultadoCombinado(ResultadosBase):
             key: value + other.resultados.votos_no_positivos.get(key, 0)
             for key, value in self.resultados.votos_no_positivos.items()
         }
+
+        self.resultados.votos_positivos = {
+            partido: {
+                opcion: votos_opcion + self.resultados.votos_positivos.get(partido, {}).get(opcion, 0)
+                for opcion, votos_opcion in votos_partido.items()
+            }
+            for partido, votos_partido in other.resultados.votos_positivos.items()
+        }
+        print(self.resultados.votos_positivos)
 
         # Sumar el resto de los atributos en resultados
         for attr in ['total_mesas', 'total_mesas_escrutadas', 'electores', 'electores_en_mesas_escrutadas']:

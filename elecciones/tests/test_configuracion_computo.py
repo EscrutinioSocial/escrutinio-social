@@ -69,7 +69,7 @@ def test_configuracion_combinada(db, fiscal_client, url_resultados_computo):
     # Para el primer distrito consideramos todas las cargas.
     # Esto nos da 100 votos para la opción 1 (60 + 20 + 20)
     # Y 160 para s2 (40 + 60 + 60)
-    # 15 blancos (10 + 5) 
+    # 15 blancos (10 + 5)
     # y 5 nulos (sólo mc3)
     ConfiguracionComputoDistritoFactory(
         configuracion=configuracion_combinada,
@@ -113,83 +113,32 @@ def test_configuracion_combinada(db, fiscal_client, url_resultados_computo):
     # assert resultados.total_mesas_escrutadas() == 6   # {d1: 3, d2: 1, d3: 2}
     # assert resultados.porcentaje_mesas_escrutadas() == '25.00'
 
+    # Totales básicos
     assert resultados.electores() == 2400
     assert resultados.total_votos() == 740  # {d1: 100, d2: 280, d3: 360}
 
+    # Opciones no positivas
     assert resultados.total_blancos() == 45  # {d2: 15, d3: 30}
-    assert resultados.porcentaje_blancos() == '6.08'  # 45 / 740
-
     assert resultados.total_nulos() == 15  # {d2: 5, d3: 10}
+    assert resultados.total_no_positivos() == 60  # 45 + 15
+
+    # Opciones partidarias
+    positivos = resultados.tabla_positivos()
+    assert positivos[o1.partido]['votos'] == 240  # 60 + 100 + 80
+    assert positivos[o2.partido]['votos'] == 440  # 40 + 160 + 240
+    assert resultados.total_positivos() == 680  # 240 + 440
+    #
+    # Se ordena de acuerdo al que va ganando
+    assert list(positivos.keys()) == [o2.partido, o1.partido]
+
+    # Porcentajes
+    assert resultados.porcentaje_blancos() == '6.08'  # 45 / 740
     assert resultados.porcentaje_nulos() == '2.03'  # 15 / 740
 
-    positivos = resultados.tabla_positivos()
-# 
-    # # se ordena de acuerdo al que va ganando
-    # assert list(positivos.keys()) == [o3.partido, o2.partido, o1.partido]
+    assert positivos[o1.partido]['porcentaje_positivos'] == '35.29'  # 240 / 680
+    assert positivos[o1.partido]['porcentaje_validos'] == '33.10'  # 240 / 725
+    assert positivos[o2.partido]['porcentaje_positivos'] == '64.71'  # 440 / 680
+    assert positivos[o2.partido]['porcentaje_validos'] == '60.69'  # 440 / 725
 
-    # Total de votos por partido
-    assert positivos[o1.partido]['votos'] == 240  # 60 + 100 + 80
-    assert positivos[o2.partido]['votos'] == 30 + 40  # 40 + 160 + 240
-
-    assert resultados.total_positivos() == 680  # 240 + 440
-
-    # total_blancos   = resultados.total_blancos()
-
-    # assert total_blancos   == 45    # 5 + 0
-
-    # # cuentas
-    # # (40 + 50) / total_positivos
-    # assert positivos[o3.partido]['porcentaje_positivos'] == '41.86'
-    # # (40 + 50) / total_positivos + total_blanco
-    # assert positivos[o3.partido]['porcentaje_validos'] == '34.62'
-    # # (30 + 40) / total_positivos
-    # assert positivos[o2.partido]['porcentaje_positivos'] == '32.56'
-    # # (30 + 40) / total_positivos + total_blanco
-    # assert positivos[o2.partido]['porcentaje_validos'] == '26.92'
-    # assert positivos[o1.partido]['votos'] == 10 + 20 + 20 + 5
-    # # (20 + 5 + 10 + 20) / total_positivos
-    # assert positivos[o1.partido]['porcentaje_positivos'] == '25.58'
-    # # (20 + 5 + 10 + 20) / total_positivos + total_blanco
-    # assert positivos[o1.partido]['porcentaje_validos'] == '21.15'
-
-    # # todos los positivos suman 100
-    # assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
-
-    # # votos de partido 1 son iguales a los de o1 + o4
-    # assert positivos[o1.partido]['votos'] == sum(
-    #     x['votos'] for x in positivos[o4.partido]['detalle'].values()
-    # )
-
-    # content = response.content.decode('utf8')
-
-    # assert f'<td id="votos_{o1.partido.id}" class="dato">55</td>' in content
-    # assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
-    # assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
-
-    # # Deberíamos visualizar los porcentajes positivos.
-    # assert f'<td id="porcentaje_{o1.partido.id}" class="dato">25.58%</td>' in content
-    # assert f'<td id="porcentaje_{o2.partido.id}" class="dato">32.56%</td>' in content
-    # assert f'<td id="porcentaje_{o3.partido.id}" class="dato">41.86%</td>' in content
-
-    # total_electores = sum(m.electores for m in carta_marina)
-
-    # assert resultados.electores() == total_electores
-    # assert resultados.total_positivos() == 215  # 20 + 30 + 40 + 5 + 20 + 10 + 40 + 50
-    # assert resultados.porcentaje_positivos() == '81.13'
-    # assert resultados.porcentaje_mesas_escrutadas() == '37.50'  # 3 de 8
-    # assert resultados.votantes() == 265
-    # assert resultados.electores_en_mesas_escrutadas() == 320
-    # assert resultados.porcentaje_escrutado() == f'{100 * 320 / total_electores:.2f}'
-    # assert resultados.porcentaje_participacion() == f'{100 * 265/ 320:.2f}'  # Es sobre escrutado.
-
-
-    # columna_datos = [
-    #     ('Electores', resultados.electores()),
-    #     ('Escrutados', resultados.electores_en_mesas_escrutadas()),
-    #     ('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
-    #     ('Votantes', resultados.votantes()),
-    #     ('Positivos', resultados.total_positivos()),
-    #     ('% Participación', f'{resultados.porcentaje_participacion()} %'),
-    # ]
-    # for variable, valor in columna_datos:
-    #     assert f'<td title="{variable}">{valor}</td>' in content
+    # Todos los positivos suman 100
+    assert sum(float(v['porcentaje_positivos']) for v in positivos.values()) == 100.0
