@@ -207,7 +207,7 @@ class Attachment(TimeStampedModel):
         testear más fácilmente
         """
         desde = timezone.now() - timedelta(minutes=wait)
-        qs = cls.objects.select_for_update() if for_update else cls.objects.all()
+        qs = cls.objects.select_for_update(skip_locked=True) if for_update else cls.objects.all()
         qs = qs.filter(
             Q(taken__isnull=True) | Q(taken__lt=desde),
             status='sin_identificar',

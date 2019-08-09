@@ -21,8 +21,8 @@ def siguiente_accion(request):
       cola de carga (siendo X la variable config.COEFICIENTE_IDENTIFICACION_VS_CARGA).
     - caso contrario, no hay nada para hacer
     """
-    attachments = Attachment.sin_identificar(request.user.fiscal)
-    con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente()
+    attachments = Attachment.sin_identificar(request.user.fiscal, for_update=True)
+    con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True)
 
     cant_fotos = attachments.count()
     cant_cargas = con_carga_pendiente.count()
@@ -31,10 +31,10 @@ def siguiente_accion(request):
             cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
         foto = attachments.order_by('?').first()
         if foto:
+            # Se marca el adjunto
+            foto.take(request.user.fiscal)
             return IdentificacionDeFoto(request, foto)
     elif cant_cargas:
-        # La vuelvo a seleccionar pero con for_update.
-        con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True)
         mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
         if mesacategoria:
             # Se marca que se inicia una carga
@@ -55,8 +55,6 @@ class IdentificacionDeFoto():
         self.attachment = attachment
 
     def ejecutar(self):
-        # Se marca el adjunto
-        self.attachment.take(self.request.user.fiscal)
         # Se realiza el redirect
         return redirect('asignar-mesa', attachment_id=self.attachment.id)
 
