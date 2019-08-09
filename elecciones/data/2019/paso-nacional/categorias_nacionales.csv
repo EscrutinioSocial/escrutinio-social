@@ -1,11 +1,11 @@
-aux,partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_codigo,opcion_orden,opcion_nombre,opcion_nombre_corto,tipo,distrito,cargo,id_subcategoriacargo,Alias de lista,Column,partido_orden,categoria_nombre,categoria_slug,categoria_prioridad
-certificado nacional,Movimiento al socialismo,Movimiento al socialismo,13,,13,1,13 Lista 1 A unidad de la izquierda,13 Lista 1 A unidad de la izquierda,Distrital,Distrito Único,Presidente-Vice,,MANUELA JIMENA CASTAÑEIRA,FALSE,109,Presidente-Vice,P,1
-certificado nacional,PARTIDO AUTONOMISTA,PARTIDO AUTONOMISTA,36,,36,2,36 A valores y experiencia,36 A valores y experiencia,Distrital,Distrito Único,Presidente-Vice,,JOSE ANTONIO ROMERO FERIS,FALSE,110,Presidente-Vice,P,1
-certificado nacional,MOVIMIENTO DE ACCIÓN VECINAL,MOVIMIENTO DE ACCIÓN VECINAL,57,,57,3,57 compromiso vecinal lista a,57 compromiso vecinal lista a,Distrital,Distrito Único,Presidente-Vice,,RAUL HUMBERTO ALBARRACIN,FALSE,111,Presidente-Vice,P,1
-certificado nacional,Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,87,,87,4,87 lista a despertar,87 lista a despertar,Distrital,Distrito Único,Presidente-Vice,,JOSE LUIS ESPERT,FALSE,228,Presidente-Vice,P,1
-certificado nacional,frente nos,frente nos,131,,131,5,131 A - Celeste 2019,131 A - Celeste 2019,Distrital,Distrito Único,Presidente-Vice,,JUAN JOSE GOMEZ CENTURION,FALSE,117,Presidente-Vice,P,1
-certificado nacional,frente patriota,frente patriota,132,,132,6,132 A- Celeste,132 A- Celeste,Distrital,Distrito Único,Presidente-Vice,,ALEJANDRO CARLOS BIONDINI,FALSE,112,Presidente-Vice,P,1
-certificado nacional,frente de izquierda de trabajadores,frente de izquierda de trabajadores,133,,133,7,133 Unidad A,133 Unidad A,Distrital,Distrito Único,Presidente-Vice,,NICOLAS DEL CAÑO,FALSE,113,Presidente-Vice,P,1
-certificado nacional,juntos por el cambio,juntos por el cambio,135,,135,8,135 A Juntos Somos el cambio,135 A Juntos Somos el cambio,Distrital,Distrito Único,Presidente-Vice,,MAURICIO MACRI,FALSE,114,Presidente-Vice,P,1
-certificado nacional,frente de todos,frente de todos,136,,136,9,136 A - Celeste y Blanca,136 A - Celeste y Blanca,Distrital,Distrito Único,Presidente-Vice,,ALBERTO ANGEL FERNANDEZ,FALSE,115,Presidente-Vice,P,1
-certificado nacional,consenso federal,consenso federal,137,,137,10,137 A - Consenso para el futuro,137 A - Consenso para el futuro,Distrital,Distrito Único,Presidente-Vice,,ROBERTO LAVAGNA,FALSE,116,Presidente-Vice,P,1
+opcion_codigo,opcion_orden,opcion_nombre,opcion_nombre_corto,partido_nombre,partido_nombre_corto,partido_codigo,partido_color,partido_orden,categoria_nombre,categoria_slug,categoria_prioridad
+13,1,13 Lista 1 A unidad de la izquierda,13 Lista 1 A unidad de la izquierda,Movimiento al socialismo,Movimiento al socialismo,13,,109,Presidente-Vice,P,1
+36,2,36 A valores y experiencia,36 A valores y experiencia,PARTIDO AUTONOMISTA,PARTIDO AUTONOMISTA,36,,110,Presidente-Vice,P,1
+57,3,57 compromiso vecinal lista a,57 compromiso vecinal lista a,MOVIMIENTO DE ACCIÓN VECINAL,MOVIMIENTO DE ACCIÓN VECINAL,57,,111,Presidente-Vice,P,1
+87,4,87 lista a despertar,87 lista a despertar,Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,87,,228,Presidente-Vice,P,1
+131,5,131 A - Celeste 2019,131 A - Celeste 2019,frente nos,frente nos,131,,117,Presidente-Vice,P,1
+132,6,132 A- Celeste,132 A- Celeste,frente patriota,frente patriota,132,,112,Presidente-Vice,P,1
+133,7,133 Unidad A,133 Unidad A,frente de izquierda de trabajadores,frente de izquierda de trabajadores,133,,113,Presidente-Vice,P,1
+135,8,135 A Juntos Somos el cambio,135 A Juntos Somos el cambio,juntos por el cambio,juntos por el cambio,135,,114,Presidente-Vice,P,1
+136,9,136 A - Celeste y Blanca,136 A - Celeste y Blanca,frente de todos,frente de todos,136,,115,Presidente-Vice,P,1
+137,10,137 A - Consenso para el futuro,137 A - Consenso para el futuro,consenso federal,consenso federal,137,,116,Presidente-Vice,P,1
