@@ -468,7 +468,7 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['computo'] = True
+        context['en_base_a_configuracion'] = True
 
         if (self.configuracion_combinada):
             context['configuracion_computo'] = self.configuracion_combinada.nombre

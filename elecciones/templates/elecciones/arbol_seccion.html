@@ -4,7 +4,7 @@
     <li id="seccion-{{seccion.id}}">
         <div class="collapsible-header">
             <i class="material-icons">arrow_drop_down</i>
-            <a href="{{ request.path }}?seccion={{ seccion.id }}{% if not computo %}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}{% endif %}">
+            <a href="{{ request.path }}?seccion={{ seccion.id }}{% if not en_base_a_configuracion %}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}{% endif %}">
                 {{ seccion }}
             </a>
         </div>
@@ -13,7 +13,7 @@
             	{% for circuito in seccion.circuitos.all %}
                 <li id="circuito-{{circuito.id}}">
                     <a
-                        href="{{ request.path }}?circuito={{ circuito.id }}{% if not computo %}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}{% endif %}">
+                        href="{{ request.path }}?circuito={{ circuito.id }}{% if not en_base_a_configuracion %}&tipoDeAgregacion={{tipos_de_agregaciones_seleccionado}}&opcionaConsiderar={{opciones_a_considerar_seleccionado}}{% endif %}">
                         {{ circuito.nombre }}
                     </a>
                 </li>
