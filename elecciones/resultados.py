@@ -597,30 +597,39 @@ class AvanceDeCarga(Sumarizador):
         identificaciones_validas_mesa = Identificacion.objects.filter(mesa=OuterRef('pk'), invalidada=False)
         mesas_con_marca_identificacion = self.mesas_a_considerar.annotate(
             tiene_identificaciones=Exists(identificaciones_validas_mesa))
-        mesas_sin_identificar = mesas_con_marca_identificacion.filter(tiene_identificaciones=False)
+        mesas_sin_identificar = mesas_con_marca_identificacion.filter(
+            tiene_identificaciones=False)
         mesas_en_identificacion = mesas_con_marca_identificacion.filter(
-            tiene_identificaciones=True, attachments__isnull=True)
+            tiene_identificaciones=True, attachments=None)
 
         mesacats_de_la_categoria = MesaCategoria.objects.filter(
             mesa__in=self.mesas_a_considerar,
             categoria=self.categoria
         )
 
+        # como "a cargar" se reportan solamente los que tienen attachments
+        # OJO hay que hacer .exclude(mesa__attachments=None), si el query se arma distinto
+        # se corre el peligro de que una mesa con N attachments con N > 1 (lo que es válido en esta app) cuente N veces.
+        # Carlos Lombardi, 9/8/2019
         mesacats_sin_cargar = mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.sin_cargar) \
-            .filter(mesa__attachments__isnull=False)
+            .exclude(mesa__attachments=None)
 
         mesacats_carga_parcial_sin_consolidar = \
-            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_sin_consolidar) | \
-                mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_consolidada_csv)
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_sin_consolidar) 
 
-        mesacats_carga_parcial_consolidada = \
+        mesacats_carga_parcial_consolidada_csv = \
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_consolidada_csv)
+
+        mesacats_carga_parcial_consolidada_dc = \
             mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_consolidada_dc)
 
         mesacats_carga_total_sin_consolidar = \
-            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_sin_consolidar) | \
-                mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_consolidada_csv)
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_sin_consolidar)
+                
+        mesacats_carga_total_consolidada_csv = \
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_consolidada_csv)
 
-        mesacats_carga_total_consolidada = \
+        mesacats_carga_total_consolidada_dc = \
             mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_consolidada_dc)
 
         mesacats_conflicto_o_problema = \
@@ -636,9 +645,11 @@ class AvanceDeCarga(Sumarizador):
             "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_en_identificacion),
             "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_sin_cargar),
             "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_sin_consolidar),
-            "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada),
+            "carga_parcial_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada_csv),
+            "carga_parcial_consolidada_dc": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada_dc),
             "carga_total_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_sin_consolidar),
-            "carga_total_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_consolidada),
+            "carga_total_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_consolidada_csv),
+            "carga_total_consolidada_dc": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_consolidada_dc),
             "conflicto_o_problema": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_conflicto_o_problema),
             "preidentificaciones": cantidad_preidentificaciones
         })
@@ -657,17 +668,20 @@ class AvanceDeCarga(Sumarizador):
         Lo dejo por eventuales refactors.
         """
         dato_total = DatoTotalAvanceDeCarga().para_valores_fijos(1000, 50000)
-        return AttrDict({
+        resultado_bruto = AttrDict({
             "total": dato_total,
             "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
             "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
             "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(150, 8000),
             "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
-            "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
+            "carga_parcial_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 3000),
+            "carga_parcial_consolidada_dc": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
             "carga_total_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
-            "carga_total_consolidada": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
+            "carga_total_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 3000),
+            "carga_total_consolidada_dc": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
             "conflicto_o_problema": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
         })
+        return AvanceWrapper(resultado_bruto)
 
 
 class DatoAvanceDeCarga():
@@ -732,14 +746,20 @@ class AvanceWrapper():
     def carga_parcial_sin_consolidar(self):
         return self.resultados.carga_parcial_sin_consolidar
 
-    def carga_parcial_consolidada(self):
-        return self.resultados.carga_parcial_consolidada
+    def carga_parcial_consolidada_csv(self):
+        return self.resultados.carga_parcial_consolidada_csv
+
+    def carga_parcial_consolidada_dc(self):
+        return self.resultados.carga_parcial_consolidada_dc
 
     def carga_total_sin_consolidar(self):
         return self.resultados.carga_total_sin_consolidar
 
-    def carga_total_consolidada(self):
-        return self.resultados.carga_total_consolidada
+    def carga_total_consolidada_csv(self):
+        return self.resultados.carga_total_consolidada_csv
+
+    def carga_total_consolidada_dc(self):
+        return self.resultados.carga_total_consolidada_dc
 
     def conflicto_o_problema(self):
         return self.resultados.conflicto_o_problema
