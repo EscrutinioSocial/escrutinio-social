@@ -4,8 +4,9 @@
     <tr><th>circuito</th><td>{{ object.circuito.numero }} {{ object.circuito.nombre}} </td></tr>
     <tr><th>direccion</th><td>{{ object.direccion }}</td></tr>
     <tr><th>ciudad</th><td>{{ object.ciudad }}</td></tr>
-    <tr><th>Electores</th><td>{{ object.electores }}</td></tr>
-
+    {% if mostrar_electores %}
+        <tr><th>Electores</th><td>{{ object.electores }}</td></tr>
+    {% endif %}
 </table>
 
 <a href="{% url 'admin:elecciones_lugarvotacion_change' object.id %}">Editar escuela</a>
