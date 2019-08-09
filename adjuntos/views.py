@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView, FormView
 from django.core.serializers import serialize
 from django.conf import settings
+from django.db import transaction
 
 from sentry_sdk import capture_message
 
@@ -307,11 +308,12 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         if form.is_valid():
             file = files[0]
             fiscal = request.user.fiscal
-            instance = self.procesar_adjunto(file, fiscal)
-            if instance is not None:
-                messages.success(self.request, 'Subiste el acta correctamente.')
-                instance.take(fiscal)
-                return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
+            with transaction.atomic():
+                instance = self.procesar_adjunto(file, fiscal)
+                if instance is not None:
+                    messages.success(self.request, 'Subiste el acta correctamente.')
+                    instance.take(fiscal)
+                    return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
 
             form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
         return self.form_invalid(form)
