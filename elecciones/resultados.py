@@ -108,10 +108,10 @@ class Sumarizador():
         """
         # Es una de TIPOS_DE_AGREGACIONES
         self.tipo_de_agregacion = tipo_de_agregacion
-        
+
         # Es una de OPCIONES_A_CONSIDERAR
         self.opciones_a_considerar = opciones_a_considerar
-        
+
         self.nivel_de_agregacion = nivel_de_agregacion
 
         self.ids_a_considerar = ids_a_considerar
@@ -268,7 +268,6 @@ class Sumarizador():
         Devuelve
             electores: cantidad de electores en las mesas válidas de la categoría
             electores_en_mesas_escrutadas: cantidad de electores en las mesas efectivamente escrutadas
-            porcentaje_mesas_escrutadas:
             votos: diccionario con resultados de votos por partido y opción (positivos y no positivos)
             total_positivos: total votos positivos
             total: total votos (positivos + no positivos)
@@ -287,8 +286,6 @@ class Sumarizador():
         total_mesas_escrutadas = mesas_escrutadas.count()
         total_mesas = mesas.count()
 
-        porcentaje_mesas_escrutadas = porcentaje(total_mesas_escrutadas, total_mesas)
-
         # 2) Electores.
 
         electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
@@ -301,7 +298,6 @@ class Sumarizador():
         return AttrDict({
             "total_mesas": total_mesas,
             "total_mesas_escrutadas": total_mesas_escrutadas,
-            "porcentaje_mesas_escrutadas": porcentaje_mesas_escrutadas,
             "electores": electores,
             "electores_en_mesas_escrutadas": electores_en_mesas_escrutadas,
             "votos_positivos": votos_positivos,
@@ -333,6 +329,72 @@ class ResultadosBase():
         return dict(self.resultados)
 
     @lru_cache(128)
+    def tabla_positivos(self):
+        """
+        Devuelve toda la información sobre los votos positivos para mostrar.
+        Para cada partido incluye:
+            - votos: total de votos del partido
+            - detalle: los votos de cada opción dentro del partido (recordar que
+              es una PASO).
+                Para cada opción incluye:
+                    - votos: cantidad de votos para esta opción.
+                    - porcentaje: porcentaje sobre el total del del partido.
+                    - porcentaje_positivos: porcentaje sobre el total de votos
+                      positivos.
+                    - porcentaje_validos: porcentaje sobre el total de votos
+                      positivos y en blanco.
+                    - porcentaje_total: porcentaje sobre el total de votos.
+        """
+        votos_positivos = {}
+        blancos = self.total_blancos() if self.total_blancos() != '-' else 0
+        for partido, votos_por_opcion in self.resultados.votos_positivos.items():
+            total_partido = sum(filter(None, votos_por_opcion.values()))
+            votos_positivos[partido] = {
+                'votos': total_partido,
+                'porcentaje_positivos': porcentaje(total_partido, self.total_positivos()),
+                'porcentaje_validos': porcentaje(total_partido, self.total_positivos() + blancos),
+                'porcentaje_total': porcentaje(total_partido, self.votantes()),
+                'detalle': {
+                    opcion: {
+                        'votos': votos_opcion,
+                        'porcentaje': porcentaje(votos_opcion, total_partido),
+                        'porcentaje_positivos': porcentaje(votos_opcion, self.total_positivos()),
+                        'porcentaje_validos': porcentaje(votos_opcion, self.total_positivos() + blancos),
+                        'porcentaje_total': porcentaje(votos_opcion, self.votantes()),
+                    }
+                    for opcion, votos_opcion in votos_por_opcion.items()
+                }
+            }
+
+        return OrderedDict(
+            sorted(votos_positivos.items(), key=lambda partido: float(partido[1]["votos"]), reverse=True)
+        )
+
+    @lru_cache(128)
+    def tabla_no_positivos(self):
+        """
+        Devuelve un diccionario con la cantidad de votos para cada una de las opciones no positivas.
+        Incluye a todos los positivos agrupados como una única opción adicional.
+        También incluye porcentajes calculados sobre el total de votos de la mesa.
+        """
+        # TODO Falta un criterio de ordenamiento para las opciones no positivas.
+        tabla_no_positivos = {
+            nombre_opcion: {
+                "votos": votos,
+                "porcentaje_total": porcentaje(votos, self.votantes())
+            }
+            for nombre_opcion, votos in self.resultados.votos_no_positivos.items()
+        }
+
+        # Esta key es especial porque la vista la muestra directamente en pantalla.
+        tabla_no_positivos[settings.KEY_VOTOS_POSITIVOS] = {
+            "votos": self.total_positivos(),
+            "porcentaje_total": porcentaje(self.total_positivos(), self.votantes())
+        }
+
+        return tabla_no_positivos
+
+    @lru_cache(128)
     def votantes(self):
         """
         Total de personas que votaron.
@@ -346,7 +408,7 @@ class ResultadosBase():
         return self.resultados.electores_en_mesas_escrutadas
 
     def porcentaje_mesas_escrutadas(self):
-        return self.resultados.porcentaje_mesas_escrutadas
+        return porcentaje(self.total_mesas_escrutadas(), self.total_mesas())
 
     def porcentaje_escrutado(self):
         return porcentaje(self.resultados.electores_en_mesas_escrutadas, self.resultados.electores)
@@ -428,84 +490,44 @@ class Resultados(ResultadosBase):
             if opcion not in (nombre_opcion_total, nombre_opcion_sobres)
         )
 
-    @lru_cache(128)
-    def tabla_positivos(self):
-        """
-        Devuelve toda la información sobre los votos positivos para mostrar.
-        Para cada partido incluye:
-            - votos: total de votos del partido
-            - detalle: los votos de cada opción dentro del partido (recordar que
-              es una PASO).
-                Para cada opción incluye:
-                    - votos: cantidad de votos para esta opción.
-                    - porcentaje: porcentaje sobre el total del del partido.
-                    - porcentaje_positivos: porcentaje sobre el total de votos
-                      positivos.
-                    - porcentaje_validos: porcentaje sobre el total de votos
-                      positivos y en blanco.
-                    - porcentaje_total: porcentaje sobre el total de votos.
-        """
-        votos_positivos = {}
-        blancos = self.total_blancos() if self.total_blancos() != '-' else 0
-        for partido, votos_por_opcion in self.resultados.votos_positivos.items():
-            total_partido = sum(filter(None, votos_por_opcion.values()))
-            votos_positivos[partido] = {
-                'votos': total_partido,
-                'porcentaje_positivos': porcentaje(total_partido, self.total_positivos()),
-                'porcentaje_validos': porcentaje(total_partido, self.total_positivos() + blancos),
-                'porcentaje_total': porcentaje(total_partido, self.votantes()),
-                'detalle': {
-                    opcion: {
-                        'votos': votos_opcion,
-                        'porcentaje': porcentaje(votos_opcion, total_partido),
-                        'porcentaje_positivos': porcentaje(votos_opcion, self.total_positivos()),
-                        'porcentaje_validos': porcentaje(votos_opcion, self.total_positivos() + blancos),
-                        'porcentaje_total': porcentaje(votos_opcion, self.votantes()),
-                    }
-                    for opcion, votos_opcion in votos_por_opcion.items()
-                }
-            }
-
-        return OrderedDict(
-            sorted(votos_positivos.items(), key=lambda partido: float(partido[1]["votos"]), reverse=True)
-        )
-
-    @lru_cache(128)
-    def tabla_no_positivos(self):
-        """
-        Devuelve un diccionario con la cantidad de votos para cada una de las opciones no positivas.
-        Incluye a todos los positivos agrupados como una única opción adicional.
-        También incluye porcentajes calculados sobre el total de votos de la mesa.
-        """
-        # TODO Falta un criterio de ordenamiento para las opciones no positivas.
-        tabla_no_positivos = {
-            nombre_opcion: {
-                "votos": votos,
-                "porcentaje_total": porcentaje(votos, self.votantes())
-            }
-            for nombre_opcion, votos in self.resultados.votos_no_positivos.items()
-        }
-
-        # Esta key es especial porque la vista la muestra directamente en pantalla.
-        tabla_no_positivos[settings.KEY_VOTOS_POSITIVOS] = {
-            "votos": self.total_positivos(),
-            "porcentaje_total": porcentaje(self.total_positivos(), self.votantes())
-        }
-
-        return tabla_no_positivos
-
 
 class ResultadoCombinado(ResultadosBase):
     _total_positivos = 0
     _total_no_positivos = 0
 
     def __init__(self):
-        super().__init__(AttrDict())
+        super().__init__(AttrDict({
+            "total_mesas": 0,
+            "total_mesas_escrutadas": 0,
+            "electores": 0,
+            "electores_en_mesas_escrutadas": 0,
+            # "votos_positivos": votos_positivos,
+            # "votos_no_positivos": votos_no_positivos,
+
+            'votos_no_positivos': {opcion['nombre']: 0 for opcion in [
+                settings.OPCION_BLANCOS,
+                settings.OPCION_NULOS,
+                settings.OPCION_TOTAL_VOTOS,
+                settings.OPCION_TOTAL_SOBRES,
+            ]}
+        }))
 
     def __add__(self, other):
         self._total_positivos += other.total_positivos()
         self._total_no_positivos += other.total_no_positivos()
-        self.resultados = other.resultados
+
+        # Sumar los votos no positivos
+        self.resultados.votos_no_positivos = {
+            key: value + other.resultados.votos_no_positivos.get(key, 0)
+            for key, value in self.resultados.votos_no_positivos.items()
+        }
+
+        # Sumar el resto de los atributos en resultados
+        for attr in ['total_mesas', 'total_mesas_escrutadas', 'electores', 'electores_en_mesas_escrutadas']:
+            self.resultados[attr] += other.resultados[attr]
+
+        # TODO falta pasar agrupaciones no consideradas
+
         return self
 
     def total_positivos(self):
