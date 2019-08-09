@@ -1,7 +1,7 @@
 from django.urls import reverse
 from http import HTTPStatus
 
-from elecciones.tests.test_resultados import fiscal_client, setup_groups
+from elecciones.tests.conftest import fiscal_client, setup_groups
 from elecciones.tests.factories import (
     FiscalFactory,
     SeccionFactory,

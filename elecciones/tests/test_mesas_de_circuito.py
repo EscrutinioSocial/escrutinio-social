@@ -7,9 +7,9 @@ from adjuntos.consolidacion import consumir_novedades_identificacion
 from elecciones.models import (
     MesaCategoria,
     Carga,
-    Opcion
+    Opcion,
+    OPCIONES_A_CONSIDERAR,
 )
-from elecciones.resultados import Sumarizador
 from elecciones.tests.factories import (
     CargaFactory,
     CategoriaFactory,
@@ -17,7 +17,7 @@ from elecciones.tests.factories import (
     MesaFactory,
     VotoMesaReportadoFactory,
 )
-from elecciones.tests.test_resultados import (
+from elecciones.tests.conftest import (
     fiscal_client,
     setup_groups,
     carta_marina
@@ -161,7 +161,7 @@ def test_mesa_de_circuito__url_mesa_con_resultados(carta_marina, fiscal_client):
     query_string_mesa_1 = (
         f'?mesa={mesa1.id}&circuito={mesa1.circuito.id}'
         '&tipoDeAgregacion=todas_las_cargas'
-        f'&opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
+        f'&opcionaConsiderar={OPCIONES_A_CONSIDERAR.prioritarias}'
         )
     url_mesa_1 = reverse('mesas-circuito', args=[categoria.id]) + query_string_mesa_1
     response = fiscal_client.get(url_mesa_1)
