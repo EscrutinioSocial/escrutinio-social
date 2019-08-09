@@ -499,17 +499,22 @@ class AvanceDeCarga(Sumarizador):
         identificaciones_validas_mesa = Identificacion.objects.filter(mesa=OuterRef('pk'), invalidada=False)
         mesas_con_marca_identificacion = self.mesas_a_considerar.annotate(
             tiene_identificaciones=Exists(identificaciones_validas_mesa))
-        mesas_sin_identificar = mesas_con_marca_identificacion.filter(tiene_identificaciones=False)
+        mesas_sin_identificar = mesas_con_marca_identificacion.filter(
+            tiene_identificaciones=False)
         mesas_en_identificacion = mesas_con_marca_identificacion.filter(
-            tiene_identificaciones=True, attachments__isnull=True)
+            tiene_identificaciones=True, attachments=None)
 
         mesacats_de_la_categoria = MesaCategoria.objects.filter(
             mesa__in=self.mesas_a_considerar,
             categoria=self.categoria
         )
 
+        # como "a cargar" se reportan solamente los que tienen attachments
+        # OJO hay que hacer .exclude(mesa__attachments=None), si el query se arma distinto
+        # se corre el peligro de que una mesa con N attachments con N > 1 (lo que es válido en esta app) cuente N veces.
+        # Carlos Lombardi, 9/8/2019
         mesacats_sin_cargar = mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.sin_cargar) \
-            .filter(mesa__attachments__isnull=False)
+            .exclude(mesa__attachments=None)
 
         mesacats_carga_parcial_sin_consolidar = \
             mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_sin_consolidar) 
