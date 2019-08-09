@@ -33,8 +33,12 @@ def siguiente_accion(request):
         if foto:
             return IdentificacionDeFoto(request, foto)
     elif cant_cargas:
+        # La vuelvo a seleccionar pero con for_update.
+        con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True)
         mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
         if mesacategoria:
+            # Se marca que se inicia una carga
+            mesacategoria.take(request.user.fiscal)
             return CargaCategoriaEnActa(request, mesacategoria)
     return NoHayAccion(request)
 
@@ -70,8 +74,6 @@ class CargaCategoriaEnActa():
         self.mc = mc
 
     def ejecutar(self):
-        # Se marca que se inicia una carga
-        self.mc.take(self.request.user.fiscal)
         if (
             self.mc.categoria.requiere_cargas_parciales and
             self.mc.status in [
@@ -80,7 +82,7 @@ class CargaCategoriaEnActa():
                     MesaCategoria.STATUS.parcial_en_conflicto,
                     MesaCategoria.STATUS.parcial_consolidada_csv,
                 ]):
-            # solo si la categoria requiere parciales y las parciales no estan consolidadas
+            # Sólo si la categoría requiere parciales y las parciales no están consolidadas.
             return redirect('carga-parcial', mesacategoria_id=self.mc.id)
         return redirect('carga-total', mesacategoria_id=self.mc.id)
 
