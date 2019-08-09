@@ -1,0 +1,30 @@
+{% extends "elecciones/resultados.html" %}
+{% load staticfiles %}
+
+{% block title %}Resultados{% endblock %}
+{% block page_title %}Resultados para {{para|default:para}}{% endblock %}
+{% block breadcrumbs %}
+<nav class="filtros">
+  <div class="row">
+  {% if configuracion_computo %}
+      <div class="col s12">
+        <label>Configuración de computos combinada</label>
+        <span>{{configuracion_computo}}</span>
+      </div>
+    {% else %}
+      <div class="col s3">
+        <label>Tipo de agregación</label>
+        <span>{{tipo_de_agregacion}}</span>
+      </div>
+      <div class="col s3">
+        <label>Opción a considerar</label>
+        <span>{{opciones}}</span>
+      </div>
+      <div class="col s3">
+        <label>Tipo de proyeccion</label>
+        <span>{{tecnica_de_proyeccion}}</span>
+      </div>
+    {% endif %}
+  </div>
+</nav>
+{% endblock %}

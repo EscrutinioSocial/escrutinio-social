@@ -16,7 +16,7 @@ from elecciones.tests.factories import (
 )
 from constance.test import override_config
 
-from elecciones.tests.test_resultados import fiscal_client, setup_groups    # noqa
+from elecciones.tests.conftest import fiscal_client, setup_groups    # noqa
 from elecciones.models import Carga, MesaCategoria, Opcion
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion, consumir_novedades_carga

@@ -1,8 +1,7 @@
-import pytest
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
-from elecciones.models import Categoria, MesaCategoria, Carga, Seccion, Opcion
+from elecciones.models import Categoria, MesaCategoria, Carga, Seccion, Opcion, OPCIONES_A_CONSIDERAR
 
 from .factories import (
     UserFactory,
@@ -11,85 +10,16 @@ from .factories import (
     SeccionFactory,
     FiscalFactory,
     OpcionFactory,
-    CircuitoFactory,
     MesaFactory,
     MesaCategoriaFactory,
     IdentificacionFactory,
     VotoMesaReportadoFactory,
     CargaFactory,
-    TecnicaProyeccionFactory,
-    AgrupacionCircuitosFactory,
 )
 from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
 from .test_models import consumir_novedades_y_actualizar_objetos
-from elecciones.resultados import Sumarizador
-
-
-def tecnica_proyeccion(minimo_mesas=1):
-    """
-    Crea una técnica de proyección para las mesas existentes, agrupadas por sección.
-    """
-    proyeccion = TecnicaProyeccionFactory()
-    for seccion in Seccion.objects.all():
-        AgrupacionCircuitosFactory(
-            nombre=seccion.nombre,
-            proyeccion=proyeccion,
-            minimo_mesas=minimo_mesas
-        ).circuitos.set(seccion.circuitos.all())
-
-    return proyeccion
-
-
-def cargar_votos(carga, votos):
-    for opcion, cant_votos in votos.items():
-        VotoMesaReportadoFactory(opcion=opcion, carga=carga, votos=cant_votos)
-    carga.actualizar_firma()
-
-
-@pytest.fixture()
-def carta_marina(db):
-    """
-    1 distrito, 2 secciones con 2 circuitos y 2 mesas por circuito
-    """
-    s1, s2 = SeccionFactory.create_batch(2)
-    c1, c2 = CircuitoFactory.create_batch(2, seccion=s1)
-    c3, c4 = CircuitoFactory.create_batch(2, seccion=s2)
-    return (
-        MesaFactory(numero=1, lugar_votacion__circuito=c1, electores=100),
-        MesaFactory(numero=2, lugar_votacion__circuito=c1, electores=100),
-        MesaFactory(numero=3, lugar_votacion__circuito=c2, electores=120),
-        MesaFactory(numero=4, lugar_votacion__circuito=c2, electores=120),
-        MesaFactory(numero=5, lugar_votacion__circuito=c3, electores=90),
-        MesaFactory(numero=6, lugar_votacion__circuito=c3, electores=90),
-        MesaFactory(numero=7, lugar_votacion__circuito=c4, electores=90),
-        MesaFactory(numero=8, lugar_votacion__circuito=c4, electores=90),
-    )
-
-
-@pytest.fixture()
-def setup_groups(db, admin_user):
-    groups = [
-        'validadores', 'unidades basicas', 'visualizadores', 'supervisores', 'fiscales con acceso al bot',
-        'visualizadores_sensible'
-    ]
-    for nombre in groups:
-        g = Group.objects.create(name=nombre)
-        admin_user.groups.add(g)
-
-
-@pytest.fixture()
-def fiscal_client(db, admin_user, setup_groups, client):
-    """A Django test client logged in as an admin user."""
-    FiscalFactory(user=admin_user)
-    client.login(username=admin_user.username, password='password')
-    return client
-
-
-@pytest.fixture()
-def url_resultados(carta_marina):
-    c = CategoriaFactory(nombre='default')
-    return reverse('resultados-categoria', args=[c.id])
+from .utils import tecnica_proyeccion, cargar_votos
 
 
 def test_resultados_pide_login(db, client, url_resultados):
@@ -242,7 +172,7 @@ def test_resultados_parciales_generales(carta_marina, url_resultados, fiscal_cli
     assert c3.es_testigo.exists()
 
     response = fiscal_client.get(
-        url_resultados + f'?opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
+        url_resultados + f'?opcionaConsiderar={OPCIONES_A_CONSIDERAR.prioritarias}'
     )
     resultados = response.context['resultados']
 
@@ -383,7 +313,7 @@ def test_resultados_parciales_paso(carta_marina, url_resultados, fiscal_client):
     assert c3.es_testigo.exists()
 
     response = fiscal_client.get(
-        url_resultados + f'?opcionaConsiderar={Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias}'
+        url_resultados + f'?opcionaConsiderar={OPCIONES_A_CONSIDERAR.prioritarias}'
     )
     resultados = response.context['resultados']
 

@@ -1,4 +1,3 @@
-import itertools
 from urllib import parse
 
 from django.conf import settings
@@ -11,6 +10,7 @@ from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from djgeojson.views import GeoJSONLayerView
 from django.contrib.auth.mixins import AccessMixin
+from constance import config
 
 import django_excel as excel
 
@@ -21,10 +21,17 @@ from .models import (
     Categoria,
     LugarVotacion,
     Mesa,
+    ConfiguracionComputo,
+    ConfiguracionComputoDistrito,
+    OPCIONES_A_CONSIDERAR,
+    TIPOS_DE_AGREGACIONES,
+    NIVELES_AGREGACION,
+    NIVELES_DE_AGREGACION,
 )
-from .resultados import Sumarizador, Proyecciones, AvanceDeCarga
+from .resultados import Proyecciones, AvanceDeCarga, NIVEL_DE_AGREGACION, create_sumarizador
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
+
 
 class StaffOnlyMixing:
     """
@@ -121,9 +128,9 @@ class Mapa(StaffOnlyMixing, TemplateView):
         return context
 
 
-class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
+class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
     """
-    Vista principal para el cálculo de resultados
+    Clase base para subclasear vistas de resultados
     """
 
     template_name = "elecciones/resultados.html"
@@ -135,69 +142,13 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        nivel_de_agregacion = None
-        ids_a_considerar = None
-        for nivel in ['mesa', 'lugar_de_votacion', 'circuito', 'seccion', 'seccion_politica', 'distrito']:
-            if nivel in self.request.GET:
-                nivel_de_agregacion = nivel
-                ids_a_considerar = self.request.GET.getlist(nivel)
-
-        parametros_sumarizacion = [
-            self.get_tipo_de_agregacion(),
-            self.get_opciones_a_considerar(),
-            nivel_de_agregacion,
-            ids_a_considerar,
-        ]
-
-        tecnica_de_proyeccion = next((tecnica for tecnica in Proyecciones.tecnicas_de_proyeccion()
-                                     if str(tecnica.id) == self.get_tecnica_de_proyeccion()), None)
-
-        self.sumarizador = (
-            Proyecciones(tecnica_de_proyeccion, *parametros_sumarizacion)
-            if tecnica_de_proyeccion
-            else Sumarizador(*parametros_sumarizacion)
-        )
-
+        self.sumarizador = self.create_sumarizador()
         self.ocultar_sensibles = not request.user.fiscal.esta_en_grupo('visualizadores_sensible')
 
         return super().get(request, *args, **kwargs)
 
-    def get_template_names(self):
-        return [self.kwargs.get("template_name", self.template_name)]
-
-    def get_resultados(self, categoria):
-        return self.sumarizador.get_resultados(categoria)
-
-    def get_tipo_de_agregacion(self):
-        # TODO el default también está en Sumarizador.__init__
-        return self.request.GET.get('tipoDeAgregacion', Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas)
-
-    def get_opciones_a_considerar(self):
-        # TODO el default también está en Sumarizador.__init__
-        return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
-
-    def get_tecnica_de_proyeccion(self):
-        return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
-
-    def get_tecnicas_de_proyeccion(self):
-        return [settings.SIN_PROYECCION] + [(str(tecnica.id), tecnica.nombre)
-                                            for tecnica in Proyecciones.tecnicas_de_proyeccion()]
-
-    def get_plot_data(self, resultados):
-        return [{
-            'key': str(k),
-            'y': v["votos"],
-            'color': k.color if not isinstance(k, str) else '#CCCCCC'
-        } for k, v in resultados.tabla_positivos().items()]
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tipos_de_agregaciones'] = Sumarizador.TIPOS_DE_AGREGACIONES
-        context['tipos_de_agregaciones_seleccionado'] = self.get_tipo_de_agregacion()
-        context['opciones_a_considerar'] = Sumarizador.OPCIONES_A_CONSIDERAR
-        context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
-        context['tecnicas_de_proyeccion'] = self.get_tecnicas_de_proyeccion()
-        context['tecnicas_de_proyeccion_seleccionado'] = self.get_tecnica_de_proyeccion()
 
         if self.sumarizador.filtros:
             context['para'] = get_text_list([
@@ -242,6 +193,71 @@ class ResultadosCategoria(VisualizadoresOnlyMixin, TemplateView):
 
         context['categorias'] = categorias.order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('numero')
+        return context
+
+    def create_sumarizador(self):
+        return create_sumarizador(
+            parametros_sumarizacion=[
+                self.get_tipo_de_agregacion(),
+                self.get_opciones_a_considerar(),
+                *self.get_filtro_por_nivel()
+            ],
+            tecnica_de_proyeccion=next(
+                (tecnica for tecnica in Proyecciones.tecnicas_de_proyeccion()
+                 if str(tecnica.id) == self.get_tecnica_de_proyeccion()), None)
+        )
+
+    def get_filtro_por_nivel(self):
+        nivel_de_agregacion = None
+        ids_a_considerar = None
+        for nivel in reversed(NIVELES_AGREGACION):
+            if nivel in self.request.GET:
+                nivel_de_agregacion = nivel
+                ids_a_considerar = self.request.GET.getlist(nivel)
+
+        return (nivel_de_agregacion, ids_a_considerar)
+
+    def get_template_names(self):
+        return [self.kwargs.get("template_name", self.template_name)]
+
+    def get_resultados(self, categoria):
+        return self.sumarizador.get_resultados(categoria)
+
+    def get_tipo_de_agregacion(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('tipoDeAgregacion', TIPOS_DE_AGREGACIONES.todas_las_cargas)
+
+    def get_opciones_a_considerar(self):
+        # TODO el default también está en Sumarizador.__init__
+        return self.request.GET.get('opcionaConsiderar', OPCIONES_A_CONSIDERAR.todas)
+
+    def get_tecnica_de_proyeccion(self):
+        return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
+
+    def get_tecnicas_de_proyeccion(self):
+        return [settings.SIN_PROYECCION] + [(str(tecnica.id), tecnica.nombre)
+                                            for tecnica in Proyecciones.tecnicas_de_proyeccion()]
+
+    def get_plot_data(self, resultados):
+        return [{
+            'key': str(k),
+            'y': v["votos"],
+            'color': k.color if not isinstance(k, str) else '#CCCCCC'
+        } for k, v in resultados.tabla_positivos().items()]
+
+
+class ResultadosCategoria(ResultadosCategoriaBase):
+    """
+    Vista principal para el cálculo de resultados
+    """
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tipos_de_agregaciones'] = TIPOS_DE_AGREGACIONES
+        context['tipos_de_agregaciones_seleccionado'] = self.get_tipo_de_agregacion()
+        context['opciones_a_considerar'] = OPCIONES_A_CONSIDERAR
+        context['opciones_a_considerar_seleccionado'] = self.get_opciones_a_considerar()
+        context['tecnicas_de_proyeccion'] = self.get_tecnicas_de_proyeccion()
+        context['tecnicas_de_proyeccion_seleccionado'] = self.get_tecnica_de_proyeccion()
         return context
 
 
@@ -336,10 +352,9 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-
         nivel_de_agregacion = None
         ids_a_considerar = None
-        for nivel in ['mesa', 'lugar_de_votacion', 'circuito', 'seccion', 'seccion_politica', 'distrito']:
+        for nivel in reversed(NIVELES_AGREGACION):
             if nivel in self.request.GET:
                 nivel_de_agregacion = nivel
                 ids_a_considerar = self.request.GET.getlist(nivel)
@@ -355,11 +370,11 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
 
     def get_tipo_de_agregacion(self):
         # TODO el default también está en Sumarizador.__init__
-        return self.request.GET.get('tipoDeAgregacion', Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas)
+        return self.request.GET.get('tipoDeAgregacion', TIPOS_DE_AGREGACIONES.todas_las_cargas)
 
     def get_opciones_a_considerar(self):
         # TODO el default también está en Sumarizador.__init__
-        return self.request.GET.get('opcionaConsiderar', Sumarizador.OPCIONES_A_CONSIDERAR.todas)
+        return self.request.GET.get('opcionaConsiderar', OPCIONES_A_CONSIDERAR.todas)
 
     def get_tecnica_de_proyeccion(self):
         return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
@@ -389,3 +404,86 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('nombre')
         return context
+
+
+class ResultadosComputoCategoria(ResultadosCategoriaBase):
+
+    template_name = "elecciones/resultados_computo.html"
+
+    def dispatch(self, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            return redirect('resultados-en-base-a-configuración', pk=Categoria.objects.first().id)
+        return super().dispatch(*args, **kwargs)
+
+    def create_sumarizador(self):
+        """
+        Crea un sumarizador basado en una configuración guardada en la base
+        """
+        nivel_de_agregacion, ids_a_considerar = self.get_filtro_por_nivel()
+        fiscal = self.request.user.fiscal
+
+        # Tenemos que considerar todo el país.
+        if nivel_de_agregacion is None or ids_a_considerar is None or len(ids_a_considerar) > 1:
+            # Configuracion por fiscal, ponele que usamos la primera que tenga.
+            configuracion_combinada = ConfiguracionComputo.objects.filter(fiscal=fiscal).first()
+
+            # Si no tiene ninguna, usamos la global.
+            if configuracion_combinada is None:
+                configuracion_combinada = ConfiguracionComputo.objects.first()
+
+            self.configuracion_combinada = configuracion_combinada
+            return create_sumarizador(configuracion_combinada=configuracion_combinada)
+        else:
+            self.configuracion_combinada = None
+
+        # Recién ahora averiguamos cómo computar:
+        entidad = NIVEL_DE_AGREGACION[nivel_de_agregacion].objects.get(id=ids_a_considerar[0])
+        distrito = entidad if nivel_de_agregacion == NIVELES_DE_AGREGACION.distrito else entidad.distrito
+
+        # Configuracion por fiscal, ponele que usamos la primera que tenga.
+        # Si no tiene ninguna, usamos la global.
+        configuracion_distrito = ConfiguracionComputoDistrito.objects.filter(
+                configuracion__fiscal=fiscal,
+                distrito=distrito
+        ).first()
+
+        if configuracion_distrito is None:
+            configuracion_distrito = ConfiguracionComputoDistrito.objects.filter(
+                configuracion__nombre=config.CONFIGURACION_COMPUTO_PUBLICA,
+                distrito=distrito
+            ).first()
+
+        self.agregacion = configuracion_distrito.agregacion
+        self.opciones = configuracion_distrito.opciones
+        self.tecnica_de_proyeccion = configuracion_distrito.proyeccion
+
+        return create_sumarizador(
+            parametros_sumarizacion=[
+                nivel_de_agregacion,
+                ids_a_considerar,
+            ],
+            configuracion_distrito=configuracion_distrito,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['en_base_a_configuracion'] = True
+
+        if (self.configuracion_combinada):
+            context['configuracion_computo'] = self.configuracion_combinada.nombre
+        else:
+            context['tipo_de_agregacion'] = TIPOS_DE_AGREGACIONES[self.agregacion]
+            context['opciones'] = OPCIONES_A_CONSIDERAR[self.opciones]
+            context['tecnica_de_proyeccion'] = self.tecnica_de_proyeccion
+
+        return context
+
+    def get_tipo_de_agregacion(self):
+        return self.agregacion
+
+    def get_opciones_a_considerar(self):
+        return self.opciones
+
+    def get_tecnica_de_proyeccion(self):
+        return self.tecnica_de_proyeccion

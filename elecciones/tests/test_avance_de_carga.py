@@ -1,5 +1,5 @@
-import pytest
-from elecciones.models import MesaCategoria, Carga, Eleccion
+from elecciones.models import MesaCategoria, Carga, NIVELES_DE_AGREGACION
+
 from elecciones.tests.factories import (
     CargaFactory,
     CategoriaFactory,
@@ -7,7 +7,6 @@ from elecciones.tests.factories import (
     FiscalFactory,
     AttachmentFactory,
     IdentificacionFactory,
-    OpcionFactory,
     UserFactory,
     VotoMesaReportadoFactory,
     CircuitoFactory, SeccionFactory, LugarVotacionFactory, MesaFactory,
@@ -243,7 +242,7 @@ def test_avance_de_carga_dos_circuitos(db, settings):
     consumir_novedades_carga()
 
     # resultados circuito 1
-    vorwaerts = AvanceDeCarga(Eleccion.NIVELES_AGREGACION.circuito, [circuito_1.id])
+    vorwaerts = AvanceDeCarga(NIVELES_DE_AGREGACION.circuito, [circuito_1.id])
     # categoría pv
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
@@ -260,7 +259,7 @@ def test_avance_de_carga_dos_circuitos(db, settings):
     verificar_resultado(resultados.carga_parcial_consolidada(), 2, 210, 20, 14.48)
 
     # resultados circuito 2
-    vorwaerts = AvanceDeCarga(Eleccion.NIVELES_AGREGACION.circuito, [circuito_2.id])
+    vorwaerts = AvanceDeCarga(NIVELES_DE_AGREGACION.circuito, [circuito_2.id])
     # categoría pv
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 20, 4000, 100, 100)

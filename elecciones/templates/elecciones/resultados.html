@@ -50,7 +50,7 @@
  {% endblock %}
 
 {% block sidenav_items %}
-<li><a href="{% url "resultados-categoria" primera_categoria %}">Todo el país</a></li>
+<li><a href="{% if not en_base_a_configuracion %}{% url "resultados-categoria" primera_categoria %}{% else %}{% url "resultados-en-base-a-configuración" primera_categoria %}{% endif %}">Todo el país</a></li>
 {% include "elecciones/arbol_distrito.html" %}
 {% endblock %}
 

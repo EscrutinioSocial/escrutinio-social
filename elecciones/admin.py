@@ -20,6 +20,8 @@ from .models import (
     TecnicaProyeccion,
     AgrupacionCircuitos,
     AgrupacionCircuito,
+    ConfiguracionComputo,
+    ConfiguracionComputoDistrito,
 )
 from .forms import CategoriaForm, SeccionForm
 from django.http import HttpResponseRedirect
@@ -306,6 +308,12 @@ class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     es_testigo.boolean = True
 
 
+class ConfiguracionComputoDistritoInline(admin.TabularInline):
+    model = ConfiguracionComputoDistrito
+    
+class ConfiguracionComputoAdmin(admin.ModelAdmin):
+    inlines = (ConfiguracionComputoDistritoInline, )
+
 admin.site.register(Eleccion)
 admin.site.register(Carga, CargaAdmin)
 admin.site.register(Distrito, DistritoAdmin)
@@ -322,3 +330,4 @@ admin.site.register(Categoria, CategoriaAdmin)
 admin.site.register(CategoriaOpcion, CategoriaOpcionAdmin)
 admin.site.register(TecnicaProyeccion, TecnicaProyeccionAdmin)
 admin.site.register(AgrupacionCircuitos, AgrupacionCircuitosAdmin)
+admin.site.register(ConfiguracionComputo, ConfiguracionComputoAdmin)
