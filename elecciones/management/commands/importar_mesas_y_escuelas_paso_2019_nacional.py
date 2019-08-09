@@ -39,12 +39,13 @@ class Command(BaseCommand):
     help = "Importar escuelas"
 
     def handle(self, *args, **options):
+        verbosity = int(options['verbosity'])
         fecha = datetime.datetime(2019, 5, 12, 8, 0)
 
         reader = DictReader(CSV.open())
 
         for c, row in enumerate(reader, 1):
-            print(row['distrito_nro'], row['seccion_nro'], row['circuito_nro'], row['escuela_nro'])
+            if verbosity>0: print(row['distrito_nro'], row['seccion_nro'], row['circuito_nro'], row['escuela_nro'])
             nro_distrito = row['distrito_nro']
             nro_seccion = row['seccion_nro']
             try:
@@ -57,43 +58,47 @@ class Command(BaseCommand):
                 self.warning('No existe la sección %s en el distrito %s.' % (nro_seccion, nro_distrito))
             except Circuito.DoesNotExist:
                 self.warning('No existe el circuito %s' % row)
-
-            escuela, created = LugarVotacion.objects.update_or_create(
-                circuito=circuito,
-                nombre=row['escuela'],
-                direccion=row['direccion'],
-                numero=row['escuela_nro'],
-                ciudad=row['localidad'] or '',
-#                barrio=row['Barrio'] or ''
-                )
-
-#            escuela.electores = int(row['electores']) #no los tenemos aca
-            
-            coordenadas = [to_float(row['longitud']), to_float(row['latitud'])]
-            if coordenadas[0] and coordenadas[1]:
-                geom = {'type': 'Point', 'coordinates': coordenadas}
-                if row['estado_geolocalizacion'] == 'Match':
-                    estado_geolocalizacion = 9
-                elif row['estado_geolocalizacion'] == 'Partial Match':
-                    estado_geolocalizacion = 5
             else:
-                geom = None
-                estado_geolocalizacion = 0
-            escuela.geom = geom
-            escuela.estado_geolocalizacion = estado_geolocalizacion
-            escuela.save()
 
-            self.log(escuela, created)
+                escuela, created = LugarVotacion.objects.update_or_create(
+                    circuito=circuito,
+                    nombre=row['escuela'],
+                    direccion=row['direccion'],
+                    numero=row['escuela_nro'],
+                    ciudad=row['localidad'] or '',
+        #                barrio=row['Barrio'] or ''
+                    )
 
-            for mesa_nro in range(int(row['desde']), int(row['hasta']) + 1):
-            #ojo habia caso mesas con numeros no consecutivos - prever
-            #tal vez agregar las mesas en otra instancia y solo guardar los valores
-                mesa, created = Mesa.objects.update_or_create(numero=mesa_nro,lugar_votacion=escuela,circuito=circuito)  # EVITAR duplicados en limpiezas de escuelas y otros
-#                mesa.lugar_votacion=escuela
-#                mesa.circuito=circuito
-                #mesa.electores=escuela.electores/(int(row['hasta']) + 1- int(row['desde'])) # habria que guardar escuela.mesas en el modelo
-                mesa.save()
+        #            escuela.electores = int(row['electores']) #no los tenemos aca
+                
+                coordenadas = [to_float(row['longitud']), to_float(row['latitud'])]
+                if coordenadas[0] and coordenadas[1]:
+                    geom = {'type': 'Point', 'coordinates': coordenadas}
+                    if row['estado_geolocalizacion'] == 'Match':
+                        estado_geolocalizacion = 9
+                    elif row['estado_geolocalizacion'] == 'Partial Match':
+                        estado_geolocalizacion = 5
+                else:
+                    geom = None
+                    estado_geolocalizacion = 0
+                escuela.geom = geom
+                escuela.estado_geolocalizacion = estado_geolocalizacion
+                escuela.save()
 
-                self.log(mesa, created)
+                if verbosity>3: self.log(escuela, created)
+
+                mesa_desde=int(row['desde'])
+                mesa_hasta=int(row['hasta']) + 1
+                mesas_total=int(row['cant_mesas'])
+
+                if mesas_total==(mesa_hasta-mesa_desde):
+                    for mesa_nro in range(mesa_desde, mesa_hasta):
+                        mesa, created = Mesa.objects.update_or_create(numero=mesa_nro,lugar_votacion=escuela,circuito=circuito) 
+                        mesa.save()
+                        if verbosity>4: self.log(mesa, created)
+                else:
+                    self.warning('La cantidad de mesas %s no coincide con el rango desde %s-hasta %s.' % (mesas_total,mesa_desde,mesa_hasta))
+                    self.warning('Se saltea la creación de esas mesas para evitar posible colisión de numeros de mesa.')
+                    
 
 
