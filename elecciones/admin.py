@@ -88,7 +88,7 @@ def resultados_reportados(modeladmin, request, queryset):
 resultados_reportados.short_description = "Ver Resultados"
 
 
-class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
+class LugarVotacionAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, LeafletGeoAdmin):
 
     def sección(o):
         return o.circuito.seccion.numero
@@ -97,6 +97,7 @@ class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
         'nombre', 'direccion', 'ciudad', 'circuito', sección, 'mesas_desde_hasta', 'electores',
         'estado_geolocalizacion'
     )
+    raw_ids_fields = ('circuito',)
     list_display_links = ('nombre', )
     list_filter = (HasLatLongListFilter, 'circuito__seccion', 'circuito')
     search_fields = ('nombre', 'direccion', 'ciudad', 'barrio', 'mesas__numero')
@@ -126,6 +127,7 @@ mostrar_resultados_mesas.short_description = "Mostrar resultados de Mesas selecc
 class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     actions = [resultados_reportados]
     list_display = ('numero', 'lugar_votacion')
+    raw_id_fields = ('circuito', 'lugar_votacion')
     list_filter = (
         TieneResultados, 'es_testigo', 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito'
     )
@@ -175,7 +177,7 @@ class MesaCategoriaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelA
         return row_actions
 
 
-class CircuitoAdmin(admin.ModelAdmin):
+class CircuitoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ('__str__', 'seccion')
     list_display_links = list_display
     list_filter = ('seccion', )
@@ -185,7 +187,7 @@ class CircuitoAdmin(admin.ModelAdmin):
     )
 
 
-class DistritoAdmin(admin.ModelAdmin):
+class DistritoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     search_fields = (
         'nombre',
         'numero',
@@ -310,7 +312,7 @@ class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
 class ConfiguracionComputoDistritoInline(admin.TabularInline):
     model = ConfiguracionComputoDistrito
-    
+
 class ConfiguracionComputoAdmin(admin.ModelAdmin):
     inlines = (ConfiguracionComputoDistritoInline, )
 
