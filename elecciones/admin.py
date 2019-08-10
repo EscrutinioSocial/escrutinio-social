@@ -1,7 +1,9 @@
+from django import forms
 from django.contrib import admin
 from django.urls import reverse
 from djangoql.admin import DjangoQLSearchMixin
 from leaflet.admin import LeafletGeoAdmin
+from annoying.functions import get_object_or_None
 from .models import (
     Distrito,
     SeccionPolitica,
@@ -124,7 +126,33 @@ def mostrar_resultados_mesas(modeladmin, request, queryset):
 mostrar_resultados_mesas.short_description = "Mostrar resultados de Mesas seleccionadas"
 
 
+class MesaForm(forms.ModelForm):
+    copiar_categorias = forms.BooleanField(
+        initial=True,
+        label="Copiar las categorias del resto de las mesas en el circuito (sólo vale para la creación)"
+    )
+
+    def save(self, commit=True):
+        add = not self.instance.pk
+        copiar_categorias = self.cleaned_data.get('copiar_categorias', None)
+
+        mesa = super().save(commit=commit)
+        mesa.save()
+
+        if add and copiar_categorias:
+            otra_mesa = Mesa.objects.filter(circuito=mesa.circuito).first()
+            if otra_mesa:
+                for categoria in otra_mesa.categorias.all():
+                    mesa.categorias.add(categoria)
+        return mesa
+
+    class Meta:
+        model = Mesa
+        fields = '__all__'
+
+
 class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
+    form = MesaForm
     actions = [resultados_reportados]
     list_display = ('numero', 'lugar_votacion')
     raw_id_fields = ('circuito', 'lugar_votacion')
@@ -148,11 +176,12 @@ class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
             'enabled': True
         })
 
-        row_actions.append({
-            'label': 'Escuela',
-            'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
-            'enabled': True,
-        })
+        if obj.lugar_votacion:
+            row_actions.append({
+                'label': 'Escuela',
+                'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
+                'enabled': True,
+            })
         row_actions += super().get_row_actions(obj)
         return row_actions
 
