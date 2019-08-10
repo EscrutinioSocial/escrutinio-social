@@ -383,7 +383,7 @@ OCULTAR_CANTIDADES_DE_ELECTORES = True
 # blanco.
 ME_OPCION_PASO = 'PASO'
 # El porcentaje de votos se calcula sobre el total de votos afirmativos.
-ME_OPCION_GEN  = 'GENERALES'
+ME_OPCION_GEN = 'GENERALES'
 
 # Seteamos el modo de elección; la manera en que visualización de porcentajes de
 # votos de la elección. Las opciones posibles son: ME_OPCION_PASO y ME_OPCION_GEN
@@ -434,3 +434,6 @@ if not TESTING:
         from .local_settings import *  # noqa
     except ImportError:
         pass
+
+
+OCULTAR_CANTIDADES_DE_ELECTORES = True
