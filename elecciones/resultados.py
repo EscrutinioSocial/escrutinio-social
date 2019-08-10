@@ -201,6 +201,17 @@ class Sumarizador():
         lookups = self.lookups_de_mesas()
         return Mesa.objects.filter(categorias=categoria).filter(lookups).distinct()
 
+    def mesas_escrutadas(self):
+        """
+        De las mesas incluidas en los filtros seleccionados, 
+        aquellas que tienen votos para la categoría seleccionada.
+        """
+        return self.mesas_a_considerar.filter(
+            mesacategoria__categoria=self.categoria,
+            mesacategoria__carga_testigo__isnull=False,
+            **self.cargas_a_considerar_status_filter(self.categoria, 'mesacategoria__')
+        ).distinct()
+
     @lru_cache(128)
     def electores(self, categoria):
         """
@@ -274,20 +285,13 @@ class Sumarizador():
         """
 
         # 1) Mesas.
-
         # Me quedo con las mesas que corresponden de acuerdo a los parámetros
         # y la categoría, que tengan la carga testigo para esa categoría.
-        mesas_escrutadas = mesas.filter(
-            mesacategoria__categoria=categoria,
-            mesacategoria__carga_testigo__isnull=False,
-            **self.cargas_a_considerar_status_filter(categoria, 'mesacategoria__')
-        ).distinct()
-
+        mesas_escrutadas = self.mesas_escrutadas()
         total_mesas_escrutadas = mesas_escrutadas.count()
         total_mesas = mesas.count()
 
         # 2) Electores.
-
         electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
         electores_en_mesas_escrutadas = mesas_escrutadas.aggregate(v=Sum('electores'))['v'] or 0
 
@@ -776,13 +780,6 @@ class Proyecciones(Sumarizador):
         self.tecnica = tecnica
         super().__init__(*args)
 
-    def mesas_escrutadas(self):
-        return self.mesas_a_considerar.filter(
-            mesacategoria__categoria=self.categoria,
-            mesacategoria__carga_testigo__isnull=False,
-            **self.cargas_a_considerar_status_filter(self.categoria, 'mesacategoria__')
-        )
-
     def circuito_subquery(self, id_agrupacion):
         """
         Construye un subquery que permite filtrar mesas por id_agrupacion
@@ -831,7 +828,7 @@ class Proyecciones(Sumarizador):
         return self.total_mesas(id_agrupacion) / self.cant_mesas_escrutadas(id_agrupacion)
 
     @lru_cache(128)
-    def agrupaciones_no_consideradas(self, categoria, mesas):
+    def agrupaciones_no_consideradas(self):
         """
         Devuelve la lista de agrupaciones que fueron descartadas por no tener el mínimo de mesas exigido.
 
@@ -849,9 +846,9 @@ class Proyecciones(Sumarizador):
         )
 
     @lru_cache(128)
-    def agrupaciones_a_considerar(self, categoria, mesas):
+    def agrupaciones_a_considerar_raw(self):
         """
-        Devuelve la lista de agrupaciones que se incluyen en la proyección, descartando aquellas 
+        Devuelve la lista de agrupaciones que se incluyen en la proyección, descartando aquellas
         que no tienen aún el mínimo de mesas definido según la técnica de proyección.
 
         Atención: el query se realiza en realidad sobre AgrupacionCircuito, porque de otra manera la
@@ -863,12 +860,26 @@ class Proyecciones(Sumarizador):
                 "circuito__mesas",
                 filter=Q(circuito__mesas__id__in=self.mesas_escrutadas().values_list('id', flat=True))
             )
-        ).filter(agrupacion__minimo_mesas__lte=F('mesas_escrutadas')).values_list('agrupacion', flat=True)
+        ).filter(agrupacion__minimo_mesas__lte=F('mesas_escrutadas'))
+
+    def agrupaciones_a_considerar(self):
+        """
+        Idem anterior pero devuelve sólo ids de agrupación.
+        """
+        return self.agrupaciones_a_considerar_raw().values_list('agrupacion', flat=True)
+
+    def cant_mesas_escrutadas_y_consideradas(self):
+        """
+        Devuelve la cantidad final de mesas que se utilizaron en la proyección, puede ser menor a lo
+        escrutado cuando una agrupación de circuitos tiene menos mesas escrutadas de las necesarias
+        para ser consideradas en la proyección.
+        """
+        return self.agrupaciones_a_considerar_raw().aggregate(cant=Sum('mesas_escrutadas'))['cant']
 
     def coeficientes_para_proyeccion(self):
         return {
             id_agrupacion: self.coeficiente_para_proyeccion(id_agrupacion)
-            for id_agrupacion in self.agrupaciones_a_considerar(self.categoria, self.mesas_a_considerar)
+            for id_agrupacion in self.agrupaciones_a_considerar()
         }
 
     def votos_por_opcion(self, categoria, mesas):
@@ -879,7 +890,7 @@ class Proyecciones(Sumarizador):
         correspondientes a agrupaciones que llegaron al mínimo de mesas requerido.
         """
 
-        agrupaciones_subquery = self.agrupaciones_a_considerar(categoria, mesas).filter(
+        agrupaciones_subquery = self.agrupaciones_a_considerar().filter(
             agrupacion__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones'))
         ).values_list('agrupacion', flat=True)
 
@@ -931,7 +942,9 @@ class Proyecciones(Sumarizador):
         proyección por no alcanzar el mínimo de mesas requerido.
         """
         computos = super().calcular(categoria, mesas)
-        computos["agrupaciones_no_consideradas"] = self.agrupaciones_no_consideradas(categoria, mesas)
+        computos.total_mesas_escrutadas = self.cant_mesas_escrutadas_y_consideradas()
+        computos.agrupaciones_no_consideradas = self.agrupaciones_no_consideradas()
+
         return computos
 
     @classmethod
