@@ -223,3 +223,15 @@ def test_procesar_csv_informacion_valida_con_listas_numericas(db, usr_unidad_bas
     # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene
     # además opción no prioritaria.
     assert cargas_totales.count() == 2
+
+
+def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
+    fdt = Opcion.objects.get(nombre='FdT')
+    fdt.codigo = '136'
+    fdt.save()
+    CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok_con_sanitizar.csv', usr_unidad_basica).procesar()
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene
+    # además opción no prioritaria.
+    assert cargas_totales.count() == 2
