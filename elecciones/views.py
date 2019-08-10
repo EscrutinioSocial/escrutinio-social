@@ -38,7 +38,6 @@ class StaffOnlyMixing:
     Mixin para que sólo usuarios tipo "staff"
     accedan a la vista.
     """
-
     @method_decorator(staff_member_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)

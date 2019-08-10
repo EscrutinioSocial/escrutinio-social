@@ -14,7 +14,12 @@ from problemas import urls as problemas_urls
 
 from fiscales import urls as fiscales_urls
 from fiscales.views import (
-    choice_home, permission_denied, QuieroSerFiscal, quiero_validar_gracias, confirmar_email
+    choice_home,
+    confirmar_email,
+    EnviarEmail,
+    permission_denied,
+    quiero_validar_gracias,
+    QuieroSerFiscal,
 )
 from fiscales.forms import AuthenticationFormCustomError
 
@@ -35,6 +40,7 @@ urlpatterns = [
     url(r'', include(frontend_urls)),
     url(r'', include('django.contrib.auth.urls')),
     url(r'^hijack/', include('hijack.urls')),
+    url('^admin/enviar_email$', EnviarEmail.as_view(), name='enviar-email'),
     url(r'^admin/', admin.site.urls),
     url(r'^fiscales/', include(fiscales_urls)),
 
@@ -44,6 +50,7 @@ urlpatterns = [
     url(r'^api/', include(api_urls)),
     url(r'^problemas/', include(problemas_urls)),
     url(r'^antitrolling/', include(antitrolling_urls)),
+    url(r'^summernote/', include('django_summernote.urls')),
 ]
 
 if settings.DEBUG:
