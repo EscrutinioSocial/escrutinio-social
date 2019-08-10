@@ -3,13 +3,14 @@
 from django.db import migrations
 from collections import Counter
 
+
 def sanear_correos(apps, schema_editor):
 
     DatoDeContacto = apps.get_model("contacto", "DatoDeContacto")
 
     User = apps.get_model("auth", "User")
 
-    num_repetido_general = 1
+    index_mail_no_repetidos = 1
 
     # primero arreglamos los datos de contacto repetidos
     problemas = [
@@ -23,28 +24,25 @@ def sanear_correos(apps, schema_editor):
         for num, dato in enumerate(datos_repetidos, start=1):
             # si no es el primero, le cambio el correo
             if (num > 1):
-                email = f"info+{num_repetido_general}@nodomain.org"
+                email = f"info+{index_mail_no_repetidos}@nodomain.org"
                 dato.valor = email
                 dato.save(update_fields=["valor"])
-                num_repetido_general = num_repetido_general + 1
+                index_mail_no_repetidos = index_mail_no_repetidos + 1
 
-    
     # ahora arreglamos los que tienen el correo vacío, que son muuuchos
-
     users_email_blank = User.objects.filter(email='')
 
     for user in users_email_blank:
-        fiscal = user.fiscal
-        fiscal_emails = list(DatoDeContacto.objects.filter(object_id=user.id).filter(tipo="email").values_list('valor', flat=True))
+        query_set_emails = DatoDeContacto.objects.filter(object_id=user.id).filter(tipo="email")
+        fiscal_emails = list(query_set_emails.values_list('valor', flat=True))
         if len(fiscal_emails) > 0:
             email = fiscal_emails[0]
         else:
             # esto pasa porque no tenía datodecontacto
-            email = f"info+{num_repetido_general}@nodomain.org"
-            num_repetido_general = num_repetido_general + 1
+            email = f"info+{index_mail_no_repetidos}@nodomain.org"
+            index_mail_no_repetidos = index_mail_no_repetidos + 1
         user.email = email
         user.save(update_fields=["email"])
-        
 
 
 class Migration(migrations.Migration):
@@ -52,13 +50,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ('fiscales', '0009_ingreso_alguna_vez'),
     ]
-    
-        # sacar constraint de NULL de correo
-        # updatear tabla user desde datosdecontacto
-        # llenar con un correo bobo los NULL
-        # reponer constraint de NULL
-        # modificamos los problemáticos
-        # ponemos constraint de unique
 
     operations = [
         migrations.RunPython(sanear_correos, atomic=True)
