@@ -68,7 +68,6 @@ class Command(BaseCommand):
             nombre = row['opcion_nombre']            
             ## Realmente queremos cortar así?
             nombre_corto = row['opcion_nombre_corto'][:20]
-            
             opcion_codigo = row.get('opcion_codigo', None)
             opcion_codigo = opcion_codigo if opcion_codigo else codigo # Si no tiene uso el del partido.
             defaults = {
@@ -77,13 +76,21 @@ class Command(BaseCommand):
                 'orden': orden,
             }        
 
-            
-            opcion, created = Opcion.objects.update_or_create(partido=partido,
-                                                              codigo=opcion_codigo,
-                                                              defaults=defaults
-            )
-            if opcion is None:
-                self.error_log(f'No se pudo crear la opción {nombre}. Línea {c}')
+            try:
+                opcion, created = Opcion.objects.update_or_create(partido=partido,
+                                                                  codigo=opcion_codigo,
+                                                                  defaults=defaults
+                )
+                if opcion is None:
+                    self.error_log(f'No se pudo crear la opción {nombre}. Línea {c}.')
+            except MultipleObjectsReturned:
+                # Si hay varias las borro y creo una nueva.
+                Opcion.objects.filter(partido=partido, codigo=opcion_codigo).delete()
+                self.warning(f'La opción {nombre} estaba repetida. Borramos y volvemos a crear. Línea {c}.')
+                opcion, created = Opcion.objects.update_or_create(partido=partido,
+                                                                  codigo=opcion_codigo,
+                                                                  defaults=defaults
+                )
 
             self.log_creacion(opcion, created)
 
