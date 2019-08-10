@@ -245,7 +245,7 @@ def test_resultados_parciales_generales(carta_marina, url_resultados, fiscal_cli
     columna_datos = [
         #('Electores', resultados.electores()),
         #('Escrutados', resultados.electores_en_mesas_escrutadas()),
-        ('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
+        #('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
         ('Votantes', resultados.votantes()),
         ('Positivos', resultados.total_positivos()),
         #('% Participación', f'{resultados.porcentaje_participacion()} %'),
@@ -385,7 +385,7 @@ def test_resultados_parciales_paso(carta_marina, url_resultados, fiscal_client):
     columna_datos = [
         #('Electores', resultados.electores()),
         #('Escrutados', resultados.electores_en_mesas_escrutadas()),
-        ('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
+        #('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
         ('Votantes', resultados.votantes()),
         ('Positivos', resultados.total_positivos()),
         #('% Participación', f'{resultados.porcentaje_participacion()} %'),
