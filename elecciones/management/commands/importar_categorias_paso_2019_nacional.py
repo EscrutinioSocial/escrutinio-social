@@ -87,7 +87,7 @@ class Command(BaseCommand):
 
             self.log_creacion(opcion, created)
 
-            defaults = {nombre: row['categoria_nombre']}
+            defaults = {'nombre': row['categoria_nombre']}
             categoria, created = Categoria.objects.update_or_create(
                 slug=row['categoria_slug'],
                 defaults=defaults
