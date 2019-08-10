@@ -18,10 +18,28 @@ function cambioMesa(url_seccion,url_circuito){
     return true;
 }
 
+function ocultoSeccionCircuito(){
+    var circuito = $('#id_circuito');
+    var seccion = $('#id_seccion');
+    var distrito = $('#distrito-resultado').val();
+    if(distrito == "Buenos Aires"){
+	$('#id_seccion_container').removeClass("hide");
+	$('#id_circuito_container').removeClass("hide");
+	$('#mesa_input').focus();
+    }
+    else {
+	$('#id_seccion_container').addClass("hide");
+	$('#id_circuito_container').addClass("hide");
+	$('#seccion_input').focus();
+    }
+    return true;
+}
+
 var updateDistrito = function(url){
     return(
 	function(e){
 	    updateField('distrito', url,[]);
+	    ocultoSeccionCircuito();
 	    return true;
 	}
     )
