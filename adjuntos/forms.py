@@ -61,6 +61,7 @@ class IdentificacionForm(forms.ModelForm):
 
     distrito = SelectField(
         queryset = Distrito.objects.all(),
+        help_text = "Puede ingresar número o nombre",
     )
 
     seccion = CharFieldModel(
@@ -127,6 +128,7 @@ class PreIdentificacionForm(forms.ModelForm):
     """
     distrito = SelectField(
         queryset = Distrito.objects.all(),
+        help_text = "Puede ingresar número o nombre",
     )
 
     seccion = SelectField(
