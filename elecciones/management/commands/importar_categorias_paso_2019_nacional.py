@@ -46,13 +46,11 @@ class Command(BaseCommand):
             nombre = row['partido_nombre']
             nombre_corto = row['partido_nombre_corto'][:30]
             color = row['partido_color']
-            extranjeros = self.to_nat(row,'extranjeros', c)
+            extranjeros = self.to_nat(row,'extranjeros', c, 0)
             if extranjeros is None:
                 self.warning(f'La opción {codigo} no tiene seteado el campo extranjero o no es 0 ó 1.'
                              f' Se asume que no corresponde a extranjeros. Línea {c}'
                 )
-                extranjeros = False
-                
             extranjeros = bool(extranjeros)
 
             partido_orden = self.to_nat(row, 'partido_orden', c)
