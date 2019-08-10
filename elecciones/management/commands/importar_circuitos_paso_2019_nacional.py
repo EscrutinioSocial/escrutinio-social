@@ -6,7 +6,7 @@ from csv import DictReader
 from elecciones.models import Seccion, Circuito, Distrito
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/circuitos.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/circuitos_limpios.csv'
 
 
 def to_float(val):

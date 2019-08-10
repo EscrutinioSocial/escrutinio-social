@@ -6,7 +6,12 @@ from csv import DictReader
 from elecciones.models import Distrito, Seccion, Circuito, LugarVotacion, Mesa, Categoria
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/escuelas.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/escuelas_limpias.csv'
+
+ESTADO_GEOLOCALIZACION = {
+    'Match': 9,
+    'Partial Match': 5,
+}
 
 def to_float(val):
     try:
@@ -17,17 +22,25 @@ def to_float(val):
 
 class BaseCommand(BaseCommand):
 
-    def success(self, msg, ending='\n'):
-        self.stdout.write(self.style.SUCCESS(msg), ending=ending)
+    def log(self, message, level=2, ending='\n'):
+        if level <= self.verbosity:
+            self.stdout.write(message, ending=ending)
+            
+    def success(self, msg, level=3, ending='\n'):
+        self.log(self.style.SUCCESS(msg), level, ending=ending)
 
-    def warning(self, msg, ending='\n'):
-        self.stdout.write(self.style.WARNING(msg), ending=ending)
+    def warning(self, msg, level=1, ending='\n'):
+        self.log(self.style.WARNING(msg), level, ending=ending)
 
-    def log(self, object, created=True, ending='\n'):
+    def error_log(self, msg, ending='\n'):
+        self.log(self.style.FAIL(msg), 0, ending=ending)
+        
+    def log_creacion(self, object, created=True, level=3, ending='\n'):
+        modelo = object._meta.model.__name__
         if created:
-            self.success(f'creado {object}', ending=ending)
+            self.success(f'Se creó el/la {modelo} {object}', level, ending)
         else:
-            self.warning(f'{object} ya existe', ending=ending)
+            self.warning(f'El/La {modelo} {object} ya existe', level, ending)
 
 
 class Command(BaseCommand):
@@ -39,66 +52,92 @@ class Command(BaseCommand):
     help = "Importar escuelas"
 
     def handle(self, *args, **options):
-        verbosity = int(options['verbosity'])
+        self.verbosity = int(options['verbosity'])
         fecha = datetime.datetime(2019, 5, 12, 8, 0)
 
         reader = DictReader(CSV.open())
 
         for c, row in enumerate(reader, 1):
-            if verbosity>0: print(row['distrito_nro'], row['seccion_nro'], row['circuito_nro'], row['escuela_nro'])
+            self.log(f"{row['distrito_nro']}, {row['seccion_nro']}, {row['circuito_nro']}, {row['escuela_nro']}",
+                     level=3
+            )
+
             nro_distrito = row['distrito_nro']
             nro_seccion = row['seccion_nro']
+            nro_circuito = row['circuito_nro']
+            nro_escuela = row['escuela_nro']
+            mensaje_fallo_escuela = f'No se procesa la escuela {nro_escuela}. Línea {c}.'
+
             try:
                 distrito = Distrito.objects.get(numero=nro_distrito)
                 seccion  = Seccion.objects.get(numero=nro_seccion, distrito=distrito)
                 circuito = Circuito.objects.get(numero=row['circuito_nro'].strip(), seccion=seccion)
             except Distrito.DoesNotExist:
-                self.warning('No existe el distrito %s.' % nro_distrito)
+                self.warning(f'No existe el distrito {nro_distrito}. {mensaje_fallo_escuela}')
             except Seccion.DoesNotExist:
-                self.warning('No existe la sección %s en el distrito %s.' % (nro_seccion, nro_distrito))
+                self.warning('No existe la sección {nro_seccion} en el distrito {nro_distrito}. Línea {c}. '
+                             f'{mensaje_fallo_escuela}'
+                )
             except Circuito.DoesNotExist:
-                self.warning('No existe el circuito %s' % row)
+                self.warning('No existe el circuito {circuito_nro}. {mensaje_fallo_escuela}')
             else:
 
                 escuela, created = LugarVotacion.objects.update_or_create(
                     circuito=circuito,
                     nombre=row['escuela'],
                     direccion=row['direccion'],
-                    numero=row['escuela_nro'],
+                    numero=nro_escuela,
                     ciudad=row['localidad'] or '',
-        #                barrio=row['Barrio'] or ''
                     )
 
-        #            escuela.electores = int(row['electores']) #no los tenemos aca
+                ## Idealmente deberíamos tener el número de electores por escuela, al menos.
+                # escuela.electores = int(row['electores']) #no los tenemos aca
                 
-                coordenadas = [to_float(row['longitud']), to_float(row['latitud'])]
-                if coordenadas[0] and coordenadas[1]:
-                    geom = {'type': 'Point', 'coordinates': coordenadas}
-                    if row['estado_geolocalizacion'] == 'Match':
-                        estado_geolocalizacion = 9
-                    elif row['estado_geolocalizacion'] == 'Partial Match':
-                        estado_geolocalizacion = 5
+                coordenadas = (to_float(row['longitud']), to_float(row['latitud']))
+                if isinstance(coordenadas[0],float) and isinstance(coordenadas[1],float):
+                    info_geolocalizacion = {'type': 'Point', 'coordinates': coordenadas}
+                    estado_geolocalizacion = ESTADO_GEOLOCALIZACION['Match']
                 else:
-                    geom = None
+                    info_geolocalizacion = None
                     estado_geolocalizacion = 0
-                escuela.geom = geom
+                escuela.geom = info_geolocalizacion
                 escuela.estado_geolocalizacion = estado_geolocalizacion
                 escuela.save()
 
-                if verbosity>3: self.log(escuela, created)
+                self.log_creacion(escuela, created)
+                
+                mensaje_mesas = f'No se crean mesas para la escuela {escuela}. Línea {c}.'
+                try:
+                    mesa_desde=int(row['desde'])
+                except ValueError:
+                    self.warning('No está definido el campo _desde_. {mensaje_mesas}')
+                    continue
+                
+                try:
+                    mesa_hasta = int(row['hasta'])
+                except ValueError:
+                    self.warning(f'No está definido el campo _hasta_. {mensaje_mesas}')
+                    continue
 
-                mesa_desde=int(row['desde'])
-                mesa_hasta=int(row['hasta']) + 1
-                mesas_total=int(row['cant_mesas'])
+                mesa_hasta = mesa_hasta + 1
 
-                if mesas_total==(mesa_hasta-mesa_desde):
+                try:
+                    mesas_total = int(row['cant_mesas'])
+                except ValueError:
+                    mesas_total = None
+                    self.warning('No está definido el campo _hasta_.'
+                                 f'Se crean mesas desde {mesa_desde} hasta {mesa_hasta}. Línea {c}.'
+                    )
+                    
+                if mesas_total == mesa_hasta - mesa_desde:
                     for mesa_nro in range(mesa_desde, mesa_hasta):
                         mesa, created = Mesa.objects.update_or_create(numero=mesa_nro,lugar_votacion=escuela,circuito=circuito) 
                         mesa.save()
-                        if verbosity>4: self.log(mesa, created)
+                        self.log_creacion(mesa, created, level=4)
                 else:
-                    self.warning('La cantidad de mesas %s no coincide con el rango desde %s-hasta %s.' % (mesas_total,mesa_desde,mesa_hasta))
-                    self.warning('Se saltea la creación de esas mesas para evitar posible colisión de numeros de mesa.')
+                    self.warning(f'El total de mesas {mesas_total} no coincide con el rango {mesa_desde}-{mesa_hasta}.'
+                                 f'Se crean las mesas {mesa_desde} hasta {mesa_hasta}. Línea {c}.'
+                    )
                     
 
 
