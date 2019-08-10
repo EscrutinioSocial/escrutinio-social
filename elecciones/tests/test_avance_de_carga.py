@@ -320,7 +320,7 @@ def test_avance_de_carga_combinando_dc_y_csv(db, settings):
     consumir_novedades_carga()
 
     # podemos mirar
-    vorwaerts = AvanceDeCarga(Eleccion.NIVELES_AGREGACION.circuito, [circuito_1.id])
+    vorwaerts = AvanceDeCarga(NIVELES_DE_AGREGACION.circuito, [circuito_1.id])
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 20, 3900, 100, 100)
     verificar_resultado(resultados.sin_identificar(), 2, 570, 10, 14.62)
@@ -365,7 +365,7 @@ def test_avance_de_carga_identificacion_parcial(db, settings):
     consumir_novedades_carga()
 
     # podemos mirar
-    vorwaerts = AvanceDeCarga(Eleccion.NIVELES_AGREGACION.circuito, [circuito_1.id])
+    vorwaerts = AvanceDeCarga(NIVELES_DE_AGREGACION.circuito, [circuito_1.id])
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
     verificar_resultado(resultados.sin_identificar(), 3, 540, 30, 37.24)
