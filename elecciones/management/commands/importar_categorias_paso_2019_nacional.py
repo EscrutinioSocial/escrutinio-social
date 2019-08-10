@@ -47,15 +47,15 @@ class Command(BaseCommand):
             nombre_corto = row['partido_nombre_corto'][:30]
             color = row['partido_color']
 
-            orden = self.to_nat(row, 'partido_orden', c)
-            if orden is None:
+            partido_orden = self.to_nat(row, 'partido_orden', c)
+            if partido_orden is None:
                 continue
 
             defaults = {
                 'nombre': nombre,
                 'nombre_corto': nombre_corto,
                 'color': color,
-                'orden': orden,
+                'orden': partido_orden,
             }            
             partido, created = Partido.objects.update_or_create(codigo=codigo, defaults=defaults)
 
@@ -81,12 +81,14 @@ class Command(BaseCommand):
                     secciones_nat.append(s)
                 if secciones_nat == []:
                     continue
+
+            nombre = row['opcion_nombre']            
                 
             orden = self.to_nat(row, 'opcion_orden', c)
             if orden is None:
-                continue
+                orden = partido_orden
+                self.warning(f'Usando orden del partido para {nombre}. Línea {c}.')
 
-            nombre = row['opcion_nombre']            
             ## Realmente queremos cortar así?
             nombre_corto = row['opcion_nombre_corto'][:20]
             opcion_codigo = row.get('opcion_codigo', None)
