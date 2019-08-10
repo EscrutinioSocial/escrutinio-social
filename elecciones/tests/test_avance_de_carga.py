@@ -116,8 +116,8 @@ def test_avance_de_carga_sencillo(db, settings):
     vorwaerts = AvanceDeCarga()
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
-    verificar_resultado(resultados.sin_identificar(), 2, 370, 20, 25.52)
-    verificar_resultado(resultados.en_identificacion(), 1, 170, 10, 11.72)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 2, 370, 20, 25.52)
+    verificar_resultado(resultados.en_identificacion_sin_cargas(), 1, 170, 10, 11.72)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 2, 230, 20, 15.86)
     verificar_resultado(resultados.carga_parcial_consolidada_dc(), 1, 100, 10, 6.9)
     verificar_resultado(resultados.carga_total_sin_consolidar(), 0, 0, 0, 0)
@@ -166,16 +166,16 @@ def test_avance_de_carga_dos_categorias(db, settings):
     # categoría pv
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
-    verificar_resultado(resultados.sin_identificar(), 1, 190, 10, 13.1)
-    verificar_resultado(resultados.en_identificacion(), 0, 0, 0, 0)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 1, 190, 10, 13.1)
+    verificar_resultado(resultados.en_identificacion_sin_cargas(), 0, 0, 0, 0)
     verificar_resultado(resultados.sin_cargar(), 2, 350, 20, 24.14)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 1, 160, 10, 11.03)
     verificar_resultado(resultados.carga_parcial_consolidada_dc(), 6, 750, 60, 51.72)
     # categoría gv
     resultados = vorwaerts.get_resultados(gv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
-    verificar_resultado(resultados.sin_identificar(), 1, 190, 10, 13.1)
-    verificar_resultado(resultados.en_identificacion(), 0, 0, 0, 0)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 1, 190, 10, 13.1)
+    verificar_resultado(resultados.en_identificacion_sin_cargas(), 0, 0, 0, 0)
     verificar_resultado(resultados.sin_cargar(), 4, 660, 40, 45.52)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 3, 390, 30, 26.9)
     verificar_resultado(resultados.carga_parcial_consolidada_dc(), 2, 210, 20, 14.48)
@@ -246,14 +246,14 @@ def test_avance_de_carga_dos_circuitos(db, settings):
     # categoría pv
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
-    verificar_resultado(resultados.sin_identificar(), 0, 0, 0, 0)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 0, 0, 0, 0)
     verificar_resultado(resultados.sin_cargar(), 3, 540, 30, 37.24)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 1, 160, 10, 11.03)
     verificar_resultado(resultados.carga_parcial_consolidada_dc(), 6, 750, 60, 51.72)
     # categoría gv
     resultados = vorwaerts.get_resultados(gv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
-    verificar_resultado(resultados.sin_identificar(), 0, 0, 0, 0)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 0, 0, 0, 0)
     verificar_resultado(resultados.sin_cargar(), 5, 850, 50, 58.62)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 3, 390, 30, 26.9)
     verificar_resultado(resultados.carga_parcial_consolidada_dc(), 2, 210, 20, 14.48)
@@ -263,14 +263,14 @@ def test_avance_de_carga_dos_circuitos(db, settings):
     # categoría pv
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 20, 4000, 100, 100)
-    verificar_resultado(resultados.sin_identificar(), 2, 400, 10, 10)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 2, 400, 10, 10)
     verificar_resultado(resultados.sin_cargar(), 3, 600, 15, 15)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 0, 0, 0, 0)
     verificar_resultado(resultados.carga_parcial_consolidada_dc(), 15, 3000, 75, 75)
     # categoría gv
     resultados = vorwaerts.get_resultados(gv)
     verificar_resultado(resultados.total(), 20, 4000, 100, 100)
-    verificar_resultado(resultados.sin_identificar(), 2, 400, 10, 10)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 2, 400, 10, 10)
     verificar_resultado(resultados.sin_cargar(), 0, 0, 0, 0)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 6, 1200, 30, 30)
     verificar_resultado(resultados.carga_parcial_consolidada_dc(), 12, 2400, 60, 60)
@@ -323,7 +323,7 @@ def test_avance_de_carga_combinando_dc_y_csv(db, settings):
     vorwaerts = AvanceDeCarga(NIVELES_DE_AGREGACION.circuito, [circuito_1.id])
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 20, 3900, 100, 100)
-    verificar_resultado(resultados.sin_identificar(), 2, 570, 10, 14.62)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 2, 570, 10, 14.62)
     verificar_resultado(resultados.sin_cargar(), 3, 780, 15, 20)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 1, 240, 5, 6.15)
     verificar_resultado(resultados.carga_parcial_consolidada_csv(), 2, 450, 10, 11.54)
@@ -368,8 +368,10 @@ def test_avance_de_carga_identificacion_parcial(db, settings):
     vorwaerts = AvanceDeCarga(NIVELES_DE_AGREGACION.circuito, [circuito_1.id])
     resultados = vorwaerts.get_resultados(pv)
     verificar_resultado(resultados.total(), 10, 1450, 100, 100)
-    verificar_resultado(resultados.sin_identificar(), 3, 540, 30, 37.24)
-    verificar_resultado(resultados.en_identificacion(), 2, 310, 20, 21.38)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 3, 540, 30, 37.24)
+    verificar_resultado(resultados.sin_identificar_con_cargas(), 0, 0, 0, 0)
+    verificar_resultado(resultados.en_identificacion_sin_cargas(), 2, 310, 20, 21.38)
+    verificar_resultado(resultados.en_identificacion_con_cargas(), 0, 0, 0, 0)
     verificar_resultado(resultados.sin_cargar(), 3, 390, 30, 26.9)
     verificar_resultado(resultados.carga_parcial_sin_consolidar(), 2, 210, 20, 14.48)
     verificar_resultado(resultados.carga_parcial_consolidada_csv(), 0, 0, 0, 0)
@@ -377,3 +379,92 @@ def test_avance_de_carga_identificacion_parcial(db, settings):
     verificar_resultado(resultados.carga_total_sin_consolidar(), 0, 0, 0, 0)
     verificar_resultado(resultados.carga_total_consolidada_csv(), 0, 0, 0, 0)
     verificar_resultado(resultados.carga_total_consolidada_dc(), 0, 0, 0, 0)
+
+
+def test_avance_de_carga_mesas_con_carga_csv_sin_fotos(db, settings):
+        # settings
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 2
+    settings.MIN_COINCIDENCIAS_CARGA = 2
+
+    # una categoria con cuatro opciones, dos prioritarias, dos no prioritarias
+    pv = nueva_categoria(["a1", "a2"], ["b1", "b2"])
+    # un circuito con 10 mesas de 100, 110, ..., 290 votantes. Total 1450
+    seccion_1, circuito_1, lugar_votacion_1 = crear_seccion("Luján oeste")
+    [mesas_1] = crear_mesas([lugar_votacion_1], [pv], 10)
+    for ix in range(len(mesas_1)):
+        mesas_1[ix].electores = 100 + ix * 10
+        mesas_1[ix].save(update_fields=['electores'])
+    # dos fiscales
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+
+    # identifico totalmente 6 mesas, parcialmente dos mesas
+    attachs = AttachmentFactory.create_batch(30)
+    for ix in range(6):
+        identificar(attachs[ix], mesas_1[ix], fiscal_1)
+        identificar(attachs[ix], mesas_1[ix], fiscal_2)
+    identificar(attachs[6], mesas_1[6], fiscal_1)
+    identificar(attachs[7], mesas_1[7], fiscal_1)
+    consumir_novedades_identificacion()
+
+    # dos cargas parciales
+    nueva_carga(mesacat(mesas_1[0], pv), fiscal_1, [50, 30], Carga.TIPOS.parcial)
+    nueva_carga(mesacat(mesas_1[1], pv), fiscal_1, [50, 30], Carga.TIPOS.parcial)
+    # tres cargas totales desde CSV de una mesa sin identificar (la última), una parcialmente identificada, una identificada
+    nueva_carga(mesacat(mesas_1[9], pv), fiscal_1, [50, 30, 20, 10], Carga.TIPOS.total, Carga.SOURCES.csv)
+    nueva_carga(mesacat(mesas_1[6], pv), fiscal_1, [50, 30, 20, 10], Carga.TIPOS.total, Carga.SOURCES.csv)
+    nueva_carga(mesacat(mesas_1[2], pv), fiscal_1, [50, 30, 20, 10], Carga.TIPOS.total, Carga.SOURCES.csv)
+    consumir_novedades_carga()
+
+    # podemos mirar
+    vorwaerts = AvanceDeCarga(NIVELES_DE_AGREGACION.circuito, [circuito_1.id])
+    resultados = vorwaerts.get_resultados(pv)
+    verificar_resultado(resultados.total(), 10, 1450, 100, 100)
+    verificar_resultado(resultados.sin_identificar_sin_cargas(), 1, 180, 10, 12.41)
+    verificar_resultado(resultados.sin_identificar_con_cargas(), 1, 190, 10, 13.1)
+    verificar_resultado(resultados.en_identificacion_sin_cargas(), 1, 170, 10, 11.72)
+    verificar_resultado(resultados.en_identificacion_con_cargas(), 1, 160, 10, 11.03)
+    verificar_resultado(resultados.sin_cargar(), 3, 420, 30, 28.97)
+    verificar_resultado(resultados.carga_parcial_sin_consolidar(), 2, 210, 20, 14.48)
+    verificar_resultado(resultados.carga_parcial_consolidada_csv(), 0, 0, 0, 0)
+    verificar_resultado(resultados.carga_parcial_consolidada_dc(), 0, 0, 0, 0)
+    verificar_resultado(resultados.carga_total_sin_consolidar(), 0, 0, 0, 0)
+    verificar_resultado(resultados.carga_total_consolidada_csv(), 3, 470, 30, 32.41)
+    verificar_resultado(resultados.carga_total_consolidada_dc(), 0, 0, 0, 0)
+
+
+def test_avance_de_carga_mesas_con_varias_fotos(db, settings):
+        # settings
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 2
+    settings.MIN_COINCIDENCIAS_CARGA = 2
+
+    # una categoria con cuatro opciones, dos prioritarias, dos no prioritarias
+    pv = nueva_categoria(["a1", "a2"], ["b1", "b2"])
+    # un circuito con 10 mesas de 100, 110, ..., 290 votantes. Total 1450
+    seccion_1, circuito_1, lugar_votacion_1 = crear_seccion("Luján oeste")
+    [mesas_1] = crear_mesas([lugar_votacion_1], [pv], 10)
+    for ix in range(len(mesas_1)):
+        mesas_1[ix].electores = 100 + ix * 10
+        mesas_1[ix].save(update_fields=['electores'])
+    # dos fiscales
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+
+    # identifico totalmente 5 mesas
+    attachs = AttachmentFactory.create_batch(30)
+    for ix in range(5):
+        identificar(attachs[ix], mesas_1[ix], fiscal_1)
+        identificar(attachs[ix], mesas_1[ix], fiscal_2)
+    identificar(attachs[5], mesas_1[5], fiscal_1)
+    identificar(attachs[6], mesas_1[6], fiscal_1)
+    # agrego dos fotos más a la primer mesa
+    identificar(attachs[7], mesas_1[0], fiscal_1)
+    identificar(attachs[7], mesas_1[0], fiscal_2)
+    identificar(attachs[8], mesas_1[0], fiscal_1)
+    identificar(attachs[8], mesas_1[0], fiscal_2)
+    # agrego otra foto parcial a la segunda mesa
+    identificar(attachs[9], mesas_1[1], fiscal_1)
+    # agrego una fotos más a la tercer mesa
+    identificar(attachs[10], mesas_1[2], fiscal_1)
+    identificar(attachs[10], mesas_1[2], fiscal_2)
+    consumir_novedades_identificacion()

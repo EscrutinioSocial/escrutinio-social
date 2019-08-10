@@ -587,6 +587,12 @@ class AvanceDeCarga(Sumarizador):
         """
         Realiza los cálculos necesarios y devuelve un AttrDict con la info obtenida
         """
+        # Nota previa: se elige mirar siempre status de la mesacat, nunca existencia o inexistencia de cargas
+        # de esta forma, el reporte es internamente coherente.
+        # Tener en cuenta que puede haber mesacats con cargas y status "sin_cargar",
+        # porque todavía no corrió la consolidación que le cambia el status.
+        # Carlos Lombardi, 2019.08.10
+
         # con preidentificación: depende de las preidentificaciones correspondientes a la unidad geográfica,
         # esto no depende de las mesas
         # ... puede haber más preidentificaciones que mesas, si hay dos fotos por mesa
@@ -596,20 +602,40 @@ class AvanceDeCarga(Sumarizador):
         if lookups_preident is not None:
             cantidad_preidentificaciones = PreIdentificacion.objects.filter(lookups_preident).count()
 
-        # mesas sin identificar y en identificación: dependen de las identificaciones **válidas**
-        # y de los attachment
-        identificaciones_validas_mesa = Identificacion.objects.filter(mesa=OuterRef('pk'), invalidada=False)
-        mesas_con_marca_identificacion = self.mesas_a_considerar.annotate(
-            tiene_identificaciones=Exists(identificaciones_validas_mesa))
-        mesas_sin_identificar = mesas_con_marca_identificacion.filter(
-            tiene_identificaciones=False)
-        mesas_en_identificacion = mesas_con_marca_identificacion.filter(
-            tiene_identificaciones=True, attachments=None)
 
         mesacats_de_la_categoria = MesaCategoria.objects.filter(
             mesa__in=self.mesas_a_considerar,
             categoria=self.categoria
         )
+
+        # mesas sin identificar y en identificación: dependen de las identificaciones **válidas**
+        # y de los attachment.
+        # respecto de la condición "mesa__attachments=None" ver comentario abajo, 
+        # en la definición de mesacats_sin_cargar
+        identificaciones_validas_mesacat = Identificacion.objects.filter(mesa=OuterRef('mesa'), invalidada=False)
+        mesacats_con_marca_identificacion = mesacats_de_la_categoria.annotate(
+            tiene_identificaciones=Exists(identificaciones_validas_mesacat))
+        mesacats_sin_identificar = mesacats_con_marca_identificacion.filter(
+            tiene_identificaciones=False)
+        mesacats_sin_identificar_sin_cargas = mesacats_sin_identificar.filter(status=MesaCategoria.STATUS.sin_cargar)
+        mesacats_sin_identificar_con_cargas = mesacats_sin_identificar.exclude(status=MesaCategoria.STATUS.sin_cargar)
+        mesacats_en_identificacion = mesacats_con_marca_identificacion.filter(
+            tiene_identificaciones=True, mesa__attachments=None)
+        mesacats_en_identificacion_sin_cargas = mesacats_en_identificacion.filter(
+            status=MesaCategoria.STATUS.sin_cargar)
+        mesacats_en_identificacion_con_cargas = mesacats_en_identificacion.exclude(
+            status=MesaCategoria.STATUS.sin_cargar)
+        
+
+        # mesas sin identificar y en identificación: dependen de las identificaciones **válidas**
+        # y de los attachment
+        # identificaciones_validas_mesa = Identificacion.objects.filter(mesa=OuterRef('pk'), invalidada=False)
+        # mesas_con_marca_identificacion = self.mesas_a_considerar.annotate(
+        #     tiene_identificaciones=Exists(identificaciones_validas_mesa))
+        # mesas_sin_identificar = mesas_con_marca_identificacion.filter(
+        #     tiene_identificaciones=False)
+        # mesas_en_identificacion = mesas_con_marca_identificacion.filter(
+        #     tiene_identificaciones=True, attachments=None)
 
         # como "a cargar" se reportan solamente los que tienen attachments
         # OJO hay que hacer .exclude(mesa__attachments=None), si el query se arma distinto
@@ -645,8 +671,10 @@ class AvanceDeCarga(Sumarizador):
 
         return AttrDict({
             "total": dato_total,
-            "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_sin_identificar),
-            "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_en_identificacion),
+            "sin_identificar_sin_cargas": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_sin_identificar_sin_cargas),
+            "sin_identificar_con_cargas": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_sin_identificar_con_cargas),
+            "en_identificacion_sin_cargas": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_en_identificacion_sin_cargas),
+            "en_identificacion_con_cargas": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_en_identificacion_con_cargas),
             "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_sin_cargar),
             "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_sin_consolidar),
             "carga_parcial_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada_csv),
@@ -674,8 +702,10 @@ class AvanceDeCarga(Sumarizador):
         dato_total = DatoTotalAvanceDeCarga().para_valores_fijos(1000, 50000)
         resultado_bruto = AttrDict({
             "total": dato_total,
-            "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
-            "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
+            "sin_identificar_sin_cargas": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
+            "sin_identificar_con_cargas": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(0, 0),
+            "en_identificacion_sin_cargas": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
+            "en_identificacion_con_cargas": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(0, 0),
             "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(150, 8000),
             "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
             "carga_parcial_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 3000),
@@ -738,11 +768,17 @@ class AvanceWrapper():
     def total(self):
         return self.resultados.total
 
-    def sin_identificar(self):
-        return self.resultados.sin_identificar
+    def sin_identificar_sin_cargas(self):
+        return self.resultados.sin_identificar_sin_cargas
 
-    def en_identificacion(self):
-        return self.resultados.en_identificacion
+    def sin_identificar_con_cargas(self):
+        return self.resultados.sin_identificar_con_cargas
+
+    def en_identificacion_sin_cargas(self):
+        return self.resultados.en_identificacion_sin_cargas
+
+    def en_identificacion_con_cargas(self):
+        return self.resultados.en_identificacion_con_cargas
 
     def sin_cargar(self):
         return self.resultados.sin_cargar
