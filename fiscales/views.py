@@ -134,6 +134,7 @@ class QuieroSerFiscal(FormView):
         fiscal.agregar_dato_de_contacto('teléfono', telefono)
         fiscal.agregar_dato_de_contacto('email', data['email'])
         fiscal.user.set_password(data['password'])
+        fiscal.user.email = data['email']
         fiscal.user.save()
         self.enviar_correo_confirmacion(fiscal, data['email'])
 

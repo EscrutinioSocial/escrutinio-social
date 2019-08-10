@@ -145,6 +145,8 @@ def _assert_fiscal_cargado_correctamente(seccion):
     assert fiscal.user is not None
     assert fiscal.user.password is not None
 
+    assert fiscal.user.email == QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT['email']
+
 
 def construir_request_data(seccion):
     data = QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT.copy()
