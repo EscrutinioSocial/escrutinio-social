@@ -595,7 +595,8 @@ class Mesa(models.Model):
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
     prioridad = models.PositiveIntegerField(default=0)
-
+    extranjeros = models.BooleanField(default=False)
+    
     class Meta:
         unique_together = ('circuito', 'numero')
 

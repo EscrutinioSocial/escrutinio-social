@@ -35,7 +35,10 @@ class BaseCommand(BaseCommand):
         except KeyError:
             self.error_log(f'No está {field_name} en la línea {n}.')
             return None
-
+        if value is None:
+            self.error_log(f'El valor {value} del campo {field_name} no es un entero. Línea {n}.')
+            return None
+            
         try:
             value = int(value)
         except ValueError:
