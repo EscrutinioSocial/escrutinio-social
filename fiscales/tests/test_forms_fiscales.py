@@ -1,5 +1,10 @@
+from django.template.backends.django import Template
 from fiscales.tests.test_view_fiscales import construir_request_data
-from fiscales.forms import QuieroSerFiscalForm, votomesareportadoformset_factory
+from fiscales.forms import (
+    QuieroSerFiscalForm,
+    votomesareportadoformset_factory,
+    EnviarEmailForm,
+)
 
 from elecciones.tests.factories import (
     FiscalFactory,
@@ -141,6 +146,7 @@ def test_formset_carga_warning_suma_votos_mayor_sobres(db):
     assert formset.is_valid()
     assert len(formset.non_form_errors()) == 0
 
+
 def test_formset_carga_warning_cero_votos(db):
     m = MesaFactory()
     o1 = OpcionFactory(partido__codigo="136")
@@ -163,3 +169,20 @@ def test_formset_carga_warning_cero_votos(db):
 
     assert formset.is_valid()
     assert len(formset.non_form_errors()) == 0
+
+
+def test_enviar_email_form_valid():
+    f = EnviarEmailForm(data={
+        'asunto': 'asunto', 'template': "Hola {{ settings.FOO|default:'mundo'|upper }}"
+    })
+    assert f.is_valid()
+    assert isinstance(f.cleaned_data['template'], Template)
+
+
+def test_enviar_email_form_invalid():
+    f = EnviarEmailForm(data={
+        'asunto': 'asunto', 'template': "Hola {{ FOO|filtro_que_no_existe }}"
+    })
+    assert not f.is_valid()
+    assert f.errors == {'template': ["Invalid filter: 'filtro_que_no_existe'"]}
+

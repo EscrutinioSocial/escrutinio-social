@@ -18,7 +18,6 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
 from django.db.models import Q
-from django.template import engines
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
 from .models import Fiscal, CodigoReferido
@@ -497,20 +496,28 @@ class EnviarEmail(FormView):
         )
         return super().dispatch(request, *args, **kwargs)
 
+    def get_initial(self):
+        initial = super().get_initial()
+        asunto = self.request.session.get('enviar_email_asunto')
+        if asunto:
+            initial['asunto'] = asunto
+        template = self.request.session.get('enviar_email_template')
+        if template:
+            initial['template'] = template
+        return initial
+
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context['count'] = self.fiscales.count()
         return context
 
     def form_valid(self, form):
-        template_body = form.cleaned_data['template']
-        django_engine = engines['django']
-        template = django_engine.from_string(
-            '{% extends "fiscales/base_email.html" %}'
-            '{% block body %}'
-            f'{template_body}'
-            '{% endblock body %}'
-        )
+        # guardamos en la session la data del ultimo mail
+        # para inicializar el form en el proximo
+        self.request.session['enviar_email_template'] = form.data['template']
+        self.request.session['enviar_email_asunto'] = form.data['asunto']
+
+        template = form.cleaned_data['template']
         count = 0
         for fiscal in self.fiscales:
             emails = list(fiscal.emails)
@@ -524,7 +531,6 @@ class EnviarEmail(FormView):
                 'site_url': settings.FULL_SITE_URL
             }
             body_html = template.render(context, request=self.request)
-
             body_text = html2text(body_html)
             send_mail(
                 form.cleaned_data['asunto'],
