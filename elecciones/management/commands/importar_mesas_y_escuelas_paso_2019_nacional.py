@@ -41,10 +41,10 @@ class Command(BaseCommand):
                      level=3
             )
 
-            nro_distrito = row['distrito_nro']
-            nro_seccion = row['seccion_nro']
-            nro_circuito = row['circuito_nro']
-            nro_escuela = row['escuela_nro']
+            nro_distrito = self.canonizar(row['distrito_nro'])
+            nro_seccion = self.canonizar(row['seccion_nro'])
+            nro_circuito = self.canonizar(row['circuito_nro'])
+            nro_escuela = self.canonizar(row['escuela_nro'])
             mensaje_fallo_escuela = f'No se procesa la escuela {nro_escuela}. Línea {c}.'
 
             try:
