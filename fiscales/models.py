@@ -116,11 +116,14 @@ class Fiscal(models.Model):
     referencia_confirmada = models.BooleanField(default=False)
 
     # otra metadata del supuesto referente
-    referente_nombres = models.CharField(max_length=50, blank=True, null=True)
-    referente_apellido = models.CharField(max_length=30, blank=True, null=True)
+    referente_nombres = models.CharField(max_length=100, blank=True, null=True)
+    referente_apellido = models.CharField(max_length=50, blank=True, null=True)
 
     # el materialized path de referencias
     referido_por_codigos = models.CharField(max_length=250, blank=True, null=True)
+
+    # Para saber si hay que capacitarlo
+    ingreso_alguna_vez = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = 'Fiscales'
@@ -231,6 +234,14 @@ class Fiscal(models.Model):
         self.save(update_fields=['troll'])
         if era_troll:
             registrar_fiscal_no_es_troll(self, nuevo_scoring, actor)
+
+    def marcar_ingreso_alguna_vez(self):
+        """
+        Marca que el Fiscal efectivamente ya ingresó alguna vez.
+        En principio la marca de ingreso_alguna_vez se usa para capacitar al validador.
+        """
+        self.ingreso_alguna_vez = True
+        self.save(update_fields=['ingreso_alguna_vez'])
 
 
 @receiver(post_save, sender=Fiscal)

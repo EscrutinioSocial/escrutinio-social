@@ -13,3 +13,6 @@ class Select(forms.widgets.Input):
         context = super().get_context(name, value, attrs)
         context['widget']['type'] = self.input_type
         return context
+
+    def required(self,value):
+        self.required = value

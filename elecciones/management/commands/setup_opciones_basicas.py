@@ -4,17 +4,17 @@ from elecciones.models import Opcion, CategoriaOpcion, Categoria
 
 
 class Command(BaseCommand):
-    help = "Crea las opciones basicas definidas en el setting"
+    help = "Crea las opciones básicas definidas en settings."
 
     defaults = {
-        'BLANCOS': 'Votos en blanco',
-        'TOTAL_VOTOS': 'Total de votos',
-        'TOTAL_SOBRES': 'Total de sobres',
-        'NULOS': 'Votos nulos',
+        'BLANCOS': ('Votos en blanco', 10000),
+        'NULOS': ('Votos nulos', 10001),
+        'TOTAL_VOTOS': ('Total de votos', 10002),
+        'TOTAL_SOBRES': ('Total de sobres', 10003),
     }
 
     def handle(self, *args, **options):
-        for constant, nombre_default in Command.defaults.items():
+        for constant, (nombre_default, orden) in Command.defaults.items():
             criterio_dict = getattr(settings, f'OPCION_{constant}')
 
             # estrictamente, el nombre no deberia importar para el filtro
@@ -24,16 +24,16 @@ class Command(BaseCommand):
 
             opcion, creada = Opcion.objects.get_or_create(
                 **criterio_dict,
-                defaults={'nombre': nombre},
+                defaults={'nombre': nombre, 'orden': orden},
             )
 
             if creada:
                 self.stdout.write(
-                    self.style.SUCCESS(f'se creó la opcion {opcion}')
+                    self.style.SUCCESS(f'Se creó la opcion {opcion}.')
                 )
             else:
                 self.stdout.write(
-                    self.style.WARNING(f'{opcion} preexistía')
+                    self.style.WARNING(f'{opcion} preexistía.')
                 )
             for categoria in Categoria.objects.all():
                 _, creada = CategoriaOpcion.objects.get_or_create(
@@ -41,7 +41,7 @@ class Command(BaseCommand):
                 )
                 if creada:
                     self.stdout.write(
-                        self.style.SUCCESS(f'     se asoció a {categoria}')
+                        self.style.SUCCESS(f'     se asoció a {categoria}.')
                     )
                 else:
                     self.stdout.write(

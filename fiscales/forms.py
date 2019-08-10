@@ -12,7 +12,10 @@ from django.template import engines
 from datetime import timedelta
 from django.utils import timezone
 from django.utils.html import format_html
+
 from django_summernote.widgets import SummernoteWidget
+from django.utils.safestring import mark_safe
+
 from dal import autocomplete
 
 import phonenumbers
@@ -81,7 +84,6 @@ class ReferidoForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['url'].widget.attrs['readonly'] = True
-
 
 
 class MisDatosForm(FiscalForm):
@@ -171,7 +173,7 @@ class QuieroSerFiscalForm(forms.Form):
     )
 
     referente_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
-    referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=100)
+    referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=50)
 
     referido_por_codigo = forms.CharField(
         required=False,
@@ -342,6 +344,8 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
     def clean(self):
         super().clean()
         suma = 0
+        errors = []
+
         for form in self.forms:
             opcion = form.cleaned_data.get('opcion')
             votos = form.cleaned_data.get('votos')
@@ -356,18 +360,21 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
                     f'El valor confirmado que tenemos para esta opción es {previos}'
                 ))
 
-        errors = []
+            if opcion == Opcion.total_votos():
+                if votos > self.mesa.electores:
+                    errors.append('El campo total de votos no puede ser mayor a la '
+                        f'cantidad de electores de la mesa: {self.mesa.electores}')
 
         # Controlamos que la suma de votos no sea mayor a cantidad de
         # electores si conocemos la cantidad de electores de una mesa.
         if self.mesa.electores > 0 and suma > self.mesa.electores:
             errors.append(
-                'El total de votos no puede ser mayor a la '
+                'La suma de los votos no puede ser mayor a la '
                 f'cantidad de electores de la mesa: {self.mesa.electores}'
             )
 
         if errors:
-            form.add_error('votos', ValidationError(errors))
+            raise forms.ValidationError(errors)
 
         #warnings
         warnings = []
@@ -411,6 +418,8 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
                 form.data = data
 
             if warnings:
+                warnings[-1] = mark_safe( warnings[-1] +
+                    '<br><br>¿Confirma que están cargados correctamente los valores que figuran en el acta?')
                 raise forms.ValidationError(warnings)
 
 

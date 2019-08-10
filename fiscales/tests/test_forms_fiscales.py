@@ -15,6 +15,7 @@ from elecciones.tests.factories import (
 from .test_carga_datos import _construir_request_data_para_carga_de_resultados
 from elecciones.models import Opcion
 
+
 def test_quiero_ser_fiscal_form__data_ok(db):
     seccion = SeccionFactory()
     request_data = construir_request_data(seccion)
@@ -101,7 +102,8 @@ def test_formset_carga_valida_votos_para_opcion(db):
 
 def test_formset_carga_warning_sobres_mayor_mesa_electores(db):
     m = MesaFactory()
-    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres', nombre='total de sobres')
+    o1 = OpcionFactory(
+        tipo=Opcion.TIPOS.metadata, nombre_corto='sobres', nombre='total de sobres')
 
     VMRFormSet = votomesareportadoformset_factory(min_num=1)
     data = _construir_request_data_para_carga_de_resultados(
@@ -124,7 +126,11 @@ def test_formset_carga_warning_sobres_mayor_mesa_electores(db):
 
 def test_formset_carga_warning_suma_votos_mayor_sobres(db):
     m = MesaFactory()
-    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres', nombre='total de sobres')
+    o1 = OpcionFactory(
+        tipo=Opcion.TIPOS.metadata,
+        nombre_corto='sobres',
+        nombre='total de sobres',
+    )
     o2 = OpcionFactory()
     o3 = OpcionFactory()
 
@@ -186,3 +192,28 @@ def test_enviar_email_form_invalid():
     assert not f.is_valid()
     assert f.errors == {'template': ["Invalid filter: 'filtro_que_no_existe'"]}
 
+
+def test_formset_carga_total_votos_mayor_electores_mesa(db):
+    m = MesaFactory(electores=100)
+    o1 = o1 = OpcionFactory(
+        tipo=Opcion.TIPOS.metadata,
+        nombre_corto='total_votos',
+        nombre='total de votos'
+    )
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 200, 0)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert not formset.is_valid()
+    assert len(formset.non_form_errors()) == 1
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 80, 0)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert formset.is_valid()
+    assert len(formset.non_form_errors()) == 0

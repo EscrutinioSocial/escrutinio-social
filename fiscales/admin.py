@@ -1,5 +1,6 @@
 from django.urls import reverse
 from django.contrib import admin
+
 from django.http import HttpResponseRedirect
 from djangoql.admin import DjangoQLSearchMixin
 from .models import Fiscal, CodigoReferido
@@ -8,8 +9,6 @@ from contacto.admin import ContactoAdminInline
 from django_admin_row_actions import AdminRowActionsMixin
 from django.contrib.admin.filters import DateFieldListFilter
 from antitrolling.models import EventoScoringTroll
-from functools import lru_cache
-from django.utils.html import format_html
 
 
 class FechaIsNull(DateFieldListFilter):
@@ -24,7 +23,6 @@ class BaseBooleanFilter(admin.SimpleListFilter):
     # por defecto aplica True para 'sí' y "false" para no. Si
     # reversed_criteria está en True, se hace lo contrario
     reversed_criteria = False
-
 
     def lookups(self, request, model_admin):
         return (
@@ -94,16 +92,12 @@ class EventoScoringTrollInline(admin.TabularInline):
     model = EventoScoringTroll
     extra = 0
     fk_name = "fiscal_afectado"
-    readonly_fields = ('motivo', 'mesa_categoria', 'attachment_link', 'automatico', 'actor', 'variacion')
-    exclude = ['attachment']
+    fields = ('motivo', 'mesa_categoria', 'automatico', 'attachment', 'actor', 'variacion')
+    readonly_fields = ('motivo', 'mesa_categoria', 'attachment', 'automatico', 'actor', 'variacion')
+
     verbose_name = "Evento que afecta al scoring troll del fiscal"
     verbose_name_plural = "Eventos que afectan al scoring troll del fiscal"
     can_delete = False
-
-    # probablemente haya una mejor forma de hacer esto.
-    def attachment_link(self, obj):
-        img_snippet = f'<img src="{obj.attachment.foto.url}" width="80px"/>'
-        return format_html(f'<a href="{obj.attachment.foto.url}">'+img_snippet+'</a>')
 
     def has_add_permission(self, request):
         return False
@@ -167,7 +161,6 @@ class FiscalAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
         row_actions += super().get_row_actions(obj)
         return row_actions
 
-    @lru_cache(maxsize=64)
     def scoring_troll(o):
         return o.scoring_troll()
 
@@ -182,6 +175,7 @@ class FiscalAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     search_fields = ('apellido', 'nombres', 'dni',)
     list_display_links = ('__str__',)
     list_filter = (TieneReferente, CertezaFilter, 'troll', EsStaffFilter, 'estado')
+
     inlines = [
         EventoScoringTrollInline,
         CodigoReferidoInline,

@@ -22,6 +22,28 @@ logger = logging.getLogger("e-va")
 
 MAX_INT_DB = 2147483647
 
+TIPOS_DE_AGREGACIONES = Choices(
+    ('todas_las_cargas', 'Todas'),
+    ('solo_consolidados', 'Consolidadas'),
+    ('solo_consolidados_doble_carga', 'Consolidadas con doble Carga'),
+)
+
+OPCIONES_A_CONSIDERAR = Choices(
+    ('prioritarias', 'Prioritarias'),
+    ('todas', 'Todas'),
+)
+
+NIVELES_DE_AGREGACION = Choices(
+    ('distrito', 'Provincia'),
+    ('seccion_politica', 'Sección Política'),
+    ('seccion', 'Sección Electoral'),
+    ('circuito', 'Circuito'),
+    ('lugar_de_votacion', 'Lugar de Votación'),
+    ('mesa', 'Mesa'),
+)
+
+NIVELES_AGREGACION = [x[0] for x in NIVELES_DE_AGREGACION]
+
 
 class Distrito(models.Model):
     """
@@ -172,7 +194,10 @@ class Circuito(models.Model):
     def nombre_completo(self):
         return f'{self.seccion.nombre_completo()} - {self.nombre}'
 
-
+    @property
+    def distrito(self):
+        return self.seccion.distrito
+    
 class LugarVotacion(models.Model):
     """
     Define el lugar de votación (escuela) que pertenece a un circuito
@@ -263,6 +288,9 @@ class LugarVotacion(models.Model):
     def nombre_completo(self):
         return f'{self.circuito.nombre_completo()}  - {self.nombre}'
 
+    @property
+    def distrito(self):
+        return self.circuito.seccion.distrito
 
 class MesaCategoriaQuerySet(models.QuerySet):
 
@@ -299,14 +327,21 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
 
+    def sin_consolidar_por_csv(self):
+        """
+        Excluye las instancias no consolidadas con doble carga.
+        """
+        return self.exclude(status=MesaCategoria.STATUS.total_consolidada_csv)
+
     def sin_cargas_del_fiscal(self, fiscal):
         """
         Excluye las instancias que tengan alguna carga del fiscal indicado
         """
         return self.exclude(cargas__fiscal=fiscal)
 
-    def con_carga_pendiente(self):
-        return self.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
+    def con_carga_pendiente(self, for_update=False):
+        qs = self.select_for_update(skip_locked=True) if for_update else self
+        return qs.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
     def anotar_prioridad_status(self):
         """
@@ -344,6 +379,12 @@ class MesaCategoriaQuerySet(models.QuerySet):
         Devuelve mesacat con carga pendiente más prioritaria
         """
         return self.con_carga_pendiente().mas_prioritaria()
+
+    def siguiente_para_ub(self):
+        """
+        Devuelve mesacat con carga pendiente más prioritaria
+        """
+        return self.con_carga_pendiente().sin_consolidar_por_csv().mas_prioritaria()
 
     def siguiente_para_fiscal(self, fiscal):
         """
@@ -630,6 +671,10 @@ class Mesa(models.Model):
     def nombre_completo(self):
         return self.lugar_votacion.nombre_completo() + " - Mesa N°" + self.numero
 
+    @property
+    def distrito(self):
+        return self.circuito.seccion.distrito
+
 
 class Partido(models.Model):
     """
@@ -742,10 +787,6 @@ class Eleccion(models.Model):
     """
     fecha = models.DateTimeField()
     nombre = models.CharField(max_length=100)
-    # Se usan para referencia en otros lugares, no aquí.
-    NIVELES_AGREGACION = Choices(
-        'distrito', 'seccion_politica', 'seccion', 'circuito', 'lugar_de_votacion', 'mesa'
-    )
 
     def __str__(self):
         return f'{self.nombre}'
@@ -871,6 +912,10 @@ class CategoriaOpcion(models.Model):
     def __str__(self):
         prioritaria = ' (es prioritaria)' if self.prioritaria else ''
         return f'{self.categoria} - {self.opcion} {prioritaria}'
+
+    def set_prioritaria(self):
+        self.prioritaria = True
+        self.save(update_fields=['prioritaria'])
 
 
 class CargasIncompatiblesError(Exception):
@@ -1007,6 +1052,8 @@ class TecnicaProyeccion(models.Model):
         return f'Técnica de proyección {self.nombre}'
 
 
+
+
 class AgrupacionCircuitos(models.Model):
     """
     Representa un conjunto de circuitos que se computarán juntos a los efectos de una proyección.
@@ -1027,6 +1074,55 @@ class AgrupacionCircuitos(models.Model):
 class AgrupacionCircuito(models.Model):
     circuito = models.ForeignKey('Circuito', on_delete=models.CASCADE)
     agrupacion = models.ForeignKey('AgrupacionCircuitos', on_delete=models.CASCADE)
+
+
+class ConfiguracionComputo(models.Model):
+    """
+    Definición de modos de computar resultados por distrito.
+    """
+    nombre = models.CharField(max_length=100)
+    fiscal = models.ForeignKey(
+        'fiscales.Fiscal',
+        on_delete=models.CASCADE,
+        related_name='configuracion_computo',
+    )
+    
+    class Meta:
+        ordering = ('nombre', )
+        verbose_name = 'Configuración para cómputo'
+        verbose_name_plural = 'Configuraciones para cómputo'
+        constraints = [
+            models.UniqueConstraint(fields=['nombre'],
+                                    name='nombre_unico'
+            )
+        ]
+
+    def __str__(self):
+        return f'Configuración de cómputo {self.nombre}'
+
+
+class ConfiguracionComputoDistrito(models.Model):
+    """
+    Definición de modos de computar resultados para un distrito, de acuerdo a un usuario.
+    """
+    configuracion = models.ForeignKey(ConfiguracionComputo, on_delete=models.CASCADE,related_name='configuraciones')
+    distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE)
+    agregacion = models.CharField(max_length=30,choices=TIPOS_DE_AGREGACIONES)
+    opciones = models.CharField(max_length=30,choices=OPCIONES_A_CONSIDERAR)
+    proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.SET_NULL, default=None, null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'Configuración para cómputo por distrito'
+        verbose_name_plural = 'Configuraciones para cómputo por distrito'
+        constraints = [
+            models.UniqueConstraint(fields=['configuracion','distrito'],
+                                    name='distrito_unico'
+                                    )
+        ]
+
+    @property
+    def fiscal(self):
+        return self.configuracion.fiscal
 
 
 @receiver(post_save, sender=Mesa)

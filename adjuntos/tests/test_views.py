@@ -1,16 +1,10 @@
-from elecciones.tests.factories import (
-    AttachmentFactory,
-    CargaFactory,
-    MesaFactory,
-    MesaCategoriaFactory,
-)
+from elecciones.tests.factories import ( AttachmentFactory, MesaFactory, )
 from django.urls import reverse
-from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
+from elecciones.tests.conftest import fiscal_client, setup_groups # noqa
 from http import HTTPStatus
 from adjuntos.models import Attachment, Identificacion
-from adjuntos.consolidacion import consumir_novedades_carga
-from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile
-import os
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 
 def test_identificacion_create_view_get(fiscal_client, admin_user):
     a = AttachmentFactory()
@@ -28,9 +22,9 @@ def test_identificacion_create_view_post(fiscal_client, admin_user):
     a = AttachmentFactory()
     a.take(admin_user.fiscal)
     data = {
-        'mesa': m1.id,
-        'circuito': m1.circuito.id,
-        'seccion': m1.circuito.seccion.id,
+        'mesa': m1.numero,
+        'circuito': m1.circuito.numero,
+        'seccion': m1.circuito.seccion.numero,
         'distrito': m1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('asignar-mesa', args=[a.id]), data)
@@ -62,9 +56,9 @@ def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client, adm
     attachment = AttachmentFactory()
     attachment.take(admin_user.fiscal)
     data = {
-        'mesa': mesa_1.id,
-        'circuito': mesa_1.circuito.id,
-        'seccion': mesa_1.circuito.seccion.id,
+        'mesa': mesa_1.numero,
+        'circuito': mesa_1.circuito.numero,
+        'seccion': mesa_1.circuito.seccion.numero,
         'distrito': mesa_1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('asignar-mesa-ub', args=[attachment.id]), data)
@@ -214,8 +208,8 @@ def test_preidentificacion_con_datos_de_fiscal(fiscal_client):
     fiscal.seccion = seccion
     fiscal.save()
     fiscal.refresh_from_db()
-    distrito_preset = f'<input id="id_distrito" name="distrito" type="hidden" tabindex="-1" value="{seccion.distrito.id}"/>'
-    seccion_preset =  f'<input id="id_seccion" name="seccion" type="hidden" tabindex="-1" value="{seccion.id}"/>'
+    distrito_preset = f'<input id="id_distrito" name="distrito" type="hidden" tabindex="-1" value="{seccion.distrito.id}" />'
+    seccion_preset =  f'<input id="id_seccion" name="seccion" type="hidden" tabindex="-1" value="{seccion.id}" />'
 
     response = fiscal_client.get(reverse('agregar-adjuntos'))
     content = response.content.decode('utf8')

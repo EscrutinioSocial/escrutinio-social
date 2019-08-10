@@ -1,11 +1,11 @@
-partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_nombre,opcion_nombre_corto,partido_orden,opcion_codigo,opcion_orden,categoria_nombre,categoria_slug
-Frente de Todos,Frente de Todos,136,,Celeste y Blanca A,Celeste y Blanca A,1,136A,1,Presidente y Vicepresidente,Presidente y Vicepresidente
-Frente Patriota,Frente Patriota,132,,Celeste,Celeste,2,132A,2,Presidente y Vicepresidente,Presidente y Vicepresidente
-Frente Nos,Frente Nos,131,,Celeste 2019 A,Celeste 2019 A,3,131A,3,Presidente y Vicepresidente,Presidente y Vicepresidente
-Frente de Izquierda y de Trabajadores,Frente de Izquierda y de Trabajadores,133,,Unidad A,Unidad A,4,133A,4,Presidente y Vicepresidente,Presidente y Vicepresidente
-Consenso Federal,Consenso Federal,137,,Consenso Para El Futuro,Consenso Para El Futuro,5,137A,5,Presidente y Vicepresidente,Presidente y Vicepresidente
-Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,87,,Despertar,Despertar,6,87A,6,Presidente y Vicepresidente,Presidente y Vicepresidente
-Juntos por el Cambio,Juntos por el Cambio,135,,Juntos Somos El Cambio,Juntos Somos El Cambio,7,135A,7,Presidente y Vicepresidente,Presidente y Vicepresidente
-Partido Autonomista,Partido Autonomista,36,,Valores Y Experiencia,Valores Y Experiencia,8,36A,8,Presidente y Vicepresidente,Presidente y Vicepresidente
-Movimiento Al Socialismo,Movimiento Al Socialismo,13,,Unidad De La Izquierda,Unidad De La Izquierda,9,13A,9,Presidente y Vicepresidente,Presidente y Vicepresidente
-Movimiento De Acción Vecinal,Movimiento De Acción Vecinal,57,,Compromiso Vecinal,Compromiso Vecinal,10,57A,10,Presidente y Vicepresidente,Presidente y Vicepresidente
+"opcion_codigo","opcion_orden","opcion_nombre","opcion_nombre_corto","partido_nombre","partido_nombre_corto","partido_codigo","partido_color","partido_orden","categoria_nombre","categoria_slug","categoria_prioridad"
+13,1,"13 Lista 1 A unidad de la izquierda","13 Lista 1 A unidad de la izquierda","Movimiento al socialismo","Movimiento al socialismo",13,,109,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1
+36,2,"36 A valores y experiencia","36 A valores y experiencia","PARTIDO AUTONOMISTA","PARTIDO AUTONOMISTA",36,,110,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1
+57,3,"57 compromiso vecinal lista a","57 compromiso vecinal lista a","MOVIMIENTO DE ACCIÓN VECINAL","MOVIMIENTO DE ACCIÓN VECINAL",57,,111,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1
+87,4,"87 lista a despertar","87 lista a despertar","Unite por la Libertad y la Dignidad","Unite por la Libertad y la Dignidad",87,,228,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1
+131,5,"131 A - Celeste 2019","131 A - Celeste 2019","frente nos","frente nos",131,,117,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1
+132,6,"132 A- Celeste","132 A- Celeste","frente patriota","frente patriota",132,,112,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1
+133,7,"133 Unidad A","133 Unidad A","frente de izquierda de trabajadores","frente de izquierda de trabajadores",133,,113,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1
+135,8,"135 A Juntos Somos el cambio","135 A Juntos Somos el cambio","juntos por el cambio","juntos por el cambio",135,,114,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1
+136,9,"136 A - Celeste y Blanca","136 A - Celeste y Blanca","frente de todos","frente de todos",136,,115,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1
+137,10,"137 A - Consenso para el futuro","137 A - Consenso para el futuro","consenso federal","consenso federal",137,,116,"Presidente y Vicepresidente","Presidente_y_Vicepresidente",1

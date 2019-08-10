@@ -1,5 +1,5 @@
 from elecciones.tests.factories import UserFactory, FiscalFactory
-from elecciones.tests.test_resultados import fiscal_client, setup_groups
+from elecciones.tests.conftest import fiscal_client, setup_groups
 from django.contrib.auth.models import Group
 
 

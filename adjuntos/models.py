@@ -189,7 +189,7 @@ class Attachment(TimeStampedModel):
         super().save(*args, **kwargs)
 
     @classmethod
-    def sin_identificar(cls, fiscal_a_excluir=None):
+    def sin_identificar(cls, fiscal_a_excluir=None, for_update=False):
         """
         Devuelve un conjunto de Attachments que no tienen
         identificación consolidada y no han sido asignados
@@ -198,16 +198,17 @@ class Attachment(TimeStampedModel):
         Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
         """
         wait = settings.ATTACHMENT_TAKE_WAIT_TIME
-        return cls.sin_identificar_con_timeout(wait=wait, fiscal_a_excluir=fiscal_a_excluir)
+        return cls.sin_identificar_con_timeout(wait=wait, fiscal_a_excluir=fiscal_a_excluir, for_update=for_update)
 
     @classmethod
-    def sin_identificar_con_timeout(cls, wait=2, fiscal_a_excluir=None):
+    def sin_identificar_con_timeout(cls, wait=2, fiscal_a_excluir=None, for_update=False):
         """
         Es la implementación de sin_identificar() que se expone sólo para poder
         testear más fácilmente
         """
         desde = timezone.now() - timedelta(minutes=wait)
-        qs = cls.objects.filter(
+        qs = cls.objects.select_for_update(skip_locked=True) if for_update else cls.objects.all()
+        qs = qs.filter(
             Q(taken__isnull=True) | Q(taken__lt=desde),
             status='sin_identificar',
         )
@@ -250,7 +251,7 @@ class Attachment(TimeStampedModel):
         return result
 
     def __str__(self):
-        return f'{self.foto} ({self.mimetype})'
+        return f'{self.id} {self.foto} ({self.mimetype})'
 
 
 class Identificacion(TimeStampedModel):
@@ -301,7 +302,7 @@ class PreIdentificacion(TimeStampedModel):
     Este modelo se usa para asociar a los attachment información de identificación que no es completa.
     No confundir con Identificacion ni con el status de identificación de una mesa.
     """
-    
+
     fiscal = models.ForeignKey(
         'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
     )

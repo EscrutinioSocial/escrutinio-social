@@ -1,46 +1,47 @@
-{% extends "fiscales/base_email.html" %}
 
-      {% block body %}
+            {% block body %}
+
+                        <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Hola {{ fiscal.nombres }}</p>
+                        <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">
+
+                        Recibimos correctamente tu inscripción para validar los resultados de las <strong>Paso Nacional 2019</strong> para las próximas elecciones del 11 de agosto. Debés <strong>confirmar tu email</strong> haciendo click en el siguiente botón</p>
+
+                        <table border="0" cellpadding="0" cellspacing="0" class="btn btn-primary" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; box-sizing: border-box;">
+                          <tbody>
+                            <tr>
+                              <td align="left" style="font-family: sans-serif; font-size: 14px; vertical-align: top; padding-bottom: 15px;">
+                                <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: auto;">
+                                  <tbody>
+                                    <tr>
+                                      <td style="font-family: sans-serif; font-size: 14px; vertical-align: top; background-color: #3498db; border-radius: 5px; text-align: center;">
+                                        <a href="{{ site_url }}{% url 'confirmar-email' fiscal.codigo_confirmacion %}" target="_blank" style="display: inline-block; color: #ffffff; background-color: #3498db; border: solid 1px #3498db; border-radius: 5px; box-sizing: border-box; cursor: pointer; text-decoration: none; font-size: 14px; font-weight: bold; margin: 0; padding: 12px 25px; text-transform: capitalize; border-color: #3498db;">Confirmar tu email</a> </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+
+                        <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Es importante que instales Telegram en tu teléfono (es una aplicación de comunicación gratuita, similar a WhatsApp, pero que facilita la comunicación con grupos grandes. Es sencillo: entrás en la PlayStore de tu celu (o Apple Store si tenés iPhone) y lo buscás ahí. Una vez hecho eso sumate a nuestro grupo haciendo click en <a href="http://tinyurl.com/validadores">aquí</a></p>
+
+                        <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Pronto nos comunicaremos con vos por teléfono y/o email</p>
+                        <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">¡Muchas gracias!</p>
 
 
-      <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Hola {{ fiscal.nombres }}</p>
-      <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">
+                        {% endblock body %}
 
-      Recibimos correctamente tu inscripción para validar los resultados de las <strong>Paso Nacional 2019</strong> para las próximas elecciones del 11 de agosto. Debés <strong>confirmar tu email</strong> haciendo click en el siguiente botón</p>
 
-      <table border="0" cellpadding="0" cellspacing="0" class="btn btn-primary" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; box-sizing: border-box;">
-        <tbody>
-          <tr>
-            <td align="left" style="font-family: sans-serif; font-size: 14px; vertical-align: top; padding-bottom: 15px;">
-              <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: auto;">
-                <tbody>
-                  <tr>
-                    <td style="font-family: sans-serif; font-size: 14px; vertical-align: top; background-color: #3498db; border-radius: 5px; text-align: center;">
-                      <a href="{{ site_url }}{% url 'confirmar-email' fiscal.codigo_confirmacion %}" target="_blank" style="display: inline-block; color: #ffffff; background-color: #3498db; border: solid 1px #3498db; border-radius: 5px; box-sizing: border-box; cursor: pointer; text-decoration: none; font-size: 14px; font-weight: bold; margin: 0; padding: 12px 25px; text-transform: capitalize; border-color: #3498db;">Confirmar tu email</a> </td>
-                  </tr>
-                </tbody>
-              </table>
-            </td>
-          </tr>
-        </tbody>
-      </table>
 
-      <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Pronto nos comunicaremos con vos por teléfono y/o email</p>
-      <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">¡Muchas gracias!</p>
-
-{% endblock body %}
-
-{% block footer %}
-<div class="footer" style="clear: both; Margin-top: 10px; text-align: center; width: 100%;">
+        {% block footer %}
+        <div class="footer" style="clear: both; Margin-top: 10px; text-align: center; width: 100%;">
               <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;">
                 <tr>
                   <td class="content-block" style="font-family: sans-serif; vertical-align: top; padding-bottom: 10px; padding-top: 10px; font-size: 12px; color: #999999; text-align: center;">
-
-    <span class="apple-link" style="color: #999999; font-size: 12px; text-align: center;">Si no ves el botón, copiá y pegá el siguiente link en el navegador</span>
-    <br> {{ site_url }}{% url 'confirmar-email' fiscal.codigo_confirmacion %}.
-
-      </td>
+                    <span class="apple-link" style="color: #999999; font-size: 12px; text-align: center;">Si no ves el botón, copiá y pegá el siguiente link en el navegador</span>
+                    <br> {{ site_url }}{% url 'confirmar-email' fiscal.codigo_confirmacion %}.
+                  </td>
                 </tr>
               </table>
-            </div>
-{% endblock footer %}
+         </div>
+        {% endblock footer %}

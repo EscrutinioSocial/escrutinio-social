@@ -32,6 +32,7 @@ from elecciones.models import (
     VotoMesaReportado
 )
 from .acciones import siguiente_accion
+from adjuntos.consolidacion import consolidar_cargas
 
 from dal import autocomplete
 
@@ -46,11 +47,15 @@ from .forms import (
     ReferidoForm,
     EnviarEmailForm,
 )
+
+from .email_sender import enviar_correo
+
 from contacto.views import ConContactosMixin
 from problemas.models import Problema
 from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
+
 
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
@@ -141,24 +146,10 @@ class QuieroSerFiscal(FormView):
         return super().form_valid(form)
 
     def enviar_correo_confirmacion(self, fiscal, email):
-        body_html = render_to_string(
-            'fiscales/email.html', {
-                'fiscal': fiscal,
-                'email': settings.DEFAULT_FROM_EMAIL,
-                'cell_call': settings.DEFAULT_CEL_CALL,
-                'cell_local': settings.DEFAULT_CEL_LOCAL,
-                'site_url': settings.FULL_SITE_URL
-            }
-        )
-        body_text = html2text(body_html)
-
-        send_mail(
+        enviar_correo(
             '[NOREPLY] Recibimos tu inscripción como validador/a.',
-            body_text,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False,
-            html_message=body_html
+            fiscal,
+            email
         )
 
 
@@ -181,7 +172,6 @@ def referidos(request):
 
     form = ReferidoForm(initial={'url': fiscal.ultimo_codigo_url()})
     return render(request, 'fiscales/referidos.html', {'form': form, 'referidos': fiscal.referidos.all()})
-
 
 
 def confirmar_email(request, uuid):
@@ -240,7 +230,13 @@ def realizar_siguiente_accion(request):
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
 def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
-    mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente()
+
+    if request.method == 'GET':
+        mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente_para_ub()
+    else:
+        mesa_cat_id = request.session.pop('mesa_categoria_id', None)
+        mesacategoria = MesaCategoria.objects.get(id=mesa_cat_id)
+
     if mesacategoria:
         mesacategoria.take(request.user.fiscal)
         return carga(request, mesacategoria.id, desde_ub=True)
@@ -274,17 +270,17 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
         # TO DO: quizas sumar puntos al score anti-trolling?
         raise PermissionDenied('no te toca cargar acá')
 
-    # en carga parcial sólo se cargan opciones prioritarias
+    # En carga parcial sólo se cargan opciones prioritarias.
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
 
-    # tenemos la lista de opciones ordenadas como la lista
+    # Tenemos la lista de opciones ordenadas como la lista.
     opciones = categoria.opciones_actuales(solo_prioritarias)
 
     datos_previos = mesa_categoria.datos_previos(tipo)
 
-    # obtenemos la clase para el formset seteando tantas filas como opciones
+    # Obtenemos la clase para el formset seteando tantas filas como opciones
     # existen. Como extra=0, el formset tiene un tamaño fijo
     VotoMesaReportadoFormset = votomesareportadoformset_factory(
         min_num=opciones.count()
@@ -292,7 +288,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
 
     def fix_opciones(formset):
         """
-        función auxiliar que deja sólo la opcion correspondiente a cada fila en los
+        Función auxiliar que deja sólo la opcion correspondiente a cada fila en los
         choicefields de cada formulario, configura widget readonly necesarios
         y la índice de la navegación con tabs
         """
@@ -315,7 +311,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     first_autofoco = True
                     form.fields['votos'].widget.attrs['autofocus'] = True
 
-            # todos los campos son requeridos
+            # Todos los campos son requeridos
             form.fields['votos'].required = True
 
     data = request.POST if request.method == 'POST' else None
@@ -331,6 +327,9 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     if request.method == 'POST':
         is_valid = formset.is_valid()
 
+    if desde_ub:
+        request.session['mesa_categoria_id'] = mesa_categoria.id
+
     if is_valid:
         try:
             with transaction.atomic():
@@ -340,7 +339,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     mesa_categoria=mesa_categoria,
                     tipo=tipo,
                     fiscal=fiscal,
-                    origen=Carga.SOURCES.web
+                    origen=Carga.SOURCES.web if not desde_ub else Carga.SOURCES.csv
                 )
                 reportados = []
                 for form in formset:
@@ -348,8 +347,13 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     vmr.carga = carga
                     reportados.append(vmr)
                 VotoMesaReportado.objects.bulk_create(reportados)
+                
                 # Libero el token sobre la mc
                 mesa_categoria.release()
+                # si viene desde_ub, consolidamos la carga
+                if desde_ub:
+                    consolidar_cargas(mesa_categoria)
+
             carga.actualizar_firma()
             messages.success(request, f'Guardada categoría {categoria} para {mesa}')
         except Exception as e:
@@ -359,6 +363,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             # y ya no hay constraint.
             # Lo dejamos para enterarnos de algun otro tipo de excepción.
             capture_exception(e)
+
         redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', args=[mesa.id])
         return redirect(redirect_to)
 
@@ -390,14 +395,11 @@ class ReporteDeProblemaCreateView(CreateView):
             MesaCategoria, id=self.kwargs['mesacategoria_id']
         )
 
-    def form_invalid(self, form):
-        messages.info(
-            self.request,
-            f'No se registró el reporte. Corroborá haber elegido una opción.',
-            extra_tags="problema"
-        )
-        return redirect('siguiente-accion')
-
+    def form_invalid(self,form):            
+        tipo = bool(form.errors['tipo_de_problema'])
+        descripcion = bool(form.errors['descripcion'])
+        return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
+    
     def form_valid(self, form):
         fiscal = self.request.user.fiscal
         carga = form.save(commit=False)
@@ -593,8 +595,10 @@ class SeccionSimpleListView(autocomplete.Select2QuerySetView):
         distrito = self.forwarded.get('distrito',None)
         if distrito:
             lookups &= Q(distrito_id=distrito)
-        return qs.filter(lookups)
+        if self.q:
+            lookups &= Q(numero=self.q) | Q(nombre__istartswith=self.q)
 
+        return qs.filter(lookups)
 
 class DistritoListView(AjaxListView):
     model = Distrito

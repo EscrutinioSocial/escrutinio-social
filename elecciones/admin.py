@@ -20,54 +20,40 @@ from .models import (
     TecnicaProyeccion,
     AgrupacionCircuitos,
     AgrupacionCircuito,
+    ConfiguracionComputo,
+    ConfiguracionComputoDistrito,
 )
 from .forms import CategoriaForm, SeccionForm
 from django.http import HttpResponseRedirect
 from django_admin_row_actions import AdminRowActionsMixin
+from fiscales.admin import BaseBooleanFilter
 
 
-class HasLatLongListFilter(admin.SimpleListFilter):
+class EsTestigoFilter(BaseBooleanFilter):
+    title = 'Es testigo'
+    parameter_name = 'es_testigo'
+    base_lookup = 'es_testigo__isnull'
+    reversed_criteria = True
+
+
+class HasLatLongListFilter(BaseBooleanFilter):
     """
     Filtro para escuelas
     """
     title = 'Tiene coordenadas'
-
-    # Parameter for the filter that will be used in the URL query.
     parameter_name = 'coordenadas'
-
-    def lookups(self, request, model_admin):
-        return (
-            ('sí', 'sí'),
-            ('no', 'no'),
-        )
-
-    def queryset(self, request, queryset):
-        value = self.value()
-        if value:
-            isnull = value == 'no'
-            queryset = queryset.filter(geom__isnull=isnull)
-        return queryset
+    base_lookup = 'geom__isnull'
+    reversed_criteria = True
 
 
-class TieneResultados(admin.SimpleListFilter):
+class TieneResultados(BaseBooleanFilter):
     """
     filtro para mesas
     """
     title = 'Tiene resultados'
     parameter_name = 'tiene_resultados'
-
-    def lookups(self, request, model_admin):
-        return (
-            ('sí', 'sí'),
-            ('no', 'no'),
-        )
-
-    def queryset(self, request, queryset):
-        value = self.value()
-        if value is not None:
-            isnull = value == 'no'
-            queryset = Mesa.objects.filter(cargas__isnull=isnull)
-        return queryset
+    base_lookup = 'cargas__isnull'
+    reversed_criteria = True
 
 
 def mostrar_en_mapa(modeladmin, request, queryset):
@@ -137,7 +123,7 @@ def mostrar_resultados_mesas(modeladmin, request, queryset):
 mostrar_resultados_mesas.short_description = "Mostrar resultados de Mesas seleccionadas"
 
 
-class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
+class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     actions = [resultados_reportados]
     list_display = ('numero', 'lugar_votacion')
     list_filter = (
@@ -153,12 +139,12 @@ class MesaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def get_row_actions(self, obj):
         row_actions = []
-        for e in obj.categorias.all():
-            row_actions.append({
-                'label': f'Ver resultados {e}',
-                'url': reverse('resultados-categoria', args=(e.id, )) + f'?mesa={obj.id}',
-                'enabled': True
-            })
+
+        row_actions.append({
+            'label': f'Ver Mesa-categorias',
+            'url': reverse('admin:elecciones_mesacategoria_changelist') + f'?mesa={obj.id}',
+            'enabled': True
+        })
 
         row_actions.append({
             'label': 'Escuela',
@@ -174,9 +160,19 @@ class PartidoAdmin(admin.ModelAdmin):
     list_display_links = list_display
 
 
-class MesaCategoriaAdmin(admin.ModelAdmin):
-    list_display = ('mesa', 'categoria', 'status')
-    list_filter = ['status', 'categoria', 'mesa__circuito', 'mesa__circuito__seccion']
+class MesaCategoriaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
+    list_display = ['mesa', 'categoria', 'status']
+    raw_id_fields = ['mesa', 'categoria', 'carga_testigo', 'taken_by']
+    list_filter = ['status', ]
+
+    def get_row_actions(self, obj):
+        row_actions = [{
+            'label': 'Ver cargas',
+            'url': reverse('admin:elecciones_carga_changelist') + f'?mesa_categoria={obj.id}',
+            'enabled': True,
+        }]
+        row_actions += super().get_row_actions(obj)
+        return row_actions
 
 
 class CircuitoAdmin(admin.ModelAdmin):
@@ -222,6 +218,7 @@ class SeccionAdmin(admin.ModelAdmin):
         }),
     )
 
+
 class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = [
         'carga',
@@ -264,19 +261,61 @@ class TecnicaProyeccionAdmin(admin.ModelAdmin):
 
 
 class AgrupacionCircuitoInline(admin.TabularInline):
+    # TODO quitar este modelo intermedio inutil y relacionar directamente con  circuito
     model = AgrupacionCircuito
-    extra = 3
+    raw_id_fields = ['circuito']
+    extra = 1
+    verbose_name = "Circuitos"
+    verbose_name_plural = "Circuitos en esta Agrupación"
 
 
 class AgrupacionCircuitosAdmin(admin.ModelAdmin):
     search_fields = ['proyeccion', 'nombre']
     ordering = ['proyeccion']
-    list_filter = ('proyeccion', )
-    inlines = (AgrupacionCircuitoInline, )
+    list_filter = ['proyeccion']
+    inlines = [AgrupacionCircuitoInline]
 
+
+class VotoMesaReportadoInline(admin.TabularInline):
+    model = VotoMesaReportado
+    extra = 0
+    can_delete = False
+    fields = ['opcion', 'votos']
+    readonly_fields = ['opcion']
+    ordering = ['opcion__orden']
+
+
+class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
+    list_display = ['mesa_categoria', 'fiscal', 'tipo', 'created', 'es_testigo']
+    readonly_fields = ['fiscal', 'mesa_categoria']
+    inlines = [VotoMesaReportadoInline]
+    list_filter = ['tipo', EsTestigoFilter]
+
+    def es_testigo(self, obj):
+        return obj.es_testigo.exists()
+
+    def get_row_actions(self, obj):
+        row_actions = [{
+            'label': 'Ver mesa-categoria',
+            'url': reverse('admin:elecciones_mesacategoria_changelist') + f'?id={obj.mesa_categoria.id}',
+            'enabled': True,
+        }]
+        row_actions += super().get_row_actions(obj)
+        return row_actions
+
+
+
+    es_testigo.boolean = True
+
+
+class ConfiguracionComputoDistritoInline(admin.TabularInline):
+    model = ConfiguracionComputoDistrito
+    
+class ConfiguracionComputoAdmin(admin.ModelAdmin):
+    inlines = (ConfiguracionComputoDistritoInline, )
 
 admin.site.register(Eleccion)
-admin.site.register(Carga)
+admin.site.register(Carga, CargaAdmin)
 admin.site.register(Distrito, DistritoAdmin)
 admin.site.register(SeccionPolitica, SeccionPoliticaAdmin)
 admin.site.register(Seccion, SeccionAdmin)
@@ -291,3 +330,4 @@ admin.site.register(Categoria, CategoriaAdmin)
 admin.site.register(CategoriaOpcion, CategoriaOpcionAdmin)
 admin.site.register(TecnicaProyeccion, TecnicaProyeccionAdmin)
 admin.site.register(AgrupacionCircuitos, AgrupacionCircuitosAdmin)
+admin.site.register(ConfiguracionComputo, ConfiguracionComputoAdmin)

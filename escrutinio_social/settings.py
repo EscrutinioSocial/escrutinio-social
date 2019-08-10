@@ -353,14 +353,17 @@ OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 KEY_VOTOS_POSITIVOS = 'Votos Positivos'
 
-#codigo de partidos para validaciones
+NOMBRE_CATEGORIA_PRESI_Y_VICE = 'Presidente y Vicepresidente'
+NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y Vice Provincia de Buenos Aires'
+
+# Código de partidos principales para validaciones.
 CODIGO_PARTIDO_NOSOTROS = '136'
 CODIGO_PARTIDO_ELLOS = '135'
 
-# Cada cuanto tiempo actualizar el campo last_seen de un Fiscal.
+# Cada cuánto tiempo actualizar el campo last_seen de un Fiscal.
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
 
-# Cuando expira una sesión.
+# Cuándo expira una sesión.
 SESSION_TIMEOUT = 5 * 60  # en segundos.
 
 # Flag para decidir si las categorias pertenecientes a totales de los CSV tienen que estar completas
@@ -369,6 +372,10 @@ OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 
 # Opción para elegir ninguna proyección en el combo
 SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
+
+# Opción para indicar que no se debe mostrar información relacionada con cantidad de electores por mesa / escuela / etc
+# una razón para esto es que su no se cuenta con información fidedigna al respecto
+OCULTAR_CANTIDADES_DE_ELECTORES = True
 
 # Constantes para configurar el modo de visualización de los porcentajes de votos
 # de cada partido, habiendo dos opciones:
@@ -413,9 +420,11 @@ CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
 CONSTANCE_CONFIG = {
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
-    'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text')
+    'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text'),
+    'CONFIGURACION_COMPUTO_PUBLICA': ('inicial', 'Nombre de la configuración que se utiliza para publicar resultados.'),
 }
 
+URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/tgbNymZ7vqY'
 
 TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
 

@@ -1,8 +1,12 @@
+import json
+
 from django.urls import reverse
 from http import HTTPStatus
+from urllib import parse
 
-from elecciones.tests.test_resultados import fiscal_client, setup_groups
+from elecciones.tests.conftest import fiscal_client, setup_groups
 from elecciones.tests.factories import (
+    DistritoFactory,
     FiscalFactory,
     SeccionFactory,
 )
@@ -231,3 +235,78 @@ def test_enviar_email_post(fiscal_client, admin_user, mailoutbox, settings):
     assert html.startswith('<!doctype html>\n<html>\n  <head>\n')
     assert m.from_email == 'lio@messi.com'
     assert m.to == ['10@diego.com']
+
+
+def test_autocomplete_seccion__sin_seccion_especifica(db, client):
+    SeccionFactory.create_batch(20)
+
+    url = reverse("autocomplete-seccion-simple")
+
+    response = client.get(url)
+    response_data = json.loads(response.content)
+    resultados = response_data["results"]
+
+    # nos devuelve los 10 resultados
+    assert len(resultados) == 10
+    assert response_data["pagination"]["more"]
+
+
+def test_autocomplete_seccion__camino_feliz(db, client):
+    tam_batch = 10
+    secciones = SeccionFactory.create_batch(tam_batch)
+    distrito = secciones[0].distrito
+
+    # pedimos el nombre completo de una seccion, el match debiese ser único
+    # (a menos que pidamos "Seccion 7" y existan cosas como "Seccion 7x",  "Sección 7xx", etc)
+    query = secciones[tam_batch - 1].nombre
+
+    response = _hacer_call_seccion_autocomplete(client, q=query, distrito=distrito)
+    response_data = json.loads(response.content)
+    resultados = response_data["results"]
+
+    assert len(resultados) == 1
+    assert query in resultados[0]['text']
+
+
+def test_autocomplete_seccion__dos_distritos(db, client):
+    distrito1, distrito2 = DistritoFactory.create_batch(2)
+    SeccionFactory(distrito=distrito1)
+    SeccionFactory(distrito=distrito1)
+    SeccionFactory(distrito=distrito1)
+    SeccionFactory(distrito=distrito2)
+    SeccionFactory(distrito=distrito2)
+
+    query = "Sección"
+
+    response = _hacer_call_seccion_autocomplete(client, q=query)
+    response_data = json.loads(response.content)
+    resultados = response_data["results"]
+
+    # sin distrito, me trae todo
+    assert len(resultados) == 5
+
+    for resultado in resultados:
+        assert query in resultado["text"]
+
+    response = _hacer_call_seccion_autocomplete(client, q=query, distrito=distrito1)
+    response_data = json.loads(response.content)
+    resultados = response_data["results"]
+
+    # trae solo las 3 del distrito 1
+    assert len(resultados) == 3
+
+    for resultado in resultados:
+        assert query in resultado["text"]
+
+
+def _hacer_call_seccion_autocomplete(client, q=None, distrito=None):
+    params = {}
+    if distrito:
+        forward = f'{{"distrito": "{distrito.id}"}}'
+        params["forward"] = forward
+    if q:
+        params["q"] = q
+    query_string = parse.urlencode(params)
+    url = reverse("autocomplete-seccion-simple") + "?" + query_string
+    return client.get(url)
+

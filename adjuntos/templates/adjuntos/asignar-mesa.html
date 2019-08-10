@@ -5,31 +5,23 @@
 {% block breadcrumbs_items %}
 <a href="{{ object.get_absolute_url }}">{{ object }}</a>
 <a class="active">Acta</a>
+<a href="{{ url_video_instructivo }}" id="btnVideoInstructivo">Video instructivo<i class="material-icons">videocam</i></a>
+
+<div id="modalVideoInstructivo" class="modal-video">
+ <!-- Video instructivo como ventana modal. -->
+  <div class="modal-content video">
+    <span class="close-modal-content">&times;</span>
+     <iframe width="560" height="420" src="{{ url_video_instructivo }}">
+     </iframe> 
+  </div>
+</div>
 {% endblock %}
 {% block js %}
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script src="{% static 'js/simpleselect.js' %}"></script>
-<script>
-  /* 
-   Si pudimos determinar la mesa unívocamente, actualizamos la
-   sección y el circuito (si están vacíos). 
- */
-  function cambioMesa(){
-      var mesa = $('#id_mesa').val();
-      var circuito = $('#id_circuito').val();
-      var seccion = $('#id_seccion').val();
-      if(mesa != "-1"){
-	  var params = {'mesa': mesa, 'desdeMesa': '1'};
-	  if(circuito == "-1"){
-	      updateFieldUrl('circuito',"{% url 'autocomplete-circuito' %}",params);
-	  }
-	  if(seccion == "-1"){
-	      updateFieldUrl('seccion', "{% url 'autocomplete-seccion' %}",params);
-	  }
-      }
-  }
-</script>
+<script src="{% static 'js/identificacion.js' %}"></script>
+<script src="{% static 'js/commons.js' %}"></script>
 {% block extrajs %}{% endblock %}
 {% endblock %}
 
@@ -85,27 +77,45 @@
   }
 }
 
-</style>
-<script type="text/javascript">
-$(document).ready(function() {
-  // Si hay imagen de acta
-  var $container = $('.darkroom-container');
-  if ($container.length) {
-    // Actualizar el alto de la imagen a lo disponible
-    var padding = 24;
-    $('html, body').css('overflowY', 'hidden');
-    var darkroomHeight = $(window).height() - $container.offset().top - padding * 2;
-    $container.height(darkroomHeight);
+/* The Modal (background) */
+.modal-video {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1000; /* Sit on top */
+  padding-top: 30px; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 60%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 
-    // Actualizar el alto del left panel
-    var $leftPanel = $('.left-panel .card');
-    var leftPanelHeight = $(window).height() - $leftPanel.offset().top - padding;
-    $('.left-panel .card')
-      .css('max-height', leftPanelHeight)
-      .css('overflowY', 'auto');
-  }
-});
-</script>
+}
+/* Modal Content */
+.modal-content.video {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 9px !important;
+  border: 1px solid #888;
+  width: 80%;
+}
+/* The Close Button */
+.close-modal-content {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+.close-modal-content:hover,
+.close-modal-content:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+
+</style>
 {% endblock %}
 
 
@@ -129,7 +139,7 @@ $(document).ready(function() {
           <div class="card-action">
             {% block card-action %}
             <div class="right-align">
-              <button class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
+              <button id="boton-enviar" class="btn waves-effect waves-light btn white-text" type="submit" tabindex="5">
                 Guardar
               </button>
               <a  class="waves-effect waves-light btn white-text modal-trigger red" href="#modal-problem" id="btn-problema">
@@ -170,7 +180,17 @@ $(document).ready(function() {
                     })
                   }
                 }
-              }
+              },
+
+              /*
+                corremos el seteo del height después de la inicialización de Darkroom.
+                antes a veces no se seteaba el height del contenedor porque Darkroom no había terminado de cargar
+                el evento ready se tiraba, pero luego Darkroom asincrónicamente cambia el HTML, entonces había una condición de carrera
+                el seteo ahora se hace en initialize, que es un callback que nos da Darkroom 
+                */
+              initialize: function() {
+                calcularYSetearAlturaContenedorDarkroom();
+              },
             });
             </script>
         </div>
@@ -180,46 +200,89 @@ $(document).ready(function() {
 {% block messages %}
 {{ block.super }}
 <script type="text/javascript">
+  var url_distrito = "{% url 'autocomplete-distrito' %}";
+  var url_seccion  = "{% url 'autocomplete-seccion' %}";
+  var url_circuito = "{% url 'autocomplete-circuito' %}";
+  var url_mesa = "{% url 'autocomplete-mesa' %}";
+  var fields = [
+      ['distrito', updateDistrito(url_distrito),url_distrito,[]]
+  ];
   $(document).ready(function(){
       $('.modal').modal();
-      initializeSimpleSelect('distrito',"{% url 'autocomplete-distrito' %}",[]);
-      initializeSimpleSelect('seccion', "{% url 'autocomplete-seccion' %}",['distrito']);
-      initializeSimpleSelect('circuito',"{% url 'autocomplete-circuito' %}",['distrito','seccion']);
-      $('#distrito_input').on('focusout',function(e){
-	  updateField(
-	      'distrito',
-	      "{% url 'autocomplete-distrito' %}",
-	      [],
-	      null
-	  );
-      });
-      $('#seccion_input').on('focusout',function(e){
-	  updateField(
-	      'seccion',
-	      "{% url 'autocomplete-seccion' %}",
-	      ['distrito'],
-	      null
-	  )});
-      $('#circuito_input').on('focusout',function(e){
-	  updateField(
-	      'circuito',
-	      "{% url 'autocomplete-circuito' %}",
-	      ['distrito','seccion'],
-	      null
-	  )});
-      $('#mesa_input').on('focusout',function(e){
-	  updateField(
-	      'mesa',
-	      "{% url 'autocomplete-mesa' %}",
-	      ['distrito','seccion','circuito'],
-	      cambioMesa
-	  );
-      });
+      fields.map(e => (e[2]) ? initializeSimpleSelect(e[0],e[2],e[3]) : null);
+      fields.map(e => $('#'+e[0]+'_input').on("mouseout",e[1]));
+      fields.map(e => $('#'+e[0]+'_input').on("focusout",e[1]));
       $('#distrito_input').attr('tabindex', 1);
-      $('#seccion_input').attr('tabindex', 2);
-      $('#circuito_input').attr('tabindex', 3);
-      $('#mesa_input').attr('tabindex', 4);
-      $('#distrito_input').focus();
+      $('#id_seccion').attr('tabindex', 2);
+      $('#id_circuito').attr('tabindex', 3);
+      $('#id_mesa').attr('tabindex', 4);
+      if($('#distrito_input').val()==""){
+	  $('#distrito_input').focus();
+      }
+      else if($('#id_seccion').val()==""){
+	  $('#id_seccion').focus();
+      }
+      else if($('#id_circuito').val()==""){
+	  $('#id_circuito').focus();
+      }
+      else if($('#id_mesa').val()==""){
+	  $('#id_mesa').focus();
+      };
+      $('#btn-reportar').on('click',function(e){
+	  var form = $('#problema-imagen');
+	  $.ajax({
+              type: $(form).attr('method'),
+              url: $(form).attr('action'),
+              data: form.serialize(),
+              context: form,
+              success: function(data, status) {
+	   	  $(form).submit();
+              },
+	      error: function (request, type, errorThrown) {
+		  var json = $.parseJSON(request.responseText);
+		  $.map(json, function( val, i ) {
+		      if(val){
+			  $('#'+i).removeClass('hide');
+		      }
+		  });
+              }
+	  });
+	  return false;
+      });
+  // Get the modal
+  var modal_video_instructivo = document.getElementById("modalVideoInstructivo");
+
+  // Get the button that opens the modal
+  var btn_video_instructivo = document.getElementById("btnVideoInstructivo");
+
+  // Get the <span> element that closes the modal
+  var close_span = document.getElementsByClassName("close-modal-content")[0];
+
+  primer_ingreso = "{{ request.user.fiscal.ingreso_alguna_vez }}" == "False" ? true : false
+  "{{ request.user.fiscal.marcar_ingreso_alguna_vez }}"
+
+  if (primer_ingreso) {
+    modal_video_instructivo.style.display = "block";
+  }
+
+  // When the user clicks the button, open the modal 
+  btn_video_instructivo.onclick = function(event) {
+    event.preventDefault()
+    modal_video_instructivo.style.display = "block";
+  }
+
+  // When the user clicks on <span> (x), close the modal
+  close_span.onclick = function(event) {
+    modal_video_instructivo.style.display = "none";
+  }
+
+  // When the user clicks anywhere outside of the modal, close it
+  window.onclick = function(event) {
+    if (event.target == modal_video_instructivo) {
+      modal_video_instructivo.style.display = "none";
+    }
+  }
+
   });
 </script>
 

@@ -67,8 +67,10 @@
 	       celdas de las columnas 2 y 4; de esta manera en la siguiente
 	       fila llenamos en las columnas 2 y 3 Cantidad y porcentaje para
 	       la mesa y en 4 y 5 Cantidad y porcentaje para los electores. -->
-	  <th colspan="2" style="text-align: center;">Mesa</th>
-	  <th colspan="4" style="text-align: center;">Electores</th>
+	  <th colspan="2" style="text-align: center;">Mesas</th>
+	  {% if mostrar_electores %}
+		<th colspan="4" style="text-align: center;">Electores</th>
+	  {% endif %}
 	</tr>
 	<!-- Cantidad / Porcentajes -->
 	<tr> <!-- Segunda fila -->
@@ -78,153 +80,223 @@
 	  <!-- Mesa: Cantidad / Porcentajes -->
 	  <th style="text-align: right;">Cantidad</th>
 	  <th style="text-align: right;">Porcentajes</th>
-	  <!-- Electores: Cantidad / Porcentajes -->
-	  <th style="text-align: right;">Cantidad</th>
-	  <th style="text-align: right;">Porcentajes</th>
+  	{% if mostrar_electores %}
+      <!-- Electores: Cantidad / Porcentajes -->
+      <th style="text-align: right;">Cantidad</th>
+      <th style="text-align: right;">Porcentajes</th>
+	  {% endif %}
 	</tr>
       </thead>
       <!-- A partir de acá van datos y por lo tanto todas las celdas deberían
 	tener datos -->
       <tbody>
 	<tr>
-	  <td>Total mesa y electores</td>
+	  <td style="text-align: left; font-weight: bold">Totales</td>
 	  <td style="text-align: right;">
 	    {{ resultados.total.cantidad_mesas }}
 	  </td>
 	  <td style="text-align: right;">
 	    {{ resultados.total.porcentaje_mesas }}
 	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.total.cantidad_electores }}
-	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.total.porcentaje_electores }}
-	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.total.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.total.porcentaje_electores }}
+      </td>
+    {% endif %}
 	</tr>
 	<tr>
-	  <td>Sin identificar</td>
+	  <td style="text-align: left">Sin identificar</td>
 	  <td style="text-align: right;">
 	    {{ resultados.sin_identificar.cantidad_mesas }}
 	  </td>
 	  <td style="text-align: right;">
 	    {{ resultados.sin_identificar.porcentaje_mesas }}
 	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.sin_identificar.cantidad_electores }}
-	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.sin_identificar.porcentaje_electores }}
-	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.sin_identificar.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.sin_identificar.porcentaje_electores }}
+      </td>
+    {% endif %}
 	</tr>
 	<tr>
-		<td>En proceso de identificación</td>
+		<td style="text-align: left">En proceso de identificación</td>
 		<td style="text-align: right;">
 			{{ resultados.en_identificacion.cantidad_mesas }}
 		</td>
 		<td style="text-align: right;">
 			{{ resultados.en_identificacion.porcentaje_mesas }}
 		</td>
-		<td style="text-align: right;">
-			{{ resultados.en_identificacion.cantidad_electores }}
-		</td>
-		<td style="text-align: right;">
-			{{ resultados.en_identificacion.porcentaje_electores }}
-		</td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.en_identificacion.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.en_identificacion.porcentaje_electores }}
+      </td>
+    {% endif %}
 	</tr>
 	<tr>
-	  <td>Sin cargar</td>
+	  <td style="text-align: left">Sin cargar</td>
 	  <td style="text-align: right;">
 	    {{ resultados.sin_cargar.cantidad_mesas }}
 	  </td>
 	  <td style="text-align: right;">
 	    {{ resultados.sin_cargar.porcentaje_mesas }}
 	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.sin_cargar.cantidad_electores }}
-	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.sin_cargar.porcentaje_electores }}
-	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.sin_cargar.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.sin_cargar.porcentaje_electores }}
+      </td>
+    {% endif %}
 	</tr>
+  <tr>
+    <td style="text-align: left"><span style="font-weight: bold">Carga parcial</span></td>
+    <td></td><td></td>
+    {% if mostrar_electores %}
+      <td></td><td></td>
+    {% endif %}
+  </tr>
 	<tr>
-	  <td>Carga parcial - sin consolidar</td>
+	  <td style="text-align: left; padding-left: 50px">Sin consolidar</td>
 	  <td style="text-align: right;">
 	    {{ resultados.carga_parcial_sin_consolidar.cantidad_mesas }}
 	  </td>
 	  <td style="text-align: right;">
 	    {{ resultados.carga_parcial_sin_consolidar.porcentaje_mesas }}
 	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.carga_parcial_sin_consolidar.cantidad_electores }}
-	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.carga_parcial_sin_consolidar.porcentaje_electores }}
-	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.carga_parcial_sin_consolidar.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.carga_parcial_sin_consolidar.porcentaje_electores }}
+      </td>
+    {% endif %}
 	</tr>
+  <tr>
+    <td style="text-align: left; padding-left: 50px">Consolidada por ingreso desde CSV</td>
+    <td style="text-align: right;">
+      {{ resultados.carga_parcial_consolidada_csv.cantidad_mesas }}
+    </td>
+    <td style="text-align: right;">
+      {{ resultados.carga_parcial_consolidada_csv.porcentaje_mesas }}
+    </td>
+    {% if mostrar_electores %}
+    <td style="text-align: right;">
+      {{ resultados.carga_parcial_consolidada_csv.cantidad_electores }}
+    </td>
+    <td style="text-align: right;">
+      {{ resultados.carga_parcial_consolidada_csv.porcentaje_electores }}
+    </td>
+    {% endif %}
+  </tr>
 	<tr>
-	  <td>Carga parcial - consolidada</td>
+    <td style="text-align: left; padding-left: 50px">Consolidada por doble carga</td>
 	  <td style="text-align: right;">
-	    {{ resultados.carga_parcial_consolidada.cantidad_mesas }}
+	    {{ resultados.carga_parcial_consolidada_dc.cantidad_mesas }}
 	  </td>
 	  <td style="text-align: right;">
-	    {{ resultados.carga_parcial_consolidada.porcentaje_mesas }}
+	    {{ resultados.carga_parcial_consolidada_dc.porcentaje_mesas }}
 	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.carga_parcial_consolidada.cantidad_electores }}
-	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.carga_parcial_consolidada.porcentaje_electores }}
-	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.carga_parcial_consolidada_dc.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.carga_parcial_consolidada_dc.porcentaje_electores }}
+      </td>
+    {% endif %}
 	</tr>
+  <tr>
+    <td style="text-align: left"><span style="font-weight: bold">Carga total</span></td>
+    <td></td>
+    <td></td>
+    {% if mostrar_electores %}
+      <td></td>
+      <td></td>
+    {% endif %}
+  </tr>
 	<tr>
-	  <td>Carga total - sin consolidar</td>
+	  <td style="text-align: left; padding-left: 50px">Sin consolidar</td>
 	  <td style="text-align: right;">
 	    {{ resultados.carga_total_sin_consolidar.cantidad_mesas }}
 	  </td>
 	  <td style="text-align: right;">
 	    {{ resultados.carga_total_sin_consolidar.porcentaje_mesas }}
 	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.carga_total_sin_consolidar.cantidad_electores }}
-	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.carga_total_sin_consolidar.porcentaje_electores }}
-	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.carga_total_sin_consolidar.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.carga_total_sin_consolidar.porcentaje_electores }}
+      </td>
+    {% endif %}
 	</tr>
 	<tr>
-	  <td>Carga total - consolidada</td>
+	  <td style="text-align: left; padding-left: 50px">Consolidada por ingreso desde CSV</td>
 	  <td style="text-align: right;">
-	    {{ resultados.carga_total_consolidada.cantidad_mesas }}
+	    {{ resultados.carga_total_consolidada_csv.cantidad_mesas }}
 	  </td>
 	  <td style="text-align: right;">
-	    {{ resultados.carga_total_consolidada.porcentaje_mesas }}
+	    {{ resultados.carga_total_consolidada_csv.porcentaje_mesas }}
 	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.carga_total_consolidada.cantidad_electores }}
-	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.carga_total_consolidada.porcentaje_electores }}
-	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.carga_total_consolidada_csv.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.carga_total_consolidada_csv.porcentaje_electores }}
+      </td>
+    {% endif %}
 	</tr>
+  <tr>
+    <td style="text-align: left; padding-left: 50px">Consolidada por doble carga</td>
+    <td style="text-align: right;">
+      {{ resultados.carga_total_consolidada_dc.cantidad_mesas }}
+    </td>
+    <td style="text-align: right;">
+      {{ resultados.carga_total_consolidada_dc.porcentaje_mesas }}
+    </td>
+    {% if mostrar_electores %}
+    <td style="text-align: right;">
+      {{ resultados.carga_total_consolidada_dc.cantidad_electores }}
+    </td>
+    <td style="text-align: right;">
+      {{ resultados.carga_total_consolidada_dc.porcentaje_electores }}
+    </td>
+    {% endif %}
+  </tr>
 	<tr>
-	  <td>Conflictos o problemas</td>
+	  <td style="text-align: left">Conflictos o problemas</td>
 	  <td style="text-align: right;">
 	    {{ resultados.conflicto_o_problema.cantidad_mesas }}
 	  </td>
 	  <td style="text-align: right;">
 	    {{ resultados.conflicto_o_problema.porcentaje_mesas }}
 	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.conflicto_o_problema.cantidad_electores }}
-	  </td>
-	  <td style="text-align: right;">
-	    {{ resultados.conflicto_o_problema.porcentaje_electores }}
-	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.conflicto_o_problema.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.conflicto_o_problema.porcentaje_electores }}
+      </td>
+    {% endif %}
 	</tr>
 	<tr style="height: 50px;">
 	</tr>
 	<tr>
-		<td>Pre-identificación desde CSV</td>
+		<td style="text-align: left">Pre-identificación</td>
 		<td style="text-align: right;">
 			{{ resultados.preidentificaciones }}
 		</td>

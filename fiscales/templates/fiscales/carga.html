@@ -5,58 +5,59 @@
 {{ block.super }}
 
 <style>
-
-.carga-acta-inline {
-  max-width: 100%;
-  display: flex;
-  flex-flow: row wrap;
-  align-items: center;
+h5 {
+    margin-bottom: 0.4rem !important;
+    margin-top: 0.4rem !important;
 }
 
-.carga-acta-inline > dmc-select {
-  flex: 1 60%;
+.card-content {
+    padding-top: 1rem !important;
+    padding-left: 1em !important;
+}
+  
+.collection {
+    border: 0pt !important;
+    padding-top: 0rem !important;
 }
 
-.carga-acta-inline > dmc-select select {
+.collection-item {
+    align-items: baseline;
+    border: 0pt !important;
+    display: flex;
+    line-height: 1.4rem !important;
+    vertical-align: bottom !important;
+    padding : 0px 0px !important; 
+}
+
+.collection-item > dmc-select {
+    flex: 1 75%;
+}
+
+.collection-item > div.row:last-child {
+  flex: 1 25%;
+}
+
+.carga-acta-inline .input-field > input {
+    margin: 0px;
+    font-weight: 600;
+    height: 1.4rem !important;
+    vertical-align: bottom !important;
+}
+
+dmc-select select {
   border: 0;
   -webkit-appearance: none;
   -moz-appearance: none;
+  height: 1.2rem !important;
   text-indent: 1px;
   text-overflow: '';
   padding: 0;
-  height: 2rem;
+  padding-right: .8em;
   text-align-last: right;
-
-}
-
-.carga-acta-inline > dmc-select select > option {
-  direction: rtl;
 }
 
 .carga-acta-inline > dmc-select select::-ms-expand {
   display: none;
-}
-
-.carga-acta-inline > div {
-  flex: 1 40%;
-}
-
-.carga-acta-inline .row {
-  margin-left: 0px;
-  margin-right: 0px;
-}
-
-.carga-acta-inline .row .col {
-  padding: 0 .1rem;
-}
-
-.carga-acta-inline .input-field {
-  margin-top: 0;
-}
-
-.carga-acta-inline .input-field > input {
-  margin: 0;
-  height: 2rem;
 }
 
 .card-content {
@@ -98,18 +99,19 @@ $(document).ready(function(){
 
 {% block card-content %}
     <div class="card-title">
-        <b style='background-color: {{ categoria.back_color }}; color: {{ categoria.color }}'>{{ categoria }}</b>
+      <h5 style='background-color:{{ categoria.back_color }}; color: {{ categoria.color }}'><strong>{{ categoria }}</strong></h5>
     </div>
     {{ formset.management_form }}
-    <div class="carga-acta-inline">
+    <div class="carga-acta-inline collection">
       {% for form in formset %}
+      <div class="collection-item">
         {% form %}
         {% endform %}
+      </div>
       {% endfor %}
     </div>
     {% if formset.non_form_errors %}
       <div style='color: red'>{{formset.non_form_errors}}</div>
-      <div style='color: red'>¿Confirma que están cargados correctamente los valores que figuran en el acta?</div>
     {% endif %}
 {% endblock card-content %}
 
@@ -155,7 +157,11 @@ $(document).ready(function(){
                       plugins: {
                         save: false,
                         crop: false
-                      }
+                      },
+
+                      initialize: function() {
+                        calcularYSetearAlturaContenedorDarkroom();
+                      },
                     });
                     </script>
                 </div>

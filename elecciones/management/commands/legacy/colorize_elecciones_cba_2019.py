@@ -8,7 +8,7 @@ import datetime
 
 
 class Command(BaseCommand):
-    help = "Darle colores a las elecciones.
+    help = "Darle colores a las elecciones."
 
     def handle(self, *args, **options):
 
