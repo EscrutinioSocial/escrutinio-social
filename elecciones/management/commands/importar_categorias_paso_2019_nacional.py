@@ -83,7 +83,7 @@ class Command(BaseCommand):
                 )
                 if opcion is None:
                     self.error_log(f'No se pudo crear la opción {nombre}. Línea {c}.')
-            except MultipleObjectsReturned:
+            except Opcion.MultipleObjectsReturned:
                 # Si hay varias las borro y creo una nueva.
                 Opcion.objects.filter(partido=partido, codigo=opcion_codigo).delete()
                 self.warning(f'La opción {nombre} estaba repetida. Borramos y volvemos a crear. Línea {c}.')
