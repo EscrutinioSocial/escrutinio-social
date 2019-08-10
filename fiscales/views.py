@@ -30,7 +30,7 @@ from elecciones.models import (
     VotoMesaReportado
 )
 from .acciones import siguiente_accion
-from adjuntos.consolidacion import consolidar_cargas 
+from adjuntos.consolidacion import consolidar_cargas
 
 from dal import autocomplete
 
@@ -44,11 +44,15 @@ from .forms import (
     QuieroSerFiscalForm,
     ReferidoForm,
 )
+
+from .email_sender import enviar_correo
+
 from contacto.views import ConContactosMixin
 from problemas.models import Problema
 from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
+
 
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
@@ -139,24 +143,10 @@ class QuieroSerFiscal(FormView):
         return super().form_valid(form)
 
     def enviar_correo_confirmacion(self, fiscal, email):
-        body_html = render_to_string(
-            'fiscales/email.html', {
-                'fiscal': fiscal,
-                'email': settings.DEFAULT_FROM_EMAIL,
-                'cell_call': settings.DEFAULT_CEL_CALL,
-                'cell_local': settings.DEFAULT_CEL_LOCAL,
-                'site_url': settings.FULL_SITE_URL
-            }
-        )
-        body_text = html2text(body_html)
-
-        send_mail(
+        enviar_correo(
             '[NOREPLY] Recibimos tu inscripción como validador/a.',
-            body_text,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False,
-            html_message=body_html
+            fiscal,
+            email
         )
 
 
@@ -179,7 +169,6 @@ def referidos(request):
 
     form = ReferidoForm(initial={'url': fiscal.ultimo_codigo_url()})
     return render(request, 'fiscales/referidos.html', {'form': form, 'referidos': fiscal.referidos.all()})
-
 
 
 def confirmar_email(request, uuid):
