@@ -10,10 +10,10 @@ class Command(BaseCommand):
     help = "Envía los correos de registración que no fueron enviados en su momento"
 
     def add_arguments(self, parser):
-        parser.add_argument('--dia', default=9, type=int, help='Día desde cuando')
-        parser.add_argument('--mes', default=8, type=int, help='Mes desde cuando')
-        parser.add_argument('--hora', default=12, type=int, help='Hora desde cuando')
-        parser.add_argument('--anio', default=2019, type=int, help='Año desde cuando')
+        parser.add_argument('--dia', default=9, type=int, help='Día hasta cuando')
+        parser.add_argument('--mes', default=8, type=int, help='Mes hasta cuando')
+        parser.add_argument('--hora', default=12, type=int, help='Hora hasta cuando')
+        parser.add_argument('--anio', default=2019, type=int, help='Año hasta cuando')
 
     def handle(self, *args, **options):
         dia = options['dia']
@@ -21,12 +21,12 @@ class Command(BaseCommand):
         hora = options['hora']
         anio = options['anio']
 
-        fecha_desde = datetime.datetime(year=anio, month=mes, day=dia, hour=hora, tzinfo=timezone.utc)
-        users = User.objects.filter(date_joined__gt=fecha_desde)
+        fecha_hasta = datetime.datetime(year=anio, month=mes, day=dia, hour=hora, tzinfo=timezone.utc)
+        users = User.objects.filter(date_joined__le=fecha_hasta)
 
         self.stdout.write(self.style.SUCCESS(
             f"Se enviarán {len(users)} correos de registración a los usuarios registrados "
-            f"luego de la fecha {fecha_desde}."
+            f"antes de la fecha {fecha_hasta}."
         ))
 
         confirmado = self.boolean_input("Desea seguir (s/n)?", default="s")
