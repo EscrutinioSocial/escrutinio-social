@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% load i18n l10n %}
+
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+        &rsaquo; <a href="{% url 'admin:fiscales_fiscal_changelist' %}">Fiscales</a>
+        &rsaquo; Enviar email
+    </div>
+{% endblock %}
+
+{% block content %}
+
+<h3>Enviar Email a {{ count }} fiscales.</h3>
+
+<form action="" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <input type="submit" name="enviar" value="Enviar" />
+</form>
+
+{% endblock %}

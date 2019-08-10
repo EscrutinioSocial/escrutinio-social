@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'constance',
     'constance.backends.database',
     'djangoql',
+    'django_summernote',
 
     # 'material.admin',
     # 'django.contrib.admin',
@@ -287,6 +288,13 @@ IMAPS = [{
     'pass': 'xxxx',
     'mailbox': 'INBOX'
 }]
+
+SUMMERNOTE_THEME = 'lite'
+SUMMERNOTE_CONFIG = {
+    # You can disable attachment feature.
+    'disable_attachment': True,
+}
+
 
 # contacto settings
 CARACTERISTICA_TELEFONO_DEFAULT = '351'  # CORDOBA

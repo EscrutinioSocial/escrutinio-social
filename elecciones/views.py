@@ -1,4 +1,3 @@
-import itertools
 from urllib import parse
 
 from django.conf import settings
@@ -23,12 +22,12 @@ from .resultados import Sumarizador, Proyecciones, AvanceDeCarga
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
+
 class StaffOnlyMixing:
     """
     Mixin para que sólo usuarios tipo "staff"
     accedan a la vista.
     """
-
     @method_decorator(staff_member_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)

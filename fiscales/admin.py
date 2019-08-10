@@ -1,8 +1,7 @@
-import csv
-from django.db.models import Q
 from django.urls import reverse
 from django.contrib import admin
-from django.contrib.contenttypes.admin import GenericTabularInline
+from django.http import HttpResponseRedirect
+from djangoql.admin import DjangoQLSearchMixin
 from .models import Fiscal, CodigoReferido
 from .forms import FiscalForm
 from contacto.admin import ContactoAdminInline
@@ -11,7 +10,6 @@ from django.contrib.admin.filters import DateFieldListFilter
 from antitrolling.models import EventoScoringTroll
 from functools import lru_cache
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 
 
 class FechaIsNull(DateFieldListFilter):
@@ -122,8 +120,15 @@ class CodigoReferidoInline(admin.TabularInline):
         return False
 
 
-class FiscalAdmin(AdminRowActionsMixin, admin.ModelAdmin):
-    actions = [hacer_staff]
+def enviar_email(modeladmin, request, queryset):
+    selected = request.POST.getlist(admin.ACTION_CHECKBOX_NAME)
+    ids = ",".join(selected)
+    url = reverse('enviar-email')
+    return HttpResponseRedirect(f'{url}?ids={ids}')
+
+
+class FiscalAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
+    actions = [hacer_staff, enviar_email]
 
     def get_row_actions(self, obj):
         row_actions = []

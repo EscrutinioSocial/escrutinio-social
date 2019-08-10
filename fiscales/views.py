@@ -5,6 +5,8 @@ como elegir acta a clasificar / a cargar / validar
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, get_object_or_404, render
+from django.utils.decorators import method_decorator
+from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.detail import DetailView
@@ -15,7 +17,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
-from django.db.models import Q, F
+from django.db.models import Q
+from django.template import engines
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
 from .models import Fiscal, CodigoReferido
@@ -42,6 +45,7 @@ from .forms import (
     votomesareportadoformset_factory,
     QuieroSerFiscalForm,
     ReferidoForm,
+    EnviarEmailForm,
 )
 from contacto.views import ConContactosMixin
 from problemas.models import Problema
@@ -475,14 +479,75 @@ def confirmar_fiscal(request, fiscal_id):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
+class EnviarEmail(FormView):
+    """
+    Permite enviar email a los fiscales seleccionados en admin.
+    Usa base_email como template
+    """
+
+    form_class = EnviarEmailForm
+    template_name = 'fiscales/enviar_email.html'
+    success_url = reverse_lazy('admin:fiscales_fiscal_changelist')
+
+    @method_decorator(staff_member_required)
+    def dispatch(self, request, *args, **kwargs):
+        ids = request.GET.get('ids', '').split(',')
+        self.fiscales = Fiscal.objects.filter(
+            id__in=ids
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['count'] = self.fiscales.count()
+        return context
+
+    def form_valid(self, form):
+        template_body = form.cleaned_data['template']
+        django_engine = engines['django']
+        template = django_engine.from_string(
+            '{% extends "fiscales/base_email.html" %}'
+            '{% block body %}'
+            f'{template_body}'
+            '{% endblock body %}'
+        )
+        count = 0
+        for fiscal in self.fiscales:
+            emails = list(fiscal.emails)
+            if not emails:
+                continue
+            context = {
+                'fiscal': fiscal,
+                'email': settings.DEFAULT_FROM_EMAIL,
+                'cell_call': settings.DEFAULT_CEL_CALL,
+                'cell_local': settings.DEFAULT_CEL_LOCAL,
+                'site_url': settings.FULL_SITE_URL
+            }
+            body_html = template.render(context, request=self.request)
+
+            body_text = html2text(body_html)
+            send_mail(
+                form.cleaned_data['asunto'],
+                body_text,
+                settings.DEFAULT_FROM_EMAIL,
+                list(fiscal.emails),
+                fail_silently=False,
+                html_message=body_html
+            )
+            count += 1
+        messages.success(self.request, f'Email enviado a {count} fiscales')
+        return super().form_valid(form)
+
+
 class AutocompleteBaseListView(ListView):
 
     def get(self, request, *args, **kwargs):
         try:
             data = {'options': [{'id': o.id, 'text': str(o), 'selected_text': str(o)} for o in self.get_queryset(request)]}
         except:
-            return JsonResponse(data={},status=500)
+            return JsonResponse(data={}, status=500)
         return JsonResponse(data, status=200, safe=False)
+
 
 class DistritoBaseListView(AutocompleteBaseListView):
     model = Distrito
@@ -501,6 +566,7 @@ class AjaxListView(autocomplete.Select2QuerySetView):
     def get_selected_result_label(self, item):
         return item.numero
 
+
 class DistritoSimpleListView(autocomplete.Select2QuerySetView):
     model = Distrito
 
@@ -510,6 +576,7 @@ class DistritoSimpleListView(autocomplete.Select2QuerySetView):
         if self.q:
             lookups &= Q(numero=self.q) | Q(nombre__istartswith=self.q)
         return qs.filter(lookups)
+
 
 class SeccionSimpleListView(autocomplete.Select2QuerySetView):
     model = Seccion
@@ -521,7 +588,6 @@ class SeccionSimpleListView(autocomplete.Select2QuerySetView):
         if distrito:
             lookups &= Q(distrito_id=distrito)
         return qs.filter(lookups)
-
 
 
 class DistritoListView(AjaxListView):
@@ -559,6 +625,7 @@ class SeccionListView(AjaxListView):
             lookups &= Q(id__in=mesas)
         return qs.filter(lookups)
 
+
 class CircuitoListView(AjaxListView):
     model = Circuito
 
@@ -582,6 +649,7 @@ class CircuitoListView(AjaxListView):
             mesas = Mesa.objects.filter(id=mesa).values('circuito_id')
             lookups &= Q(id__in=mesas)
         return qs.filter(lookups)
+
 
 class MesaListView(AjaxListView):
     model = Mesa

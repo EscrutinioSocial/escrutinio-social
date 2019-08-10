@@ -12,7 +12,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from django.utils.html import format_html
-
+from django_summernote.widgets import SummernoteWidget
 from dal import autocomplete
 
 import phonenumbers
@@ -422,3 +422,8 @@ votomesareportadoformset_factory = partial(
     extra=0,
     can_delete=False
 )
+
+
+class EnviarEmailForm(forms.Form):
+    asunto = forms.CharField(max_length=200)
+    template = forms.CharField(widget=SummernoteWidget())
