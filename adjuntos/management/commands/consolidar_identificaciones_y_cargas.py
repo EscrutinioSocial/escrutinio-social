@@ -1,11 +1,11 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from adjuntos.consolidacion import consumir_novedades
-import logging
 import time
+import structlog
 
 
-logger = logging.getLogger("e-va")
+logger = structlog.get_logger('consolidador')
 
 
 class Command(BaseCommand):
@@ -17,5 +17,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         while True:
             n_identificaciones, n_cargas = consumir_novedades()
-            logger.debug("Identificaciones: %d, cargas: %d.", n_identificaciones, n_cargas)
+            logger.debug(
+                'consolidacion',
+                identificaciones=n_identificaciones,
+                cargas=n_cargas
+            )
             time.sleep(settings.PAUSA_CONSOLIDACION)

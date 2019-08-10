@@ -7,9 +7,11 @@ from django.db import transaction
 from django.db.utils import IntegrityError
 
 from escrutinio_social import settings
-from escrutinio_social.settings import OPCION_TOTAL_SOBRES, OPCION_TOTAL_VOTOS
 from fiscales.models import Fiscal
-import logging
+import structlog
+
+
+logger = structlog.get_logger('csv_import')
 
 # Primer dato: nombre de la columna, segundo: si es parte de una categoría o no,
 # tercero, si es obligatorio o puede no estar (dado que en distintas provincias se votan distintas
@@ -72,7 +74,7 @@ class CSVImporter:
             'Seccion': self.canonizar,
             'Circuito': self.canonizar,
             'Nro de mesa': self.canonizar,
-            'Nro de lista': self.canonizar, 
+            'Nro de lista': self.canonizar,
         }
         self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"], dtype=str, converters=converters)
         self.usuario = usuario
@@ -81,7 +83,7 @@ class CSVImporter:
         self.mesas_matches = {}
         self.carga_total = None
         self.carga_parcial = None
-        self.logger = logging.getLogger('csv_import')
+        self.logger = logger
         self.logger.debug("Importando archivo '%s'.", archivo)
 
     def procesar(self):
@@ -153,7 +155,6 @@ class CSVImporter:
                     f'distrito {distrito}.')
             self.mesas_matches[nro_de_mesa] = match_mesa
             self.mesas.append(match_mesa)
-
 
     def canonizar(self, valor):
         """

@@ -1,4 +1,3 @@
-import logging
 import math
 from datetime import timedelta
 from collections import defaultdict
@@ -16,8 +15,9 @@ from model_utils import Choices, FieldTracker
 from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
 from constance import config
+import structlog
 
-logger = logging.getLogger("e-va")
+logger = structlog.get_logger(__name__)
 
 
 MAX_INT_DB = 2147483647
@@ -197,7 +197,7 @@ class Circuito(models.Model):
     @property
     def distrito(self):
         return self.seccion.distrito
-    
+
 
 class LugarVotacion(models.Model):
     """
@@ -1089,7 +1089,7 @@ class ConfiguracionComputo(models.Model):
         on_delete=models.CASCADE,
         related_name='configuracion_computo',
     )
-    
+
     class Meta:
         ordering = ('nombre', )
         verbose_name = 'Configuración para cómputo'
@@ -1113,7 +1113,7 @@ class ConfiguracionComputoDistrito(models.Model):
     agregacion = models.CharField(max_length=30,choices=TIPOS_DE_AGREGACIONES)
     opciones = models.CharField(max_length=30,choices=OPCIONES_A_CONSIDERAR)
     proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.SET_NULL, default=None, null=True, blank=True)
-    
+
     class Meta:
         verbose_name = 'Configuración para cómputo por distrito'
         verbose_name_plural = 'Configuraciones para cómputo por distrito'

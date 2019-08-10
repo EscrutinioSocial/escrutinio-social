@@ -163,9 +163,9 @@ class Attachment(TimeStampedModel):
             return
 
         self.pre_identificacion = PreIdentificacion.objects.create(
-            fiscal = self.subido_por,
-            distrito = self.subido_por.seccion.distrito if self.subido_por.seccion else self.subido_por.distrito,
-            seccion = self.subido_por.seccion
+            fiscal=self.subido_por,
+            distrito=self.subido_por.seccion.distrito if self.subido_por.seccion else self.subido_por.distrito,
+            seccion=self.subido_por.seccion
         )
 
     def save(self, *args, **kwargs):

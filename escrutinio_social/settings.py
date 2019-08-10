@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 import sys
 from model_utils import Choices
+import structlog
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,8 +78,7 @@ INSTALLED_APPS = [
     'contacto',
     'api',
     'antitrolling',
-    'scheduling'
-
+    'scheduling',
 ]
 
 MIDDLEWARE = [
@@ -87,9 +87,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'fiscales.middleware.OneSessionPerUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'fiscales.middleware.OneSessionPerUserMiddleware'
+    'django_structlog.middlewares.RequestMiddleware',
 ]
 
 ROOT_URLCONF = 'escrutinio_social.urls'
@@ -240,24 +241,79 @@ ANYMAIL = {
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json_formatter": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.processors.JSONRenderer(),
+        },
+        "plain_console": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.dev.ConsoleRenderer(),
+        },
+        "key_value": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.processors.KeyValueRenderer(
+                key_order=['timestamp', 'level', 'logger']
+            ),
         },
     },
-    'loggers': {
-        'e-va': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "plain_console",
         },
-        'csv_import': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
+        "json_file": {
+            "class": "logging.handlers.WatchedFileHandler",
+            "filename": "logs/json.log",
+            "formatter": "json_formatter",
+        },
+        "flat_line_file": {
+            "class": "logging.handlers.WatchedFileHandler",
+            "filename": "logs/flat_line.log",
+            "formatter": "key_value",
         },
     },
+    "loggers": {
+        "consolidador": {
+            "handlers": ["console", "flat_line_file"],
+            "level": "DEBUG",
+        },
+        "csv_import": {
+            "handlers": ["console", "flat_line_file"],
+            "level": "DEBUG",
+        },
+        "": {
+            "handlers": ["json_file"],
+            "level": "INFO",
+        },
+        "django_structlog": {
+            "handlers": ["console", "json_file"],
+            "level": "INFO",
+        },
+    }
 }
+
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.UnicodeDecoder(),
+        structlog.processors.ExceptionPrettyPrinter(),
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    context_class=structlog.threadlocal.wrap_dict(dict),
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
+
 
 # EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"  # or sendgrid.EmailBackend, or...
 DEFAULT_FROM_EMAIL = "algo@email.com"  # if you don't already have this in settings

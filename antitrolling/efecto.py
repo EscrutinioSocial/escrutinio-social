@@ -8,9 +8,9 @@ from .models import (
     EventoScoringTroll
 )
 
-import logging
+import structlog
 
-logger = logging.getLogger("e-va")
+logger = structlog.get_logger(__name__)
 
 
 def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
@@ -71,6 +71,7 @@ def efecto_determinacion_fiscal_troll(fiscal):
 
     for identificacion in Identificacion.objects.filter(fiscal=fiscal):
         identificacion.invalidar()
+
 
 def efecto_scoring_troll_descartar_problema(fiscal, problema):
     """
