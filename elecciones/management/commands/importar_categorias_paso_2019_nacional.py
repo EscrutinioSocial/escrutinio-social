@@ -11,7 +11,7 @@ from django.db import transaction
 from .basic_command import BaseCommand
 
 CSV_NACIONAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_nacionales.csv'
-CSV_PROVINCIAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_provinciales_limpia.csv'
+CSV_PROVINCIAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_provinciales.csv'
 
 
 class Command(BaseCommand):
