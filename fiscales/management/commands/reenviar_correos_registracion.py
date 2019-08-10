@@ -22,7 +22,7 @@ class Command(BaseCommand):
         anio = options['anio']
 
         fecha_hasta = datetime.datetime(year=anio, month=mes, day=dia, hour=hora, tzinfo=timezone.utc)
-        users = User.objects.filter(date_joined__le=fecha_hasta)
+        users = User.objects.filter(date_joined__lte=fecha_hasta)
 
         self.stdout.write(self.style.SUCCESS(
             f"Se enviarán {len(users)} correos de registración a los usuarios registrados "
