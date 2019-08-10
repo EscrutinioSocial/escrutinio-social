@@ -6,6 +6,8 @@ from csv import DictReader
 from elecciones.models import Seccion, Circuito, Distrito
 import datetime
 
+from .basic_command import BaseCommand
+
 CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/prioridad_scheduling.csv'
 
 
@@ -16,36 +18,9 @@ def to_float(val):
         return None
 
 
-class BaseCommand(BaseCommand):
-    
-    def success(self, msg, ending='\n'):
-        self.stdout.write(self.style.SUCCESS(msg), ending=ending)
-
-    def warning(self, msg, ending='\n'):
-        self.stdout.write(self.style.WARNING(msg), ending=ending)
-
-    def log(self, message, level=3, ending='\n', ):
-        self.verbosity = self.verbosity if self.verbosity else 1
-        if level <= self.verbosity:
-            self.success(f'{message}', ending=ending)
-
-
 class Command(BaseCommand):
     help = "Importar hasta circuitos"
-    
-    def to_nat(self, value, field_name, n):
-        """conversión de un string a un natural"""
-        try:
-            value = int(value)
-        except ValueError:
-            self.log(f'El valor {value} del campo {field_name} en la fila {n} no es un entero',0)
-            return None
-
-        if value <= 0:
-            self.log(f'El valor {value} del campo {field_name} en la fila {n} no es positivo',0)
-            return None
-        return value
-        
+            
     def handle(self, *args, **options):
 
         self.verbosity = options.get('verbosity',1)

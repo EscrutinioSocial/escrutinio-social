@@ -2,9 +2,12 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
+from django.db.utils import IntegrityError
 from csv import DictReader
 from elecciones.models import Distrito, Seccion, Circuito, LugarVotacion, Mesa, Categoria
 import datetime
+
+from .basic_command import BaseCommand
 
 CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/escuelas.csv'
 
@@ -18,30 +21,6 @@ def to_float(val):
         return float(val.replace(',', '.'))
     except:
         return None
-
-
-class BaseCommand(BaseCommand):
-
-    def log(self, message, level=2, ending='\n'):
-        if level <= self.verbosity:
-            self.stdout.write(message, ending=ending)
-            
-    def success(self, msg, level=3, ending='\n'):
-        self.log(self.style.SUCCESS(msg), level, ending=ending)
-
-    def warning(self, msg, level=1, ending='\n'):
-        self.log(self.style.WARNING(msg), level, ending=ending)
-
-    def error_log(self, msg, ending='\n'):
-        self.log(self.style.FAIL(msg), 0, ending=ending)
-        
-    def log_creacion(self, object, created=True, level=3, ending='\n'):
-        modelo = object._meta.model.__name__
-        if created:
-            self.success(f'Se creó el/la {modelo} {object}', level, ending)
-        else:
-            self.warning(f'El/La {modelo} {object} ya existe', level, ending)
-
 
 class Command(BaseCommand):
     ''' formato de archivo: escuelas.csv
@@ -131,13 +110,20 @@ class Command(BaseCommand):
                     
                 if mesas_total == mesa_hasta - mesa_desde:
                     for mesa_nro in range(mesa_desde, mesa_hasta):
-                        mesa, created = Mesa.objects.update_or_create(numero=mesa_nro,lugar_votacion=escuela,circuito=circuito) 
+                        try:
+                            mesa, created = Mesa.objects.update_or_create(numero=mesa_nro,
+                                                                          lugar_votacion=escuela,
+                                                                          circuito=circuito)
+                        except IntegrityError:
+                            self.warning(f'Error de integridad al intentar crear la mesa {mesa_nro} '
+                                         f'en la escuela {escuela}. Línea {c}'
+                            )
+                            continue
                         mesa.save()
                         self.log_creacion(mesa, created, level=4)
+
                 else:
-                    self.warning(f'El total de mesas {mesas_total} no coincide con el rango {mesa_desde}-{mesa_hasta}.'
+                    self.warning(f'El total de mesas {mesas_total} no coincide con el '
+                                 f'rango {mesa_desde}-{mesa_hasta}.'
                                  f'Se crean las mesas {mesa_desde} hasta {mesa_hasta}. Línea {c}.'
                     )
-                    
-
-
