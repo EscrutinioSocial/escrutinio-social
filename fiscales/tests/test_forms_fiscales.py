@@ -79,6 +79,18 @@ def test_quiero_ser_fiscal_form__limpieza_de_ceros_telefono_area(db):
     assert form.cleaned_data.get("telefono_area") == "11"
 
 
+def test_quiero_ser_fiscal_form__email_repetido_en_la_base(db):
+    fiscal = FiscalFactory()
+    seccion = SeccionFactory()
+    request_data = construir_request_data(seccion)
+    request_data["email"] = fiscal.user.email
+    request_data["email_confirmacion"] = fiscal.user.email
+
+    form = QuieroSerFiscalForm(data=request_data)
+    assert not form.is_valid()
+    assert form.errors['email'][0] == QuieroSerFiscalForm.MENSAJE_ERROR_EMAIL_REPETIDO
+
+
 def test_formset_carga_valida_votos_para_opcion(db):
     m = MesaFactory()
     o1, o2 = OpcionFactory(), OpcionFactory()
