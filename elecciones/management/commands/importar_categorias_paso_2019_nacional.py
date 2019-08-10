@@ -42,19 +42,10 @@ class Command(BaseCommand):
             nombre_corto = row['partido_nombre_corto'][:30]
             color = row['partido_color']
 
-            ## Campos que deberían ser numéricos.
-            orden = self.to_nat(row['partido_orden'],'partido_orden',c)
+            orden = self.to_nat(row, 'partido_orden', c)
             if orden is None:
-                continue
-            
-            distrito_nro = self.to_nat(row['distrito_nro'],'distrito_nro',c)
-            if distrito_nro is None:
                 continue
 
-            orden = self.to_nat(row['opcion_orden'],'opcion_orden',c)
-            if orden is None:
-                continue
-            
             defaults = {
                 'nombre': nombre,
                 'nombre_corto': nombre_corto,
@@ -64,6 +55,15 @@ class Command(BaseCommand):
             partido, created = Partido.objects.update_or_create(codigo=codigo, defaults=defaults)
 
             self.log_creacion(partido, created)
+            
+            if provinciales:
+                distrito_nro = self.to_nat(row, 'distrito_nro', c)
+                if distrito_nro is None:
+                    continue
+
+            orden = self.to_nat(row, 'opcion_orden', c)
+            if orden is None:
+                continue
 
             nombre = row['opcion_nombre']            
             ## Realmente queremos cortar así?
@@ -105,7 +105,7 @@ class Command(BaseCommand):
                         mesacategoria, created = MesaCategoria.objects.get_or_create(
                             mesa=mesa, categoria=categoria
                         )
-            # reportamos que no se hizo ninguna asociación mesa-categoría.
+            # Reportamos que no se hizo ninguna asociación mesa-categoría.
             else:
                 self.warning(f'No se hizo ninguna asoción mesa-categoría para la categoría {categoria}. '
                              f'Línea {c}.'

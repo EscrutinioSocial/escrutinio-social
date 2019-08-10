@@ -24,12 +24,18 @@ class BaseCommand(BaseCommand):
     def log_creacion(self, object, created=True, level=3, ending='\n'):
         modelo = object._meta.model.__name__
         if created:
-            self.success(f'Se creó el/la {modelo} {object}', level, ending)
+            self.success(f'Se creó {modelo} {object}', level, ending)
         else:
-            self.warning(f'El/La {modelo} {object} ya existe', level-1, ending)
+            self.warning(f'{modelo} {object} ya existe', level-1, ending)
 
-    def to_nat(self, value, field_name, n):
-        """conversión de un string a un natural"""
+    def to_nat(self, row, field_name, n):
+        """ Conversión de un string a un natural. """
+        try:
+            value = row[field_name]
+        except KeyError:
+            self.error_log(f'No está {field_name} en la línea {n}.')
+            return None
+
         try:
             value = int(value)
         except ValueError:
