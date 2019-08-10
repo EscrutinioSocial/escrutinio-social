@@ -12,7 +12,7 @@ from .basic_command import BaseCommand
 
 CSV_NACIONAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_nacionales.csv'
 CSV_PROVINCIAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_provinciales.csv'
-
+CSV_DISTRITAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_distrito_02.csv'
 
 class Command(BaseCommand):
     """partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_nombre,opcion_nombre_corto,partido_orden,opcion_orden,categoria_nombre
@@ -26,12 +26,17 @@ class Command(BaseCommand):
                             default=False,
                             help='Indica si importa nacionales o distritales.'
         )
+        parser.add_argument('--distritales',
+                            action="store_true",
+                            default=False,
+                            help='Indica si importa distritales.')
 
     def handle(self, *args, **options):
         self.verbosity = int(options['verbosity'])
         provinciales = options['provinciales']
+        distritales = options['distritales']
 
-        archivo = CSV_PROVINCIAL if provinciales else CSV_NACIONAL
+        archivo = CSV_PROVINCIAL if provinciales else CSV_DISTRITAL if distritales else CSV_NACIONAL
 
         reader = DictReader(archivo.open())
         errores = []
@@ -60,7 +65,23 @@ class Command(BaseCommand):
                 distrito_nro = self.to_nat(row, 'distrito_nro', c)
                 if distrito_nro is None:
                     continue
-
+            elif distritales:
+                distrito_nro = self.to_nat(row, 'distrito_nro', c)
+                if distrito_nro is None:
+                    continue
+                
+                secciones = row['secciones_list'].split(',')
+                ## para evitar iterar dos veces por secciones. como te extraño sequence!
+                secciones_nat = []
+                for s in secciones:
+                    s = self.to_nat_value(s,'secciones_list',c)
+                    if s is None:
+                        secciones_nat = []
+                        break
+                    secciones_nat.append(s)
+                if secciones_nat == []:
+                    continue
+                
             orden = self.to_nat(row, 'opcion_orden', c)
             if orden is None:
                 continue
@@ -105,7 +126,11 @@ class Command(BaseCommand):
                 # Se asocian las mesas a la categoría sólo cuando se crea la categoría.
                 lookup = Q()
                 if provinciales:
-                    lookup = Q(circuito__seccion__distrito__numero=distrito_nro) 
+                    lookup = Q(circuito__seccion__distrito__numero=distrito_nro)
+                if distritales:
+                    lookup = Q(circuito__seccion__distrito__numero=distrito_nro,
+                               circuito__seccion__numero__in=secciones_nat
+                    )
                 mesas = Mesa.objects.filter(lookup).all()
 
                 with transaction.atomic():
