@@ -210,23 +210,19 @@
   $(document).ready(function(){
       $('.modal').modal();
       fields.map(e => (e[2]) ? initializeSimpleSelect(e[0],e[2],e[3]) : null);
-      fields.map(e => $('#'+e[0]+'_input').on("mouseout",e[1]));
-      fields.map(e => $('#'+e[0]+'_input').on("focusout",e[1]));
+      fields.map(e => $('#'+e[0]+'_input').on("keyup",delay(e[1], 250)));
       $('#distrito_input').attr('tabindex', 1);
       $('#id_seccion').attr('tabindex', 2);
       $('#id_circuito').attr('tabindex', 3);
       $('#id_mesa').attr('tabindex', 4);
-      if($('#distrito_input').val()==""){
-	  $('#distrito_input').focus();
-      }
-      else if($('#id_seccion').val()==""){
-	  $('#id_seccion').focus();
-      }
-      else if($('#id_circuito').val()==""){
-	  $('#id_circuito').focus();
-      }
-      else if($('#id_mesa').val()==""){
-	  $('#id_mesa').focus();
+      if($('#distrito_input').val() == "") {
+        $('#distrito_input').focus();
+      } else if($('#id_seccion').val() == "") {
+	      $('#id_seccion').focus();
+      } else if($('#id_circuito').val()==""){
+	      $('#id_circuito').focus();
+      } else if($('#id_mesa').val()==""){
+	      $('#id_mesa').focus();
       };
       $('#btn-reportar').on('click',function(e){
 	  var form = $('#problema-imagen');

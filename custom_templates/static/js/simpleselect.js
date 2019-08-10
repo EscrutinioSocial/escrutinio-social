@@ -9,35 +9,32 @@ function displayResult(field,default_value,options=[]){
     var input_text = $.trim($('#'+field+'_input').val());
     var required = $('#'+field+'_input').prop('required');
     if(options.length == 1){
-	shown_value= options[0].text;
-	value = options[0].id;
-	input_text = options[0].selected_text;
-    }
-    else {
-	shown_value = "";
-    }
+		shown_value= options[0].text;
+		value = options[0].id;
+		input_text = options[0].selected_text;
+    } else {
+		shown_value = "";
+	}
     /* Si val es -1 entonces estamos ante un error. 
      */
     if (value == -1 && !(input_text == "")){
-	if (!($("#"+field+"_input").is(':focus')) && input_text == "")  {
-	    $($('label[for='+field+'_input]')[0]).removeClass("active");
-	}
-	if (input_text != "" || required){
-	    $('#inline-error-for-'+field).removeClass("hide");
-	}
-	if (input_text == ""){
-	    shown_value = "";
-	}
-    }
-    else
-    {
-	$($('label[for='+field+'_input]')[0]).addClass("active");
-	$("#"+field+"-resultado").removeClass("hide");
-	$('#inline-error-for-'+field).addClass("hide");
+		if (!($("#"+field+"_input").is(':focus')) && input_text == "")  {
+			$($('label[for='+field+'_input]')[0]).removeClass("active");
+		}
+		if (input_text != "" || required){
+			$('#inline-error-for-'+field).removeClass("hide");
+		}
+		if (input_text == ""){
+			shown_value = "";
+		}
+    } else {
+		$($('label[for='+field+'_input]')[0]).addClass("active");
+		$("#"+field+"-resultado").removeClass("hide");
+		$('#inline-error-for-'+field).addClass("hide");
     }
     $("#"+field+"-resultado").val(shown_value);
     if(value != ""){
-	$("#id_"+field).val(value);
+		$("#id_"+field).val(value);
     }
     $("#"+field+"_input").val(input_text);
     return true;
@@ -69,8 +66,8 @@ function updateFieldUrl(field,url,params){
       	type: 'GET',
       	url: url
     }).then(function (data) {
-	options = data['results'];
-	displayResult(field,"",options);
+		options = data['results'];
+		displayResult(field,"",options);
     });
 }
 
@@ -96,10 +93,13 @@ function updateField(field,base_url,forward,on_after=null){
       	type: 'GET',
       	url: url
     }).then(function (data) {
-	options = data['results'];
-	displayResult(field,nro,options);
-	if(on_after){
-	    on_after();
-	}
+		options = data['results'];
+		displayResult(field,nro,options);
+		if (field == "distrito") {
+			ocultoSeccionCircuito();
+		}
+		if(on_after){
+			on_after();
+		}
     });
 }

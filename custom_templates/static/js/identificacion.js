@@ -18,19 +18,31 @@ function cambioMesa(url_seccion,url_circuito){
     return true;
 }
 
+// esta función se agrega para que el callback se ejecute después de ms millis
+// en particular se uso para que el evento keyup no se aplique al toque, sino que espere
+// 300 ms después de que el usuario tecleara el distrito
+// si el usuario antes de los ms millis apreta una tecla, el timer se resetea
+function delay(callback, ms) {
+	var timer = 0;
+	return function() {
+	  var context = this, args = arguments;
+	  clearTimeout(timer);
+	  timer = setTimeout(function () {
+		callback.apply(context, args);
+	  }, ms || 0);
+	};
+}
+
 function ocultoSeccionCircuito(){
-    var circuito = $('#id_circuito');
-    var seccion = $('#id_seccion');
-    var distrito = $('#distrito-resultado').val();
+	var distrito = $('#distrito-resultado').val();
     if(distrito == "Buenos Aires"){
-	$('#id_seccion_container').removeClass("hide");
-	$('#id_circuito_container').removeClass("hide");
-	$('#mesa_input').focus();
-    }
-    else {
-	$('#id_seccion_container').addClass("hide");
-	$('#id_circuito_container').addClass("hide");
-	$('#seccion_input').focus();
+		$('#id_seccion_container').removeClass("hide");
+		$('#id_circuito_container').removeClass("hide");
+		$('#mesa_input').focus();
+    } else {
+		$('#id_seccion_container').addClass("hide");
+		$('#id_circuito_container').addClass("hide");
+		$('#seccion_input').focus();
     }
     return true;
 }
@@ -38,8 +50,7 @@ function ocultoSeccionCircuito(){
 var updateDistrito = function(url){
     return(
 	function(e){
-	    updateField('distrito', url,[]);
-	    ocultoSeccionCircuito();
+		updateField('distrito', url,[]);
 	    return true;
 	}
     )
