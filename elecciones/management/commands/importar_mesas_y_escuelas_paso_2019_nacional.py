@@ -6,7 +6,7 @@ from csv import DictReader
 from elecciones.models import Distrito, Seccion, Circuito, LugarVotacion, Mesa, Categoria
 import datetime
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/escuelas_limpias.csv'
+CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/escuelas.csv'
 
 ESTADO_GEOLOCALIZACION = {
     'Match': 9,
