@@ -10,7 +10,7 @@ urlpatterns = [
 
     url('^_autocomplete_simple/d$', views.DistritoSimpleListView.as_view(), name='autocomplete-distrito-simple'),
     url('^_autocomplete_simple/s$', views.SeccionSimpleListView.as_view(), name='autocomplete-seccion-simple'),
-    
+
     url('^mis-datos$', views.MisDatos.as_view(), name='mis-datos'),
     url('^referidos$', views.referidos, name='referidos'),
     url('^siguiente/$', views.realizar_siguiente_accion, name='siguiente-accion'),
@@ -26,6 +26,5 @@ urlpatterns = [
     url('^mis-datos/profile$', views.MisDatosUpdate.as_view(), name='mis-datos-update'),
     url('^mis-datos/password$', views.CambiarPassword.as_view(), name='cambiar-password'),
     url('^_confirmar/(?P<fiscal_id>\d+)$', views.confirmar_fiscal, name='confirmar-fiscal'),
-
     url(r'^bienvenido$', views.bienvenido, name="bienvenido"),
 ]

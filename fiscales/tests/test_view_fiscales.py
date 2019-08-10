@@ -6,13 +6,13 @@ from urllib import parse
 
 from elecciones.tests.conftest import fiscal_client, setup_groups
 from elecciones.tests.factories import (
-    DistritoFactory,    
+    DistritoFactory,
     FiscalFactory,
     SeccionFactory,
 )
 from django.contrib.auth.models import Group
 from fiscales.models import Fiscal
-from fiscales.forms import ReferidoForm
+from fiscales.forms import ReferidoForm, EnviarEmailForm
 
 
 QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT = {
@@ -194,6 +194,49 @@ def test_referidos_post_confirma_conoce(fiscal_client, admin_user):
     assert fiscal.referidos.filter(referencia_confirmada=True).count() == 2
 
 
+def test_enviar_email_get(fiscal_client, admin_user):
+    fiscales_ids = ','.join(str(f.id) for f in FiscalFactory.create_batch(2))
+    url = f"{reverse('enviar-email')}?ids={fiscales_ids}"
+    session = fiscal_client.session
+    session.update({
+        'enviar_email_asunto': 'foo',
+        'enviar_email_template': '{{ foo }}',
+    })
+    session.save()
+
+    response = fiscal_client.get(url)
+    assert response.status_code == 200
+    form = response.context['form']
+    assert isinstance(form, EnviarEmailForm)
+    assert 'Enviar Email a 2 fiscales' in response.content.decode('utf8')
+    assert form.initial['asunto'] == 'foo'
+    assert form.initial['template'] == '{{ foo }}'
+
+
+def test_enviar_email_post(fiscal_client, admin_user, mailoutbox, settings):
+    settings.DEFAULT_FROM_EMAIL = 'lio@messi.com'
+    f = FiscalFactory(nombres='Diego Armando')
+    f.agregar_dato_de_contacto('email', '10@diego.com')
+    data = {'asunto': 'hola', 'template': '<p>Hola {{ fiscal.nombres }}</p>'}
+    url = f"{reverse('enviar-email')}?ids={f.id}"
+    response = fiscal_client.post(url, data)
+
+    # se guardan variables de session
+    assert fiscal_client.session.get('enviar_email_asunto') == 'hola'
+    assert fiscal_client.session.get('enviar_email_template') == '<p>Hola {{ fiscal.nombres }}</p>'
+
+    assert response.status_code == 302
+    assert len(mailoutbox) == 1
+    m = mailoutbox[0]
+    assert m.subject == 'hola'
+    assert 'Hola Diego Armando' in m.body   # text version
+    html = m.alternatives[0][0]             # html version
+    assert '<p>Hola Diego Armando</p>' in html
+    assert html.startswith('<!doctype html>\n<html>\n  <head>\n')
+    assert m.from_email == 'lio@messi.com'
+    assert m.to == ['10@diego.com']
+
+
 def test_autocomplete_seccion__sin_seccion_especifica(db, client):
     SeccionFactory.create_batch(20)
 
@@ -266,3 +309,4 @@ def _hacer_call_seccion_autocomplete(client, q=None, distrito=None):
     query_string = parse.urlencode(params)
     url = reverse("autocomplete-seccion-simple") + "?" + query_string
     return client.get(url)
+

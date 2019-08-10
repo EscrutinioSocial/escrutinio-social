@@ -8,10 +8,12 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import ValidationError, MinLengthValidator, MaxLengthValidator
 from django.contrib.auth import password_validation
+from django.template import engines
 from datetime import timedelta
 from django.utils import timezone
-from django.conf import settings
 from django.utils.html import format_html
+
+from django_summernote.widgets import SummernoteWidget
 from django.utils.safestring import mark_safe
 
 from dal import autocomplete
@@ -82,7 +84,6 @@ class ReferidoForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['url'].widget.attrs['readonly'] = True
-
 
 
 class MisDatosForm(FiscalForm):
@@ -430,3 +431,23 @@ votomesareportadoformset_factory = partial(
     extra=0,
     can_delete=False
 )
+
+
+class EnviarEmailForm(forms.Form):
+    asunto = forms.CharField(max_length=200)
+    template = forms.CharField(widget=SummernoteWidget())
+
+    def clean_template(self):
+        template = self.cleaned_data['template']
+        django_engine = engines['django']
+        try:
+            template = django_engine.from_string(
+                '{% extends "fiscales/base_email.html" %}'
+                '{% block body %}'
+                f'{template}'
+                '{% endblock body %}'
+            )
+        except Exception as e:
+            raise forms.ValidationError(str(e))
+
+        return template
