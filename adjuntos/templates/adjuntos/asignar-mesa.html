@@ -212,7 +212,6 @@
       fields.map(e => (e[2]) ? initializeSimpleSelect(e[0],e[2],e[3]) : null);
       fields.map(e => $('#'+e[0]+'_input').on("mouseout",e[1]));
       fields.map(e => $('#'+e[0]+'_input').on("focusout",e[1]));
-      $('#distrito_input').on("blur",function(e){ocultoSeccionCircuito()});
       $('#distrito_input').attr('tabindex', 1);
       $('#id_seccion').attr('tabindex', 2);
       $('#id_circuito').attr('tabindex', 3);
