@@ -1,7 +1,9 @@
+from django import forms
 from django.contrib import admin
 from django.urls import reverse
 from djangoql.admin import DjangoQLSearchMixin
 from leaflet.admin import LeafletGeoAdmin
+from annoying.functions import get_object_or_None
 from .models import (
     Distrito,
     SeccionPolitica,
@@ -88,7 +90,7 @@ def resultados_reportados(modeladmin, request, queryset):
 resultados_reportados.short_description = "Ver Resultados"
 
 
-class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
+class LugarVotacionAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, LeafletGeoAdmin):
 
     def sección(o):
         return o.circuito.seccion.numero
@@ -97,6 +99,7 @@ class LugarVotacionAdmin(AdminRowActionsMixin, LeafletGeoAdmin):
         'nombre', 'direccion', 'ciudad', 'circuito', sección, 'mesas_desde_hasta', 'electores',
         'estado_geolocalizacion'
     )
+    raw_ids_fields = ('circuito',)
     list_display_links = ('nombre', )
     list_filter = (HasLatLongListFilter, 'circuito__seccion', 'circuito')
     search_fields = ('nombre', 'direccion', 'ciudad', 'barrio', 'mesas__numero')
@@ -123,9 +126,39 @@ def mostrar_resultados_mesas(modeladmin, request, queryset):
 mostrar_resultados_mesas.short_description = "Mostrar resultados de Mesas seleccionadas"
 
 
+class MesaForm(forms.ModelForm):
+    copiar_categorias = forms.BooleanField(
+        initial=True,
+        label="Copiar las categorias del resto de las mesas en el circuito (sólo vale para la creación)"
+    )
+
+    def save(self, commit=True):
+        add = not self.instance.pk
+        copiar_categorias = self.cleaned_data.get('copiar_categorias', None)
+
+        mesa = super().save(commit=commit)
+        mesa.save()
+
+        if add and copiar_categorias:
+            otra_mesa = Mesa.objects.filter(circuito=mesa.circuito).first()
+
+            if otra_mesa:
+                if not mesa.electores:
+                    mesa.electores = otra_mesa.electores
+                for categoria in otra_mesa.categorias.all():
+                    mesa.categorias.add(categoria)
+        return mesa
+
+    class Meta:
+        model = Mesa
+        fields = '__all__'
+
+
 class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
+    form = MesaForm
     actions = [resultados_reportados]
-    list_display = ('numero', 'lugar_votacion')
+    list_display = ('numero', 'lugar_votacion', 'electores')
+    raw_id_fields = ('circuito', 'lugar_votacion')
     list_filter = (
         TieneResultados, 'es_testigo', 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito'
     )
@@ -146,11 +179,12 @@ class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
             'enabled': True
         })
 
-        row_actions.append({
-            'label': 'Escuela',
-            'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
-            'enabled': True,
-        })
+        if obj.lugar_votacion:
+            row_actions.append({
+                'label': 'Escuela',
+                'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
+                'enabled': True,
+            })
         row_actions += super().get_row_actions(obj)
         return row_actions
 
@@ -175,7 +209,7 @@ class MesaCategoriaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelA
         return row_actions
 
 
-class CircuitoAdmin(admin.ModelAdmin):
+class CircuitoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ('__str__', 'seccion')
     list_display_links = list_display
     list_filter = ('seccion', )
@@ -185,7 +219,7 @@ class CircuitoAdmin(admin.ModelAdmin):
     )
 
 
-class DistritoAdmin(admin.ModelAdmin):
+class DistritoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     search_fields = (
         'nombre',
         'numero',
@@ -310,7 +344,7 @@ class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
 class ConfiguracionComputoDistritoInline(admin.TabularInline):
     model = ConfiguracionComputoDistrito
-    
+
 class ConfiguracionComputoAdmin(admin.ModelAdmin):
     inlines = (ConfiguracionComputoDistritoInline, )
 

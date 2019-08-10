@@ -1,5 +1,10 @@
+from django.template.backends.django import Template
 from fiscales.tests.test_view_fiscales import construir_request_data
-from fiscales.forms import QuieroSerFiscalForm, votomesareportadoformset_factory
+from fiscales.forms import (
+    QuieroSerFiscalForm,
+    votomesareportadoformset_factory,
+    EnviarEmailForm,
+)
 
 from elecciones.tests.factories import (
     FiscalFactory,
@@ -9,6 +14,7 @@ from elecciones.tests.factories import (
 )
 from .test_carga_datos import _construir_request_data_para_carga_de_resultados
 from elecciones.models import Opcion
+
 
 def test_quiero_ser_fiscal_form__data_ok(db):
     seccion = SeccionFactory()
@@ -73,6 +79,18 @@ def test_quiero_ser_fiscal_form__limpieza_de_ceros_telefono_area(db):
     assert form.cleaned_data.get("telefono_area") == "11"
 
 
+def test_quiero_ser_fiscal_form__email_repetido_en_la_base(db):
+    fiscal = FiscalFactory()
+    seccion = SeccionFactory()
+    request_data = construir_request_data(seccion)
+    request_data["email"] = fiscal.user.email
+    request_data["email_confirmacion"] = fiscal.user.email
+
+    form = QuieroSerFiscalForm(data=request_data)
+    assert not form.is_valid()
+    assert form.errors['email'][0] == QuieroSerFiscalForm.MENSAJE_ERROR_EMAIL_REPETIDO
+
+
 def test_formset_carga_valida_votos_para_opcion(db):
     m = MesaFactory()
     o1, o2 = OpcionFactory(), OpcionFactory()
@@ -96,7 +114,8 @@ def test_formset_carga_valida_votos_para_opcion(db):
 
 def test_formset_carga_warning_sobres_mayor_mesa_electores(db):
     m = MesaFactory()
-    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres', nombre='total de sobres')
+    o1 = OpcionFactory(
+        tipo=Opcion.TIPOS.metadata, nombre_corto='sobres', nombre='total de sobres')
 
     VMRFormSet = votomesareportadoformset_factory(min_num=1)
     data = _construir_request_data_para_carga_de_resultados(
@@ -119,7 +138,11 @@ def test_formset_carga_warning_sobres_mayor_mesa_electores(db):
 
 def test_formset_carga_warning_suma_votos_mayor_sobres(db):
     m = MesaFactory()
-    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'sobres', nombre='total de sobres')
+    o1 = OpcionFactory(
+        tipo=Opcion.TIPOS.metadata,
+        nombre_corto='sobres',
+        nombre='total de sobres',
+    )
     o2 = OpcionFactory()
     o3 = OpcionFactory()
 
@@ -140,6 +163,7 @@ def test_formset_carga_warning_suma_votos_mayor_sobres(db):
 
     assert formset.is_valid()
     assert len(formset.non_form_errors()) == 0
+
 
 def test_formset_carga_warning_cero_votos(db):
     m = MesaFactory()
@@ -165,11 +189,29 @@ def test_formset_carga_warning_cero_votos(db):
     assert len(formset.non_form_errors()) == 0
 
 
+def test_enviar_email_form_valid():
+    f = EnviarEmailForm(data={
+        'asunto': 'asunto', 'template': "Hola {{ settings.FOO|default:'mundo'|upper }}"
+    })
+    assert f.is_valid()
+    assert isinstance(f.cleaned_data['template'], Template)
+
+
+def test_enviar_email_form_invalid():
+    f = EnviarEmailForm(data={
+        'asunto': 'asunto', 'template': "Hola {{ FOO|filtro_que_no_existe }}"
+    })
+    assert not f.is_valid()
+    assert f.errors == {'template': ["Invalid filter: 'filtro_que_no_existe'"]}
+
+
 def test_formset_carga_total_votos_mayor_electores_mesa(db):
     m = MesaFactory(electores=100)
-    o1 = o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'total_votos',
-                                    nombre='total de votos')
-
+    o1 = o1 = OpcionFactory(
+        tipo=Opcion.TIPOS.metadata,
+        nombre_corto='total_votos',
+        nombre='total de votos'
+    )
     VMRFormSet = votomesareportadoformset_factory(min_num=1)
     data = _construir_request_data_para_carga_de_resultados(
         [(o1.id, 200, 0)]

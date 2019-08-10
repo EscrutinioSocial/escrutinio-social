@@ -66,7 +66,8 @@
     <div class="card-content" id="frame{{categoria.id}}">
     {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
 
-        <h4>Sobre un {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
+        <h4>{% if tecnicas_de_proyeccion_seleccionado %}Proyección a partir de{% else %}Sobre un{% endif%}
+            {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
             ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
         </h4>
         {% if request.GET.circuito != null %}
@@ -87,18 +88,8 @@
                     <th id="header_titulo" colspan="{%if incluir_votos %}3{%else%}5{%endif%}">Agrupaciones políticas/Listas</th>
                 </tr>
                 <tr>
-        		        <th></th>
-        		        <th id="header_votos" colspan="{%if incluir_votos %}2{%else%}4{%endif%}">Votos</th>
-                    {% if resultados.proyectado %}
-                    <th id="header_proyectado">
-                        % proyectado
-                        <i class="small material-icons {% if resultados.proyeccion_incompleta  %}tooltipped"
-                           data-position="bottom"
-                           data-tooltip="Proyección incompleta. Faltan cargar datos en {% for ag in resultados.proyeccion_incompleta %}{{ ag }} / {% endfor %}{% endif %}">
-                           warning
-                        </i>
-                    </th>
-                    {% endif %}
+                    <th></th>
+                    <th id="header_votos" colspan="{%if incluir_votos %}2{%else%}4{%endif%}">Votos</th>
                 </tr>
             </thead>
             <tbody>
@@ -140,27 +131,29 @@
 <div class="card">
     <div id="metadata" class="card-content">
         <table class="borderless" style="font-size: 0.9em">
-            <tr>
-                <th title="Electores">
-                    <i class="small material-icons">people_outline</i>
-                    <span>Electores</span>
-                </th>
-                <td title="Electores">{{ resultados.electores}}</td>
-            </tr>
-            <tr>
-                <th title="Escrutados">
-                    <i class="small material-icons">person_outline</i>
-                    <span>Escrutados</span>
-                </th>
-                <td title="Escrutados">{{ resultados.electores_en_mesas_escrutadas }}</td>
-            </tr>
-            <tr>
-                <th title="% Escrutado">
-                    <i class="small material-icons">trending_up</i>
-                    <span>% Escrutado</span>
-                </th>
-                <td title="% Escrutado">{{ resultados.porcentaje_escrutado}} %</td>
-            </tr>
+            {% if mostrar_electores %}
+                <tr>
+                    <th title="Electores">
+                        <i class="small material-icons">people_outline</i>
+                        <span>Electores</span>
+                    </th>
+                    <td title="Electores">{{ resultados.electores}}</td>
+                </tr>
+                <tr>
+                    <th title="Escrutados">
+                        <i class="small material-icons">person_outline</i>
+                        <span>Escrutados</span>
+                    </th>
+                    <td title="Escrutados">{{ resultados.electores_en_mesas_escrutadas }}</td>
+                </tr>
+                <tr>
+                    <th title="% Escrutado">
+                        <i class="small material-icons">trending_up</i>
+                        <span>% Escrutado</span>
+                    </th>
+                    <td title="% Escrutado">{{ resultados.porcentaje_escrutado}} %</td>
+                </tr>
+            {% endif %}
             <tr>
                 <th title="Votantes">
                     <i class="small material-icons">person</i>
@@ -175,6 +168,7 @@
                 </th>
                 <td title="Positivos">{{ resultados.total_positivos}}</td>
             </tr>
+            {% if mostrar_electores %}
             <tr>
                 <th title="% Participación">
                     <i class="small material-icons">timeline</i>
@@ -182,6 +176,7 @@
                 </th>
                 <td title="% Participación">{{ resultados.porcentaje_participacion}} %</td>
             </tr>
+            {% endif %}
         </table>
     </div>
 </div>

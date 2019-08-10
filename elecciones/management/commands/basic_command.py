@@ -46,3 +46,16 @@ class BaseCommand(BaseCommand):
             self.error_log(f'El valor {value} del campo {field_name} no es positivo. Línea {n}.')
             return None
         return value
+
+    def to_nat_value(self, value, field_name, n):
+        """ Conversión de un string a un natural. """
+        try:
+            value = int(value)
+        except ValueError:
+            self.error_log(f'El valor {value} del campo {field_name} no es un entero. Línea {n}.')
+            return None
+
+        if value <= 0:
+            self.error_log(f'El valor {value} del campo {field_name} no es positivo. Línea {n}.')
+            return None
+        return value

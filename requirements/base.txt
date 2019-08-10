@@ -5,6 +5,7 @@ django-model-utils==3.1.2
 django-admin-row-actions==0.0.5
 django-constance[database]==2.4.0
 djangoql==0.13.0
+django-summernote==0.8.11.4
 git+https://github.com/mgaitan/django-sneak.git@#egg=django-sneak
 git+https://github.com/mgaitan/django-admincommand.git@filefield#egg=django-admincommand
 git+https://github.com/mgaitan/django-versatileimagefield@one-dimension-resize#egg=django-versatileimagefield

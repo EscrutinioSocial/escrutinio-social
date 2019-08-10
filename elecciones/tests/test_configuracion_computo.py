@@ -2,7 +2,6 @@ from django.conf import settings
 
 from elecciones.models import (
     Distrito,
-    Seccion,
     Categoria,
     MesaCategoria,
     Carga,
@@ -12,9 +11,7 @@ from elecciones.models import (
 )
 from .factories import (
     MesaCategoriaFactory,
-    OpcionFactory,
     CargaFactory,
-    VotoMesaReportadoFactory,
     ConfiguracionComputoFactory,
     ConfiguracionComputoDistritoFactory,
 )
@@ -110,8 +107,8 @@ def test_configuracion_combinada(db, fiscal_client, url_resultados_computo):
     assert resultados.total_mesas() == 24  # 8 en c/u de los 3 distritos
 
     # TODO Los siguientes dos asserts no dan por un bug en proyecciones, decidimos postergar su resolución.
-    # assert resultados.total_mesas_escrutadas() == 6   # {d1: 3, d2: 1, d3: 2}
-    # assert resultados.porcentaje_mesas_escrutadas() == '25.00'
+    assert resultados.total_mesas_escrutadas() == 6   # {d1: 3, d2: 1, d3: 2}
+    assert resultados.porcentaje_mesas_escrutadas() == '25.00'
 
     # Totales básicos
     assert resultados.electores() == 2400

@@ -66,7 +66,15 @@ class CSVImporter:
 
     def __init__(self, archivo, usuario):
         self.archivo = archivo
-        self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"], dtype=str)
+        converters = {
+            'Distrito': self.canonizar,
+            'Sección': self.canonizar,
+            'Seccion': self.canonizar,
+            'Circuito': self.canonizar,
+            'Nro de mesa': self.canonizar,
+            'Nro de lista': self.canonizar, 
+        }
+        self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"], dtype=str, converters=converters)
         self.usuario = usuario
         self.fiscal = None
         self.mesas = []
@@ -145,6 +153,20 @@ class CSVImporter:
                     f'distrito {distrito}.')
             self.mesas_matches[nro_de_mesa] = match_mesa
             self.mesas.append(match_mesa)
+
+
+    def canonizar(self, valor):
+        """
+        Pasa a mayúsculas y elimina espacios.
+        Si se trata de un número, elimina los ceros previos.
+        """
+        valor = valor.upper().strip()
+        try:
+            nro = int(valor)  # Esto elimina ceros.
+            valor = str(nro)  # Y acá volvemos a string.
+        except Exception as e:
+            pass
+        return valor
 
     def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
         self.logger.debug("- Procesando mesa '%s'.", mesa)
@@ -245,11 +267,17 @@ class CSVImporter:
                                       if una_opcion.codigo and una_opcion.codigo.strip().lower()
                                       == codigo_lista_en_csv.strip().lower()]
                 opcion_bd = match_codigo_lista[0] if len(match_codigo_lista) > 0 else None
-                if not opcion_bd:
+
+                if not opcion_bd and cantidad_votos > 0:
                     raise DatosInvalidosError(f'El número de lista {codigo_lista_en_csv} no fue '
                                               f'encontrado asociado la categoría '
                                               f'{categoria_bd.nombre}, revise que sea '
                                               f'el correcto.')
+                elif not opcion_bd and cantidad_votos == 0:
+                    # Me están reportando cero votos para una opción no asociada a la categoría.
+                    # La ignoro.
+                    continue
+
                 opcion_categoria = opcion_bd.categoriaopcion_set.filter(
                     categoria=categoria_bd
                 ).first()
