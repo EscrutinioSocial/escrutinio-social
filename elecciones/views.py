@@ -38,7 +38,6 @@ class StaffOnlyMixing:
     Mixin para que sólo usuarios tipo "staff"
     accedan a la vista.
     """
-
     @method_decorator(staff_member_required)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
@@ -99,6 +98,11 @@ class EscuelaDetailView(StaffOnlyMixing, DetailView):
     """
     template_name = "elecciones/detalle_escuela.html"
     model = LugarVotacion
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['mostrar_electores'] = not settings.OCULTAR_CANTIDADES_DE_ELECTORES
+        return context
 
 
 class Mapa(StaffOnlyMixing, TemplateView):
@@ -169,10 +173,12 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
         # Agregamos al contexto el modo de elección; para cada partido decidimos
         # que porcentaje vamos a visualizar (porcentaje_positivos o
         # porcentaje_validos) dependiendo del tipo de elección.
-        context['modo_eleccion']  = settings.MODO_ELECCION
+        context['modo_eleccion'] = settings.MODO_ELECCION
         # Para no hardcodear las opciones en el html las agregamos al contexto.
-        context['modo_paso']      = settings.ME_OPCION_PASO
+        context['modo_paso'] = settings.ME_OPCION_PASO
         context['modo_generales'] = settings.ME_OPCION_GEN
+
+        context['mostrar_electores'] = not settings.OCULTAR_CANTIDADES_DE_ELECTORES
 
         if settings.SHOW_PLOT:
             chart = self.get_plot_data(context['resultados'])
