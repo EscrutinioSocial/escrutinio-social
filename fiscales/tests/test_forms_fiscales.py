@@ -163,3 +163,27 @@ def test_formset_carga_warning_cero_votos(db):
 
     assert formset.is_valid()
     assert len(formset.non_form_errors()) == 0
+
+
+def test_formset_carga_total_votos_mayor_electores_mesa(db):
+    m = MesaFactory(electores=100)
+    o1 = o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, nombre_corto= 'total_votos',
+                                    nombre='total de votos')
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 200, 0)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert not formset.is_valid()
+    assert len(formset.non_form_errors()) == 1
+
+    VMRFormSet = votomesareportadoformset_factory(min_num=1)
+    data = _construir_request_data_para_carga_de_resultados(
+        [(o1.id, 80, 0)]
+    )
+    formset = VMRFormSet(data=data, mesa=m, datos_previos={})
+
+    assert formset.is_valid()
+    assert len(formset.non_form_errors()) == 0

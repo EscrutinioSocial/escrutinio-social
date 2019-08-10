@@ -343,6 +343,8 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
     def clean(self):
         super().clean()
         suma = 0
+        errors = []
+
         for form in self.forms:
             opcion = form.cleaned_data.get('opcion')
             votos = form.cleaned_data.get('votos')
@@ -357,13 +359,16 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
                     f'El valor confirmado que tenemos para esta opción es {previos}'
                 ))
 
-        errors = []
+            if opcion == Opcion.total_votos():
+                if votos > self.mesa.electores:
+                    errors.append('El campo total de votos no puede ser mayor a la '
+                        f'cantidad de electores de la mesa: {self.mesa.electores}')
 
         # Controlamos que la suma de votos no sea mayor a cantidad de
         # electores si conocemos la cantidad de electores de una mesa.
         if self.mesa.electores > 0 and suma > self.mesa.electores:
             errors.append(
-                'El total de votos no puede ser mayor a la '
+                'La suma de los votos no puede ser mayor a la '
                 f'cantidad de electores de la mesa: {self.mesa.electores}'
             )
 

@@ -403,6 +403,7 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         mesas = self.sumarizador.mesas(categoria)
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
         context['distritos'] = Distrito.objects.all().order_by('nombre')
+        context['mostrar_electores'] = not settings.OCULTAR_CANTIDADES_DE_ELECTORES
         return context
 
 
