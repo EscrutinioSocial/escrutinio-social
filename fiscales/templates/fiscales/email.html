@@ -28,9 +28,19 @@
       <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Pronto nos comunicaremos con vos por teléfono y/o email</p>
       <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">¡Muchas gracias!</p>
 
-
-      <p class="apple-link" style="color: #999999; font-size: 10px; text-align: center;">Si no ves el botón, copiá y pegá el siguiente link en el navegador</span>
-                    <br> {{ site_url }}{% url 'confirmar-email' fiscal.codigo_confirmacion %}.</p>
-
 {% endblock body %}
 
+{% block footer %}
+<div class="footer" style="clear: both; Margin-top: 10px; text-align: center; width: 100%;">
+              <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;">
+                <tr>
+                  <td class="content-block" style="font-family: sans-serif; vertical-align: top; padding-bottom: 10px; padding-top: 10px; font-size: 12px; color: #999999; text-align: center;">
+
+    <span class="apple-link" style="color: #999999; font-size: 12px; text-align: center;">Si no ves el botón, copiá y pegá el siguiente link en el navegador</span>
+    <br> {{ site_url }}{% url 'confirmar-email' fiscal.codigo_confirmacion %}.
+
+      </td>
+                </tr>
+              </table>
+            </div>
+{% endblock footer %}
