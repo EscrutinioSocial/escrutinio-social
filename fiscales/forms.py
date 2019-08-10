@@ -19,6 +19,7 @@ from dal import autocomplete
 import phonenumbers
 
 from .models import Fiscal
+from django.contrib.auth.models import User
 from elecciones.models import VotoMesaReportado, Categoria, Opcion, Distrito, Seccion
 
 
@@ -120,6 +121,7 @@ class QuieroSerFiscalForm(forms.Form):
     MENSAJE_ERROR_TELEFONO_INVALIDO = 'Teléfono no es válido. Chequeá código de área y teléfono.'
     MENSAJE_ERROR_DNI_REPETIDO = 'Ya se encuentra un usuario registrado con ese DNI.'
     MENSAJE_ERROR_PASSWORD_NO_IGUALES = "Las contraseñas no coinciden."
+    MENSAJE_ERROR_EMAIL_REPETIDO = 'Ya existe ese correo. Intentá recuperando la contraseña'
 
     CARACTERES_REF_CODIGO = 4
     CANTIDAD_DIGITOS_NUMERACION_ARGENTINA = 10
@@ -228,6 +230,9 @@ class QuieroSerFiscalForm(forms.Form):
         if email and email2 and email != email2:
             self.add_error('email', 'Los emails no coinciden')
             self.add_error('email_confirmacion', 'Los emails no coinciden')
+
+        if User.objects.filter(email=email).exists():
+            self.add_error('email', self.MENSAJE_ERROR_EMAIL_REPETIDO)
 
     def validar_telefono(self, telefono_area, telefono_local):
         if telefono_area and telefono_local:
