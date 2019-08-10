@@ -7,7 +7,7 @@ from fiscales.email_sender import enviar_correo
 
 class Command(BaseCommand):
 
-    help = "Envia los correos de registración que no fueron enviados en su momento"
+    help = "Envía los correos de registración que no fueron enviados en su momento"
 
     def add_arguments(self, parser):
         parser.add_argument('--dia', default=9, type=int, help='Día desde cuando')
@@ -25,8 +25,8 @@ class Command(BaseCommand):
         users = User.objects.filter(date_joined__gt=fecha_desde)
 
         self.stdout.write(self.style.SUCCESS(
-            f"Se enviaran {len(users)} correos de registración a los usuarios registrados "
-            f"luego de la fecha {fecha_desde}"
+            f"Se enviarán {len(users)} correos de registración a los usuarios registrados "
+            f"luego de la fecha {fecha_desde}."
         ))
 
         confirmado = self.boolean_input("Desea seguir (s/n)?", default="s")
