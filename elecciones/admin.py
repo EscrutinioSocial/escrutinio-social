@@ -141,7 +141,10 @@ class MesaForm(forms.ModelForm):
 
         if add and copiar_categorias:
             otra_mesa = Mesa.objects.filter(circuito=mesa.circuito).first()
+
             if otra_mesa:
+                if not mesa.electores:
+                    mesa.electores = otra_mesa.electores
                 for categoria in otra_mesa.categorias.all():
                     mesa.categorias.add(categoria)
         return mesa
@@ -154,7 +157,7 @@ class MesaForm(forms.ModelForm):
 class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     form = MesaForm
     actions = [resultados_reportados]
-    list_display = ('numero', 'lugar_votacion')
+    list_display = ('numero', 'lugar_votacion', 'electores')
     raw_id_fields = ('circuito', 'lugar_votacion')
     list_filter = (
         TieneResultados, 'es_testigo', 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito'
