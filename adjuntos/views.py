@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import CreateView, FormView
 from django.core.serializers import serialize
 from django.conf import settings
+from django.db import transaction
 
 from sentry_sdk import capture_message
 
@@ -156,8 +157,8 @@ class ReporteDeProblemaCreateView(CreateView):
         return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
 
     def form_invalid(self,form):
-        tipo = bool(form.errors['tipo_de_problema'])
-        descripcion = bool(form.errors['descripcion'])
+        tipo = bool(form.errors.get('tipo_de_problema',False))
+        descripcion = bool(form.errors.get('descripcion',False))
         return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
     
     def form_valid(self, form):
@@ -307,11 +308,12 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
         if form.is_valid():
             file = files[0]
             fiscal = request.user.fiscal
-            instance = self.procesar_adjunto(file, fiscal)
-            if instance is not None:
-                messages.success(self.request, 'Subiste el acta correctamente.')
-                instance.take(fiscal)
-                return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
+            with transaction.atomic():
+                instance = self.procesar_adjunto(file, fiscal)
+                if instance is not None:
+                    messages.success(self.request, 'Subiste el acta correctamente.')
+                    instance.take(fiscal)
+                    return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
 
             form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)
         return self.form_invalid(form)
@@ -357,9 +359,7 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
         pre_identificacion_form = PreIdentificacionForm(self.request.POST)
         files = request.FILES.getlist('file_field')
 
-        if form.is_valid():
-            if not pre_identificacion_form.is_valid():
-                return self.form_invalid(form, pre_identificacion_form)
+        if form.is_valid() and pre_identificacion_form.is_valid():
 
             fiscal = request.user.fiscal
             pre_identificacion = pre_identificacion_form.save(commit=False)
@@ -367,6 +367,9 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
             pre_identificacion.save()
             kwargs.update({'pre_identificacion': pre_identificacion})
             return super().post(request, *args, **kwargs)
+
+        if not pre_identificacion_form.is_valid():
+            messages.warning(self.request, f'Hubo algún error en la identificación. No se subió ningún archivo.')
 
         return self.form_invalid(form, pre_identificacion_form, **kwargs)
 

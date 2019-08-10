@@ -2,10 +2,8 @@ from django.conf import settings
 from functools import lru_cache
 from collections import OrderedDict
 from attrdict import AttrDict
-from model_utils import Choices
-from django.db.models import Q, F, Sum, Subquery, IntegerField, OuterRef, Count, Exists
+from django.db.models import Q, F, Sum, Subquery, OuterRef, Count, Exists
 from .models import (
-    Eleccion,
     Distrito,
     SeccionPolitica,
     Seccion,
@@ -16,10 +14,58 @@ from .models import (
     MesaCategoria,
     Mesa,
     TecnicaProyeccion,
-    AgrupacionCircuitos,
     AgrupacionCircuito,
+    TIPOS_DE_AGREGACIONES,
+    OPCIONES_A_CONSIDERAR,
+    NIVELES_DE_AGREGACION,
 )
 from adjuntos.models import Identificacion, PreIdentificacion
+
+NIVEL_DE_AGREGACION = {
+    NIVELES_DE_AGREGACION.distrito: Distrito,
+    NIVELES_DE_AGREGACION.seccion_politica: SeccionPolitica,
+    NIVELES_DE_AGREGACION.seccion: Seccion,
+    NIVELES_DE_AGREGACION.circuito: Circuito,
+    NIVELES_DE_AGREGACION.lugar_de_votacion: LugarVotacion,
+    NIVELES_DE_AGREGACION.mesa: Mesa
+}
+
+
+def create_sumarizador(
+    parametros_sumarizacion=None,
+    tecnica_de_proyeccion=None,
+    configuracion_combinada=None,
+    configuracion_distrito=None
+):
+    # Si nos llega una configuracion combinada creamos un SumarizadorIdem
+    if configuracion_combinada:
+        return SumarizadorCombinado(configuracion_combinada)
+
+    # Si nos llega una configuracion por distrito tomamos su información
+    if configuracion_distrito:
+        tecnica_de_proyeccion = configuracion_distrito.proyeccion
+        # En caso de no tener parámetros de sumarización, toda la info sale la conf
+        if (parametros_sumarizacion is None):
+            parametros_sumarizacion = [
+                configuracion_distrito.agregacion,
+                configuracion_distrito.opciones,
+                NIVELES_DE_AGREGACION.distrito,
+                [configuracion_distrito.distrito.id]
+            ]
+        # Otra opción es recibir el nivel de agregación y los ids a considerar en forma manual
+        elif (len(parametros_sumarizacion) == 2):
+            parametros_sumarizacion = [
+                configuracion_distrito.agregacion,
+                configuracion_distrito.opciones,
+                *parametros_sumarizacion
+            ]
+
+    # En caso contrario se usa la técnica de proyección y parámetros recibidos.
+    # Si hay una técnica de proyección se usa Proyecciones y si no se usa un Sumarizador normal.
+    return Proyecciones(
+        tecnica_de_proyeccion,
+        *parametros_sumarizacion
+    ) if tecnica_de_proyeccion else Sumarizador(*parametros_sumarizacion)
 
 
 def porcentaje(numerador, denominador):
@@ -34,13 +80,17 @@ def porcentaje(numerador, denominador):
     return '-'
 
 
+def porcentaje_numerico(parcial, total):
+    """
+    Función utilitaria para el cálculo de un porcentaje, así se hace igual en todos lados
+    """
+    return 0 if total == 0 else round((parcial * 100) / total, 2)
+
+
 class Sumarizador():
     """
     Esta clase encapsula el cómputo de resultados.
     """
-    TIPOS_DE_AGREGACIONES = Choices('todas_las_cargas', 'solo_consolidados', 'solo_consolidados_doble_carga')
-    OPCIONES_A_CONSIDERAR = Choices('prioritarias', 'todas')
-
     def __init__(
         self,
         tipo_de_agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas,
@@ -56,9 +106,12 @@ class Sumarizador():
         Por último, los ids_a_considerar son los ids de unidades de el nivel `nivel_de_agregacion`
         que deben considerarse. Si es None se consideran todos.
         """
-        self.tipo_de_agregacion = tipo_de_agregacion  # Es una de TIPOS_DE_AGREGACIONES
+        # Es una de TIPOS_DE_AGREGACIONES
+        self.tipo_de_agregacion = tipo_de_agregacion
+
         # Es una de OPCIONES_A_CONSIDERAR
         self.opciones_a_considerar = opciones_a_considerar
+
         self.nivel_de_agregacion = nivel_de_agregacion
 
         self.ids_a_considerar = ids_a_considerar
@@ -71,15 +124,15 @@ class Sumarizador():
         """
         lookups = dict()
 
-        if self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga:
-            if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
+        if self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga:
+            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status'] = MesaCategoria.STATUS.total_consolidada_dc
             else:
                 lookups[f'{prefix}status'] = MesaCategoria.STATUS.parcial_consolidada_dc
 
-        elif self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.solo_consolidados:
+        elif self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.solo_consolidados:
             # Doble carga y CSV.
-            if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
+            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status__in'] = (
                     MesaCategoria.STATUS.total_consolidada_dc,
                     MesaCategoria.STATUS.total_consolidada_csv,
@@ -90,8 +143,8 @@ class Sumarizador():
                     MesaCategoria.STATUS.parcial_consolidada_csv,
                 )
 
-        elif self.tipo_de_agregacion == self.TIPOS_DE_AGREGACIONES.todas_las_cargas:
-            if self.opciones_a_considerar == self.OPCIONES_A_CONSIDERAR.todas:
+        elif self.tipo_de_agregacion == TIPOS_DE_AGREGACIONES.todas_las_cargas:
+            if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
                 lookups[f'{prefix}status__in'] = (
                     MesaCategoria.STATUS.total_consolidada_dc,
                     MesaCategoria.STATUS.total_consolidada_csv,
@@ -113,23 +166,9 @@ class Sumarizador():
         if not self.ids_a_considerar:
             return
 
-        if self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.distrito:
-            return Distrito.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion_politica:
-            return SeccionPolitica.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.seccion:
-            return Seccion.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.circuito:
-            return Circuito.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.lugar_de_votacion:
-            return LugarVotacion.objects.filter(id__in=self.ids_a_considerar)
-
-        elif self.nivel_de_agregacion == Eleccion.NIVELES_AGREGACION.mesa:
-            return Mesa.objects.filter(id__in=self.ids_a_considerar)
+        modelo = NIVEL_DE_AGREGACION.get(self.nivel_de_agregacion, None)
+        if modelo:
+            return modelo.objects.filter(id__in=self.ids_a_considerar)
 
     def lookups_de_mesas(self):
         lookups = Q()
@@ -229,7 +268,6 @@ class Sumarizador():
         Devuelve
             electores: cantidad de electores en las mesas válidas de la categoría
             electores_en_mesas_escrutadas: cantidad de electores en las mesas efectivamente escrutadas
-            porcentaje_mesas_escrutadas:
             votos: diccionario con resultados de votos por partido y opción (positivos y no positivos)
             total_positivos: total votos positivos
             total: total votos (positivos + no positivos)
@@ -248,8 +286,6 @@ class Sumarizador():
         total_mesas_escrutadas = mesas_escrutadas.count()
         total_mesas = mesas.count()
 
-        porcentaje_mesas_escrutadas = porcentaje(total_mesas_escrutadas, total_mesas)
-
         # 2) Electores.
 
         electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
@@ -262,7 +298,6 @@ class Sumarizador():
         return AttrDict({
             "total_mesas": total_mesas,
             "total_mesas_escrutadas": total_mesas_escrutadas,
-            "porcentaje_mesas_escrutadas": porcentaje_mesas_escrutadas,
             "electores": electores,
             "electores_en_mesas_escrutadas": electores_en_mesas_escrutadas,
             "votos_positivos": votos_positivos,
@@ -278,13 +313,12 @@ class Sumarizador():
         return Resultados(self.opciones_a_considerar, self.calcular(categoria, self.mesas_a_considerar))
 
 
-class Resultados():
+class ResultadosBase():
     """
-    Esta clase contiene los resultados.
+    Clase base para el comportamiento común entre los resultados de una sumarización / proyección y 
+    la sumatoria de muchos resultados en un ResultadoCombinado
     """
-
-    def __init__(self, opciones_a_considerar, resultados):
-        self.opciones_a_considerar = opciones_a_considerar
+    def __init__(self, resultados):
         self.resultados = resultados
 
     def data(self):
@@ -293,48 +327,6 @@ class Resultados():
         pasen información al template directamente sin obligar a que esta clase oficie de pasamanos.
         """
         return dict(self.resultados)
-
-    @lru_cache(128)
-    def total_positivos(self):
-        """
-        Devuelve el total de votos positivos, sumando los votos de cada una de las opciones de cada partido
-        en el caso self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas.
-
-        En el caso self.self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias
-        obtiene la opción de total
-        """
-        if self.opciones_a_considerar == Sumarizador.OPCIONES_A_CONSIDERAR.todas:
-            total_positivos = sum(
-                sum(votos for votos in opciones_partido.values() if votos)
-                for opciones_partido in self.resultados.votos_positivos.values()
-            )
-        else:
-            nombre_opcion_total = Opcion.total_votos().nombre
-            total = self.resultados.votos_no_positivos[nombre_opcion_total]
-            total_no_positivos = self.total_no_positivos()
-            total_positivos = max(total - total_no_positivos, 0)
-
-        return total_positivos
-
-    @lru_cache(128)
-    def total_no_positivos(self):
-        """
-        Devuelve el total de votos no positivos, sumando los votos a cada opción no partidaria
-        y excluyendo la opción que corresponde a totales (como el total de votantes o de sobres).
-        """
-        nombre_opcion_total = Opcion.total_votos().nombre
-        nombre_opcion_sobres = Opcion.sobres().nombre
-        return sum(
-            votos for opcion, votos in self.resultados.votos_no_positivos.items()
-            if opcion not in (nombre_opcion_total, nombre_opcion_sobres)
-        )
-
-    @lru_cache(128)
-    def votantes(self):
-        """
-        Total de personas que votaron.
-        """
-        return self.total_positivos() + self.total_no_positivos()
 
     @lru_cache(128)
     def tabla_positivos(self):
@@ -402,6 +394,13 @@ class Resultados():
 
         return tabla_no_positivos
 
+    @lru_cache(128)
+    def votantes(self):
+        """
+        Total de personas que votaron.
+        """
+        return self.total_positivos() + self.total_no_positivos()
+
     def electores(self):
         return self.resultados.electores
 
@@ -409,7 +408,7 @@ class Resultados():
         return self.resultados.electores_en_mesas_escrutadas
 
     def porcentaje_mesas_escrutadas(self):
-        return self.resultados.porcentaje_mesas_escrutadas
+        return porcentaje(self.total_mesas_escrutadas(), self.total_mesas())
 
     def porcentaje_escrutado(self):
         return porcentaje(self.resultados.electores_en_mesas_escrutadas, self.resultados.electores)
@@ -447,6 +446,105 @@ class Resultados():
         return porcentaje(nulos, self.votantes()) if nulos != '-' else '-'
 
 
+class Resultados(ResultadosBase):
+    """
+    Esta clase contiene los resultados de una sumarización o proyección.
+    """
+
+    def __init__(self, opciones_a_considerar, resultados):
+        super().__init__(resultados)
+        self.opciones_a_considerar = opciones_a_considerar
+
+    @lru_cache(128)
+    def total_positivos(self):
+        """
+        Devuelve el total de votos positivos, sumando los votos de cada una de las opciones de cada partido
+        en el caso self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas.
+
+        En el caso self.self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias
+        obtiene la opción de total
+        """
+        if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.todas:
+            total_positivos = sum(
+                sum(votos for votos in opciones_partido.values() if votos)
+                for opciones_partido in self.resultados.votos_positivos.values()
+            )
+        else:
+            nombre_opcion_total = Opcion.total_votos().nombre
+            total = self.resultados.votos_no_positivos[nombre_opcion_total]
+            total_no_positivos = self.total_no_positivos()
+            total_positivos = max(total - total_no_positivos, 0)
+
+        return total_positivos
+
+    @lru_cache(128)
+    def total_no_positivos(self):
+        """
+        Devuelve el total de votos no positivos, sumando los votos a cada opción no partidaria
+        y excluyendo la opción que corresponde a totales (como el total de votantes o de sobres).
+        """
+        nombre_opcion_total = Opcion.total_votos().nombre
+        nombre_opcion_sobres = Opcion.sobres().nombre
+        return sum(
+            votos for opcion, votos in self.resultados.votos_no_positivos.items()
+            if opcion not in (nombre_opcion_total, nombre_opcion_sobres)
+        )
+
+
+class ResultadoCombinado(ResultadosBase):
+    _total_positivos = 0
+    _total_no_positivos = 0
+
+    def __init__(self):
+        super().__init__(AttrDict({
+            'total_mesas': 0,
+            'total_mesas_escrutadas': 0,
+            'electores': 0,
+            'electores_en_mesas_escrutadas': 0,
+            'votos_positivos': {},
+
+            'votos_no_positivos': {opcion['nombre']: 0 for opcion in [
+                settings.OPCION_BLANCOS,
+                settings.OPCION_NULOS,
+                settings.OPCION_TOTAL_VOTOS,
+                settings.OPCION_TOTAL_SOBRES,
+            ]}
+        }))
+
+    def __add__(self, other):
+        self._total_positivos += other.total_positivos()
+        self._total_no_positivos += other.total_no_positivos()
+
+        # Sumar los votos no positivos
+        self.resultados.votos_no_positivos = {
+            key: value + other.resultados.votos_no_positivos.get(key, 0)
+            for key, value in self.resultados.votos_no_positivos.items()
+        }
+
+        self.resultados.votos_positivos = {
+            partido: {
+                opcion: votos_opcion + self.resultados.votos_positivos.get(partido, {}).get(opcion, 0)
+                for opcion, votos_opcion in votos_partido.items()
+            }
+            for partido, votos_partido in other.resultados.votos_positivos.items()
+        }
+        print(self.resultados.votos_positivos)
+
+        # Sumar el resto de los atributos en resultados
+        for attr in ['total_mesas', 'total_mesas_escrutadas', 'electores', 'electores_en_mesas_escrutadas']:
+            self.resultados[attr] += other.resultados[attr]
+
+        # TODO falta pasar agrupaciones no consideradas
+
+        return self
+
+    def total_positivos(self):
+        return self._total_positivos
+
+    def total_no_positivos(self):
+        return self._total_no_positivos
+
+
 class AvanceDeCarga(Sumarizador):
     """
     Esta clase contiene información sobre el avance de carga.
@@ -458,8 +556,8 @@ class AvanceDeCarga(Sumarizador):
         ids_a_considerar=None
     ):
         super().__init__(
-            tipo_de_agregacion=Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas,
-            opciones_a_considerar=Sumarizador.OPCIONES_A_CONSIDERAR.todas,
+            tipo_de_agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas,
+            opciones_a_considerar=OPCIONES_A_CONSIDERAR.todas,
             nivel_de_agregacion=nivel_de_agregacion,
             ids_a_considerar=ids_a_considerar
         )
@@ -499,30 +597,39 @@ class AvanceDeCarga(Sumarizador):
         identificaciones_validas_mesa = Identificacion.objects.filter(mesa=OuterRef('pk'), invalidada=False)
         mesas_con_marca_identificacion = self.mesas_a_considerar.annotate(
             tiene_identificaciones=Exists(identificaciones_validas_mesa))
-        mesas_sin_identificar = mesas_con_marca_identificacion.filter(tiene_identificaciones=False)
+        mesas_sin_identificar = mesas_con_marca_identificacion.filter(
+            tiene_identificaciones=False)
         mesas_en_identificacion = mesas_con_marca_identificacion.filter(
-            tiene_identificaciones=True, attachments__isnull=True)
+            tiene_identificaciones=True, attachments=None)
 
         mesacats_de_la_categoria = MesaCategoria.objects.filter(
             mesa__in=self.mesas_a_considerar,
             categoria=self.categoria
         )
 
+        # como "a cargar" se reportan solamente los que tienen attachments
+        # OJO hay que hacer .exclude(mesa__attachments=None), si el query se arma distinto
+        # se corre el peligro de que una mesa con N attachments con N > 1 (lo que es válido en esta app) cuente N veces.
+        # Carlos Lombardi, 9/8/2019
         mesacats_sin_cargar = mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.sin_cargar) \
-            .filter(mesa__attachments__isnull=False)
+            .exclude(mesa__attachments=None)
 
         mesacats_carga_parcial_sin_consolidar = \
-            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_sin_consolidar) | \
-                mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_consolidada_csv)
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_sin_consolidar) 
 
-        mesacats_carga_parcial_consolidada = \
+        mesacats_carga_parcial_consolidada_csv = \
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_consolidada_csv)
+
+        mesacats_carga_parcial_consolidada_dc = \
             mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.parcial_consolidada_dc)
 
         mesacats_carga_total_sin_consolidar = \
-            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_sin_consolidar) | \
-                mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_consolidada_csv)
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_sin_consolidar)
+                
+        mesacats_carga_total_consolidada_csv = \
+            mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_consolidada_csv)
 
-        mesacats_carga_total_consolidada = \
+        mesacats_carga_total_consolidada_dc = \
             mesacats_de_la_categoria.filter(status=MesaCategoria.STATUS.total_consolidada_dc)
 
         mesacats_conflicto_o_problema = \
@@ -538,9 +645,11 @@ class AvanceDeCarga(Sumarizador):
             "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_mesas(mesas_en_identificacion),
             "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_sin_cargar),
             "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_sin_consolidar),
-            "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada),
+            "carga_parcial_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada_csv),
+            "carga_parcial_consolidada_dc": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_parcial_consolidada_dc),
             "carga_total_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_sin_consolidar),
-            "carga_total_consolidada": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_consolidada),
+            "carga_total_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_consolidada_csv),
+            "carga_total_consolidada_dc": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_carga_total_consolidada_dc),
             "conflicto_o_problema": DatoParcialAvanceDeCarga(dato_total).para_mesacats(mesacats_conflicto_o_problema),
             "preidentificaciones": cantidad_preidentificaciones
         })
@@ -559,24 +668,20 @@ class AvanceDeCarga(Sumarizador):
         Lo dejo por eventuales refactors.
         """
         dato_total = DatoTotalAvanceDeCarga().para_valores_fijos(1000, 50000)
-        return AttrDict({
+        resultado_bruto = AttrDict({
             "total": dato_total,
             "sin_identificar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
             "en_identificacion": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
             "sin_cargar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(150, 8000),
             "carga_parcial_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(200, 10000),
-            "carga_parcial_consolidada": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
+            "carga_parcial_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 3000),
+            "carga_parcial_consolidada_dc": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
             "carga_total_sin_consolidar": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
-            "carga_total_consolidada": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
+            "carga_total_consolidada_csv": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 3000),
+            "carga_total_consolidada_dc": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(50, 2000),
             "conflicto_o_problema": DatoParcialAvanceDeCarga(dato_total).para_valores_fijos(100, 5000),
         })
-
-
-def porcentaje_numerico(parcial, total):
-    """
-    Función utilitaria para el cálculo de un porcentaje, así se hace igual en todos lados
-    """
-    return 0 if total == 0 else round((parcial * 100) / total, 2)
+        return AvanceWrapper(resultado_bruto)
 
 
 class DatoAvanceDeCarga():
@@ -641,14 +746,20 @@ class AvanceWrapper():
     def carga_parcial_sin_consolidar(self):
         return self.resultados.carga_parcial_sin_consolidar
 
-    def carga_parcial_consolidada(self):
-        return self.resultados.carga_parcial_consolidada
+    def carga_parcial_consolidada_csv(self):
+        return self.resultados.carga_parcial_consolidada_csv
+
+    def carga_parcial_consolidada_dc(self):
+        return self.resultados.carga_parcial_consolidada_dc
 
     def carga_total_sin_consolidar(self):
         return self.resultados.carga_total_sin_consolidar
 
-    def carga_total_consolidada(self):
-        return self.resultados.carga_total_consolidada
+    def carga_total_consolidada_csv(self):
+        return self.resultados.carga_total_consolidada_csv
+
+    def carga_total_consolidada_dc(self):
+        return self.resultados.carga_total_consolidada_dc
 
     def conflicto_o_problema(self):
         return self.resultados.conflicto_o_problema
@@ -736,8 +847,6 @@ class Proyecciones(Sumarizador):
         ).filter(agrupacion__minimo_mesas__gt=F('mesas_escrutadas')).values_list(
             'agrupacion__nombre', 'agrupacion__minimo_mesas', 'mesas_escrutadas'
         )
-
-
 
     @lru_cache(128)
     def agrupaciones_a_considerar(self, categoria, mesas):
@@ -828,3 +937,28 @@ class Proyecciones(Sumarizador):
     @classmethod
     def tecnicas_de_proyeccion(cls):
         return TecnicaProyeccion.objects.all()
+
+
+class SumarizadorCombinado():
+
+    def __init__(self, configuracion):
+        self.configuracion = configuracion
+
+    @property
+    def filtros(self):
+        """
+        El sumarizador combinado siempre es para el total país.
+        """
+        return
+
+    def mesas(self, categoria):
+        """
+            Devuelve todas las mesas para la categoría especificada
+        """
+        return Mesa.objects.filter(categorias=categoria).distinct()
+
+    def get_resultados(self, categoria):
+        return sum((
+            create_sumarizador(configuracion_distrito=configuracion_distrito).get_resultados(categoria)
+            for configuracion_distrito in self.configuracion.configuraciones.all()
+        ), ResultadoCombinado())

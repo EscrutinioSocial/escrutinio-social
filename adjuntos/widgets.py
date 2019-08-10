@@ -14,9 +14,5 @@ class Select(forms.widgets.Input):
         context['widget']['type'] = self.input_type
         return context
 
-    def clean(self,value):
-        val = super().clean(value)
-        if val == "" or val == -1 or val == "-1":
-            return None
-        else:
-            return val
+    def required(self,value):
+        self.required = value

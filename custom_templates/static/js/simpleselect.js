@@ -4,34 +4,42 @@ los inputs asociados al campo. Si hay una única opción válida se usan
 esos valores.
 */
 function displayResult(field,default_value,options=[]){
-    var op = default_value;
-    var val = -1;
-    var txt = "";
+    var shown_value = default_value;
+    var value = -1;
+    var input_text = $.trim($('#'+field+'_input').val());
+    var required = $('#'+field+'_input').prop('required');
     if(options.length == 1){
-	op = options[0].text;
-	val = options[0].id;
-	txt = options[0].selected_text;
+	shown_value= options[0].text;
+	value = options[0].id;
+	input_text = options[0].selected_text;
     }
     else {
-	op = "";
+	shown_value = "";
     }
     /* Si val es -1 entonces estamos ante un error. 
      */
-    if (val == -1){
-	if (!($("#"+field+"_input").is(':focus'))) {
+    if (value == -1 && !(input_text == "")){
+	if (!($("#"+field+"_input").is(':focus')) && input_text == "")  {
 	    $($('label[for='+field+'_input]')[0]).removeClass("active");
 	}
+	if (input_text != "" || required){
+	    $('#inline-error-for-'+field).removeClass("hide");
+	}
+	if (input_text == ""){
+	    shown_value = "";
+	}
     }
-    else {
+    else
+    {
 	$($('label[for='+field+'_input]')[0]).addClass("active");
 	$("#"+field+"-resultado").removeClass("hide");
-	$('#errors_for_'+field).addClass("hide");
+	$('#inline-error-for-'+field).addClass("hide");
     }
-    $("#"+field+"-resultado").val(op);
-    if(val != ""){
-	$("#id_"+field).val(val);
+    $("#"+field+"-resultado").val(shown_value);
+    if(value != ""){
+	$("#id_"+field).val(value);
     }
-    $("#"+field+"_input").val(txt);
+    $("#"+field+"_input").val(input_text);
     return true;
 }
 
@@ -77,7 +85,7 @@ TODO: filtrar los parámetros de `forward` que usamos para no
 tener que hacer chequeos en la vista de django. 
 */
 function updateField(field,base_url,forward,on_after=null){
-    var nro = $("#"+field+"_input").val();
+    var nro = $.trim($("#"+field+"_input").val());
     if (isFinite(nro)){
 	nro = parseInt(nro);
     }

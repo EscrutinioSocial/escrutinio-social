@@ -2,6 +2,7 @@ from django import forms
 from django.conf import settings
 from django.core.validators import FileExtensionValidator, ValidationError
 from django.db.models import Q
+from annoying.functions import get_object_or_None
 
 from .models import Identificacion, PreIdentificacion, Attachment
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
@@ -18,6 +19,21 @@ MENSAJES_ERROR = {
     
     
 
+class SelectField(forms.ModelChoiceField):
+
+    widget = Select
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        self.name = kwargs.get('label',self.queryset.model._meta.object_name)
+        required = kwargs.get('required',True)
+        self.widget.attrs['required'] = required
+    
+    def clean(self,value):
+        if value == "" or value == -1 or value == "-1":
+            return None
+        return super().clean(value)
+
+    
 class CharFieldModel(forms.CharField):
 
     def queryset(self,value,*args):
@@ -43,11 +59,8 @@ class IdentificacionForm(forms.ModelForm):
     Este formulario se utiliza para asignar mesa
     """
 
-    distrito = forms.ModelChoiceField(
+    distrito = SelectField(
         queryset = Distrito.objects.all(),
-        widget = Select(
-            attrs = {'class': 'requerido'}
-        ),
     )
 
     seccion = CharFieldModel(
@@ -112,24 +125,19 @@ class PreIdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar una pre identificación a un adjunto.
     """
-    distrito = forms.ModelChoiceField(
+    distrito = SelectField(
         queryset = Distrito.objects.all(),
-        widget = Select(
-            attrs = {'class': 'requerido'}
-        ),
     )
 
-    seccion = forms.ModelChoiceField(
-        required = False,
-        queryset = Seccion.objects.all(),
-        widget = Select(),
-        label = 'Sección',
+    seccion = SelectField(
+         required = False,
+         queryset = Seccion.objects.all(),
+         label = 'Sección',
     )
     
-    circuito = forms.ModelChoiceField(
-        required = False,
-        queryset = Circuito.objects.all(),
-        widget = Select(),
+    circuito = SelectField(
+         required = False,
+         queryset = Circuito.objects.all(),
     )
 
     class Meta:
@@ -146,14 +154,14 @@ class PreIdentificacionForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        circuito = cleaned_data.get('circuito') 
+        circuito = cleaned_data.get('circuito')
         seccion = cleaned_data.get('seccion')
         distrito = cleaned_data.get('distrito')
         if seccion and seccion.distrito != distrito:
             self.add_error(
                 'seccion', MENSAJES_ERROR['seccion']
             )
-        elif circuito and circuito.seccion != seccion:
+        if circuito and circuito.seccion != seccion:
             self.add_error(
                 'circuito', MENSAJES_ERROR['circuito']
             )

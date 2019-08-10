@@ -1,16 +1,10 @@
-from elecciones.tests.factories import (
-    AttachmentFactory,
-    CargaFactory,
-    MesaFactory,
-    MesaCategoriaFactory,
-)
+from elecciones.tests.factories import ( AttachmentFactory, MesaFactory, )
 from django.urls import reverse
-from elecciones.tests.test_resultados import fiscal_client, setup_groups # noqa
+from elecciones.tests.conftest import fiscal_client, setup_groups # noqa
 from http import HTTPStatus
 from adjuntos.models import Attachment, Identificacion
-from adjuntos.consolidacion import consumir_novedades_carga
-from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile
-import os
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 
 def test_identificacion_create_view_get(fiscal_client, admin_user):
     a = AttachmentFactory()
@@ -214,8 +208,8 @@ def test_preidentificacion_con_datos_de_fiscal(fiscal_client):
     fiscal.seccion = seccion
     fiscal.save()
     fiscal.refresh_from_db()
-    distrito_preset = f'<input id="id_distrito" name="distrito" type="hidden" tabindex="-1" value="{seccion.distrito.id}"/>'
-    seccion_preset =  f'<input id="id_seccion" name="seccion" type="hidden" tabindex="-1" value="{seccion.id}"/>'
+    distrito_preset = f'<input id="id_distrito" name="distrito" type="hidden" tabindex="-1" value="{seccion.distrito.id}" />'
+    seccion_preset =  f'<input id="id_seccion" name="seccion" type="hidden" tabindex="-1" value="{seccion.id}" />'
 
     response = fiscal_client.get(reverse('agregar-adjuntos'))
     content = response.content.decode('utf8')
