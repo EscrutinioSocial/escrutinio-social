@@ -59,15 +59,3 @@ class BaseCommand(BaseCommand):
             self.error_log(f'El valor {value} del campo {field_name} no es positivo. Línea {n}.')
             return None
         return value
-
-
-    def canonizar(self, valor):
-        """
-        Tomado prestado de adjuntos/csv_import
-        Pasa a mayúsculas y elimina espacios.
-        Si se trata de un número, elimina los ceros previos.
-        """
-        valor = valor.upper().strip()
-        if valor.isdigit():
-            nro = str(int(valor))  # Esto elimina ceros y lo volvemos a string
-        return valor

@@ -3,11 +3,12 @@ import math
 from datetime import timedelta
 from collections import defaultdict
 
+from django.dispatch import receiver
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import Sum, Count, Q
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone
@@ -43,6 +44,22 @@ NIVELES_DE_AGREGACION = Choices(
 )
 
 NIVELES_AGREGACION = [x[0] for x in NIVELES_DE_AGREGACION]
+
+
+def canonizar(valor):
+    """
+    Tomado prestado de adjuntos/csv_import, también está en managament/commands
+    Pasa a mayúsculas y elimina espacios.
+    Si se trata de un número, elimina los ceros previos.
+    """
+    if valor is None:
+        return valor
+    if not isinstance(valor, str):
+        return valor
+    valor = valor.upper().strip()    
+    if valor.isdigit():
+        valor = str(int(valor))  # Esto elimina ceros y lo volvemos a string
+    return valor
 
 
 class Distrito(models.Model):
@@ -1184,3 +1201,14 @@ def actualizar_prioridades_seccion(sender, instance, created, **kwargs):
                 or instance.tracker.has_changed('prioridad_10_a_100'):
         registrar_prioridades_seccion(instance)
         MesaCategoria.recalcular_orden_de_carga_para_seccion(instance)
+
+
+@receiver(pre_save, sender=Distrito)
+@receiver(pre_save, sender=Seccion)
+@receiver(pre_save, sender=Circuito)
+@receiver(pre_save, sender=LugarVotacion)
+@receiver(pre_save, sender=Mesa)
+@receiver(pre_save, sender=SeccionPolitica)
+@receiver(pre_save, sender=Partido)
+def canonizar_numero(sender, instance, *args, **kwargs):
+    instance.numero = canonizar(instance.numero)

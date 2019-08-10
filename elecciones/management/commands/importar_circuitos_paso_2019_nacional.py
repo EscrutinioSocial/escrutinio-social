@@ -18,8 +18,6 @@ def to_float(val):
         return None
 
 
-
-
 class Command(BaseCommand):
     help = "Importar hasta circuitos"
 
@@ -28,11 +26,11 @@ class Command(BaseCommand):
         reader = DictReader(CSV.open())
 
         for c, row in enumerate(reader, 1):
-            distrito_nro = self.canonizar(row['distrito_nro'])
+            distrito_nro = row['distrito_nro']
             distrito_name = row['distrito_name']
-            seccion_nro = self.canonizar(row['seccion_nro'])
+            seccion_nro = row['seccion_nro']
             seccion_name = row['seccion_name']
-            circuito_nro = self.canonizar(row['circuito_nro'])
+            circuito_nro = row['circuito_nro']
             circuito_name = row['circuito_name']
 
             try:
