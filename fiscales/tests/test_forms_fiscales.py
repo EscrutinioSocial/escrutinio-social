@@ -165,10 +165,10 @@ def test_formset_carga_warning_suma_votos_mayor_sobres(db):
     assert len(formset.non_form_errors()) == 0
 
 
-def test_formset_carga_warning_cero_votos(db):
+def test_formset_carga_warning_cero_votos(db, settings):
     m = MesaFactory()
-    o1 = OpcionFactory(partido__codigo="136")
-    o2 = OpcionFactory(partido__codigo="135")
+    o1 = OpcionFactory(partido__codigo=settings.CODIGO_PARTIDO_NOSOTROS)
+    o2 = OpcionFactory(partido__codigo=settings.CODIGO_PARTIDO_ELLOS)
 
     VMRFormSet = votomesareportadoformset_factory(min_num=1)
     data = _construir_request_data_para_carga_de_resultados(

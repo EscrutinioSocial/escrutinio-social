@@ -80,17 +80,38 @@ def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client, adm
     assert mesa_1.attachments.exists()
 
 
-def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
-    m1 = MesaFactory()
+def test_identificacion_problema_create_view_post_no_ajax(fiscal_client, mocker):
+    info = mocker.patch('adjuntos.views.messages.info')
     a = AttachmentFactory()
     data = {
         'status': 'problema',
         'tipo_de_problema': 'falta_lista',
         'descripcion': 'Un problema'
     }
-    response = fiscal_client.post(reverse('asignar-problema', args=[a.id]), data)
+    # ajax post
+    url = reverse('asignar-problema', args=[a.id])
+    response = fiscal_client.post(url, data)
     assert response.status_code == 302
+    assert info.call_args[0][1] == 'Gracias por el reporte. Ahora pasamos a la siguiente acta.'
     assert response.url == reverse('siguiente-accion')
+    # estrictamente, acá no se crea ningun problema
+    assert not a.problemas.exists()
+
+
+def test_identificacion_problema_create_view_post_ajax(fiscal_client, admin_user):
+    a = AttachmentFactory()
+    data = {
+        'status': 'problema',
+        'tipo_de_problema': 'falta_lista',
+        'descripcion': 'Un problema'
+    }
+    # ajax post
+    url = reverse('asignar-problema', args=[a.id])
+    response = fiscal_client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert response.status_code == 200
+    # hack
+    assert response.json() == {'status': 'hack'}
+
     assert a.identificaciones.count() == 1
     i = a.identificaciones.first()
     assert i.status == 'problema'
@@ -99,7 +120,14 @@ def test_identificacion_problema_create_view_post(fiscal_client, admin_user):
     # mesa no tiene attach aun
     a.refresh_from_db()
     assert a.identificacion_testigo is None
-    assert not m1.attachments.exists()
+
+    # hay un problema asociado al attach con un reporte asociado
+    problema = a.problemas.get()                # demuestra que es 1 solo
+    assert problema.estado == 'potencial'
+    reporte = problema.reportes.get()           # idem, es 1 solo
+    assert reporte.tipo_de_problema == 'falta_lista'
+    assert reporte.reportado_por == admin_user.fiscal
+    assert reporte.descripcion == 'Un problema'
 
 
 def test_identificacion_sin_permiso(fiscal_client, admin_user, mocker):
@@ -115,6 +143,7 @@ def test_identificacion_sin_permiso(fiscal_client, admin_user, mocker):
     a.take(fiscal)
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
     assert response.status_code == 200
+
 
 def test_preidentificacion_create_view_post(fiscal_client):
     content = open('adjuntos/tests/acta.jpg','rb')
@@ -193,7 +222,7 @@ def test_preidentificacion_sin_datos(fiscal_client):
     }
     response = fiscal_client.post(reverse('agregar-adjuntos'), data)
     assert response.status_code == HTTPStatus.OK
-    
+
     attachment = Attachment.objects.all().first()
     assert attachment is None
     assert "Este campo es requerido" in response.content.decode('utf8')

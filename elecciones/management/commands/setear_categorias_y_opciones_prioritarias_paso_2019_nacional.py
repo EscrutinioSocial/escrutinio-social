@@ -9,13 +9,16 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Categoría Presidente.
         categoria = Categoria.objects.get(nombre=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE)
-        self.configurar_categoria_prioritaria(categoria)
+        codigos = [settings.CODIGO_PARTIDO_NOSOTROS, settings.CODIGO_PARTIDO_ELLOS]
+        self.configurar_categoria_prioritaria(categoria, codigos)
 
         # Categoría Gobernador.
-        categoria = Categoria.objects.get(nombre=settings.NOMBRE_CATEGORIA_GOB_Y_VICE_PBA)
-        self.configurar_categoria_prioritaria(categoria)
+        m = Mesa.objects.filter(circuito__seccion__distrito__numero="2")[0]
+        categoria = m.categorias.get(nombre=settings.NOMBRE_CATEGORIA_GOB_Y_VICE_PBA)
+        codigos = [settings.CODIGO_PARTIDO_NOSOTROS, settings.CODIGO_PARTIDO_ELLOS_BA]
+        self.configurar_categoria_prioritaria(categoria, codigos)
 
-    def configurar_categoria_prioritaria(self, categoria):
+    def configurar_categoria_prioritaria(self, categoria, codigos):
         categoria.activa = True
         categoria.sensible = True
         categoria.requiere_cargas_parciales = True
@@ -23,7 +26,7 @@ class Command(BaseCommand):
         categoria.save()
 
         # Opciones prioritarias.
-        for cod_partido in [settings.CODIGO_PARTIDO_NOSOTROS, settings.CODIGO_PARTIDO_ELLOS]:
+        for cod_partido in codigos:
             categoriaopcion = CategoriaOpcion.objects.get(
                     categoria=categoria,
                     opcion__partido__codigo=cod_partido,

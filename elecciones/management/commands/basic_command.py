@@ -28,22 +28,22 @@ class BaseCommand(BaseCommand):
         else:
             self.warning(f'{modelo} {object} ya existe', level-1, ending)
 
-    def to_nat(self, row, field_name, n):
+    def to_nat(self, row, field_name, n, low_bound=1):
         """ Conversión de un string a un natural. """
         try:
             value = row[field_name]
         except KeyError:
             self.error_log(f'No está {field_name} en la línea {n}.')
             return None
-
+        
         try:
             value = int(value)
-        except ValueError:
+        except (ValueError, TypeError) as e:
             self.error_log(f'El valor {value} del campo {field_name} no es un entero. Línea {n}.')
             return None
 
-        if value <= 0:
-            self.error_log(f'El valor {value} del campo {field_name} no es positivo. Línea {n}.')
+        if value < low_bound:
+            self.error_log(f'El valor {value} del campo {field_name} es menor que {low_bound}. Línea {n}.')
             return None
         return value
 
