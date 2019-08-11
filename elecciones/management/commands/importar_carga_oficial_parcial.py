@@ -108,6 +108,8 @@ class Command(BaseCommand):
                     VotoMesaReportado.objects.create(carga=carga, opcion=opcion_nulos, votos=row['Nulos'])
                     VotoMesaReportado.objects.create(carga=carga, opcion=opcion_total, votos=row['Total'])
 
+                    carga.actualizar_firma()
+
                     # Si hay cargas repetidas esto hace que se tome la ultima
                     # en el proceso de comparar_mesas_con_correo
                     mesa_categoria.actualizar_parcial_oficial(carga)
