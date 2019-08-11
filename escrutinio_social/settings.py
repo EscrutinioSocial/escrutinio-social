@@ -349,7 +349,7 @@ NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y vice'
 
 URL_ARCHIVO_IMPORTAR_CORREO = {}
 URL_ARCHIVO_IMPORTAR_CORREO[NOMBRE_CATEGORIA_PRESI_Y_VICE] = 'https://sheets.googleapis.com/v4/spreadsheets/1hnn-BCqilu2jXZ-lcNiwhDa_V-QTCSp-EMqhpz4y2fA/values/A:XX'
-URL_ARCHIVO_IMPORTAR_CORREO[NOMBRE_CATEGORIA_GOB_Y_VICE_PBA] = 'https://sheets.googleapis.com/v4/spreadsheets/1hnn-BCqilu2jXZ-lcNiwhDa_V-QTCSp-EMqhpz4y2fA/values/A:XX'
+URL_ARCHIVO_IMPORTAR_CORREO[NOMBRE_CATEGORIA_GOB_Y_VICE_PBA] = 'https://sheets.googleapis.com/v4/spreadsheets/10GW6KVlORVor9HRbhmr9EtzuYEqlFD7mJmxyNG7LQCs/values/A:XX'
 
 # Código de partidos principales para validaciones.
 CODIGO_PARTIDO_NOSOTROS = 136
