@@ -231,6 +231,7 @@ def realizar_siguiente_accion(request):
 
 @login_required
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('unidades basicas'), login_url=NO_PERMISSION_REDIRECT)
+@transaction.atomic
 def cargar_desde_ub(request, mesa_id, tipo='total'):
     mesa_existente = get_object_or_404(Mesa, id=mesa_id)
 
