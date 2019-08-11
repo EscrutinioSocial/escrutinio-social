@@ -211,8 +211,8 @@ def test_formset_en_carga_total_muestra_todos(db, fiscal_client, admin_user):
     totales = reverse('carga-total', args=[mc.id])
     response = fiscal_client.get(totales)
     assert len(response.context['formset']) == 2 + len(Opcion.opciones_no_partidarias())
-    assert response.context['formset'][0].fields['opcion'].choices == [(o2.id, str(o2))]
-    assert response.context['formset'][1].fields['opcion'].choices == [(o.id, str(o))]
+    assert response.context['formset'][0].fields['opcion'].choices == [(o2.id, o2)]
+    assert response.context['formset'][1].fields['opcion'].choices == [(o.id, o)]
 
 
 def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, admin_user, settings):
@@ -400,7 +400,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
 
     tupla_opciones_electores = [(opcion_1.id, mesa.electores // 2, mesa.electores // 2), (opcion_2.id, mesa.electores // 2, mesa.electores // 2)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
-    with django_assert_num_queries(53):
+    with django_assert_num_queries(51):
         response = fiscal_client.post(url_carga, request_data)
 
     # Tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
