@@ -27,7 +27,18 @@ PARAMS = {'key': API_KEY}
 
 class Command(BaseCommand):
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--categoria", type=str, dest="categoria",
+            help="Categoria a analizar (default %(default)s).",
+            default=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE
+        )
+
     def handle(self, *args, **options):
+        nombre_categoria = options['categoria']
+        self.categoria = Categoria.objects.get(nombre=nombre_categoria)
+        print("Vamos a importar la categoría:", self.categoria)
+
         r = requests.get(url=URL, params=PARAMS)
         values = r.json()['values']
         ultima_guardada_con_exito = None
@@ -48,7 +59,6 @@ class Command(BaseCommand):
                 head, *tail = values
                 datos_a_guardar = map(lambda x: dict(zip(head, x)), tail)
 
-            categoria_presidente = Categoria.objects.get(nombre=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE)
             fiscal = Fiscal.objects.get(id=1)
             tipo = 'parcial_oficial'
 
@@ -67,7 +77,7 @@ class Command(BaseCommand):
                     seccion = Seccion.objects.get(numero=nro_seccion, distrito=distrito)
                     circuito = Circuito.objects.get(numero=row['Circuito'].strip(), seccion=seccion)
                     mesa = Mesa.objects.get(numero=row['Mesa'], circuito=circuito)
-                    mesa_categoria = MesaCategoria.objects.get(mesa=mesa, categoria=categoria_presidente)
+                    mesa_categoria = MesaCategoria.objects.get(mesa=mesa, categoria=self.categoria)
 
                     # TODO
                     # INICIO TRANSACCION
