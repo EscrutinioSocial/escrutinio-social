@@ -348,7 +348,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     vmr.carga = carga
                     reportados.append(vmr)
                 VotoMesaReportado.objects.bulk_create(reportados)
-                
+
                 # Libero el token sobre la mc
                 mesa_categoria.release()
                 # si viene desde_ub, consolidamos la carga
@@ -385,7 +385,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     )
 
 
-class ReporteDeProblemaCreateView(CreateView):
+class ReporteDeProblemaCreateView(FormView):
     http_method_names = ['post']
     form_class = IdentificacionDeProblemaForm
     template_name = "problemas/problema.html"
@@ -396,32 +396,35 @@ class ReporteDeProblemaCreateView(CreateView):
             MesaCategoria, id=self.kwargs['mesacategoria_id']
         )
 
-    def form_invalid(self,form):            
+    def form_invalid(self, form):
         tipo = bool(form.errors['tipo_de_problema'])
         descripcion = bool(form.errors['descripcion'])
         return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
-    
+
     def form_valid(self, form):
-        fiscal = self.request.user.fiscal
-        carga = form.save(commit=False)
-        carga.fiscal = fiscal
-        carga.status = Carga.TIPOS.problema
-        # Lo falso grabo para quedarme con la data de sus campos.
-        reporte_de_problema = form.save(commit=False)
-        tipo_de_problema = reporte_de_problema.tipo_de_problema
-        descripcion = reporte_de_problema.descripcion
+        # mismo hack que en la misma vista adjuntos.views.ReporteDeProblemaCreateView
+        # FIX ME: no tiene tests
+        if self.request.is_ajax():
+            fiscal = self.request.user.fiscal
+            carga = form.save(commit=False)
+            carga.fiscal = fiscal
+            carga.status = Carga.TIPOS.problema
+            # Lo falso grabo para quedarme con la data de sus campos.
+            reporte_de_problema = form.save(commit=False)
+            tipo_de_problema = reporte_de_problema.tipo_de_problema
+            descripcion = reporte_de_problema.descripcion
 
-        # Creo la identificación.
-        carga = Carga.objects.create(
-            tipo=Carga.TIPOS.problema,
-            fiscal=fiscal,
-            origen=Carga.SOURCES.web,
-            mesa_categoria=self.mesa_categoria
-        )
+            # Creo la identificación.
+            carga = Carga.objects.create(
+                tipo=Carga.TIPOS.problema,
+                fiscal=fiscal,
+                origen=Carga.SOURCES.web,
+                mesa_categoria=self.mesa_categoria
+            )
 
-        # Creo el problema asociado.
-        Problema.reportar_problema(fiscal, descripcion, tipo_de_problema, carga=carga)
-
+            # Creo el problema asociado.
+            Problema.reportar_problema(fiscal, descripcion, tipo_de_problema, carga=carga)
+            return JsonResponse({'status': 'hack'})
         messages.info(
             self.request,
             f'Gracias por el reporte. Ahora pasamos a la siguiente acta.',

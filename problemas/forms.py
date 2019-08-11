@@ -2,10 +2,11 @@ from django import forms
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 from .models import ReporteDeProblema
 
+
 class IdentificacionDeProblemaForm(forms.ModelForm):
     class Meta:
         model = ReporteDeProblema
-        fields = ['tipo_de_problema','descripcion']
+        fields = ['tipo_de_problema', 'descripcion']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

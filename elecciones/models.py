@@ -609,6 +609,7 @@ class Mesa(models.Model):
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
     prioridad = models.PositiveIntegerField(default=0)
+    extranjeros = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('circuito', 'numero')
@@ -1103,7 +1104,6 @@ class ConfiguracionComputo(models.Model):
         on_delete=models.CASCADE,
         related_name='configuracion_computo',
     )
-    
     class Meta:
         ordering = ('nombre', )
         verbose_name = 'Configuración para cómputo'
@@ -1127,7 +1127,7 @@ class ConfiguracionComputoDistrito(models.Model):
     agregacion = models.CharField(max_length=30,choices=TIPOS_DE_AGREGACIONES)
     opciones = models.CharField(max_length=30,choices=OPCIONES_A_CONSIDERAR)
     proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.SET_NULL, default=None, null=True, blank=True)
-    
+
     class Meta:
         verbose_name = 'Configuración para cómputo por distrito'
         verbose_name_plural = 'Configuraciones para cómputo por distrito'
