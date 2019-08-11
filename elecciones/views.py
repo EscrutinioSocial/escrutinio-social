@@ -141,9 +141,9 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
 
     def dispatch(self, *args, **kwargs):
         pk = self.kwargs.get('pk')
-        presidenteVice = Categoria.objects.filter(nombre=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE).first()
+        categoriaPresidenteVice = Categoria.objects.filter(nombre=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE).first()
         if pk is None:
-            return redirect('resultados-categoria', pk=presidenteVice.id)
+            return redirect('resultados-categoria', pk=categoriaPresidenteVice.id)
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
