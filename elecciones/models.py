@@ -92,7 +92,7 @@ class Distrito(models.Model):
         return self.nombre
 
     def natural_key(self):
-        return self.numero
+        return (self.numero, )
 
 
 class SeccionPolitica(models.Model):
@@ -194,8 +194,8 @@ class Seccion(models.Model):
             return f"{self.distrito.nombre_completo()} - {self.nombre}"
 
     def natural_key(self):
-        return (self.distrito.natural_key(), self.numero)
-
+        return self.distrito.natural_key() + (self.numero, ) 
+    natural_key.dependencies = ['elecciones.distrito']
 
 class Circuito(models.Model):
     """
