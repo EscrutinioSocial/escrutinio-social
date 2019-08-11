@@ -295,7 +295,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
         """
         first_autofoco = None
         for i, (opcion, form) in enumerate(zip(opciones, formset), 1):
-            form.fields['opcion'].choices = [(opcion.id, str(opcion))]
+            form.fields['opcion'].choices = [(opcion.id, opcion)]
 
             # esto hace que la navegacion mediante Tabs priorice los inputs de "votos"
             # por sobre los combo de "opcion"

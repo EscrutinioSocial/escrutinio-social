@@ -5,6 +5,25 @@
 {{ block.super }}
 
 <style>
+.label-opcion {
+    border: 0 !important;
+    padding-bottom: 2pt !important;
+}
+
+.opcion-body {
+}
+.opcion-nro {
+    margin-bottom: -1rem !important;
+}
+.opcion-nombre {
+}
+
+.opcion-partido{
+    margin-top: -2pt; 
+    line-height: 0.9;
+}
+
+
 h5 {
     margin-bottom: 0.4rem !important;
     margin-top: 0.4rem !important;
@@ -104,7 +123,7 @@ $(document).ready(function(){
     {{ formset.management_form }}
     <div class="carga-acta-inline collection">
       {% for form in formset %}
-      <div class="collection-item">
+      <div class="collection-item row">
         {% form %}
         {% endform %}
       </div>
