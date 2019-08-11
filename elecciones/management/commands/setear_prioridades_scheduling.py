@@ -42,13 +42,13 @@ class Command(BaseCommand):
                 continue
 
             # chequeamos tener naturales
-            hasta_2 = self.to_nat(hasta_2,'hasta_2',c)
+            hasta_2 = self.to_nat(row, 'hasta_2', c)
             if hasta_2 is None:
                 continue
-            hasta_10 = self.to_nat(hasta_10,'hasta_10',c)
+            hasta_10 = self.to_nat(row, 'hasta_10', c)
             if hasta_10 is None:
                 continue
-            desde_10 = self.to_nat(desde_10,'desde_10',c)
+            desde_10 = self.to_nat(row, 'desde_10', c)
             if desde_10 is None:
                 continue
 
