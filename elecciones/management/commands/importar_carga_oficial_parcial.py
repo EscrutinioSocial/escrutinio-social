@@ -74,8 +74,6 @@ class Command(BaseCommand):
 
             opcion_nosotros = self.get_opcion_nosotros()
             opcion_ellos = self.get_opcion_ellos()
-            # opcion_nosotros = Opcion.objects.get(partido__codigo=settings.CODIGO_PARTIDO_NOSOTROS)
-            # opcion_ellos = Opcion.objects.get(partido__codigo=settings.CODIGO_PARTIDO_ELLOS)
             opcion_blancos = Opcion.blancos()
             opcion_nulos = Opcion.nulos()
             opcion_total = Opcion.total_votos()
@@ -108,6 +106,7 @@ class Command(BaseCommand):
                     VotoMesaReportado.objects.create(carga=carga, opcion=opcion_nulos, votos=row['Nulos'])
                     VotoMesaReportado.objects.create(carga=carga, opcion=opcion_total, votos=row['Total'])
 
+                    # actualizo la firma así no es necesario correr consolidar_identificaciones_y_cargas
                     carga.actualizar_firma()
 
                     # Si hay cargas repetidas esto hace que se tome la ultima
