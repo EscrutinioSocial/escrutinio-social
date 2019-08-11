@@ -196,7 +196,7 @@ class Attachment(TimeStampedModel):
         super().save(*args, **kwargs)
 
     @classmethod
-    def sin_identificar(cls, fiscal_a_excluir=None, for_update=False):
+    def sin_identificar(cls, fiscal_a_excluir=None, for_update=True):
         """
         Devuelve un conjunto de Attachments que no tienen
         identificación consolidada y no han sido asignados

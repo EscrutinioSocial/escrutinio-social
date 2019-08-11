@@ -377,7 +377,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.exclude(cargas__fiscal=fiscal)
 
-    def con_carga_pendiente(self, for_update=False):
+    def con_carga_pendiente(self, for_update=True):
         qs = self.select_for_update(skip_locked=True) if for_update else self
         return qs.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
 
