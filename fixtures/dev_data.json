@@ -969,8 +969,8 @@
   "pk": 1,
   "fields": {
     "eleccion": null,
-    "slug": "elecciones-1",
-    "nombre": "elecciones-1",
+    "slug": "presidente-vice",
+    "nombre": "Presidente y vice",
     "color": "black",
     "back_color": "white",
     "activa": true,
@@ -1280,4 +1280,3 @@
   }
 }
 ]
-

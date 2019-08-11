@@ -141,8 +141,9 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
 
     def dispatch(self, *args, **kwargs):
         pk = self.kwargs.get('pk')
+        presidenteVice = Categoria.objects.filter(nombre=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE).first()
         if pk is None:
-            return redirect('resultados-categoria', pk=Categoria.objects.first().id)
+            return redirect('resultados-categoria', pk=presidenteVice.id)
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -162,8 +163,6 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
             context['para'] = 'todo el país'
 
         pk = self.kwargs.get('pk')
-        if pk is None:
-            pk = Categoria.objects.first().id
         categoria = get_object_or_404(Categoria, id=pk)
         context['object'] = categoria
         context['categoria_id'] = categoria.id
