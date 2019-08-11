@@ -23,7 +23,7 @@ import phonenumbers
 from .models import Fiscal
 from django.contrib.auth.models import User
 from elecciones.models import VotoMesaReportado, Categoria, Opcion, Distrito, Seccion
-
+from .widgets import Select as OpcionLista
 
 class AuthenticationFormCustomError(AuthenticationForm):
     error_messages = {
@@ -299,7 +299,7 @@ class VotoMesaModelForm(forms.ModelForm):
         self.fields['carga'].widget = forms.HiddenInput()
         self.fields['carga'].required = False
         self.fields['opcion'].label = ''
-        self.fields['opcion'].widget = forms.Select(
+        self.fields['opcion'].widget = OpcionLista(
             attrs={
                 # Materialize muestra el select default
                 'class': 'browser-default',
