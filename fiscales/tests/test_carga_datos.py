@@ -189,7 +189,7 @@ def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client, a
     c = CategoriaFactory()
     o = CategoriaOpcionFactory(categoria=c, prioritaria=True).opcion
 
-    # la opcion 2 no se muestra
+    # La opción 2 no se muestra
     CategoriaOpcionFactory(categoria=c, prioritaria=False).opcion
     mc = MesaCategoriaFactory(categoria=c)
     mc.take(admin_user.fiscal)
@@ -197,9 +197,9 @@ def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client, a
     parciales = reverse('carga-parcial', args=[mc.id])
     response = fiscal_client.get(parciales)
 
-    # sólo hay un formulario (e de o)
+    # Sólo hay un formulario (e de o)
     assert len(response.context['formset']) == 1
-    assert response.context['formset'][0].fields['opcion'].choices == [(o.id, str(o))]
+    assert response.context['formset'][0].fields['opcion'].choices == [(o.id, o)]
 
 
 def test_formset_en_carga_total_muestra_todos(db, fiscal_client, admin_user):
