@@ -108,6 +108,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'elecciones.context_processors.version',
             ],
         },
     },
@@ -491,6 +492,11 @@ CONSTANCE_CONFIG = {
 
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
 
+
+APP_VERSION_NUMBER = 'dev'
+if os.path.isfile("/version/version.txt"):
+    with open("/version/version.txt") as v_file:
+        APP_VERSION_NUMBER = v_file.read()
 
 # Para los tests no se importan los local settings.
 if not TESTING:
