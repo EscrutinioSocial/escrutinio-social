@@ -424,7 +424,7 @@ CONSTANCE_CONFIG = {
     'CONFIGURACION_COMPUTO_PUBLICA': ('inicial', 'Nombre de la configuración que se utiliza para publicar resultados.'),
 }
 
-URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/tgbNymZ7vqY'
+URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
 
 TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
 
