@@ -249,7 +249,7 @@ class Command(BaseCommand):
         return opciones
 
     def crear_sumarizador_circuito(self, circuito):
-        opciones = self.armar_opciones_sumarizador(NIVELES_AGREGACION.circuito, circuito.id)
+        opciones = self.armar_opciones_sumarizador(NIVELES_DE_AGREGACION.circuito, circuito.id)
         return Sumarizador(**opciones)
 
     def get_resultados_circuito(self, circuito):
