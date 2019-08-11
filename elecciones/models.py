@@ -62,6 +62,11 @@ def canonizar(valor):
     return valor
 
 
+class DistritoManager(models.Manager):
+    def get_by_natural_key(self, numero):
+        return self.get(numero = numero)
+
+
 class Distrito(models.Model):
     """
     Define el distrito o circunscripción electoral. Es la subdivisión más
@@ -74,6 +79,8 @@ class Distrito(models.Model):
     electores = models.PositiveIntegerField(default=0)
     prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
+    objects = DistritoManager()
+
     class Meta:
         verbose_name = 'Distrito electoral'
         verbose_name_plural = 'Distritos electorales'
@@ -83,6 +90,9 @@ class Distrito(models.Model):
 
     def nombre_completo(self):
         return self.nombre
+
+    def natural_key(self):
+        return self.numero
 
 
 class SeccionPolitica(models.Model):
@@ -112,6 +122,11 @@ class SeccionPolitica(models.Model):
 
     def nombre_completo(self):
         return f"{self.distrito.nombre_completo()} - {self.nombre}"
+
+
+class SeccionManager(models.Manager):
+    def get_by_natural_key(self, distrito, numero):
+        return self.get(distrito__numero = distrito, numero = numero)
 
 
 class Seccion(models.Model):
@@ -156,6 +171,8 @@ class Seccion(models.Model):
         ]
     )
 
+    objects = SeccionManager()
+
     class Meta:
         ordering = ('numero',)
         verbose_name = 'Sección electoral'
@@ -175,6 +192,9 @@ class Seccion(models.Model):
             return f"{self.seccion_politica.nombre_completo()} - {self.nombre}"
         else:
             return f"{self.distrito.nombre_completo()} - {self.nombre}"
+
+    def natural_key(self):
+        return (self.distrito.natural_key(), self.numero)
 
 
 class Circuito(models.Model):
