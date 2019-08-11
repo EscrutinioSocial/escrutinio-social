@@ -1,489 +1,320 @@
-,aux,ARA,opcion_codigo,opcion_orden,opcion_nombre,opcion_nombre_corto,partido_nombre,partido_nombre_corto,partido_codigo,partido_color,tipo,distrito,cargo,id_subcategoriacargo,Alias de lista,partido_orden,categoria_nombre,categoria_slug,distrito_nro,categoria_prioridad,extranjeros
-1,77,Ciudad Autónoma de Buenos Aires-5,5,1,CIUDAD CELESTE POR LA VIDA Y LA FAMILIA,CIUDAD CELESTE POR LA VIDA Y LA FAMILIA,Partido Democrata Cristiano,Partido Democrata Cristiano,5,,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,18601,ANA MARIA GARCIA MARTIN,1,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-2,,Ciudad Autónoma de Buenos Aires-13,13,2,Lista 1A Unidad de la izquierda,Lista 1A Unidad de la izquierda,Movimiento al Socialismo,Movimiento al Socialismo,13,,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,,,2,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-3,61,Ciudad Autónoma de Buenos Aires-86,86,3,Lista -A- Nueva Corriente,Lista -A- Nueva Corriente,Frente Renovador Autentico,Frente Renovador Autentico,333,,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,18599,PATRICIO HORACIO FERNANDEZ DIAZ VELEZ,3,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-4,66,Ciudad Autónoma de Buenos Aires-87,87,4,ola celeste,ola celeste,Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,179,,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,18599,NAZARENO GABRIEL ETCHEPARE,4,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-5,59,Ciudad Autónoma de Buenos Aires-88,88,5,LIBERACION,LIBERACION,Dignidad Popular,Dignidad Popular,342,,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,18599,JORGE OSCAR DORIO,5,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-6,60,Ciudad Autónoma de Buenos Aires-132-262,132-262,6,Lista A - Celeste,Lista A - Celeste,El Movimiento,El Movimiento,262,,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,18599,HORACIO RICCIARDELLI,6,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-7,56,Ciudad Autónoma de Buenos Aires-133-501,133-501,7,unidad,unidad,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,501,,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,18599,MYRIAM TERESA BREGMAN,7,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-8,,Ciudad Autónoma de Buenos Aires-135-503,135-503,8,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Juntos por el Cambio,Juntos por el Cambio,135,#FFCD00,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,,,8,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-9,,Ciudad Autónoma de Buenos Aires-136-502,136-502,9,Lista A - Celeste y Blanca,Lista A - Celeste y Blanca,Frente de Todos,Frente de Todos,136,#00A8E4,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,,,9,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-10,58,Ciudad Autónoma de Buenos Aires-137-504,137-504,10,CONSENSO PARA EL FUTURO,CONSENSO PARA EL FUTURO,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,18599,MARCO JUAN LAVAGNA,10,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-11,57,Ciudad Autónoma de Buenos Aires-187,187,11,"187-A ""QUE LOS PUEBLOS MANDEN""","187-A ""QUE LOS PUEBLOS MANDEN""",Autodeterminación y Libertad,Autodeterminación y Libertad,187,,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,18599,LUIS FERNANDO ZAMORA,11,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-12,64,Ciudad Autónoma de Buenos Aires-343,343,12,MISION CELESTE,MISION CELESTE,Movimiento de Jubilados y Juventud,Movimiento de Jubilados y Juventud,343,,Distrital,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,18599,JULIO MANUEL GOMEZ PERALTA,12,Diputados Nacionales Ciudad Autónoma de Buenos Aires,DN1,1,20000,0
-13,63,Ciudad Autónoma de Buenos Aires-13,13,1,UNIDAD DE LA IZQUIERDA,UNIDAD DE LA IZQUIERDA,Movimiento al Socialismo,Movimiento al Socialismo,13,,Distrital,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,18599,MARINA HIDALGO ROBLES,13,Jefe de Gobierno Ciudad Autónoma de Buenos Aires,JG1,1,20000,0
-14,78,Ciudad Autónoma de Buenos Aires-87,87,2,dignidad,dignidad,Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,179,,Distrital,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,18601,RAUL OSCAR RACANA,14,Jefe de Gobierno Ciudad Autónoma de Buenos Aires,JG1,1,20000,0
-15,71,Ciudad Autónoma de Buenos Aires-88,88,3,LIBERACION,LIBERACION,Dignidad Popular,Dignidad Popular,88,,Distrital,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,18601,PABLO AUGUSTO SERCOVICH,15,Jefe de Gobierno Ciudad Autónoma de Buenos Aires,JG1,1,20000,0
-16,68,Ciudad Autónoma de Buenos Aires-133-501,133-501,4,UNIDAD,UNIDAD,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,501,,Distrital,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,18601,JORGE DANIEL ADARO,16,Jefe de Gobierno Ciudad Autónoma de Buenos Aires,JG1,1,20000,0
-17,62,Ciudad Autónoma de Buenos Aires-135-503,135-503,5,Juntos Somos el Cambio,Juntos Somos el Cambio,ALIANZA JUNTOS POR EL CAMBIO,ALIANZA JUNTOS POR EL CAMBIO,503,,Distrital,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,18599,MAXIMILIANO CARLOS FRANCISCO FERRARO,17,Jefe de Gobierno Ciudad Autónoma de Buenos Aires,JG1,1,20000,0
-18,67,Ciudad Autónoma de Buenos Aires-136-502,136-502,6,celeste y blanca,celeste y blanca,ALIANZA frente de todos,ALIANZA frente de todos,502,,Distrital,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,18599,FERNANDO EZEQUIEL SOLANAS,18,Jefe de Gobierno Ciudad Autónoma de Buenos Aires,JG1,1,20000,0
-19,70,Ciudad Autónoma de Buenos Aires-137-504,137-504,7,504 -A - CONSENSO PARA EL FUTURO,504 -A - CONSENSO PARA EL FUTURO,ALIANZA CONSENSO FEDERAL,ALIANZA CONSENSO FEDERAL,504,,Distrital,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,18601,RAMIRO DANIEL MARRA,19,Jefe de Gobierno Ciudad Autónoma de Buenos Aires,JG1,1,20000,0
-20,69,Ciudad Autónoma de Buenos Aires-187,187,8,QUE LOS PUEBLOS MANDEN,QUE LOS PUEBLOS MANDEN,Autodeterminación y Libertad,Autodeterminación y Libertad,187,,Distrital,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,18601,SERGIO ADRIAN SALLUSTIO,20,Jefe de Gobierno Ciudad Autónoma de Buenos Aires,JG1,1,20000,0
-21,75,Ciudad Autónoma de Buenos Aires-5,5,1,CIUDAD CELESTE POR LA VIDA Y LA FAMILIA,CIUDAD CELESTE POR LA VIDA Y LA FAMILIA,Partido Democrata Cristiano,Partido Democrata Cristiano,5,,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,18601,INES ZADUNAISKY,21,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-22,,Ciudad Autónoma de Buenos Aires-13,13,2,Lista 1A Unidad de la izquierda,Lista 1A Unidad de la izquierda,Movimiento al Socialismo,Movimiento al Socialismo,13,,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,,,22,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-23,,Ciudad Autónoma de Buenos Aires-86,86,3,Lista -A- Nueva Corriente,Lista -A- Nueva Corriente,Frente Renovador Autentico,Frente Renovador Autentico,333,,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,,,23,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-24,72,Ciudad Autónoma de Buenos Aires-87,87,4,ola celeste,ola celeste,Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,179,,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,18601,CARLOS ALFREDO TORTORA,24,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-25,76,Ciudad Autónoma de Buenos Aires-88,88,5,LIBERACION,LIBERACION,Dignidad Popular,Dignidad Popular,342,,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,18601,ELISEO ADOLFO SCHAERER,25,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-26,,Ciudad Autónoma de Buenos Aires-132-262,132-262,6,Lista A - Celeste,Lista A - Celeste,El Movimiento,El Movimiento,262,,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,,,26,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-27,73,Ciudad Autónoma de Buenos Aires-133-501,133-501,7,unidad,unidad,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,501,,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,18601,ROBERTO ESTEBAN FERNANDEZ,27,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-28,,Ciudad Autónoma de Buenos Aires-135-503,135-503,8,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Juntos por el Cambio,Juntos por el Cambio,135,#FFCD00,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,,,28,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-29,,Ciudad Autónoma de Buenos Aires-136-502,136-502,9,Lista A - Celeste y Blanca,Lista A - Celeste y Blanca,Frente de Todos,Frente de Todos,136,#00A8E4,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,,,29,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-30,79,Ciudad Autónoma de Buenos Aires-137-504,137-504,10,CONSENSO PARA EL FUTURO,CONSENSO PARA EL FUTURO,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,18601,MARIANO RECALDE,30,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-31,74,Ciudad Autónoma de Buenos Aires-187,187,11,"187-A ""QUE LOS PUEBLOS MANDEN""","187-A ""QUE LOS PUEBLOS MANDEN""",Autodeterminación y Libertad,Autodeterminación y Libertad,187,,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,18601,MARTIN LOUSTEAU,31,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-32,,Ciudad Autónoma de Buenos Aires-343,343,12,MISION CELESTE,MISION CELESTE,Movimiento de Jubilados y Juventud,Movimiento de Jubilados y Juventud,343,,Distrital,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,,,32,Senadores Nacionales Ciudad Autónoma de Buenos Aires,SN1,1,20000,0
-33,,Buenos Aires-276,276,1,LISTA 1 A UNIDAD DE LA IZQUIERDA,LISTA 1 A UNIDAD DE LA IZQUIERDA,Movimiento de Avanzada socialista,Movimiento de Avanzada socialista,276,,Distrital,Buenos Aires,Diputados Nacionales,,,33,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-34,11,Buenos Aires-79,79,2,somos renovadores,somos renovadores,partido renovador federal,partido renovador federal,79,,Distrital,Buenos Aires,Diputados Nacionales,18581,GUSTAVO SERGIO CUERVO,34,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-35,,Buenos Aires-88/816,88/816,3,lista1A por la vida,lista1A por la vida,PARTIDO DIGNIDAD POPULAR,PARTIDO DIGNIDAD POPULAR,88/816,,Distrital,Buenos Aires,Diputados Nacionales,,,35,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-36,,Buenos Aires-312,312,4,LISTA CELESTE,LISTA CELESTE,FRENTE PATRIOTA,FRENTE PATRIOTA,312/,,Distrital,Buenos Aires,Diputados Nacionales,,,36,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-37,208,Buenos Aires-133,133,5,unidad,unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,502,,Distrital,Buenos Aires,Diputados Nacionales,18653,MARy GARRIDO,37,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-38,209,Buenos Aires-135,135,6,LISTA A JUNTOS SOMOS EL CAMBIO,LISTA A JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Buenos Aires,Diputados Nacionales,18653,MARCELO ORREGO,38,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-39,,Buenos Aires-136/503,136/503,7,LISTA CELESTE Y BLANCA,LISTA CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,136,#00A8E4,Distrital,Buenos Aires,Diputados Nacionales,18653,EDUARDO RUBEN CASTRO,39,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-40,205,Buenos Aires-137A,137A,8,A CONSENSO PARA EL FUTURO,A CONSENSO PARA EL FUTURO,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Buenos Aires,Diputados Nacionales,18653,NANCY BARBARITA AVELIN,40,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-41,,Buenos Aires-207,207,9,LISTA A NARANJA,LISTA A NARANJA,PARTIDO HUMANISTA,PARTIDO HUMANISTA,207,,Distrital,Buenos Aires,Diputados Nacionales,,,41,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-42,,Buenos Aires-309A,309A,10,LISTA COMPROMISO CIUDADANO,LISTA COMPROMISO CIUDADANO,MOV. ORGANIZACIÓN DEMOCRÁTICA MODE,MOV. ORGANIZACIÓN DEMOCRÁTICA MODE,309,,Distrital,Buenos Aires,Diputados Nacionales,,,42,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-43,,Buenos Aires-314,314,11,LISTA A CELESTE Y BLANCO,LISTA A CELESTE Y BLANCO,PARTIDO REPUBLICANO FEDERAL,PARTIDO REPUBLICANO FEDERAL,314,,Distrital,Buenos Aires,Diputados Nacionales,18653,GUSTAVO EMILIO FERNANDEZ,43,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-44,,Buenos Aires-315,315,12,LISTA ESPERANZA,LISTA ESPERANZA,MORAL Y PROGRESO,MORAL Y PROGRESO,315,,Distrital,Buenos Aires,Diputados Nacionales,18653,JOSE LUIS GIOJA,44,Diputados Nacionales Buenos Aires,DN2,2,20000,0
-45,,Buenos Aires-276,276,1,LISTA 1 A UNIDAD DE LA IZQUIERDA,LISTA 1 A UNIDAD DE LA IZQUIERDA,Movimiento de Avanzada socialista,Movimiento de Avanzada socialista,276,,Distrital,Buenos Aires,Gobernador-Vice,,,45,Gobernador-Vice Buenos Aires,G2,2,3,1
-46,,Buenos Aires-88/816,88/816,2,LISTA 1A - POR LA VIDA,PARTIDO DIGNIDAD POPULAR,PARTIDO DIGNIDAD POPULAR,,88/816,,Distrital,Buenos Aires,Gobernador-Vice,,,46,Gobernador-Vice Buenos Aires,G2,2,3,1
-47,,Buenos Aires-131/1911,131/1911,3,linea única,linea única,Frente NOS,Frente NOS,,,Distrital,Buenos Aires,Gobernador-Vice,,,47,Gobernador-Vice Buenos Aires,G2,2,3,1
-48,,Buenos Aires-865,865,4,lista lealtad,lista lealtad,FRENTE PATRIOTA,FRENTE PATRIOTA,,,Distrital,Buenos Aires,Gobernador-Vice,,,48,Gobernador-Vice Buenos Aires,G2,2,3,1
-49,208,Buenos Aires-133,133,5,unidad,unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,502,,Distrital,Buenos Aires,Gobernador-Vice,18653,MARy GARRIDO,49,Gobernador-Vice Buenos Aires,G2,2,3,1
-50,,Buenos Aires-135,135,6,1 A amarilllo,1 A amarilllo,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Buenos Aires,Gobernador-Vice,,,50,Gobernador-Vice Buenos Aires,G2,2,3,1
-51,,Buenos Aires-136/503,136/503,7,LISTA CELESTE Y BLANCA 2,LISTA CELESTE Y BLANCA 2,FRENTE DE TODOS,FRENTE DE TODOS,136,#00A8E4,Distrital,Buenos Aires,Gobernador-Vice,,,51,Gobernador-Vice Buenos Aires,G2,2,3,1
-52,205,Buenos Aires-137B,137B,8,hay consenso,hay consenso,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Buenos Aires,Gobernador-Vice,18653,NANCY BARBARITA AVELIN,52,Gobernador-Vice Buenos Aires,G2,2,3,1
-53,,Buenos Aires-309B,309B,9,Lista azul y blanco,Lista azul y blanco,MOV. ORGANIZACIÓN DEMOCRÁTICA MODE,MOV. ORGANIZACIÓN DEMOCRÁTICA MODE,309,,Distrital,Buenos Aires,Gobernador-Vice,,,53,Gobernador-Vice Buenos Aires,G2,2,3,1
-54,certificado nacional,Catamarca-183,183,1,183 Partido Frente Somos Catamarca Lista A,183 Partido Frente Somos Catamarca Lista A,somos catamarca,somos catamarca,183,,Distrital,Catamarca,Diputados Nacionales,,,54,Diputados Nacionales Catamarca,DN3,3,20000,0
-55,certificado nacional,Catamarca-198,198,2,198 Partido Popular Lista A,198 Partido Popular Lista A,Partido popULAR,Partido popULAR,198,,Distrital,Catamarca,Diputados Nacionales,,,55,Diputados Nacionales Catamarca,DN3,3,20000,0
-56,certificado nacional,Catamarca-218,218,3,218 Partido U.C.D. Lista A,218 Partido U.C.D. Lista A,UCD,UCD,218,,Distrital,Catamarca,Diputados Nacionales,,,56,Diputados Nacionales Catamarca,DN3,3,20000,0
-57,certificado nacional,Catamarca-501,501,4,501 FTE Unid Por la gente- Lista A,501 FTE Unid Por la gente- Lista A,FRENTE UNIDOS POR LA GENTE,FRENTE UNIDOS POR LA GENTE,501,,Distrital,Catamarca,Diputados Nacionales,18585,KArEN GISELLE CARRIZO,57,Diputados Nacionales Catamarca,DN3,3,20000,0
-58,certificado nacional,Catamarca-503,503,5,Lista 503 Frente de Todos Lista A,Lista 503 Frente de Todos Lista A,FRENTE DE TODOS,FRENTE DE TODOS,503,#00A8E4,Distrital,Catamarca,Diputados Nacionales,18585,LUCIA CORPACCI,58,Diputados Nacionales Catamarca,DN3,3,20000,0
-59,certificado nacional,Catamarca-504,504,6,504 Consenso Fed. Lista A,504 Consenso Fed. Lista A,consenso federal,consenso federal,504,#031F73,Distrital,Catamarca,Diputados Nacionales,18585,JOSE LUIS BARRIONUEVO,59,Diputados Nacionales Catamarca,DN3,3,20000,0
-60,certificado nacional,Catamarca-505,505,7,505 Fte De Izq y de los Trab- Unidad,505 Fte De Izq y de los Trab- Unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,505,,Distrital,Catamarca,Diputados Nacionales,18585,DANIEL HUMBERTO BLANES,60,Diputados Nacionales Catamarca,DN3,3,20000,0
-61,certificado nacional,Catamarca-506,506,8,506 Frente Juntos P/Cam-Lista A,506 Frente Juntos P/Cam-Lista A,Frente juntos por el cambio,Frente juntos por el cambio,506,,Distrital,Catamarca,Diputados Nacionales,,,61,Diputados Nacionales Catamarca,DN3,3,20000,0
-62,certificado nacional,Catamarca-69,69,1,69 GEM Lista A,69 GEM Lista A,GEM,GEM,69,,Distrital,Catamarca,Gobernador-Vice,,,62,Gobernador-Vice Catamarca,G3,3,20000,0
-63,15,Catamarca-501,501,2,501 FTE Unid Por la gente- Lista A,501 FTE Unid Por la gente- Lista A,FRENTE UNIDOS POR LA GENTE,FRENTE UNIDOS POR LA GENTE,501,,Distrital,Catamarca,Gobernador-Vice,18585,KArEN GISELLE CARRIZO,63,Gobernador-Vice Catamarca,G3,3,20000,0
-64,14,Catamarca-503,503,3,Lista 503 Frente de Todos Lista A,Lista 503 Frente de Todos Lista A,FRENTE DE TODOS,FRENTE DE TODOS,503,#00A8E4,Distrital,Catamarca,Gobernador-Vice,18585,LUCIA CORPACCI,64,Gobernador-Vice Catamarca,G3,3,20000,0
-65,17,Catamarca-504,504,4,504 Consenso Fed. Lista A,504 Consenso Fed. Lista A,consenso federal,consenso federal,504,#031F73,Distrital,Catamarca,Gobernador-Vice,18585,JOSE LUIS BARRIONUEVO,65,Gobernador-Vice Catamarca,G3,3,20000,0
-66,13,Catamarca-505,505,5,505 Fte De Izq y de los Trab- Unidad,505 Fte De Izq y de los Trab- Unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,505,,Distrital,Catamarca,Gobernador-Vice,18585,DANIEL HUMBERTO BLANES,66,Gobernador-Vice Catamarca,G3,3,20000,0
-67,19,Catamarca-506,506,6,506 Frente Juntos P/Cam-Lista A,506 Frente Juntos P/Cam-Lista A,Frente juntos por el cambio,Frente juntos por el cambio,506,,Distrital,Catamarca,Gobernador-Vice,18585,RUBEN HORACIO MANZI,67,Gobernador-Vice Catamarca,G3,3,20000,0
-68,90,Córdoba-13,13,1,Lista 1A Unidad de la izquierda,Lista 1A Unidad de la izquierda,movimiento al socialismo,movimiento al socialismo,13,,Distrital,Córdoba,Diputados Nacionales,18605,JULIA DI SANTI,68,Diputados Nacionales Córdoba,DN4,4,20000,0
-69,92,Córdoba-23,23,2,Lista Azul y Amarillo,Lista Azul y Amarillo,union popular,union popular,23,,Distrital,Córdoba,Diputados Nacionales,18605,MARIO ALFREDO PERAL,69,Diputados Nacionales Córdoba,DN4,4,20000,0
-70,91,Córdoba-57,57,3,Lista 57 Compromiso Vecinal A,Lista 57 Compromiso Vecinal A,movimiento de accion vecinal,movimiento de accion vecinal,57,,Distrital,Córdoba,Diputados Nacionales,18605,ALEJANDRA FERNANDEZ,70,Diputados Nacionales Córdoba,DN4,4,20000,0
-71,93,Córdoba-87,87,4,Lista 87 A La Ola Celeste,Lista 87 A La Ola Celeste,unite por la libertad y la dignidad,unite por la libertad y la dignidad,87,,Distrital,Córdoba,Diputados Nacionales,18605,ARIEL ALFREDO DIAZ,71,Diputados Nacionales Córdoba,DN4,4,20000,0
-72,,Córdoba-133/504,133/504,5,LISTA A- UNIDAD,LISTA A- UNIDAD,FRENTE DE IZQUIERDA Y TRABAJDORES UNIDAD,FRENTE DE IZQUIERDA Y TRABAJDORES UNIDAD,133/504,,Distrital,Córdoba,Diputados Nacionales,,,72,Diputados Nacionales Córdoba,DN4,4,20000,0
-73,,Córdoba-135/502A,135/502A,6,LISTA A JUNTOS SOMOS EL CAMBIO/a JUNTOS POR CBA,LISTA A JUNTOS SOMOS EL CAMBIO/a JUNTOS POR CBA,juntos por el cambio,juntos por el cambio,502,#FFCD00,Distrital,Córdoba,Diputados Nacionales,,,73,Diputados Nacionales Córdoba,DN4,4,20000,0
-74,88,Córdoba-135/502B,135/502B,7,Lista B Somos Consenso y Renovación,Lista B Somos Consenso y Renovación,juntos por el cambio,juntos por el cambio,502,#FFCD00,Distrital,Córdoba,Diputados Nacionales,18605,JAVIER HORACIO FABRE,74,Diputados Nacionales Córdoba,DN4,4,20000,0
-75,89,Córdoba-135/502C,135/502C,8,Lista C Blanca y Roja,Lista C Blanca y Roja,juntos por el cambio,juntos por el cambio,502,#FFCD00,Distrital,Córdoba,Diputados Nacionales,18605,MIGUEL OSVALDO NICOLAS,75,Diputados Nacionales Córdoba,DN4,4,20000,0
-76,83,Córdoba-136/505,136/505,9,Lista 505 “De Todos – A”,Lista 505 “De Todos – A”,frente de todos,frente de todos,505,#00A8E4,Distrital,Córdoba,Diputados Nacionales,18605,EDUARDO GABRIEL FERNANDEZ,76,Diputados Nacionales Córdoba,DN4,4,20000,0
-77,80,Córdoba-137/506,137/506,10,consenso para el futuro,consenso para el futuro,consenso federal,consenso federal,506,#031F73,Distrital,Córdoba,Diputados Nacionales,18605,ROBERTO BIRRI,77,Diputados Nacionales Córdoba,DN4,4,20000,0
-78,81,Córdoba-217,217,11,Lista 217 Valores en Acción,Lista 217 Valores en Acción,encuentro vecinal cordoba,encuentro vecinal cordoba,217,,Distrital,Córdoba,Diputados Nacionales,18605,RODRIGO MARIA AGRELO,78,Diputados Nacionales Córdoba,DN4,4,20000,0
-79,85,Córdoba-501A,501A,12,LISTA 501 A DEMOCRATA LIBERAL,LISTA 501 A DEMOCRATA LIBERAL,frente despertar,frente despertar,501,,Distrital,Córdoba,Diputados Nacionales,18605,AGUSTIN ALEJANDRO SPACCESI,79,Diputados Nacionales Córdoba,DN4,4,20000,0
-80,84,Córdoba-501B,501B,13,LISTA 501 B LIBERTARIOS,LISTA 501 B LIBERTARIOS,frente despertar,frente despertar,501,,Distrital,Córdoba,Diputados Nacionales,18605,CARLOS ALBERTO BIANCO,80,Diputados Nacionales Córdoba,DN4,4,20000,0
-81,86,Córdoba-503,503,14,Lista 503 Primero Córdoba A,Lista 503 Primero Córdoba A,hacemos por cordoba,hacemos por cordoba,503,,Distrital,Córdoba,Diputados Nacionales,18605,CARLOS MARIO GUTIERREZ,81,Diputados Nacionales Córdoba,DN4,4,20000,0
-82,94,Corrientes-216,216,1,VIDA FAMILIA VALORES A,VIDA FAMILIA VALORES A,CIUDADANOS A GOBERNAR,CIUDADANOS A GOBERNAR,216,,Distrital,Corrientes,Diputados Nacionales,18607,"EDUARDO ""PACO""  ACHITTE",82,Diputados Nacionales Corrientes,DN5,5,20000,0
-83,103,Corrientes-501A,501A,2,peronismo ortodoxo (a),peronismo ortodoxo (a),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Corrientes,Diputados Nacionales,18607,JORGE ALBERTO BAEZ,83,Diputados Nacionales Corrientes,DN5,5,20000,0
-84,101,Corrientes-501B,501B,3,CELESTE Y BLANCA (b),CELESTE Y BLANCA (b),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Corrientes,Diputados Nacionales,18607,"JOSE ""PITIN"" RUIZ ARAGON",84,Diputados Nacionales Corrientes,DN5,5,20000,0
-85,102,Corrientes-501C,501C,4,VAMOS TODOS  (C),VAMOS TODOS  (C),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Corrientes,Diputados Nacionales,18607,JOSE RODOLFO MARTINEZ LLANO,85,Diputados Nacionales Corrientes,DN5,5,20000,0
-86,104,Corrientes-501D,501D,5,todos somos parte (D),todos somos parte (D),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Corrientes,Diputados Nacionales,18607,FERNANDO RODRIGUEZ,86,Diputados Nacionales Corrientes,DN5,5,20000,0
-87,99,Corrientes-502A,502A,6,verde (LISTA A),verde (LISTA A),ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,502,,Distrital,Corrientes,Diputados Nacionales,18607,JORGE VARA,87,Diputados Nacionales Corrientes,DN5,5,20000,0
-88,98,Corrientes-502B,502B,7,VAMOS JUNTOS (B),VAMOS JUNTOS (B),ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,502,,Distrital,Corrientes,Diputados Nacionales,18607,"EMILIO ""FLaco"" REY",88,Diputados Nacionales Corrientes,DN5,5,20000,0
-89,97,Corrientes-502C,502C,8,DEFENSORES DEL CAMBIO (c),DEFENSORES DEL CAMBIO (c),ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,502,,Distrital,Corrientes,Diputados Nacionales,18607,INGRID JETTER,89,Diputados Nacionales Corrientes,DN5,5,20000,0
-90,95,Corrientes-503A,503A,9,otro rumbo (A),otro rumbo (A),CONSENSO FEDERAL,CONSENSO FEDERAL,503,#031F73,Distrital,Corrientes,Diputados Nacionales,18607,GABRIEL ALEJANDRO ROMERO,90,Diputados Nacionales Corrientes,DN5,5,20000,0
-91,96,Corrientes-503B,503B,10,somos la alternativa (B),somos la alternativa (B),CONSENSO FEDERAL,CONSENSO FEDERAL,503,#031F73,Distrital,Corrientes,Diputados Nacionales,18607,JUAN PANTALEON EUGENIO ALMADA,91,Diputados Nacionales Corrientes,DN5,5,20000,0
-92,34,Chaco-33,33,1,"VALORES, FAMILIA Y VIDA","VALORES, FAMILIA Y VIDA",UNIR,UNIR,33,,Distrital,Chaco,Diputados Nacionales,18591,LUIS ALBERTO CABRERA,92,Diputados Nacionales Chaco,DN6,6,20000,0
-93,32,Chaco-71,71,2,unidad,unidad,PARTIDO DEL OBRERO,PARTIDO DEL OBRERO,71,,Distrital,Chaco,Diputados Nacionales,18591,JUAN GARCIA,93,Diputados Nacionales Chaco,DN6,6,20000,0
-94,21,Chaco-156,156,3,a - celeste,a - celeste,ACCION CHAQUEÑA,ACCION CHAQUEÑA,156,,Distrital,Chaco,Diputados Nacionales,18591,NAREDO LUIS AGUIRRE PIELA,94,Diputados Nacionales Chaco,DN6,6,20000,0
-95,23,Chaco-179,179,4,LISTA CELESTE Y BLANCA,LISTA CELESTE Y BLANCA,CIUDADANOS A GOBERNAR,CIUDADANOS A GOBERNAR,179,,Distrital,Chaco,Diputados Nacionales,18591,RAUL HORACIO LUCERO,95,Diputados Nacionales Chaco,DN6,6,20000,0
-96,33,Chaco-180,180,5,VERDE A,VERDE A,PARTIDO PROYECTO SUR CHACO,PARTIDO PROYECTO SUR CHACO,180,,Distrital,Chaco,Diputados Nacionales,18591,GUADALUPE SEGURA LEMA,96,Diputados Nacionales Chaco,DN6,6,20000,0
-97,25,Chaco-501R,501R,6,17 DE OCTUBRE,17 DE OCTUBRE,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Chaco,Diputados Nacionales,18591,MARIA LUCILA MASIN,97,Diputados Nacionales Chaco,DN6,6,20000,0
-98,27,Chaco-501I,501I,7,SIGLO XXI,SIGLO XXI,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Chaco,Diputados Nacionales,18591,ISMAEL WALTER ESPINOZA,98,Diputados Nacionales Chaco,DN6,6,20000,0
-99,26,Chaco-501O,501O,8,CELESTE Y BLANCA,CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Chaco,Diputados Nacionales,18591,GUSTAVO MARTIN MARTINEZ,99,Diputados Nacionales Chaco,DN6,6,20000,0
-100,28,Chaco-501P,501P,9,frente patriotico,frente patriotico,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Chaco,Diputados Nacionales,18591,CINTIA YANINA ABALOS,100,Diputados Nacionales Chaco,DN6,6,20000,0
-101,29,Chaco-501F,501F,10,sinceramente peronista,sinceramente peronista,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Chaco,Diputados Nacionales,18591,MARIA AGUSTINA PINTOS,101,Diputados Nacionales Chaco,DN6,6,20000,0
-102,22,Chaco-502,502,11,ALIANZA ALTERNATIVA RENOVADORA FEDERAL,ALIANZA ALTERNATIVA RENOVADORA FEDERAL,ALTERNATIVA RENOVADORA FEDERAL,ALTERNATIVA RENOVADORA FEDERAL,502,,Distrital,Chaco,Diputados Nacionales,18591,KARIN BUSTOS ZDANOWSKY,102,Diputados Nacionales Chaco,DN6,6,20000,0
-103,31,Chaco-503A,503A,12,uniDad,uniDad,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Chaco,Diputados Nacionales,18591,GERARDO CIPOLINI,103,Diputados Nacionales Chaco,DN6,6,20000,0
-104,30,Chaco-503B,503B,13,sumamos,sumamos,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Chaco,Diputados Nacionales,18591,JUAN MARIO DELGADO,104,Diputados Nacionales Chaco,DN6,6,20000,0
-105,24,Chaco-504,504,14,Lista consenso para el futuro,Lista consenso para el futuro,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Chaco,Diputados Nacionales,18591,NATALIA ANTONIA ROMERO,105,Diputados Nacionales Chaco,DN6,6,20000,0
-106,47,Chaco-33,33,1,"valores, familia y vida","valores, familia y vida",UNIR,UNIR,33,,Distrital,Chaco,Senadores Nacionales,18593,JUAN JOSE MARIA RODRIGUEZ,106,Senadores Nacionales Chaco,SN6,6,20000,0
-107,45,Chaco-71,71,2,UNIDAD,UNIDAD,PARTIDO DEL OBRERO,PARTIDO DEL OBRERO,71,,Distrital,Chaco,Senadores Nacionales,18593,SAMANTA SALAS,107,Senadores Nacionales Chaco,SN6,6,20000,0
-108,35,Chaco-156,156,3,a - celeste,a - celeste,ACCION CHAQUEÑA,ACCION CHAQUEÑA,156,,Distrital,Chaco,Senadores Nacionales,18593,ADELA DE LOS ANGELES ACOSTA,108,Senadores Nacionales Chaco,SN6,6,20000,0
-109,37,Chaco-179,179,4,LISTA CELESTE Y BLANCA,LISTA CELESTE Y BLANCA,CIUDADANOS A GOBERNAR,CIUDADANOS A GOBERNAR,179,,Distrital,Chaco,Senadores Nacionales,18593,CARLA MARIEL ANDRIANI,109,Senadores Nacionales Chaco,SN6,6,20000,0
-110,46,Chaco-180,180,5,VERDE A,VERDE A,PARTIDO PROYECTO SUR CHACO,PARTIDO PROYECTO SUR CHACO,180,,Distrital,Chaco,Senadores Nacionales,18593,DANILO ISMAEL LEGAL,110,Senadores Nacionales Chaco,SN6,6,20000,0
-111,39,Chaco-501R,501R,6,17 DE OCTUBRE,17 DE OCTUBRE,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Chaco,Senadores Nacionales,18593,JORGE MILTON CAPITANICH,111,Senadores Nacionales Chaco,SN6,6,20000,0
-112,40,Chaco-501O,501O,7,CELESTE Y BLANCA,CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Chaco,Senadores Nacionales,18593,OSCAR DOMINGO PEPPO,112,Senadores Nacionales Chaco,SN6,6,20000,0
-113,42,Chaco-501P,501P,8,frente patriotico,frente patriotico,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Chaco,Senadores Nacionales,18593,JORGE ALEJANDRO BRITE,113,Senadores Nacionales Chaco,SN6,6,20000,0
-114,42,Chaco-501F,501F,9,sinceramente peronista,sinceramente peronista,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Chaco,Senadores Nacionales,,,114,Senadores Nacionales Chaco,SN6,6,20000,0
-115,36,Chaco-502,502,10,ALIANZA ALTERNATIVA RENOVADORA FEDERAL,ALIANZA ALTERNATIVA RENOVADORA FEDERAL,ALTERNATIVA RENOVADORA FEDERAL,ALTERNATIVA RENOVADORA FEDERAL,502,,Distrital,Chaco,Senadores Nacionales,18593,SERGIO VALLEJOS,115,Senadores Nacionales Chaco,SN6,6,20000,0
-116,43,Chaco-503A,503A,11,Unidad,Unidad,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Chaco,Senadores Nacionales,18593,VICTOR ZIMMERMANN,116,Senadores Nacionales Chaco,SN6,6,20000,0
-117,44,Chaco-503B,503B,12,sumamos,sumamos,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Chaco,Senadores Nacionales,18593,Alicia azula,117,Senadores Nacionales Chaco,SN6,6,20000,0
-118,38,Chaco-504,504,13,unidad,unidad,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Chaco,Senadores Nacionales,18593,JOSE ENRIQUE DIB,118,Senadores Nacionales Chaco,SN6,6,20000,0
-119,50,Chubut-504,504,1,unidad,unidad,FRENTE DE IZQUIERDA,FRENTE DE IZQUIERDA,504,,Distrital,Chubut,Diputados Nacionales,18597,GLORIA SAEZ,119,Diputados Nacionales Chubut,DN7,7,20000,0
-120,52,Chubut-503A,503A,2,proyecto chubut,proyecto chubut,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Chubut,Diputados Nacionales,18597,EDUARDO JOSE CONDE,120,Diputados Nacionales Chubut,DN7,7,20000,0
-121,51,Chubut-503B,503B,3,juntos somos el cambio chubut,juntos somos el cambio chubut,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Chubut,Diputados Nacionales,18597,"IGNACIO ""Nacho"" TORRES",121,Diputados Nacionales Chubut,DN7,7,20000,0
-122,55,Chubut-501,501,4,CELESTE Y BLANCA,CELESTE Y BLANCA,frente de todos,frente de todos,501,#00A8E4,Distrital,Chubut,Diputados Nacionales,18597,SANTIAGO NICOLAS IGON,122,Diputados Nacionales Chubut,DN7,7,20000,0
-123,53,Chubut-152,152,5,CONSENSO PARA EL FUTURO,CONSENSO PARA EL FUTURO,MOVIMIENTO POLO SOCIAL,MOVIMIENTO POLO SOCIAL,152,,Distrital,Chubut,Diputados Nacionales,18597,CESAR JAVIER AYALA,123,Diputados Nacionales Chubut,DN7,7,20000,0
-124,54,Chubut-151,151,6,SUMEMOS,SUMEMOS,PARTIDO INDEPENDIENTE DE CHUBUT,PARTIDO INDEPENDIENTE DE CHUBUT,151,,Distrital,Chubut,Diputados Nacionales,18597,CARLOS EDUARDO WOHN,124,Diputados Nacionales Chubut,DN7,7,20000,0
-125,49,Chubut-502A,502A,7,porsiemprechubut,porsiemprechubut,CHUBUT AL FRENTE,CHUBUT AL FRENTE,502,,Distrital,Chubut,Diputados Nacionales,18597,MAXIMO GABRIeL PEREZ CATAN,125,Diputados Nacionales Chubut,DN7,7,20000,0
-126,48,Chubut-502B,502B,8,la militancia al frente,la militancia al frente,CHUBUT AL FRENTE,CHUBUT AL FRENTE,502,,Distrital,Chubut,Diputados Nacionales,18597,CARLOS Alfredo BELIZ,126,Diputados Nacionales Chubut,DN7,7,20000,0
-127,119,Entre Ríos-13,13,1,13 1 A - Unidad de la izquierda,13 1 A - Unidad de la izquierda,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,Distrital,Entre Ríos,Diputados Nacionales,18613,FEDERICO DEMARCHI,127,Diputados Nacionales Entre Ríos,DN8,8,20000,0
-128,123,Entre Ríos-68,68,2,68 UNIDAD A,68 UNIDAD A,nueva izquierda,nueva izquierda,68,,Distrital,Entre Ríos,Diputados Nacionales,18613,NADIA GISEL BURGOS,128,Diputados Nacionales Entre Ríos,DN8,8,20000,0
-129,116,Entre Ríos-502A,502A,3,502A FUTURO ENTRERRIANO,502A FUTURO ENTRERRIANO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Distrital,Entre Ríos,Diputados Nacionales,18613,ROBERTO ALFREDO JURADO,129,Diputados Nacionales Entre Ríos,DN8,8,20000,0
-130,118,Entre Ríos-502B,502B,4,502B DEFENSORES DEL CAMBIO,502B DEFENSORES DEL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Distrital,Entre Ríos,Diputados Nacionales,18613,LEANDRO JOAQUIN ARRIBALZAGA,130,Diputados Nacionales Entre Ríos,DN8,8,20000,0
-131,117,Entre Ríos-502C,502C,5,502C JUNTOS SOMOS EL CAMBIO,502C JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Distrital,Entre Ríos,Diputados Nacionales,18613,GABRIELA MABEL LENA,131,Diputados Nacionales Entre Ríos,DN8,8,20000,0
-132,122,Entre Ríos-501,501,6,501A CELESTE Y BLANCA,501A CELESTE Y BLANCA,frente de todos,frente de todos,501,#00A8E4,Distrital,Entre Ríos,Diputados Nacionales,18613,MARCELO PABLO CASARETTO,132,Diputados Nacionales Entre Ríos,DN8,8,20000,0
-133,120,Entre Ríos-50A,50A,7,50A - Consenso Federal,50A - Consenso Federal,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Distrital,Entre Ríos,Diputados Nacionales,18613,JUAN MANUEL ROSSI,133,Diputados Nacionales Entre Ríos,DN8,8,20000,0
-134,121,Entre Ríos-50B,50B,8,50B - Consenso Federal,50B - Consenso Federal,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Distrital,Entre Ríos,Diputados Nacionales,18613,LUIS EDUARDO DIAZ,134,Diputados Nacionales Entre Ríos,DN8,8,20000,0
-135,127,Entre Ríos-13,13,1,13 1 A - Unidad de la izquierda,13 1 A - Unidad de la izquierda,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,Distrital,Entre Ríos,Senadores Nacionales,18611,LUIS ANTONIO ROJAS,135,Senadores Nacionales Entre Ríos,SN8,8,20000,0
-136,131,Entre Ríos-68,68,2,68 UNIDAD A,68 UNIDAD A,nueva izquierda,nueva izquierda,68,,Distrital,Entre Ríos,Senadores Nacionales,18611,LUIS GUILLERMO MEINERS,136,Senadores Nacionales Entre Ríos,SN8,8,20000,0
-137,124,Entre Ríos-502A,502A,3,502A FUTURO ENTRERRIANO,502A FUTURO ENTRERRIANO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Distrital,Entre Ríos,Senadores Nacionales,18611,HERNAN JAVIER BLAZQUEZ,137,Senadores Nacionales Entre Ríos,SN8,8,20000,0
-138,126,Entre Ríos-502B,502B,4,502B DEFENSORES DEL CAMBIO,502B DEFENSORES DEL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Distrital,Entre Ríos,Senadores Nacionales,18611,RAYMUNDO ARTURO KISSER,138,Senadores Nacionales Entre Ríos,SN8,8,20000,0
-139,125,Entre Ríos-502C,502C,5,502C JUNTOS SOMOS EL CAMBIO,502C JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Distrital,Entre Ríos,Senadores Nacionales,18611,ALFREDO LUIS DE ANGELI,139,Senadores Nacionales Entre Ríos,SN8,8,20000,0
-140,130,Entre Ríos-501,501,6,501A CELESTE Y BLANCA,501A CELESTE Y BLANCA,frente de todos,frente de todos,501,#00A8E4,Distrital,Entre Ríos,Senadores Nacionales,18611,EDGARDO DARIO KUEIDER,140,Senadores Nacionales Entre Ríos,SN8,8,20000,0
-141,128,Entre Ríos-50A,50A,7,50A - Consenso Federal,50A - Consenso Federal,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Distrital,Entre Ríos,Senadores Nacionales,18611,LISANDRO LUIS GAMARRA,141,Senadores Nacionales Entre Ríos,SN8,8,20000,0
-142,129,Entre Ríos-50B,50B,8,50B - Consenso Federal,50B - Consenso Federal,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Distrital,Entre Ríos,Senadores Nacionales,18611,ISMAEL SEBASTIAN ETCHEVERRY,142,Senadores Nacionales Entre Ríos,SN8,8,20000,0
-143,136,Formosa-231A,231A,1,UNIDAD,UNIDAD,Movimiento Socialista de los Trabajadores,Movimiento Socialista de los Trabajadores,38,,Distrital,Formosa,Diputados Nacionales,18617,CARLOS FABIAN SERVIN,143,Diputados Nacionales Formosa,DN9,9,20000,0
-144,137,Formosa-501A,501A,2,celeste y blanca,celeste y blanca,frente de todos,frente de todos,501,#00A8E4,Distrital,Formosa,Diputados Nacionales,18617,LUIS EUGENIO BASTERRA,144,Diputados Nacionales Formosa,DN9,9,20000,0
-145,132,Formosa-502A,502A,3,Consenso para el futuro,Consenso para el futuro,CONSENSO FEDERAL,CONSENSO FEDERAL,502,#031F73,Distrital,Formosa,Diputados Nacionales,18617,JOSE ANTONIO TREUS,145,Diputados Nacionales Formosa,DN9,9,20000,0
-146,133,Formosa-503A,503A,4,JUNTOS POR LA INTEGRACION Y EL DESARROLLO (A),JUNTOS POR LA INTEGRACION Y EL DESARROLLO (A),FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,503,,Distrital,Formosa,Diputados Nacionales,18617,ANGEL LUIS BIGATTI,146,Diputados Nacionales Formosa,DN9,9,20000,0
-147,134,Formosa-503B,503B,5,JUNTOS SOMOS EL CAMBIO (B),JUNTOS SOMOS EL CAMBIO (B),FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,503,,Distrital,Formosa,Diputados Nacionales,18617,RICARDO BURYAILE,147,Diputados Nacionales Formosa,DN9,9,20000,0
-148,135,Formosa-503C,503C,6,vamos juntos (C),vamos juntos (C),FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,503,,Distrital,Formosa,Diputados Nacionales,18617,MARTIN OSVALDO HERNANDEZ,148,Diputados Nacionales Formosa,DN9,9,20000,0
-149,144,Jujuy-33,33,1,LISTA A UNIR MI JUJUY,LISTA A UNIR MI JUJUY,unir,unir,33,,Distrital,Jujuy,Diputados Nacionales,18621,ROBERTO CARLOS ALEMAN,149,Diputados Nacionales Jujuy,DN10,10,20000,0
-150,141,Jujuy-501B,501B,2,b - arriba jujuy,b - arriba jujuy,frente de todos,frente de todos,501,#00A8E4,Distrital,Jujuy,Diputados Nacionales,18621,MARIA CAROLINA MOISES,150,Diputados Nacionales Jujuy,DN10,10,20000,0
-151,142,Jujuy-501E,501E,3,E- para volver a tener futuro,E- para volver a tener futuro,frente de todos,frente de todos,501,#00A8E4,Distrital,Jujuy,Diputados Nacionales,18621,GUILLERMO HORACIO SAPAG,151,Diputados Nacionales Jujuy,DN10,10,20000,0
-152,140,Jujuy-501F,501F,4,F- CELESTE Y BLANCO DE LOS TRABAJADORES,F- CELESTE Y BLANCO DE LOS TRABAJADORES,frente de todos,frente de todos,501,#00A8E4,Distrital,Jujuy,Diputados Nacionales,18621,JULIO D. FERREYRA,152,Diputados Nacionales Jujuy,DN10,10,20000,0
-153,143,Jujuy-502,502,5,cambia jujuy,cambia jujuy,juntos por el cambio,juntos por el cambio,502,#FFCD00,Distrital,Jujuy,Diputados Nacionales,18621,"JORGE ""colo"" RIZZOTTI",153,Diputados Nacionales Jujuy,DN10,10,20000,0
-154,138,Jujuy-503,503,6,celeste y blanca,celeste y blanca,consenso federal,consenso federal,503,#031F73,Distrital,Jujuy,Diputados Nacionales,18621,ALEJANDRO FRANCISCO SNOPEK,154,Diputados Nacionales Jujuy,DN10,10,20000,0
-155,139,Jujuy-504,504,7,unidad1,unidad1,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,504,,Distrital,Jujuy,Diputados Nacionales,18621,ALEJANDRO VILCA,155,Diputados Nacionales Jujuy,DN10,10,20000,0
-156,145,La Pampa-13,13,1,1A-UNIDAD DE LA IZQUIERDA,1A-UNIDAD DE LA IZQUIERDA,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,Distrital,La Pampa,Diputados Nacionales,18625,AYELEN PILCIC,156,Diputados Nacionales La Pampa,DN11,11,20000,0
-157,146,La Pampa-133,133,2,A-UNIDAD,A-UNIDAD,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,503,,Distrital,La Pampa,Diputados Nacionales,18625,CLAUDIA LUPARDO,157,Diputados Nacionales La Pampa,DN11,11,20000,0
-158,148,La Pampa-135,135,3,A-JUNTOS SOMOS EL CAMBIO/A- RENOVACION Y CAMBIO,A-JUNTOS SOMOS EL CAMBIO/A- RENOVACION Y CAMBIO,juntos por el cambio,juntos por el cambio,502,#FFCD00,Distrital,La Pampa,Diputados Nacionales,18625,berhongaray MARTIN ANTONIO,158,Diputados Nacionales La Pampa,DN11,11,20000,0
-159,147,La Pampa-136,136,4,A- CELESTE Y BLANCA,A- CELESTE Y BLANCA,frente de todos,frente de todos,501,#00A8E4,Distrital,La Pampa,Diputados Nacionales,18625,HERNAN PEREZ ARAUJO,159,Diputados Nacionales La Pampa,DN11,11,20000,0
-160,149,La Pampa-137,137,5,A- CONSENSO PARA EL FUTURO/CONSENSO PAMPEANO,A- CONSENSO PARA EL FUTURO/CONSENSO PAMPEANO,CONSENSO FEDERAL / PARTIDO SOCIALISTA,CONSENSO FEDERAL / PARTIDO SOCIALISTA,50,,Distrital,La Pampa,Diputados Nacionales,18625,LUIS HERNAN SOLANA,160,Diputados Nacionales La Pampa,DN11,11,20000,0
-161,155,La Rioja-13,13,1,1a - unidad de la izquierda,1a - unidad de la izquierda,movimiento al socialismo (mas),movimiento al socialismo (mas),13,,Distrital,La Rioja,Diputados Nacionales,18629,MARIA PAULA ABARCA GRANILLO FERNANDEZ,161,Diputados Nacionales La Rioja,DN12,12,20000,0
-162,151,La Rioja-33,33,2,LISTA A - DESPERTAR,LISTA A - DESPERTAR,UNIR,UNIR,33,,Distrital,La Rioja,Diputados Nacionales,18629,MATIAS MAXIMILIANO HERRERA,162,Diputados Nacionales La Rioja,DN12,12,20000,0
-163,152,La Rioja-82,82,3,E - ES POSIBLE,E - ES POSIBLE,compromiso federal,compromiso federal,82,,Distrital,La Rioja,Diputados Nacionales,18629,CARLOS ALBERTO SANTANDER,163,Diputados Nacionales La Rioja,DN12,12,20000,0
-164,150,La Rioja-501,501,4,A - UNIDAD A,A - UNIDAD A,FRENTE DE IZQUIERDA Y TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y TRABAJADORES - UNIDAD,501,,Distrital,La Rioja,Diputados Nacionales,18629,MARTIN ANGEL,164,Diputados Nacionales La Rioja,DN12,12,20000,0
-165,154,La Rioja-502,502,5,LISTA A - HECTOR OLIVARES,LISTA A - HECTOR OLIVARES,juntos por la rioja,juntos por la rioja,502,,Distrital,La Rioja,Diputados Nacionales,18629,DIEGO FELIPE ALVAREZ,165,Diputados Nacionales La Rioja,DN12,12,20000,0
-166,153,La Rioja-503,503,6,LISTA A - CELESTE Y BLANCA,LISTA A - CELESTE Y BLANCA,frente de todos,frente de todos,503,#00A8E4,Distrital,La Rioja,Diputados Nacionales,18629,SERGIO GUILLERMO CASAS,166,Diputados Nacionales La Rioja,DN12,12,20000,0
-167,157,Mendoza-501,501,1,UNIDAD,UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES  - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES  - UNIDAD,501,,Distrital,Mendoza,Diputados Nacionales,18633,LAUTARO JIMENEZ,167,Diputados Nacionales Mendoza,DN13,13,20000,0
-168,156,Mendoza-503,503,2,A MEJOR PARA MENDOZA,A MEJOR PARA MENDOZA,CAMBIA MENDOZA,CAMBIA MENDOZA,503,,Distrital,Mendoza,Diputados Nacionales,18633,ALFREDO CORNEJO,168,Diputados Nacionales Mendoza,DN13,13,20000,0
-169,158,Mendoza-502,502,3,Lista A celeste y blanca,Lista A celeste y blanca,FRENTE DE TODOS,FRENTE DE TODOS,502,#00A8E4,Distrital,Mendoza,Diputados Nacionales,18633,MARISA UCEDA,169,Diputados Nacionales Mendoza,DN13,13,20000,0
-170,159,Mendoza-222,222,4,CONSENSO PARA EL FUTURO-1,CONSENSO PARA EL FUTURO-1,protectora fuerza politica,protectora fuerza politica,222,,Distrital,Mendoza,Diputados Nacionales,18633,MARCELO MARTIN ROMANO,170,Diputados Nacionales Mendoza,DN13,13,20000,0
-171,166,Misiones-50,50,1,Lista PARTIDO SOCIALISTA,Lista PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Distrital,Misiones,Diputados Nacionales,18637,FERNANDO JESUS FERNANDEZ,171,Diputados Nacionales Misiones,DN14,14,20000,0
-172,165,Misiones-71,71,2,Lista A - UNIDAD,Lista A - UNIDAD,PARTIDO DEL OBRERO,PARTIDO DEL OBRERO,71,,Distrital,Misiones,Diputados Nacionales,18637,EDUARDO D. CANTERO,172,Diputados Nacionales Misiones,DN14,14,20000,0
-173,161,Misiones-501,501,3,"Lista ROJA, AZUL Y BLANCA","Lista ROJA, AZUL Y BLANCA",FRENTE RENOVADOR DE LA CONCORDIA,FRENTE RENOVADOR DE LA CONCORDIA,501,,Distrital,Misiones,Diputados Nacionales,18637,SARTORI DIEGO HORACIO,173,Diputados Nacionales Misiones,DN14,14,20000,0
-174,160,Misiones-502,502,4,LISTA F - CELESTE Y BLANCA,LISTA F - CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,502,#00A8E4,Distrital,Misiones,Diputados Nacionales,18637,CRISTINA BRITEZ,174,Diputados Nacionales Misiones,DN14,14,20000,0
-175,162,Misiones-503A,503A,5,LISTA A JUNTOS SOMOS EL CAMBIO,LISTA A JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Misiones,Diputados Nacionales,18637,ALFREDO O.  SCHIAVONI,175,Diputados Nacionales Misiones,DN14,14,20000,0
-176,164,Misiones-503B,503B,6,LISTA B Juntos por misiones,LISTA B Juntos por misiones,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Misiones,Diputados Nacionales,18637,RICARDO LEANDRO ANDERSEN,176,Diputados Nacionales Misiones,DN14,14,20000,0
-177,163,Misiones-503C,503C,7,LISTA C JUNTOS,LISTA C JUNTOS,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Misiones,Diputados Nacionales,18637,PEDRO PUERTA,177,Diputados Nacionales Misiones,DN14,14,20000,0
-178,170,Neuquén-13,13,1,1a UNIDAD DE LA IZQUIERDA,1a UNIDAD DE LA IZQUIERDA,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,Distrital,Neuquén,Diputados Nacionales,18641,ALCIDES CHRISTIANSEN,178,Diputados Nacionales Neuquén,DN15,15,20000,0
-179,173,Neuquén-133,133,2,UNIDAD A,UNIDAD A,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,502,,Distrital,Neuquén,Diputados Nacionales,18641,RAUL EDUARDO GODOY,179,Diputados Nacionales Neuquén,DN15,15,20000,0
-180,169,Neuquén-135A,135A,3,JUNTOS SOMOS EL CAMBIO,JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,501,#FFCD00,Distrital,Neuquén,Diputados Nacionales,18641,FRANCISCO SANCHEZ,180,Diputados Nacionales Neuquén,DN15,15,20000,0
-181,169,Neuquén-135B,135B,4,participación y renovación,participación y renovación,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,501,#FFCD00,Distrital,Neuquén,Diputados Nacionales,18641,FRANCISCO SANCHEZ,181,Diputados Nacionales Neuquén,DN15,15,20000,0
-182,171,Neuquén-151A,151A,5,LETRA A -  DEFENDAMOS NEUQUEN,LETRA A -  DEFENDAMOS NEUQUEN,MOVIMIENTO POPULAR NEUQUINO,MOVIMIENTO POPULAR NEUQUINO,151,,Distrital,Neuquén,Diputados Nacionales,18641,RICARDO ANDRES CORRADI DIEZ,182,Diputados Nacionales Neuquén,DN15,15,20000,0
-183,172,Neuquén-151B,151B,6,unidos si podemos lista b,unidos si podemos lista b,MOVIMIENTO POPULAR NEUQUINO,MOVIMIENTO POPULAR NEUQUINO,151,,Distrital,Neuquén,Diputados Nacionales,18641,JOSE OSCAR ESCUDERO,183,Diputados Nacionales Neuquén,DN15,15,20000,0
-184,167,Neuquén-137,137,7,CONSENSO PARA EL FUTURO,CONSENSO PARA EL FUTURO,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Neuquén,Diputados Nacionales,18641,JESUS ESCOBAR,184,Diputados Nacionales Neuquén,DN15,15,20000,0
-185,168,Neuquén-136,136,8,CELESTE Y BLANCA,CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,503,#00A8E4,Distrital,Neuquén,Diputados Nacionales,18641,DARIO MARTINEZ,185,Diputados Nacionales Neuquén,DN15,15,20000,0
-186,177,Neuquén-13,13,1,UNIDAD DE LA IZQUIERDA,UNIDAD DE LA IZQUIERDA,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,Distrital,Neuquén,Senadores Nacionales,18639,XIMENA MEZA ARROYO,186,Senadores Nacionales Neuquén,SN15,15,20000,0
-187,180,Neuquén-133,133,2,UNIDAD A,UNIDAD A,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,502,,Distrital,Neuquén,Senadores Nacionales,18639,NORBERTO EDUARDO CALDUCCI,187,Senadores Nacionales Neuquén,SN15,15,20000,0
-188,176,Neuquén-135,135,3,JUNTOS SOMOS EL CAMBIO,JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,501,#FFCD00,Distrital,Neuquén,Senadores Nacionales,18639,HORACIO PECHI QUIROGA,188,Senadores Nacionales Neuquén,SN15,15,20000,0
-189,175,Neuquén-136,136,4,CELESTE Y BLANCA,CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,503,#00A8E4,Distrital,Neuquén,Senadores Nacionales,18639,OSCAR PARRILLI,189,Senadores Nacionales Neuquén,SN15,15,20000,0
-190,174,Neuquén-137,137,5,a,a,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Neuquén,Senadores Nacionales,18639,"GABRIEL ""tom"" ROMERO",190,Senadores Nacionales Neuquén,SN15,15,20000,0
-191,178,Neuquén-151B,151B,6,B UNIDOS SI PODEMOS,B UNIDOS SI PODEMOS,MOVIMIENTO POPULAR NEUQUINO,MOVIMIENTO POPULAR NEUQUINO,151,,Distrital,Neuquén,Senadores Nacionales,18639,HUGO VICTOR RAUQUE,191,Senadores Nacionales Neuquén,SN15,15,20000,0
-192,179,Neuquén-151A,151A,7,LETRA A -  DEFENDAMOS NEUQUEN,LETRA A -  DEFENDAMOS NEUQUEN,MOVIMIENTO POPULAR NEUQUINO,MOVIMIENTO POPULAR NEUQUINO,151,,Distrital,Neuquén,Senadores Nacionales,18639,GUILLERMO JUAN PEREYRA,192,Senadores Nacionales Neuquén,SN15,15,20000,0
-193,183,Rio Negro-13,13,1,LISTA A UNIDAD DE LA IZQUIERDA,LISTA A UNIDAD DE LA IZQUIERDA,MOVIMIENTO AL SOCIALISMO - MAS,MOVIMIENTO AL SOCIALISMO - MAS,13,,Distrital,Rio Negro,Diputados Nacionales,18645,AURELIO VAZQUEZ,193,Diputados Nacionales Rio Negro,DN16,16,20000,0
-194,184,Rio Negro-133-503,133-503,2,LISTA A UNIDAD,LISTA A UNIDAD,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,503,,Distrital,Rio Negro,Diputados Nacionales,18645,LAURA ROMINA SANTILLAN,194,Diputados Nacionales Rio Negro,DN16,16,20000,0
-195,182,Rio Negro-135-501,135-501,3,LISTA A JUNTOS SOMOS EL CAMBIO,LISTA A JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,501,#FFCD00,Distrital,Rio Negro,Diputados Nacionales,18645,SERGIO JAVIER WISKY,195,Diputados Nacionales Rio Negro,DN16,16,20000,0
-196,181,Rio Negro-136-502,136-502,4,LISTA A CELESTE Y BLANCA,LISTA A CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,502,#00A8E4,Distrital,Rio Negro,Diputados Nacionales,18645,MARTIN IGNACIO SORIA,196,Diputados Nacionales Rio Negro,DN16,16,20000,0
-197,185,Rio Negro-169,169,5,LISTA A SIGAMOS CRECIENDO ,LISTA A SIGAMOS CRECIENDO ,juntos somos rio negro,juntos somos rio negro,169,,Distrital,Rio Negro,Diputados Nacionales,18645,LUIS DI GIACOMO,197,Diputados Nacionales Rio Negro,DN16,16,20000,0
-198,187,Rio Negro-13,13,1,LISTA A Unidad de la Izquierda,LISTA A Unidad de la Izquierda,MOVIMIENTO AL SOCIALISMO - MAS,MOVIMIENTO AL SOCIALISMO - MAS,13,,Distrital,Rio Negro,Senadores Nacionales,18643,NATACHA GOMEZ,198,Senadores Nacionales Rio Negro,SN16,16,20000,0
-199,188,Rio Negro-133-503,133-503,2,LISTA A UNIDAD,LISTA A UNIDAD,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,503,,Distrital,Rio Negro,Senadores Nacionales,18643,GABRIEL  MUSA,199,Senadores Nacionales Rio Negro,SN16,16,20000,0
-200,186,Rio Negro-136-502,136-502,3,LISTA A CELESTE Y BLANCA,LISTA A CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,502,#00A8E4,Distrital,Rio Negro,Senadores Nacionales,18643,CLAUDIO MARTIN DOÑATE,200,Senadores Nacionales Rio Negro,SN16,16,20000,0
-201,189,Rio Negro-169,169,4,LISTA A SIGAMOS CRECIENDO ,LISTA A SIGAMOS CRECIENDO ,juntos somos rio negro,juntos somos rio negro,169,,Distrital,Rio Negro,Senadores Nacionales,18643,ALBERTO EDGARDO WERETILNECK,201,Senadores Nacionales Rio Negro,SN16,16,20000,0
-202,196,Salta-131-19,131-19,1,FRENTE NOS (A),FRENTE NOS (A),FRENTE NOS PARTIDO CONSERVADOR POPULAR,FRENTE NOS PARTIDO CONSERVADOR POPULAR,19,,Distrital,Salta,Diputados Nacionales,18649,MAGA MARCONE,202,Diputados Nacionales Salta,DN17,17,20000,0
-203,190,Salta-133-504,133-504,2,unidad,unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,504,,Distrital,Salta,Diputados Nacionales,18649,PABLO LOPEZ,203,Diputados Nacionales Salta,DN17,17,20000,0
-204,194,Salta-135-503A,135-503A,3,JUNTOS SOMOS EL CAMBIO (A),JUNTOS SOMOS EL CAMBIO (A),JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Salta,Diputados Nacionales,18649,MIGUEL NANNI,204,Diputados Nacionales Salta,DN17,17,20000,0
-205,195,Salta-135-503I,135-503I,4,UN CAMBIO PARA SALTA (i),UN CAMBIO PARA SALTA (i),JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Salta,Diputados Nacionales,18649,JOSE ANTONIO IBARRA,205,Diputados Nacionales Salta,DN17,17,20000,0
-206,192,Salta-136/501A,136/501A,5,celeste y blanca,celeste y blanca,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Salta,Diputados Nacionales,18649,LUCAS JAVIER GODOY,206,Diputados Nacionales Salta,DN17,17,20000,0
-207,193,Salta-136/501B,136/501B,6,"con todos, sinceramente","con todos, sinceramente",FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Salta,Diputados Nacionales,18649,JORGE ANTONIO GUAYMAS,207,Diputados Nacionales Salta,DN17,17,20000,0
-208,191,Salta-136/501K,136/501K,7,TENEMOS FUTURO (k),TENEMOS FUTURO (k),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Salta,Diputados Nacionales,18649,DIEGO SARAVIA,208,Diputados Nacionales Salta,DN17,17,20000,0
-209,197,Salta-137-502,137-502,8,CONSENSO POR SALTA,CONSENSO POR SALTA,UNIÓN POR SAlta,UNIÓN POR SAlta,502,,Distrital,Salta,Diputados Nacionales,18649,PABLO KOSINER,209,Diputados Nacionales Salta,DN17,17,20000,0
-210,202,Salta-131-19,131-19,1,FRENTE NOS,FRENTE NOS,fRENTE NOS PARTIDO CONSERVADOR POPULAR,fRENTE NOS PARTIDO CONSERVADOR POPULAR,19,,Distrital,Salta,Senadores Nacionales,18647,RAFAEL ANGEL CORNEJO SOLA,210,Senadores Nacionales Salta,SN17,17,20000,0
-211,198,Salta-133-504,133-504,2,unidad (A),unidad (A),FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,504,,Distrital,Salta,Senadores Nacionales,18647,VIOLETA GIL,211,Senadores Nacionales Salta,SN17,17,20000,0
-212,201,Salta-135-503,135-503,3,juntos por salta (b),juntos por salta (b),JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Distrital,Salta,Senadores Nacionales,18647,JUAN CARLOS ROMERO,212,Senadores Nacionales Salta,SN17,17,20000,0
-213,200,Salta-136-501A,136-501A,4,celeste y blanca,celeste y blanca,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Salta,Senadores Nacionales,18647,"SERGIO ""oso"" LEAVY",213,Senadores Nacionales Salta,SN17,17,20000,0
-214,199,Salta-136-501K,136-501K,5,TENEMOS FUTURO (K),TENEMOS FUTURO (K),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Distrital,Salta,Senadores Nacionales,18647,ELIA FERNANDEZ,214,Senadores Nacionales Salta,SN17,17,20000,0
-215,203,Salta-137-502,137-502,6,CONSENSO POR SALTA,CONSENSO POR SALTA,"CONSENSO POR SALTA, UNIÓN POR SAlta ","CONSENSO POR SALTA, UNIÓN POR SAlta ",502,,Distrital,Salta,Senadores Nacionales,18647,GUILLERMO MARCELO LARA GROS,215,Senadores Nacionales Salta,SN17,17,20000,0
-216,1,San Juan-135,135,1,Somos el cambio,Somos el cambio,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,135,#FFCD00,Distrital,San Juan,Diputados Nacionales,18581,SERGIO MASSA,216,Diputados Nacionales San Juan,DN18,18,20000,0
-217,2,San Juan-136,136,2,Frente de Todos,Frente de Todos,,,,,Distrital,San Juan,Diputados Nacionales,18581,CRISTIAN ADRIAN RITONDO,217,Diputados Nacionales San Juan,DN18,18,20000,0
-218,6,San Juan-501,501,3,Alianza Frente de Todos San Juan - Celeste y Blanca,Alianza Frente de Todos San Juan - Celeste y Blanca,,,,,Distrital,San Juan,Diputados Nacionales,18581,GRACIELA CAMAÑO,218,Diputados Nacionales San Juan,DN18,18,20000,0
-219,7,San Juan-503,503,4,Alianza Juntos por el Cambio San Juan - Con Vos,Alianza Juntos por el Cambio San Juan - Con Vos,,,,,Distrital,San Juan,Diputados Nacionales,18581,NESTOR ANTONIO PITROLA,219,Diputados Nacionales San Juan,DN18,18,20000,0
-220,8,San Juan-504,504,5,Alianza consenso federal San juan - Blanca unidad,Alianza consenso federal San juan - Blanca unidad,,,,,Distrital,San Juan,Diputados Nacionales,18581,SEBASTIAN JORGE BUSTAMAnte,220,Diputados Nacionales San Juan,DN18,18,20000,0
-221,9,San Juan-50503,50503,6,Alianza Juntos por el Cambio San Juan - Defensores del Cambio,Alianza Juntos por el Cambio San Juan - Defensores del Cambio,,,,,Distrital,San Juan,Diputados Nacionales,18581,LUIS MATIAS MONTAOS,221,Diputados Nacionales San Juan,DN18,18,20000,0
-222,10,San Juan-50504,50504,7,Alianza consenso federal San juan - Concertación,Alianza consenso federal San juan - Concertación,,,,,Distrital,San Juan,Diputados Nacionales,18581,MIGUEL ANGEL HERNANDEZ,222,Diputados Nacionales San Juan,DN18,18,20000,0
-223,214,San Luis-501A,501A,1,unidas y unidos,unidas y unidos,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,501,,Distrital,San Luis,Diputados Nacionales,18657,JOHANA GóMEZ,223,Diputados Nacionales San Luis,DN19,19,20000,0
-224,216,San Luis-502A,502A,2,A San Luis Unido,A San Luis Unido,juntos por el cambio,juntos por el cambio,502,#FFCD00,Distrital,San Luis,Diputados Nacionales,18657,ALEJANDRO CACACE,224,Diputados Nacionales San Luis,DN19,19,20000,0
-225,217,San Luis-502B,502B,3,B SOMOS POR LA VIDA,B SOMOS POR LA VIDA,juntos por el cambio,juntos por el cambio,502,#FFCD00,Distrital,San Luis,Diputados Nacionales,18657,BARTOLOME ESTEBAN ABDALA,225,Diputados Nacionales San Luis,DN19,19,20000,0
-226,215,San Luis-503A,503A,4,A UNIDAD,A UNIDAD,frente de todos,frente de todos,503,#00A8E4,Distrital,San Luis,Diputados Nacionales,18657,CARLOS YBRHAIN PONCE,226,Diputados Nacionales San Luis,DN19,19,20000,0
-227,212,San Luis-204A,204A,5,212 - ACUERDO SAN LUIS,212 - ACUERDO SAN LUIS,CONSENSO FEDERAL,CONSENSO FEDERAL,204,#031F73,Distrital,San Luis,Diputados Nacionales,,,227,Diputados Nacionales San Luis,DN19,19,20000,0
-228,213,San Luis-13,13,6,lista a unidad de la izquierda,lista a unidad de la izquierda,Movimiento al socialismo,Movimiento al socialismo,13,,Distrital,San Luis,Diputados Nacionales,18657,ITALO ALBERTO GALLARDO MUÑOZ,228,Diputados Nacionales San Luis,DN19,19,20000,0
-229,228,Santa Cruz-13,13,1,UNIDAD DE LA IZQUIERDA,UNIDAD DE LA IZQUIERDA,movimiento al socialismo,movimiento al socialismo,13,,Distrital,Santa Cruz,Diputados Nacionales,18661,CYNTHIA PAMELA MUÑOZ,229,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-230,218,Santa Cruz-133-501,133-501,2,UNIDAD,UNIDAD,frente de izquierda y de trabajadores-unidad,frente de izquierda y de trabajadores-unidad,501,,Distrital,Santa Cruz,Diputados Nacionales,18661,ADA SILVIA VIVANCO,230,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-231,225,Santa Cruz-135-503A,135-503A,3,cambiando juntos santa cruz,cambiando juntos santa cruz,juntos por el cambio,juntos por el cambio,503,#FFCD00,Distrital,Santa Cruz,Diputados Nacionales,18661,GABRIEL DAMIAN ARIEL RUIZ,231,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-232,226,Santa Cruz-135-503B,135-503B,4,juntos por vos,juntos por vos,juntos por el cambio,juntos por el cambio,503,#FFCD00,Distrital,Santa Cruz,Diputados Nacionales,18661,LUIS CESAR VERA,232,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-233,223,Santa Cruz-135-503C,135-503C,5,NUESTRA SANTA CRUZ,NUESTRA SANTA CRUZ,juntos por el cambio,juntos por el cambio,503,#FFCD00,Distrital,Santa Cruz,Diputados Nacionales,18661,ROBERTO  GIUBETICH,233,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-234,227,Santa Cruz-135-503D,135-503D,6,para salir adelante,para salir adelante,juntos por el cambio,juntos por el cambio,503,#FFCD00,Distrital,Santa Cruz,Diputados Nacionales,18661,OMAR ZEIDAN,234,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-235,224,Santa Cruz-135-503E,135-503E,7,Proyecto Alternativo,Proyecto Alternativo,juntos por el cambio,juntos por el cambio,503,#FFCD00,Distrital,Santa Cruz,Diputados Nacionales,18661,JORGE FERNANDO CRUZ,235,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-236,219,Santa Cruz-136-502A,136-502A,8,ACUERDO SANTACRUCEÑO,ACUERDO SANTACRUCEÑO,frente de todos,frente de todos,502,#00A8E4,Distrital,Santa Cruz,Diputados Nacionales,18661,PABLO GERARDO GONZALEZ,236,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-237,220,Santa Cruz-136-502B,136-502B,9,NACE UNA ESPERANZA,NACE UNA ESPERANZA,frente de todos,frente de todos,502,#00A8E4,Distrital,Santa Cruz,Diputados Nacionales,18661,OSCAR SANDOVAL,237,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-238,221,Santa Cruz-136-502C,136-502C,10,SER SANTA CRUZ,SER SANTA CRUZ,frente de todos,frente de todos,502,#00A8E4,Distrital,Santa Cruz,Diputados Nacionales,18661,HECTOR HORACIO DI TULIO,238,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-239,222,Santa Cruz-176,176,11,consenso federal,consenso federal,frente renovador autentico,frente renovador autentico,86,,Distrital,Santa Cruz,Diputados Nacionales,18661,JOSE BLASSIOTTO,239,Diputados Nacionales Santa Cruz,DN20,20,20000,0
-240,,Santa Cruz-13,13,1,movimiento al socialismo,movimiento al socialismo,movimiento al socialismo,movimiento al socialismo,13,,,Santa Cruz,Gobernador-Vice,,,240,Gobernador-Vice Santa Cruz,G20,20,20000,0
-241,,Santa Cruz-701A,701A,2,ALTERNATIVA FEDERAL,ALTERNATIVA FEDERAL,nueva Santa Cruz,nueva Santa Cruz,701,,,Santa Cruz,Gobernador-Vice,,,241,Gobernador-Vice Santa Cruz,G20,20,20000,0
-242,,Santa Cruz-701B,701B,3,DEFENSORES DEL CAMBIO SANTA CRUZ,DEFENSORES DEL CAMBIO SANTA CRUZ,nueva Santa Cruz,nueva Santa Cruz,701,,,Santa Cruz,Gobernador-Vice,,,242,Gobernador-Vice Santa Cruz,G20,20,20000,0
-243,,Santa Cruz-701C,701C,4,ENCUENTRO CIUDADANO,ENCUENTRO CIUDADANO,nueva Santa Cruz,nueva Santa Cruz,701,,,Santa Cruz,Gobernador-Vice,,,243,Gobernador-Vice Santa Cruz,G20,20,20000,0
-244,,Santa Cruz-701D,701D,5,FE SANTA CRUZ,FE SANTA CRUZ,nueva Santa Cruz,nueva Santa Cruz,701,,,Santa Cruz,Gobernador-Vice,,,244,Gobernador-Vice Santa Cruz,G20,20,20000,0
-245,,Santa Cruz-701E,701E,6,MEJOREMOS SANTA CRUZ,MEJOREMOS SANTA CRUZ,nueva Santa Cruz,nueva Santa Cruz,701,,,Santa Cruz,Gobernador-Vice,,,245,Gobernador-Vice Santa Cruz,G20,20,20000,0
-246,,Santa Cruz-701F,701F,7,PARA SALIR ADELANTE,PARA SALIR ADELANTE,nueva Santa Cruz,nueva Santa Cruz,701,,,Santa Cruz,Gobernador-Vice,,,246,Gobernador-Vice Santa Cruz,G20,20,20000,0
-247,,Santa Cruz-701G,701G,8,SOCIALISMO SANTACRUCEÑO,SOCIALISMO SANTACRUCEÑO,nueva Santa Cruz,nueva Santa Cruz,701,,,Santa Cruz,Gobernador-Vice,,,247,Gobernador-Vice Santa Cruz,G20,20,20000,0
-248,,Santa Cruz-702A,702A,9,ACUERDO SANTACRUCEÑO,ACUERDO SANTACRUCEÑO,FRENTE DE TODOS,FRENTE DE TODOS,702,#00A8E4,,Santa Cruz,Gobernador-Vice,,,248,Gobernador-Vice Santa Cruz,G20,20,20000,0
-249,,Santa Cruz-702B,702B,10,NACE UNA ESPERANZA,NACE UNA ESPERANZA,FRENTE DE TODOS,FRENTE DE TODOS,702,#00A8E4,,Santa Cruz,Gobernador-Vice,,,249,Gobernador-Vice Santa Cruz,G20,20,20000,0
-250,,Santa Cruz-702C,702C,11,SER SANTA CRUZ,SER SANTA CRUZ,FRENTE DE TODOS,FRENTE DE TODOS,702,#00A8E4,,Santa Cruz,Gobernador-Vice,,,250,Gobernador-Vice Santa Cruz,G20,20,20000,0
-251,,Santa Cruz-703,703,12,,,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,703,,,Santa Cruz,Gobernador-Vice,,,251,Gobernador-Vice Santa Cruz,G20,20,20000,0
-252,,Santa Cruz-710,710,13,,,SANTA CRUZ SOMOS TODOS,SANTA CRUZ SOMOS TODOS,710,,,Santa Cruz,Gobernador-Vice,,,252,Gobernador-Vice Santa Cruz,G20,20,20000,0
-253,245,Santa Fe-13,13,1,1A - Unidad de la Izquierda,1A - Unidad de la Izquierda,movimiento al socialismo,movimiento al socialismo,13,,Distrital,Santa Fe,Diputados Nacionales,18665,CESAR ROJAS,253,Diputados Nacionales Santa Fe,DN21,21,20000,0
-254,249,Santa Fe-36A,36A,2,LISTA A - CELESTE LEALTAD ANIMAL,LISTA A - CELESTE LEALTAD ANIMAL,partido autonomista,partido autonomista,36,,Distrital,Santa Fe,Diputados Nacionales,18665,RICHARD ALEGRE,254,Diputados Nacionales Santa Fe,DN21,21,20000,0
-255,247,Santa Fe-36B,36B,3,LISTA B - ACCION SANTAFESINA,LISTA B - ACCION SANTAFESINA,partido autonomista,partido autonomista,36,,Distrital,Santa Fe,Diputados Nacionales,18665,MIGUEL ORLANDO ZALAZAR,255,Diputados Nacionales Santa Fe,DN21,21,20000,0
-256,250,Santa Fe-36C,36C,4,LISTA C - ROJO UNIDOS POR LA FE Y LA VIDA,LISTA C - ROJO UNIDOS POR LA FE Y LA VIDA,partido autonomista,partido autonomista,36,,Distrital,Santa Fe,Diputados Nacionales,18665,ESTELA GLADIS LUKINI,256,Diputados Nacionales Santa Fe,DN21,21,20000,0
-257,251,Santa Fe-36D,36D,5,LISTA D - AMARILLO VALORES PARA ARGENTINA,LISTA D - AMARILLO VALORES PARA ARGENTINA,partido autonomista,partido autonomista,36,,Distrital,Santa Fe,Diputados Nacionales,18665,DIEGO SEBASTIAN BENITEZ ARCE,257,Diputados Nacionales Santa Fe,DN21,21,20000,0
-258,248,Santa Fe-36E,36E,6,LISTA D - NARANJA CREER PARA CRECER,LISTA D - NARANJA CREER PARA CRECER,partido autonomista,partido autonomista,36,,Distrital,Santa Fe,Diputados Nacionales,18665,VICTOR HUGO MAOLO,258,Diputados Nacionales Santa Fe,DN21,21,20000,0
-259,253,Santa Fe-65,65,7,LISTA E - UNIDOS X SANTA FE,LISTA E - UNIDOS X SANTA FE,union celeste y blanco,union celeste y blanco,65,,Distrital,Santa Fe,Diputados Nacionales,18665,ROSANA GABRIELA DE GIUSEPPE,259,Diputados Nacionales Santa Fe,DN21,21,20000,0
-260,254,Santa Fe-87,87,8,LISTA A - OLA CELESTE,LISTA A - OLA CELESTE,unite por la libertad y la dignidad,unite por la libertad y la dignidad,87,,Distrital,Santa Fe,Diputados Nacionales,18665,GONZALO JAVIER MANSILLA,260,Diputados Nacionales Santa Fe,DN21,21,20000,0
-261,242,Santa Fe-131-501-1A,131-501-1A,9,LISTA 1A - SIEMPRE CELESTES,LISTA 1A - SIEMPRE CELESTES,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,TATA MARTINO,261,Diputados Nacionales Santa Fe,DN21,21,20000,0
-262,237,Santa Fe-131-501-2B,131-501-2B,10,2B - MALVINAS ARGENTINAS,2B - MALVINAS ARGENTINAS,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,NICOLAS RICARDO ROSSETTON,262,Diputados Nacionales Santa Fe,DN21,21,20000,0
-263,238,Santa Fe-131-501-3C,131-501-3C,11,3C - nos p/ la familia y la vida,3C - nos p/ la familia y la vida,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,PATRICIA MONICA SILVA,263,Diputados Nacionales Santa Fe,DN21,21,20000,0
-264,234,Santa Fe-131-501-4D,131-501-4D,12,4D - PAZ Y TRABAJO,4D - PAZ Y TRABAJO,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,ALFONSO JUAN ALBERTO SFILIGOY,264,Diputados Nacionales Santa Fe,DN21,21,20000,0
-265,235,Santa Fe-131-501-5E,131-501-5E,13,5E - POR LOS ANIMALES,5E - POR LOS ANIMALES,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,VERONICA LYDIA LOPEZ NORDIO,265,Diputados Nacionales Santa Fe,DN21,21,20000,0
-266,233,Santa Fe-131-501-6F,131-501-6F,14,6F - FRENTE EMANCIPADOR,6F - FRENTE EMANCIPADOR,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,JORGE ROBERTO SALES,266,Diputados Nacionales Santa Fe,DN21,21,20000,0
-267,236,Santa Fe-131-501-7G,131-501-7G,15,7G - SANTA FE CON VALORES,7G - SANTA FE CON VALORES,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,JUAN DANIEL AGUILAR,267,Diputados Nacionales Santa Fe,DN21,21,20000,0
-268,239,Santa Fe-131-501-8H,131-501-8H,16,8H - por la vida,8H - por la vida,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,GUSTAVO RAMON ALBIL,268,Diputados Nacionales Santa Fe,DN21,21,20000,0
-269,240,Santa Fe-131-501-9I,131-501-9I,17,9I - progreso y bienestar,9I - progreso y bienestar,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,RONAL ALBERTO BOZITKOVIC,269,Diputados Nacionales Santa Fe,DN21,21,20000,0
-270,241,Santa Fe-131-501-10J,131-501-10J,18,10J - salvemos dos vidas,10J - salvemos dos vidas,frente federal nos,frente federal nos,501,,Distrital,Santa Fe,Diputados Nacionales,18665,TATI MARTINO,270,Diputados Nacionales Santa Fe,DN21,21,20000,0
-271,231,Santa Fe-133-503,133-503,19,LISTA A - UNIDAD,LISTA A - UNIDAD,frente de izquierda y de trabajadores-unidad,frente de izquierda y de trabajadores-unidad,503,,Distrital,Santa Fe,Diputados Nacionales,18665,OCTAVIO CRIVARO,271,Diputados Nacionales Santa Fe,DN21,21,20000,0
-272,243,Santa Fe-135-504A,135-504A,20,LISTA A - Juntos somos el cambio,LISTA A - Juntos somos el cambio,juntos por el cambio,juntos por el cambio,504,#FFCD00,Distrital,Santa Fe,Diputados Nacionales,18665,FEDERICO ANGELINI,272,Diputados Nacionales Santa Fe,DN21,21,20000,0
-273,244,Santa Fe-135-504B,135-504B,21,Lista B - Vamos todos,Lista B - Vamos todos,juntos por el cambio,juntos por el cambio,504,#FFCD00,Distrital,Santa Fe,Diputados Nacionales,18665,MARTIN PABLO ROSUA,273,Diputados Nacionales Santa Fe,DN21,21,20000,0
-274,232,Santa Fe-136-505,136-505,22,K - celeste y blanca,K - celeste y blanca,frente de todos,frente de todos,505,#00A8E4,Distrital,Santa Fe,Diputados Nacionales,18665,MARCOS CLERI,274,Diputados Nacionales Santa Fe,DN21,21,20000,0
-275,230,Santa Fe-137-502,137-502,23,LISTA A - ADELANTE,LISTA A - ADELANTE,consenso federal,consenso federal,502,#031F73,Distrital,Santa Fe,Diputados Nacionales,18665,ENRIQUE ELOY ESTEVEZ,275,Diputados Nacionales Santa Fe,DN21,21,20000,0
-276,246,Santa Fe-177,177,24,LISTA 1 A - desarrollo agroindustrial,LISTA 1 A - desarrollo agroindustrial,movimiento independiente renovador,movimiento independiente renovador,177,,Distrital,Santa Fe,Diputados Nacionales,18665,JUAN CARLOS BLANCO,276,Diputados Nacionales Santa Fe,DN21,21,20000,0
-277,252,Santa Fe-199,199,25,LISTA A - soy pro vida,LISTA A - soy pro vida,partido popular,partido popular,199,,Distrital,Santa Fe,Diputados Nacionales,18665,evangelina matilde lencina,277,Diputados Nacionales Santa Fe,DN21,21,20000,0
-278,229,Santa Fe-506,506,26,Lista A - Apostemos por la Vida,Lista A - Apostemos por la Vida,alternativa federal,alternativa federal,506,,Distrital,Santa Fe,Diputados Nacionales,18665,NIDIA MARGARITA SOSA,278,Diputados Nacionales Santa Fe,DN21,21,20000,0
-279,263,Santiago del Estero-38,38,1,Lista Unidad - A,Lista Unidad - A,movimiento socialista de los trabajadores,movimiento socialista de los trabajadores,38,,Distrital,Santiago del Estero,Diputados Nacionales,18669,ERIKA VANESA RUIZ,279,Diputados Nacionales Santiago del Estero,DN22,22,20000,0
-280,255,Santiago del Estero-40,40,2,Lista 40A Libres,Lista 40A Libres,MOVIMIENTO LIBRES DEL SUR,MOVIMIENTO LIBRES DEL SUR,40,,Distrital,Santiago del Estero,Diputados Nacionales,18669,MARIANELLA LEZAMA HID,280,Diputados Nacionales Santiago del Estero,DN22,22,20000,0
-281,258,Santiago del Estero-87,87,3,Lista A Pro Vida,Lista A Pro Vida,UNITE! POR LA lIBERTAD Y LA dIGNIDAD,UNITE! POR LA lIBERTAD Y LA dIGNIDAD,87,,Distrital,Santiago del Estero,Diputados Nacionales,18669,JOSE RUBEN DEL VALLE ABDALA,281,Diputados Nacionales Santiago del Estero,DN22,22,20000,0
-282,257,Santiago del Estero-178,178,4,Lista  1A Unidos Por El Futuro,Lista  1A Unidos Por El Futuro,PARTIDO POPULAR,PARTIDO POPULAR,178,,Distrital,Santiago del Estero,Diputados Nacionales,18669,JORGE FRANCISCO MURAD,282,Diputados Nacionales Santiago del Estero,DN22,22,20000,0
-283,256,Santiago del Estero-179,179,5,Lista  179 A Celeste,Lista  179 A Celeste,PARTIDO DIGNIDAD POPULAR,PARTIDO DIGNIDAD POPULAR,179,,Distrital,Santiago del Estero,Diputados Nacionales,18669,CARLOS ALBERTO ZERDA,283,Diputados Nacionales Santiago del Estero,DN22,22,20000,0
-284,259,Santiago del Estero-501,501,6,Lista A Por Santiago,Lista A Por Santiago,frente civico por santiago,frente civico por santiago,501,,Distrital,Santiago del Estero,Diputados Nacionales,18669,DANIEL AGUSTIN BRUE,284,Diputados Nacionales Santiago del Estero,DN22,22,20000,0
-285,260,Santiago del Estero-502,502,7,Lista A celeste y blanca,Lista A celeste y blanca,frente de todos,frente de todos,502,#00A8E4,Distrital,Santiago del Estero,Diputados Nacionales,18669,ESTELA MARY DEL ROSARIO NEDER,285,Diputados Nacionales Santiago del Estero,DN22,22,20000,0
-286,261,Santiago del Estero-503A,503A,8,Lista 503 A Juntos Podemos,Lista 503 A Juntos Podemos,juntos por el cambio,juntos por el cambio,503,#FFCD00,Distrital,Santiago del Estero,Diputados Nacionales,18669,RODRIGO POSSE,286,Diputados Nacionales Santiago del Estero,DN22,22,20000,0
-287,262,Santiago del Estero-503B,503B,9,Lista 503 B Cambia Santiago,Lista 503 B Cambia Santiago,juntos por el cambio,juntos por el cambio,503,#FFCD00,Distrital,Santiago del Estero,Diputados Nacionales,18669,NATALIA GABRIELA NEME,287,Diputados Nacionales Santiago del Estero,DN22,22,20000,0
-288,272,Santiago del Estero-38,38,1,Lista Unidad - A,Lista Unidad - A,movimiento socialista de los trabajadores,movimiento socialista de los trabajadores,38,,Distrital,Santiago del Estero,Senadores Nacionales,18667,ROXANA TREJO,288,Senadores Nacionales Santiago del Estero,SN22,22,20000,0
-289,264,Santiago del Estero-40,40,2,Lista 40A Libres,Lista 40A Libres,MOVIMIENTO LIBRES DEL SUR,MOVIMIENTO LIBRES DEL SUR,40,,Distrital,Santiago del Estero,Senadores Nacionales,18667,PAOLA GRIGGIO,289,Senadores Nacionales Santiago del Estero,SN22,22,20000,0
-290,267,Santiago del Estero-87,87,3,Lista A Pro Vida,Lista A Pro Vida,UNITE! POR LA lIBERTAD Y LA dIGNIDAD,UNITE! POR LA lIBERTAD Y LA dIGNIDAD,87,,Distrital,Santiago del Estero,Senadores Nacionales,18667,MARIA ROSA BARBARAN VILLAVICENCIO,290,Senadores Nacionales Santiago del Estero,SN22,22,20000,0
-291,266,Santiago del Estero-178,178,4,unidos por el futuro,unidos por el futuro,PARTIDO POPULAR,PARTIDO POPULAR,178,,Distrital,Santiago del Estero,Senadores Nacionales,18667,Jorge Luis Mussetti,291,Senadores Nacionales Santiago del Estero,SN22,22,20000,0
-292,265,Santiago del Estero-179,179,5,Lista 179  A - Celeste,Lista 179  A - Celeste,PARTIDO DIGNIDAD POPULAR,PARTIDO DIGNIDAD POPULAR,179,,Distrital,Santiago del Estero,Senadores Nacionales,18667,EDGARDO ATILIO MORENO,292,Senadores Nacionales Santiago del Estero,SN22,22,20000,0
-293,268,Santiago del Estero-501,501,6,Lista 501 A Por Santiago,Lista 501 A Por Santiago,frente civico por santiago,frente civico por santiago,501,,Distrital,Santiago del Estero,Senadores Nacionales,18667,CLAUDIA ALEJANDRA LEDESMA,293,Senadores Nacionales Santiago del Estero,SN22,22,20000,0
-294,269,Santiago del Estero-502,502,7,Lista A Celeste y Blanca,Lista A Celeste y Blanca,frente de todos,frente de todos,502,#00A8E4,Distrital,Santiago del Estero,Senadores Nacionales,18667,GERARDO ANTENOR MONTENEGRO,294,Senadores Nacionales Santiago del Estero,SN22,22,20000,0
-295,270,Santiago del Estero-503A,503A,8,Lista 503 A Juntos Podemos,Lista 503 A Juntos Podemos,juntos por el cambio,juntos por el cambio,503,#FFCD00,Distrital,Santiago del Estero,Senadores Nacionales,18667,EDUARDO CHABAY RUIZ,295,Senadores Nacionales Santiago del Estero,SN22,22,20000,0
-296,271,Santiago del Estero-503B,503B,9,Lista 503 B Cambia Santiago,Lista 503 B Cambia Santiago,juntos por el cambio,juntos por el cambio,503,#FFCD00,Distrital,Santiago del Estero,Senadores Nacionales,18667,LUCIANA PATRICIA RACHED,296,Senadores Nacionales Santiago del Estero,SN22,22,20000,0
-297,290,Tucumán-5031A,5031A,1,Lista 1A unidad,Lista 1A unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES,FRENTE DE IZQUIERDA Y DE TRABAJADORES,503,,Distrital,Tucumán,Diputados Nacionales,18677,ARIEL OSATINSKY,297,Diputados Nacionales Tucumán,DN23,23,20000,0
-298,293,Tucumán-502A,502A,2,Lista A unidad por tucuman,Lista A unidad por tucuman,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Distrital,Tucumán,Diputados Nacionales,18677,DOMINGO AMAYA,298,Diputados Nacionales Tucumán,DN23,23,20000,0
-299,292,Tucumán-502B,502B,3,Lista B cambia tucuman,Lista B cambia tucuman,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Distrital,Tucumán,Diputados Nacionales,18677,MANUEL COUREL,299,Diputados Nacionales Tucumán,DN23,23,20000,0
-300,295,Tucumán-501B,501B,4,Lista B lealtad a los principios,Lista B lealtad a los principios,frente de todos,frente de todos,501,#00A8E4,Distrital,Tucumán,Diputados Nacionales,18677,JOSE ALBERTO VITAR,300,Diputados Nacionales Tucumán,DN23,23,20000,0
-301,294,Tucumán-501F,501F,5,Lista F Celeste y Blanca,Lista F Celeste y Blanca,frente de todos,frente de todos,501,#00A8E4,Distrital,Tucumán,Diputados Nacionales,18677,MARIO ALBERTO LEITO,301,Diputados Nacionales Tucumán,DN23,23,20000,0
-302,288,Tucumán-5041,5041,6,Lista 1 PROGRESO SOCIAL,Lista 1 PROGRESO SOCIAL,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Tucumán,Diputados Nacionales,18677,ARIEL GARCIA,302,Diputados Nacionales Tucumán,DN23,23,20000,0
-303,289,Tucumán-504B,504B,7,Lista B alternativa tucuman,Lista B alternativa tucuman,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Distrital,Tucumán,Diputados Nacionales,18677,SILVIO CESAR BELLOMIO,303,Diputados Nacionales Tucumán,DN23,23,20000,0
-304,291,Tucumán-181A,181A,8,Lista A CELESTE Y BLANCA,Lista A CELESTE Y BLANCA,FUERZA REPUBLICANA,FUERZA REPUBLICANA,181,,Distrital,Tucumán,Diputados Nacionales,18677,RICARDO ARGENTINO BUSSI,304,Diputados Nacionales Tucumán,DN23,23,20000,0
-305,277,Tierra del Fuego-133 - 203,133 - 203,1,Lista A UNIDAD / Lista unidad,Lista A UNIDAD / Lista unidad,Frente de Izquierda y de los trabajadores / Partido Obrero,Frente de Izquierda y de los trabajadores / Partido Obrero,203,,Distrital,Tierra del Fuego,Diputados Nacionales,18673,YESICA TAMARA GOMEZ,305,Diputados Nacionales Tierra del Fuego,DN24,24,20000,0
-306,276,Tierra del Fuego-135 - 502,135 - 502,2,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Alianza juntos por el cambio Juntos por el cambio TDF,Alianza juntos por el cambio Juntos por el cambio TDF,502,,Distrital,Tierra del Fuego,Diputados Nacionales,18673,FEDERICO FRIGERIO,306,Diputados Nacionales Tierra del Fuego,DN24,24,20000,0
-307,273,Tierra del Fuego-136 - 501,136 - 501,3,Lista A celeste y blanca,Lista A celeste y blanca,Alianza frente de todos,Alianza frente de todos,501,,Distrital,Tierra del Fuego,Diputados Nacionales,18673,ROSANA ANDREA BERTONE,307,Diputados Nacionales Tierra del Fuego,DN24,24,20000,0
-308,274,Tierra del Fuego-137 - 69,137 - 69,4,Lista a - Consenso para el futuro soberania fueguina,Lista a - Consenso para el futuro soberania fueguina,Alianza Consenso Federal / gen,Alianza Consenso Federal / gen,69,,Distrital,Tierra del Fuego,Diputados Nacionales,18673,FERNANDO MARCELO TEMARI,308,Diputados Nacionales Tierra del Fuego,DN24,24,20000,0
-309,278,Tierra del Fuego-187,187,5,Lista A unidad,Lista A unidad,partido social patagónico,partido social patagónico,187,,Distrital,Tierra del Fuego,Diputados Nacionales,18673,MALENA YUQUERI TESZKIEWICZ,309,Diputados Nacionales Tierra del Fuego,DN24,24,20000,0
-310,275,Tierra del Fuego-502,502,6,Lista C - TIERRA DEL FUEGO CAMBIA,Lista C - TIERRA DEL FUEGO CAMBIA,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,,Distrital,Tierra del Fuego,Diputados Nacionales,18673,PAULINO BALTASAR JESUS ROSSI,310,Diputados Nacionales Tierra del Fuego,DN24,24,20000,0
-311,279,Tierra del Fuego-503,503,7,Lista A sigamos juntos,Lista A sigamos juntos,vamos todos a vivir mejor,vamos todos a vivir mejor,503,,Distrital,Tierra del Fuego,Diputados Nacionales,18673,MABEL LUISA CAPARROS,311,Diputados Nacionales Tierra del Fuego,DN24,24,20000,0
-312,285,Tierra del Fuego-133 - 203,133 - 203,1,Lista A UNIDAD / Lista unidad,Lista A UNIDAD / Lista unidad,Frente de Izquierda y de los trabajadores / Partido Obrero,Frente de Izquierda y de los trabajadores / Partido Obrero,203,,Distrital,Tierra del Fuego,Senadores Nacionales,18671,DANIEL PATRICIO BARRIA CARABAJAL,312,Senadores Nacionales Tierra del Fuego,SN24,24,20000,0
-313,282,Tierra del Fuego-135 - 502,135 - 502,2,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Alianza juntos por el cambio Juntos por el cambio TDF,Alianza juntos por el cambio Juntos por el cambio TDF,502,,Distrital,Tierra del Fuego,Senadores Nacionales,18671,PABLO DANIEL BLANCO,313,Senadores Nacionales Tierra del Fuego,SN24,24,20000,0
-314,280,Tierra del Fuego-136 - 501,136 - 501,3,Lista A celeste y blanca,Lista A celeste y blanca,Alianza frente de todos,Alianza frente de todos,501,,Distrital,Tierra del Fuego,Senadores Nacionales,18671,MATIAS DAVID RODRIGUEZ,314,Senadores Nacionales Tierra del Fuego,SN24,24,20000,0
-315,281,Tierra del Fuego-137 - 69,137 - 69,4,Lista a - Consenso para el futuro soberania fueguina,Lista a - Consenso para el futuro soberania fueguina,Alianza Consenso Federal / gen,Alianza Consenso Federal / gen,69,,Distrital,Tierra del Fuego,Senadores Nacionales,18671,JUAN CARLOS ARCANDO,315,Senadores Nacionales Tierra del Fuego,SN24,24,20000,0
-316,286,Tierra del Fuego-187,187,5,Lista A unidad,Lista A unidad,partido social patagónico,partido social patagónico,187,,Distrital,Tierra del Fuego,Senadores Nacionales,18671,MARIA FABIANA RIOS,316,Senadores Nacionales Tierra del Fuego,SN24,24,20000,0
-317,283,Tierra del Fuego-502B,502B,6,Lista B - cantera popular,Lista B - cantera popular,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,,Distrital,Tierra del Fuego,Senadores Nacionales,18671,NATALIA SOLEDAD JAÑEZ,317,Senadores Nacionales Tierra del Fuego,SN24,24,20000,0
-318,284,Tierra del Fuego-502C,502C,7,Lista C - TIERRA DEL FUEGO CAMBIA,Lista C - TIERRA DEL FUEGO CAMBIA,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,,Distrital,Tierra del Fuego,Senadores Nacionales,18671,"HECTOR ""TITO"" STEFANI",318,Senadores Nacionales Tierra del Fuego,SN24,24,20000,0
-319,287,Tierra del Fuego-503,503,8,Lista A sigamos juntos,Lista A sigamos juntos,vamos todos a vivir mejor,vamos todos a vivir mejor,503,,Distrital,Tierra del Fuego,Senadores Nacionales,18671,FEDERICO ARMANDO RUNIN,319,Senadores Nacionales Tierra del Fuego,SN24,24,20000,0
-,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
-,,-,,,,,,,,,,,,,,,,,,,
+opcion_codigo,opcion_orden,opcion_nombre,opcion_nombre_corto,partido_nombre,partido_nombre_corto,partido_codigo,partido_color,distrito,categoria_nombre,partido_orden,categoria_slug,distrito_nro,categoria_prioridad,extranjeros
+5,1,CIUDAD CELESTE POR LA VIDA Y LA FAMILIA,CIUDAD CELESTE POR LA VIDA Y LA FAMILIA,Partido Democrata Cristiano,Partido Democrata Cristiano,5,,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,1,DN1,1,20000,0
+13,2,Lista 1A Unidad de la izquierda,Lista 1A Unidad de la izquierda,Movimiento al Socialismo,Movimiento al Socialismo,13,,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,2,DN1,1,20000,0
+86,3,Lista -A- Nueva Corriente,Lista -A- Nueva Corriente,Frente Renovador Autentico,Frente Renovador Autentico,333,,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,3,DN1,1,20000,0
+87,4,ola celeste,ola celeste,Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,179,,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,4,DN1,1,20000,0
+88,5,LIBERACION,LIBERACION,Dignidad Popular,Dignidad Popular,342,,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,5,DN1,1,20000,0
+132-262,6,Lista A - Celeste,Lista A - Celeste,El Movimiento,El Movimiento,262,,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,6,DN1,1,20000,0
+133-501,7,unidad,unidad,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,501,,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,7,DN1,1,20000,0
+135-503,8,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Juntos por el Cambio,Juntos por el Cambio,135,#FFCD00,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,8,DN1,1,20000,0
+136-502,9,Lista A - Celeste y Blanca,Lista A - Celeste y Blanca,Frente de Todos,Frente de Todos,136,#00A8E4,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,9,DN1,1,20000,0
+137-504,10,CONSENSO PARA EL FUTURO,CONSENSO PARA EL FUTURO,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,10,DN1,1,20000,0
+187,11,"187-A ""QUE LOS PUEBLOS MANDEN""","187-A ""QUE LOS PUEBLOS MANDEN""",Autodeterminación y Libertad,Autodeterminación y Libertad,187,,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,11,DN1,1,20000,0
+343,12,MISION CELESTE,MISION CELESTE,Movimiento de Jubilados y Juventud,Movimiento de Jubilados y Juventud,343,,Ciudad Autónoma de Buenos Aires,Diputados Nacionales,12,DN1,1,20000,0
+13,1,UNIDAD DE LA IZQUIERDA,UNIDAD DE LA IZQUIERDA,Movimiento al Socialismo,Movimiento al Socialismo,13,,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,13,JG1,1,20000,0
+87,2,dignidad,dignidad,Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,179,,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,14,JG1,1,20000,0
+88,3,LIBERACION,LIBERACION,Dignidad Popular,Dignidad Popular,88,,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,15,JG1,1,20000,0
+133-501,4,UNIDAD,UNIDAD,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,501,,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,16,JG1,1,20000,0
+135-503,5,Juntos Somos el Cambio,Juntos Somos el Cambio,ALIANZA JUNTOS POR EL CAMBIO,ALIANZA JUNTOS POR EL CAMBIO,503,,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,17,JG1,1,20000,0
+136-502,6,celeste y blanca,celeste y blanca,ALIANZA frente de todos,ALIANZA frente de todos,502,,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,18,JG1,1,20000,0
+137-504,7,504 -A - CONSENSO PARA EL FUTURO,504 -A - CONSENSO PARA EL FUTURO,ALIANZA CONSENSO FEDERAL,ALIANZA CONSENSO FEDERAL,504,,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,19,JG1,1,20000,0
+187,8,QUE LOS PUEBLOS MANDEN,QUE LOS PUEBLOS MANDEN,Autodeterminación y Libertad,Autodeterminación y Libertad,187,,Ciudad Autónoma de Buenos Aires,Jefe de Gobierno,20,JG1,1,20000,0
+5,1,CIUDAD CELESTE POR LA VIDA Y LA FAMILIA,CIUDAD CELESTE POR LA VIDA Y LA FAMILIA,Partido Democrata Cristiano,Partido Democrata Cristiano,5,,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,21,SN1,1,20000,0
+13,2,Lista 1A Unidad de la izquierda,Lista 1A Unidad de la izquierda,Movimiento al Socialismo,Movimiento al Socialismo,13,,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,22,SN1,1,20000,0
+86,3,Lista -A- Nueva Corriente,Lista -A- Nueva Corriente,Frente Renovador Autentico,Frente Renovador Autentico,333,,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,23,SN1,1,20000,0
+87,4,ola celeste,ola celeste,Unite por la Libertad y la Dignidad,Unite por la Libertad y la Dignidad,179,,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,24,SN1,1,20000,0
+88,5,LIBERACION,LIBERACION,Dignidad Popular,Dignidad Popular,342,,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,25,SN1,1,20000,0
+132-262,6,Lista A - Celeste,Lista A - Celeste,El Movimiento,El Movimiento,262,,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,26,SN1,1,20000,0
+133-501,7,unidad,unidad,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,ALIANZA FRENTE DE IZQUIERDA Y DE LOS TRABAJADORES,501,,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,27,SN1,1,20000,0
+135-503,8,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Juntos por el Cambio,Juntos por el Cambio,135,#FFCD00,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,28,SN1,1,20000,0
+136-502,9,Lista A - Celeste y Blanca,Lista A - Celeste y Blanca,Frente de Todos,Frente de Todos,136,#00A8E4,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,29,SN1,1,20000,0
+137-504,10,CONSENSO PARA EL FUTURO,CONSENSO PARA EL FUTURO,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,30,SN1,1,20000,0
+187,11,"187-A ""QUE LOS PUEBLOS MANDEN""","187-A ""QUE LOS PUEBLOS MANDEN""",Autodeterminación y Libertad,Autodeterminación y Libertad,187,,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,31,SN1,1,20000,0
+343,12,MISION CELESTE,MISION CELESTE,Movimiento de Jubilados y Juventud,Movimiento de Jubilados y Juventud,343,,Ciudad Autónoma de Buenos Aires,Senadores Nacionales,32,SN1,1,20000,0
+276,1,LISTA 1 A UNIDAD DE LA IZQUIERDA,LISTA 1 A UNIDAD DE LA IZQUIERDA,Movimiento de Avanzada socialista,Movimiento de Avanzada socialista,276,,Buenos Aires,Diputados Nacionales,33,DN2,2,20000,0
+79,2,somos renovadores,somos renovadores,partido renovador federal,partido renovador federal,79,,Buenos Aires,Diputados Nacionales,34,DN2,2,20000,0
+88/816,3,lista1A por la vida,lista1A por la vida,PARTIDO DIGNIDAD POPULAR,PARTIDO DIGNIDAD POPULAR,88/816,,Buenos Aires,Diputados Nacionales,35,DN2,2,20000,0
+312,4,LISTA CELESTE,LISTA CELESTE,FRENTE PATRIOTA,FRENTE PATRIOTA,312/,,Buenos Aires,Diputados Nacionales,36,DN2,2,20000,0
+133,5,unidad,unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,502,,Buenos Aires,Diputados Nacionales,37,DN2,2,20000,0
+135,6,LISTA A JUNTOS SOMOS EL CAMBIO,LISTA A JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Buenos Aires,Diputados Nacionales,38,DN2,2,20000,0
+136/503,7,LISTA CELESTE Y BLANCA,LISTA CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,136,#00A8E4,Buenos Aires,Diputados Nacionales,39,DN2,2,20000,0
+137A,8,A CONSENSO PARA EL FUTURO,A CONSENSO PARA EL FUTURO,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Buenos Aires,Diputados Nacionales,40,DN2,2,20000,0
+207,9,LISTA A NARANJA,LISTA A NARANJA,PARTIDO HUMANISTA,PARTIDO HUMANISTA,207,,Buenos Aires,Diputados Nacionales,41,DN2,2,20000,0
+309A,10,LISTA COMPROMISO CIUDADANO,LISTA COMPROMISO CIUDADANO,MOV. ORGANIZACIÓN DEMOCRÁTICA MODE,MOV. ORGANIZACIÓN DEMOCRÁTICA MODE,309,,Buenos Aires,Diputados Nacionales,42,DN2,2,20000,0
+314,11,LISTA A CELESTE Y BLANCO,LISTA A CELESTE Y BLANCO,PARTIDO REPUBLICANO FEDERAL,PARTIDO REPUBLICANO FEDERAL,314,,Buenos Aires,Diputados Nacionales,43,DN2,2,20000,0
+315,12,LISTA ESPERANZA,LISTA ESPERANZA,MORAL Y PROGRESO,MORAL Y PROGRESO,315,,Buenos Aires,Diputados Nacionales,44,DN2,2,20000,0
+276,1,LISTA 1 A UNIDAD DE LA IZQUIERDA,LISTA 1 A UNIDAD DE LA IZQUIERDA,Movimiento de Avanzada socialista,Movimiento de Avanzada socialista,276,,Buenos Aires,Gobernador y vice,45,G2,2,3,1
+88/816,2,LISTA 1A - POR LA VIDA,PARTIDO DIGNIDAD POPULAR,PARTIDO DIGNIDAD POPULAR,,88/816,,Buenos Aires,Gobernador y vice,46,G2,2,3,1
+131/1911,3,linea única,linea única,Frente NOS,Frente NOS,,,Buenos Aires,Gobernador y vice,47,G2,2,3,1
+865,4,lista lealtad,lista lealtad,FRENTE PATRIOTA,FRENTE PATRIOTA,,,Buenos Aires,Gobernador y vice,48,G2,2,3,1
+133,5,unidad,unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,502,,Buenos Aires,Gobernador y vice,49,G2,2,3,1
+135,6,1 A amarilllo,1 A amarilllo,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Buenos Aires,Gobernador y vice,50,G2,2,3,1
+136/503,7,LISTA CELESTE Y BLANCA 2,LISTA CELESTE Y BLANCA 2,FRENTE DE TODOS,FRENTE DE TODOS,136,#00A8E4,Buenos Aires,Gobernador y vice,51,G2,2,3,1
+137B,8,hay consenso,hay consenso,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Buenos Aires,Gobernador y vice,52,G2,2,3,1
+309B,9,Lista azul y blanco,Lista azul y blanco,MOV. ORGANIZACIÓN DEMOCRÁTICA MODE,MOV. ORGANIZACIÓN DEMOCRÁTICA MODE,309,,Buenos Aires,Gobernador y vice,53,G2,2,3,1
+183,1,183 Partido Frente Somos Catamarca Lista A,183 Partido Frente Somos Catamarca Lista A,somos catamarca,somos catamarca,183,,Catamarca,Diputados Nacionales,54,DN3,3,20000,0
+198,2,198 Partido Popular Lista A,198 Partido Popular Lista A,Partido popULAR,Partido popULAR,198,,Catamarca,Diputados Nacionales,55,DN3,3,20000,0
+218,3,218 Partido U.C.D. Lista A,218 Partido U.C.D. Lista A,UCD,UCD,218,,Catamarca,Diputados Nacionales,56,DN3,3,20000,0
+501,4,501 FTE Unid Por la gente- Lista A,501 FTE Unid Por la gente- Lista A,FRENTE UNIDOS POR LA GENTE,FRENTE UNIDOS POR LA GENTE,501,,Catamarca,Diputados Nacionales,57,DN3,3,20000,0
+503,5,Lista 503 Frente de Todos Lista A,Lista 503 Frente de Todos Lista A,FRENTE DE TODOS,FRENTE DE TODOS,503,#00A8E4,Catamarca,Diputados Nacionales,58,DN3,3,20000,0
+504,6,504 Consenso Fed. Lista A,504 Consenso Fed. Lista A,consenso federal,consenso federal,504,#031F73,Catamarca,Diputados Nacionales,59,DN3,3,20000,0
+505,7,505 Fte De Izq y de los Trab- Unidad,505 Fte De Izq y de los Trab- Unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,505,,Catamarca,Diputados Nacionales,60,DN3,3,20000,0
+506,8,506 Frente Juntos P/Cam-Lista A,506 Frente Juntos P/Cam-Lista A,Frente juntos por el cambio,Frente juntos por el cambio,506,,Catamarca,Diputados Nacionales,61,DN3,3,20000,0
+69,1,69 GEM Lista A,69 GEM Lista A,GEM,GEM,69,,Catamarca,Gobernador y vice,62,G3,3,20000,0
+501,2,501 FTE Unid Por la gente- Lista A,501 FTE Unid Por la gente- Lista A,FRENTE UNIDOS POR LA GENTE,FRENTE UNIDOS POR LA GENTE,501,,Catamarca,Gobernador y vice,63,G3,3,20000,0
+503,3,Lista 503 Frente de Todos Lista A,Lista 503 Frente de Todos Lista A,FRENTE DE TODOS,FRENTE DE TODOS,503,#00A8E4,Catamarca,Gobernador y vice,64,G3,3,20000,0
+504,4,504 Consenso Fed. Lista A,504 Consenso Fed. Lista A,consenso federal,consenso federal,504,#031F73,Catamarca,Gobernador y vice,65,G3,3,20000,0
+505,5,505 Fte De Izq y de los Trab- Unidad,505 Fte De Izq y de los Trab- Unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,505,,Catamarca,Gobernador y vice,66,G3,3,20000,0
+506,6,506 Frente Juntos P/Cam-Lista A,506 Frente Juntos P/Cam-Lista A,Frente juntos por el cambio,Frente juntos por el cambio,506,,Catamarca,Gobernador y vice,67,G3,3,20000,0
+13,1,Lista 1A Unidad de la izquierda,Lista 1A Unidad de la izquierda,movimiento al socialismo,movimiento al socialismo,13,,Córdoba,Diputados Nacionales,68,DN4,4,20000,0
+23,2,Lista Azul y Amarillo,Lista Azul y Amarillo,union popular,union popular,23,,Córdoba,Diputados Nacionales,69,DN4,4,20000,0
+57,3,Lista 57 Compromiso Vecinal A,Lista 57 Compromiso Vecinal A,movimiento de accion vecinal,movimiento de accion vecinal,57,,Córdoba,Diputados Nacionales,70,DN4,4,20000,0
+87,4,Lista 87 A La Ola Celeste,Lista 87 A La Ola Celeste,unite por la libertad y la dignidad,unite por la libertad y la dignidad,87,,Córdoba,Diputados Nacionales,71,DN4,4,20000,0
+133/504,5,LISTA A- UNIDAD,LISTA A- UNIDAD,FRENTE DE IZQUIERDA Y TRABAJDORES UNIDAD,FRENTE DE IZQUIERDA Y TRABAJDORES UNIDAD,133/504,,Córdoba,Diputados Nacionales,72,DN4,4,20000,0
+135/502A,6,LISTA A JUNTOS SOMOS EL CAMBIO/a JUNTOS POR CBA,LISTA A JUNTOS SOMOS EL CAMBIO/a JUNTOS POR CBA,juntos por el cambio,juntos por el cambio,502,#FFCD00,Córdoba,Diputados Nacionales,73,DN4,4,20000,0
+135/502B,7,Lista B Somos Consenso y Renovación,Lista B Somos Consenso y Renovación,juntos por el cambio,juntos por el cambio,502,#FFCD00,Córdoba,Diputados Nacionales,74,DN4,4,20000,0
+135/502C,8,Lista C Blanca y Roja,Lista C Blanca y Roja,juntos por el cambio,juntos por el cambio,502,#FFCD00,Córdoba,Diputados Nacionales,75,DN4,4,20000,0
+136/505,9,Lista 505 “De Todos – A”,Lista 505 “De Todos – A”,frente de todos,frente de todos,505,#00A8E4,Córdoba,Diputados Nacionales,76,DN4,4,20000,0
+137/506,10,consenso para el futuro,consenso para el futuro,consenso federal,consenso federal,506,#031F73,Córdoba,Diputados Nacionales,77,DN4,4,20000,0
+217,11,Lista 217 Valores en Acción,Lista 217 Valores en Acción,encuentro vecinal cordoba,encuentro vecinal cordoba,217,,Córdoba,Diputados Nacionales,78,DN4,4,20000,0
+501A,12,LISTA 501 A DEMOCRATA LIBERAL,LISTA 501 A DEMOCRATA LIBERAL,frente despertar,frente despertar,501,,Córdoba,Diputados Nacionales,79,DN4,4,20000,0
+501B,13,LISTA 501 B LIBERTARIOS,LISTA 501 B LIBERTARIOS,frente despertar,frente despertar,501,,Córdoba,Diputados Nacionales,80,DN4,4,20000,0
+503,14,Lista 503 Primero Córdoba A,Lista 503 Primero Córdoba A,hacemos por cordoba,hacemos por cordoba,503,,Córdoba,Diputados Nacionales,81,DN4,4,20000,0
+216,1,VIDA FAMILIA VALORES A,VIDA FAMILIA VALORES A,CIUDADANOS A GOBERNAR,CIUDADANOS A GOBERNAR,216,,Corrientes,Diputados Nacionales,82,DN5,5,20000,0
+501A,2,peronismo ortodoxo (a),peronismo ortodoxo (a),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Corrientes,Diputados Nacionales,83,DN5,5,20000,0
+501B,3,CELESTE Y BLANCA (b),CELESTE Y BLANCA (b),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Corrientes,Diputados Nacionales,84,DN5,5,20000,0
+501C,4,VAMOS TODOS  (C),VAMOS TODOS  (C),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Corrientes,Diputados Nacionales,85,DN5,5,20000,0
+501D,5,todos somos parte (D),todos somos parte (D),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Corrientes,Diputados Nacionales,86,DN5,5,20000,0
+502A,6,verde (LISTA A),verde (LISTA A),ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,502,,Corrientes,Diputados Nacionales,87,DN5,5,20000,0
+502B,7,VAMOS JUNTOS (B),VAMOS JUNTOS (B),ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,502,,Corrientes,Diputados Nacionales,88,DN5,5,20000,0
+502C,8,DEFENSORES DEL CAMBIO (c),DEFENSORES DEL CAMBIO (c),ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,ENCUENTRO POR CORRIENTES - ECO + JUNTOS POR EL CAMBIO,502,,Corrientes,Diputados Nacionales,89,DN5,5,20000,0
+503A,9,otro rumbo (A),otro rumbo (A),CONSENSO FEDERAL,CONSENSO FEDERAL,503,#031F73,Corrientes,Diputados Nacionales,90,DN5,5,20000,0
+503B,10,somos la alternativa (B),somos la alternativa (B),CONSENSO FEDERAL,CONSENSO FEDERAL,503,#031F73,Corrientes,Diputados Nacionales,91,DN5,5,20000,0
+33,1,"VALORES, FAMILIA Y VIDA","VALORES, FAMILIA Y VIDA",UNIR,UNIR,33,,Chaco,Diputados Nacionales,92,DN6,6,20000,0
+71,2,unidad,unidad,PARTIDO DEL OBRERO,PARTIDO DEL OBRERO,71,,Chaco,Diputados Nacionales,93,DN6,6,20000,0
+156,3,a - celeste,a - celeste,ACCION CHAQUEÑA,ACCION CHAQUEÑA,156,,Chaco,Diputados Nacionales,94,DN6,6,20000,0
+179,4,LISTA CELESTE Y BLANCA,LISTA CELESTE Y BLANCA,CIUDADANOS A GOBERNAR,CIUDADANOS A GOBERNAR,179,,Chaco,Diputados Nacionales,95,DN6,6,20000,0
+180,5,VERDE A,VERDE A,PARTIDO PROYECTO SUR CHACO,PARTIDO PROYECTO SUR CHACO,180,,Chaco,Diputados Nacionales,96,DN6,6,20000,0
+501R,6,17 DE OCTUBRE,17 DE OCTUBRE,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Chaco,Diputados Nacionales,97,DN6,6,20000,0
+501I,7,SIGLO XXI,SIGLO XXI,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Chaco,Diputados Nacionales,98,DN6,6,20000,0
+501O,8,CELESTE Y BLANCA,CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Chaco,Diputados Nacionales,99,DN6,6,20000,0
+501P,9,frente patriotico,frente patriotico,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Chaco,Diputados Nacionales,100,DN6,6,20000,0
+501F,10,sinceramente peronista,sinceramente peronista,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Chaco,Diputados Nacionales,101,DN6,6,20000,0
+502,11,ALIANZA ALTERNATIVA RENOVADORA FEDERAL,ALIANZA ALTERNATIVA RENOVADORA FEDERAL,ALTERNATIVA RENOVADORA FEDERAL,ALTERNATIVA RENOVADORA FEDERAL,502,,Chaco,Diputados Nacionales,102,DN6,6,20000,0
+503A,12,uniDad,uniDad,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Chaco,Diputados Nacionales,103,DN6,6,20000,0
+503B,13,sumamos,sumamos,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Chaco,Diputados Nacionales,104,DN6,6,20000,0
+504,14,Lista consenso para el futuro,Lista consenso para el futuro,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Chaco,Diputados Nacionales,105,DN6,6,20000,0
+33,1,"valores, familia y vida","valores, familia y vida",UNIR,UNIR,33,,Chaco,Senadores Nacionales,106,SN6,6,20000,0
+71,2,UNIDAD,UNIDAD,PARTIDO DEL OBRERO,PARTIDO DEL OBRERO,71,,Chaco,Senadores Nacionales,107,SN6,6,20000,0
+156,3,a - celeste,a - celeste,ACCION CHAQUEÑA,ACCION CHAQUEÑA,156,,Chaco,Senadores Nacionales,108,SN6,6,20000,0
+179,4,LISTA CELESTE Y BLANCA,LISTA CELESTE Y BLANCA,CIUDADANOS A GOBERNAR,CIUDADANOS A GOBERNAR,179,,Chaco,Senadores Nacionales,109,SN6,6,20000,0
+180,5,VERDE A,VERDE A,PARTIDO PROYECTO SUR CHACO,PARTIDO PROYECTO SUR CHACO,180,,Chaco,Senadores Nacionales,110,SN6,6,20000,0
+501R,6,17 DE OCTUBRE,17 DE OCTUBRE,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Chaco,Senadores Nacionales,111,SN6,6,20000,0
+501O,7,CELESTE Y BLANCA,CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Chaco,Senadores Nacionales,112,SN6,6,20000,0
+501P,8,frente patriotico,frente patriotico,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Chaco,Senadores Nacionales,113,SN6,6,20000,0
+501F,9,sinceramente peronista,sinceramente peronista,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Chaco,Senadores Nacionales,114,SN6,6,20000,0
+502,10,ALIANZA ALTERNATIVA RENOVADORA FEDERAL,ALIANZA ALTERNATIVA RENOVADORA FEDERAL,ALTERNATIVA RENOVADORA FEDERAL,ALTERNATIVA RENOVADORA FEDERAL,502,,Chaco,Senadores Nacionales,115,SN6,6,20000,0
+503A,11,Unidad,Unidad,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Chaco,Senadores Nacionales,116,SN6,6,20000,0
+503B,12,sumamos,sumamos,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Chaco,Senadores Nacionales,117,SN6,6,20000,0
+504,13,unidad,unidad,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Chaco,Senadores Nacionales,118,SN6,6,20000,0
+504,1,unidad,unidad,FRENTE DE IZQUIERDA,FRENTE DE IZQUIERDA,504,,Chubut,Diputados Nacionales,119,DN7,7,20000,0
+503A,2,proyecto chubut,proyecto chubut,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Chubut,Diputados Nacionales,120,DN7,7,20000,0
+503B,3,juntos somos el cambio chubut,juntos somos el cambio chubut,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Chubut,Diputados Nacionales,121,DN7,7,20000,0
+501,4,CELESTE Y BLANCA,CELESTE Y BLANCA,frente de todos,frente de todos,501,#00A8E4,Chubut,Diputados Nacionales,122,DN7,7,20000,0
+152,5,CONSENSO PARA EL FUTURO,CONSENSO PARA EL FUTURO,MOVIMIENTO POLO SOCIAL,MOVIMIENTO POLO SOCIAL,152,,Chubut,Diputados Nacionales,123,DN7,7,20000,0
+151,6,SUMEMOS,SUMEMOS,PARTIDO INDEPENDIENTE DE CHUBUT,PARTIDO INDEPENDIENTE DE CHUBUT,151,,Chubut,Diputados Nacionales,124,DN7,7,20000,0
+502A,7,porsiemprechubut,porsiemprechubut,CHUBUT AL FRENTE,CHUBUT AL FRENTE,502,,Chubut,Diputados Nacionales,125,DN7,7,20000,0
+502B,8,la militancia al frente,la militancia al frente,CHUBUT AL FRENTE,CHUBUT AL FRENTE,502,,Chubut,Diputados Nacionales,126,DN7,7,20000,0
+13,1,13 1 A - Unidad de la izquierda,13 1 A - Unidad de la izquierda,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,Entre Ríos,Diputados Nacionales,127,DN8,8,20000,0
+68,2,68 UNIDAD A,68 UNIDAD A,nueva izquierda,nueva izquierda,68,,Entre Ríos,Diputados Nacionales,128,DN8,8,20000,0
+502A,3,502A FUTURO ENTRERRIANO,502A FUTURO ENTRERRIANO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Entre Ríos,Diputados Nacionales,129,DN8,8,20000,0
+502B,4,502B DEFENSORES DEL CAMBIO,502B DEFENSORES DEL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Entre Ríos,Diputados Nacionales,130,DN8,8,20000,0
+502C,5,502C JUNTOS SOMOS EL CAMBIO,502C JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Entre Ríos,Diputados Nacionales,131,DN8,8,20000,0
+501,6,501A CELESTE Y BLANCA,501A CELESTE Y BLANCA,frente de todos,frente de todos,501,#00A8E4,Entre Ríos,Diputados Nacionales,132,DN8,8,20000,0
+50A,7,50A - Consenso Federal,50A - Consenso Federal,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Entre Ríos,Diputados Nacionales,133,DN8,8,20000,0
+50B,8,50B - Consenso Federal,50B - Consenso Federal,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Entre Ríos,Diputados Nacionales,134,DN8,8,20000,0
+13,1,13 1 A - Unidad de la izquierda,13 1 A - Unidad de la izquierda,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,Entre Ríos,Senadores Nacionales,135,SN8,8,20000,0
+68,2,68 UNIDAD A,68 UNIDAD A,nueva izquierda,nueva izquierda,68,,Entre Ríos,Senadores Nacionales,136,SN8,8,20000,0
+502A,3,502A FUTURO ENTRERRIANO,502A FUTURO ENTRERRIANO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Entre Ríos,Senadores Nacionales,137,SN8,8,20000,0
+502B,4,502B DEFENSORES DEL CAMBIO,502B DEFENSORES DEL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Entre Ríos,Senadores Nacionales,138,SN8,8,20000,0
+502C,5,502C JUNTOS SOMOS EL CAMBIO,502C JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Entre Ríos,Senadores Nacionales,139,SN8,8,20000,0
+501,6,501A CELESTE Y BLANCA,501A CELESTE Y BLANCA,frente de todos,frente de todos,501,#00A8E4,Entre Ríos,Senadores Nacionales,140,SN8,8,20000,0
+50A,7,50A - Consenso Federal,50A - Consenso Federal,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Entre Ríos,Senadores Nacionales,141,SN8,8,20000,0
+50B,8,50B - Consenso Federal,50B - Consenso Federal,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Entre Ríos,Senadores Nacionales,142,SN8,8,20000,0
+231A,1,UNIDAD,UNIDAD,Movimiento Socialista de los Trabajadores,Movimiento Socialista de los Trabajadores,38,,Formosa,Diputados Nacionales,143,DN9,9,20000,0
+501A,2,celeste y blanca,celeste y blanca,frente de todos,frente de todos,501,#00A8E4,Formosa,Diputados Nacionales,144,DN9,9,20000,0
+502A,3,Consenso para el futuro,Consenso para el futuro,CONSENSO FEDERAL,CONSENSO FEDERAL,502,#031F73,Formosa,Diputados Nacionales,145,DN9,9,20000,0
+503A,4,JUNTOS POR LA INTEGRACION Y EL DESARROLLO (A),JUNTOS POR LA INTEGRACION Y EL DESARROLLO (A),FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,503,,Formosa,Diputados Nacionales,146,DN9,9,20000,0
+503B,5,JUNTOS SOMOS EL CAMBIO (B),JUNTOS SOMOS EL CAMBIO (B),FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,503,,Formosa,Diputados Nacionales,147,DN9,9,20000,0
+503C,6,vamos juntos (C),vamos juntos (C),FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,FRENTE AMPLIO FORMOSEÑO JUNTOS POR EL CAMBIO,503,,Formosa,Diputados Nacionales,148,DN9,9,20000,0
+33,1,LISTA A UNIR MI JUJUY,LISTA A UNIR MI JUJUY,unir,unir,33,,Jujuy,Diputados Nacionales,149,DN10,10,20000,0
+501B,2,b - arriba jujuy,b - arriba jujuy,frente de todos,frente de todos,501,#00A8E4,Jujuy,Diputados Nacionales,150,DN10,10,20000,0
+501E,3,E- para volver a tener futuro,E- para volver a tener futuro,frente de todos,frente de todos,501,#00A8E4,Jujuy,Diputados Nacionales,151,DN10,10,20000,0
+501F,4,F- CELESTE Y BLANCO DE LOS TRABAJADORES,F- CELESTE Y BLANCO DE LOS TRABAJADORES,frente de todos,frente de todos,501,#00A8E4,Jujuy,Diputados Nacionales,152,DN10,10,20000,0
+502,5,cambia jujuy,cambia jujuy,juntos por el cambio,juntos por el cambio,502,#FFCD00,Jujuy,Diputados Nacionales,153,DN10,10,20000,0
+503,6,celeste y blanca,celeste y blanca,consenso federal,consenso federal,503,#031F73,Jujuy,Diputados Nacionales,154,DN10,10,20000,0
+504,7,unidad1,unidad1,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,504,,Jujuy,Diputados Nacionales,155,DN10,10,20000,0
+13,1,1A-UNIDAD DE LA IZQUIERDA,1A-UNIDAD DE LA IZQUIERDA,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,La Pampa,Diputados Nacionales,156,DN11,11,20000,0
+133,2,A-UNIDAD,A-UNIDAD,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,503,,La Pampa,Diputados Nacionales,157,DN11,11,20000,0
+135,3,A-JUNTOS SOMOS EL CAMBIO/A- RENOVACION Y CAMBIO,A-JUNTOS SOMOS EL CAMBIO/A- RENOVACION Y CAMBIO,juntos por el cambio,juntos por el cambio,502,#FFCD00,La Pampa,Diputados Nacionales,158,DN11,11,20000,0
+136,4,A- CELESTE Y BLANCA,A- CELESTE Y BLANCA,frente de todos,frente de todos,501,#00A8E4,La Pampa,Diputados Nacionales,159,DN11,11,20000,0
+137,5,A- CONSENSO PARA EL FUTURO/CONSENSO PAMPEANO,A- CONSENSO PARA EL FUTURO/CONSENSO PAMPEANO,CONSENSO FEDERAL / PARTIDO SOCIALISTA,CONSENSO FEDERAL / PARTIDO SOCIALISTA,50,,La Pampa,Diputados Nacionales,160,DN11,11,20000,0
+13,1,1a - unidad de la izquierda,1a - unidad de la izquierda,movimiento al socialismo (mas),movimiento al socialismo (mas),13,,La Rioja,Diputados Nacionales,161,DN12,12,20000,0
+33,2,LISTA A - DESPERTAR,LISTA A - DESPERTAR,UNIR,UNIR,33,,La Rioja,Diputados Nacionales,162,DN12,12,20000,0
+82,3,E - ES POSIBLE,E - ES POSIBLE,compromiso federal,compromiso federal,82,,La Rioja,Diputados Nacionales,163,DN12,12,20000,0
+501,4,A - UNIDAD A,A - UNIDAD A,FRENTE DE IZQUIERDA Y TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y TRABAJADORES - UNIDAD,501,,La Rioja,Diputados Nacionales,164,DN12,12,20000,0
+502,5,LISTA A - HECTOR OLIVARES,LISTA A - HECTOR OLIVARES,juntos por la rioja,juntos por la rioja,502,,La Rioja,Diputados Nacionales,165,DN12,12,20000,0
+503,6,LISTA A - CELESTE Y BLANCA,LISTA A - CELESTE Y BLANCA,frente de todos,frente de todos,503,#00A8E4,La Rioja,Diputados Nacionales,166,DN12,12,20000,0
+501,1,UNIDAD,UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES  - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES  - UNIDAD,501,,Mendoza,Diputados Nacionales,167,DN13,13,20000,0
+503,2,A MEJOR PARA MENDOZA,A MEJOR PARA MENDOZA,CAMBIA MENDOZA,CAMBIA MENDOZA,503,,Mendoza,Diputados Nacionales,168,DN13,13,20000,0
+502,3,Lista A celeste y blanca,Lista A celeste y blanca,FRENTE DE TODOS,FRENTE DE TODOS,502,#00A8E4,Mendoza,Diputados Nacionales,169,DN13,13,20000,0
+222,4,CONSENSO PARA EL FUTURO-1,CONSENSO PARA EL FUTURO-1,protectora fuerza politica,protectora fuerza politica,222,,Mendoza,Diputados Nacionales,170,DN13,13,20000,0
+50,1,Lista PARTIDO SOCIALISTA,Lista PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,PARTIDO SOCIALISTA,50,,Misiones,Diputados Nacionales,171,DN14,14,20000,0
+71,2,Lista A - UNIDAD,Lista A - UNIDAD,PARTIDO DEL OBRERO,PARTIDO DEL OBRERO,71,,Misiones,Diputados Nacionales,172,DN14,14,20000,0
+501,3,"Lista ROJA, AZUL Y BLANCA","Lista ROJA, AZUL Y BLANCA",FRENTE RENOVADOR DE LA CONCORDIA,FRENTE RENOVADOR DE LA CONCORDIA,501,,Misiones,Diputados Nacionales,173,DN14,14,20000,0
+502,4,LISTA F - CELESTE Y BLANCA,LISTA F - CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,502,#00A8E4,Misiones,Diputados Nacionales,174,DN14,14,20000,0
+503A,5,LISTA A JUNTOS SOMOS EL CAMBIO,LISTA A JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Misiones,Diputados Nacionales,175,DN14,14,20000,0
+503B,6,LISTA B Juntos por misiones,LISTA B Juntos por misiones,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Misiones,Diputados Nacionales,176,DN14,14,20000,0
+503C,7,LISTA C JUNTOS,LISTA C JUNTOS,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Misiones,Diputados Nacionales,177,DN14,14,20000,0
+13,1,1a UNIDAD DE LA IZQUIERDA,1a UNIDAD DE LA IZQUIERDA,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,Neuquén,Diputados Nacionales,178,DN15,15,20000,0
+133,2,UNIDAD A,UNIDAD A,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,502,,Neuquén,Diputados Nacionales,179,DN15,15,20000,0
+135A,3,JUNTOS SOMOS EL CAMBIO,JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,501,#FFCD00,Neuquén,Diputados Nacionales,180,DN15,15,20000,0
+135B,4,participación y renovación,participación y renovación,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,501,#FFCD00,Neuquén,Diputados Nacionales,181,DN15,15,20000,0
+151A,5,LETRA A -  DEFENDAMOS NEUQUEN,LETRA A -  DEFENDAMOS NEUQUEN,MOVIMIENTO POPULAR NEUQUINO,MOVIMIENTO POPULAR NEUQUINO,151,,Neuquén,Diputados Nacionales,182,DN15,15,20000,0
+151B,6,unidos si podemos lista b,unidos si podemos lista b,MOVIMIENTO POPULAR NEUQUINO,MOVIMIENTO POPULAR NEUQUINO,151,,Neuquén,Diputados Nacionales,183,DN15,15,20000,0
+137,7,CONSENSO PARA EL FUTURO,CONSENSO PARA EL FUTURO,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Neuquén,Diputados Nacionales,184,DN15,15,20000,0
+136,8,CELESTE Y BLANCA,CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,503,#00A8E4,Neuquén,Diputados Nacionales,185,DN15,15,20000,0
+13,1,UNIDAD DE LA IZQUIERDA,UNIDAD DE LA IZQUIERDA,MOVIMIENTO AL SOCIALISMO,MOVIMIENTO AL SOCIALISMO,13,,Neuquén,Senadores Nacionales,186,SN15,15,20000,0
+133,2,UNIDAD A,UNIDAD A,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,502,,Neuquén,Senadores Nacionales,187,SN15,15,20000,0
+135,3,JUNTOS SOMOS EL CAMBIO,JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,501,#FFCD00,Neuquén,Senadores Nacionales,188,SN15,15,20000,0
+136,4,CELESTE Y BLANCA,CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,503,#00A8E4,Neuquén,Senadores Nacionales,189,SN15,15,20000,0
+137,5,a,a,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Neuquén,Senadores Nacionales,190,SN15,15,20000,0
+151B,6,B UNIDOS SI PODEMOS,B UNIDOS SI PODEMOS,MOVIMIENTO POPULAR NEUQUINO,MOVIMIENTO POPULAR NEUQUINO,151,,Neuquén,Senadores Nacionales,191,SN15,15,20000,0
+151A,7,LETRA A -  DEFENDAMOS NEUQUEN,LETRA A -  DEFENDAMOS NEUQUEN,MOVIMIENTO POPULAR NEUQUINO,MOVIMIENTO POPULAR NEUQUINO,151,,Neuquén,Senadores Nacionales,192,SN15,15,20000,0
+13,1,LISTA A UNIDAD DE LA IZQUIERDA,LISTA A UNIDAD DE LA IZQUIERDA,MOVIMIENTO AL SOCIALISMO - MAS,MOVIMIENTO AL SOCIALISMO - MAS,13,,Rio Negro,Diputados Nacionales,193,DN16,16,20000,0
+133-503,2,LISTA A UNIDAD,LISTA A UNIDAD,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,503,,Rio Negro,Diputados Nacionales,194,DN16,16,20000,0
+135-501,3,LISTA A JUNTOS SOMOS EL CAMBIO,LISTA A JUNTOS SOMOS EL CAMBIO,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,501,#FFCD00,Rio Negro,Diputados Nacionales,195,DN16,16,20000,0
+136-502,4,LISTA A CELESTE Y BLANCA,LISTA A CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,502,#00A8E4,Rio Negro,Diputados Nacionales,196,DN16,16,20000,0
+169,5,LISTA A SIGAMOS CRECIENDO ,LISTA A SIGAMOS CRECIENDO ,juntos somos rio negro,juntos somos rio negro,169,,Rio Negro,Diputados Nacionales,197,DN16,16,20000,0
+13,1,LISTA A Unidad de la Izquierda,LISTA A Unidad de la Izquierda,MOVIMIENTO AL SOCIALISMO - MAS,MOVIMIENTO AL SOCIALISMO - MAS,13,,Rio Negro,Senadores Nacionales,198,SN16,16,20000,0
+133-503,2,LISTA A UNIDAD,LISTA A UNIDAD,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,503,,Rio Negro,Senadores Nacionales,199,SN16,16,20000,0
+136-502,3,LISTA A CELESTE Y BLANCA,LISTA A CELESTE Y BLANCA,FRENTE DE TODOS,FRENTE DE TODOS,502,#00A8E4,Rio Negro,Senadores Nacionales,200,SN16,16,20000,0
+169,4,LISTA A SIGAMOS CRECIENDO ,LISTA A SIGAMOS CRECIENDO ,juntos somos rio negro,juntos somos rio negro,169,,Rio Negro,Senadores Nacionales,201,SN16,16,20000,0
+131-19,1,FRENTE NOS (A),FRENTE NOS (A),FRENTE NOS PARTIDO CONSERVADOR POPULAR,FRENTE NOS PARTIDO CONSERVADOR POPULAR,19,,Salta,Diputados Nacionales,202,DN17,17,20000,0
+133-504,2,unidad,unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,504,,Salta,Diputados Nacionales,203,DN17,17,20000,0
+135-503A,3,JUNTOS SOMOS EL CAMBIO (A),JUNTOS SOMOS EL CAMBIO (A),JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Salta,Diputados Nacionales,204,DN17,17,20000,0
+135-503I,4,UN CAMBIO PARA SALTA (i),UN CAMBIO PARA SALTA (i),JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Salta,Diputados Nacionales,205,DN17,17,20000,0
+136/501A,5,celeste y blanca,celeste y blanca,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Salta,Diputados Nacionales,206,DN17,17,20000,0
+136/501B,6,"con todos, sinceramente","con todos, sinceramente",FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Salta,Diputados Nacionales,207,DN17,17,20000,0
+136/501K,7,TENEMOS FUTURO (k),TENEMOS FUTURO (k),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Salta,Diputados Nacionales,208,DN17,17,20000,0
+137-502,8,CONSENSO POR SALTA,CONSENSO POR SALTA,UNIÓN POR SAlta,UNIÓN POR SAlta,502,,Salta,Diputados Nacionales,209,DN17,17,20000,0
+131-19,1,FRENTE NOS,FRENTE NOS,fRENTE NOS PARTIDO CONSERVADOR POPULAR,fRENTE NOS PARTIDO CONSERVADOR POPULAR,19,,Salta,Senadores Nacionales,210,SN17,17,20000,0
+133-504,2,unidad (A),unidad (A),FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,504,,Salta,Senadores Nacionales,211,SN17,17,20000,0
+135-503,3,juntos por salta (b),juntos por salta (b),JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Salta,Senadores Nacionales,212,SN17,17,20000,0
+136-501A,4,celeste y blanca,celeste y blanca,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Salta,Senadores Nacionales,213,SN17,17,20000,0
+136-501K,5,TENEMOS FUTURO (K),TENEMOS FUTURO (K),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Salta,Senadores Nacionales,214,SN17,17,20000,0
+137-502,6,CONSENSO POR SALTA,CONSENSO POR SALTA,"CONSENSO POR SALTA, UNIÓN POR SAlta ","CONSENSO POR SALTA, UNIÓN POR SAlta ",502,,Salta,Senadores Nacionales,215,SN17,17,20000,0
+135,1,Somos el cambio,Somos el cambio,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,135,#FFCD00,San Juan,Diputados Nacionales,216,DN18,18,20000,0
+136,2,Frente de Todos,Frente de Todos,,,,,San Juan,Diputados Nacionales,217,DN18,18,20000,0
+501,3,Alianza Frente de Todos San Juan - Celeste y Blanca,Alianza Frente de Todos San Juan - Celeste y Blanca,,,,,San Juan,Diputados Nacionales,218,DN18,18,20000,0
+503,4,Alianza Juntos por el Cambio San Juan - Con Vos,Alianza Juntos por el Cambio San Juan - Con Vos,,,,,San Juan,Diputados Nacionales,219,DN18,18,20000,0
+504,5,Alianza consenso federal San juan - Blanca unidad,Alianza consenso federal San juan - Blanca unidad,,,,,San Juan,Diputados Nacionales,220,DN18,18,20000,0
+50503,6,Alianza Juntos por el Cambio San Juan - Defensores del Cambio,Alianza Juntos por el Cambio San Juan - Defensores del Cambio,,,,,San Juan,Diputados Nacionales,221,DN18,18,20000,0
+50504,7,Alianza consenso federal San juan - Concertación,Alianza consenso federal San juan - Concertación,,,,,San Juan,Diputados Nacionales,222,DN18,18,20000,0
+501A,1,unidas y unidos,unidas y unidos,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,501,,San Luis,Diputados Nacionales,223,DN19,19,20000,0
+502A,2,A San Luis Unido,A San Luis Unido,juntos por el cambio,juntos por el cambio,502,#FFCD00,San Luis,Diputados Nacionales,224,DN19,19,20000,0
+502B,3,B SOMOS POR LA VIDA,B SOMOS POR LA VIDA,juntos por el cambio,juntos por el cambio,502,#FFCD00,San Luis,Diputados Nacionales,225,DN19,19,20000,0
+503A,4,A UNIDAD,A UNIDAD,frente de todos,frente de todos,503,#00A8E4,San Luis,Diputados Nacionales,226,DN19,19,20000,0
+204A,5,212 - ACUERDO SAN LUIS,212 - ACUERDO SAN LUIS,CONSENSO FEDERAL,CONSENSO FEDERAL,204,#031F73,San Luis,Diputados Nacionales,227,DN19,19,20000,0
+13,6,lista a unidad de la izquierda,lista a unidad de la izquierda,Movimiento al socialismo,Movimiento al socialismo,13,,San Luis,Diputados Nacionales,228,DN19,19,20000,0
+13,1,UNIDAD DE LA IZQUIERDA,UNIDAD DE LA IZQUIERDA,movimiento al socialismo,movimiento al socialismo,13,,Santa Cruz,Diputados Nacionales,229,DN20,20,20000,0
+133-501,2,UNIDAD,UNIDAD,frente de izquierda y de trabajadores-unidad,frente de izquierda y de trabajadores-unidad,501,,Santa Cruz,Diputados Nacionales,230,DN20,20,20000,0
+135-503A,3,cambiando juntos santa cruz,cambiando juntos santa cruz,juntos por el cambio,juntos por el cambio,503,#FFCD00,Santa Cruz,Diputados Nacionales,231,DN20,20,20000,0
+135-503B,4,juntos por vos,juntos por vos,juntos por el cambio,juntos por el cambio,503,#FFCD00,Santa Cruz,Diputados Nacionales,232,DN20,20,20000,0
+135-503C,5,NUESTRA SANTA CRUZ,NUESTRA SANTA CRUZ,juntos por el cambio,juntos por el cambio,503,#FFCD00,Santa Cruz,Diputados Nacionales,233,DN20,20,20000,0
+135-503D,6,para salir adelante,para salir adelante,juntos por el cambio,juntos por el cambio,503,#FFCD00,Santa Cruz,Diputados Nacionales,234,DN20,20,20000,0
+135-503E,7,Proyecto Alternativo,Proyecto Alternativo,juntos por el cambio,juntos por el cambio,503,#FFCD00,Santa Cruz,Diputados Nacionales,235,DN20,20,20000,0
+136-502A,8,ACUERDO SANTACRUCEÑO,ACUERDO SANTACRUCEÑO,frente de todos,frente de todos,502,#00A8E4,Santa Cruz,Diputados Nacionales,236,DN20,20,20000,0
+136-502B,9,NACE UNA ESPERANZA,NACE UNA ESPERANZA,frente de todos,frente de todos,502,#00A8E4,Santa Cruz,Diputados Nacionales,237,DN20,20,20000,0
+136-502C,10,SER SANTA CRUZ,SER SANTA CRUZ,frente de todos,frente de todos,502,#00A8E4,Santa Cruz,Diputados Nacionales,238,DN20,20,20000,0
+176,11,consenso federal,consenso federal,frente renovador autentico,frente renovador autentico,86,,Santa Cruz,Diputados Nacionales,239,DN20,20,20000,0
+13,1,movimiento al socialismo,movimiento al socialismo,movimiento al socialismo,movimiento al socialismo,13,,Santa Cruz,Gobernador y vice,240,G20,20,20000,0
+701A,2,ALTERNATIVA FEDERAL,ALTERNATIVA FEDERAL,nueva Santa Cruz,nueva Santa Cruz,701,,Santa Cruz,Gobernador y vice,241,G20,20,20000,0
+701B,3,DEFENSORES DEL CAMBIO SANTA CRUZ,DEFENSORES DEL CAMBIO SANTA CRUZ,nueva Santa Cruz,nueva Santa Cruz,701,,Santa Cruz,Gobernador y vice,242,G20,20,20000,0
+701C,4,ENCUENTRO CIUDADANO,ENCUENTRO CIUDADANO,nueva Santa Cruz,nueva Santa Cruz,701,,Santa Cruz,Gobernador y vice,243,G20,20,20000,0
+701D,5,FE SANTA CRUZ,FE SANTA CRUZ,nueva Santa Cruz,nueva Santa Cruz,701,,Santa Cruz,Gobernador y vice,244,G20,20,20000,0
+701E,6,MEJOREMOS SANTA CRUZ,MEJOREMOS SANTA CRUZ,nueva Santa Cruz,nueva Santa Cruz,701,,Santa Cruz,Gobernador y vice,245,G20,20,20000,0
+701F,7,PARA SALIR ADELANTE,PARA SALIR ADELANTE,nueva Santa Cruz,nueva Santa Cruz,701,,Santa Cruz,Gobernador y vice,246,G20,20,20000,0
+701G,8,SOCIALISMO SANTACRUCEÑO,SOCIALISMO SANTACRUCEÑO,nueva Santa Cruz,nueva Santa Cruz,701,,Santa Cruz,Gobernador y vice,247,G20,20,20000,0
+702A,9,ACUERDO SANTACRUCEÑO,ACUERDO SANTACRUCEÑO,FRENTE DE TODOS,FRENTE DE TODOS,702,#00A8E4,Santa Cruz,Gobernador y vice,248,G20,20,20000,0
+702B,10,NACE UNA ESPERANZA,NACE UNA ESPERANZA,FRENTE DE TODOS,FRENTE DE TODOS,702,#00A8E4,Santa Cruz,Gobernador y vice,249,G20,20,20000,0
+702C,11,SER SANTA CRUZ,SER SANTA CRUZ,FRENTE DE TODOS,FRENTE DE TODOS,702,#00A8E4,Santa Cruz,Gobernador y vice,250,G20,20,20000,0
+703,12,,,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,703,,Santa Cruz,Gobernador y vice,251,G20,20,20000,0
+710,13,,,SANTA CRUZ SOMOS TODOS,SANTA CRUZ SOMOS TODOS,710,,Santa Cruz,Gobernador y vice,252,G20,20,20000,0
+13,1,1A - Unidad de la Izquierda,1A - Unidad de la Izquierda,movimiento al socialismo,movimiento al socialismo,13,,Santa Fe,Diputados Nacionales,253,DN21,21,20000,0
+36A,2,LISTA A - CELESTE LEALTAD ANIMAL,LISTA A - CELESTE LEALTAD ANIMAL,partido autonomista,partido autonomista,36,,Santa Fe,Diputados Nacionales,254,DN21,21,20000,0
+36B,3,LISTA B - ACCION SANTAFESINA,LISTA B - ACCION SANTAFESINA,partido autonomista,partido autonomista,36,,Santa Fe,Diputados Nacionales,255,DN21,21,20000,0
+36C,4,LISTA C - ROJO UNIDOS POR LA FE Y LA VIDA,LISTA C - ROJO UNIDOS POR LA FE Y LA VIDA,partido autonomista,partido autonomista,36,,Santa Fe,Diputados Nacionales,256,DN21,21,20000,0
+36D,5,LISTA D - AMARILLO VALORES PARA ARGENTINA,LISTA D - AMARILLO VALORES PARA ARGENTINA,partido autonomista,partido autonomista,36,,Santa Fe,Diputados Nacionales,257,DN21,21,20000,0
+36E,6,LISTA D - NARANJA CREER PARA CRECER,LISTA D - NARANJA CREER PARA CRECER,partido autonomista,partido autonomista,36,,Santa Fe,Diputados Nacionales,258,DN21,21,20000,0
+65,7,LISTA E - UNIDOS X SANTA FE,LISTA E - UNIDOS X SANTA FE,union celeste y blanco,union celeste y blanco,65,,Santa Fe,Diputados Nacionales,259,DN21,21,20000,0
+87,8,LISTA A - OLA CELESTE,LISTA A - OLA CELESTE,unite por la libertad y la dignidad,unite por la libertad y la dignidad,87,,Santa Fe,Diputados Nacionales,260,DN21,21,20000,0
+131-501-1A,9,LISTA 1A - SIEMPRE CELESTES,LISTA 1A - SIEMPRE CELESTES,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,261,DN21,21,20000,0
+131-501-2B,10,2B - MALVINAS ARGENTINAS,2B - MALVINAS ARGENTINAS,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,262,DN21,21,20000,0
+131-501-3C,11,3C - nos p/ la familia y la vida,3C - nos p/ la familia y la vida,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,263,DN21,21,20000,0
+131-501-4D,12,4D - PAZ Y TRABAJO,4D - PAZ Y TRABAJO,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,264,DN21,21,20000,0
+131-501-5E,13,5E - POR LOS ANIMALES,5E - POR LOS ANIMALES,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,265,DN21,21,20000,0
+131-501-6F,14,6F - FRENTE EMANCIPADOR,6F - FRENTE EMANCIPADOR,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,266,DN21,21,20000,0
+131-501-7G,15,7G - SANTA FE CON VALORES,7G - SANTA FE CON VALORES,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,267,DN21,21,20000,0
+131-501-8H,16,8H - por la vida,8H - por la vida,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,268,DN21,21,20000,0
+131-501-9I,17,9I - progreso y bienestar,9I - progreso y bienestar,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,269,DN21,21,20000,0
+131-501-10J,18,10J - salvemos dos vidas,10J - salvemos dos vidas,frente federal nos,frente federal nos,501,,Santa Fe,Diputados Nacionales,270,DN21,21,20000,0
+133-503,19,LISTA A - UNIDAD,LISTA A - UNIDAD,frente de izquierda y de trabajadores-unidad,frente de izquierda y de trabajadores-unidad,503,,Santa Fe,Diputados Nacionales,271,DN21,21,20000,0
+135-504A,20,LISTA A - Juntos somos el cambio,LISTA A - Juntos somos el cambio,juntos por el cambio,juntos por el cambio,504,#FFCD00,Santa Fe,Diputados Nacionales,272,DN21,21,20000,0
+135-504B,21,Lista B - Vamos todos,Lista B - Vamos todos,juntos por el cambio,juntos por el cambio,504,#FFCD00,Santa Fe,Diputados Nacionales,273,DN21,21,20000,0
+136-505,22,K - celeste y blanca,K - celeste y blanca,frente de todos,frente de todos,505,#00A8E4,Santa Fe,Diputados Nacionales,274,DN21,21,20000,0
+137-502,23,LISTA A - ADELANTE,LISTA A - ADELANTE,consenso federal,consenso federal,502,#031F73,Santa Fe,Diputados Nacionales,275,DN21,21,20000,0
+177,24,LISTA 1 A - desarrollo agroindustrial,LISTA 1 A - desarrollo agroindustrial,movimiento independiente renovador,movimiento independiente renovador,177,,Santa Fe,Diputados Nacionales,276,DN21,21,20000,0
+199,25,LISTA A - soy pro vida,LISTA A - soy pro vida,partido popular,partido popular,199,,Santa Fe,Diputados Nacionales,277,DN21,21,20000,0
+506,26,Lista A - Apostemos por la Vida,Lista A - Apostemos por la Vida,alternativa federal,alternativa federal,506,,Santa Fe,Diputados Nacionales,278,DN21,21,20000,0
+38,1,Lista Unidad - A,Lista Unidad - A,movimiento socialista de los trabajadores,movimiento socialista de los trabajadores,38,,Santiago del Estero,Diputados Nacionales,279,DN22,22,20000,0
+40,2,Lista 40A Libres,Lista 40A Libres,MOVIMIENTO LIBRES DEL SUR,MOVIMIENTO LIBRES DEL SUR,40,,Santiago del Estero,Diputados Nacionales,280,DN22,22,20000,0
+87,3,Lista A Pro Vida,Lista A Pro Vida,UNITE! POR LA lIBERTAD Y LA dIGNIDAD,UNITE! POR LA lIBERTAD Y LA dIGNIDAD,87,,Santiago del Estero,Diputados Nacionales,281,DN22,22,20000,0
+178,4,Lista  1A Unidos Por El Futuro,Lista  1A Unidos Por El Futuro,PARTIDO POPULAR,PARTIDO POPULAR,178,,Santiago del Estero,Diputados Nacionales,282,DN22,22,20000,0
+179,5,Lista  179 A Celeste,Lista  179 A Celeste,PARTIDO DIGNIDAD POPULAR,PARTIDO DIGNIDAD POPULAR,179,,Santiago del Estero,Diputados Nacionales,283,DN22,22,20000,0
+501,6,Lista A Por Santiago,Lista A Por Santiago,frente civico por santiago,frente civico por santiago,501,,Santiago del Estero,Diputados Nacionales,284,DN22,22,20000,0
+502,7,Lista A celeste y blanca,Lista A celeste y blanca,frente de todos,frente de todos,502,#00A8E4,Santiago del Estero,Diputados Nacionales,285,DN22,22,20000,0
+503A,8,Lista 503 A Juntos Podemos,Lista 503 A Juntos Podemos,juntos por el cambio,juntos por el cambio,503,#FFCD00,Santiago del Estero,Diputados Nacionales,286,DN22,22,20000,0
+503B,9,Lista 503 B Cambia Santiago,Lista 503 B Cambia Santiago,juntos por el cambio,juntos por el cambio,503,#FFCD00,Santiago del Estero,Diputados Nacionales,287,DN22,22,20000,0
+38,1,Lista Unidad - A,Lista Unidad - A,movimiento socialista de los trabajadores,movimiento socialista de los trabajadores,38,,Santiago del Estero,Senadores Nacionales,288,SN22,22,20000,0
+40,2,Lista 40A Libres,Lista 40A Libres,MOVIMIENTO LIBRES DEL SUR,MOVIMIENTO LIBRES DEL SUR,40,,Santiago del Estero,Senadores Nacionales,289,SN22,22,20000,0
+87,3,Lista A Pro Vida,Lista A Pro Vida,UNITE! POR LA lIBERTAD Y LA dIGNIDAD,UNITE! POR LA lIBERTAD Y LA dIGNIDAD,87,,Santiago del Estero,Senadores Nacionales,290,SN22,22,20000,0
+178,4,unidos por el futuro,unidos por el futuro,PARTIDO POPULAR,PARTIDO POPULAR,178,,Santiago del Estero,Senadores Nacionales,291,SN22,22,20000,0
+179,5,Lista 179  A - Celeste,Lista 179  A - Celeste,PARTIDO DIGNIDAD POPULAR,PARTIDO DIGNIDAD POPULAR,179,,Santiago del Estero,Senadores Nacionales,292,SN22,22,20000,0
+501,6,Lista 501 A Por Santiago,Lista 501 A Por Santiago,frente civico por santiago,frente civico por santiago,501,,Santiago del Estero,Senadores Nacionales,293,SN22,22,20000,0
+502,7,Lista A Celeste y Blanca,Lista A Celeste y Blanca,frente de todos,frente de todos,502,#00A8E4,Santiago del Estero,Senadores Nacionales,294,SN22,22,20000,0
+503A,8,Lista 503 A Juntos Podemos,Lista 503 A Juntos Podemos,juntos por el cambio,juntos por el cambio,503,#FFCD00,Santiago del Estero,Senadores Nacionales,295,SN22,22,20000,0
+503B,9,Lista 503 B Cambia Santiago,Lista 503 B Cambia Santiago,juntos por el cambio,juntos por el cambio,503,#FFCD00,Santiago del Estero,Senadores Nacionales,296,SN22,22,20000,0
+5031A,1,Lista 1A unidad,Lista 1A unidad,FRENTE DE IZQUIERDA Y DE TRABAJADORES,FRENTE DE IZQUIERDA Y DE TRABAJADORES,503,,Tucumán,Diputados Nacionales,297,DN23,23,20000,0
+502A,2,Lista A unidad por tucuman,Lista A unidad por tucuman,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Tucumán,Diputados Nacionales,298,DN23,23,20000,0
+502B,3,Lista B cambia tucuman,Lista B cambia tucuman,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,502,#FFCD00,Tucumán,Diputados Nacionales,299,DN23,23,20000,0
+501B,4,Lista B lealtad a los principios,Lista B lealtad a los principios,frente de todos,frente de todos,501,#00A8E4,Tucumán,Diputados Nacionales,300,DN23,23,20000,0
+501F,5,Lista F Celeste y Blanca,Lista F Celeste y Blanca,frente de todos,frente de todos,501,#00A8E4,Tucumán,Diputados Nacionales,301,DN23,23,20000,0
+5041,6,Lista 1 PROGRESO SOCIAL,Lista 1 PROGRESO SOCIAL,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Tucumán,Diputados Nacionales,302,DN23,23,20000,0
+504B,7,Lista B alternativa tucuman,Lista B alternativa tucuman,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Tucumán,Diputados Nacionales,303,DN23,23,20000,0
+181A,8,Lista A CELESTE Y BLANCA,Lista A CELESTE Y BLANCA,FUERZA REPUBLICANA,FUERZA REPUBLICANA,181,,Tucumán,Diputados Nacionales,304,DN23,23,20000,0
+133 - 203,1,Lista A UNIDAD / Lista unidad,Lista A UNIDAD / Lista unidad,Frente de Izquierda y de los trabajadores / Partido Obrero,Frente de Izquierda y de los trabajadores / Partido Obrero,203,,Tierra del Fuego,Diputados Nacionales,305,DN24,24,20000,0
+135 - 502,2,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Alianza juntos por el cambio Juntos por el cambio TDF,Alianza juntos por el cambio Juntos por el cambio TDF,502,,Tierra del Fuego,Diputados Nacionales,306,DN24,24,20000,0
+136 - 501,3,Lista A celeste y blanca,Lista A celeste y blanca,Alianza frente de todos,Alianza frente de todos,501,,Tierra del Fuego,Diputados Nacionales,307,DN24,24,20000,0
+137 - 69,4,Lista a - Consenso para el futuro soberania fueguina,Lista a - Consenso para el futuro soberania fueguina,Alianza Consenso Federal / gen,Alianza Consenso Federal / gen,69,,Tierra del Fuego,Diputados Nacionales,308,DN24,24,20000,0
+187,5,Lista A unidad,Lista A unidad,partido social patagónico,partido social patagónico,187,,Tierra del Fuego,Diputados Nacionales,309,DN24,24,20000,0
+502,6,Lista C - TIERRA DEL FUEGO CAMBIA,Lista C - TIERRA DEL FUEGO CAMBIA,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,,Tierra del Fuego,Diputados Nacionales,310,DN24,24,20000,0
+503,7,Lista A sigamos juntos,Lista A sigamos juntos,vamos todos a vivir mejor,vamos todos a vivir mejor,503,,Tierra del Fuego,Diputados Nacionales,311,DN24,24,20000,0
+133 - 203,1,Lista A UNIDAD / Lista unidad,Lista A UNIDAD / Lista unidad,Frente de Izquierda y de los trabajadores / Partido Obrero,Frente de Izquierda y de los trabajadores / Partido Obrero,203,,Tierra del Fuego,Senadores Nacionales,312,SN24,24,20000,0
+135 - 502,2,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Alianza juntos por el cambio Juntos por el cambio TDF,Alianza juntos por el cambio Juntos por el cambio TDF,502,,Tierra del Fuego,Senadores Nacionales,313,SN24,24,20000,0
+136 - 501,3,Lista A celeste y blanca,Lista A celeste y blanca,Alianza frente de todos,Alianza frente de todos,501,,Tierra del Fuego,Senadores Nacionales,314,SN24,24,20000,0
+137 - 69,4,Lista a - Consenso para el futuro soberania fueguina,Lista a - Consenso para el futuro soberania fueguina,Alianza Consenso Federal / gen,Alianza Consenso Federal / gen,69,,Tierra del Fuego,Senadores Nacionales,315,SN24,24,20000,0
+187,5,Lista A unidad,Lista A unidad,partido social patagónico,partido social patagónico,187,,Tierra del Fuego,Senadores Nacionales,316,SN24,24,20000,0
+502B,6,Lista B - cantera popular,Lista B - cantera popular,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,,Tierra del Fuego,Senadores Nacionales,317,SN24,24,20000,0
+502C,7,Lista C - TIERRA DEL FUEGO CAMBIA,Lista C - TIERRA DEL FUEGO CAMBIA,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,,Tierra del Fuego,Senadores Nacionales,318,SN24,24,20000,0
+503,8,Lista A sigamos juntos,Lista A sigamos juntos,vamos todos a vivir mejor,vamos todos a vivir mejor,503,,Tierra del Fuego,Senadores Nacionales,319,SN24,24,20000,0
