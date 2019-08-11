@@ -135,18 +135,21 @@ class Problema(TimeStampedModel):
         mesa = carga.mesa if carga else None
         attachment = identificacion.attachment if identificacion else None
 
-        # Me fijo si ya existe problema no resuelto para esa mesa o attachment.
+        # Me fijo si ya existe problema no resuelto ni descartado para esa mesa o attachment.
         problema = Problema.objects.filter(
             mesa=mesa, attachment=attachment
         ).exclude(
             estado=cls.ESTADOS.resuelto
+        ).exclude(
+            estado=cls.ESTADOS.descartado
         ).first()
 
         if not problema:
+            estado_nuevo_problema = cls.ESTADOS.descartado if (reportado_por.troll) else cls.ESTADOS.potencial
             # Lo creo
             problema = Problema.objects.create(
                 mesa=mesa, attachment=attachment,
-                estado=cls.ESTADOS.potencial
+                estado=estado_nuevo_problema
             )
 
         ReporteDeProblema.objects.create(
