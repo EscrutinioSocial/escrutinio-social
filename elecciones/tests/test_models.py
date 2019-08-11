@@ -450,3 +450,24 @@ def test_orden_por_prioridad_status(db):
         mesas_result = MesaCategoria.objects.anotar_prioridad_status(
             ).order_by('prioridad_status')
     assert [m.status for m in mesas_result] == statuses
+
+
+def test_normalizacion_numero(db):
+    m = MesaFactory()
+
+    # removemos ceros a la izquierda si es sólo números
+    m.numero = "0001231"
+    m.save()
+    assert m.numero == "1231"
+
+    # removemos espacios y ponemos en mayúsculas
+    m.numero = "   as928"
+    m.save()
+    assert m.numero == "AS928"
+    
+    # si no son todos dígitos, no sacamos los ceros.
+    s = SeccionFactory()
+    s.numero = "00678vp"
+    s.save()
+    # ... pero si ponemos en mayúsculas
+    assert s.numero == "00678VP"
