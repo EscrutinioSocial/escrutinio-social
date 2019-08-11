@@ -78,6 +78,11 @@ class CodigoReferido(TimeStampedModel):
                 raise
 
 
+class FiscalManager(models.Manager):
+    def get_by_natural_key(self, tipo_dni, dni):
+        return self.get(tipo_dni = tipo_dni, dni = dni)
+
+
 class Fiscal(models.Model):
     """
     Representa al usuario "data-entry" del sistema.
@@ -129,6 +134,8 @@ class Fiscal(models.Model):
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'), )
 
+    objects = FiscalManager()
+        
     def update_last_seen(self, cuando):
         self.last_seen = cuando
         self.save(update_fields=['last_seen'])
@@ -243,6 +250,9 @@ class Fiscal(models.Model):
         self.ingreso_alguna_vez = True
         self.save(update_fields=['ingreso_alguna_vez'])
 
+
+    def natural_key(self):
+        return (self.tipo_dni, self.dni)
 
 @receiver(post_save, sender=Fiscal)
 def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, **kwargs):
