@@ -73,9 +73,32 @@
   }
 },
 {
+  "model": "fiscales.fiscal",
+  "pk": 1,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "13a16943-1f43-4061-8fed-cfd08a8b8145",
+    "email_confirmado": false,
+    "apellido": "Admin",
+    "nombres": "Fiscal",
+    "tipo_dni": "DNI",
+    "dni": "0000000",
+    "troll": false,
+    "user": 1,
+    "seccion": null,
+    "referente": null,
+    "referente_certeza": 100,
+    "referencia_confirmada": false,
+    "referente_nombres": null,
+    "referente_apellido": null,
+    "referido_por_codigos": null
+  }
+},
+{
   "model": "elecciones.eleccion",
   "pk": 1,
-    "fields": {
+  "fields": {
     "fecha": "2019-08-11T11:00:00Z",
     "nombre": "PASO Nacional 2019"
   }
