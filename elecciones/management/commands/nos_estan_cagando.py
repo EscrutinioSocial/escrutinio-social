@@ -2,7 +2,7 @@ import math
 
 from django.core.management.base import BaseCommand
 
-from elecciones.models import Distrito, Seccion, Circuito, Eleccion, Categoria, Mesa, Partido
+from elecciones.models import Distrito, Seccion, Circuito, Eleccion, Categoria, Mesa, Partido, MesaCategoria, TIPOS_DE_AGREGACIONES, NIVELES_DE_AGREGACION, OPCIONES_A_CONSIDERAR
 from elecciones.resultados import Sumarizador
 from escrutinio_social import settings
 
@@ -41,7 +41,7 @@ class Command(BaseCommand):
 
     def status(self, texto):
         self.stdout.write(f"{texto}")
-        #self.stdout.write(self.style.SUCCESS(texto))
+        # self.stdout.write(self.style.SUCCESS(texto))
 
     def status_green(self, texto):
         self.stdout.write(self.style.SUCCESS(texto))
@@ -85,9 +85,45 @@ class Command(BaseCommand):
                 cant_ganadas_cambiemos = cant_ganadas_cambiemos + 1
         return cant_ganadas_fdt, cant_ganadas_cambiemos
 
-    # TODO: Compara la mesa con lo que dio el correo.
-    def comparar_mesa_con_correo(self, mesa):
+    def comparar_mesas_con_correo(self, mesas):
+        """
+        Determina si en alguna mesa nosotros o ellos tiene diferencia con lo informado en el Correo.
+        """
+        for mesa in mesas:
+
+            carga_testigo = self.get_carga_testigo(mesa)
+            if not carga_testigo:
+                self.alerta_mesa(mesa, "No existe carga testigo para la mesa")
+
+            carga_correo = self.get_carga_correo(mesa)
+            if not carga_correo:
+                # TODO preguntar si vale la pena informar esto
+                self.warning_mesa(mesa, f"No existe carga oficial (correo) para la mesa.")
+
+            if carga_testigo and carga_correo:
+                if carga_testigo.firma != carga_correo.firma:
+                    self.alerta_mesa(mesa, f"Tiene diferencias respecto la carga oficial. Testigo: {carga_testigo.firma}. Correo: {carga_correo.firma}.")
+                    if self.get_votos_nuestros_carga(carga_correo) == 0:
+                        self.alerta_mesa(mesa, "La carga oficial reporta 0 votos nuestros")
+
         return
+
+    def get_votos_nuestros_carga(self, carga):
+        opcion_votos_nuestros = carga.opcion_votos().filter(opcion__partido=self.partido_fdt)
+        votos_nuestros = [voto for (opcion, voto) in opcion_votos_nuestros][0]
+        return votos_nuestros
+
+    def get_carga_testigo(self, mesa):
+        return MesaCategoria.objects.get(
+            mesa=mesa,
+            categoria=self.categoria,
+        ).carga_testigo
+
+    def get_carga_correo(self, mesa):
+        return MesaCategoria.objects.get(
+            mesa=mesa,
+            categoria=self.categoria,
+        ).parcial_oficial
 
     def reporte_tendencias(self, mesas, cant_mesas_ganadas_por_fdt, cant_mesas_ganadas_por_cambiemos):
         """
@@ -96,7 +132,7 @@ class Command(BaseCommand):
         dif = 1
         if cant_mesas_ganadas_por_cambiemos + cant_mesas_ganadas_por_fdt != 0:
             dif = math.fabs(cant_mesas_ganadas_por_cambiemos - cant_mesas_ganadas_por_fdt) / (
-                    cant_mesas_ganadas_por_cambiemos + cant_mesas_ganadas_por_fdt)
+                cant_mesas_ganadas_por_cambiemos + cant_mesas_ganadas_por_fdt)
 
         if dif < self.umbral_mesas_ganadas:
             # Está parejo, no tiene sentido.
@@ -110,7 +146,7 @@ class Command(BaseCommand):
             if cant_mesas_ganadas_por_fdt > cant_mesas_ganadas_por_cambiemos:
                 if votos_ellos > votos_nuestros:
                     self.alerta_mesa(mesa, f"En el circuito FdT ganó en la mayoría de las mesas pero en "
-                                           f"ésta no (FdT: {votos_nuestros} votos, JpC: {votos_ellos} votos).")
+                                     f"ésta no (FdT: {votos_nuestros} votos, JpC: {votos_ellos} votos).")
                 elif votos_nuestros > votos_ellos:
                     self.warning_mesa(mesa,
                                       "En el circuito JpC ganó en la mayoría de las mesas pero en ésta no ("
@@ -171,8 +207,8 @@ class Command(BaseCommand):
 
         # Me quedo con las escrutadas.
         mesas = self.sumarizador.mesas(self.categoria).filter(
-                mesacategoria__categoria=self.categoria, 
-                mesacategoria__carga_testigo__isnull=False
+            mesacategoria__categoria=self.categoria,
+            mesacategoria__carga_testigo__isnull=False
         )
 
         if self.analizar_ceros:
@@ -180,13 +216,10 @@ class Command(BaseCommand):
 
         cant_mesas_listas = mesas.count()
         if self.comparar_con_correo:
-            for mesa in mesas:
-                # Los analizo.
-                # FIXME: No tenemos todavía
-                self.comparar_mesa_con_correo(mesa)
+            self.comparar_mesas_con_correo(mesas)
 
         umbral_mesas_superado = cant_mesas_listas > (
-                self.umbral_analisis_estadisticos / 100.0 * total_mesas_del_circuito)
+            self.umbral_analisis_estadisticos / 100.0 * total_mesas_del_circuito)
 
         if not umbral_mesas_superado:
             self.warning(f"No se superó el umbral de mesas listas en circuito {circuito.numero} "
@@ -206,24 +239,24 @@ class Command(BaseCommand):
             self.reporte_promedio(mesas, cant_mesas_listas, promedio_votos_fdt,
                                   promedio_votos_cambiemos)
 
-    def armar_opciones_sumarizador(self, id):
+    def armar_opciones_sumarizador(self, nivel, id):
         opciones = {
-            "nivel_de_agregacion": Eleccion.NIVELES_AGREGACION.circuito,
-            "opciones_a_considerar": Sumarizador.OPCIONES_A_CONSIDERAR.prioritarias,
+            "nivel_de_agregacion": nivel,
+            "opciones_a_considerar": OPCIONES_A_CONSIDERAR.prioritarias,
             "tipo_de_agregacion": self.tipo_de_agregacion,
             "ids_a_considerar": [id]
         }
         return opciones
 
     def crear_sumarizador_circuito(self, circuito):
-        opciones = self.armar_opciones_sumarizador(circuito.id)
+        opciones = self.armar_opciones_sumarizador(NIVELES_AGREGACION.circuito, circuito.id)
         return Sumarizador(**opciones)
 
     def get_resultados_circuito(self, circuito):
         return self.crear_sumarizador_circuito(circuito).get_resultados(self.categoria)
 
     def crear_sumarizador_mesa(self, mesa):
-        opciones = self.armar_opciones_sumarizador(mesa.id)
+        opciones = self.armar_opciones_sumarizador(NIVELES_DE_AGREGACION.mesa, mesa.id)
         return Sumarizador(**opciones)
 
     def get_resultados_mesa(self, mesa):
@@ -244,40 +277,40 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         # Opciones para comparar fraude
-        parser.add_argument("--analizar_ceros", 
-            action="store_true", dest="analizar_ceros",
-            default=False, 
-            help="Busca ceros en votos (default %(default)s)."
-        )
+        parser.add_argument("--analizar_ceros",
+                            action="store_true", dest="analizar_ceros",
+                            default=False,
+                            help="Busca ceros en votos (default %(default)s)."
+                            )
         parser.add_argument("--analizar_tendencias",
-            action="store_true", dest="analizar_tendencias",
-            default=False,
-            help="Busca mesas con cambio de tendencia (default %(default)s).",
-        )
+                            action="store_true", dest="analizar_tendencias",
+                            default=False,
+                            help="Busca mesas con cambio de tendencia (default %(default)s).",
+                            )
         parser.add_argument("--analizar_promedio",
-            action="store_true", dest="analizar_promedio",
-            default=False,
-            help="Busca mesas a más de un desvío estándar del promedio (default %(default)s).",
-        )
+                            action="store_true", dest="analizar_promedio",
+                            default=False,
+                            help="Busca mesas a más de un desvío estándar del promedio (default %(default)s).",
+                            )
         parser.add_argument("--comparar_con_correo",
-            action="store_true", dest="comparar_con_correo",
-            default=False,
-            help="Compara con los resultados que va publicando el Correo (default %(default)s).",
-        )
+                            action="store_true", dest="comparar_con_correo",
+                            default=False,
+                            help="Compara con los resultados que va publicando el Correo (default %(default)s).",
+                            )
 
         # Umbrales para detectar fraudes
         parser.add_argument("--umbral_analisis_estadisticos",
-            type=int, dest="umbral_analisis_estadisticos",
-            help="Umbral de mesas listas por circuito para comenzar a hacer análisis estadísticos "
-                 "(default %(default)s).",
-            default=30
-        )
+                            type=int, dest="umbral_analisis_estadisticos",
+                            help="Umbral de mesas listas por circuito para comenzar a hacer análisis estadísticos "
+                            "(default %(default)s).",
+                            default=30
+                            )
         parser.add_argument("--umbral_mesas_ganadas",
-            type=float, dest="umbral_mesas_ganadas",
-            help="Porcentaje, umbral, de mesas para considerar dentro del "
-                 "circuito que difieren (default %(default)s).",
-            default=0.4
-        )
+                            type=float, dest="umbral_mesas_ganadas",
+                            help="Porcentaje, umbral, de mesas para considerar dentro del "
+                            "circuito que difieren (default %(default)s).",
+                            default=0.4
+                            )
 
         # Nivel de agregación a analizar
         parser.add_argument("--solo_seccion", type=int, dest="solo_seccion",
@@ -291,15 +324,15 @@ class Command(BaseCommand):
 
         # Opciones a considerar
         parser.add_argument("--tipo_de_agregacion",
-            type=str, dest="tipo_de_agregacion",
-            help="Tipo de agregación del tipo de carga: "
-                 f"{Sumarizador.TIPOS_DE_AGREGACIONES.todas_las_cargas}, "
-                 f"{Sumarizador.TIPOS_DE_AGREGACIONES.solo_consolidados}, "
-                 f"{Sumarizador.TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga}; "
-                 "(default %(default)s).",
-            # Por default sólo se analizan los resultados consolidados
-            default=Sumarizador.TIPOS_DE_AGREGACIONES.solo_consolidados
-        )
+                            type=str, dest="tipo_de_agregacion",
+                            help="Tipo de agregación del tipo de carga: "
+                            f"{TIPOS_DE_AGREGACIONES.todas_las_cargas}, "
+                            f"{TIPOS_DE_AGREGACIONES.solo_consolidados}, "
+                            f"{TIPOS_DE_AGREGACIONES.solo_consolidados_doble_carga}; "
+                            "(default %(default)s).",
+                            # Por default sólo se analizan los resultados consolidados
+                            default=TIPOS_DE_AGREGACIONES.solo_consolidados
+                            )
 
     def handle(self, *args, **kwargs):
         """
@@ -319,7 +352,7 @@ class Command(BaseCommand):
         print("Vamos a analizar la categoría:", self.categoria)
 
         self.asignar_nivel_agregacion(kwargs)
-        self.analizar_segun_nivel_agregacion()        
+        self.analizar_segun_nivel_agregacion()
 
     def analizar_segun_nivel_agregacion(self):
         if self.circuito:

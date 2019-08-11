@@ -24,6 +24,7 @@ from .models import (
     AgrupacionCircuito,
     ConfiguracionComputo,
     ConfiguracionComputoDistrito,
+    CargaOficialControl,
 )
 from .forms import CategoriaForm, SeccionForm
 from django.http import HttpResponseRedirect
@@ -196,7 +197,7 @@ class PartidoAdmin(admin.ModelAdmin):
 
 class MesaCategoriaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     list_display = ['mesa', 'categoria', 'status']
-    raw_id_fields = ['mesa', 'categoria', 'carga_testigo', 'taken_by']
+    raw_id_fields = ['mesa', 'categoria', 'carga_testigo', 'carga_oficial', 'parcial_oficial', 'taken_by']
     list_filter = ['status', ]
 
     def get_row_actions(self, obj):
@@ -348,6 +349,10 @@ class ConfiguracionComputoAdmin(admin.ModelAdmin):
     inlines = (ConfiguracionComputoDistritoInline, )
 
 
+class CargaOficialControlAdmin(admin.ModelAdmin):
+    list_display = ['fecha_ultimo_registro']
+
+
 admin.site.register(Eleccion)
 admin.site.register(Carga, CargaAdmin)
 admin.site.register(Distrito, DistritoAdmin)
@@ -365,3 +370,4 @@ admin.site.register(CategoriaOpcion, CategoriaOpcionAdmin)
 admin.site.register(TecnicaProyeccion, TecnicaProyeccionAdmin)
 admin.site.register(AgrupacionCircuitos, AgrupacionCircuitosAdmin)
 admin.site.register(ConfiguracionComputo, ConfiguracionComputoAdmin)
+admin.site.register(CargaOficialControl, CargaOficialControlAdmin)
