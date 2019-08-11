@@ -253,8 +253,8 @@ class Fiscal(models.Model):
 
     def natural_key(self):
         return (self.tipo_dni, self.dni)
-    natural_key.dependencies = ['elecciones.distrito', 'elecciones.seccion']
-    
+    natural_key.dependencies = ['elecciones.distrito', 'elecciones.seccion', 'auth.user']    
+
 @receiver(post_save, sender=Fiscal)
 def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, **kwargs):
     """
