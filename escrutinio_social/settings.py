@@ -241,24 +241,22 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 LOGGING = {
     'version': 1,
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        }
-    },
+    'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'DEBUG',
-            'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
-        }
+        },
     },
     'loggers': {
-        'django.db.backends': {
-            'level': 'DEBUG',
+        'e-va': {
             'handlers': ['console'],
-        }
-    }
+            'level': 'DEBUG',
+        },
+        'csv_import': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
 }
 
 # EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"  # or sendgrid.EmailBackend, or...
