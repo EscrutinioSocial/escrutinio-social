@@ -1139,16 +1139,10 @@ class ConfiguracionComputo(models.Model):
         verbose_name = 'Configuración para cómputo'
         verbose_name_plural = 'Configuraciones para cómputo'
         constraints = [
-<<<<<<< HEAD
             models.UniqueConstraint(
                 fields=['nombre'],
                 name='nombre_unico'
             )
-=======
-            models.UniqueConstraint(fields=['nombre'],
-                                    name='nombre_unico'
-                                    )
->>>>>>> develop
         ]
 
     def __str__(self):
