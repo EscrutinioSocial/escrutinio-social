@@ -56,7 +56,7 @@ def canonizar(valor):
         return valor
     if not isinstance(valor, str):
         return valor
-    valor = valor.upper().strip()    
+    valor = valor.upper().strip()
     if valor.isdigit():
         valor = str(int(valor))  # Esto elimina ceros y lo volvemos a string
     return valor
@@ -433,6 +433,14 @@ class MesaCategoria(models.Model):
         'Carga', related_name='es_testigo', null=True, blank=True, on_delete=models.SET_NULL
     )
 
+    carga_oficial = models.ForeignKey(
+        'Carga', related_name='es_oficial', null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    parcial_oficial = models.ForeignKey(
+        'Carga', related_name='es_parcial_oficial', null=True, blank=True, on_delete=models.SET_NULL
+    )
+
     # timestamp para dar un tiempo de guarda a la espera de una carga
     taken = models.DateTimeField(null=True, blank=True)
     taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
@@ -464,7 +472,6 @@ class MesaCategoria(models.Model):
         self.taken = None
         self.taken_by = None
         self.save(update_fields=['taken', 'taken_by'])
-
 
     def actualizar_orden_de_carga(self):
         """
@@ -553,6 +560,10 @@ class MesaCategoria(models.Model):
         self.status = status
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
+
+    def actualizar_parcial_oficial(self, parcial_oficial):
+        self.parcial_oficial = parcial_oficial
+        self.save(update_fields=['parcial_oficial'])
 
     @classmethod
     def recalcular_orden_de_carga_para_categoria(cls, categoria):
@@ -955,7 +966,13 @@ class Carga(TimeStampedModel):
     para las opciones válidas en la mesa-categoría.
     """
     invalidada = models.BooleanField(null=False, default=False)
-    TIPOS = Choices('problema', 'parcial', 'total')
+    TIPOS = Choices(
+        'problema',
+        'parcial',
+        'total',
+        'total_oficial',
+        'parcial_oficial'
+    )
     tipo = models.CharField(max_length=50, choices=TIPOS)
 
     SOURCES = Choices('web', 'csv', 'telegram')
@@ -1073,8 +1090,6 @@ class TecnicaProyeccion(models.Model):
         return f'Técnica de proyección {self.nombre}'
 
 
-
-
 class AgrupacionCircuitos(models.Model):
     """
     Representa un conjunto de circuitos que se computarán juntos a los efectos de una proyección.
@@ -1107,6 +1122,7 @@ class ConfiguracionComputo(models.Model):
         on_delete=models.CASCADE,
         related_name='configuracion_computo',
     )
+
     class Meta:
         ordering = ('nombre', )
         verbose_name = 'Configuración para cómputo'
@@ -1114,7 +1130,7 @@ class ConfiguracionComputo(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['nombre'],
                                     name='nombre_unico'
-            )
+                                    )
         ]
 
     def __str__(self):
@@ -1125,17 +1141,17 @@ class ConfiguracionComputoDistrito(models.Model):
     """
     Definición de modos de computar resultados para un distrito, de acuerdo a un usuario.
     """
-    configuracion = models.ForeignKey(ConfiguracionComputo, on_delete=models.CASCADE,related_name='configuraciones')
+    configuracion = models.ForeignKey(ConfiguracionComputo, on_delete=models.CASCADE, related_name='configuraciones')
     distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE)
-    agregacion = models.CharField(max_length=30,choices=TIPOS_DE_AGREGACIONES)
-    opciones = models.CharField(max_length=30,choices=OPCIONES_A_CONSIDERAR)
+    agregacion = models.CharField(max_length=30, choices=TIPOS_DE_AGREGACIONES)
+    opciones = models.CharField(max_length=30, choices=OPCIONES_A_CONSIDERAR)
     proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.SET_NULL, default=None, null=True, blank=True)
 
     class Meta:
         verbose_name = 'Configuración para cómputo por distrito'
         verbose_name_plural = 'Configuraciones para cómputo por distrito'
         constraints = [
-            models.UniqueConstraint(fields=['configuracion','distrito'],
+            models.UniqueConstraint(fields=['configuracion', 'distrito'],
                                     name='distrito_unico'
                                     )
         ]
@@ -1143,6 +1159,14 @@ class ConfiguracionComputoDistrito(models.Model):
     @property
     def fiscal(self):
         return self.configuracion.fiscal
+
+
+class CargaOficialControl(models.Model):
+    """
+    Este modelo se agrega para guardar la fecha y hora del último registro de
+    carga parcial oficial obtenido desde la planilla de cálculo de gdocs
+    """
+    fecha_ultimo_registro = models.DateTimeField()
 
 
 @receiver(post_save, sender=Mesa)
@@ -1201,7 +1225,7 @@ def actualizar_prioridades_seccion(sender, instance, created, **kwargs):
     if created or instance.tracker.has_changed('prioridad_hasta_2') \
         or instance.tracker.has_changed('cantidad_minima_prioridad_hasta_2') \
             or instance.tracker.has_changed('prioridad_2_a_10')  \
-                or instance.tracker.has_changed('prioridad_10_a_100'):
+    or instance.tracker.has_changed('prioridad_10_a_100'):
         registrar_prioridades_seccion(instance)
         MesaCategoria.recalcular_orden_de_carga_para_seccion(instance)
 
