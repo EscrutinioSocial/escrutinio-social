@@ -40,11 +40,11 @@ function ocultoSeccionCircuito() {
     if (distrito == NUMERO_DISTRITO_PBA) {
 		$('#id_seccion_container').removeClass("hide");
 		$('#id_circuito_container').removeClass("hide");
-		$('#mesa_input').focus();
+		$('#id_seccion').focus();
     } else {
 		$('#id_seccion_container').addClass("hide");
 		$('#id_circuito_container').addClass("hide");
-		$('#seccion_input').focus();
+		$('#id_mesa').focus();
     }
     return true;
 }

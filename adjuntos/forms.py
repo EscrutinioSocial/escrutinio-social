@@ -22,13 +22,14 @@ MENSAJES_ERROR = {
 class SelectField(forms.ModelChoiceField):
 
     widget = Select
-    def __init__(self,*args,**kwargs):
-        super().__init__(*args,**kwargs)
-        self.name = kwargs.get('label',self.queryset.model._meta.object_name)
-        required = kwargs.get('required',True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = kwargs.get('label', self.queryset.model._meta.object_name)
+        required = kwargs.get('required', True)
         self.widget.attrs['required'] = required
     
-    def clean(self,value):
+    def clean(self, value):
         if value == "" or value == -1 or value == "-1":
             return None
         return super().clean(value)
@@ -36,15 +37,15 @@ class SelectField(forms.ModelChoiceField):
     
 class CharFieldModel(forms.CharField):
 
-    def queryset(self,value,*args):
+    def queryset(self, value, *args):
         query = {self.predicate: value}
-        return self.model.objects.filter(*args,**query)
+        return self.model.objects.filter(*args, **query)
     
-    def __init__(self,model,predicate,*args,**kwargs):
-        super().__init__(*args,**kwargs)
+    def __init__(self, model, predicate, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.model = model
         self.predicate = predicate
-        self.label = kwargs.get('label',self.model._meta.object_name)
+        self.label = kwargs.get('label', self.model._meta.object_name)
 
     def clean(self, value):
         if value == "" or value == "-1":
@@ -53,7 +54,7 @@ class CharFieldModel(forms.CharField):
 
     def get_object(self, value, *args):
         datum = super().clean(value)
-        objs = self.queryset(datum,*args).distinct()
+        objs = self.queryset(datum, *args).distinct()
         if objs.count() != 1:
             return None
         return objs[0]
@@ -146,12 +147,12 @@ class IdentificacionForm(forms.ModelForm):
             self.add_error('circuito', MENSAJES_ERROR['circuito'])
         else:
             return circuito
-            
+
     def check_seccion_circuito(self, distrito, mesa=None):
         seccion = self.check_seccion(distrito, mesa)
         circuito = self.check_circuito(distrito, mesa, seccion)
         return (seccion, circuito)
-        
+
     def clean(self):
         super().clean()
         self.cleaned_data = {}
@@ -297,5 +298,7 @@ class AgregarAttachmentsCSV(BaseUploadForm):
     """
     Form para subir uno o más archivos CSV.
     """
-    file_field = forms.FileField(label="Archivos .csv", validators=[FileExtensionValidator(allowed_extensions=['csv'])])
-
+    file_field = forms.FileField(
+        label="Archivos .csv",
+        validators=[FileExtensionValidator(allowed_extensions=['csv'])]
+    )
