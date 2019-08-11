@@ -285,6 +285,9 @@ LOGGING = {
             "filename": "logs/requests.log",
             "formatter": "key_value",
         },
+        "null": {
+            "class": "logging.NullHandler",
+        }
     },
     "loggers": {
         "consolidador": {
@@ -300,7 +303,7 @@ LOGGING = {
             "level": "INFO",
         },
         "django_structlog": {
-            "handlers": ["requests"],
+            "handlers": ["requests"] if not TESTING else ["null"],
             "level": "INFO",
         },
     }
