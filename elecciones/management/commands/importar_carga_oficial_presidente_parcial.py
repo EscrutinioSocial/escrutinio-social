@@ -15,7 +15,8 @@ from elecciones.models import (
     MesaCategoria,
     VotoMesaReportado,
     CargaOficialControl,
-    Opcion
+    Opcion,
+    CategoriaOpcion
 )
 
 # If modifying these scopes, delete the file token.pickle.
@@ -33,6 +34,15 @@ class Command(BaseCommand):
             default=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE
         )
 
+    def get_opcion(self, codigo_partido):
+        return CategoriaOpcion.objects.get(opcion__partido__codigo=codigo_partido, categoria=self.categoria).opcion
+
+    def get_opcion_nosotros(self):
+        return self.get_opcion(settings.CODIGO_PARTIDO_NOSOTROS)
+
+    def get_opcion_ellos(self):
+        return self.get_opcion(settings.CODIGO_PARTIDO_ELLOS)
+
     def handle(self, *args, **options):
         nombre_categoria = options['categoria']
         self.categoria = Categoria.objects.get(nombre=nombre_categoria)
@@ -47,7 +57,7 @@ class Command(BaseCommand):
         if values:
             # acá se debería consultar la fecha y hora del último registro guardado
             # para luego filtrar las filas nuevas
-            fecha_ultimo_registro = CargaOficialControl.objects.first()
+            fecha_ultimo_registro = CargaOficialControl.objects.filter(categoria=self.categoria).first()
             if fecha_ultimo_registro:
                 date_format = '%d/%m/%Y %H:%M:%S'
                 # fd = datetime.strptime(fecha_ultimo_registro.fecha_ultimo_registro, date_format)
@@ -62,8 +72,10 @@ class Command(BaseCommand):
             fiscal = Fiscal.objects.get(id=1)
             tipo = 'parcial_oficial'
 
-            opcion_nosotros = Opcion.objects.get(partido__codigo=settings.CODIGO_PARTIDO_NOSOTROS)
-            opcion_ellos = Opcion.objects.get(partido__codigo=settings.CODIGO_PARTIDO_ELLOS)
+            opcion_nosotros = self.get_opcion_nosotros()
+            opcion_ellos = self.get_opcion_ellos()
+            # opcion_nosotros = Opcion.objects.get(partido__codigo=settings.CODIGO_PARTIDO_NOSOTROS)
+            # opcion_ellos = Opcion.objects.get(partido__codigo=settings.CODIGO_PARTIDO_ELLOS)
             opcion_blancos = Opcion.blancos()
             opcion_nulos = Opcion.nulos()
             opcion_total = Opcion.total_votos()
@@ -116,4 +128,4 @@ class Command(BaseCommand):
                     fecha_ultimo_registro.fecha_ultimo_registro = ultima_guardada_con_exito
                     fecha_ultimo_registro.save()
                 else:
-                    CargaOficialControl.objects.create(fecha_ultimo_registro=ultima_guardada_con_exito)
+                    CargaOficialControl.objects.create(fecha_ultimo_registro=ultima_guardada_con_exito, categoria=self.categoria)
