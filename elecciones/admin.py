@@ -273,18 +273,18 @@ class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         return obj.opcion.orden
 
 
-class OpcionAdmin(admin.ModelAdmin):
+class OpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ['id', 'nombre_corto', 'partido', 'nombre', 'orden']
 
 
-class CategoriaAdmin(admin.ModelAdmin):
+class CategoriaAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ['nombre', 'activa', 'color', 'back_color']
     search_fields = ['nombre']
     list_filter = ['activa']
     form = CategoriaForm
 
 
-class CategoriaOpcionAdmin(admin.ModelAdmin):
+class CategoriaOpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     search_fields = ['categoria__nombre', 'opcion__nombre']
     ordering = ['categoria__nombre', 'opcion__orden']
 
@@ -319,7 +319,7 @@ class VotoMesaReportadoInline(admin.TabularInline):
     ordering = ['opcion__orden']
 
 
-class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
+class CargaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     list_display = ['mesa_categoria', 'fiscal', 'tipo', 'created', 'es_testigo']
     readonly_fields = ['fiscal', 'mesa_categoria']
     inlines = [VotoMesaReportadoInline]
@@ -327,6 +327,8 @@ class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def es_testigo(self, obj):
         return obj.es_testigo.exists()
+
+    es_testigo.boolean = True
 
     def get_row_actions(self, obj):
         row_actions = [{
@@ -338,15 +340,13 @@ class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         return row_actions
 
 
-
-    es_testigo.boolean = True
-
-
 class ConfiguracionComputoDistritoInline(admin.TabularInline):
     model = ConfiguracionComputoDistrito
 
+
 class ConfiguracionComputoAdmin(admin.ModelAdmin):
     inlines = (ConfiguracionComputoDistritoInline, )
+
 
 admin.site.register(Eleccion)
 admin.site.register(Carga, CargaAdmin)
