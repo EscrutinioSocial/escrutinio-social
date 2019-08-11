@@ -78,7 +78,7 @@ class IdentificacionCreateView(CreateView):
         else:
             return {'decision': 'mesa', 'contenido': self.identificacion().mesa.numero}
 
-    @cached_property
+    @property
     def attachment(self):
         attachment = get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
         fiscal = self.request.user.fiscal
