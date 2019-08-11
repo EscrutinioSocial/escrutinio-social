@@ -111,7 +111,6 @@ def aumentar_scoring_troll_carga(variacion, carga, motivo):
     Aumenta el scoring troll de un fiscal por motivos relacionados con una carga.
     Si corresponde, marcar al fiscal como troll.
     """
-
     fiscal = carga.fiscal
     scoring_anterior = fiscal.scoring_troll()
     nuevo_evento = EventoScoringTroll.objects.create(
@@ -124,6 +123,7 @@ def aumentar_scoring_troll_carga(variacion, carga, motivo):
     scoring_actualizado = scoring_anterior + variacion
     if scoring_actualizado >= settings.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
         marcar_fiscal_troll(fiscal, nuevo_evento)
+
 
 def aumentar_scoring_troll_problema_descartado(variacion, fiscal_afectado, mesa, attachment):
     scoring_anterior = fiscal_afectado.scoring_troll()

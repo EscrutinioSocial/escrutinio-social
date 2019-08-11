@@ -1,17 +1,22 @@
-from django.conf import settings
 from functools import partial
 from datetime import timedelta
 from urllib.parse import quote_plus
+
+from django.conf import settings
 from django.utils import timezone
-from model_utils import Choices
-from model_utils.fields import StatusField
-from model_utils.models import TimeStampedModel
 from django.db.models import Count, Value
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 from django.db import models, transaction
+from model_utils import Choices
+from model_utils.fields import StatusField
+from model_utils.models import TimeStampedModel
+import structlog
 import hashlib
 from versatileimagefield.fields import VersatileImageField
+
+
+logger = structlog.get_logger(__name__)
 
 
 def hash_file(file, block_size=65536):
@@ -139,6 +144,7 @@ class Attachment(TimeStampedModel):
     def take(self, fiscal):
         self.taken = timezone.now()
         self.taken_by = fiscal
+        logger.info('attachment take', id=self.id)
         self.save(update_fields=['taken', 'taken_by'])
 
     @transaction.atomic
@@ -146,6 +152,7 @@ class Attachment(TimeStampedModel):
         """
         Libera una mesa, es lo contrario de take().
         """
+        logger.info('attachment release', id=self.id)
         self.taken = None
         self.taken_by = None
         self.save(update_fields=['taken', 'taken_by'])
@@ -284,6 +291,7 @@ class Identificacion(TimeStampedModel):
         )
 
     def invalidar(self):
+        logger.info('identificacion invalidada', id=self.id)
         self.invalidada = True
         self.procesada = False
         self.save(update_fields=['invalidada', 'procesada'])
@@ -296,6 +304,7 @@ class Identificacion(TimeStampedModel):
             self.invalidada = True
             self.procesada = True
         super().save(*args, **kwargs)
+
 
 class PreIdentificacion(TimeStampedModel):
     """

@@ -19,7 +19,6 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-
 MAX_INT_DB = 2147483647
 
 TIPOS_DE_AGREGACIONES = Choices(
@@ -437,6 +436,7 @@ class MesaCategoria(models.Model):
     def take(self, fiscal):
         self.taken = timezone.now()
         self.taken_by = fiscal
+        logger.info('mc take', id=self.id)
         self.save(update_fields=['taken', 'taken_by'])
 
     @transaction.atomic
@@ -444,10 +444,10 @@ class MesaCategoria(models.Model):
         """
         Libera la mesa, es lo contrario de take().
         """
+        logger.info('mc release', id=self.id)
         self.taken = None
         self.taken_by = None
         self.save(update_fields=['taken', 'taken_by'])
-
 
     def actualizar_orden_de_carga(self):
         """
@@ -465,6 +465,13 @@ class MesaCategoria(models.Model):
         self.orden_de_llegada = identificadas + 1
         self.percentil = math.floor((identificadas * 100) / total) + 1
         self.recalcular_orden_de_carga()
+        logger.info(
+            'actualizar orden',
+            id=self.id,
+            coef=self.orden_de_carga,
+            llegada=self.orden_de_llegada,
+            p=self.percentil
+        )
         self.save(update_fields=['orden_de_carga', 'orden_de_llegada', 'percentil'])
 
     def recalcular_orden_de_carga(self):
@@ -535,6 +542,7 @@ class MesaCategoria(models.Model):
     def actualizar_status(self, status, carga_testigo):
         self.status = status
         self.carga_testigo = carga_testigo
+        logger.info('mc status', id=self.id, status=status, testigo=getattr(carga_testigo, 'id', None))
         self.save(update_fields=['status', 'carga_testigo'])
 
     @classmethod
@@ -644,6 +652,7 @@ class Mesa(models.Model):
         Hay que: invalidar todas las cargas, y borrar el orden de carga de las MesaCategoria
         para que no se tengan en cuenta en el scheduling
         """
+        logger.info('invalidar asignacion attachment', mesa=self.id)
         for mc in MesaCategoria.objects.filter(mesa=self):
             mc.orden_de_carga = None
             mc.percentil = None
@@ -918,6 +927,7 @@ class CategoriaOpcion(models.Model):
 
     def set_prioritaria(self):
         self.prioritaria = True
+        logger.info('set prioritaria', id=self.id)
         self.save(update_fields=['prioritaria'])
 
 

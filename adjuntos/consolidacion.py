@@ -1,14 +1,18 @@
 from django.conf import settings
+import structlog
 from adjuntos.models import Attachment, Identificacion
 from elecciones.models import Carga, MesaCategoria
 from django.db import transaction
-from django.db.models import Subquery, Count
+from django.db.models import Count
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from problemas.models import Problema
 from antitrolling.efecto import (
     efecto_scoring_troll_asociacion_attachment, efecto_scoring_troll_confirmacion_carga
 )
+
+
+logger = structlog.get_logger(__name__)
 
 
 def consolidar_cargas_por_tipo(cargas, tipo):
@@ -146,6 +150,7 @@ def consolidar_cargas(mesa_categoria):
     if status_resultante in statuses_que_requieren_computar_efecto_trolling:
         efecto_scoring_troll_confirmacion_carga(mesa_categoria)
 
+
 def consolidar_identificaciones(attachment):
     """
     Consolida todas las identificaciones del Attachment parámetro.
@@ -218,12 +223,16 @@ def consolidar_identificaciones(attachment):
     attachment.mesa = mesa_attachment
     attachment.identificacion_testigo = testigo
     attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
-
+    logger.info(
+        'identificacion',
+        attachment=attachment.id,
+        testigo=getattr(testigo, 'id', None),
+        status=status_attachment
+    )
     # si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
     # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment
     if mesa_anterior and not mesa_attachment:
         mesa_anterior.invalidar_asignacion_attachment()
-
 
 
 @transaction.atomic

@@ -18,6 +18,7 @@ from django.conf import settings
 from django.db import transaction
 
 from sentry_sdk import capture_message
+import structlog
 
 from adjuntos.consolidacion import consolidar_identificaciones
 from adjuntos.csv_import import CSVImporter
@@ -27,12 +28,11 @@ from .forms import (
     PreIdentificacionForm,
 )
 from .models import Attachment, Identificacion
-from problemas.models import Problema, ReporteDeProblema
+from problemas.models import Problema
 from problemas.forms import IdentificacionDeProblemaForm
+from .forms import AgregarAttachmentsCSV
 
-from .forms import AgregarAttachmentsForm, AgregarAttachmentsCSV, IdentificacionForm
-from .models import Attachment, Identificacion
-from elecciones.models import Distrito
+logger = structlog.get_logger(__name__)
 
 
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
@@ -48,6 +48,7 @@ CSV_MIMETYPES = (
     'text/comma-separated-values',
     'text/x-comma-separated-values',
 )
+
 
 class IdentificacionCreateView(CreateView):
     """
@@ -108,14 +109,22 @@ class IdentificacionCreateView(CreateView):
             initial['circuito'] = pre_identificacion.circuito.numero
         return initial
 
+    def get(self, *args, **kwargs):
+        logger.info('inicio identificacion', id=self.attachment.id)
+        return super().get(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
-        context = super(IdentificacionCreateView,self).get_context_data(**kwargs)
+        context = super(IdentificacionCreateView, self).get_context_data(**kwargs)
         context['attachment'] = self.attachment
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
         context['url_video_instructivo'] = settings.URL_VIDEO_INSTRUCTIVO
         return context
+
+    def form_invalid(self, form):
+        logger.info('error identificacion', id=self.attachment.id)
+        return super().form_invalid(form)
 
     def form_valid(self, form):
         identificacion = form.save(commit=False)
@@ -127,7 +136,9 @@ class IdentificacionCreateView(CreateView):
             self.request,
             f'Identificada mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito}',
         )
+        logger.info('fin identificacion', id=self.attachment.id)
         return super().form_valid(form)
+
 
 class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
     template_name = "adjuntos/asignar-mesa-ub.html"
@@ -160,7 +171,7 @@ class ReporteDeProblemaCreateView(CreateView):
         tipo = bool(form.errors.get('tipo_de_problema',False))
         descripcion = bool(form.errors.get('descripcion',False))
         return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
-    
+
     def form_valid(self, form):
         fiscal = self.request.user.fiscal
         identificacion = form.save(commit=False)
@@ -205,6 +216,7 @@ def editar_foto(request, attachment_id):
         attachment.foto_edited = ContentFile(
             base64.b64decode(imgstr), name=f'edited_{attachment_id}.{extension}'
         )
+        logger.info('foto editada', id=attachment.id)
         attachment.save(update_fields=['foto_edited'])
         return JsonResponse({'message': 'Imagen guardada'})
     return JsonResponse({'message': 'No se pudo guardar la imagen'})

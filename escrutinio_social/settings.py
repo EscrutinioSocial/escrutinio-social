@@ -27,6 +27,7 @@ SECRET_KEY = 'gq9%*_m)=m*y$cnkl1xeg1xiihaz5%v+_d@a+3ft$b(cq29r8z'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ALLOWED_HOSTS = ['*']
+TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
 
 # Application definition
 
@@ -269,27 +270,37 @@ LOGGING = {
             "filename": "logs/json.log",
             "formatter": "json_formatter",
         },
-        "flat_line_file": {
+        "csv_import_file": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/flat_line.log",
+            "filename": "logs/csv_import_line.log",
+            "formatter": "key_value",
+        },
+        "consolidador_file": {
+            "class": "logging.handlers.WatchedFileHandler",
+            "filename": "logs/consolidador.log",
+            "formatter": "key_value",
+        },
+        "requests": {
+            "class": "logging.handlers.WatchedFileHandler",
+            "filename": "logs/requests.log",
             "formatter": "key_value",
         },
     },
     "loggers": {
         "consolidador": {
-            "handlers": ["console", "flat_line_file"],
+            "handlers": ["console", "consolidador_file"] if not TESTING else ["console"],
             "level": "DEBUG",
         },
         "csv_import": {
-            "handlers": ["console", "flat_line_file"],
+            "handlers": ["console", "csv_import_file"] if not TESTING else ["console"],
             "level": "DEBUG",
         },
         "": {
-            "handlers": ["json_file"],
+            "handlers": ["json_file"] if not TESTING else ["console"],
             "level": "INFO",
         },
         "django_structlog": {
-            "handlers": ["console", "json_file"],
+            "handlers": ["requests"],
             "level": "INFO",
         },
     }
@@ -482,7 +493,6 @@ CONSTANCE_CONFIG = {
 
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/tgbNymZ7vqY'
 
-TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
 
 # Para los tests no se importan los local settings.
 if not TESTING:

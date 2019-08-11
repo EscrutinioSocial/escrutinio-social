@@ -20,6 +20,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils.functional import cached_property
 from annoying.functions import get_object_or_None
+import structlog
 from .models import Fiscal, CodigoReferido
 from elecciones.models import (
     Distrito,
@@ -36,7 +37,6 @@ from adjuntos.consolidacion import consolidar_cargas
 
 from dal import autocomplete
 
-from django.template.loader import render_to_string
 from html2text import html2text
 from django.core.mail import send_mail
 from sentry_sdk import capture_exception, capture_message
@@ -55,10 +55,12 @@ from problemas.models import Problema
 from problemas.forms import IdentificacionDeProblemaForm
 
 from django.conf import settings
-
+import structlog
 
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
+
+logger = structlog.get_logger(__name__)
 
 
 @login_required
@@ -275,6 +277,8 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     solo_prioritarias = tipo == 'parcial'
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
+    if request.method == 'GET':
+        logger.info('carga inicio', mc=mesa_categoria.id, tipo=tipo)
 
     # Tenemos la lista de opciones ordenadas como la lista.
     opciones = categoria.opciones_actuales(solo_prioritarias)
@@ -327,6 +331,8 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     is_valid = False
     if request.method == 'POST':
         is_valid = formset.is_valid()
+        if not is_valid:
+            logger.info('carga error', mc=mesa_categoria.id, tipo=tipo, ub=desde_ub)
 
     if desde_ub:
         request.session['mesa_categoria_id'] = mesa_categoria.id
@@ -348,7 +354,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     vmr.carga = carga
                     reportados.append(vmr)
                 VotoMesaReportado.objects.bulk_create(reportados)
-                
+
                 # Libero el token sobre la mc
                 mesa_categoria.release()
                 # si viene desde_ub, consolidamos la carga
@@ -364,6 +370,9 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             # y ya no hay constraint.
             # Lo dejamos para enterarnos de algun otro tipo de excepción.
             capture_exception(e)
+
+        if not is_valid:
+            logger.info('carga error', mc=mesa_categoria.id, tipo=tipo, ub=desde_ub)
 
         redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', args=[mesa.id])
         return redirect(redirect_to)
@@ -396,11 +405,11 @@ class ReporteDeProblemaCreateView(CreateView):
             MesaCategoria, id=self.kwargs['mesacategoria_id']
         )
 
-    def form_invalid(self,form):            
+    def form_invalid(self,form):
         tipo = bool(form.errors['tipo_de_problema'])
         descripcion = bool(form.errors['descripcion'])
         return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
-    
+
     def form_valid(self, form):
         fiscal = self.request.user.fiscal
         carga = form.save(commit=False)
@@ -600,6 +609,7 @@ class SeccionSimpleListView(autocomplete.Select2QuerySetView):
             lookups &= Q(numero=self.q) | Q(nombre__istartswith=self.q)
 
         return qs.filter(lookups)
+
 
 class DistritoListView(AjaxListView):
     model = Distrito
