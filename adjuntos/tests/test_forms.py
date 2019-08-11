@@ -17,6 +17,7 @@ from elecciones.models import (
 )
 
 
+@pytest.mark.skip('Verificar si está obsoleto respecto del comportamiento de la UI.')
 def test_identificacion_nuevo_choices(db):
     d = Distrito.objects.get()      # 'Distrito único', lo crea una migracion
     d2 = DistritoFactory(nombre='otro distrito')
