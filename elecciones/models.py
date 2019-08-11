@@ -214,7 +214,8 @@ class Circuito(models.Model):
     @property
     def distrito(self):
         return self.seccion.distrito
-    
+
+
 class LugarVotacion(models.Model):
     """
     Define el lugar de votación (escuela) que pertenece a un circuito
@@ -308,6 +309,7 @@ class LugarVotacion(models.Model):
     @property
     def distrito(self):
         return self.circuito.seccion.distrito
+
 
 class MesaCategoriaQuerySet(models.QuerySet):
 
@@ -552,7 +554,6 @@ class MesaCategoria(models.Model):
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
 
-
     @classmethod
     def recalcular_orden_de_carga_para_categoria(cls, categoria):
         """
@@ -602,7 +603,9 @@ class Mesa(models.Model):
     lugar_votacion = models.ForeignKey(
         LugarVotacion,
         verbose_name='Lugar de votacion',
-        null=True,
+        # Durante el escrutinio queremos poder crear mesas en caliente
+        # y tal vez no sepamos el lugar de votación.
+        null=True, blank=True, default=None,
         related_name='mesas',
         on_delete=models.CASCADE
     )
