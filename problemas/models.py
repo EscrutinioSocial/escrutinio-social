@@ -26,20 +26,21 @@ class ReporteDeProblema(TimeStampedModel):
     # Falta identificador: es genérico para señalar la ausencia de una opción de localización de la mesa.
     # Falta lista: una de las opciones que figuran en el acta no está en el sistema.
 
-    tipo_de_problema = models.CharField(max_length=100, null=True, blank=False,
-                                        choices=TIPOS_DE_PROBLEMA,
-                                        default=TIPOS_DE_PROBLEMA.ilegible
-                                        )
+    tipo_de_problema = models.CharField(
+        max_length=100, null=True, blank=False,
+        choices=TIPOS_DE_PROBLEMA,
+        default=TIPOS_DE_PROBLEMA.ilegible
+    )
 
     descripcion = models.TextField(null=True, blank=True)
     es_reporte_fake = models.BooleanField(default=False) # Se completa desde el admin.
     problema = models.ForeignKey('Problema', on_delete=models.CASCADE, related_name='reportes')
     identificacion = models.ForeignKey('adjuntos.Identificacion', null=True, blank=True, related_name='problemas', on_delete=models.CASCADE)
     carga = models.ForeignKey('elecciones.Carga', null=True, blank=True, related_name='problemas', on_delete=models.CASCADE)
-    reportado_por = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE) 
+    reportado_por = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.tipo_de_problema}: {self.descripcion} (vía {self.reportado_por})'   
+        return f'{self.tipo_de_problema}: {self.descripcion} (vía {self.reportado_por})'
 
 
 class Problema(TimeStampedModel):
@@ -63,7 +64,7 @@ class Problema(TimeStampedModel):
     @classmethod
     def confirmar_problema(cls, carga=None, identificacion=None):
         """
-        Toma el problema asociado a la carga.mesa o a identificacion.attachment y 
+        Toma el problema asociado a la carga.mesa o a identificacion.attachment y
         lo confirma.
         """
         mesa = carga.mesa if carga else None
@@ -75,7 +76,6 @@ class Problema(TimeStampedModel):
             # Puede haber tenido otros problemas previos.
             estado__in=[cls.ESTADOS.resuelto, cls.ESTADOS.descartado]
         ).first()
-
         problema.confirmar()
 
     @classmethod
@@ -95,8 +95,7 @@ class Problema(TimeStampedModel):
         ).first()
 
         if problema:
-            problema.resolver(None) # Pongo None como quien lo resolvió.
-
+            problema.resolver(None)     # Pongo None como quien lo resolvió.
 
     def confirmar(self):
         self.estado = self.ESTADOS.pendiente
@@ -133,7 +132,7 @@ class Problema(TimeStampedModel):
         """
         Tiene que pasar carga xor identificacion.
         """
-
+        import ipdb; ipdb.set_trace()
         mesa = carga.mesa if carga else None
         attachment = identificacion.attachment if identificacion else None
 
@@ -151,7 +150,7 @@ class Problema(TimeStampedModel):
                 estado=cls.ESTADOS.potencial
             )
 
-        reporte = ReporteDeProblema.objects.create(
+        ReporteDeProblema.objects.create(
             tipo_de_problema=tipo_de_problema,
             descripcion=descripcion,
             reportado_por=reportado_por,
