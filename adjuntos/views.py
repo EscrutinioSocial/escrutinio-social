@@ -109,7 +109,7 @@ class IdentificacionCreateView(CreateView):
         return initial
 
     def get_context_data(self, **kwargs):
-        context = super(IdentificacionCreateView,self).get_context_data(**kwargs)
+        context = super(IdentificacionCreateView, self).get_context_data(**kwargs)
         context['attachment'] = self.attachment
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
@@ -128,6 +128,7 @@ class IdentificacionCreateView(CreateView):
             f'Identificada mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito}',
         )
         return super().form_valid(form)
+
 
 class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
     template_name = "adjuntos/asignar-mesa-ub.html"
@@ -156,10 +157,10 @@ class ReporteDeProblemaCreateView(CreateView):
     def attachment(self):
         return get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
 
-    def form_invalid(self,form):
-        tipo = bool(form.errors.get('tipo_de_problema',False))
-        descripcion = bool(form.errors.get('descripcion',False))
-        return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
+    def form_invalid(self, form):
+        tipo = bool(form.errors.get('tipo_de_problema', False))
+        descripcion = bool(form.errors.get('descripcion', False))
+        return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion}, status=500)
     
     def form_valid(self, form):
         fiscal = self.request.user.fiscal
