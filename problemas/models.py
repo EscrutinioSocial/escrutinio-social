@@ -132,7 +132,6 @@ class Problema(TimeStampedModel):
         """
         Tiene que pasar carga xor identificacion.
         """
-        import ipdb; ipdb.set_trace()
         mesa = carga.mesa if carga else None
         attachment = identificacion.attachment if identificacion else None
 
