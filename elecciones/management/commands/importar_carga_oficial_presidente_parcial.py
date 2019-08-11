@@ -19,7 +19,6 @@ from elecciones.models import (
 )
 
 # If modifying these scopes, delete the file token.pickle.
-URL = 'https://sheets.googleapis.com/v4/spreadsheets/1hnn-BCqilu2jXZ-lcNiwhDa_V-QTCSp-EMqhpz4y2fA/values/A:XX'
 API_KEY = '***REMOVED***'
 # The ID and range of a sample spreadsheet.
 PARAMS = {'key': API_KEY}
@@ -39,7 +38,8 @@ class Command(BaseCommand):
         self.categoria = Categoria.objects.get(nombre=nombre_categoria)
         print("Vamos a importar la categoría:", self.categoria)
 
-        r = requests.get(url=URL, params=PARAMS)
+        url = settings.URL_ARCHIVO_IMPORTAR_CORREO[nombre_categoria]
+        r = requests.get(url=url, params=PARAMS)
         values = r.json()['values']
         ultima_guardada_con_exito = None
         tz = pytz.timezone('America/Argentina/Buenos_Aires')
