@@ -214,7 +214,8 @@ class Circuito(models.Model):
     @property
     def distrito(self):
         return self.seccion.distrito
-    
+
+
 class LugarVotacion(models.Model):
     """
     Define el lugar de votación (escuela) que pertenece a un circuito
@@ -308,6 +309,7 @@ class LugarVotacion(models.Model):
     @property
     def distrito(self):
         return self.circuito.seccion.distrito
+
 
 class MesaCategoriaQuerySet(models.QuerySet):
 
@@ -552,7 +554,6 @@ class MesaCategoria(models.Model):
         self.carga_testigo = carga_testigo
         self.save(update_fields=['status', 'carga_testigo'])
 
-
     @classmethod
     def recalcular_orden_de_carga_para_categoria(cls, categoria):
         """
@@ -602,13 +603,16 @@ class Mesa(models.Model):
     lugar_votacion = models.ForeignKey(
         LugarVotacion,
         verbose_name='Lugar de votacion',
-        null=True,
+        # Durante el escrutinio queremos poder crear mesas en caliente
+        # y tal vez no sepamos el lugar de votación.
+        null=True, blank=True, default=None,
         related_name='mesas',
         on_delete=models.CASCADE
     )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
     prioridad = models.PositiveIntegerField(default=0)
+    extranjeros = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('circuito', 'numero')
@@ -1103,7 +1107,6 @@ class ConfiguracionComputo(models.Model):
         on_delete=models.CASCADE,
         related_name='configuracion_computo',
     )
-    
     class Meta:
         ordering = ('nombre', )
         verbose_name = 'Configuración para cómputo'
@@ -1127,7 +1130,7 @@ class ConfiguracionComputoDistrito(models.Model):
     agregacion = models.CharField(max_length=30,choices=TIPOS_DE_AGREGACIONES)
     opciones = models.CharField(max_length=30,choices=OPCIONES_A_CONSIDERAR)
     proyeccion = models.ForeignKey(TecnicaProyeccion, on_delete=models.SET_NULL, default=None, null=True, blank=True)
-    
+
     class Meta:
         verbose_name = 'Configuración para cómputo por distrito'
         verbose_name_plural = 'Configuraciones para cómputo por distrito'

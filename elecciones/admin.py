@@ -1,7 +1,9 @@
+from django import forms
 from django.contrib import admin
 from django.urls import reverse
 from djangoql.admin import DjangoQLSearchMixin
 from leaflet.admin import LeafletGeoAdmin
+from annoying.functions import get_object_or_None
 from .models import (
     Distrito,
     SeccionPolitica,
@@ -124,9 +126,38 @@ def mostrar_resultados_mesas(modeladmin, request, queryset):
 mostrar_resultados_mesas.short_description = "Mostrar resultados de Mesas seleccionadas"
 
 
+class MesaForm(forms.ModelForm):
+    copiar_categorias = forms.BooleanField(
+        initial=True,
+        label="Copiar las categorias del resto de las mesas en el circuito (sólo vale para la creación)"
+    )
+
+    def save(self, commit=True):
+        add = not self.instance.pk
+        copiar_categorias = self.cleaned_data.get('copiar_categorias', None)
+
+        mesa = super().save(commit=commit)
+        mesa.save()
+
+        if add and copiar_categorias:
+            otra_mesa = Mesa.objects.filter(circuito=mesa.circuito).first()
+
+            if otra_mesa:
+                if not mesa.electores:
+                    mesa.electores = otra_mesa.electores
+                for categoria in otra_mesa.categorias.all():
+                    mesa.categorias.add(categoria)
+        return mesa
+
+    class Meta:
+        model = Mesa
+        fields = '__all__'
+
+
 class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
+    form = MesaForm
     actions = [resultados_reportados]
-    list_display = ('numero', 'lugar_votacion')
+    list_display = ('numero', 'lugar_votacion', 'electores')
     raw_id_fields = ('circuito', 'lugar_votacion')
     list_filter = (
         TieneResultados, 'es_testigo', 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito'
@@ -148,11 +179,12 @@ class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
             'enabled': True
         })
 
-        row_actions.append({
-            'label': 'Escuela',
-            'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
-            'enabled': True,
-        })
+        if obj.lugar_votacion:
+            row_actions.append({
+                'label': 'Escuela',
+                'url': reverse('admin:elecciones_lugarvotacion_changelist') + f'?id={obj.lugar_votacion.id}',
+                'enabled': True,
+            })
         row_actions += super().get_row_actions(obj)
         return row_actions
 
@@ -241,18 +273,18 @@ class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         return obj.opcion.orden
 
 
-class OpcionAdmin(admin.ModelAdmin):
+class OpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ['id', 'nombre_corto', 'partido', 'nombre', 'orden']
 
 
-class CategoriaAdmin(admin.ModelAdmin):
+class CategoriaAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ['nombre', 'activa', 'color', 'back_color']
     search_fields = ['nombre']
     list_filter = ['activa']
     form = CategoriaForm
 
 
-class CategoriaOpcionAdmin(admin.ModelAdmin):
+class CategoriaOpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     search_fields = ['categoria__nombre', 'opcion__nombre']
     ordering = ['categoria__nombre', 'opcion__orden']
 
@@ -287,7 +319,7 @@ class VotoMesaReportadoInline(admin.TabularInline):
     ordering = ['opcion__orden']
 
 
-class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
+class CargaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     list_display = ['mesa_categoria', 'fiscal', 'tipo', 'created', 'es_testigo']
     readonly_fields = ['fiscal', 'mesa_categoria']
     inlines = [VotoMesaReportadoInline]
@@ -295,6 +327,8 @@ class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
 
     def es_testigo(self, obj):
         return obj.es_testigo.exists()
+
+    es_testigo.boolean = True
 
     def get_row_actions(self, obj):
         row_actions = [{
@@ -306,15 +340,13 @@ class CargaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
         return row_actions
 
 
-
-    es_testigo.boolean = True
-
-
 class ConfiguracionComputoDistritoInline(admin.TabularInline):
     model = ConfiguracionComputoDistrito
 
+
 class ConfiguracionComputoAdmin(admin.ModelAdmin):
     inlines = (ConfiguracionComputoDistritoInline, )
+
 
 admin.site.register(Eleccion)
 admin.site.register(Carga, CargaAdmin)

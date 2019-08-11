@@ -211,7 +211,7 @@
   $(document).ready(function(){
       $('.modal').modal();
       fields.map(e => (e[2]) ? initializeSimpleSelect(e[0],e[2], ocultoSeccionCircuito) : null);
-      fields.map(e => $('#'+e[0]+'_input').on("keyup",delay(e[1], 250)));
+      fields.map(e => $('#'+e[0]+'_input').on("keyup",delay(e[1], 300)));
       
       $('#distrito_input').attr('tabindex', 1);
       $('#id_seccion').attr('tabindex', 2);

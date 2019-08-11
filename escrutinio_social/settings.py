@@ -106,6 +106,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'elecciones.context_processors.version',
             ],
         },
     },
@@ -343,12 +344,13 @@ OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 KEY_VOTOS_POSITIVOS = 'Votos Positivos'
 
-NOMBRE_CATEGORIA_PRESI_Y_VICE = 'Presidente y Vice'
-NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y Vice'
+NOMBRE_CATEGORIA_PRESI_Y_VICE = 'Presidente y vice'
+NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y vice'
 
 # Código de partidos principales para validaciones.
 CODIGO_PARTIDO_NOSOTROS = '136'
 CODIGO_PARTIDO_ELLOS = '135'
+CODIGO_PARTIDO_ELLOS_BA = '502'
 
 # Cada cuánto tiempo actualizar el campo last_seen de un Fiscal.
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
@@ -421,6 +423,11 @@ CONSTANCE_CONFIG = {
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
 
 TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
+
+APP_VERSION_NUMBER = 'dev'
+if os.path.isfile("/version/version.txt"):
+    with open("/version/version.txt") as v_file:
+        APP_VERSION_NUMBER = v_file.read()
 
 # Para los tests no se importan los local settings.
 if not TESTING:

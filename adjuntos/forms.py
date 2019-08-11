@@ -1,11 +1,10 @@
 from django import forms
 from django.conf import settings
-from django.core.validators import FileExtensionValidator, ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db.models import Q
 
 from .models import Identificacion, PreIdentificacion
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
-from problemas.models import ReporteDeProblema
 
 from .widgets import Select
 
@@ -117,7 +116,7 @@ class IdentificacionForm(forms.ModelForm):
         if mesa is None:
             self.add_error('seccion', MENSAJES_ERROR['seccion'])
             return None
-        
+
         seccion = mesa.circuito.seccion
         if seccion and seccion.distrito != distrito:
             self.add_error('seccion', MENSAJES_ERROR['seccion'])
