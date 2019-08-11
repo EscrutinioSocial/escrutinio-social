@@ -130,7 +130,7 @@
               <div class="card-title">¿De qué mesa es esta acta?</div>
               {% form %}
 	      {% endform %}
-	      {% if form.errors %}
+        {% if form.errors %}
 	      <div class="grey-text text-darken-1">Si no podés identificar la imagen, podés
 		reportarlo con el botón “Problema”.</div>
 	      {% endif %}
@@ -205,11 +205,12 @@
   var url_circuito = "{% url 'autocomplete-circuito' %}";
   var url_mesa = "{% url 'autocomplete-mesa' %}";
   var fields = [
-      ['distrito', updateDistrito(url_distrito),url_distrito,[]]
+      ['distrito', updateDistrito(url_distrito, ocultoSeccionCircuito),url_distrito,[]]
   ];
+
   $(document).ready(function(){
       $('.modal').modal();
-      fields.map(e => (e[2]) ? initializeSimpleSelect(e[0],e[2],e[3]) : null);
+      fields.map(e => (e[2]) ? initializeSimpleSelect(e[0],e[2], ocultoSeccionCircuito) : null);
       fields.map(e => $('#'+e[0]+'_input').on("keyup",delay(e[1], 250)));
       $('#distrito_input').attr('tabindex', 1);
       $('#id_seccion').attr('tabindex', 2);
@@ -227,21 +228,21 @@
       $('#btn-reportar').on('click',function(e){
 	  var form = $('#problema-imagen');
 	  $.ajax({
-              type: $(form).attr('method'),
-              url: $(form).attr('action'),
-              data: form.serialize(),
-              context: form,
-              success: function(data, status) {
-	   	  $(form).submit();
-              },
-	      error: function (request, type, errorThrown) {
-		  var json = $.parseJSON(request.responseText);
-		  $.map(json, function( val, i ) {
-		      if(val){
-			  $('#'+i).removeClass('hide');
-		      }
-		  });
-              }
+            type: $(form).attr('method'),
+            url: $(form).attr('action'),
+            data: form.serialize(),
+            context: form,
+            success: function(data, status) {
+              $(form).submit();
+            },
+            error: function (request, type, errorThrown) {
+              var json = $.parseJSON(request.responseText);
+              $.map(json, function( val, i ) {
+                if(val){
+                  $('#'+i).removeClass('hide');
+                }
+              });
+            }
 	  });
 	  return false;
       });

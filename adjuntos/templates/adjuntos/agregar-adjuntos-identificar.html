@@ -67,8 +67,7 @@
   $(document).ready(function(){
       $('.modal').modal();
       fields.map(e => initializeSimpleSelect(e[0],e[2],e[3]));
-      fields.map(e => $('#'+e[0]+'_input').on("mouseout",e[1]));
-      fields.map(e => $('#'+e[0]+'_input').on("focusout",e[1]));
+      fields.map(e => $('#'+e[0]+'_input').on("keyup",delay(e[1], 250)));
       $('#distrito_input').attr('tabindex', 1);
       $('#seccion_input').attr('tabindex',  2);
       $('#circuito_input').attr('tabindex', 3);
