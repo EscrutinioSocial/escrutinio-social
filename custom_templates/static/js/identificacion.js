@@ -44,7 +44,9 @@ function ocultoSeccionCircuito() {
     } else {
 		$('#id_seccion_container').addClass("hide");
 		$('#id_circuito_container').addClass("hide");
-		$('#id_mesa').focus();
+		if (distrito != "") {
+			$('#id_mesa').focus();
+		}
     }
     return true;
 }

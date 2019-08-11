@@ -85,6 +85,7 @@ TODO: filtrar los parámetros de `forward` que usamos para no
 tener que hacer chequeos en la vista de django. 
 */
 function updateField(field, baseUrl, forward, onAfter=null) {
+
     var nro = $.trim($("#"+field+"_input").val());
 	
 	if (isFinite(nro)){
@@ -93,6 +94,12 @@ function updateField(field, baseUrl, forward, onAfter=null) {
 	
 	function get_val(field) { 
 		return $("#id_"+field).val()
+	}
+
+	//si el campo actualizado es distrito, reseteamos los valores de seccion y circuito
+	if (field == "distrito") {
+		$("#id_seccion").val("");
+		$("#id_circuito").val("");
 	}
 	
 	var params = forward.reduce((obj, x) => (obj[x] = get_val(x), obj),{});
