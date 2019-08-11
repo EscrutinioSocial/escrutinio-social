@@ -350,7 +350,7 @@ class ConfiguracionComputoAdmin(admin.ModelAdmin):
 
 
 class CargaOficialControlAdmin(admin.ModelAdmin):
-    list_display = ['fecha_ultimo_registro']
+    list_display = ['fecha_ultimo_registro', 'categoria']
 
 
 admin.site.register(Eleccion)

@@ -1167,6 +1167,7 @@ class CargaOficialControl(models.Model):
     carga parcial oficial obtenido desde la planilla de cálculo de gdocs
     """
     fecha_ultimo_registro = models.DateTimeField()
+    categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE, default=None)
 
 
 @receiver(post_save, sender=Mesa)
