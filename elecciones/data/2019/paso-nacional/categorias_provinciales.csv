@@ -208,19 +208,19 @@ opcion_codigo,opcion_orden,opcion_nombre,opcion_nombre_corto,partido_nombre,part
 136/501B,6,"con todos, sinceramente","con todos, sinceramente",FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Salta,Diputados Nacionales,207,DN17,17,20000,0
 136/501K,7,TENEMOS FUTURO (k),TENEMOS FUTURO (k),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Salta,Diputados Nacionales,208,DN17,17,20000,0
 137-502,8,CONSENSO POR SALTA,CONSENSO POR SALTA,UNIÓN POR SAlta,UNIÓN POR SAlta,502,,Salta,Diputados Nacionales,209,DN17,17,20000,0
-131-19,1,FRENTE NOS,FRENTE NOS,fRENTE NOS PARTIDO CONSERVADOR POPULAR,fRENTE NOS PARTIDO CONSERVADOR POPULAR,19,,Salta,Senadores Nacionales,210,SN17,17,20000,0
+131-19,1,FRENTE NOS,FRENTE NOS,FRENTE NOS PARTIDO CONSERVADOR POPULAR,FRENTE NOS PARTIDO CONSERVADOR POPULAR,19,,Salta,Senadores Nacionales,210,SN17,17,20000,0
 133-504,2,unidad (A),unidad (A),FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,FRENTE DE IZQUIERDA Y DE TRABAJADORES - UNIDAD,504,,Salta,Senadores Nacionales,211,SN17,17,20000,0
 135-503,3,juntos por salta (b),juntos por salta (b),JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,503,#FFCD00,Salta,Senadores Nacionales,212,SN17,17,20000,0
 136-501A,4,celeste y blanca,celeste y blanca,FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Salta,Senadores Nacionales,213,SN17,17,20000,0
 136-501K,5,TENEMOS FUTURO (K),TENEMOS FUTURO (K),FRENTE DE TODOS,FRENTE DE TODOS,501,#00A8E4,Salta,Senadores Nacionales,214,SN17,17,20000,0
 137-502,6,CONSENSO POR SALTA,CONSENSO POR SALTA,"CONSENSO POR SALTA, UNIÓN POR SAlta ","CONSENSO POR SALTA, UNIÓN POR SAlta ",502,,Salta,Senadores Nacionales,215,SN17,17,20000,0
 135,1,Somos el cambio,Somos el cambio,JUNTOS POR EL CAMBIO,JUNTOS POR EL CAMBIO,135,#FFCD00,San Juan,Diputados Nacionales,216,DN18,18,20000,0
-136,2,Frente de Todos,Frente de Todos,,,,,San Juan,Diputados Nacionales,217,DN18,18,20000,0
-501,3,Alianza Frente de Todos San Juan - Celeste y Blanca,Alianza Frente de Todos San Juan - Celeste y Blanca,,,,,San Juan,Diputados Nacionales,218,DN18,18,20000,0
-503,4,Alianza Juntos por el Cambio San Juan - Con Vos,Alianza Juntos por el Cambio San Juan - Con Vos,,,,,San Juan,Diputados Nacionales,219,DN18,18,20000,0
-504,5,Alianza consenso federal San juan - Blanca unidad,Alianza consenso federal San juan - Blanca unidad,,,,,San Juan,Diputados Nacionales,220,DN18,18,20000,0
-50503,6,Alianza Juntos por el Cambio San Juan - Defensores del Cambio,Alianza Juntos por el Cambio San Juan - Defensores del Cambio,,,,,San Juan,Diputados Nacionales,221,DN18,18,20000,0
-50504,7,Alianza consenso federal San juan - Concertación,Alianza consenso federal San juan - Concertación,,,,,San Juan,Diputados Nacionales,222,DN18,18,20000,0
+136,2,Frente de Todos,Frente de Todos,Frente de Todos,Frente de Todos,,#00A8E4,San Juan,Diputados Nacionales,217,DN18,18,20000,0
+501,3,Celeste y Blanca,Celeste y Blanca,Alianza Frente de Todos San Juan,Alianza Frente de Todos San Juan,,#00A8E4,San Juan,Diputados Nacionales,218,DN18,18,20000,0
+503,4,Con Vos,Con Vos,Alianza Juntos por el Cambio San Juan,Alianza Juntos por el Cambio San Juan,,#FFCD00,San Juan,Diputados Nacionales,219,DN18,18,20000,0
+504,5,Blanca unidad,Blanca unidad,Alianza consenso federal San juan,Alianza consenso federal San juan,,#031F73,San Juan,Diputados Nacionales,220,DN18,18,20000,0
+50503,6,Defensores del Cambio,Defensores del Cambio,Alianza Juntos por el Cambio San Juan,Alianza Juntos por el Cambio San Juan,,#FFCD00,San Juan,Diputados Nacionales,221,DN18,18,20000,0
+50504,7,Concertación,Concertación,Alianza consenso federal San juan,Alianza consenso federal San juan,,#031F73,San Juan,Diputados Nacionales,222,DN18,18,20000,0
 501A,1,unidas y unidos,unidas y unidos,frente de izquierda y de trabajadores - unidad,frente de izquierda y de trabajadores - unidad,501,,San Luis,Diputados Nacionales,223,DN19,19,20000,0
 502A,2,A San Luis Unido,A San Luis Unido,juntos por el cambio,juntos por el cambio,502,#FFCD00,San Luis,Diputados Nacionales,224,DN19,19,20000,0
 502B,3,B SOMOS POR LA VIDA,B SOMOS POR LA VIDA,juntos por el cambio,juntos por el cambio,502,#FFCD00,San Luis,Diputados Nacionales,225,DN19,19,20000,0
@@ -304,17 +304,17 @@ opcion_codigo,opcion_orden,opcion_nombre,opcion_nombre_corto,partido_nombre,part
 504B,7,Lista B alternativa tucuman,Lista B alternativa tucuman,CONSENSO FEDERAL,CONSENSO FEDERAL,504,#031F73,Tucumán,Diputados Nacionales,303,DN23,23,20000,0
 181A,8,Lista A CELESTE Y BLANCA,Lista A CELESTE Y BLANCA,FUERZA REPUBLICANA,FUERZA REPUBLICANA,181,,Tucumán,Diputados Nacionales,304,DN23,23,20000,0
 133 - 203,1,Lista A UNIDAD / Lista unidad,Lista A UNIDAD / Lista unidad,Frente de Izquierda y de los trabajadores / Partido Obrero,Frente de Izquierda y de los trabajadores / Partido Obrero,203,,Tierra del Fuego,Diputados Nacionales,305,DN24,24,20000,0
-135 - 502,2,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Alianza juntos por el cambio Juntos por el cambio TDF,Alianza juntos por el cambio Juntos por el cambio TDF,502,,Tierra del Fuego,Diputados Nacionales,306,DN24,24,20000,0
-136 - 501,3,Lista A celeste y blanca,Lista A celeste y blanca,Alianza frente de todos,Alianza frente de todos,501,,Tierra del Fuego,Diputados Nacionales,307,DN24,24,20000,0
-137 - 69,4,Lista a - Consenso para el futuro soberania fueguina,Lista a - Consenso para el futuro soberania fueguina,Alianza Consenso Federal / gen,Alianza Consenso Federal / gen,69,,Tierra del Fuego,Diputados Nacionales,308,DN24,24,20000,0
+135 - 502,2,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,#FFCD00,Tierra del Fuego,Diputados Nacionales,306,DN24,24,20000,0
+136 - 501,3,Lista A celeste y blanca,Lista A celeste y blanca,Alianza frente de todos,Alianza frente de todos,501,#00A8E4,Tierra del Fuego,Diputados Nacionales,307,DN24,24,20000,0
+137 - 69,4,Lista a - Consenso para el futuro soberania fueguina,Lista a - Consenso para el futuro soberania fueguina,Alianza Consenso Federal / gen,Alianza Consenso Federal / gen,69,#031F73,Tierra del Fuego,Diputados Nacionales,308,DN24,24,20000,0
 187,5,Lista A unidad,Lista A unidad,partido social patagónico,partido social patagónico,187,,Tierra del Fuego,Diputados Nacionales,309,DN24,24,20000,0
 502,6,Lista C - TIERRA DEL FUEGO CAMBIA,Lista C - TIERRA DEL FUEGO CAMBIA,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,,Tierra del Fuego,Diputados Nacionales,310,DN24,24,20000,0
 503,7,Lista A sigamos juntos,Lista A sigamos juntos,vamos todos a vivir mejor,vamos todos a vivir mejor,503,,Tierra del Fuego,Diputados Nacionales,311,DN24,24,20000,0
 133 - 203,1,Lista A UNIDAD / Lista unidad,Lista A UNIDAD / Lista unidad,Frente de Izquierda y de los trabajadores / Partido Obrero,Frente de Izquierda y de los trabajadores / Partido Obrero,203,,Tierra del Fuego,Senadores Nacionales,312,SN24,24,20000,0
-135 - 502,2,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Alianza juntos por el cambio Juntos por el cambio TDF,Alianza juntos por el cambio Juntos por el cambio TDF,502,,Tierra del Fuego,Senadores Nacionales,313,SN24,24,20000,0
-136 - 501,3,Lista A celeste y blanca,Lista A celeste y blanca,Alianza frente de todos,Alianza frente de todos,501,,Tierra del Fuego,Senadores Nacionales,314,SN24,24,20000,0
-137 - 69,4,Lista a - Consenso para el futuro soberania fueguina,Lista a - Consenso para el futuro soberania fueguina,Alianza Consenso Federal / gen,Alianza Consenso Federal / gen,69,,Tierra del Fuego,Senadores Nacionales,315,SN24,24,20000,0
+135 - 502,2,Lista A - Juntos somos el cambio,Lista A - Juntos somos el cambio,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,#FFCD00,Tierra del Fuego,Senadores Nacionales,313,SN24,24,20000,0
+136 - 501,3,Lista A celeste y blanca,Lista A celeste y blanca,Alianza frente de todos,Alianza frente de todos,501,#00A8E4,Tierra del Fuego,Senadores Nacionales,314,SN24,24,20000,0
+137 - 69,4,Lista a - Consenso para el futuro soberania fueguina,Lista a - Consenso para el futuro soberania fueguina,Alianza Consenso Federal / gen,Alianza Consenso Federal / gen,69,#031F73,Tierra del Fuego,Senadores Nacionales,315,SN24,24,20000,0
 187,5,Lista A unidad,Lista A unidad,partido social patagónico,partido social patagónico,187,,Tierra del Fuego,Senadores Nacionales,316,SN24,24,20000,0
-502B,6,Lista B - cantera popular,Lista B - cantera popular,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,,Tierra del Fuego,Senadores Nacionales,317,SN24,24,20000,0
-502C,7,Lista C - TIERRA DEL FUEGO CAMBIA,Lista C - TIERRA DEL FUEGO CAMBIA,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,,Tierra del Fuego,Senadores Nacionales,318,SN24,24,20000,0
+502B,6,Lista B - cantera popular,Lista B - cantera popular,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,#FFCD00,Tierra del Fuego,Senadores Nacionales,317,SN24,24,20000,0
+502C,7,Lista C - TIERRA DEL FUEGO CAMBIA,Lista C - TIERRA DEL FUEGO CAMBIA,Alianza juntos por el cambio TDF,Alianza juntos por el cambio TDF,502,#00A8E4,Tierra del Fuego,Senadores Nacionales,318,SN24,24,20000,0
 503,8,Lista A sigamos juntos,Lista A sigamos juntos,vamos todos a vivir mejor,vamos todos a vivir mejor,503,,Tierra del Fuego,Senadores Nacionales,319,SN24,24,20000,0
