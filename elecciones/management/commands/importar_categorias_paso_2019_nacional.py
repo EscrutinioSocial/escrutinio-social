@@ -2,6 +2,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.db.models import Q
+from django.db.utils import IntegrityError
 from pathlib import Path
 from csv import DictReader
 from elecciones.models import Partido, Opcion, Categoria, CategoriaOpcion, Mesa, MesaCategoria
@@ -13,6 +14,8 @@ from .basic_command import BaseCommand
 CSV_NACIONAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_nacionales.csv'
 CSV_PROVINCIAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_provinciales.csv'
 CSV_DISTRITAL = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/categorias_distrito_02.csv'
+
+PRIORIDAD_DEFAULT = 20000
 
 class Command(BaseCommand):
     """partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_nombre,opcion_nombre_corto,partido_orden,opcion_orden,categoria_nombre
@@ -57,6 +60,13 @@ class Command(BaseCommand):
             if partido_orden is None:
                 continue
 
+            prioridad_categoria = self.to_nat(row,'categoria_prioridad', c)
+            if prioridad_categoria is None:
+                self.warning(f'La opción {codigo} no define la prioridad de la categoría o no es un natural.'
+                             f' Se setea en el valor por defecto {PRIORIDAD_DEFAULT}. Línea {c}'
+                )
+                prioridad_categoria = PRIORIDAD_DEFAULT
+            
             defaults = {
                 'nombre': nombre,
                 'nombre_corto': nombre_corto,
@@ -124,10 +134,18 @@ class Command(BaseCommand):
             self.log_creacion(opcion, created)
 
             defaults = {'nombre': row['categoria_nombre']}
-            categoria, created = Categoria.objects.update_or_create(
-                slug=row['categoria_slug'],
-                defaults=defaults
-            )
+            try:
+                categoria, created = Categoria.objects.update_or_create(
+                    slug=row['categoria_slug'],
+                    defaults=defaults,
+                    prioridad=prioridad_categoria
+                )
+            except IntegrityError:
+                self.error_log(f'El slug {row["categoria_slug"]} ya estaba en uso. No se crea la '
+                               f'categoría {row["categoria_nombre"]}. Línea {c}.'
+                )
+                continue
+            
             self.log_creacion(categoria, created)
 
             if created:
