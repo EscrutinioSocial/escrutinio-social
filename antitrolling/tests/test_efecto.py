@@ -1,4 +1,5 @@
 import pytest
+from constance.test import override_config
 from django.conf import settings
 
 from elecciones.models import MesaCategoria, Carga, CargasIncompatiblesError
@@ -27,33 +28,32 @@ def test_efecto_consolidar_asociacion_attachment(db, settings):
     O sea, que se aumente el scoring de los fiscales que hicieron identificaciones distintas
     a la aceptada, y que no aumente el scoring de los fiscales que hicieron la identificacion aceptada.
     """
+    with override_config(SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 180):
+        fiscal_1 = nuevo_fiscal()
+        fiscal_2 = nuevo_fiscal()
+        fiscal_3 = nuevo_fiscal()
+        fiscal_4 = nuevo_fiscal()
+        mesa_1 = MesaFactory()
+        mesa_2 = MesaFactory()
+        attach = AttachmentFactory()
+        # los cuatro fiscales hacen una identificacion sobre el mismo attachment
+        # los fiscales 1 y 2 hacen la identificacion que se va a aceptar, a la mesa 1
+        # el fiscal 3 identifica a una mesa distinta
+        # el fiscal 4 reporta un problema
+        identificar(attach, mesa_1, fiscal_1)
+        identificar(attach, mesa_1, fiscal_2)
+        identificar(attach, mesa_2, fiscal_3)
+        reportar_problema_attachment(attach, fiscal_4)
 
-    settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 180
-    fiscal_1 = nuevo_fiscal()
-    fiscal_2 = nuevo_fiscal()
-    fiscal_3 = nuevo_fiscal()
-    fiscal_4 = nuevo_fiscal()
-    mesa_1 = MesaFactory()
-    mesa_2 = MesaFactory()
-    attach = AttachmentFactory()
-    # los cuatro fiscales hacen una identificacion sobre el mismo attachment
-    # los fiscales 1 y 2 hacen la identificacion que se va a aceptar, a la mesa 1
-    # el fiscal 3 identifica a una mesa distinta
-    # el fiscal 4 reporta un problema
-    identificar(attach, mesa_1, fiscal_1)
-    identificar(attach, mesa_1, fiscal_2)
-    identificar(attach, mesa_2, fiscal_3)
-    reportar_problema_attachment(attach, fiscal_4)
-
-    # se espera que se generen dos eventos, para los fiscales 3 y 4 que identificaron distinto
-    # a la mesa que se indica como asociada al attachment
-    cantidad_eventos_antes = EventoScoringTroll.objects.count()
-    efecto_scoring_troll_asociacion_attachment(attach, mesa_1)
-    assert EventoScoringTroll.objects.count() == cantidad_eventos_antes + 2
-    assert fiscal_1.scoring_troll() == 0
-    assert fiscal_2.scoring_troll() == 0
-    assert fiscal_3.scoring_troll() == 180
-    assert fiscal_4.scoring_troll() == 180
+        # se espera que se generen dos eventos, para los fiscales 3 y 4 que identificaron distinto
+        # a la mesa que se indica como asociada al attachment
+        cantidad_eventos_antes = EventoScoringTroll.objects.count()
+        efecto_scoring_troll_asociacion_attachment(attach, mesa_1)
+        assert EventoScoringTroll.objects.count() == cantidad_eventos_antes + 2
+        assert fiscal_1.scoring_troll() == 0
+        assert fiscal_2.scoring_troll() == 0
+        assert fiscal_3.scoring_troll() == 180
+        assert fiscal_4.scoring_troll() == 180
 
 
 def test_diferencia_opciones(db):
@@ -319,4 +319,5 @@ def test_efecto_problema_descartado(db):
     problema = i1.problemas.first().problema
     problema.descartar(nuevo_fiscal().user)
 
-    assert EventoScoringTroll.objects.get().variacion == settings.SCORING_TROLL_PROBLEMA_DESCARTADO
+    from constance import config
+    assert EventoScoringTroll.objects.get().variacion == config.SCORING_TROLL_PROBLEMA_DESCARTADO

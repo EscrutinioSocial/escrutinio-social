@@ -1,3 +1,4 @@
+from constance import config
 from django.conf import settings
 from django.db import models
 from model_utils.models import TimeStampedModel
@@ -102,7 +103,7 @@ def aumentar_scoring_troll_identificacion(variacion, identificacion):
         variacion=variacion
     )
     scoring_actualizado = scoring_anterior + variacion
-    if scoring_actualizado >= settings.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
+    if scoring_actualizado >= config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
         marcar_fiscal_troll(fiscal, nuevo_evento)
 
 
@@ -121,7 +122,7 @@ def aumentar_scoring_troll_carga(variacion, carga, motivo):
         variacion=variacion
     )
     scoring_actualizado = scoring_anterior + variacion
-    if scoring_actualizado >= settings.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
+    if scoring_actualizado >= config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
         marcar_fiscal_troll(fiscal, nuevo_evento)
 
 
@@ -136,7 +137,7 @@ def aumentar_scoring_troll_problema_descartado(variacion, fiscal_afectado, mesa,
         variacion=variacion
     )
     scoring_actualizado = scoring_anterior + variacion
-    if scoring_actualizado >= settings.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
+    if scoring_actualizado >= config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
         marcar_fiscal_troll(fiscal_afectado, nuevo_evento)
 
 def crear_evento_marca_explicita_como_troll(fiscal, actor):

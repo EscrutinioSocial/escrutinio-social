@@ -11,6 +11,8 @@ from .basic_command import BaseCommand
 
 CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/escuelas.csv'
 
+ELECTORES_MESA_DEFAULT = 350
+
 ESTADO_GEOLOCALIZACION = {
     'Match': 9,
     'Partial Match': 5,
@@ -54,11 +56,11 @@ class Command(BaseCommand):
             except Distrito.DoesNotExist:
                 self.warning(f'No existe el distrito {nro_distrito}. {mensaje_fallo_escuela}')
             except Seccion.DoesNotExist:
-                self.warning('No existe la sección {nro_seccion} en el distrito {nro_distrito}. Línea {c}. '
+                self.warning(f'No existe la sección {nro_seccion} en el distrito {nro_distrito}. Línea {c}. '
                              f'{mensaje_fallo_escuela}'
                 )
             except Circuito.DoesNotExist:
-                self.warning('No existe el circuito {circuito_nro}. {mensaje_fallo_escuela}')
+                self.warning(f'No existe el circuito {circuito_nro}. {mensaje_fallo_escuela}')
             else:
 
                 escuela, created = LugarVotacion.objects.update_or_create(
@@ -113,7 +115,9 @@ class Command(BaseCommand):
                         try:
                             mesa, created = Mesa.objects.update_or_create(numero=mesa_nro,
                                                                           lugar_votacion=escuela,
-                                                                          circuito=circuito)
+                                                                          circuito=circuito,
+                                                                          electores=ELECTORES_MESA_DEFAULT
+                            )
                         except IntegrityError:
                             self.warning(f'Error de integridad al intentar crear la mesa {mesa_nro} '
                                          f'en la escuela {escuela}. Línea {c}'

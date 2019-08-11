@@ -1,4 +1,4 @@
-from django.conf import settings
+from constance import config
 from adjuntos.models import Identificacion
 from elecciones.models import Carga, CargasIncompatiblesError
 from .models import (
@@ -24,7 +24,7 @@ def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
             #  Para cada identificación del attachment que no coincida en mesa,
             #  aumentar el scoring troll del fiscal que la hizo
             aumentar_scoring_troll_identificacion(
-                settings.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA,
+                config.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA,
                 identificacion
             )
 
@@ -53,7 +53,7 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
                 )
         elif carga.tipo == Carga.TIPOS.problema:
             aumentar_scoring_troll_carga(
-                settings.SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA,
+                config.SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA,
                 carga,
                 EventoScoringTroll.MOTIVOS.indica_problema_mesa_categoria_confirmada
             )
@@ -78,7 +78,7 @@ def efecto_scoring_troll_descartar_problema(fiscal, problema):
     Realiza el efecto de que se descarte un "problema" reportado por el usuario parámetro.
     """
     aumentar_scoring_troll_problema_descartado(
-        settings.SCORING_TROLL_PROBLEMA_DESCARTADO,
+        config.SCORING_TROLL_PROBLEMA_DESCARTADO,
         fiscal,
         problema.mesa,
         problema.attachment

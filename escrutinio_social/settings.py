@@ -386,16 +386,6 @@ MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
 # recálculo de consolidaciones de identificación y carga
 PAUSA_CONSOLIDACION = 15
 
-# Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll
-SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 500
-
-# Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada
-SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 200
-# Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
-SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA = 200
-# Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.
-SCORING_TROLL_PROBLEMA_DESCARTADO = 200
-
 # Tiempos de 'taken', para adjuntos y para mesas.
 ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
 MESA_TAKE_WAIT_TIME = 2  # En minutos
@@ -423,12 +413,13 @@ OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
 KEY_VOTOS_POSITIVOS = 'Votos Positivos'
 
-NOMBRE_CATEGORIA_PRESI_Y_VICE = 'Presidente y Vicepresidente'
-NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y Vice Provincia de Buenos Aires'
+NOMBRE_CATEGORIA_PRESI_Y_VICE = 'Presidente y vice'
+NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y vice'
 
 # Código de partidos principales para validaciones.
-CODIGO_PARTIDO_NOSOTROS = '136'
-CODIGO_PARTIDO_ELLOS = '135'
+CODIGO_PARTIDO_NOSOTROS = 136
+CODIGO_PARTIDO_ELLOS = 135
+CODIGO_PARTIDO_ELLOS_BA = 502
 
 # Cada cuánto tiempo actualizar el campo last_seen de un Fiscal.
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
@@ -492,9 +483,13 @@ CONSTANCE_CONFIG = {
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
     'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text'),
     'CONFIGURACION_COMPUTO_PUBLICA': ('inicial', 'Nombre de la configuración que se utiliza para publicar resultados.'),
+    'SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL': (500, 'Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll.', int), 
+    'SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada.', int),
+    'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas.', int),
+    'SCORING_TROLL_PROBLEMA_DESCARTADO': (200, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
 }
 
-URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/tgbNymZ7vqY'
+URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
 
 
 # Para los tests no se importan los local settings.

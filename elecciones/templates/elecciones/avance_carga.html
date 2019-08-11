@@ -107,42 +107,98 @@
       </td>
     {% endif %}
 	</tr>
+  <tr>
+    <td style="text-align: left"><span style="font-weight: bold">Sin identificar</span></td>
+    <td></td>
+    <td></td>
+    {% if mostrar_electores %}
+      <td></td>
+      <td></td>
+    {% endif %}
+  </tr>
 	<tr>
-	  <td style="text-align: left">Sin identificar</td>
+    <td style="text-align: left; padding-left: 50px">Mesas sin foto asociada y sin cargas</td>
 	  <td style="text-align: right;">
-	    {{ resultados.sin_identificar.cantidad_mesas }}
+	    {{ resultados.sin_identificar_sin_cargas.cantidad_mesas }}
 	  </td>
 	  <td style="text-align: right;">
-	    {{ resultados.sin_identificar.porcentaje_mesas }}
+	    {{ resultados.sin_identificar_sin_cargas.porcentaje_mesas }}
 	  </td>
     {% if mostrar_electores %}
       <td style="text-align: right;">
-        {{ resultados.sin_identificar.cantidad_electores }}
+        {{ resultados.sin_identificar_sin_cargas.cantidad_electores }}
       </td>
       <td style="text-align: right;">
-        {{ resultados.sin_identificar.porcentaje_electores }}
+        {{ resultados.sin_identificar_sin_cargas.porcentaje_electores }}
       </td>
     {% endif %}
 	</tr>
+  <tr>
+    <td style="text-align: left; padding-left: 50px; color: mediumseagreen;">
+      Mesas sin foto asociada con carga desde CSV (se incluyen en *)
+    </td>
+    <td style="text-align: right; color: mediumseagreen;">
+      {{ resultados.sin_identificar_con_cargas.cantidad_mesas }}
+    </td>
+    <td style="text-align: right; color: mediumseagreen;">
+      {{ resultados.sin_identificar_con_cargas.porcentaje_mesas }}
+    </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right; color: mediumseagreen;">
+        {{ resultados.sin_identificar_con_cargas.cantidad_electores }}
+      </td>
+      <td style="text-align: right; color: mediumseagreen;">
+        {{ resultados.sin_identificar_con_cargas.porcentaje_electores }}
+      </td>
+    {% endif %}
+  </tr>
+  <tr>
+    <td style="text-align: left"><span style="font-weight: bold">En proceso de identificación</span></td>
+    <td></td>
+    <td></td>
+    {% if mostrar_electores %}
+    <td></td>
+    <td></td>
+    {% endif %}
+  </tr>
 	<tr>
-		<td style="text-align: left">En proceso de identificación</td>
+    <td style="text-align: left; padding-left: 50px">Mesas sin foto asociada y sin cargas</td>
 		<td style="text-align: right;">
-			{{ resultados.en_identificacion.cantidad_mesas }}
+			{{ resultados.en_identificacion_sin_cargas.cantidad_mesas }}
 		</td>
 		<td style="text-align: right;">
-			{{ resultados.en_identificacion.porcentaje_mesas }}
+			{{ resultados.en_identificacion_sin_cargas.porcentaje_mesas }}
 		</td>
     {% if mostrar_electores %}
       <td style="text-align: right;">
-        {{ resultados.en_identificacion.cantidad_electores }}
+        {{ resultados.en_identificacion_sin_cargas.cantidad_electores }}
       </td>
       <td style="text-align: right;">
-        {{ resultados.en_identificacion.porcentaje_electores }}
+        {{ resultados.en_identificacion_sin_cargas.porcentaje_electores }}
       </td>
     {% endif %}
 	</tr>
+  <tr>
+    <td style="text-align: left; padding-left: 50px; color: mediumseagreen;">
+      Mesas sin foto asociada con carga desde CSV (se incluyen en *)
+    </td>
+    <td style="text-align: right; color: mediumseagreen;">
+      {{ resultados.en_identificacion_con_cargas.cantidad_mesas }}
+    </td>
+    <td style="text-align: right; color: mediumseagreen;">
+      {{ resultados.en_identificacion_con_cargas.porcentaje_mesas }}
+    </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right; color: mediumseagreen;">
+        {{ resultados.en_identificacion_con_cargas.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.en_identificacion_con_cargas.porcentaje_electores }}
+      </td>
+    {% endif %}
+  </tr>
 	<tr>
-	  <td style="text-align: left">Sin cargar</td>
+	  <td style="text-align: left"><span style="font-weight: bold">Con foto asociada y sin cargas</span></td>
 	  <td style="text-align: right;">
 	    {{ resultados.sin_cargar.cantidad_mesas }}
 	  </td>
@@ -183,7 +239,9 @@
     {% endif %}
 	</tr>
   <tr>
-    <td style="text-align: left; padding-left: 50px">Consolidada por ingreso desde CSV</td>
+    <td style="text-align: left; padding-left: 50px">
+      Consolidada por ingreso desde CSV <span style="color: mediumseagreen;">(*)</span>
+    </td>
     <td style="text-align: right;">
       {{ resultados.carga_parcial_consolidada_csv.cantidad_mesas }}
     </td>
@@ -243,7 +301,9 @@
     {% endif %}
 	</tr>
 	<tr>
-	  <td style="text-align: left; padding-left: 50px">Consolidada por ingreso desde CSV</td>
+    <td style="text-align: left; padding-left: 50px">
+      Consolidada por ingreso desde CSV <span style="color: mediumseagreen;">(*)</span>
+    </td>
 	  <td style="text-align: right;">
 	    {{ resultados.carga_total_consolidada_csv.cantidad_mesas }}
 	  </td>
