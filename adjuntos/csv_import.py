@@ -11,7 +11,8 @@ from fiscales.models import Fiscal
 import structlog
 
 
-logger = structlog.get_logger('csv_import')
+import logging
+logger = logging.getLogger('csv_import')
 
 # Primer dato: nombre de la columna, segundo: si es parte de una categoría o no,
 # tercero, si es obligatorio o puede no estar (dado que en distintas provincias se votan distintas
