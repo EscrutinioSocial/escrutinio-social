@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.shortcuts import reverse
 from django.utils.html import format_html
+from djangoql.admin import DjangoQLSearchMixin
 from .models import Problema, ReporteDeProblema
 from django import forms
 from django_admin_row_actions import AdminRowActionsMixin
@@ -21,7 +22,7 @@ class ReporteDeProblemaInline(admin.StackedInline):
     model = ReporteDeProblema
     extra = 0
 
-class ProblemaAdmin(AdminRowActionsMixin, admin.ModelAdmin):
+class ProblemaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
 
     def mesa_(o):
         if o.mesa:
