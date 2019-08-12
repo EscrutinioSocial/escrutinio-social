@@ -87,6 +87,13 @@ def hacer_staff(modeladmin, request, queryset):
 
 hacer_staff.short_description = "Hacer staff (dataentry)"
 
+def hacer_no_troll(modeladmin, request, queryset):
+    for f in queryset:
+        f.troll = False
+        f.save(update_fields=['troll'])
+
+
+hacer_no_troll.short_description = "Hacer NO troll"
 
 class EventoScoringTrollInline(admin.TabularInline):
     model = EventoScoringTroll
@@ -122,7 +129,7 @@ def enviar_email(modeladmin, request, queryset):
 
 
 class FiscalAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
-    actions = [hacer_staff, enviar_email]
+    actions = [hacer_staff, enviar_email, hacer_no_troll]
 
     def get_row_actions(self, obj):
         row_actions = []
