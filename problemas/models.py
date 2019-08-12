@@ -66,6 +66,9 @@ class Problema(TimeStampedModel):
         """
         Toma el problema asociado a la carga.mesa o a identificacion.attachment y
         lo confirma.
+        Esta función puede ser invocada por el consolidador. En ese caso, el problema
+        podría ya estar resuelto o descartado, así que se contempla esa opción en cuyo
+        caso no sucede nada.
         """
         mesa = carga.mesa if carga else None
         attachment = identificacion.attachment if identificacion else None
@@ -76,7 +79,9 @@ class Problema(TimeStampedModel):
             # Puede haber tenido otros problemas previos.
             estado__in=[cls.ESTADOS.resuelto, cls.ESTADOS.descartado]
         ).first()
-        problema.confirmar()
+        if problema:
+            # Sólo lo confirmamos si "sobrevivió" y no está resuelto ni descartado.
+            problema.confirmar()
 
     @classmethod
     def resolver_problema_falta_hoja(cls, mesa):
