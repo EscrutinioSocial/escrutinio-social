@@ -407,8 +407,8 @@ class ReporteDeProblemaCreateView(FormView):
         )
 
     def form_invalid(self, form):
-        tipo = bool(form.errors['tipo_de_problema'])
-        descripcion = bool(form.errors['descripcion'])
+        tipo = bool(form.errors.get('tipo_de_problema', False))
+        descripcion = bool(form.errors.get('descripcion', False))
         return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
 
     def form_valid(self, form):
