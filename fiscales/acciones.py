@@ -21,7 +21,7 @@ def siguiente_accion(request):
       cola de carga (siendo X la variable config.COEFICIENTE_IDENTIFICACION_VS_CARGA).
     - caso contrario, no hay nada para hacer
     """
-    attachments = Attachment.sin_identificar(request.user.fiscal, for_update=True)
+    attachments = Attachment.objects.sin_identificar(request.user.fiscal, for_update=True)
     con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True)
 
     cant_fotos = attachments.count()
@@ -29,16 +29,12 @@ def siguiente_accion(request):
 
     if (cant_fotos and not cant_cargas or
             cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
-        foto = attachments.order_by('?').first()
+        foto = attachments.menos_asignadas().first()
         if foto:
-            # Se marca el adjunto
-            foto.take(request.user.fiscal)
             return IdentificacionDeFoto(request, foto)
     elif cant_cargas:
         mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
         if mesacategoria:
-            # Se marca que se inicia una carga
-            mesacategoria.take(request.user.fiscal)
             return CargaCategoriaEnActa(request, mesacategoria)
     return NoHayAccion(request)
 
@@ -53,6 +49,10 @@ class IdentificacionDeFoto():
     def __init__(self, request, attachment):
         self.request = request
         self.attachment = attachment
+        # Asignamos el attachment al fiscal.
+        request.user.fiscal.asignar_attachment(foto)
+        # Se registra que fue asignado a un fiscal.
+        attachment.asignar_a_fiscal()
 
     def ejecutar(self):
         # Se realiza el redirect
@@ -70,6 +70,9 @@ class CargaCategoriaEnActa():
     def __init__(self, request, mc):
         self.request = request
         self.mc = mc
+        # Se marca que se inicia una carga.
+        request.user.fiscal.asignar_mesa_categoria(mc)
+        mesacategoria.asignar_a_fiscal()
 
     def ejecutar(self):
         if (

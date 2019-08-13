@@ -387,10 +387,6 @@ MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
 # recálculo de consolidaciones de identificación y carga
 PAUSA_CONSOLIDACION = 15
 
-# Tiempos de 'taken', para adjuntos y para mesas.
-ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
-MESA_TAKE_WAIT_TIME = 2  # En minutos
-
 # Prioridades standard, a usar si no se definen prioridades específicas
 # para una categoría o circuito
 PRIORIDADES_STANDARD_SECCION = [

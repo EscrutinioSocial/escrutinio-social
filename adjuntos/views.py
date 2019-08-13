@@ -35,8 +35,8 @@ from .forms import AgregarAttachmentsCSV
 logger = structlog.get_logger(__name__)
 
 
-MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido'
-MENSAJE_SOLO_UN_ACTA = 'Se debe subir una sola acta'
+MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido o nuevo.'
+MENSAJE_SOLO_UN_ACTA = 'Se debe subir una sola acta.'
 CSV_MIMETYPES = (
     'application/csv.ms-excel',
     'application/csv.msexcel',
@@ -83,17 +83,18 @@ class IdentificacionCreateView(CreateView):
         attachment = get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
         fiscal = self.request.user.fiscal
         # Sólo el fiscal asignado al attachment puede identificar la foto.
-        if False: #attachment.taken_by != fiscal:
+        if fiscal.attachment_asignado != attachment:
             capture_message(
                 f"""
-                Intento de asignar mesa de attachment {attachment.id} sin permiso
+                Intento de asignar mesa de attachment {attachment.id} sin permiso.
 
-                taken_by: {attachment.taken_by}
-                fiscal: {fiscal} ({fiscal.id})
+                attachment: {attachment.id}
+                fiscal: {fiscal} ({fiscal.id}, tenía asignada: fiscal.attachment_asignado)
                 """
             )
             # TO DO: deberíamos sumar puntos al score anti-trolling?
-            raise PermissionDenied()
+            # Lo mandamos nuevamente a que le dé algo para hacer.
+            raise reverse('siguiente-accion')
         return attachment
 
     def get_initial(self):
@@ -126,17 +127,19 @@ class IdentificacionCreateView(CreateView):
         logger.info('error identificacion', id=self.attachment.id)
         return super().form_invalid(form)
 
+    @transaction.atomic
     def form_valid(self, form):
         identificacion = form.save(commit=False)
         identificacion.status = Attachment.STATUS.identificada
         identificacion.fiscal = self.request.user.fiscal
         identificacion.attachment = self.attachment
         identificacion.save()
+        attachment.desasignar_a_fiscal()  # Le bajamos la cuenta.
         messages.info(
             self.request,
             f'Identificada mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito}',
         )
-        logger.info('fin identificacion', id=self.attachment.id)
+        logger.info('fin identificación', id=self.attachment.id)
         return super().form_valid(form)
 
 
@@ -148,11 +151,13 @@ class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
         mesa_id = identificacion.mesa.id
         return reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_id})
 
+    @transaction.atomic
     def form_valid(self, form):
         identificacion = form.save(commit=False)
         identificacion.source = Identificacion.SOURCES.csv
         identificacion.fiscal = self.request.user.fiscal
         super().form_valid(form)
+        attachment.desasignar_a_fiscal()
         # Como viene desde una UB, consolidamos el attachment y ya le pasamos la mesa
         consolidar_identificaciones(identificacion.attachment)
         return redirect(self.get_success_url())
@@ -325,7 +330,8 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
                 instance = self.procesar_adjunto(file, fiscal)
                 if instance is not None:
                     messages.success(self.request, 'Subiste el acta correctamente.')
-                    instance.take(fiscal)
+                    fiscal.asignar_attachment(instance)
+                    instance.asignar_a_fiscal()
                     return redirect(reverse('asignar-mesa-ub', kwargs={"attachment_id": instance.id}))
 
             form.add_error('file_field', MENSAJE_NINGUN_ATTACHMENT_VALIDO)

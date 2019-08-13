@@ -82,6 +82,8 @@ class Attachment(TimeStampedModel):
     No pueden existir dos instancias de este modelo con la misma foto, dado que
     el atributo digest es único.
     """
+    objects = AttachmentQuerySet.as_manager()
+
     STATUS = Choices(
         ('sin_identificar', 'sin identificar'),
         'identificada',
@@ -119,8 +121,6 @@ class Attachment(TimeStampedModel):
         blank=True,
         null=True
     )
-    taken = models.DateTimeField(null=True, blank=True)
-    taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
     subido_por = models.ForeignKey(
         'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL,
@@ -140,22 +140,22 @@ class Attachment(TimeStampedModel):
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    @transaction.atomic
-    def take(self, fiscal):
-        self.taken = timezone.now()
-        self.taken_by = fiscal
-        logger.info('attachment take', id=self.id)
-        self.save(update_fields=['taken', 'taken_by'])
+    # Registra a cuántos fiscales se les entregó la mesa para que trabajen en ella.
+    cant_fiscales_asignados = models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False
+    )
 
-    @transaction.atomic
-    def release(self):
-        """
-        Libera una mesa, es lo contrario de take().
-        """
-        logger.info('attachment release', id=self.id)
-        self.taken = None
-        self.taken_by = None
-        self.save(update_fields=['taken', 'taken_by'])
+    def asignar_a_fiscal(self):
+        self.cant_fiscales_asignados += 1
+        self.save(update_fields=['cant_fiscales_asignados'])
+        logger.info('attachment asignado', id=self.id)
+
+    def desasignar_a_fiscal(self):
+        self.cant_fiscales_asignados -= 1
+        self.save(update_fields=['cant_fiscales_asignados'])
+        logger.info('attachment desasignado', id=self.id)
 
     def crear_pre_identificacion_si_corresponde(self):
         """
@@ -195,34 +195,6 @@ class Attachment(TimeStampedModel):
         self.crear_pre_identificacion_si_corresponde()
         super().save(*args, **kwargs)
 
-    @classmethod
-    def sin_identificar(cls, fiscal_a_excluir=None, for_update=True):
-        """
-        Devuelve un conjunto de Attachments que no tienen
-        identificación consolidada y no han sido asignados
-        para clasificar en los últimos ``settings.ATTACHMENT_TAKE_WAIT_TIME`` minutos.
-
-        Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
-        """
-        wait = settings.ATTACHMENT_TAKE_WAIT_TIME
-        return cls.sin_identificar_con_timeout(wait=wait, fiscal_a_excluir=fiscal_a_excluir, for_update=for_update)
-
-    @classmethod
-    def sin_identificar_con_timeout(cls, wait=2, fiscal_a_excluir=None, for_update=False):
-        """
-        Es la implementación de sin_identificar() que se expone sólo para poder
-        testear más fácilmente
-        """
-        desde = timezone.now() - timedelta(minutes=wait)
-        qs = cls.objects.select_for_update(skip_locked=True) if for_update else cls.objects.all()
-        qs = qs.filter(
-            Q(taken__isnull=True) | Q(taken__lt=desde),
-            status='sin_identificar',
-        )
-        if fiscal_a_excluir:
-            qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
-        return qs
-
     def status_count(self, estado):
         """
         A partir del conjunto de identificaciones del attachment
@@ -259,6 +231,27 @@ class Attachment(TimeStampedModel):
 
     def __str__(self):
         return f'{self.id} {self.foto} ({self.mimetype})'
+
+class AttachmentQuerySet(models.QuerySet):
+
+    def sin_identificar(self, fiscal_a_excluir=None, for_update=True):
+        """
+        Devuelve un conjunto de Attachments que no tienen
+        identificación consolidada.
+
+        Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
+        """
+        qs = self.select_for_update(skip_locked=True) if for_update else self
+        qs = qs.filter(
+            status='sin_identificar',
+        )
+        if fiscal_a_excluir:
+            qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
+        return qs
+
+    def menos_asignadas(self):
+        # Ordena por asignaciones y luego un factor al azar para dispersar.        
+        self.order_by('cant_fiscales_asignados', '?')
 
 
 class Identificacion(TimeStampedModel):

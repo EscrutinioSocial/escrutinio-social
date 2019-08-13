@@ -130,12 +130,42 @@ class Fiscal(models.Model):
     # Para saber si hay que capacitarlo
     ingreso_alguna_vez = models.BooleanField(default=False)
 
+    # Campos para saber qué attachment o mesa tiene asignado.
+    attachment_asignado = models.ForeignKey('Attachment', related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
+    mesa_categoria_asignada = models.ForeignKey('MesaCategoria', related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
+
     class Meta:
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'), )
 
     objects = FiscalManager()
-        
+
+
+    @transaction.atomic
+    def asignar_attachment(self, attachment):
+        """
+        Asigna al fiscal un attachment para que trabaje en él.
+        Al hacer esto se desasigna la mesa_categoría ya que puede tener
+        asignada una de las dos tareas a la vez
+        """
+        self.asignar_attachment_o_mesacategoria(attachment, None)
+
+
+    @transaction.atomic
+    def asignar_mesa_categoria(self, mesa_categoria):
+        """
+        Asigna al fiscal una mesa_categoria para que trabaje en ella.
+        Al hacer esto se desasigna el attachment ya que puede tener
+        asignada una de las dos tareas a la vez
+        """
+        self.asignar_attachment_o_mesacategoria(None, mesa_categoria)
+
+
+    def asignar_attachment_o_mesacategoria(self, attachment, mesa_categoria):
+        self.attachment_asignado = attachment
+        self.mesa_categoria_asignada = mesa_categoria
+        self.save(update_fields=['attachment_asignado', 'mesa_categoria_asignada'])
+
     def update_last_seen(self, cuando):
         self.last_seen = cuando
         self.save(update_fields=['last_seen'])
