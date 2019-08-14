@@ -89,11 +89,11 @@ class IdentificacionCreateView(CreateView):
                 Intento de asignar mesa de attachment {attachment.id} sin permiso.
 
                 attachment: {attachment.id}
-                fiscal: {fiscal} ({fiscal.id}, tenía asignada: fiscal.attachment_asignado)
+                fiscal: {fiscal} ({fiscal.id}, tenía asignada: {fiscal.attachment_asignado})
                 """
             )
             # TO DO: deberíamos sumar puntos al score anti-trolling?
-            # Lo mandamos nuevamente a que le dé algo para hacer.
+            # Lo mandamos nuevamente a que se le dé algo para hacer.
             raise reverse('siguiente-accion')
         return attachment
 

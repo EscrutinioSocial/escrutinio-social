@@ -341,18 +341,6 @@ class MesaCategoriaQuerySet(models.QuerySet):
         # estar seguros de que no se cuele una mesa sin foto.
         return self.filter(orden_de_carga__isnull=False).exclude(mesa__attachments=None)
 
-    def no_taken(self):
-        """
-        Filtra que no esté tomada dentro de los últimos
-        ``settings.MESA_TAKE_WAIT_TIME`` minutos,
-        """
-        wait = settings.MESA_TAKE_WAIT_TIME
-        desde = timezone.now() - timedelta(minutes=wait)
-        return self.filter(
-            # No puede estar tomado o tiene que haber expirado el periodo de taken.
-            Q(taken__isnull=True) | Q(taken__lt=desde)
-        )
-
     def sin_problemas(self):
         """
         Excluye las instancias que tengan problemas.
@@ -379,7 +367,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def con_carga_pendiente(self, for_update=True):
         qs = self.select_for_update(skip_locked=True) if for_update else self
-        return qs.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
+        return qs.identificadas().sin_problemas().sin_consolidar_por_doble_carga()
 
     def anotar_prioridad_status(self):
         """
@@ -404,12 +392,25 @@ class MesaCategoriaQuerySet(models.QuerySet):
             )
         )
 
+    def redondear_cant_fiscales_asignados(self):
+        """
+        Redondea la cantidad de fiscales asignados a múltiplos de 
+        ``settings.MIN_COINCIDENCIAS_CARGAS`` para que al asignar mesas
+        no se pospongan indefinidamente mesas que fueron entregadas ya a algún
+        fiscal.
+        """
+        return self.annotate(
+            cant_fiscales_asignados_redondeados=V(cant_fiscales_asignados // settings.MIN_COINCIDENCIAS_CARGAS),
+        )
+
     def mas_prioritaria(self):
         """
         Devuelve la intancia más prioritaria del queryset.
         """
-        return self.anotar_prioridad_status().order_by(
-            'prioridad_status', 'orden_de_carga', 'id'
+        return self.anotar_prioridad_status().redondear_cant_fiscales_asignados().order_by(
+            'prioridad_status', 'orden_de_carga',
+            'cant_fiscales_asignados_redondeados',  # Primero las que tienen menos gente trabajando en ellas.
+            'id'
         ).first()
 
     def siguiente(self):
@@ -477,22 +478,22 @@ class MesaCategoria(models.Model):
     # orden relativo de carga, usado en la priorizacion
     orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
 
-    @transaction.atomic
-    def take(self, fiscal):
-        self.taken = timezone.now()
-        self.taken_by = fiscal
-        logger.info('mc take', id=self.id)
-        self.save(update_fields=['taken', 'taken_by'])
+    # Registra a cuántos fiscales se les entregó la mesa para que trabajen en ella.
+    cant_fiscales_asignados = models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False
+    )
 
-    @transaction.atomic
-    def release(self):
-        """
-        Libera la mesa, es lo contrario de take().
-        """
-        logger.info('mc release', id=self.id)
-        self.taken = None
-        self.taken_by = None
-        self.save(update_fields=['taken', 'taken_by'])
+    def asignar_a_fiscal(self):
+        self.cant_fiscales_asignados += 1
+        self.save(update_fields=['cant_fiscales_asignados'])
+        logger.info('mc asignada', id=self.id)
+
+    def desasignar_a_fiscal(self):
+        self.cant_fiscales_asignados -= 1
+        self.save(update_fields=['cant_fiscales_asignados'])
+        logger.info('mc desasignada', id=self.id)
 
     def actualizar_orden_de_carga(self):
         """

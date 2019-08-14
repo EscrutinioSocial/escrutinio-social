@@ -262,17 +262,18 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
 
     # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
-    if False: #mesa_categoria.taken_by != fiscal:
+    if fiscal.mesa_categoria_asignada != mesa_categoria:
         capture_message(
             f"""
             Intento de cargar mesa-categoria {mesa_categoria.id}
 
-            taken_by: {mesa_categoria.taken_by}
-            fiscal: {fiscal} ({fiscal.id})
+        mesa categoría: {mesa_categoria.id}
+            fiscal: {fiscal} ({fiscal.id}, tenía asignada: {fiscal.mesa_categoria_asignada})
             """
         )
         # TO DO: quizas sumar puntos al score anti-trolling?
-        raise PermissionDenied('no te toca cargar acá')
+        # Lo mandamos nuevamente a que se le dé algo para hacer.
+        raise reverse('siguiente-accion')
 
     # En carga parcial sólo se cargan opciones prioritarias.
     solo_prioritarias = tipo == 'parcial'
@@ -356,8 +357,8 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     reportados.append(vmr)
                 VotoMesaReportado.objects.bulk_create(reportados)
 
-                # Libero el token sobre la mc
-                mesa_categoria.release()
+                identificacion.save()
+                mesa_categoria.desasignar_a_fiscal()  # Le bajamos la cuenta.
                 # si viene desde_ub, consolidamos la carga
                 if desde_ub:
                     consolidar_cargas(mesa_categoria)

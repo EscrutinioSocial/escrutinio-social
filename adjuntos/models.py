@@ -249,9 +249,20 @@ class AttachmentQuerySet(models.QuerySet):
             qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
         return qs
 
+    def redondear_cant_fiscales_asignados(self):
+        """
+        Redondea la cantidad de fiscales asignados a múltiplos de 
+        ``settings.MIN_COINCIDENCIAS_IDENTIFICACION`` para que al asignar mesas
+        no se pospongan indefinidamente mesas que fueron entregadas ya a algún
+        fiscal.
+        """
+        return self.annotate(
+            cant_fiscales_asignados_redondeados=V(cant_fiscales_asignados // settings.MIN_COINCIDENCIAS_IDENTIFICACION),
+        )
+
     def menos_asignadas(self):
-        # Ordena por asignaciones y luego un factor al azar para dispersar.        
-        self.order_by('cant_fiscales_asignados', '?')
+        # Ordena por asignaciones y luego por orden de llegada.
+        self.redondear_cant_fiscales_asignados().order_by('cant_fiscales_asignados_redondeados', 'id')
 
 
 class Identificacion(TimeStampedModel):

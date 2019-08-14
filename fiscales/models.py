@@ -140,7 +140,6 @@ class Fiscal(models.Model):
 
     objects = FiscalManager()
 
-
     @transaction.atomic
     def asignar_attachment(self, attachment):
         """
@@ -150,7 +149,6 @@ class Fiscal(models.Model):
         """
         self.asignar_attachment_o_mesacategoria(attachment, None)
 
-
     @transaction.atomic
     def asignar_mesa_categoria(self, mesa_categoria):
         """
@@ -159,7 +157,6 @@ class Fiscal(models.Model):
         asignada una de las dos tareas a la vez
         """
         self.asignar_attachment_o_mesacategoria(None, mesa_categoria)
-
 
     def asignar_attachment_o_mesacategoria(self, attachment, mesa_categoria):
         self.attachment_asignado = attachment
