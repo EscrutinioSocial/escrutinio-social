@@ -81,20 +81,7 @@ class IdentificacionCreateView(CreateView):
     @property
     def attachment(self):
         attachment = get_object_or_404(Attachment, id=self.kwargs['attachment_id'])
-        fiscal = self.request.user.fiscal
-        # Sólo el fiscal asignado al attachment puede identificar la foto.
-        if fiscal.attachment_asignado != attachment:
-            capture_message(
-                f"""
-                Intento de asignar mesa de attachment {attachment.id} sin permiso.
 
-                attachment: {attachment.id}
-                fiscal: {fiscal} ({fiscal.id}, tenía asignada: {fiscal.attachment_asignado})
-                """
-            )
-            # TO DO: deberíamos sumar puntos al score anti-trolling?
-            # Lo mandamos nuevamente a que se le dé algo para hacer.
-            raise reverse('siguiente-accion')
         return attachment
 
     def get_initial(self):
@@ -111,7 +98,23 @@ class IdentificacionCreateView(CreateView):
         return initial
 
     def get(self, *args, **kwargs):
-        logger.info('inicio identificacion', id=self.attachment.id)
+        logger.info('Inicio identificación', id=self.attachment.id)
+        fiscal = self.request.user.fiscal
+        attachment = self.attachment
+        # Sólo el fiscal asignado al attachment puede identificar la foto.
+        if fiscal.attachment_asignado != attachment:
+            capture_message(
+                f"""
+                Intento de asignar mesa de attachment {attachment.id} sin permiso.
+
+                attachment: {attachment.id}
+                fiscal: {fiscal} ({fiscal.id}, tenía asignada: {fiscal.attachment_asignado})
+                """
+            )
+            # TO DO: deberíamos sumar puntos al score anti-trolling?
+            # Lo mandamos nuevamente a que se le dé algo para hacer.
+            return redirect('siguiente-accion')
+
         return super().get(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -124,7 +127,7 @@ class IdentificacionCreateView(CreateView):
         return context
 
     def form_invalid(self, form):
-        logger.info('error identificacion', id=self.attachment.id)
+        logger.info('Error identificacion', id=self.attachment.id)
         return super().form_invalid(form)
 
     @transaction.atomic
@@ -134,12 +137,12 @@ class IdentificacionCreateView(CreateView):
         identificacion.fiscal = self.request.user.fiscal
         identificacion.attachment = self.attachment
         identificacion.save()
-        attachment.desasignar_a_fiscal()  # Le bajamos la cuenta.
+        self.attachment.desasignar_a_fiscal()  # Le bajamos la cuenta.
         messages.info(
             self.request,
             f'Identificada mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito}',
         )
-        logger.info('fin identificación', id=self.attachment.id)
+        logger.info('Fin identificación', id=self.attachment.id)
         return super().form_valid(form)
 
 
@@ -157,7 +160,7 @@ class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
         identificacion.source = Identificacion.SOURCES.csv
         identificacion.fiscal = self.request.user.fiscal
         super().form_valid(form)
-        attachment.desasignar_a_fiscal()
+        identificacion.attachment.desasignar_a_fiscal()
         # Como viene desde una UB, consolidamos el attachment y ya le pasamos la mesa
         consolidar_identificaciones(identificacion.attachment)
         return redirect(self.get_success_url())

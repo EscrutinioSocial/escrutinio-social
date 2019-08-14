@@ -13,9 +13,10 @@ from django.db.models import Sum
 from django.db.models.signals import post_save, pre_delete
 from django.contrib.contenttypes.models import ContentType
 from annoying.functions import get_object_or_None
-from elecciones.models import Seccion, Distrito
+from elecciones.models import Seccion, Distrito, MesaCategoria
 
 from contacto.models import DatoDeContacto
+from adjuntos.models import Attachment
 from model_utils.models import TimeStampedModel
 from model_utils.fields import StatusField
 from django.db.utils import IntegrityError
@@ -131,8 +132,8 @@ class Fiscal(models.Model):
     ingreso_alguna_vez = models.BooleanField(default=False)
 
     # Campos para saber qué attachment o mesa tiene asignado.
-    attachment_asignado = models.ForeignKey('Attachment', related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
-    mesa_categoria_asignada = models.ForeignKey('MesaCategoria', related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
+    attachment_asignado = models.ForeignKey(Attachment, related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
+    mesa_categoria_asignada = models.ForeignKey(MesaCategoria, related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
         verbose_name_plural = 'Fiscales'

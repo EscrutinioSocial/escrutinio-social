@@ -197,7 +197,7 @@ class PartidoAdmin(admin.ModelAdmin):
 
 class MesaCategoriaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     list_display = ['mesa', 'categoria', 'status']
-    raw_id_fields = ['mesa', 'categoria', 'carga_testigo', 'carga_oficial', 'parcial_oficial', 'taken_by']
+    raw_id_fields = ['mesa', 'categoria', 'carga_testigo', 'carga_oficial', 'parcial_oficial']
     list_filter = ['status', ]
 
     def get_row_actions(self, obj):

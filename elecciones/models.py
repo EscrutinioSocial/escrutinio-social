@@ -400,7 +400,8 @@ class MesaCategoriaQuerySet(models.QuerySet):
         fiscal.
         """
         return self.annotate(
-            cant_fiscales_asignados_redondeados=V(cant_fiscales_asignados // settings.MIN_COINCIDENCIAS_CARGAS),
+            cant_fiscales_asignados_redondeados=F(
+                'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_CARGAS,
         )
 
     def mas_prioritaria(self):
@@ -436,9 +437,6 @@ class MesaCategoria(models.Model):
     """
     Modelo intermedio para la relación m2m ``Mesa.categorias``
     mantiene el estado de las `cargas`
-
-    Permite guardar el booleano que marca la carga de esa
-    "columna" como confirmada.
     """
     objects = MesaCategoriaQuerySet.as_manager()
 
@@ -461,21 +459,17 @@ class MesaCategoria(models.Model):
         'Carga', related_name='es_parcial_oficial', null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    # timestamp para dar un tiempo de guarda a la espera de una carga
-    taken = models.DateTimeField(null=True, blank=True)
-    taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
-
-    # entero que se define como el procentaje (redondeado) de mesas del circuito
+    # Entero que se define como el procentaje (redondeado) de mesas del circuito
     # ya identificadas al momento de identificar la mesa.
     # Incide en el cálculo del orden_de_carga.
     percentil = models.PositiveIntegerField(null=True, blank=True)
 
-    # en qué orden se identificó esta MesaCategoría dentro de las del circuito.
+    # En qué orden se identificó esta MesaCategoría dentro de las del circuito.
     # Incide en el cálculo del orden_de_carga.
     # aumenta en forma correlativa, salvo colisiones que no perjudican al uso en una medida relevante.
     orden_de_llegada = models.PositiveIntegerField(null=True, blank=True)
 
-    # orden relativo de carga, usado en la priorizacion
+    # Orden relativo de carga, usado en la prioritización.
     orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
 
     # Registra a cuántos fiscales se les entregó la mesa para que trabajen en ella.

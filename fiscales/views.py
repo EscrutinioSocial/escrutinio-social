@@ -273,7 +273,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
         )
         # TO DO: quizas sumar puntos al score anti-trolling?
         # Lo mandamos nuevamente a que se le dé algo para hacer.
-        raise reverse('siguiente-accion')
+        return redirect(reverse('siguiente-accion'))
 
     # En carga parcial sólo se cargan opciones prioritarias.
     solo_prioritarias = tipo == 'parcial'

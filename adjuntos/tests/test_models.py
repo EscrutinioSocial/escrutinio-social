@@ -19,14 +19,18 @@ def test_attachment_unico(db):
         AttachmentFactory(foto=a.foto)
 
 
-def test_sin_identificar_excluye_taken(db):
+def test_menos_asignadas_respeta_orden(db, settings):
     f = FiscalFactory()
     a1 = IdentificacionFactory(status='identificada').attachment
     a2 = IdentificacionFactory(status='spam').attachment
     a3 = IdentificacionFactory(status='spam').attachment
-    assert set(Attachment.sin_identificar_con_timeout()) == {a1, a2, a3}
-    a3.take(f)
-    assert set(Attachment.sin_identificar_con_timeout(wait=2)) == {a1, a2}
+    assert set(Attachment.objects.sin_identificar()) == {a1, a2, a3}
+    for i in range(settings.MIN_COINCIDENCIAS_IDENTIFICACION):
+        a2.asignar_a_fiscal()
+    for i in range(2 * settings.MIN_COINCIDENCIAS_IDENTIFICACION):
+        a3.asignar_a_fiscal()
+    # Me las debe entregar en orden.
+    assert list(Attachment.objects.sin_identificar().menos_asignadas()) == [a1, a2, a3]
 
 
 def test_sin_identificar_excluye_otros_estados(db):
@@ -34,7 +38,7 @@ def test_sin_identificar_excluye_otros_estados(db):
     AttachmentFactory(status='invalida')
     AttachmentFactory(status='identificada')
     a = AttachmentFactory(status=Attachment.STATUS.sin_identificar)
-    assert set(Attachment.sin_identificar()) == {a}
+    assert set(Attachment.objects.sin_identificar()) == {a}
 
 
 def test_identificacion_status_count(db):
@@ -139,7 +143,7 @@ def test_ciclo_de_vida_problemas_resolver(db):
     IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
 
     # Está pendiente.
-    assert a in Attachment.sin_identificar()
+    assert a in Attachment.objects.sin_identificar()
 
     i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
     f = FiscalFactory()
@@ -163,7 +167,7 @@ def test_ciclo_de_vida_problemas_resolver(db):
     assert problema.estado == Problema.ESTADOS.pendiente
 
     # El attach no está entre los pendientes.
-    assert a not in Attachment.sin_identificar()
+    assert a not in Attachment.objects.sin_identificar()
 
     problema.resolver(FiscalFactory().user)
 

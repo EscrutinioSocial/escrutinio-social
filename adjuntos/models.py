@@ -4,7 +4,7 @@ from urllib.parse import quote_plus
 
 from django.conf import settings
 from django.utils import timezone
-from django.db.models import Count, Value
+from django.db.models import Count, Value, F
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 from django.db import models, transaction
@@ -70,6 +70,40 @@ class Email(models.Model):
     def gmail_url(self):
         mid = quote_plus(f':{self.message_id}')
         return f'https://mail.google.com/mail/u/0/#search/rfc822msgid{mid}'
+
+
+class AttachmentQuerySet(models.QuerySet):
+
+    def sin_identificar(self, fiscal_a_excluir=None, for_update=True):
+        """
+        Devuelve un conjunto de Attachments que no tienen
+        identificación consolidada.
+
+        Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
+        """
+        qs = self.select_for_update(skip_locked=True) if for_update else self
+        qs = qs.filter(
+            status='sin_identificar',
+        )
+        if fiscal_a_excluir:
+            qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
+        return qs
+
+    def redondear_cant_fiscales_asignados(self):
+        """
+        Redondea la cantidad de fiscales asignados a múltiplos de
+        ``settings.MIN_COINCIDENCIAS_IDENTIFICACION`` para que al asignar mesas
+        no se pospongan indefinidamente mesas que fueron entregadas ya a algún
+        fiscal.
+        """
+        return self.annotate(
+            cant_fiscales_asignados_redondeados=F(
+                'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_IDENTIFICACION,
+        )
+
+    def menos_asignadas(self):
+        # Ordena por asignaciones y luego por orden de llegada.
+        return self.redondear_cant_fiscales_asignados().order_by('cant_fiscales_asignados_redondeados', 'id')
 
 
 class Attachment(TimeStampedModel):
@@ -150,12 +184,12 @@ class Attachment(TimeStampedModel):
     def asignar_a_fiscal(self):
         self.cant_fiscales_asignados += 1
         self.save(update_fields=['cant_fiscales_asignados'])
-        logger.info('attachment asignado', id=self.id)
+        logger.info('Attachment asignado', id=self.id)
 
     def desasignar_a_fiscal(self):
         self.cant_fiscales_asignados -= 1
         self.save(update_fields=['cant_fiscales_asignados'])
-        logger.info('attachment desasignado', id=self.id)
+        logger.info('Attachment desasignado', id=self.id)
 
     def crear_pre_identificacion_si_corresponde(self):
         """
@@ -217,12 +251,12 @@ class Attachment(TimeStampedModel):
         cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
         result = []
         query = qs.values('mesa', 'status').annotate(
-                mesa_o_0=Coalesce('mesa', Value(0))     # Esto es para facilitar el testing.
-            ).annotate(
-                total=Count('status')
-            ).annotate(
-                cuantos_csv=cuantos_csv
-            )
+            mesa_o_0=Coalesce('mesa', Value(0))     # Esto es para facilitar el testing.
+        ).annotate(
+            total=Count('status')
+        ).annotate(
+            cuantos_csv=cuantos_csv
+        )
         for item in query:
             result.append(
                 (item['mesa_o_0'], item['total'], item['cuantos_csv'])
@@ -231,38 +265,6 @@ class Attachment(TimeStampedModel):
 
     def __str__(self):
         return f'{self.id} {self.foto} ({self.mimetype})'
-
-class AttachmentQuerySet(models.QuerySet):
-
-    def sin_identificar(self, fiscal_a_excluir=None, for_update=True):
-        """
-        Devuelve un conjunto de Attachments que no tienen
-        identificación consolidada.
-
-        Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
-        """
-        qs = self.select_for_update(skip_locked=True) if for_update else self
-        qs = qs.filter(
-            status='sin_identificar',
-        )
-        if fiscal_a_excluir:
-            qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
-        return qs
-
-    def redondear_cant_fiscales_asignados(self):
-        """
-        Redondea la cantidad de fiscales asignados a múltiplos de 
-        ``settings.MIN_COINCIDENCIAS_IDENTIFICACION`` para que al asignar mesas
-        no se pospongan indefinidamente mesas que fueron entregadas ya a algún
-        fiscal.
-        """
-        return self.annotate(
-            cant_fiscales_asignados_redondeados=V(cant_fiscales_asignados // settings.MIN_COINCIDENCIAS_IDENTIFICACION),
-        )
-
-    def menos_asignadas(self):
-        # Ordena por asignaciones y luego por orden de llegada.
-        self.redondear_cant_fiscales_asignados().order_by('cant_fiscales_asignados_redondeados', 'id')
 
 
 class Identificacion(TimeStampedModel):
@@ -295,7 +297,7 @@ class Identificacion(TimeStampedModel):
         )
 
     def invalidar(self):
-        logger.info('identificacion invalidada', id=self.id)
+        logger.info('Identificación invalidada', id=self.id)
         self.invalidada = True
         self.procesada = False
         self.save(update_fields=['invalidada', 'procesada'])
@@ -333,4 +335,3 @@ class PreIdentificacion(TimeStampedModel):
 
     def __str__(self):
         return f'{self.distrito} - {self.seccion} - {self.circuito} (subida por {self.fiscal})'
-
