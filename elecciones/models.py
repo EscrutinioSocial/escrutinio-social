@@ -485,7 +485,8 @@ class MesaCategoria(models.Model):
         logger.info('mc asignada', id=self.id)
 
     def desasignar_a_fiscal(self):
-        self.cant_fiscales_asignados -= 1
+        # Si por error alguien hizo un submit de más, no es un problema, por eso se redondea a cero.
+        self.cant_fiscales_asignados = min(0, self.cant_fiscales_asignados - 1)
         self.save(update_fields=['cant_fiscales_asignados'])
         logger.info('mc desasignada', id=self.id)
 
