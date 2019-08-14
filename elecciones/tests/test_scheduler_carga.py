@@ -47,7 +47,7 @@ def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
     assert mc2.orden_de_carga is not None
 
 
-def test_siguiente_prioriza_estado_y_luego_coeficiente(db, setup_constance, django_assert_num_queries):
+def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_constance, django_assert_num_queries):
 
     f = FiscalFactory()
     c = CategoriaFactory(prioridad=1)
@@ -78,12 +78,23 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, setup_constance, djan
     with django_assert_num_queries(3):
         assert MesaCategoria.objects.siguiente() == mc1
 
-    mc1.take(f)
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc1.asignar_a_fiscal()
     assert MesaCategoria.objects.siguiente() == mc3
-    mc3.take(f)
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc3.asignar_a_fiscal()
     assert MesaCategoria.objects.siguiente() == mc2
-    mc2.take(f)
-    assert MesaCategoria.objects.siguiente() is None
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc2.asignar_a_fiscal()
+
+    # A igualdad de asignaciones, se vuelven a repetir.
+    assert MesaCategoria.objects.siguiente() == mc1
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc1.asignar_a_fiscal()
+    assert MesaCategoria.objects.siguiente() == mc3
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc3.asignar_a_fiscal()
+    assert MesaCategoria.objects.siguiente() == mc2
 
 
 @pytest.mark.skip('Reformular con nuevo scheduling.')
@@ -103,9 +114,9 @@ def test_siguiente_prioriza_categoria(db):
     )
     # se recibe la mc con categoria más baja
     assert MesaCategoria.objects.siguiente() == mc2
-    mc2.take(f)
+    mc2.asignar_a_fiscal(f)
     assert MesaCategoria.objects.siguiente() == mc1
-    mc1.take(f)
+    mc1.asignar_a_fiscal(f)
     assert MesaCategoria.objects.siguiente() is None
 
 @pytest.mark.skip('Reformular con nuevo scheduling.')
@@ -126,9 +137,9 @@ def test_siguiente_prioriza_mesa(db):
 
     # se recibe la mc con mesa con prioridad menor
     assert MesaCategoria.objects.siguiente() == mc2
-    mc2.take(f)
+    mc2.asignar_a_fiscal(f)
     assert MesaCategoria.objects.siguiente() == mc1
-    mc1.take(f)
+    mc1.asignar_a_fiscal(f)
     assert MesaCategoria.objects.siguiente() is None
 
 
@@ -152,28 +163,3 @@ def test_identificadas_excluye_sin_orden(db):
     assert mc1.orden_de_carga is None
     assert mc1 not in MesaCategoria.objects.identificadas()
     assert mc2 in MesaCategoria.objects.identificadas()
-
-
-def test_no_taken_incluye_taken_nulo(db):
-    f = FiscalFactory()
-    mc1 = MesaCategoriaDefaultFactory()
-    mc2 = MesaCategoriaDefaultFactory()
-    assert mc1.taken is None
-    assert mc2.taken is None
-    assert set(MesaCategoria.objects.no_taken()) == {mc1, mc2}
-    mc2.take(f)
-    assert mc2.taken is not None
-    assert mc2.taken_by == f
-    assert set(MesaCategoria.objects.no_taken()) == {mc1}
-
-
-def test_no_taken_incluye_taken_vencido(db):
-    now = timezone.now()
-    mc1 = MesaCategoriaFactory(taken=now)
-    mc2 = MesaCategoriaFactory(taken=now - timedelta(minutes=3))
-    assert mc1.taken is not None
-    assert mc2.taken is not None
-    assert mc1 not in MesaCategoria.objects.no_taken()
-    assert mc2 in MesaCategoria.objects.no_taken()
-
-

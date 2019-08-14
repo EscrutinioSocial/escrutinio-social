@@ -72,7 +72,7 @@ class CargaCategoriaEnActa():
         self.mc = mc
         # Se marca que se inicia una carga.
         request.user.fiscal.asignar_mesa_categoria(mc)
-        mesacategoria.asignar_a_fiscal()
+        mc.asignar_a_fiscal()
 
     def ejecutar(self):
         if (

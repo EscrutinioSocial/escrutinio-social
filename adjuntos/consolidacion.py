@@ -224,7 +224,7 @@ def consolidar_identificaciones(attachment):
     attachment.identificacion_testigo = testigo
     attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
     logger.info(
-        'identificacion',
+        'consolid. identificación',
         attachment=attachment.id,
         testigo=getattr(testigo, 'id', None),
         status=status_attachment

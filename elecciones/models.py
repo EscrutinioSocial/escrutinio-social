@@ -6,7 +6,7 @@ from django.dispatch import receiver
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, F
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -404,15 +404,25 @@ class MesaCategoriaQuerySet(models.QuerySet):
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_CARGAS,
         )
 
+    def ordenadas_por_prioridad(self):
+        return self.anotar_prioridad_status().redondear_cant_fiscales_asignados().order_by(
+            'cant_fiscales_asignados_redondeados',  # Primero las que tienen menos gente trabajando en ellas.
+            'prioridad_status', 'orden_de_carga',
+            'id'
+        )
+
+    def debug_mas_prioritaria(self):
+        return self.ordenadas_por_prioridad().values(
+            'cant_fiscales_asignados_redondeados',
+            'prioridad_status', 'orden_de_carga',
+            'id'
+        )
+
     def mas_prioritaria(self):
         """
         Devuelve la intancia más prioritaria del queryset.
         """
-        return self.anotar_prioridad_status().redondear_cant_fiscales_asignados().order_by(
-            'prioridad_status', 'orden_de_carga',
-            'cant_fiscales_asignados_redondeados',  # Primero las que tienen menos gente trabajando en ellas.
-            'id'
-        ).first()
+        return self.ordenadas_por_prioridad().first()
 
     def siguiente(self):
         """
@@ -425,12 +435,6 @@ class MesaCategoriaQuerySet(models.QuerySet):
         Devuelve mesacat con carga pendiente más prioritaria
         """
         return self.con_carga_pendiente().sin_consolidar_por_csv().mas_prioritaria()
-
-    def siguiente_para_fiscal(self, fiscal):
-        """
-        Devuelve mesacat con carga pendiente más prioritaria, que no tenga cargas del fiscal indicado
-        """
-        return self.con_carga_pendiente().sin_cargas_del_fiscal(fiscal).mas_prioritaria()
 
 
 class MesaCategoria(models.Model):
@@ -486,7 +490,7 @@ class MesaCategoria(models.Model):
 
     def desasignar_a_fiscal(self):
         # Si por error alguien hizo un submit de más, no es un problema, por eso se redondea a cero.
-        self.cant_fiscales_asignados = min(0, self.cant_fiscales_asignados - 1)
+        self.cant_fiscales_asignados = max(0, self.cant_fiscales_asignados - 1)
         self.save(update_fields=['cant_fiscales_asignados'])
         logger.info('mc desasignada', id=self.id)
 

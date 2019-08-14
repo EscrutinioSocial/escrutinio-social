@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
+from http import HTTPStatus
 from elecciones.models import Categoria, MesaCategoria, Carga, Seccion, Opcion, OPCIONES_A_CONSIDERAR
 
 from .factories import (
@@ -521,19 +522,33 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     assert resultados.total_mesas_escrutadas() == 2
 
 
-def test_siguiente_accion_cargar_acta(fiscal_client):
+def test_siguiente_accion_cargar_acta(fiscal_client, settings):
     c = CategoriaFactory(nombre='default')
     m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
     m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
     mc1 = MesaCategoriaFactory(mesa=m1, categoria=c)
     mc2 = MesaCategoriaFactory(mesa=m2, categoria=c)
     consumir_novedades_identificacion()
+
+    # Todas estas veces debería darme la misma.
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        response = fiscal_client.get(reverse('siguiente-accion'))
+        assert response.status_code == HTTPStatus.FOUND
+        assert response.url == reverse('carga-total', args=(mc1.id, ))
+        mc1.refresh_from_db()
+        assert mc1.cant_fiscales_asignados == i + 1
+
+    # Ahora la siguiente.
     response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
-    assert response.url == reverse('carga-total', args=(mc1.id, ))
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == 302
+    assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=(mc2.id, ))
+
+    # Devuelvo y pido de nuevo. Debería volver a darme la primera.
+    mc1.desasignar_a_fiscal()
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    # No la devolví, debería darme la misma.
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('carga-total', args=(mc1.id, ))
 
 
 def test_resultados_no_positivos(fiscal_client):
