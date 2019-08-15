@@ -2,6 +2,9 @@ from django.conf import settings
 import structlog
 from adjuntos.models import Attachment, Identificacion
 from elecciones.models import Carga, MesaCategoria
+from fiscales.models import Fiscal
+from django.utils import timezone
+from datetime import timedelta
 from django.db import transaction
 from django.db.models import Count
 from django.dispatch import receiver
@@ -288,9 +291,30 @@ def consumir_novedades_carga():
     procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
 
+@transaction.atomic
+def liberar_mesacategorias_y_attachments():
+    """
+    Toma a los fiscales cuya última tarea haya sido asignada más de
+    `settings.TIMEOUT_TAREAS` minutos atrás y:
+    - No se la desasinga para no perder el trabajo que va a hacer cuando haga el submit.
+    - Pero sí le baja la cantidad de asignaciones a la mesacategoría y los attachments para que queden
+    postergados por demasiado tiempo.
+    """
+    desde = timezone.now() - timedelta(minutes=settings.TIMEOUT_TAREAS)
+    fiscales_con_timeout = Fiscal.objects.select_for_update(skip_locked=True).filter(
+        asignacion_ultima_tarea__lt=desde)
+    for fiscal in fiscales_con_timeout:
+        if fiscal.attachment_asignado:
+            fiscal.attachment_asignado.desasignar_a_fiscal()
+        elif fiscal.mesa_categoria_asignada:
+            fiscal.mesa_categoria_asignada.desasignar_a_fiscal()
+        fiscal.resetear_timeout_asignacion_tareas()
 
 def consumir_novedades():
-    return (consumir_novedades_identificacion(), consumir_novedades_carga())
+    return (consumir_novedades_identificacion(), 
+        consumir_novedades_carga(),
+        liberar_mesacategorias_y_attachments()
+    )
 
 
 @receiver(post_save, sender=Attachment)

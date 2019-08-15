@@ -6,6 +6,7 @@ from django.db import models
 from django.urls import reverse
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.auth.models import User
 from django.dispatch import receiver
@@ -132,6 +133,7 @@ class Fiscal(models.Model):
     ingreso_alguna_vez = models.BooleanField(default=False)
 
     # Campos para saber qué attachment o mesa tiene asignado.
+    asignacion_ultima_tarea = models.DateTimeField(null=True, blank=True)
     attachment_asignado = models.ForeignKey(Attachment, related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
     mesa_categoria_asignada = models.ForeignKey(MesaCategoria, related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
 
@@ -141,28 +143,32 @@ class Fiscal(models.Model):
 
     objects = FiscalManager()
 
-    @transaction.atomic
     def asignar_attachment(self, attachment):
         """
         Asigna al fiscal un attachment para que trabaje en él.
         Al hacer esto se desasigna la mesa_categoría ya que puede tener
-        asignada una de las dos tareas a la vez
+        asignada una de las dos tareas a la vez.
         """
         self.asignar_attachment_o_mesacategoria(attachment, None)
 
-    @transaction.atomic
     def asignar_mesa_categoria(self, mesa_categoria):
         """
         Asigna al fiscal una mesa_categoria para que trabaje en ella.
         Al hacer esto se desasigna el attachment ya que puede tener
-        asignada una de las dos tareas a la vez
+        asignada una de las dos tareas a la vez.
         """
         self.asignar_attachment_o_mesacategoria(None, mesa_categoria)
 
+    @transaction.atomic
     def asignar_attachment_o_mesacategoria(self, attachment, mesa_categoria):
         self.attachment_asignado = attachment
         self.mesa_categoria_asignada = mesa_categoria
-        self.save(update_fields=['attachment_asignado', 'mesa_categoria_asignada'])
+        self.asignacion_ultima_tarea = timezone.now()
+        self.save(update_fields=['asignacion_ultima_tarea', 'attachment_asignado', 'mesa_categoria_asignada'])
+
+    def resetear_timeout_asignacion_tareas(self):
+        self.asignacion_ultima_tarea = None
+        self.save(update_fields=['asignacion_ultima_tarea'])
 
     def update_last_seen(self, cuando):
         self.last_seen = cuando

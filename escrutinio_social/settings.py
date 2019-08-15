@@ -379,6 +379,10 @@ MIN_COINCIDENCIAS_CARGAS = 2
 MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
 MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
+# Tiempo máximo luego del cual se considera que un fiscal no cumplió con la tarea que tenía asignada y 
+# le es entregada a otra persona.
+TIMEOUT_TAREAS = 3  # En minutos
+
 # Tamaño maximo de archivos permitidos en el formulario
 # de subida de fotos y CSV
 MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
