@@ -88,8 +88,17 @@ class CSVImporter:
         self.logger.debug("Importando archivo '%s'.", archivo)
 
     def procesar(self):
+        """
+        Devuelve True si se procesó OK, False en otro caso, y como segundo parámetro
+        todos aquellos errores que se pueden reportar en batch.
+        """
+        self.errores = []
         self.validar()
         self.cargar_info()
+        return len(self.errores) == 0, self.errores
+
+    def anadir_error(self, error):
+        self.errores.append(error)
 
     def validar(self):
         """
