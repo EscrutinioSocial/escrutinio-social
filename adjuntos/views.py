@@ -422,8 +422,11 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
     def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion):
         # Valida la info del archivo.
         try:
-            CSVImporter(adjunto, self.request.user).procesar()
-            return 'success'
+            ok, errores = CSVImporter(adjunto, self.request.user).procesar()
+            if ok:
+                return 'success'
+            else
+                messages.error(self.request, f'{adjunto.name} produjo los siguientes errores:\n{errores}')
         except Exception as e:
             messages.error(self.request, f'{adjunto.name} ignorado. {str(e)}')
         return None

@@ -86,19 +86,27 @@ class CSVImporter:
         self.carga_parcial = None
         self.logger = logger
         self.logger.debug("Importando archivo '%s'.", archivo)
+        self.cant_errores = 0
+        self.errores = []
 
     def procesar(self):
         """
         Devuelve True si se procesó OK, False en otro caso, y como segundo parámetro
         todos aquellos errores que se pueden reportar en batch.
         """
-        self.errores = []
         self.validar()
+        if self.cant_errores > 0:
+            # Si hay errores en la validación no seguimos.
+            return False, '\n'.join(self.errores)
+
         self.cargar_info()
-        return len(self.errores) == 0, self.errores
+        return self.cant_errores == 0, '\n'.join(self.errores)
 
     def anadir_error(self, error):
-        self.errores.append(error)
+        self.cant_errores += 1
+        texto_error = f'{self.cant_errores} - {error}'
+        self.errores.append(texto_error)
+        self.logger.error(texto_error)
 
     def validar(self):
         """
@@ -160,9 +168,11 @@ class CSVImporter:
                 match_mesa = Mesa.obtener_mesa_en_circuito_seccion_distrito(
                     nro_de_mesa, circuito, seccion, distrito)
             except Mesa.DoesNotExist:
-                raise DatosInvalidosError(
+                self.anadir_error(
                     f'No existe mesa {nro_de_mesa} en circuito {circuito}, sección {seccion} y '
-                    f'distrito {distrito}.')
+                    f'distrito {distrito}.'
+                )
+                continue
             self.mesas_matches[nro_de_mesa] = match_mesa
             self.mesas.append(match_mesa)
 
@@ -241,7 +251,8 @@ class CSVImporter:
 
         if len(matcheos) == 0:
             raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
-                                      f'categoría: {categoria_bd.nombre}.')
+                                      f'categoría: {categoria_bd.nombre}.'
+            )
 
         # Se encontró la categoría de la mesa en el archivo.
         columna_de_la_categoria = matcheos[0]
@@ -261,16 +272,22 @@ class CSVImporter:
             else:
                 cantidad_votos = fila[columna_de_la_categoria]
 
-                if self.dato_ausente(cantidad_votos):
-                    # La celda está vacía.
-                    continue
-
                 try:
+                    if self.dato_ausente(cantidad_votos):
+                        # La celda está vacía.
+                        continue
+
                     cantidad_votos = int(cantidad_votos)
-                except ValueError:
-                    raise DatosInvalidosError(
-                        f'Los resultados deben ser números positivos. Revise la siguiente celda '
+                    if cantidad_votos < 0:
+                        self.anadir_error(
+                        f'Los resultados deben ser números enteros positivos. Revise la siguiente celda '
                         f'a {self.celda_analizada}.')
+                        continue
+                except ValueError:
+                    self.anadir_error(
+                        f'Los resultados deben ser números enteros positivos. Revise la siguiente celda '
+                        f'a {self.celda_analizada}.')
+                    continue
 
                 # Buscamos este nro de lista dentro de las opciones asociadas a
                 # esta categoría.
@@ -280,10 +297,11 @@ class CSVImporter:
                 opcion_bd = match_codigo_lista[0] if len(match_codigo_lista) > 0 else None
 
                 if not opcion_bd and cantidad_votos > 0:
-                    raise DatosInvalidosError(f'El número de lista {codigo_lista_en_csv} no fue '
-                                              f'encontrado asociado la categoría '
-                                              f'{categoria_bd.nombre}, revise que sea '
-                                              f'el correcto.')
+                    self.anadir_error(f'El número de lista {codigo_lista_en_csv} no fue '
+                                        f'encontrado asociado la categoría '
+                                        f'{categoria_bd.nombre}, revise que sea '
+                                        f'el correcto.')
+                    continue
                 elif not opcion_bd and cantidad_votos == 0:
                     # Me están reportando cero votos para una opción no asociada a la categoría.
                     # La ignoro.
@@ -349,26 +367,24 @@ class CSVImporter:
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         columnas_categorias = [i[0] for i in COLUMNAS_DEFAULT if i[1]]
 
-        try:
-            with transaction.atomic():
-
-                for mesa, filas_de_la_mesa in grupos_mesas:
-                    self.cargar_mesa(mesa, filas_de_la_mesa, columnas_categorias)
-
-        except IntegrityError as e:
-            # fixme ver mejor forma de manejar estos errores
-            if 'votomesareportado_votos_check' in str(e):
-                raise DatosInvalidosError(
-                    f'Los resultados deben ser números positivos. Revise la celda correspondiente '
-                    f'a {self.celda_analizada}.')
-            raise DatosInvalidosError(f'Error al guardar los resultados. Revise la celda correspondiente '
-                                      f'a {self.celda_analizada}.')
-        except ValueError as e:
-            raise DatosInvalidosError(
-                f'Revise que los datos de resultados sean numéricos. Revise la celda correspondiente '
-                f'a {self.celda_analizada}: {e}')
-        except Exception as e:
-            raise e
+        with transaction.atomic():
+            for mesa, filas_de_la_mesa in grupos_mesas:
+                try:
+                    self.cargar_mesa(mesa, filas_de_la_mesa, columnas_categorias)    
+                except IntegrityError as e:
+                    if 'votomesareportado_votos_check' in str(e):
+                        self.anadir_error(
+                            f'Los resultados deben ser números positivos. Revise la celda correspondiente '
+                            f'a {self.celda_analizada}.')
+                    else:
+                        self.anadir_error(f'Error al guardar los resultados. Revise la celda correspondiente '
+                            f'a {self.celda_analizada}.')
+                except ValueError as e:
+                    self.anadir_error(
+                        f'Revise que los datos de resultados sean numéricos. Revise la celda correspondiente '
+                        f'a {self.celda_analizada}: {e}')
+                except Exception as e:
+                    raise e
 
     def cargar_votos(self, cantidad_votos, opcion_categoria, mesa_categoria, opcion_bd):
         if opcion_categoria.prioritaria:
@@ -406,13 +422,13 @@ class CSVImporter:
 
     def validar_carga(self, carga, categoria, opciones_de_carga, es_parcial):
         """
-        Valida que la Carga tenga todas las opciones disponibles para votar en esa mesa. Si corresponde a una carga
+        Valida que la carga tenga todas las opciones disponibles para votar en esa mesa. Si corresponde a una carga
         parcial se valida que estén las opciones correspondientes a las categorías prioritarias.
-        Si es una carga Total, se verifica que estén todas las opciones para esa mesa.
+        Si es una carga total, se verifica que estén todas las opciones para esa mesa.
 
         :param parcial: Booleano, sirve para describir si se quiere validar una carga parcial
         (correspondiente a los partidos prioritarios).
-        :param categoria: Objeto Categoria que queremos verificar que este completo.
+        :param categoria: Objeto categoria que queremos verificar que esté completo.
         """
         opciones_votadas = carga.listado_de_opciones()
         opciones_de_la_categoria = opciones_de_carga
@@ -422,7 +438,7 @@ class CSVImporter:
             nombres_opciones_faltantes = list(Opcion.objects.filter(
                 id__in=opciones_faltantes).values_list('nombre', flat=True))
             tipo_carga = "parcial" if es_parcial else "total"
-            raise DatosInvalidosError(
+            self.anadir_error(
                 f'Los resultados para la carga {tipo_carga} para la categoría {categoria} '
                 f'deben estar completos. '
                 f'Faltan las opciones: {nombres_opciones_faltantes}.')
