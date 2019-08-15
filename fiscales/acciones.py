@@ -50,7 +50,7 @@ class IdentificacionDeFoto():
         self.request = request
         self.attachment = attachment
         # Asignamos el attachment al fiscal.
-        request.user.fiscal.asignar_attachment(foto)
+        request.user.fiscal.asignar_attachment(attachment)
         # Se registra que fue asignado a un fiscal.
         attachment.asignar_a_fiscal()
 

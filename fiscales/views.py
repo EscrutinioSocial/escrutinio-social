@@ -237,12 +237,15 @@ def cargar_desde_ub(request, mesa_id, tipo='total'):
 
     if request.method == 'GET':
         mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente_para_ub()
+        if mesacategoria:
+            # Se la asignamos.
+            mesacategoria.asignar_a_fiscal()
+            request.user.fiscal.asignar_mesa_categoria(mesacategoria)
     else:
         mesa_cat_id = request.session.pop('mesa_categoria_id', None)
         mesacategoria = MesaCategoria.objects.get(id=mesa_cat_id)
 
     if mesacategoria:
-        mesacategoria.take(request.user.fiscal)
         return carga(request, mesacategoria.id, desde_ub=True)
 
     # si es None, lo llevamos a subir un adjunto
@@ -357,13 +360,11 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     reportados.append(vmr)
                 VotoMesaReportado.objects.bulk_create(reportados)
 
-                identificacion.save()
                 mesa_categoria.desasignar_a_fiscal()  # Le bajamos la cuenta.
-                # si viene desde_ub, consolidamos la carga
+                # Si viene desde_ub, consolidamos la carga.
                 if desde_ub:
                     consolidar_cargas(mesa_categoria)
 
-            carga.actualizar_firma()
             messages.success(request, f'Guardada categoría {categoria} para {mesa}')
         except Exception as e:
             # Este catch estaba desde cuando no podía haber múltiples cargas para una
@@ -425,7 +426,7 @@ class ReporteDeProblemaCreateView(FormView):
             tipo_de_problema = reporte_de_problema.tipo_de_problema
             descripcion = reporte_de_problema.descripcion
 
-            # Creo la identificación.
+            # Creo la carga.
             carga = Carga.objects.create(
                 tipo=Carga.TIPOS.problema,
                 fiscal=fiscal,
