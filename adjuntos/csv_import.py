@@ -58,6 +58,9 @@ class DatosInvalidosError(CSVImportacionError):
 class PermisosInvalidosError(CSVImportacionError):
     pass
 
+class ErroresAcumulados(CSVImportacionError):
+    pass
+
 
 """
 Clase encargada de procesar un archivo CSV y validarlo
@@ -99,7 +102,11 @@ class CSVImporter:
             # Si hay errores en la validación no seguimos.
             return False, '\n'.join(self.errores)
 
-        self.cargar_info()
+        try:
+            self.cargar_info()
+        except ErroresAcumulados as e:
+            # Si esta es la excepción, se uso para evitar el commit, no pasa nada.
+            pass
         return self.cant_errores == 0, '\n'.join(self.errores)
 
     def anadir_error(self, error):
@@ -225,13 +232,39 @@ class CSVImporter:
                     categoria=categoria).values_list('opcion__id', flat=True)
                 self.validar_carga_total(carga_total, categoria, opciones)
 
-            elif carga_parcial:
+            if carga_parcial:
                 self.logger.debug("----+ Validando carga parcial.")
                 # Si se cargaron las cargas parciales, entonces verificamos que estén todas las opciones
                 # de las categorias prioritarias
                 opciones = CategoriaOpcion.objects.filter(categoria=categoria, prioritaria=True).values_list(
                     'opcion__id', flat=True)
                 self.validar_carga_parcial(carga_parcial, categoria, opciones)
+
+            self.borrar_carga_anterior(carga_parcial)
+            self.borrar_carga_anterior(carga_total)
+
+    def borrar_carga_anterior(self, carga):
+        """
+        Si ya existía una carga de CSV para la misma mesa categoría, del mismo usuario,
+        la borramos.
+        """
+        if not carga:
+            return
+
+        try:
+            carga_previa = Carga.objects.get(
+                id__lt=carga.id,  # Tiene que tener un id menor.
+                tipo=carga.tipo,
+                origen=Carga.SOURCES.csv,
+                mesa_categoria=carga.mesa_categoria,
+                fiscal=carga.fiscal,
+            )
+        except Carga.DoesNotExist:
+            # No hay carga previa.
+            return
+
+        self.logger.debug("----+ Borrando carga previa (%d) de tipo %s.", carga_previa.id, carga_previa.tipo)
+        carga_previa.delete()
 
     def cargar_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
         """
@@ -252,7 +285,7 @@ class CSVImporter:
         if len(matcheos) == 0:
             raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
                                       f'categoría: {categoria_bd.nombre}.'
-            )
+                                      )
 
         # Se encontró la categoría de la mesa en el archivo.
         columna_de_la_categoria = matcheos[0]
@@ -270,50 +303,57 @@ class CSVImporter:
                 self.cantidad_sobres_mesa = fila['cantidad de sobres en la urna']
 
             else:
-                cantidad_votos = fila[columna_de_la_categoria]
-
-                try:
-                    if self.dato_ausente(cantidad_votos):
-                        # La celda está vacía.
-                        continue
-
-                    cantidad_votos = int(cantidad_votos)
-                    if cantidad_votos < 0:
-                        self.anadir_error(
-                        f'Los resultados deben ser números enteros positivos. Revise la siguiente celda '
-                        f'a {self.celda_analizada}.')
-                        continue
-                except ValueError:
-                    self.anadir_error(
-                        f'Los resultados deben ser números enteros positivos. Revise la siguiente celda '
-                        f'a {self.celda_analizada}.')
-                    continue
-
-                # Buscamos este nro de lista dentro de las opciones asociadas a
-                # esta categoría.
-                match_codigo_lista = [una_opcion for una_opcion in categoria_bd.opciones.all()
-                                      if una_opcion.codigo and una_opcion.codigo.strip().lower()
-                                      == codigo_lista_en_csv.strip().lower()]
-                opcion_bd = match_codigo_lista[0] if len(match_codigo_lista) > 0 else None
-
-                if not opcion_bd and cantidad_votos > 0:
-                    self.anadir_error(f'El número de lista {codigo_lista_en_csv} no fue '
-                                        f'encontrado asociado la categoría '
-                                        f'{categoria_bd.nombre}, revise que sea '
-                                        f'el correcto.')
-                    continue
-                elif not opcion_bd and cantidad_votos == 0:
-                    # Me están reportando cero votos para una opción no asociada a la categoría.
-                    # La ignoro.
-                    continue
-
-                opcion_categoria = opcion_bd.categoriaopcion_set.filter(
-                    categoria=categoria_bd
-                ).first()
-                self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
-                                  opcion_bd)
+                self.cargar_mesa_categoria_y_lista(
+                    fila, codigo_lista_en_csv, columna_de_la_categoria, mesa_categoria, categoria_bd)
 
         return self.carga_parcial, self.carga_total
+
+    def cargar_mesa_categoria_y_lista(self, fila, codigo_lista_en_csv, columna_de_la_categoria, mesa_categoria, categoria_bd):
+        """
+        Analiza los votos de una mesa dada, una categoría dada y una fila dada.
+        """
+        cantidad_votos = fila[columna_de_la_categoria]
+
+        try:
+            if self.dato_ausente(cantidad_votos):
+                # La celda está vacía.
+                return
+
+            cantidad_votos = int(cantidad_votos)
+            if cantidad_votos < 0:
+                self.anadir_error(
+                    f'Los resultados deben ser números enteros positivos. Revise la siguiente celda '
+                    f'a {self.celda_analizada}.')
+                return
+        except ValueError:
+            self.anadir_error(
+                f'Los resultados deben ser números enteros positivos. Revise la siguiente celda '
+                f'a {self.celda_analizada}.')
+            return
+
+        # Buscamos este nro de lista dentro de las opciones asociadas a
+        # esta categoría.
+        match_codigo_lista = [una_opcion for una_opcion in categoria_bd.opciones.all()
+                              if una_opcion.codigo and una_opcion.codigo.strip().lower()
+                              == codigo_lista_en_csv.strip().lower()]
+        opcion_bd = match_codigo_lista[0] if len(match_codigo_lista) > 0 else None
+
+        if not opcion_bd and cantidad_votos > 0:
+            self.anadir_error(f'El número de lista {codigo_lista_en_csv} no fue '
+                              f'encontrado asociado la categoría '
+                              f'{categoria_bd.nombre}, revise que sea '
+                              f'el correcto.')
+            return
+        elif not opcion_bd and cantidad_votos == 0:
+            # Me están reportando cero votos para una opción no asociada a la categoría.
+            # La ignoro.
+            return
+
+        opcion_categoria = opcion_bd.categoriaopcion_set.filter(
+            categoria=categoria_bd
+        ).first()
+        self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
+                          opcion_bd)
 
     def copiar_carga_parcial_en_total(self, carga_parcial, carga_total):
         """
@@ -359,18 +399,18 @@ class CSVImporter:
     def cargar_info(self):
         """
         Carga la info del archivo CSV en la base de datos.
-        Si hay errores, los reporta a través de excepciones.
+        Si hay errores, los reporta a través de excepciones cuando impiden continuar.
+        Si no impiden continuar los acumula para reportarlos como strings todos juntos.
         """
         self.celda_analizada = None
-        # se guardan los datos: El contenedor `carga` y los votos del archivo
-        # la carga es por mesa y categoría entonces nos conviene ir analizando grupos de mesas
+        # La carga es por mesa y categoría, entonces nos conviene ir analizando grupos de mesas.
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         columnas_categorias = [i[0] for i in COLUMNAS_DEFAULT if i[1]]
 
         with transaction.atomic():
             for mesa, filas_de_la_mesa in grupos_mesas:
                 try:
-                    self.cargar_mesa(mesa, filas_de_la_mesa, columnas_categorias)    
+                    self.cargar_mesa(mesa, filas_de_la_mesa, columnas_categorias)
                 except IntegrityError as e:
                     if 'votomesareportado_votos_check' in str(e):
                         self.anadir_error(
@@ -378,13 +418,17 @@ class CSVImporter:
                             f'a {self.celda_analizada}.')
                     else:
                         self.anadir_error(f'Error al guardar los resultados. Revise la celda correspondiente '
-                            f'a {self.celda_analizada}.')
+                                          f'a {self.celda_analizada}.')
                 except ValueError as e:
                     self.anadir_error(
                         f'Revise que los datos de resultados sean numéricos. Revise la celda correspondiente '
                         f'a {self.celda_analizada}: {e}')
                 except Exception as e:
                     raise e
+
+            # Si hubo errores evito el commit.
+            if self.cant_errores > 0:
+                raise ErroresAcumulados()
 
     def cargar_votos(self, cantidad_votos, opcion_categoria, mesa_categoria, opcion_bd):
         if opcion_categoria.prioritaria:

@@ -58,16 +58,19 @@ def usr_unidad_basica(db):
 def test_validar_csv_faltan_columnas(usr_unidad_basica):
     with pytest.raises(ColumnasInvalidasError):
         CSVImporter(PATH_ARCHIVOS_TEST + 'faltan_columnas.csv', usr_unidad_basica).validar()
+    assert Carga.objects.count() == 0
 
 
 def test_validar_csv_columnas_duplicadas(usr_unidad_basica):
     with pytest.raises(ColumnasInvalidasError):
         CSVImporter(PATH_ARCHIVOS_TEST + 'columnas_duplicadas.csv', usr_unidad_basica).validar()
+    assert Carga.objects.count() == 0
 
 
 def test_validar_csv_mesas_invalidas(db, usr_unidad_basica):
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'mesas_invalidas.csv', usr_unidad_basica).procesar()
     assert 'No existe mesa' in errores
+    assert Carga.objects.count() == 0
 
 
 def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
@@ -84,6 +87,7 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_negativos.csv', usr_unidad_basica).procesar()
     assert 'Faltan datos en el archivo de la siguiente categoría' in str(e.value)
+    assert Carga.objects.count() == 0
 
 
 @pytest.fixture()
@@ -134,25 +138,28 @@ def carga_inicial(db):
 
 def test_procesar_csv_resultados_negativos(db, usr_unidad_basica, carga_inicial):
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_negativos.csv', usr_unidad_basica).procesar()
-    assert ok == False
+    assert ok is False
     assert 'Los resultados deben ser números enteros positivos' in errores
+    assert Carga.objects.count() == 0
 
 
 def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inicial):
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'opciones_invalidas.csv', usr_unidad_basica).procesar()
-    assert ok == False
+    assert ok is False
     assert 'El número de lista C2019 no fue encontrado' in errores
+    assert Carga.objects.count() == 0
 
 
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'falta_total_votos.csv', usr_unidad_basica).procesar()
-    assert ok == False
+    assert ok is False
     assert "Faltan las opciones: ['total de votos']." in errores
+    assert Carga.objects.count() == 0
 
 
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
-    assert ok == True
+    assert ok is True
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
     # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene
@@ -181,7 +188,7 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica
 def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unidad_basica, carga_inicial):
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_copia_parciales_a_totales.csv',
                 usr_unidad_basica).procesar()
-    assert ok == True
+    assert ok is True
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total).all()
     cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial).all()
 
@@ -199,26 +206,31 @@ def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unida
 def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
     settings.OPCIONES_CARGAS_TOTALES_COMPLETAS = False
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_parcial.csv', usr_unidad_basica).procesar()
-    assert ok == False
+    assert ok is False
     assert "Faltan las opciones: ['JpC']." in errores
+    assert Carga.objects.count() == 0
 
 
 def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'falta_jpc_carga_total.csv', usr_unidad_basica).procesar()
-    assert ok == False
+    assert ok is False
     assert "Los resultados para la carga total para la categoría Intendente, Concejales y Consejeros Escolares deben estar completos. " \
            "Faltan las opciones: ['JpC']." in errores
+    assert Carga.objects.count() == 0
 
 def test_caracteres_alfabeticos_en_votos(db, usr_unidad_basica, carga_inicial):
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'valores_texto_en_votos.csv', usr_unidad_basica).procesar()
+    assert ok is False
     assert 'Los resultados deben ser números enteros positivos.' in errores
+    assert Carga.objects.count() == 0
 
 def test_acumula_errores(db, usr_unidad_basica, carga_inicial):
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'acumula_errores.csv', usr_unidad_basica).procesar()
-    assert ok == False
+    assert ok is False
     print(errores)
     assert 'Los resultados deben ser números enteros positivos.' in errores
     assert "Faltan las opciones: ['JpC']." in errores
+    assert Carga.objects.count() == 0
 
 
 def test_procesar_csv_informacion_valida_con_listas_numericas(db, usr_unidad_basica, carga_inicial):
@@ -226,13 +238,33 @@ def test_procesar_csv_informacion_valida_con_listas_numericas(db, usr_unidad_bas
     fdt.codigo = '136'
     fdt.save()
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok_con_listas_numericas.csv', usr_unidad_basica).procesar()
-    assert ok == True
+    assert ok is True
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
     # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene
     # además opción no prioritaria.
     assert cargas_totales.count() == 2
 
+def test_procesar_csv_carga_reemplaza_anterior(db, usr_unidad_basica, carga_inicial):
+    ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
+    assert ok is True
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    assert cargas_totales.count() == 2
+
+    ids_viejos = list(cargas_totales.values_list('id', flat=True))
+
+    # Vuelvo a cargar.
+
+    ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
+    assert ok is True
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    # No aumentó.
+    assert cargas_totales.count() == 2
+    cargas_repetidas = Carga.objects.filter(id__in=ids_viejos)
+    # No quedó ninguna de las viejas.
+    assert cargas_repetidas.count() == 0
 
 def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
     fdt = Opcion.objects.get(nombre='FdT')
@@ -240,7 +272,7 @@ def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
     fdt.save()
     ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok_con_sanitizar.csv', usr_unidad_basica).procesar()
 
-    assert ok == True
+    assert ok is True
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
     # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene

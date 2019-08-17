@@ -425,7 +425,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             ok, errores = CSVImporter(adjunto, self.request.user).procesar()
             if ok:
                 return 'success'
-            else
+            else:
                 messages.error(self.request, f'{adjunto.name} produjo los siguientes errores:\n{errores}')
         except Exception as e:
             messages.error(self.request, f'{adjunto.name} ignorado. {str(e)}')
