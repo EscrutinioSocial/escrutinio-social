@@ -412,7 +412,7 @@ OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'vo
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None, 'codigo': '10001'}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
 OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
-KEY_VOTOS_POSITIVOS = 'Votos Positivos'
+KEY_VOTOS_POSITIVOS = 'votos_positivos'
 
 NOMBRE_CATEGORIA_PRESI_Y_VICE = 'Presidente y vice'
 NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y vice'

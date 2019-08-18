@@ -413,7 +413,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
         '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
     )
     resultados = response.context['resultados']
-    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre_corto]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     response = fiscal_client.get(
@@ -421,7 +421,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
         '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas'
     )
     resultados = response.context['resultados']
-    assert resultados.tabla_no_positivos()[blanco.nombre] == {'votos': 0, 'porcentaje_total': '-'}
+    assert resultados.tabla_no_positivos()[blanco.nombre_corto] == {'votos': 0, 'porcentaje_total': '-'}
     assert resultados.total_mesas_escrutadas() == 0
 
     c2 = CargaFactory(mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria, tipo=Carga.TIPOS.total)
@@ -439,7 +439,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
         '?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=todas'
     )
     resultados = response.context['resultados']
-    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre_corto]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     response = fiscal_client.get(
@@ -447,7 +447,7 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
         '?tipoDeAgregacion=solo_consolidados&opcionaConsiderar=todas'
     )
     resultados = response.context['resultados']
-    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre_corto]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
 
@@ -472,7 +472,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
 
     resultados = response.context['resultados']
     # la carga está en status sin_confirmar
-    assert resultados.tabla_no_positivos()[blanco.nombre] == {'votos': 0, 'porcentaje_total': '-'}
+    assert resultados.tabla_no_positivos()[blanco.nombre_corto] == {'votos': 0, 'porcentaje_total': '-'}
     assert resultados.total_mesas_escrutadas() == 0
 
     c2 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria)
@@ -490,7 +490,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     )
     resultados = response.context['resultados']
     # Como tenemos dos cargas confirmadas, se modifica el resultado.
-    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre_corto]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     c3 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria)
@@ -503,7 +503,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     )
     resultados = response.context['resultados']
     # c3 no está confirmada, no varía el resultado.
-    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 20
+    assert resultados.tabla_no_positivos()[blanco.nombre_corto]['votos'] == 20
     assert resultados.total_mesas_escrutadas() == 1
 
     c4 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria)
@@ -517,7 +517,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     )
     resultados = response.context['resultados']
     # Ahora sí varía.
-    assert resultados.tabla_no_positivos()[blanco.nombre]['votos'] == 30
+    assert resultados.tabla_no_positivos()[blanco.nombre_corto]['votos'] == 30
     assert resultados.total_mesas_escrutadas() == 2
 
 
@@ -622,7 +622,7 @@ def test_resultados_excluye_metadata(fiscal_client, carta_marina):
     # Votos en blanco proyectados = 10 * 3 (s1) + 10 (s2) = 40
     # %blancos = 40 / (600 + 40) = 6.25%
     # %positivos = 600 / (600 + 40) = 93.75%
-    assert no_positivos[Opcion.blancos().nombre]['porcentaje_total'] == '6.25'
+    assert no_positivos[Opcion.blancos().nombre_corto]['porcentaje_total'] == '6.25'
     assert no_positivos[settings.KEY_VOTOS_POSITIVOS]['porcentaje_total'] == '93.75'
 
 
