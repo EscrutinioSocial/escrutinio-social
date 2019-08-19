@@ -224,13 +224,13 @@ def consolidar_identificaciones(attachment):
     attachment.identificacion_testigo = testigo
     attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
     logger.info(
-        'identificacion',
+        'Identificacion',
         attachment=attachment.id,
         testigo=getattr(testigo, 'id', None),
         status=status_attachment
     )
-    # si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
-    # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment
+    # Si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
+    # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment.
     if mesa_anterior and not mesa_attachment:
         mesa_anterior.invalidar_asignacion_attachment()
 
@@ -246,7 +246,14 @@ def consumir_novedades_identificacion():
         identificaciones__in=ids_a_procesar
     ).distinct()
     for attachment in attachments_con_novedades:
-        consolidar_identificaciones(attachment)
+        try:
+            consolidar_identificaciones(attachment)
+        except Exception as e:
+            # Logueamos la excepción y continuamos.
+            logger.error('Identificacion',
+                attachment=attachment.id,
+                error=str(e)
+            )
 
     # Todas procesadas
     procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
@@ -282,7 +289,14 @@ def consumir_novedades_carga():
         cargas__in=ids_a_procesar
     ).distinct()
     for mesa_categoria_con_novedades in mesa_categorias_con_novedades:
-        consolidar_cargas(mesa_categoria_con_novedades)
+        try:
+            consolidar_cargas(mesa_categoria_con_novedades)
+        except Exception as e:
+            # Logueamos la excepción y continuamos.
+            logger.error('Carga',
+                mesa_categoria=mesa_categoria_con_novedades.id,
+                error=str(e)
+            )
 
     # Todas procesadas
     procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
