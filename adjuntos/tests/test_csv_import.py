@@ -148,7 +148,7 @@ def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inici
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     with pytest.raises(DatosInvalidosError) as e:
         CSVImporter(PATH_ARCHIVOS_TEST + 'falta_total_votos.csv', usr_unidad_basica).procesar()
-    assert "Faltan las opciones: ['total de votos']." in str(e.value)
+    assert f"Faltan las opciones: ['{Opcion.total_votos().nombre}']." in str(e.value)
 
 
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
