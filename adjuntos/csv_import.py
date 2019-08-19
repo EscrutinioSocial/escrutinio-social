@@ -61,15 +61,11 @@ class PermisosInvalidosError(CSVImportacionError):
 class ErroresAcumulados(CSVImportacionError):
     pass
 
-
-"""
-Clase encargada de procesar un archivo CSV y validarlo
-Recibe por parámetro el file o path al file y el usuario que sube el archivo
-"""
-
-
 class CSVImporter:
-
+    """
+    Clase encargada de procesar un archivo CSV y validarlo.
+    Recibe por parámetro el file o path al file y el usuario que sube el archivo.
+    """
     def __init__(self, archivo, usuario):
         self.logger = logger
         self.archivo = archivo
@@ -97,6 +93,7 @@ class CSVImporter:
         self.carga_parcial = None
         self.logger.debug("Importando archivo '%s'.", archivo)
         self.cant_errores = 0
+        self.cant_mesas_importadas = 0
         self.errores = []
 
     def autodetectar_separador(self, archivo):
@@ -121,20 +118,17 @@ class CSVImporter:
 
     def procesar(self):
         """
-        Devuelve True si se procesó OK, False en otro caso, y como segundo parámetro
-        todos aquellos errores que se pueden reportar en batch.
+        Devuelve la cantidad de mesas importadas como primer comoponente del par
+        y como segundo todos aquellos errores que se pueden reportar en batch.
         """
         self.validar()
         if self.cant_errores > 0:
             # Si hay errores en la validación no seguimos.
-            return False, '\n'.join(self.errores)
+            return 0, '\n'.join(self.errores)
 
-        try:
-            self.cargar_info()
-        except ErroresAcumulados as e:
-            # Si esta es la excepción, se uso para evitar el commit, no pasa nada.
-            pass
-        return self.cant_errores == 0, '\n'.join(self.errores)
+        self.validar_mesas()
+        self.cargar_info()
+        return self.cant_mesas_importadas, '\n'.join(self.errores)
 
     def anadir_error(self, error):
         self.cant_errores += 1
@@ -149,13 +143,11 @@ class CSVImporter:
             - Existencia de ciertas columnas
             - Columnas no duplicadas
             - Tipos de datos
-            - De negocio: que la mesa + circuito + sección + distrito existan en la bd
 
         """
         try:
             self.validar_usuario()
             self.validar_columnas()
-            self.validar_mesas()
 
         except PermisosInvalidosError as e:
             raise e
@@ -223,10 +215,18 @@ class CSVImporter:
             pass
         return valor
 
+    @transaction.atomic
     def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
+        cant_errores_al_empezar = self.cant_errores
         self.logger.debug("- Procesando mesa '%s'.", mesa)
-        # Obtengo la mesa correspondiente.
-        mesa_bd = self.mesas_matches[mesa[2]]
+        try:
+            # Obtengo la mesa correspondiente.
+            mesa_bd = self.mesas_matches[mesa[2]]
+        except KeyError:
+            # Si la mesa no existe no la importamos.
+            # No acumulamos el error porque ya se hizo en la validación.
+            return
+
         self.cantidad_electores_mesa = None
         self.cantidad_sobres_mesa = None
 
@@ -269,6 +269,11 @@ class CSVImporter:
 
             self.borrar_carga_anterior(carga_parcial)
             self.borrar_carga_anterior(carga_total)
+
+        if self.cant_errores > cant_errores_al_empezar:
+            # Evito el commit.
+            raise ErroresAcumulados()
+        self.cant_mesas_importadas += 1
 
     def borrar_carga_anterior(self, carga):
         """
@@ -434,28 +439,26 @@ class CSVImporter:
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         columnas_categorias = [i[0] for i in COLUMNAS_DEFAULT if i[1]]
 
-        with transaction.atomic():
-            for mesa, filas_de_la_mesa in grupos_mesas:
-                try:
-                    self.cargar_mesa(mesa, filas_de_la_mesa, columnas_categorias)
-                except IntegrityError as e:
-                    if 'votomesareportado_votos_check' in str(e):
-                        self.anadir_error(
-                            f'Los resultados deben ser números positivos. Revise la celda correspondiente '
-                            f'a {self.celda_analizada}.')
-                    else:
-                        self.anadir_error(f'Error al guardar los resultados. Revise la celda correspondiente '
-                                          f'a {self.celda_analizada}.')
-                except ValueError as e:
+        for mesa, filas_de_la_mesa in grupos_mesas:
+            try:
+                self.cargar_mesa(mesa, filas_de_la_mesa, columnas_categorias)
+            except ErroresAcumulados:
+                # Es sólo para evitar el commit.
+                pass
+            except IntegrityError as e:
+                if 'votomesareportado_votos_check' in str(e):
                     self.anadir_error(
-                        f'Revise que los datos de resultados sean numéricos. Revise la celda correspondiente '
-                        f'a {self.celda_analizada}: {e}')
-                except Exception as e:
-                    raise e
-
-            # Si hubo errores evito el commit.
-            if self.cant_errores > 0:
-                raise ErroresAcumulados()
+                        f'Los resultados deben ser números positivos. Revise la celda correspondiente '
+                        f'a {self.celda_analizada}.')
+                else:
+                    self.anadir_error(f'Error al guardar los resultados. Revise la celda correspondiente '
+                                      f'a {self.celda_analizada}.')
+            except ValueError as e:
+                self.anadir_error(
+                    f'Revise que los datos de resultados sean numéricos. Revise la celda correspondiente '
+                    f'a {self.celda_analizada}: {e}')
+            except Exception as e:
+                raise e
 
     def cargar_votos(self, cantidad_votos, opcion_categoria, mesa_categoria, opcion_bd):
         if opcion_categoria.prioritaria:
