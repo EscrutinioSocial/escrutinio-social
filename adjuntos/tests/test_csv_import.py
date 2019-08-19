@@ -266,6 +266,20 @@ def test_procesar_csv_carga_reemplaza_anterior(db, usr_unidad_basica, carga_inic
     # No quedó ninguna de las viejas.
     assert cargas_repetidas.count() == 0
 
+
+def test_procesar_csv_otros_separadores(db, usr_unidad_basica, carga_inicial):
+    ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok_separados_por_punto_y_coma.csv', usr_unidad_basica).procesar()
+    assert ok is True
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    assert cargas_totales.count() == 2
+
+    ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok_separados_por_tab.csv', usr_unidad_basica).procesar()
+    assert ok is True
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    assert cargas_totales.count() == 2
+
 def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
     fdt = Opcion.objects.get(nombre='FdT')
     fdt.codigo = '136'

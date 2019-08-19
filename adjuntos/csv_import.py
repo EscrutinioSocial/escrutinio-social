@@ -71,6 +71,7 @@ Recibe por parámetro el file o path al file y el usuario que sube el archivo
 class CSVImporter:
 
     def __init__(self, archivo, usuario):
+        self.logger = logger
         self.archivo = archivo
         converters = {
             'Distrito': self.canonizar,
@@ -80,17 +81,43 @@ class CSVImporter:
             'Nro de mesa': self.canonizar,
             'Nro de lista': self.canonizar,
         }
-        self.df = pd.read_csv(self.archivo, na_values=["n/a", "na", "-"], dtype=str, converters=converters)
+        separador = self.autodetectar_separador(archivo)
+        self.df = pd.read_csv(self.archivo,
+            na_values=["n/a", "na", "-"],
+            dtype=str,
+            converters=converters,
+            index_col=False,  # La primera columna no es el índice.
+            sep=separador,
+        )
         self.usuario = usuario
         self.fiscal = None
         self.mesas = []
         self.mesas_matches = {}
         self.carga_total = None
         self.carga_parcial = None
-        self.logger = logger
         self.logger.debug("Importando archivo '%s'.", archivo)
         self.cant_errores = 0
         self.errores = []
+
+    def autodetectar_separador(self, archivo):
+        """
+        Esta función infiere el caracter de separación en base a la primera línea del archivo.
+        Lo hacemos de esta manera porque los mecanismos de autodetección de Pandas, al igual
+        que los de uso de múltiples caracteres de separación traen diversos problemas.
+        """
+        f = open(archivo, "r")
+        line = f.readline()
+        f.close()
+        separador = ','
+        max = 0
+        for candidato in [',', ';', '\t']:
+            cant = line.count(candidato)
+            if cant > max:
+                max = cant
+                separador = candidato
+
+        self.logger.debug("Usando %s como separador.", separador)
+        return separador
 
     def procesar(self):
         """
