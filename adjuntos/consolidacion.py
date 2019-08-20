@@ -236,9 +236,11 @@ def consolidar_identificaciones(attachment):
 
 
 @transaction.atomic
-def consumir_novedades_identificacion():
-    a_procesar = Identificacion.objects.select_for_update().filter(procesada=False)
-    # OJO - aca precomputar los ids_a_procesar es importante
+def consumir_novedades_identificacion(cant_por_iteracion=None):
+    a_procesar = Identificacion.objects.select_for_update(skip_locked=True).filter(procesada=False)
+    if cant_por_iteracion:
+        a_procesar = a_procesar[0:cant_por_iteracion]
+    # OJO - acá precomputar los ids_a_procesar es importante
     # ver comentario en consumir_novedades_carga()
     ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
 
@@ -251,7 +253,7 @@ def consumir_novedades_identificacion():
         except Exception as e:
             # Logueamos la excepción y continuamos.
             logger.error('Identificacion',
-                attachment=attachment.id,
+                attachment=attachment.id if attachment else None,
                 error=str(e)
             )
 
@@ -261,8 +263,10 @@ def consumir_novedades_identificacion():
 
 
 @transaction.atomic
-def consumir_novedades_carga():
-    a_procesar = Carga.objects.select_for_update().filter(procesada=False)
+def consumir_novedades_carga(cant_por_iteracion=None):
+    a_procesar = Carga.objects.select_for_update(skip_locked=True).filter(procesada=False)
+    if cant_por_iteracion:
+        a_procesar = a_procesar[0:cant_por_iteracion]
     ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
     # OJO - aca precomputar los ids_a_procesar es importante
     # si en lugar de hacer esto, al final se ejecuta
@@ -294,7 +298,7 @@ def consumir_novedades_carga():
         except Exception as e:
             # Logueamos la excepción y continuamos.
             logger.error('Carga',
-                mesa_categoria=mesa_categoria_con_novedades.id,
+                mesa_categoria=mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None,
                 error=str(e)
             )
 
@@ -303,8 +307,16 @@ def consumir_novedades_carga():
     return procesadas
 
 
-def consumir_novedades():
-    return (consumir_novedades_identificacion(), consumir_novedades_carga())
+def consumir_novedades(cant_por_iteracion=None):
+    """
+    Recibe un parámetro que indica cuántos elementos procesar en cada iteración.
+    Esto permite que muchas novedades de un tipo (eg, identificación) 
+    no impidan el procesamiento de las de otro tipo (eg, carga).
+    None se interpreta como sin límite.
+    """
+    return (consumir_novedades_identificacion(cant_por_iteracion),
+        consumir_novedades_carga(cant_por_iteracion)
+    )
 
 
 @receiver(post_save, sender=Attachment)
