@@ -543,10 +543,9 @@ def test_siguiente_accion_cargar_acta(fiscal_client, settings):
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=(mc2.id, ))
 
-    # Devuelvo y pido de nuevo. Debería volver a darme la primera.
+    # Devuelvo la primera y pido de nuevo. Debería volver a darme la primera.
     mc1.desasignar_a_fiscal()
     response = fiscal_client.get(reverse('siguiente-accion'))
-    # No la devolví, debería darme la misma.
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=(mc1.id, ))
 

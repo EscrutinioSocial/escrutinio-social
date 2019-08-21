@@ -100,7 +100,7 @@ class AttachmentQuerySet(models.QuerySet):
             cant_fiscales_asignados_redondeados=F(
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_IDENTIFICACION,
             cant_asignaciones_realizadas_redondeadas=F(
-                'cant_asignaciones_realizadas') / settings.MIN_COINCIDENCIAS_IDENTIFICACION,
+                'cant_asignaciones_realizadas') / (2 * settings.MIN_COINCIDENCIAS_IDENTIFICACION),
         )
 
     def priorizadas(self):

@@ -132,8 +132,9 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas(db, fiscal_clie
     )
     # Ambas consolidadas vía csv.
     consumir_novedades_identificacion()
+
     m1c1 = MesaCategoria.objects.get(mesa=m1, categoria=c1)
-    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS * 2):
         response = fiscal_client.get(reverse('siguiente-accion'))
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse('carga-total', args=[m1c1.id])
@@ -145,11 +146,11 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas(db, fiscal_clie
     # cero fiscales asignados. Ie, no da siempre la misma tarea.
     m1c1.refresh_from_db()
     assert m1c1.cant_fiscales_asignados == 0
-    assert m1c1.cant_asignaciones_realizadas == settings.MIN_COINCIDENCIAS_CARGAS
-    m2c1 = MesaCategoria.objects.get(mesa=m2, categoria=c1)    
+    assert m1c1.cant_asignaciones_realizadas == settings.MIN_COINCIDENCIAS_CARGAS * 2
+    m2c1 = MesaCategoria.objects.get(mesa=m2, categoria=c1)
     assert m2c1.cant_fiscales_asignados == 0
     assert m2c1.cant_asignaciones_realizadas == 0
-    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS * 2):
         response = fiscal_client.get(reverse('siguiente-accion'))
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse('carga-total', args=[m2c1.id])
@@ -158,11 +159,11 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas(db, fiscal_clie
 
     m2c1.refresh_from_db()
     assert m2c1.cant_fiscales_asignados == 0
-    assert m2c1.cant_asignaciones_realizadas == settings.MIN_COINCIDENCIAS_CARGAS
+    assert m2c1.cant_asignaciones_realizadas == settings.MIN_COINCIDENCIAS_CARGAS * 2
 
     # Ahora la tercera
     m2c2 = MesaCategoria.objects.get(mesa=m2, categoria=c2)
-    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS * 2):
         response = fiscal_client.get(reverse('siguiente-accion'))
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse('carga-total', args=[m2c2.id])
@@ -171,7 +172,7 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas(db, fiscal_clie
 
     m2c2.refresh_from_db()
     assert m2c2.cant_fiscales_asignados == 0
-    assert m2c2.cant_asignaciones_realizadas == settings.MIN_COINCIDENCIAS_CARGAS
+    assert m2c2.cant_asignaciones_realizadas == settings.MIN_COINCIDENCIAS_CARGAS * 2
 
     # Ya no hay actas nuevas, vuelta a empezar.
     response = fiscal_client.get(reverse('siguiente-accion'))
