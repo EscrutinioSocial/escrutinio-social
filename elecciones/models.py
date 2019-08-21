@@ -331,6 +331,12 @@ class LugarVotacion(models.Model):
 
 
 class MesaCategoriaQuerySet(models.QuerySet):
+    campos_de_orden = [
+        'cant_fiscales_asignados_redondeados',  # Primero las que tienen menos gente trabajando en ellas.
+        'prioridad_status', 'orden_de_carga',
+        'cant_asignaciones_realizadas_redondeadas',  # En caso de empate no damos siempre la de menor id.
+        'id',
+    ]
 
     def identificadas(self):
         """
@@ -392,9 +398,9 @@ class MesaCategoriaQuerySet(models.QuerySet):
             )
         )
 
-    def redondear_cant_fiscales_asignados(self):
+    def redondear_cant_fiscales_asignados_y_de_asignaciones(self):
         """
-        Redondea la cantidad de fiscales asignados a múltiplos de 
+        Redondea la cantidad de fiscales asignados y de asignaciones a múltiplos de 
         ``settings.MIN_COINCIDENCIAS_CARGAS`` para que al asignar mesas
         no se pospongan indefinidamente mesas que fueron entregadas ya a algún
         fiscal.
@@ -402,20 +408,22 @@ class MesaCategoriaQuerySet(models.QuerySet):
         return self.annotate(
             cant_fiscales_asignados_redondeados=F(
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_CARGAS,
+            cant_asignaciones_realizadas_redondeadas=F(
+                'cant_asignaciones_realizadas') / settings.MIN_COINCIDENCIAS_CARGAS,
         )
 
     def ordenadas_por_prioridad(self):
-        return self.anotar_prioridad_status().redondear_cant_fiscales_asignados().order_by(
-            'cant_fiscales_asignados_redondeados',  # Primero las que tienen menos gente trabajando en ellas.
-            'prioridad_status', 'orden_de_carga',
-            'id'
+        return self.anotar_prioridad_status().redondear_cant_fiscales_asignados_y_de_asignaciones().order_by(
+            *self.campos_de_orden
         )
 
     def debug_mas_prioritaria(self):
+        """
+        Esta función invoca a ordenadas_por_prioridad() y además imprime los campos de orden.
+        Sirve sólo para debuggear.
+        """
         return self.ordenadas_por_prioridad().values(
-            'cant_fiscales_asignados_redondeados',
-            'prioridad_status', 'orden_de_carga',
-            'id'
+            *self.campos_de_orden
         )
 
     def mas_prioritaria(self):
@@ -483,9 +491,21 @@ class MesaCategoria(models.Model):
         null=False
     )
 
+    # Este otro contador, en cambio, registra cuántas veces fue entregado un attachment
+    # a algún fiscal. Su objetivo es desempatar y hacer que en caso de que todos los demás
+    # parámetros de prioridad sea iguales (por ejemplo, muchas mesa-categorías sin cargar, de una
+    # misma ubicación prioritaria), no se tome siempre a la de menor id, introduciendo cierta
+    # variabilidad y evitando la repetición de trabajo.
+    cant_asignaciones_realizadas =  models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False
+    )
+
     def asignar_a_fiscal(self):
         self.cant_fiscales_asignados += 1
-        self.save(update_fields=['cant_fiscales_asignados'])
+        self.cant_asignaciones_realizadas += 1
+        self.save(update_fields=['cant_fiscales_asignados', 'cant_asignaciones_realizadas'])
         logger.info('mc asignada', id=self.id)
 
     def desasignar_a_fiscal(self):
@@ -521,8 +541,8 @@ class MesaCategoria(models.Model):
 
     def recalcular_orden_de_carga(self):
         """
-        Actualiza el valor de `self.orden_de_carga` a partir de las prioridades por seccion y categoria,
-        **sin** disparar el `save` correspondiente
+        Actualiza el valor de `self.orden_de_carga` a partir de las prioridades por sección y categoría,
+        **sin** disparar el `save` correspondiente.
         """
         # evitar import circular
         from scheduling.models import mapa_prioridades_para_mesa_categoria

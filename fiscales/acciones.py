@@ -29,7 +29,7 @@ def siguiente_accion(request):
 
     if (cant_fotos and not cant_cargas or
             cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
-        foto = attachments.menos_asignadas().first()
+        foto = attachments.priorizadas().first()
         if foto:
             return IdentificacionDeFoto(request, foto)
     elif cant_cargas:

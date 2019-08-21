@@ -23,4 +23,9 @@ class Migration(migrations.Migration):
             name='cant_fiscales_asignados',
             field=models.PositiveIntegerField(default=0),
         ),
+        migrations.AddField(
+            model_name='mesacategoria',
+            name='cant_asignaciones_realizadas',
+            field=models.PositiveIntegerField(default=0),
+        ),
     ]

@@ -38,7 +38,7 @@ def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
     assert mc1.orden_de_carga is None
     assert mc2.orden_de_carga is None
 
-    # emulo consolidacion
+    # Emulo consolidación.
     i = IdentificacionFactory(status='identificada', mesa=mc1.mesa, fiscal=FiscalFactory())
     AttachmentFactory(status='identificada', mesa=mesa, identificacion_testigo=i)
     mc1.refresh_from_db()

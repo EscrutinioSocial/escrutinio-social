@@ -89,9 +89,9 @@ class AttachmentQuerySet(models.QuerySet):
             qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
         return qs
 
-    def redondear_cant_fiscales_asignados(self):
+    def redondear_cant_fiscales_asignados_y_de_asignaciones(self):
         """
-        Redondea la cantidad de fiscales asignados a múltiplos de
+        Redondea la cantidad de fiscales asignados y de asignaciones a múltiplos de
         ``settings.MIN_COINCIDENCIAS_IDENTIFICACION`` para que al asignar mesas
         no se pospongan indefinidamente mesas que fueron entregadas ya a algún
         fiscal.
@@ -99,11 +99,21 @@ class AttachmentQuerySet(models.QuerySet):
         return self.annotate(
             cant_fiscales_asignados_redondeados=F(
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_IDENTIFICACION,
+            cant_asignaciones_realizadas_redondeadas=F(
+                'cant_asignaciones_realizadas') / settings.MIN_COINCIDENCIAS_IDENTIFICACION,
         )
 
-    def menos_asignadas(self):
-        # Ordena por asignaciones y luego por orden de llegada.
-        return self.redondear_cant_fiscales_asignados().order_by('cant_fiscales_asignados_redondeados', 'id')
+    def priorizadas(self):
+        """
+        Ordena por cantidad de fiscales trabajando en el momento,
+        luego por cantidad de personas que alguna vez trabajaron,
+        y por último por orden de llegada.
+        """
+        return self.redondear_cant_fiscales_asignados_y_de_asignaciones().order_by(
+            'cant_fiscales_asignados_redondeados',
+            'cant_asignaciones_realizadas_redondeadas',
+            'id'
+        )
 
 
 class Attachment(TimeStampedModel):
@@ -174,8 +184,20 @@ class Attachment(TimeStampedModel):
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    # Registra a cuántos fiscales se les entregó la mesa para que trabajen en ella.
+    # Registra a cuántos fiscales se les entregó la mesa para que trabajen en ella y aún no la
+    # devolvieron.
     cant_fiscales_asignados = models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False
+    )
+
+    # Este otro contador, en cambio, registra cuántas veces fue entregado un attachment
+    # a algún fiscal. Su objetivo es desempatar y hacer que en caso de que todos los demás
+    # parámetros de prioridad sea iguales (por ejemplo, muchos attachs sin identificar, de una
+    # misma ubicación prioritaria), no se tome siempre a la de menor id, introduciendo cierta
+    # variabilidad y evitando la repetición de trabajo.
+    cant_asignaciones_realizadas =  models.PositiveIntegerField(
         default=0,
         blank=False,
         null=False
@@ -183,7 +205,8 @@ class Attachment(TimeStampedModel):
 
     def asignar_a_fiscal(self):
         self.cant_fiscales_asignados += 1
-        self.save(update_fields=['cant_fiscales_asignados'])
+        self.cant_asignaciones_realizadas += 1
+        self.save(update_fields=['cant_fiscales_asignados', 'cant_asignaciones_realizadas'])
         logger.info('Attachment asignado', id=self.id)
 
     def desasignar_a_fiscal(self):
