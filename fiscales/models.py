@@ -82,7 +82,7 @@ class CodigoReferido(TimeStampedModel):
 
 class FiscalManager(models.Manager):
     def get_by_natural_key(self, tipo_dni, dni):
-        return self.get(tipo_dni = tipo_dni, dni = dni)
+        return self.get(tipo_dni=tipo_dni, dni=dni)
 
 
 class Fiscal(models.Model):
@@ -142,6 +142,27 @@ class Fiscal(models.Model):
         unique_together = (('tipo_dni', 'dni'), )
 
     objects = FiscalManager()
+
+    @transaction.atomic
+    @classmethod
+    def liberar_mesacategorias_y_attachments(cls):
+        """
+        Toma a los fiscales cuya última tarea haya sido asignada más de
+        `settings.TIMEOUT_TAREAS` minutos atrás y:
+        - No se la desasigna para no perder el trabajo que el fiscal puede estar haciendo y 'presentará'
+        cuando haga el submit.
+        - Pero sí le baja la cantidad de asignaciones a la mesacategoría y los attachments para que queden
+        postergados por demasiado tiempo.
+        """
+        desde = timezone.now() - timedelta(minutes=settings.TIMEOUT_TAREAS)
+        fiscales_con_timeout = Fiscal.objects.select_for_update(skip_locked=True).filter(
+            asignacion_ultima_tarea__lt=desde)
+        for fiscal in fiscales_con_timeout:
+            if fiscal.attachment_asignado:
+                fiscal.attachment_asignado.desasignar_a_fiscal()
+            elif fiscal.mesa_categoria_asignada:
+                fiscal.mesa_categoria_asignada.desasignar_a_fiscal()
+            fiscal.resetear_timeout_asignacion_tareas()
 
     def asignar_attachment(self, attachment):
         """
