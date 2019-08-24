@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from datetime import timedelta
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.auth.models import User
 from django.dispatch import receiver
@@ -143,7 +144,6 @@ class Fiscal(models.Model):
 
     objects = FiscalManager()
 
-    @transaction.atomic
     @classmethod
     def liberar_mesacategorias_y_attachments(cls):
         """

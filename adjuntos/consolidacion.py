@@ -3,8 +3,6 @@ import structlog
 from adjuntos.models import Attachment, Identificacion
 from elecciones.models import Carga, MesaCategoria
 from fiscales.models import Fiscal
-from django.utils import timezone
-from datetime import timedelta
 from django.db import transaction
 from django.db.models import Count
 from django.dispatch import receiver
@@ -294,7 +292,7 @@ def consumir_novedades_carga():
 @transaction.atomic
 def liberar_mesacategorias_y_attachments():
     """
-    Para la documentación ver a la función a la que llama.
+    Para la documentación ver a la función a la que se llama.
     """
     Fiscal.liberar_mesacategorias_y_attachments()
 

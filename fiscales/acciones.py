@@ -27,6 +27,9 @@ def siguiente_accion(request):
     cant_fotos = attachments.count()
     cant_cargas = con_carga_pendiente.count()
 
+    # Mandamos al usuario a identificar mesas si hay fotos y no hay cargas pendientes
+    # o si la cantidad de mesas a identificar supera a la cantidad de cargas pendientes
+    # por cierto coeficiente configurable.
     if (cant_fotos and not cant_cargas or
             cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
         foto = attachments.priorizadas().first()
