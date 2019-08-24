@@ -291,11 +291,17 @@ def consumir_novedades_carga():
     procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
 
+@transaction.atomic
+def liberar_mesacategorias_y_attachments():
+    """
+    Para la documentación ver a la función a la que llama.
+    """
+    Fiscal.liberar_mesacategorias_y_attachments()
 
 def consumir_novedades():
     return (consumir_novedades_identificacion(), 
         consumir_novedades_carga(),
-        Fiscal.liberar_mesacategorias_y_attachments()
+        liberar_mesacategorias_y_attachments()
     )
 
 
