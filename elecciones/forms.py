@@ -8,9 +8,13 @@ class CategoriaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        prioridad_default = mapa_prioridades_default_categoria().registros_ordenados()[0].prioridad
-        self.fields['prioridad'].label = 'Prioridad para la carga'
-        self.fields['prioridad'].help_text = f'Valor por defecto: {prioridad_default}'
+
+        # se chequea si la key prioridad existe en el formulario
+        # para poder setearle label y help_text
+        if 'prioridad' in self.fields.keys():
+            prioridad_default = mapa_prioridades_default_categoria().registros_ordenados()[0].prioridad
+            self.fields['prioridad'].label = 'Prioridad para la carga'
+            self.fields['prioridad'].help_text = f'Valor por defecto: {prioridad_default}'
 
 
 class SeccionForm(forms.ModelForm):
