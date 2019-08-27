@@ -791,7 +791,6 @@ class Opcion(models.Model):
     partido = models.ForeignKey(
         Partido, null=True, on_delete=models.SET_NULL, blank=True, related_name='opciones'
     )  # blanco, / recurrido / etc
-    orden = models.PositiveIntegerField(help_text='Orden en la boleta', null=True, blank=True)
 
     codigo_dne = models.PositiveIntegerField(
         null=True, blank=True, help_text='Nº asignado en la base de datos de resultados oficiales'
@@ -857,6 +856,21 @@ class Eleccion(models.Model):
         verbose_name = 'Elección'
         verbose_name_plural = 'Elecciones'
 
+class CategoriaGeneral(models.Model):
+    """
+    A diferencia del modelo `Categoria`, éste representa una categoría sin
+    asociación geográfica. Por ejemplo "Intendente", sin decir de dónde.
+
+    Sirve para poder de alguna manera agrupar a todas las categorías "Intendende de X",
+    además de para permitir meter aquí atributos de visualización comunes a ellas, así
+    como también nombres de columnas en, por ejemplo, el CSV.
+    """
+    eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
+    slug = models.SlugField(max_length=100, unique=True)
+    nombre = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.nombre
 
 class Categoria(models.Model):
     """
@@ -867,6 +881,17 @@ class Categoria(models.Model):
     que incluyen las partidarias (boletas) y blanco, nulo, etc.
     """
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
+    categoria_general = models.ForeignKey(CategoriaGeneral, null=False,
+        on_delete=models.SET_NULL, related_name='categorias'
+    )
+    # Información geográfica para anclar una categoría a una provincia o municipio.
+    distrito = models.ForeignKey(
+        'elecciones.Distrito', on_delete=models.SET_NULL, null=True, blank=True,
+    )
+    seccion = models.ForeignKey(
+        'elecciones.Seccion', null=True, blank=True, on_delete=models.SET_NULL
+    )
+
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100, db_index=True)
     opciones = models.ManyToManyField(Opcion, through='CategoriaOpcion', related_name='categorias')
@@ -963,6 +988,7 @@ class Categoria(models.Model):
 class CategoriaOpcion(models.Model):
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     opcion = models.ForeignKey('Opcion', on_delete=models.CASCADE)
+    orden = models.PositiveIntegerField(help_text='Orden en el acta', null=True, blank=True)
     prioritaria = models.BooleanField(default=False)
 
     class Meta:
