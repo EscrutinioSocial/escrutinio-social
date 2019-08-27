@@ -18,8 +18,9 @@ class SeccionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # se chequea si las keys de prioridades están seteadas en el formulario
-        # para poder setearles label y help_text
+        # se chequea si las keys de prioridades están seteadas en el formulario para poder setearles label y help_text
+        # este chequeo es necesario porque cuando se agrega el elemento no se usan todos los campos,
+        # a diferencia de cuando se modifica
         keys_prioridades = [
             'prioridad_hasta_2',
             'prioridad_2_a_10',
