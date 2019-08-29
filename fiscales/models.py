@@ -158,11 +158,22 @@ class Fiscal(models.Model):
         fiscales_con_timeout = Fiscal.objects.select_for_update(skip_locked=True).filter(
             asignacion_ultima_tarea__lt=desde)
         for fiscal in fiscales_con_timeout:
-            if fiscal.attachment_asignado:
-                fiscal.attachment_asignado.desasignar_a_fiscal()
-            elif fiscal.mesa_categoria_asignada:
-                fiscal.mesa_categoria_asignada.desasignar_a_fiscal()
+            fiscal.limpiar_asignacion_previa()
             fiscal.resetear_timeout_asignacion_tareas()
+
+    def limpiar_asignacion_previa(self):
+        """
+        Este método se utiliza para que las mesa-categorías o attachments
+        que tenga asignados el fiscal sean liberados cuando corresponda
+        (por timeout o cuando se asigna uno nuevo).
+
+        No se la desasigna para no perder el trabajo que el fiscal puede estar haciendo y 'presentará'
+        cuando haga el submit.
+        """
+        if self.attachment_asignado:
+            self.attachment_asignado.desasignar_a_fiscal()
+        elif self.mesa_categoria_asignada:
+            self.mesa_categoria_asignada.desasignar_a_fiscal()
 
     def asignar_attachment(self, attachment):
         """
@@ -170,6 +181,7 @@ class Fiscal(models.Model):
         Al hacer esto se desasigna la mesa_categoría ya que puede tener
         asignada una de las dos tareas a la vez.
         """
+        self.limpiar_asignacion_previa()
         self.asignar_attachment_o_mesacategoria(attachment, None)
 
     def asignar_mesa_categoria(self, mesa_categoria):
@@ -178,6 +190,7 @@ class Fiscal(models.Model):
         Al hacer esto se desasigna el attachment ya que puede tener
         asignada una de las dos tareas a la vez.
         """
+        self.limpiar_asignacion_previa()
         self.asignar_attachment_o_mesacategoria(None, mesa_categoria)
 
     @transaction.atomic

@@ -29,6 +29,14 @@ def fiscal_client(db, admin_user, setup_groups, client):
     client.login(username=admin_user.username, password='password')
     return client
 
+def fiscal_client_from_fiscal(client, fiscal):
+    """
+    Debe ser llamado desde un test que previamente llame al fixture setup_groups.
+    """
+    g = Group.objects.get(name='validadores')
+    fiscal.user.groups.add(g)
+    client.login(username=fiscal.user.username, password='password')
+    return client
 
 @pytest.fixture()
 def url_resultados(carta_marina):
