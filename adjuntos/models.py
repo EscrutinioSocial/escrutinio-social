@@ -115,6 +115,12 @@ class AttachmentQuerySet(models.QuerySet):
             'id'
         )
 
+    def priorizadas_para_la_cola(self):
+        return self.order_by(
+            'cant_fiscales_asignados',
+            'cant_asignaciones_realizadas',
+            'id'
+        )
 
 class Attachment(TimeStampedModel):
     """

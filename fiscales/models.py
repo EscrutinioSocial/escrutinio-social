@@ -321,7 +321,67 @@ class Fiscal(models.Model):
 
     def natural_key(self):
         return (self.tipo_dni, self.dni)
-    natural_key.dependencies = ['elecciones.distrito', 'elecciones.seccion', 'auth.user']    
+    natural_key.dependencies = ['elecciones.distrito', 'elecciones.seccion', 'auth.user']
+
+
+class Tarea(TimeStampedModel):
+    """
+    Esta clase representa las tareas pendientes para los fiscales.
+    """
+    attachment = models.ForeignKey(Attachment, null=True, blank=True, on_delete=models.CASCADE)
+    mesa_categoria = models.ForeignKey(MesaCategoria, null=True, blank=True, on_delete=models.CASCADE)
+    # Las no asignadas están en None.
+    asignada_a = models.ForeignKey(Fiscal, default=None, null=True, blank=True, on_delete=models.CASCADE)
+
+    def asignar(self, fiscal):
+        self.asignada_a = fiscal
+        self.save(update_fields=['asignada_a'])
+
+    @classmethod
+    def proxima(cls):
+        return cls.objects.select_for_update(
+            skip_locked=True
+        ).filter(
+            asignada_a__isnull=False
+        ).order_by(
+            'id'
+        ).first()
+
+    @classmethod
+    def armar(cls):
+        """
+        Arma la cola de tareas con `config.TAMANO_COLA_TAREAS` elementos de acuerdo
+        a los criterios de scheduling del sistema.
+        """
+        attachments_sin_identificar = Attachment.objects.sin_identificar(for_update=True).priorizadas_para_la_cola()
+        mc_con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True).ordenadas_por_prioridad_batch()
+
+        cant_attachments = attachments_sin_identificar.count()
+        cant_mc = mc_con_carga_pendiente.count()
+
+        tam_cola = 0
+        while tam_cola < config.TAMANO_COLA_TAREAS:
+            # Mandamos al usuario a identificar mesas si hay fotos y no hay cargas pendientes
+            # o si la cantidad de mesas a identificar supera a la cantidad de cargas pendientes
+            # multiplicada por cierto coeficiente configurable.
+            attachment = None
+            mc = None
+            if (cant_attachments and not cant_mc or
+                    cant_attachments >= cant_mc * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
+                attachment = attachments_sin_identificar[i]
+                cant_unidades = settings.MIN_COINCIDENCIAS_IDENTIFICACION
+                
+            elif cant_mc:
+                mc = mc_con_carga_pendiente[i]
+                cant_unidades = settings.MIN_COINCIDENCIAS_CARGAS
+            
+            # De ese elemento creo tantas unidades como sea necesario.
+            for i in range(cant_unidades):
+                cls.objects.create(
+                    attachment=attachment,
+                    mesa_categoria=mc,
+                )
+            tam_cola += cant_unidades
 
 @receiver(post_save, sender=Fiscal)
 def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, **kwargs):

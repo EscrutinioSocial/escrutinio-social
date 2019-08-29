@@ -338,6 +338,13 @@ class MesaCategoriaQuerySet(models.QuerySet):
         'id',
     ]
 
+    campos_de_orden_batch = [
+        'cant_fiscales_asignados',  # Primero las que tienen menos gente trabajando en ellas.
+        'prioridad_status', 'orden_de_carga',
+        'cant_asignaciones_realizadas',  # En caso de empate no damos siempre la de menor id.
+        'id',
+    ]
+
     def identificadas(self):
         """
         Filtra instancias que tengan orden de carga definido
@@ -424,6 +431,11 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.ordenadas_por_prioridad().values(
             *self.campos_de_orden
+        )
+
+    def ordenadas_por_prioridad_batch(self):
+        return self.anotar_prioridad_status().order_by(
+            *self.campos_de_orden_batch
         )
 
     def mas_prioritaria(self):

@@ -4,22 +4,38 @@ from constance import config
 
 from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
-
+from fiscales.models import Tarea
 
 @transaction.atomic
 def siguiente_accion(request):
+    tarea = Tarea.proxima()
+
+    if not tarea:
+        # Se acabo la cola, elegimos en el momento.
+        return elegir_siguiente_accion_en_el_momento(request)
+
+    # Hay una tarea, se la asignamos al fiscal.
+    tarea.asignar(request.user.fiscal)
+
+    if tarea.attachment:
+        return IdentificacionDeFoto(request, tarea.attachment)
+    elif tarea.mesa_categoria:
+        return CargaCategoriaEnActa(request, tarea.mesa_categoria)
+
+def elegir_siguiente_accion_en_el_momento(request):
     """
-    Elige la siguiente acción a ejecutarse
+    Elige la siguiente acción a ejecutarse de acuerdo a los siguientes criterios:
 
-    - si sólo hay actas sin cargar la accion será identificar una de ellas al azar
+    - Si sólo hay actas sin cargar la accion será identificar una de ellas.
 
-    - si sólo hay mesas con carga pendiente (es decir, que tienen categorias sin cargar),
-      se elige una por orden de prioridad
+    - Si sólo hay mesas con carga pendiente (es decir, que tienen categorias sin cargar),
+      se elige una por orden de prioridad.
 
-    - si hay tanto mesas como actas pendientes, se elige identicar
+    - Si hay tanto mesas como actas pendientes, se elige identicar
       si el tamaño de la cola de identificaciones pendientes es X veces el tamaño de la
       cola de carga (siendo X la variable config.COEFICIENTE_IDENTIFICACION_VS_CARGA).
-    - caso contrario, no hay nada para hacer
+
+    - En otro caso, no hay nada para hacer
     """
     attachments = Attachment.objects.sin_identificar(request.user.fiscal, for_update=True)
     con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True)
@@ -29,7 +45,7 @@ def siguiente_accion(request):
 
     # Mandamos al usuario a identificar mesas si hay fotos y no hay cargas pendientes
     # o si la cantidad de mesas a identificar supera a la cantidad de cargas pendientes
-    # por cierto coeficiente configurable.
+    # multiplicada por cierto coeficiente configurable.
     if (cant_fotos and not cant_cargas or
             cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
         foto = attachments.priorizadas().first()
