@@ -409,7 +409,8 @@ class MesaCategoriaQuerySet(models.QuerySet):
             cant_fiscales_asignados_redondeados=F(
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_CARGAS,
             cant_asignaciones_realizadas_redondeadas=F(
-                'cant_asignaciones_realizadas') / (2 * settings.MIN_COINCIDENCIAS_CARGAS),
+                'cant_asignaciones_realizadas') / 
+                (config.MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS * settings.MIN_COINCIDENCIAS_CARGAS),
         )
 
     def ordenadas_por_prioridad(self):
