@@ -14,7 +14,7 @@ from elecciones.tests.factories import (
 )
 from elecciones.models import MesaCategoria, Mesa
 
-from adjuntos.consolidacion import consumir_novedades_identificacion
+from adjuntos.consolidacion import consumir_novedades_identificacion, liberar_mesacategorias_y_attachments
 from problemas.models import Problema, ReporteDeProblema
 
 
@@ -38,7 +38,7 @@ def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
     assert mc1.orden_de_carga is None
     assert mc2.orden_de_carga is None
 
-    # emulo consolidacion
+    # Emulo consolidación.
     i = IdentificacionFactory(status='identificada', mesa=mc1.mesa, fiscal=FiscalFactory())
     AttachmentFactory(status='identificada', mesa=mesa, identificacion_testigo=i)
     mc1.refresh_from_db()
@@ -47,7 +47,7 @@ def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
     assert mc2.orden_de_carga is not None
 
 
-def test_siguiente_prioriza_estado_y_luego_coeficiente(db, setup_constance, django_assert_num_queries):
+def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_constance, django_assert_num_queries):
 
     f = FiscalFactory()
     c = CategoriaFactory(prioridad=1)
@@ -75,15 +75,26 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, setup_constance, djan
         orden_de_carga=2.0,
         mesa=m3
     )
-    with django_assert_num_queries(3):
+    with django_assert_num_queries(11):
         assert MesaCategoria.objects.siguiente() == mc1
 
-    mc1.take(f)
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc1.asignar_a_fiscal()
     assert MesaCategoria.objects.siguiente() == mc3
-    mc3.take(f)
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc3.asignar_a_fiscal()
     assert MesaCategoria.objects.siguiente() == mc2
-    mc2.take(f)
-    assert MesaCategoria.objects.siguiente() is None
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc2.asignar_a_fiscal()
+
+    # A igualdad de asignaciones, se vuelven a repetir.
+    assert MesaCategoria.objects.siguiente() == mc1
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc1.asignar_a_fiscal()
+    assert MesaCategoria.objects.siguiente() == mc3
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc3.asignar_a_fiscal()
+    assert MesaCategoria.objects.siguiente() == mc2
 
 
 @pytest.mark.skip('Reformular con nuevo scheduling.')
@@ -103,9 +114,9 @@ def test_siguiente_prioriza_categoria(db):
     )
     # se recibe la mc con categoria más baja
     assert MesaCategoria.objects.siguiente() == mc2
-    mc2.take(f)
+    mc2.asignar_a_fiscal(f)
     assert MesaCategoria.objects.siguiente() == mc1
-    mc1.take(f)
+    mc1.asignar_a_fiscal(f)
     assert MesaCategoria.objects.siguiente() is None
 
 @pytest.mark.skip('Reformular con nuevo scheduling.')
@@ -126,9 +137,9 @@ def test_siguiente_prioriza_mesa(db):
 
     # se recibe la mc con mesa con prioridad menor
     assert MesaCategoria.objects.siguiente() == mc2
-    mc2.take(f)
+    mc2.asignar_a_fiscal(f)
     assert MesaCategoria.objects.siguiente() == mc1
-    mc1.take(f)
+    mc1.asignar_a_fiscal(f)
     assert MesaCategoria.objects.siguiente() is None
 
 
@@ -153,27 +164,44 @@ def test_identificadas_excluye_sin_orden(db):
     assert mc1 not in MesaCategoria.objects.identificadas()
     assert mc2 in MesaCategoria.objects.identificadas()
 
+def test_liberacion_vuelve_al_ruedo(db, settings):
+    """
+    Este test verifica que la acción del consolidador libera mesas que nunca recibieron resultados.
+    """
 
-def test_no_taken_incluye_taken_nulo(db):
     f = FiscalFactory()
-    mc1 = MesaCategoriaDefaultFactory()
-    mc2 = MesaCategoriaDefaultFactory()
-    assert mc1.taken is None
-    assert mc2.taken is None
-    assert set(MesaCategoria.objects.no_taken()) == {mc1, mc2}
-    mc2.take(f)
-    assert mc2.taken is not None
-    assert mc2.taken_by == f
-    assert set(MesaCategoria.objects.no_taken()) == {mc1}
+    c = CategoriaFactory(prioridad=1)
+    m1 = MesaFactory()
+    AttachmentFactory(mesa=m1)
+    mc1 = MesaCategoriaFactory(
+        status=MesaCategoria.STATUS.parcial_sin_consolidar,
+        categoria=c,
+        orden_de_carga=1.0,
+        mesa=m1
+    )
+    m3 = MesaFactory()
+    AttachmentFactory(mesa=m3)
+    mc3 = MesaCategoriaFactory(
+        categoria=c,
+        status=MesaCategoria.STATUS.total_en_conflicto,
+        orden_de_carga=2.0,
+        mesa=m3
+    )
+    assert MesaCategoria.objects.siguiente() == mc1
 
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc1.asignar_a_fiscal()
+    cant_asignaciones = mc1.cant_fiscales_asignados
 
-def test_no_taken_incluye_taken_vencido(db):
-    now = timezone.now()
-    mc1 = MesaCategoriaFactory(taken=now)
-    mc2 = MesaCategoriaFactory(taken=now - timedelta(minutes=3))
-    assert mc1.taken is not None
-    assert mc2.taken is not None
-    assert mc1 not in MesaCategoria.objects.no_taken()
-    assert mc2 in MesaCategoria.objects.no_taken()
+    # Es como si de las varias asignaciones de la mc la última sea para el fiscal f
+    f.asignar_mesa_categoria(mc1)
 
+    # Como mc1 está muy asignada, ahora me propone mc3.
+    assert MesaCategoria.objects.siguiente() == mc3
+    settings.TIMEOUT_TAREAS = 0
+    liberar_mesacategorias_y_attachments()
 
+    # mc1 volvió al ruedo.
+    assert MesaCategoria.objects.siguiente() == mc1
+    mc1.refresh_from_db()
+    assert mc1.cant_fiscales_asignados == cant_asignaciones - 1

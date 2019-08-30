@@ -19,14 +19,49 @@ def test_attachment_unico(db):
         AttachmentFactory(foto=a.foto)
 
 
-def test_sin_identificar_excluye_taken(db):
-    f = FiscalFactory()
+def test_priorizadas_respeta_orden(db, settings):
     a1 = IdentificacionFactory(status='identificada').attachment
     a2 = IdentificacionFactory(status='spam').attachment
     a3 = IdentificacionFactory(status='spam').attachment
-    assert set(Attachment.sin_identificar_con_timeout()) == {a1, a2, a3}
-    a3.take(f)
-    assert set(Attachment.sin_identificar_con_timeout(wait=2)) == {a1, a2}
+    assert set(Attachment.objects.sin_identificar()) == {a1, a2, a3}
+    for i in range(settings.MIN_COINCIDENCIAS_IDENTIFICACION):
+        a2.asignar_a_fiscal()
+    for i in range(2 * settings.MIN_COINCIDENCIAS_IDENTIFICACION):
+        a3.asignar_a_fiscal()
+    # Me las debe entregar en orden.
+    assert list(Attachment.objects.sin_identificar().priorizadas()) == [a1, a2, a3]
+
+def test_priorizadas_ordena_por_cant_asignaciones_realizadas(db, settings):
+    a1 = AttachmentFactory()
+    a2 = AttachmentFactory()
+    a3 = AttachmentFactory()
+    assert a1.id < a2.id
+    assert a2.id < a3.id
+    assert set(Attachment.objects.sin_identificar()) == {a1, a2, a3}
+    for i in range(settings.MIN_COINCIDENCIAS_IDENTIFICACION):
+        a1.asignar_a_fiscal()
+        a2.asignar_a_fiscal()
+        a3.asignar_a_fiscal()
+
+    # Prima el orden por id.
+    assert list(Attachment.objects.sin_identificar().priorizadas()) == [a1, a2, a3]
+
+    # Ahora a2 es devuelto.
+    for i in range(settings.MIN_COINCIDENCIAS_IDENTIFICACION):
+        a2.desasignar_a_fiscal()
+
+    assert list(Attachment.objects.sin_identificar().priorizadas()) == [a2, a1, a3]
+
+    # a2 es asignado nuevamente.
+    for i in range(settings.MIN_COINCIDENCIAS_IDENTIFICACION):
+        a2.asignar_a_fiscal()
+
+    # Si bien a3 y a2 tienen la misma cantidad de asignaciones
+    # vigentes, a2 fue asignado más veces. a1 y a3 empatan, salvo por id.
+    assert list(Attachment.objects.sin_identificar().priorizadas()) == [a1, a3, a2]
+    assert a1.cant_fiscales_asignados == a3.cant_fiscales_asignados
+    assert a3.cant_fiscales_asignados == a2.cant_fiscales_asignados
+    assert a3.cant_asignaciones_realizadas < a2.cant_asignaciones_realizadas
 
 
 def test_sin_identificar_excluye_otros_estados(db):
@@ -34,7 +69,7 @@ def test_sin_identificar_excluye_otros_estados(db):
     AttachmentFactory(status='invalida')
     AttachmentFactory(status='identificada')
     a = AttachmentFactory(status=Attachment.STATUS.sin_identificar)
-    assert set(Attachment.sin_identificar()) == {a}
+    assert set(Attachment.objects.sin_identificar()) == {a}
 
 
 def test_identificacion_status_count(db):
@@ -139,7 +174,7 @@ def test_ciclo_de_vida_problemas_resolver(db):
     IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
 
     # Está pendiente.
-    assert a in Attachment.sin_identificar()
+    assert a in Attachment.objects.sin_identificar()
 
     i1 = IdentificacionFactory(attachment=a, status='problema', mesa=None)
     f = FiscalFactory()
@@ -163,7 +198,7 @@ def test_ciclo_de_vida_problemas_resolver(db):
     assert problema.estado == Problema.ESTADOS.pendiente
 
     # El attach no está entre los pendientes.
-    assert a not in Attachment.sin_identificar()
+    assert a not in Attachment.objects.sin_identificar()
 
     problema.resolver(FiscalFactory().user)
 

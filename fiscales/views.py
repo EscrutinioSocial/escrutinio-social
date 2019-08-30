@@ -237,12 +237,15 @@ def cargar_desde_ub(request, mesa_id, tipo='total'):
 
     if request.method == 'GET':
         mesacategoria = MesaCategoria.objects.filter(mesa=mesa_existente).siguiente_para_ub()
+        if mesacategoria:
+            # Se la asignamos.
+            mesacategoria.asignar_a_fiscal()
+            request.user.fiscal.asignar_mesa_categoria(mesacategoria)
     else:
         mesa_cat_id = request.session.pop('mesa_categoria_id', None)
         mesacategoria = MesaCategoria.objects.get(id=mesa_cat_id)
 
     if mesacategoria:
-        mesacategoria.take(request.user.fiscal)
         return carga(request, mesacategoria.id, desde_ub=True)
 
     # si es None, lo llevamos a subir un adjunto
@@ -262,17 +265,18 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
 
     # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
-    if False: #mesa_categoria.taken_by != fiscal:
+    if fiscal.mesa_categoria_asignada != mesa_categoria:
         capture_message(
             f"""
             Intento de cargar mesa-categoria {mesa_categoria.id}
 
-            taken_by: {mesa_categoria.taken_by}
-            fiscal: {fiscal} ({fiscal.id})
+        mesa categoría: {mesa_categoria.id}
+            fiscal: {fiscal} ({fiscal.id}, tenía asignada: {fiscal.mesa_categoria_asignada})
             """
         )
         # TO DO: quizas sumar puntos al score anti-trolling?
-        raise PermissionDenied('no te toca cargar acá')
+        # Lo mandamos nuevamente a que se le dé algo para hacer.
+        return redirect(reverse('siguiente-accion'))
 
     # En carga parcial sólo se cargan opciones prioritarias.
     solo_prioritarias = tipo == 'parcial'
@@ -356,13 +360,11 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     reportados.append(vmr)
                 VotoMesaReportado.objects.bulk_create(reportados)
 
-                # Libero el token sobre la mc
-                mesa_categoria.release()
-                # si viene desde_ub, consolidamos la carga
+                mesa_categoria.desasignar_a_fiscal()  # Le bajamos la cuenta.
+                # Si viene desde_ub, consolidamos la carga.
                 if desde_ub:
                     consolidar_cargas(mesa_categoria)
 
-            carga.actualizar_firma()
             messages.success(request, f'Guardada categoría {categoria} para {mesa}')
         except Exception as e:
             # Este catch estaba desde cuando no podía haber múltiples cargas para una
@@ -424,7 +426,7 @@ class ReporteDeProblemaCreateView(FormView):
             tipo_de_problema = reporte_de_problema.tipo_de_problema
             descripcion = reporte_de_problema.descripcion
 
-            # Creo la identificación.
+            # Creo la carga.
             carga = Carga.objects.create(
                 tipo=Carga.TIPOS.problema,
                 fiscal=fiscal,
