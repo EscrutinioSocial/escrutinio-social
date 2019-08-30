@@ -15,11 +15,11 @@ from elecciones.models import (
     MesaCategoria,
     VotoMesaReportado,
     CargaOficialControl,
-    Opcion
+    Opcion,
+    CategoriaOpcion
 )
 
 # If modifying these scopes, delete the file token.pickle.
-URL = 'https://sheets.googleapis.com/v4/spreadsheets/1hnn-BCqilu2jXZ-lcNiwhDa_V-QTCSp-EMqhpz4y2fA/values/A:XX'
 API_KEY = '***REMOVED***'
 # The ID and range of a sample spreadsheet.
 PARAMS = {'key': API_KEY}
@@ -27,8 +27,29 @@ PARAMS = {'key': API_KEY}
 
 class Command(BaseCommand):
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--categoria", type=str, dest="categoria",
+            help="Categoria a analizar (default %(default)s).",
+            default=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE
+        )
+
+    def get_opcion(self, codigo_partido):
+        return CategoriaOpcion.objects.get(opcion__partido__codigo=codigo_partido, categoria=self.categoria).opcion
+
+    def get_opcion_nosotros(self):
+        return self.get_opcion(settings.CODIGO_PARTIDO_NOSOTROS)
+
+    def get_opcion_ellos(self):
+        return self.get_opcion(settings.CODIGO_PARTIDO_ELLOS)
+
     def handle(self, *args, **options):
-        r = requests.get(url=URL, params=PARAMS)
+        nombre_categoria = options['categoria']
+        self.categoria = Categoria.objects.get(nombre=nombre_categoria)
+        print("Vamos a importar la categoría:", self.categoria)
+
+        url = settings.URL_ARCHIVO_IMPORTAR_CORREO[nombre_categoria]
+        r = requests.get(url=url, params=PARAMS)
         values = r.json()['values']
         ultima_guardada_con_exito = None
         tz = pytz.timezone('America/Argentina/Buenos_Aires')
@@ -36,7 +57,7 @@ class Command(BaseCommand):
         if values:
             # acá se debería consultar la fecha y hora del último registro guardado
             # para luego filtrar las filas nuevas
-            fecha_ultimo_registro = CargaOficialControl.objects.first()
+            fecha_ultimo_registro = CargaOficialControl.objects.filter(categoria=self.categoria).first()
             if fecha_ultimo_registro:
                 date_format = '%d/%m/%Y %H:%M:%S'
                 # fd = datetime.strptime(fecha_ultimo_registro.fecha_ultimo_registro, date_format)
@@ -48,12 +69,11 @@ class Command(BaseCommand):
                 head, *tail = values
                 datos_a_guardar = map(lambda x: dict(zip(head, x)), tail)
 
-            categoria_presidente = Categoria.objects.get(nombre=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE)
             fiscal = Fiscal.objects.get(id=1)
             tipo = 'parcial_oficial'
 
-            opcion_nosotros = Opcion.objects.get(partido__codigo=settings.CODIGO_PARTIDO_NOSOTROS)
-            opcion_ellos = Opcion.objects.get(partido__codigo=settings.CODIGO_PARTIDO_ELLOS)
+            opcion_nosotros = self.get_opcion_nosotros()
+            opcion_ellos = self.get_opcion_ellos()
             opcion_blancos = Opcion.blancos()
             opcion_nulos = Opcion.nulos()
             opcion_total = Opcion.total_votos()
@@ -67,7 +87,7 @@ class Command(BaseCommand):
                     seccion = Seccion.objects.get(numero=nro_seccion, distrito=distrito)
                     circuito = Circuito.objects.get(numero=row['Circuito'].strip(), seccion=seccion)
                     mesa = Mesa.objects.get(numero=row['Mesa'], circuito=circuito)
-                    mesa_categoria = MesaCategoria.objects.get(mesa=mesa, categoria=categoria_presidente)
+                    mesa_categoria = MesaCategoria.objects.get(mesa=mesa, categoria=self.categoria)
 
                     # TODO
                     # INICIO TRANSACCION
@@ -85,6 +105,9 @@ class Command(BaseCommand):
                     VotoMesaReportado.objects.create(carga=carga, opcion=opcion_blancos, votos=row['Blancos'])
                     VotoMesaReportado.objects.create(carga=carga, opcion=opcion_nulos, votos=row['Nulos'])
                     VotoMesaReportado.objects.create(carga=carga, opcion=opcion_total, votos=row['Total'])
+
+                    # actualizo la firma así no es necesario correr consolidar_identificaciones_y_cargas
+                    carga.actualizar_firma()
 
                     # Si hay cargas repetidas esto hace que se tome la ultima
                     # en el proceso de comparar_mesas_con_correo
@@ -106,4 +129,4 @@ class Command(BaseCommand):
                     fecha_ultimo_registro.fecha_ultimo_registro = ultima_guardada_con_exito
                     fecha_ultimo_registro.save()
                 else:
-                    CargaOficialControl.objects.create(fecha_ultimo_registro=ultima_guardada_con_exito)
+                    CargaOficialControl.objects.create(fecha_ultimo_registro=ultima_guardada_con_exito, categoria=self.categoria)

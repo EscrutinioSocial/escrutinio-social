@@ -3,6 +3,7 @@ from datetime import timedelta
 from urllib.parse import quote_plus
 
 from django.conf import settings
+from constance import config
 from django.utils import timezone
 from django.db.models import Count, Value, F
 from django.db.models.functions import Coalesce
@@ -100,7 +101,8 @@ class AttachmentQuerySet(models.QuerySet):
             cant_fiscales_asignados_redondeados=F(
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_IDENTIFICACION,
             cant_asignaciones_realizadas_redondeadas=F(
-                'cant_asignaciones_realizadas') / (2 * settings.MIN_COINCIDENCIAS_IDENTIFICACION),
+                'cant_asignaciones_realizadas') / 
+                (config.MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS * settings.MIN_COINCIDENCIAS_IDENTIFICACION),
         )
 
     def priorizadas(self):
