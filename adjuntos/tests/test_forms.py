@@ -165,3 +165,79 @@ def test_preidentificacion_parcial_ok(db):
         'distrito': m1.circuito.seccion.distrito.id
     })
     assert form.is_valid()
+
+def test_identificacion_busqueda_de_mesa(db):
+    c1 = CircuitoFactory()
+
+    # el usuario ingresa 23/8, como no existe le devuelve la mesa 23
+    m1 = MesaFactory(numero='23', circuito=c1)
+    form = IdentificacionForm({
+        'mesa': '23/8',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m1
+
+    # el usuario ingresa 23 como no existe le devuelve la mesa 23
+    form = IdentificacionForm({
+        'mesa': '23',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m1
+
+    # el usuario ingresa 00023/8, existe 23/8 le devuelve la mesa 23/8
+    m2 = MesaFactory(numero='23/8', circuito=c1)
+    form = IdentificacionForm({
+        'mesa': '00023/8',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m2
+
+    # el usuario ingresa 23/9, existe la 00023/9 le devuelve la mesa 00023/9
+    m3 = MesaFactory(numero='00023/9', circuito=c1)
+    form = IdentificacionForm({
+        'mesa': '23/9',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m3
+
+    # el usuario ingresa 023/9, existe la 00023/9 le devuelve la mesa 00023/9
+    form = IdentificacionForm({
+        'mesa': '023/9',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m3
+
+    # el usuario ingresa 00023/4, como no existe le devuelve la mesa 23
+    form = IdentificacionForm({
+        'mesa': '00023/4',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m1
+
+    # el usuario ingresa 5, como no existe le devuelve error
+    form = IdentificacionForm({
+        'mesa': '5',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert not form.is_valid()
+    assert form.errors['mesa'] == ['Esta mesa no pertenece al circuito']

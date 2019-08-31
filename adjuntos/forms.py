@@ -195,7 +195,8 @@ class IdentificacionForm(forms.ModelForm):
         if circuito_nro:
             lookup_mesa &= Q(circuito__numero=circuito_nro)
 
-        mesa = self.fields['mesa'].get_object(mesa_nro, lookup_mesa)
+        mesa = self.buscar_mesa(mesa_nro, lookup_mesa)
+
         # Intetamos obtener la seccion y circuito con lo que tengamos
         # a nuestra disposición (distrito, mesa ó los valores del form).
         seccion, circuito = self.check_seccion_circuito(distrito, mesa)
@@ -215,6 +216,42 @@ class IdentificacionForm(forms.ModelForm):
 
         return self.cleaned_data
 
+
+    def buscar_mesa(self, mesa_nro, lookup_mesa):
+        nro_mesa=str(mesa_nro)
+        """
+        BUSQUEDA DE MESA
+        primero busco como viene o sacando ceros adelante
+        """
+        query_nro_mesa = Q(numero=nro_mesa) | Q(numero=nro_mesa.lstrip('0'))
+        query_nro_mesa &= lookup_mesa
+        mesa = Mesa.objects.filter(query_nro_mesa)
+
+        if not mesa:
+            """
+            saco los ceros de adelante por si la cantidad de ceros varía
+            y busco que numero contenga mesa_nro
+            """
+            query_nro_mesa = Q(numero__contains=nro_mesa.lstrip('0'))
+            query_nro_mesa &= lookup_mesa
+            mesa = Mesa.objects.filter(query_nro_mesa)
+
+            if not mesa:
+                """
+                separo el nro de mesa dividiendolo por letra o caracter
+                especial para buscar la primera parte del numero de mesa.
+                ejemplo:
+                23/7 queda como ['23', '7']
+                47B queda como ['47', 'B']
+                """
+                mesa_nro_split = re.findall(r'[A-Za-z]+|\d+|^\w', nro_mesa)
+                # busco solo la parte 1 con o sin ceros
+                query_nro_mesa = (Q(numero=mesa_nro_split[0]) |
+                                    Q(numero=mesa_nro_split[0].lstrip('0')))
+                query_nro_mesa &= lookup_mesa
+                mesa = Mesa.objects.filter(query_nro_mesa)
+
+        return mesa[0] if mesa else None
 
 class PreIdentificacionForm(forms.ModelForm):
     """
