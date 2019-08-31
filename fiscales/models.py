@@ -370,11 +370,17 @@ class Tarea(TimeStampedModel):
                     cant_attachments >= cant_mc * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
                 attachment = attachments_sin_identificar[i]
                 cant_unidades = settings.MIN_COINCIDENCIAS_IDENTIFICACION
-                
+
             elif cant_mc:
                 mc = mc_con_carga_pendiente[i]
                 cant_unidades = settings.MIN_COINCIDENCIAS_CARGAS
-            
+                # Si ya está consolidada por CSV hay que hacer una carga menos.
+                if mc.status in [MesaCategoria.STATUS.parcial_consolidada_csv, MesaCategoria.STATUS.total_consolidada_csv]:
+                    cant_unidades -= 1
+                # Si está en conflicto sólo necesitamos una carga más.
+                elif mc.status in [MesaCategoria.STATUS.parcial_en_conflicto, MesaCategoria.STATUS.total_en_conflicto]:
+                    cant_unidades = 1
+
             # De ese elemento creo tantas unidades como sea necesario.
             for i in range(cant_unidades):
                 cls.objects.create(
