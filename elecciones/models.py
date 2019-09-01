@@ -820,7 +820,7 @@ class Opcion(models.Model):
     class Meta:
         verbose_name = 'Opción'
         verbose_name_plural = 'Opciones'
-        ordering = ['orden']
+        ordering = ['partido', 'nombre_corto']
 
     @property
     def color(self):
@@ -903,14 +903,14 @@ class Categoria(models.Model):
     """
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
     categoria_general = models.ForeignKey(CategoriaGeneral, null=False,
-        on_delete=models.SET_NULL, related_name='categorias'
+        on_delete=models.CASCADE, related_name='categorias'
     )
     # Información geográfica para anclar una categoría a una provincia o municipio.
     distrito = models.ForeignKey(
-        'elecciones.Distrito', on_delete=models.SET_NULL, null=True, blank=True,
+        Distrito, null=True, blank=True, on_delete=models.SET_NULL
     )
     seccion = models.ForeignKey(
-        'elecciones.Seccion', null=True, blank=True, on_delete=models.SET_NULL
+        Seccion, null=True, blank=True, on_delete=models.SET_NULL
     )
 
     slug = models.SlugField(max_length=100, unique=True)
