@@ -279,9 +279,10 @@ class OpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
 
 class CategoriaAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
-    list_display = ['nombre', 'activa', 'color', 'back_color']
+    list_display = ['categoria_general', 'nombre', 'activa', 'distrito', 'seccion']
     search_fields = ['nombre']
     list_filter = ['activa']
+    ordering = ['categoria_general__nombre', 'nombre']
     form = CategoriaForm
 
 
@@ -296,7 +297,6 @@ class TecnicaProyeccionAdmin(admin.ModelAdmin):
 
 
 class AgrupacionCircuitoInline(admin.TabularInline):
-    # TODO quitar este modelo intermedio inutil y relacionar directamente con  circuito
     model = AgrupacionCircuito
     raw_id_fields = ['circuito']
     extra = 1

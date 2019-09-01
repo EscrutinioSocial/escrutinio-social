@@ -763,14 +763,13 @@ class Partido(models.Model):
     """
     Representa un partido político o alianza, que contiene :py:class:`opciones <Opcion>`.
     """
-    orden = models.PositiveIntegerField(help_text='Orden opcion')
     numero = models.PositiveIntegerField(null=True, blank=True)
     codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True, db_index=True)
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=30, default='')
     color = models.CharField(max_length=30, default='', blank=True)
     referencia = models.CharField(max_length=30, default='', blank=True)
-    ordering = ['orden']
+    ordering = ['numero']
 
     def __str__(self):
         return self.nombre
