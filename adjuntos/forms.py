@@ -180,13 +180,13 @@ class IdentificacionForm(forms.ModelForm):
                 self.add_error('circuito', 'Sección y/o circuito deben estar completos')
                 intento_identificacion = False
 
-        # no tenemos la data necesaria, no seguimos identificando
+        # No tenemos la data necesaria, no seguimos identificando.
         if not intento_identificacion:
             return self.cleaned_data
 
         self.cleaned_data['distrito'] = distrito
 
-        # Intentamos obtener la mesa con distrito y numero de mesa
+        # Intentamos obtener la mesa con distrito y número de mesa.
         lookup_mesa = Q(circuito__seccion__distrito=distrito)
 
         if seccion_nro:
@@ -197,8 +197,8 @@ class IdentificacionForm(forms.ModelForm):
 
         mesa = self.buscar_mesa(mesa_nro, lookup_mesa)
 
-        # Intetamos obtener la seccion y circuito con lo que tengamos
-        # a nuestra disposición (distrito, mesa ó los valores del form).
+        # Intentamos obtener la sección y circuito con lo que tengamos
+        # a nuestra disposición (distrito, mesa o los valores del form).
         seccion, circuito = self.check_seccion_circuito(distrito, mesa)
 
         if seccion:
@@ -216,36 +216,37 @@ class IdentificacionForm(forms.ModelForm):
 
         return self.cleaned_data
 
-
     def buscar_mesa(self, mesa_nro, lookup_mesa):
-        nro_mesa=str(mesa_nro)
         """
-        BUSQUEDA DE MESA
-        primero busco como viene o sacando ceros adelante
+        Esta función busca una mesa en base al input que envía el usuario
+        realizando una serie de normalizaciones tendientes a encontrarla por más
+        que esté escrita de formas "raras".
+
+        La busca de forma literal, eliminándole los ceros, sacándole su parte alfanumérica,
+        etc.
         """
+        # Nos aseguramos de que sea texto.
+        nro_mesa = str(mesa_nro)
+        # Primero busco como viene o sacando ceros adelante.
         query_nro_mesa = Q(numero=nro_mesa) | Q(numero=nro_mesa.lstrip('0'))
         query_nro_mesa &= lookup_mesa
         mesa = Mesa.objects.filter(query_nro_mesa)
 
         if not mesa:
-            """
-            saco los ceros de adelante por si la cantidad de ceros varía
-            y busco que numero contenga mesa_nro
-            """
+            # Saco los ceros de adelante por si la cantidad de ceros varía
+            # y busco que el campo 'numero' contenga mesa_nro.
             query_nro_mesa = Q(numero__contains=nro_mesa.lstrip('0'))
             query_nro_mesa &= lookup_mesa
             mesa = Mesa.objects.filter(query_nro_mesa)
 
             if not mesa:
-                """
-                separo el nro de mesa dividiendolo por letra o caracter
-                especial para buscar la primera parte del numero de mesa.
-                ejemplo:
-                23/7 queda como ['23', '7']
-                47B queda como ['47', 'B']
-                """
+                # Separo el nro de mesa dividiéndolo por letra o caracter
+                # especial para buscar la primera parte del número de mesa.
+                # ejemplo:
+                # 23/7 queda como ['23', '7']
+                # 47B queda como ['47', 'B']
                 mesa_nro_split = re.findall(r'[A-Za-z]+|\d+|^\w', nro_mesa)
-                # busco solo la parte 1 con o sin ceros
+                # Busco solo la parte 1 con o sin ceros
                 query_nro_mesa = (Q(numero=mesa_nro_split[0]) |
                                     Q(numero=mesa_nro_split[0].lstrip('0')))
                 query_nro_mesa &= lookup_mesa
@@ -263,14 +264,14 @@ class PreIdentificacionForm(forms.ModelForm):
     )
 
     seccion = SelectField(
-         required=False,
-         queryset=Seccion.objects.all(),
-         label='Sección',
+        required=False,
+        queryset=Seccion.objects.all(),
+        label='Sección',
     )
 
     circuito = SelectField(
-         required=False,
-         queryset=Circuito.objects.all(),
+        required=False,
+        queryset=Circuito.objects.all(),
     )
 
     class Meta:
