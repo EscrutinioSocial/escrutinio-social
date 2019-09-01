@@ -78,10 +78,10 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     s1 = SeccionFactory(numero=50, distrito=d1)
     c1 = CircuitoFactory(numero='2', seccion=s1)
     m = MesaFactory(numero='4012', lugar_votacion__circuito=c1, electores=100, circuito=c1)
-    o2 = OpcionFactory(orden=3, codigo='Todes')
-    o3 = OpcionFactory(orden=2, codigo='Juntos')
+    o2 = OpcionFactory(codigo='Todes')
+    o3 = OpcionFactory(codigo='Juntos')
     c = CategoriaFactory(opciones=[o2, o3], nombre='Otra categoria')
-    CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True)
+    #CategoriaOpcionFactory(categoria=c, opcion=, prioritaria=True)
     MesaCategoriaFactory(mesa=m, categoria=c)
 
     with pytest.raises(DatosInvalidosError) as e:
@@ -97,9 +97,9 @@ def carga_inicial(db):
     circ = CircuitoFactory(numero='2', seccion=s1)
 
     # Creamos los partidos.
-    fdt = OpcionFactory(orden=3, codigo='FdT', nombre='FdT', partido__nombre='FpT')
-    jpc = OpcionFactory(orden=2, codigo='JpC', nombre='JpC', partido__nombre='JpC')
-    c2019 = OpcionFactory(orden=4, codigo='C2019', nombre='C2019', partido__nombre='C2019')
+    fdt = OpcionFactory(codigo='FdT', nombre='FdT', partido__nombre='FpT')
+    jpc = OpcionFactory(codigo='JpC', nombre='JpC', partido__nombre='JpC')
+    c2019 = OpcionFactory(codigo='C2019', nombre='C2019', partido__nombre='C2019')
 
     categorias = []
     for categoria, prioritaria in CATEGORIAS:
