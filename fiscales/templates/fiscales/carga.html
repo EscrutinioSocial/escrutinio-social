@@ -2,6 +2,7 @@
 {% load i18n material_form material_frontend staticfiles %}
 
 {% block js %}
+<script src="{% static 'fiscales/js/cambio-categoria.js' %}"></script>
 {{ block.super }}
 
 <style>
@@ -73,7 +74,7 @@ dmc-select select {
   padding: 0;
   padding-right: .8em;
   text-align-last: right;
-}
+}<script src="{% static 'js/darkroom.js' %}"></script>
 
 .carga-acta-inline > dmc-select select::-ms-expand {
   display: none;
@@ -106,7 +107,7 @@ $(document).ready(function(){
     }
     {% endif %}
     $('.modal').modal();
-
+    cargandoCategoria('{{ categoria }}');
 });
 </script>
 {% endblock js %}
@@ -163,6 +164,16 @@ $(document).ready(function(){
   {% if categoria.foto_ejemplo %}
     <div class="card small info">
         <img class="responsive-img" src="{{ categoria.foto_ejemplo.thumbnail.600x.url }}">
+    </div>
+    <div id="cambio-categoria" class="modal">
+      <div class="modal-content">
+        <h4>Atención: cambio de categoría</h4>
+        <p>Vamos a continuar cargando <strong>{{ categoria }}</strong>.</p>
+        <img class="responsive-img" src="{{ categoria.foto_ejemplo.thumbnail.600x.url }}">
+      </div>
+      <div class="modal-footer">
+        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Aceptar</a>
+      </div>
     </div>
   {% endif %}
 {% endblock information %}
