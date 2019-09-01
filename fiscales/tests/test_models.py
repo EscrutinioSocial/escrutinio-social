@@ -4,6 +4,7 @@ from django.urls import reverse
 from elecciones.tests.factories import (
     CargaFactory,
     CategoriaFactory,
+    CategoriaOpcionFactory,
     FiscalFactory,
     MesaCategoriaFactory,
     OpcionFactory,
@@ -65,11 +66,13 @@ def test_generar_codigo_check_unicidad(db, mocker):
 
 
 def test_datos_previos_parcial(db):
-    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, orden=1)
-    o2 = OpcionFactory(orden=2)
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
+    o2 = OpcionFactory()
     cat1 = CategoriaFactory(opciones=[o1, o2])
+    cat1o1 = CategoriaOpcionFactory(categoria=cat1, opcion=o1, orden=1)
+    cat1o2 = CategoriaOpcionFactory(categoria=cat1, opcion=o2, orden=2)
 
-    # tengo una consolidacion parcial
+    # tengo una consolidación parcial
     mc = MesaCategoriaFactory(categoria=cat1, status=MesaCategoria.STATUS.parcial_consolidada_dc)
     carga = CargaFactory(mesa_categoria=mc, tipo='total')
     VotoMesaReportadoFactory(carga=carga, opcion=o1, votos=10)
@@ -82,9 +85,11 @@ def test_datos_previos_parcial(db):
 
 
 def test_datos_previos_desde_metadata(db):
-    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, orden=1)
-    o2 = OpcionFactory(orden=2)
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
+    o2 = OpcionFactory()
     cat1 = CategoriaFactory(opciones=[o1, o2])
+    cat1o1 = CategoriaOpcionFactory(categoria=cat1, opcion=o1, orden=1)
+    cat1o2 = CategoriaOpcionFactory(categoria=cat1, opcion=o2, orden=2)
 
     mc = MesaCategoriaFactory(categoria=cat1, status=MesaCategoria.STATUS.total_consolidada_dc)
     carga = CargaFactory(mesa_categoria=mc, tipo='total')
@@ -92,8 +97,10 @@ def test_datos_previos_desde_metadata(db):
     VotoMesaReportadoFactory(carga=carga, opcion=o2, votos=12)
 
     # otra categoria incluye la misma metadata.
-    o2 = OpcionFactory(orden=2)
+    o2 = OpcionFactory()
     cat2 = CategoriaFactory(opciones=[o1, o2])
+    cat1o1 = CategoriaOpcionFactory(categoria=cat2, opcion=o1, orden=1)
+    cat2o2 = CategoriaOpcionFactory(categoria=cat2, opcion=o2, orden=2)
     mc2 = MesaCategoriaFactory(categoria=cat2, mesa=mc.mesa)
 
     # esa mesa categoria incluye la metadata ya cargada en mc1

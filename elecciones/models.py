@@ -956,7 +956,7 @@ class Categoria(models.Model):
         qs = self.opciones.all()
         if solo_prioritarias:
             qs = qs.filter(categoriaopcion__prioritaria=True)
-        return qs.distinct().order_by('orden')
+        return qs.distinct().order_by('categoriaopcion__orden')
 
     @classmethod
     def para_mesas(cls, mesas):

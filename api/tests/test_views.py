@@ -171,12 +171,12 @@ def test_cargar_votos(admin_client):
     mesa_categoria_1 = factories.MesaCategoriaFactory(mesa=mesa, categoria=categoria_1)
     mesa_categoria_2 = factories.MesaCategoriaFactory(mesa=mesa, categoria=categoria_2)
 
-    opcion_1 = factories.OpcionFactory(orden=1)
-    opcion_2 = factories.OpcionFactory(orden=2)
+    opcion_1 = factories.OpcionFactory()
+    opcion_2 = factories.OpcionFactory()
 
-    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1, prioritaria=True)
-    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2, prioritaria=True)
-    factories.CategoriaOpcionFactory(categoria=categoria_2, opcion=opcion_1, prioritaria=True)
+    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1, prioritaria=True, orden=1)
+    factories.CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2, prioritaria=True, orden=2)
+    factories.CategoriaOpcionFactory(categoria=categoria_2, opcion=opcion_1, prioritaria=True, orden=1)
 
     data = [{
         'categoria': categoria_1.id,
@@ -324,13 +324,13 @@ def test_listar_categorias_con_prioridad_error(prioridad, admin_client):
 
 
 def test_listar_opciones_default(admin_client):
-    o2 = factories.OpcionFactory(orden=3)
-    o3 = factories.OpcionFactory(orden=2)
+    o2 = factories.OpcionFactory()
+    o3 = factories.OpcionFactory()
 
     c = factories.CategoriaFactory(opciones=[o2, o3])
 
-    o1 = factories.CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True).opcion
-    o4 = factories.CategoriaOpcionFactory(categoria=c, opcion__orden=4, prioritaria=True).opcion
+    o1 = factories.CategoriaOpcionFactory(categoria=c, orden=1, prioritaria=True).opcion
+    o4 = factories.CategoriaOpcionFactory(categoria=c, orden=4, prioritaria=True).opcion
 
     url = reverse('opciones', kwargs={'id_categoria': c.id})
 
@@ -347,13 +347,16 @@ def test_listar_opciones_default(admin_client):
 
 
 def test_listar_opciones_todas(admin_client):
-    o2 = factories.OpcionFactory(orden=3)
-    o3 = factories.OpcionFactory(orden=2)
+    o2 = factories.OpcionFactory()
+    o3 = factories.OpcionFactory()
 
     c = factories.CategoriaFactory(opciones=[o2, o3])
 
-    o1 = factories.CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True).opcion
-    o4 = factories.CategoriaOpcionFactory(categoria=c, opcion__orden=4, prioritaria=True).opcion
+    co3 = factories.CategoriaOpcionFactory(categoria=c, orden=2, opcion=o3)
+    co2 = factories.CategoriaOpcionFactory(categoria=c, orden=3, opcion=o2)
+
+    o1 = factories.CategoriaOpcionFactory(categoria=c, orden=1, prioritaria=True).opcion
+    o4 = factories.CategoriaOpcionFactory(categoria=c, orden=4, prioritaria=True).opcion
 
     url = reverse('opciones', kwargs={'id_categoria': c.id})
 
