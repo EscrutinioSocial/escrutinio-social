@@ -580,8 +580,6 @@
     "mesa": 1,
     "categoria": 1,
     "carga_testigo": null,
-    "taken": "2019-07-19T04:42:17.480Z",
-    "taken_by": null,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": 0
@@ -595,8 +593,6 @@
     "mesa": 2,
     "categoria": 1,
     "carga_testigo": null,
-    "taken": null,
-    "taken_by": null,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": null
@@ -610,8 +606,6 @@
     "mesa": 3,
     "categoria": 1,
     "carga_testigo": null,
-    "taken": "2019-07-30T17:19:24.701Z",
-    "taken_by": 1,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": 0
@@ -625,8 +619,6 @@
     "mesa": 4,
     "categoria": 1,
     "carga_testigo": null,
-    "taken": null,
-    "taken_by": null,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": null
@@ -640,8 +632,6 @@
     "mesa": 5,
     "categoria": 1,
     "carga_testigo": null,
-    "taken": null,
-    "taken_by": null,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": null
@@ -655,8 +645,6 @@
     "mesa": 6,
     "categoria": 1,
     "carga_testigo": null,
-    "taken": null,
-    "taken_by": null,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": null
@@ -670,8 +658,6 @@
     "mesa": 7,
     "categoria": 1,
     "carga_testigo": 2,
-    "taken": null,
-    "taken_by": null,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": 0
@@ -685,8 +671,6 @@
     "mesa": 8,
     "categoria": 1,
     "carga_testigo": null,
-    "taken": null,
-    "taken_by": null,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": null
@@ -700,8 +684,6 @@
     "mesa": 8,
     "categoria": 2,
     "carga_testigo": null,
-    "taken": null,
-    "taken_by": null,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": null
@@ -715,8 +697,6 @@
     "mesa": 7,
     "categoria": 2,
     "carga_testigo": null,
-    "taken": null,
-    "taken_by": null,
     "percentil": null,
     "orden_de_llegada": null,
     "orden_de_carga": 0

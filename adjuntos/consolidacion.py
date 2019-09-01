@@ -2,6 +2,7 @@ from django.conf import settings
 import structlog
 from adjuntos.models import Attachment, Identificacion
 from elecciones.models import Carga, MesaCategoria
+from fiscales.models import Fiscal
 from django.db import transaction
 from django.db.models import Count
 from django.dispatch import receiver
@@ -224,7 +225,7 @@ def consolidar_identificaciones(attachment):
     attachment.identificacion_testigo = testigo
     attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
     logger.info(
-        'identificacion',
+        'consolid. identificación',
         attachment=attachment.id,
         testigo=getattr(testigo, 'id', None),
         status=status_attachment
@@ -288,9 +289,18 @@ def consumir_novedades_carga():
     procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
 
+@transaction.atomic
+def liberar_mesacategorias_y_attachments():
+    """
+    Para la documentación ver a la función a la que se llama.
+    """
+    Fiscal.liberar_mesacategorias_y_attachments()
 
 def consumir_novedades():
-    return (consumir_novedades_identificacion(), consumir_novedades_carga())
+    return (consumir_novedades_identificacion(), 
+        consumir_novedades_carga(),
+        liberar_mesacategorias_y_attachments()
+    )
 
 
 @receiver(post_save, sender=Attachment)

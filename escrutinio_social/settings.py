@@ -379,6 +379,10 @@ MIN_COINCIDENCIAS_CARGAS = 2
 MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
 MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
+# Tiempo máximo luego del cual se considera que un fiscal no cumplió con la tarea que tenía asignada y 
+# le es entregada a otra persona.
+TIMEOUT_TAREAS = 3  # En minutos
+
 # Tamaño maximo de archivos permitidos en el formulario
 # de subida de fotos y CSV
 MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
@@ -386,10 +390,6 @@ MAX_UPLOAD_SIZE = 12 * 1024 ** 2     # 12 Mb
 # Tiempo en segundos que se espera entre
 # recálculo de consolidaciones de identificación y carga
 PAUSA_CONSOLIDACION = 15
-
-# Tiempos de 'taken', para adjuntos y para mesas.
-ATTACHMENT_TAKE_WAIT_TIME = 1  # En minutos
-MESA_TAKE_WAIT_TIME = 2  # En minutos
 
 # Prioridades standard, a usar si no se definen prioridades específicas
 # para una categoría o circuito
@@ -416,6 +416,10 @@ KEY_VOTOS_POSITIVOS = 'Votos Positivos'
 
 NOMBRE_CATEGORIA_PRESI_Y_VICE = 'Presidente y vice'
 NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y vice'
+
+URL_ARCHIVO_IMPORTAR_CORREO = {}
+URL_ARCHIVO_IMPORTAR_CORREO[NOMBRE_CATEGORIA_PRESI_Y_VICE] = 'https://sheets.googleapis.com/v4/spreadsheets/1hnn-BCqilu2jXZ-lcNiwhDa_V-QTCSp-EMqhpz4y2fA/values/A:XX'
+URL_ARCHIVO_IMPORTAR_CORREO[NOMBRE_CATEGORIA_GOB_Y_VICE_PBA] = 'https://sheets.googleapis.com/v4/spreadsheets/10GW6KVlORVor9HRbhmr9EtzuYEqlFD7mJmxyNG7LQCs/values/A:XX'
 
 # Código de partidos principales para validaciones.
 CODIGO_PARTIDO_NOSOTROS = '136'
@@ -484,10 +488,11 @@ CONSTANCE_CONFIG = {
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
     'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text'),
     'CONFIGURACION_COMPUTO_PUBLICA': ('inicial', 'Nombre de la configuración que se utiliza para publicar resultados.'),
-    'SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL': (500, 'Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll.', int), 
+    'SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL': (500, 'Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll.', int),
     'SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada.', int),
     'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas.', int),
     'SCORING_TROLL_PROBLEMA_DESCARTADO': (200, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
+    'MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS': (2, 'Este multiplicador se utiliza al computar "cant_asignaciones_realizadas_redondeadas" en el schedulling de attachments y mesa-categorías.', int),
 }
 
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'

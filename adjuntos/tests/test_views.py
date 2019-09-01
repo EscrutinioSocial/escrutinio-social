@@ -8,19 +8,19 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 def test_identificacion_create_view_get(fiscal_client, admin_user):
     a = AttachmentFactory()
-    # se la asigno al fiscal
-    a.take(admin_user.fiscal)
+    # Se la asigno al fiscal
+    admin_user.fiscal.asignar_attachment(a)
 
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
     foto_url = a.foto.thumbnail['960x'].url
     assert response.status_code == HTTPStatus.OK
     assert foto_url in response.content.decode('utf8')
 
-
 def test_identificacion_create_view_post(fiscal_client, admin_user):
     m1 = MesaFactory()
     a = AttachmentFactory()
-    a.take(admin_user.fiscal)
+    admin_user.fiscal.asignar_attachment(a)
+    a.asignar_a_fiscal()
     data = {
         'mesa': m1.numero,
         'circuito': m1.circuito.numero,
@@ -35,15 +35,17 @@ def test_identificacion_create_view_post(fiscal_client, admin_user):
     assert i.status == Identificacion.STATUS.identificada
     assert i.mesa == m1
     assert i.fiscal == admin_user.fiscal
-    # la identificacion todavia no está consolidada
+    # La identificación todavía no está consolidada.
     a.refresh_from_db()
     assert a.identificacion_testigo is None
     assert not m1.attachments.exists()
+    assert a.cant_fiscales_asignados == 0
 
 
 def test_identificacion_create_view_get__desde_unidad_basica(fiscal_client, admin_user):
     a = AttachmentFactory()
-    a.take(admin_user.fiscal)
+    admin_user.fiscal.asignar_attachment(a)
+    a.asignar_a_fiscal()
     response = fiscal_client.get(reverse('asignar-mesa-ub', args=[a.id]))
     assert response.status_code == HTTPStatus.OK
 
@@ -54,7 +56,8 @@ def test_identificacion_create_view_get__desde_unidad_basica(fiscal_client, admi
 def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client, admin_user):
     mesa_1 = MesaFactory()
     attachment = AttachmentFactory()
-    attachment.take(admin_user.fiscal)
+    admin_user.fiscal.asignar_attachment(attachment)
+    attachment.asignar_a_fiscal()
     data = {
         'mesa': mesa_1.numero,
         'circuito': mesa_1.circuito.numero,
@@ -65,7 +68,7 @@ def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client, adm
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_1.id})
 
-    #refrescamos el attachment desde la base
+    # Refrescamos el attachment desde la base.
     attachment.refresh_from_db()
 
     assert attachment.identificaciones.count() == 1
@@ -76,7 +79,7 @@ def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client, adm
     assert identificacion.status == Identificacion.STATUS.identificada
     assert identificacion.source == Identificacion.SOURCES.csv
     assert identificacion.mesa == mesa_1
-    # la identificacion está consolidada, por lo tanto ya existe en la mesa
+    # La identificación está consolidada, por lo tanto ya existe en la mesa
     assert mesa_1.attachments.exists()
 
 
@@ -135,12 +138,13 @@ def test_identificacion_sin_permiso(fiscal_client, admin_user, mocker):
     capture = mocker.patch('adjuntos.views.capture_message')
     a = AttachmentFactory()
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
-    assert response.status_code == 403
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('siguiente-accion')
     assert capture.call_count == 1
     mensaje = capture.call_args[0][0]
     assert 'Intento de asignar mesa de attachment' in mensaje
     assert str(fiscal) in mensaje
-    a.take(fiscal)
+    fiscal.asignar_attachment(a)
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
     assert response.status_code == 200
 

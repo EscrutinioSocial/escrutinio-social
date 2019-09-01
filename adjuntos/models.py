@@ -3,8 +3,9 @@ from datetime import timedelta
 from urllib.parse import quote_plus
 
 from django.conf import settings
+from constance import config
 from django.utils import timezone
-from django.db.models import Count, Value
+from django.db.models import Count, Value, F
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 from django.db import models, transaction
@@ -72,6 +73,51 @@ class Email(models.Model):
         return f'https://mail.google.com/mail/u/0/#search/rfc822msgid{mid}'
 
 
+class AttachmentQuerySet(models.QuerySet):
+
+    def sin_identificar(self, fiscal_a_excluir=None, for_update=True):
+        """
+        Devuelve un conjunto de Attachments que no tienen
+        identificación consolidada.
+
+        Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
+        """
+        qs = self.select_for_update(skip_locked=True) if for_update else self
+        qs = qs.filter(
+            status='sin_identificar',
+        )
+        if fiscal_a_excluir:
+            qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
+        return qs
+
+    def redondear_cant_fiscales_asignados_y_de_asignaciones(self):
+        """
+        Redondea la cantidad de fiscales asignados y de asignaciones a múltiplos de
+        ``settings.MIN_COINCIDENCIAS_IDENTIFICACION`` para que al asignar mesas
+        no se pospongan indefinidamente mesas que fueron entregadas ya a algún
+        fiscal.
+        """
+        return self.annotate(
+            cant_fiscales_asignados_redondeados=F(
+                'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_IDENTIFICACION,
+            cant_asignaciones_realizadas_redondeadas=F(
+                'cant_asignaciones_realizadas') / 
+                (config.MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS * settings.MIN_COINCIDENCIAS_IDENTIFICACION),
+        )
+
+    def priorizadas(self):
+        """
+        Ordena por cantidad de fiscales trabajando en el momento,
+        luego por cantidad de personas que alguna vez trabajaron,
+        y por último por orden de llegada.
+        """
+        return self.redondear_cant_fiscales_asignados_y_de_asignaciones().order_by(
+            'cant_fiscales_asignados_redondeados',
+            'cant_asignaciones_realizadas_redondeadas',
+            'id'
+        )
+
+
 class Attachment(TimeStampedModel):
     """
     Guarda las fotos de ACTAS y otros documentos fuente desde los cuales se cargan los datos.
@@ -82,6 +128,8 @@ class Attachment(TimeStampedModel):
     No pueden existir dos instancias de este modelo con la misma foto, dado que
     el atributo digest es único.
     """
+    objects = AttachmentQuerySet.as_manager()
+
     STATUS = Choices(
         ('sin_identificar', 'sin identificar'),
         'identificada',
@@ -119,8 +167,6 @@ class Attachment(TimeStampedModel):
         blank=True,
         null=True
     )
-    taken = models.DateTimeField(null=True, blank=True)
-    taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
 
     subido_por = models.ForeignKey(
         'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL,
@@ -140,22 +186,36 @@ class Attachment(TimeStampedModel):
         null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    @transaction.atomic
-    def take(self, fiscal):
-        self.taken = timezone.now()
-        self.taken_by = fiscal
-        logger.info('attachment take', id=self.id)
-        self.save(update_fields=['taken', 'taken_by'])
+    # Registra a cuántos fiscales se les entregó la mesa para que trabajen en ella y aún no la
+    # devolvieron.
+    cant_fiscales_asignados = models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False
+    )
 
-    @transaction.atomic
-    def release(self):
-        """
-        Libera una mesa, es lo contrario de take().
-        """
-        logger.info('attachment release', id=self.id)
-        self.taken = None
-        self.taken_by = None
-        self.save(update_fields=['taken', 'taken_by'])
+    # Este otro contador, en cambio, registra cuántas veces fue entregado un attachment
+    # a algún fiscal. Su objetivo es desempatar y hacer que en caso de que todos los demás
+    # parámetros de prioridad sea iguales (por ejemplo, muchos attachs sin identificar, de una
+    # misma ubicación prioritaria), no se tome siempre a la de menor id, introduciendo cierta
+    # variabilidad y evitando la repetición de trabajo.
+    cant_asignaciones_realizadas =  models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False
+    )
+
+    def asignar_a_fiscal(self):
+        self.cant_fiscales_asignados += 1
+        self.cant_asignaciones_realizadas += 1
+        self.save(update_fields=['cant_fiscales_asignados', 'cant_asignaciones_realizadas'])
+        logger.info('Attachment asignado', id=self.id)
+
+    def desasignar_a_fiscal(self):
+        # Si por error alguien hizo un submit de más, no es un problema, por eso se redondea a cero.
+        self.cant_fiscales_asignados = max(0, self.cant_fiscales_asignados - 1)
+        self.save(update_fields=['cant_fiscales_asignados'])
+        logger.info('Attachment desasignado', id=self.id)
 
     def crear_pre_identificacion_si_corresponde(self):
         """
@@ -195,34 +255,6 @@ class Attachment(TimeStampedModel):
         self.crear_pre_identificacion_si_corresponde()
         super().save(*args, **kwargs)
 
-    @classmethod
-    def sin_identificar(cls, fiscal_a_excluir=None, for_update=True):
-        """
-        Devuelve un conjunto de Attachments que no tienen
-        identificación consolidada y no han sido asignados
-        para clasificar en los últimos ``settings.ATTACHMENT_TAKE_WAIT_TIME`` minutos.
-
-        Se excluyen attachments que ya hayan sido clasificados por `fiscal_a_excluir`
-        """
-        wait = settings.ATTACHMENT_TAKE_WAIT_TIME
-        return cls.sin_identificar_con_timeout(wait=wait, fiscal_a_excluir=fiscal_a_excluir, for_update=for_update)
-
-    @classmethod
-    def sin_identificar_con_timeout(cls, wait=2, fiscal_a_excluir=None, for_update=False):
-        """
-        Es la implementación de sin_identificar() que se expone sólo para poder
-        testear más fácilmente
-        """
-        desde = timezone.now() - timedelta(minutes=wait)
-        qs = cls.objects.select_for_update(skip_locked=True) if for_update else cls.objects.all()
-        qs = qs.filter(
-            Q(taken__isnull=True) | Q(taken__lt=desde),
-            status='sin_identificar',
-        )
-        if fiscal_a_excluir:
-            qs = qs.exclude(identificaciones__fiscal=fiscal_a_excluir)
-        return qs
-
     def status_count(self, estado):
         """
         A partir del conjunto de identificaciones del attachment
@@ -245,12 +277,12 @@ class Attachment(TimeStampedModel):
         cuantos_csv = Count('source', filter=Q(source=Identificacion.SOURCES.csv))
         result = []
         query = qs.values('mesa', 'status').annotate(
-                mesa_o_0=Coalesce('mesa', Value(0))     # Esto es para facilitar el testing.
-            ).annotate(
-                total=Count('status')
-            ).annotate(
-                cuantos_csv=cuantos_csv
-            )
+            mesa_o_0=Coalesce('mesa', Value(0))     # Esto es para facilitar el testing.
+        ).annotate(
+            total=Count('status')
+        ).annotate(
+            cuantos_csv=cuantos_csv
+        )
         for item in query:
             result.append(
                 (item['mesa_o_0'], item['total'], item['cuantos_csv'])
@@ -291,7 +323,7 @@ class Identificacion(TimeStampedModel):
         )
 
     def invalidar(self):
-        logger.info('identificacion invalidada', id=self.id)
+        logger.info('Identificación invalidada', id=self.id)
         self.invalidada = True
         self.procesada = False
         self.save(update_fields=['invalidada', 'procesada'])
@@ -329,4 +361,3 @@ class PreIdentificacion(TimeStampedModel):
 
     def __str__(self):
         return f'{self.distrito} - {self.seccion} - {self.circuito} (subida por {self.fiscal})'
-

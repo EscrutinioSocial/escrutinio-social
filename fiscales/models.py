@@ -6,6 +6,8 @@ from django.db import models
 from django.urls import reverse
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.auth.models import User
 from django.dispatch import receiver
@@ -13,9 +15,10 @@ from django.db.models import Sum
 from django.db.models.signals import post_save, pre_delete
 from django.contrib.contenttypes.models import ContentType
 from annoying.functions import get_object_or_None
-from elecciones.models import Seccion, Distrito
+from elecciones.models import Seccion, Distrito, MesaCategoria
 
 from contacto.models import DatoDeContacto
+from adjuntos.models import Attachment
 from model_utils.models import TimeStampedModel
 from model_utils.fields import StatusField
 from django.db.utils import IntegrityError
@@ -80,7 +83,7 @@ class CodigoReferido(TimeStampedModel):
 
 class FiscalManager(models.Manager):
     def get_by_natural_key(self, tipo_dni, dni):
-        return self.get(tipo_dni = tipo_dni, dni = dni)
+        return self.get(tipo_dni=tipo_dni, dni=dni)
 
 
 class Fiscal(models.Model):
@@ -130,12 +133,77 @@ class Fiscal(models.Model):
     # Para saber si hay que capacitarlo
     ingreso_alguna_vez = models.BooleanField(default=False)
 
+    # Campos para saber qué attachment o mesa tiene asignado.
+    asignacion_ultima_tarea = models.DateTimeField(null=True, blank=True)
+    attachment_asignado = models.ForeignKey(Attachment, related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
+    mesa_categoria_asignada = models.ForeignKey(MesaCategoria, related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
+
     class Meta:
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'), )
 
     objects = FiscalManager()
-        
+
+    @classmethod
+    def liberar_mesacategorias_y_attachments(cls):
+        """
+        Toma a los fiscales cuya última tarea haya sido asignada más de
+        `settings.TIMEOUT_TAREAS` minutos atrás y:
+        - No se la desasigna para no perder el trabajo que el fiscal puede estar haciendo y 'presentará'
+        cuando haga el submit.
+        - Pero sí le baja la cantidad de asignaciones a la mesacategoría y los attachments para que queden
+        postergados por demasiado tiempo.
+        """
+        desde = timezone.now() - timedelta(minutes=settings.TIMEOUT_TAREAS)
+        fiscales_con_timeout = Fiscal.objects.select_for_update(skip_locked=True).filter(
+            asignacion_ultima_tarea__lt=desde)
+        for fiscal in fiscales_con_timeout:
+            fiscal.limpiar_asignacion_previa()
+            fiscal.resetear_timeout_asignacion_tareas()
+
+    def limpiar_asignacion_previa(self):
+        """
+        Este método se utiliza para que las mesa-categorías o attachments
+        que tenga asignados el fiscal sean liberados cuando corresponda
+        (por timeout o cuando se asigna uno nuevo).
+
+        No se la desasigna para no perder el trabajo que el fiscal puede estar haciendo y 'presentará'
+        cuando haga el submit.
+        """
+        if self.attachment_asignado:
+            self.attachment_asignado.desasignar_a_fiscal()
+        elif self.mesa_categoria_asignada:
+            self.mesa_categoria_asignada.desasignar_a_fiscal()
+
+    def asignar_attachment(self, attachment):
+        """
+        Asigna al fiscal un attachment para que trabaje en él.
+        Al hacer esto se desasigna la mesa_categoría ya que puede tener
+        asignada una de las dos tareas a la vez.
+        """
+        self.limpiar_asignacion_previa()
+        self.asignar_attachment_o_mesacategoria(attachment, None)
+
+    def asignar_mesa_categoria(self, mesa_categoria):
+        """
+        Asigna al fiscal una mesa_categoria para que trabaje en ella.
+        Al hacer esto se desasigna el attachment ya que puede tener
+        asignada una de las dos tareas a la vez.
+        """
+        self.limpiar_asignacion_previa()
+        self.asignar_attachment_o_mesacategoria(None, mesa_categoria)
+
+    @transaction.atomic
+    def asignar_attachment_o_mesacategoria(self, attachment, mesa_categoria):
+        self.attachment_asignado = attachment
+        self.mesa_categoria_asignada = mesa_categoria
+        self.asignacion_ultima_tarea = timezone.now()
+        self.save(update_fields=['asignacion_ultima_tarea', 'attachment_asignado', 'mesa_categoria_asignada'])
+
+    def resetear_timeout_asignacion_tareas(self):
+        self.asignacion_ultima_tarea = None
+        self.save(update_fields=['asignacion_ultima_tarea'])
+
     def update_last_seen(self, cuando):
         self.last_seen = cuando
         self.save(update_fields=['last_seen'])

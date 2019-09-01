@@ -6,7 +6,7 @@ from django.dispatch import receiver
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, F
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.urls import reverse
@@ -331,6 +331,12 @@ class LugarVotacion(models.Model):
 
 
 class MesaCategoriaQuerySet(models.QuerySet):
+    campos_de_orden = [
+        'cant_fiscales_asignados_redondeados',  # Primero las que tienen menos gente trabajando en ellas.
+        'prioridad_status', 'orden_de_carga',
+        'cant_asignaciones_realizadas_redondeadas',  # En caso de empate no damos siempre la de menor id.
+        'id',
+    ]
 
     def identificadas(self):
         """
@@ -340,18 +346,6 @@ class MesaCategoriaQuerySet(models.QuerySet):
         # Si bien parece redundante chequear orden de carga y attachment preferimos
         # estar seguros de que no se cuele una mesa sin foto.
         return self.filter(orden_de_carga__isnull=False).exclude(mesa__attachments=None)
-
-    def no_taken(self):
-        """
-        Filtra que no esté tomada dentro de los últimos
-        ``settings.MESA_TAKE_WAIT_TIME`` minutos,
-        """
-        wait = settings.MESA_TAKE_WAIT_TIME
-        desde = timezone.now() - timedelta(minutes=wait)
-        return self.filter(
-            # No puede estar tomado o tiene que haber expirado el periodo de taken.
-            Q(taken__isnull=True) | Q(taken__lt=desde)
-        )
 
     def sin_problemas(self):
         """
@@ -379,7 +373,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def con_carga_pendiente(self, for_update=True):
         qs = self.select_for_update(skip_locked=True) if for_update else self
-        return qs.identificadas().sin_problemas().no_taken().sin_consolidar_por_doble_carga()
+        return qs.identificadas().sin_problemas().sin_consolidar_por_doble_carga()
 
     def anotar_prioridad_status(self):
         """
@@ -404,13 +398,40 @@ class MesaCategoriaQuerySet(models.QuerySet):
             )
         )
 
+    def redondear_cant_fiscales_asignados_y_de_asignaciones(self):
+        """
+        Redondea la cantidad de fiscales asignados y de asignaciones a múltiplos de 
+        ``settings.MIN_COINCIDENCIAS_CARGAS`` para que al asignar mesas
+        no se pospongan indefinidamente mesas que fueron entregadas ya a algún
+        fiscal.
+        """
+        return self.annotate(
+            cant_fiscales_asignados_redondeados=F(
+                'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_CARGAS,
+            cant_asignaciones_realizadas_redondeadas=F(
+                'cant_asignaciones_realizadas') / 
+                (config.MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS * settings.MIN_COINCIDENCIAS_CARGAS),
+        )
+
+    def ordenadas_por_prioridad(self):
+        return self.anotar_prioridad_status().redondear_cant_fiscales_asignados_y_de_asignaciones().order_by(
+            *self.campos_de_orden
+        )
+
+    def debug_mas_prioritaria(self):
+        """
+        Esta función invoca a ordenadas_por_prioridad() y además imprime los campos de orden.
+        Sirve sólo para debuggear.
+        """
+        return self.ordenadas_por_prioridad().values(
+            *self.campos_de_orden
+        )
+
     def mas_prioritaria(self):
         """
         Devuelve la intancia más prioritaria del queryset.
         """
-        return self.anotar_prioridad_status().order_by(
-            'prioridad_status', 'orden_de_carga', 'id'
-        ).first()
+        return self.ordenadas_por_prioridad().first()
 
     def siguiente(self):
         """
@@ -424,20 +445,11 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.con_carga_pendiente().sin_consolidar_por_csv().mas_prioritaria()
 
-    def siguiente_para_fiscal(self, fiscal):
-        """
-        Devuelve mesacat con carga pendiente más prioritaria, que no tenga cargas del fiscal indicado
-        """
-        return self.con_carga_pendiente().sin_cargas_del_fiscal(fiscal).mas_prioritaria()
-
 
 class MesaCategoria(models.Model):
     """
     Modelo intermedio para la relación m2m ``Mesa.categorias``
     mantiene el estado de las `cargas`
-
-    Permite guardar el booleano que marca la carga de esa
-    "columna" como confirmada.
     """
     objects = MesaCategoriaQuerySet.as_manager()
 
@@ -460,39 +472,48 @@ class MesaCategoria(models.Model):
         'Carga', related_name='es_parcial_oficial', null=True, blank=True, on_delete=models.SET_NULL
     )
 
-    # timestamp para dar un tiempo de guarda a la espera de una carga
-    taken = models.DateTimeField(null=True, blank=True)
-    taken_by = models.ForeignKey('fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL)
-
-    # entero que se define como el procentaje (redondeado) de mesas del circuito
+    # Entero que se define como el procentaje (redondeado) de mesas del circuito
     # ya identificadas al momento de identificar la mesa.
     # Incide en el cálculo del orden_de_carga.
     percentil = models.PositiveIntegerField(null=True, blank=True)
 
-    # en qué orden se identificó esta MesaCategoría dentro de las del circuito.
+    # En qué orden se identificó esta MesaCategoría dentro de las del circuito.
     # Incide en el cálculo del orden_de_carga.
     # aumenta en forma correlativa, salvo colisiones que no perjudican al uso en una medida relevante.
     orden_de_llegada = models.PositiveIntegerField(null=True, blank=True)
 
-    # orden relativo de carga, usado en la priorizacion
+    # Orden relativo de carga, usado en la prioritización.
     orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
 
-    @transaction.atomic
-    def take(self, fiscal):
-        self.taken = timezone.now()
-        self.taken_by = fiscal
-        logger.info('mc take', id=self.id)
-        self.save(update_fields=['taken', 'taken_by'])
+    # Registra a cuántos fiscales se les entregó la mesa para que trabajen en ella.
+    cant_fiscales_asignados = models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False
+    )
 
-    @transaction.atomic
-    def release(self):
-        """
-        Libera la mesa, es lo contrario de take().
-        """
-        logger.info('mc release', id=self.id)
-        self.taken = None
-        self.taken_by = None
-        self.save(update_fields=['taken', 'taken_by'])
+    # Este otro contador, en cambio, registra cuántas veces fue entregado un attachment
+    # a algún fiscal. Su objetivo es desempatar y hacer que en caso de que todos los demás
+    # parámetros de prioridad sea iguales (por ejemplo, muchas mesa-categorías sin cargar, de una
+    # misma ubicación prioritaria), no se tome siempre a la de menor id, introduciendo cierta
+    # variabilidad y evitando la repetición de trabajo.
+    cant_asignaciones_realizadas =  models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False
+    )
+
+    def asignar_a_fiscal(self):
+        self.cant_fiscales_asignados += 1
+        self.cant_asignaciones_realizadas += 1
+        self.save(update_fields=['cant_fiscales_asignados', 'cant_asignaciones_realizadas'])
+        logger.info('mc asignada', id=self.id)
+
+    def desasignar_a_fiscal(self):
+        # Si por error alguien hizo un submit de más, no es un problema, por eso se redondea a cero.
+        self.cant_fiscales_asignados = max(0, self.cant_fiscales_asignados - 1)
+        self.save(update_fields=['cant_fiscales_asignados'])
+        logger.info('mc desasignada', id=self.id)
 
     def actualizar_orden_de_carga(self):
         """
@@ -521,8 +542,8 @@ class MesaCategoria(models.Model):
 
     def recalcular_orden_de_carga(self):
         """
-        Actualiza el valor de `self.orden_de_carga` a partir de las prioridades por seccion y categoria,
-        **sin** disparar el `save` correspondiente
+        Actualiza el valor de `self.orden_de_carga` a partir de las prioridades por sección y categoría,
+        **sin** disparar el `save` correspondiente.
         """
         # evitar import circular
         from scheduling.models import mapa_prioridades_para_mesa_categoria
@@ -1225,6 +1246,7 @@ class CargaOficialControl(models.Model):
     carga parcial oficial obtenido desde la planilla de cálculo de gdocs
     """
     fecha_ultimo_registro = models.DateTimeField()
+    categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE, default=None)
 
 
 @receiver(post_save, sender=Mesa)
