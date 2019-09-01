@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         while True:
-            n_identificaciones, n_cargas = consumir_novedades()
+            n_identificaciones, n_cargas, n_mesacategorias_y_attachments = consumir_novedades()
             logger.debug(
                 'consolidacion',
                 identificaciones=n_identificaciones,

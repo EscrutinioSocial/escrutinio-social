@@ -17,6 +17,7 @@ from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
 from constance import config
 import structlog
+from versatileimagefield.fields import VersatileImageField
 
 logger = structlog.get_logger(__name__)
 
@@ -193,7 +194,7 @@ class Seccion(models.Model):
             return f"{self.distrito.nombre_completo()} - {self.nombre}"
 
     def natural_key(self):
-        return self.distrito.natural_key() + (self.numero, ) 
+        return self.distrito.natural_key() + (self.numero, )
     natural_key.dependencies = ['elecciones.distrito']
 
 class Circuito(models.Model):
@@ -400,7 +401,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def redondear_cant_fiscales_asignados_y_de_asignaciones(self):
         """
-        Redondea la cantidad de fiscales asignados y de asignaciones a múltiplos de 
+        Redondea la cantidad de fiscales asignados y de asignaciones a múltiplos de
         ``settings.MIN_COINCIDENCIAS_CARGAS`` para que al asignar mesas
         no se pospongan indefinidamente mesas que fueron entregadas ya a algún
         fiscal.
@@ -409,7 +410,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
             cant_fiscales_asignados_redondeados=F(
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_CARGAS,
             cant_asignaciones_realizadas_redondeadas=F(
-                'cant_asignaciones_realizadas') / 
+                'cant_asignaciones_realizadas') /
                 (config.MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS * settings.MIN_COINCIDENCIAS_CARGAS),
         )
 
@@ -916,6 +917,25 @@ class Categoria(models.Model):
 
     # Tracker de cambios en el atributo prioridad, usado en la función que dispara en el post_save
     tracker = FieldTracker(fields=['prioridad'])
+
+    # Foto de ejemplo para mostrar a los validadores
+    foto_ejemplo = VersatileImageField(
+        upload_to='elecciones/categorias',
+        null=True,
+        blank=True,
+        width_field='width',
+        height_field='height'
+    )
+    height = models.PositiveIntegerField(
+        'Image Height',
+        blank=True,
+        null=True
+    )
+    width = models.PositiveIntegerField(
+        'Image Width',
+        blank=True,
+        null=True
+    )
 
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])

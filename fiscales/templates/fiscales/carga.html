@@ -19,7 +19,7 @@
 }
 
 .opcion-partido{
-    margin-top: -2pt; 
+    margin-top: -2pt;
     line-height: 0.9;
 }
 
@@ -33,7 +33,7 @@ h5 {
     padding-top: 1rem !important;
     padding-left: 1em !important;
 }
-  
+
 .collection {
     border: 0pt !important;
     padding-top: 0rem !important;
@@ -45,7 +45,7 @@ h5 {
     display: flex;
     line-height: 1.4rem !important;
     vertical-align: bottom !important;
-    padding : 0px 0px !important; 
+    padding : 0px 0px !important;
 }
 
 .collection-item > dmc-select {
@@ -83,6 +83,10 @@ dmc-select select {
     background-color: {{ categoria.back_color }};
 }
 
+.info {
+  text-align: right;
+  padding: 5px;
+}
 </style>
 
 <script type="text/javascript">
@@ -118,7 +122,7 @@ $(document).ready(function(){
 
 {% block card-content %}
     <div class="card-title">
-      <h5 style='background-color:{{ categoria.back_color }}; color: {{ categoria.color }}'><strong>{{ categoria }}</strong></h5>
+      <h5 style='color: {{ categoria.color }}'><strong>{{ categoria }}</strong></h5>
     </div>
     {{ formset.management_form }}
     <div class="carga-acta-inline collection">
@@ -154,6 +158,14 @@ $(document).ready(function(){
     </div>
   {% endif %}
 {% endblock card-action %}
+
+{% block information %}
+  {% if categoria.foto_ejemplo %}
+    <div class="card small info">
+        <img class="responsive-img" src="{{ categoria.foto_ejemplo.thumbnail.600x.url }}">
+    </div>
+  {% endif %}
+{% endblock information %}
 
 {% block right-panel %}
     <script src="{% static 'js/fabric.js' %}"></script>
