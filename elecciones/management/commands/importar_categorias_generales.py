@@ -10,7 +10,6 @@ from django.db import transaction
 
 from .basic_command import BaseCommand
 
-PRIORIDAD_DEFAULT = 20000
 
 
 class Command(BaseCommand):
@@ -37,7 +36,7 @@ class Command(BaseCommand):
             )
         except IntegrityError:
             self.error_log(f'El slug {categoria_slug} ya estaba en uso. No se crea la '
-                           f'categoría {categoria_nombre}. Línea {linea}.'
+                           f'categoría general {categoria_nombre}. Línea {linea}.'
             )
             return None
 
