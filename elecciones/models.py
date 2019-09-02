@@ -876,6 +876,7 @@ class Eleccion(models.Model):
         verbose_name = 'Elección'
         verbose_name_plural = 'Elecciones'
 
+
 class CategoriaGeneral(models.Model):
     """
     A diferencia del modelo `Categoria`, éste representa una categoría sin
@@ -891,6 +892,7 @@ class CategoriaGeneral(models.Model):
 
     def __str__(self):
         return self.nombre
+
 
 class Categoria(models.Model):
     """
@@ -1085,7 +1087,7 @@ class Carga(TimeStampedModel):
         # Si ya hay firma y no están forzando, listo.
         if self.firma and not forzar:
             return
-        tuplas = (f'{o}-{v}' for (o, v) in self.opcion_votos().order_by('opcion__orden'))
+        tuplas = (f'{o}-{v}' for (o, v) in self.opcion_votos().order_by('opcion__id'))
         self.firma = '|'.join(tuplas)
         self.save(update_fields=['firma'])
 

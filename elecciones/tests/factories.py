@@ -66,10 +66,13 @@ class CategoriaFactory(DjangoModelFactory):
         if not create:
             return
 
-        # Toda categoría debe tener las opciones no partidarias
+        # Toda categoría debe tener las opciones no partidarias.
+        orden = 1000  # Las mandamos 'al fondo' en el orden.
         for nombre in Opcion.opciones_no_partidarias():
             opcion, _ = Opcion.objects.get_or_create(**getattr(settings, nombre))
-            CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion)
+            defaults = {'orden': orden}
+            CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion, defaults=defaults)
+            orden += 1
 
         if extracted is not None:
             #

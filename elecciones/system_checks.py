@@ -217,14 +217,14 @@ def categorias_ok(app_configs, **kwargs):
     errors = []
 
     # Categorías asociadas a distrito.
-    for categoria in Categorias.objects.filter(activa=True, distrito__isnull=False):
+    for categoria in Categoria.objects.filter(activa=True, distrito__isnull=False):
         mesas = Mesa.objects.filter(
             lugar_votacion__circuito__seccion__distrito=categoria.distrito
         ).exclude(
             circuito__seccion__distrito=categoria.distrito
         )
 
-        if mesas.exist():
+        if mesas.exists():
             errors.append(
                 Error(
                     f'La categoria {categoria} está asociada al distrito {categoria.distrito} '
@@ -236,14 +236,14 @@ def categorias_ok(app_configs, **kwargs):
             )
 
     # Categorías asociadas a sección.
-    for categoria in Categorias.objects.filter(activa=True, seccion__isnull=False):
+    for categoria in Categoria.objects.filter(activa=True, seccion__isnull=False):
         mesas = Mesa.objects.filter(
             lugar_votacion__circuito__seccion=categoria.seccion
         ).exclude(
             circuito__seccion=categoria.seccion
         )
 
-        if mesas.exist():
+        if mesas.exists():
             errors.append(
                 Error(
                     f'La categoria {categoria} está asociada a la sección {categoria.seccion} '

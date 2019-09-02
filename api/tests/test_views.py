@@ -350,7 +350,7 @@ def test_listar_opciones_todas(admin_client):
     o2 = factories.OpcionFactory()
     o3 = factories.OpcionFactory()
 
-    c = factories.CategoriaFactory(opciones=[o2, o3])
+    c = factories.CategoriaFactory(opciones=[])
 
     co3 = factories.CategoriaOpcionFactory(categoria=c, orden=2, opcion=o3)
     co2 = factories.CategoriaOpcionFactory(categoria=c, orden=3, opcion=o2)

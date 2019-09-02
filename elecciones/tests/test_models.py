@@ -34,13 +34,15 @@ def consumir_novedades_y_actualizar_objetos(lista=None):
 
 
 def test_opciones_actuales(db):
-    o2 = OpcionFactory(orden=3)
-    o3 = OpcionFactory(orden=2)
-    c = CategoriaFactory(opciones=[o2, o3])
-    o1 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=True).opcion
-    
+    o2 = OpcionFactory()
+    o3 = OpcionFactory()
+    c = CategoriaFactory(opciones=[])
+    co3 = CategoriaOpcionFactory(categoria=c, orden=2, opcion=o3)
+    co2 = CategoriaOpcionFactory(categoria=c, orden=3, opcion=o2)
+    o1 = CategoriaOpcionFactory(categoria=c, orden=1, prioritaria=True).opcion
+
     assert list(c.opciones_actuales()) == [
-        o1, o3, o2, 
+        o1, o3, o2,
         Opcion.blancos(), Opcion.total_votos(), Opcion.sobres(), Opcion.nulos()
     ]
     assert list(c.opciones_actuales(solo_prioritarias=True)) == [o1]
@@ -100,13 +102,13 @@ def test_fotos_de_mesa(db):
 
 def test_carga_actualizar_firma(db):
     c = CargaFactory()
-    o1 = VotoMesaReportadoFactory(carga=c, votos=10, opcion__orden=1).opcion
-    o2 = VotoMesaReportadoFactory(carga=c, votos=8, opcion__orden=3).opcion
-    o3 = VotoMesaReportadoFactory(carga=c, votos=0, opcion__orden=2).opcion
+    o1 = VotoMesaReportadoFactory(carga=c, votos=10).opcion
+    o2 = VotoMesaReportadoFactory(carga=c, votos=8).opcion
+    o3 = VotoMesaReportadoFactory(carga=c, votos=0).opcion
     # ignora otras
     VotoMesaReportadoFactory(votos=0)
     c.actualizar_firma()
-    assert c.firma == f'{o1.id}-10|{o3.id}-0|{o2.id}-8'
+    assert c.firma == f'{o1.id}-10|{o2.id}-8|{o3.id}-0'
 
 
 def test_firma_count(db):
