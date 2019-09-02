@@ -173,7 +173,7 @@ class CSVImporter:
             faltantes = [columna for columna in headers_obligatorios if columna not in self.df.columns]
             raise ColumnasInvalidasError(f'Faltan las columnas: {faltantes} en el archivo.')
 
-        # Las columnas duplicadas en Panda se especifican como ‘X’, ‘X.1’, …’X.N’
+        # Las columnas duplicadas en Pandas se especifican como ‘X’, ‘X.1’, …’X.N’
         columnas_candidatas = [columna.replace('.1', '') for columna in self.df.columns
                                if columna.endswith('.1')]
         columnas_duplicadas = any(elem in columnas_candidatas for elem in headers_obligatorios)
@@ -182,7 +182,7 @@ class CSVImporter:
 
     def validar_mesas(self):
         """
-        Valida que el número de mesa debe estar dentro del circuito y secccion indicados.
+        Valida que el número de mesa debe estar dentro del circuito y seccción indicados.
         Dichas validaciones se realizar revisando la info en la bd
         """
         # Obtener todos los combos diferentes de: número de mesa, circuito, sección, distrito para validar
@@ -253,7 +253,7 @@ class CSVImporter:
                               str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
             if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
                 self.logger.debug("----+ Validando carga total.")
-                # Si el flag de cargas totales esta activo y hay carga total, entonces verificamos que estén
+                # Si el flag de cargas totales está activo y hay carga total, entonces verificamos que estén
                 # todas las opciones para todas las categorías.
                 opciones = CategoriaOpcion.objects.filter(
                     categoria=categoria).values_list('opcion__id', flat=True)
@@ -304,7 +304,8 @@ class CSVImporter:
         Devuelve la carga parcial y la total generadas.
         """
         categoria_bd = mesa_categoria.categoria
-        self.logger.debug("-- Procesando categoría '%s'.", categoria_bd)
+        categoria_general = categoria_bd.categoria_general
+        self.logger.debug("-- Procesando categoría '%s' (corresponde con '%s').", categoria_bd, categoria_general)
 
         self.carga_total = None
         self.carga_parcial = None
@@ -312,11 +313,11 @@ class CSVImporter:
 
         # Buscamos el nombre de la columna asociada a esta categoría
         matcheos = [columna for columna in columnas_categorias if columna.lower()
-                    in categoria_bd.nombre.lower()]
+                    in categoria_general.nombre.lower()]
 
         if len(matcheos) == 0:
             raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
-                                      f'categoría: {categoria_bd.nombre}.'
+                                      f'categoría: {categoria_general.nombre}.'
                                       )
 
         # Se encontró la categoría de la mesa en el archivo.
