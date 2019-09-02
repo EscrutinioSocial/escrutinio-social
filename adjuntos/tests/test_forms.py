@@ -237,6 +237,16 @@ def test_identificacion_busqueda_de_mesa(db):
     assert form.is_valid()
     assert form.cleaned_data['mesa'] == m1
 
+    # el usuario ingresa '  0023/8 ', le devuelve la mesa 23/8
+    form = IdentificacionForm({
+        'mesa': '  0023/8 ',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m2
+
     # el usuario ingresa 5, como no existe le devuelve error
     form = IdentificacionForm({
         'mesa': '5',

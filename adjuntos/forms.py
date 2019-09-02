@@ -228,7 +228,7 @@ class IdentificacionForm(forms.ModelForm):
         etc.
         """
         # Nos aseguramos de que sea texto.
-        nro_mesa = str(mesa_nro)
+        nro_mesa = str(mesa_nro).strip()
         # Primero busco como viene o sacando ceros adelante.
         query_nro_mesa = Q(numero=nro_mesa) | Q(numero=nro_mesa.lstrip('0'))
         query_nro_mesa &= lookup_mesa
