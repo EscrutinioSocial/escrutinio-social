@@ -11,7 +11,7 @@ from problemas.models import Problema
 from antitrolling.efecto import (
     efecto_scoring_troll_asociacion_attachment, efecto_scoring_troll_confirmacion_carga
 )
-
+from sentry_sdk import capture_message
 
 logger = structlog.get_logger(__name__)
 
@@ -209,7 +209,7 @@ def consolidar_identificaciones(attachment):
                     status=Identificacion.STATUS.problema
                 ).first()
                 # Confirmo el problema porque varios reportaron problemas.
-                problema = Problema.confirmar_problema(identificacion=identificacion_con_problemas)
+                Problema.confirmar_problema(identificacion=identificacion_con_problemas)
                 status_attachment = Attachment.STATUS.problema
 
     # me acuerdo la mesa anterior por si se esta pasando a sin_identificar
@@ -225,21 +225,23 @@ def consolidar_identificaciones(attachment):
     attachment.identificacion_testigo = testigo
     attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
     logger.info(
-        'consolid. identificación',
+        'Consolid. identificación',
         attachment=attachment.id,
         testigo=getattr(testigo, 'id', None),
         status=status_attachment
     )
-    # si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
-    # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment
+    # Si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
+    # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment.
     if mesa_anterior and not mesa_attachment:
         mesa_anterior.invalidar_asignacion_attachment()
 
 
 @transaction.atomic
-def consumir_novedades_identificacion():
-    a_procesar = Identificacion.objects.select_for_update().filter(procesada=False)
-    # OJO - aca precomputar los ids_a_procesar es importante
+def consumir_novedades_identificacion(cant_por_iteracion=None):
+    a_procesar = Identificacion.objects.select_for_update(skip_locked=True).filter(procesada=False)
+    if cant_por_iteracion:
+        a_procesar = a_procesar[0:cant_por_iteracion]
+    # OJO - acá precomputar los ids_a_procesar es importante
     # ver comentario en consumir_novedades_carga()
     ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
 
@@ -247,7 +249,19 @@ def consumir_novedades_identificacion():
         identificaciones__in=ids_a_procesar
     ).distinct()
     for attachment in attachments_con_novedades:
-        consolidar_identificaciones(attachment)
+        try:
+            consolidar_identificaciones(attachment)
+        except Exception as e:
+            # Logueamos la excepción y continuamos.
+            capture_message(
+                f"""
+                Excepción {e} al procesar la identificación {attachment.id if attachment else None}.
+                """
+            )
+            logger.error('Identificacion',
+                attachment=attachment.id if attachment else None,
+                error=str(e)
+            )
 
     # Todas procesadas
     procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
@@ -255,8 +269,10 @@ def consumir_novedades_identificacion():
 
 
 @transaction.atomic
-def consumir_novedades_carga():
-    a_procesar = Carga.objects.select_for_update().filter(procesada=False)
+def consumir_novedades_carga(cant_por_iteracion=None):
+    a_procesar = Carga.objects.select_for_update(skip_locked=True).filter(procesada=False)
+    if cant_por_iteracion:
+        a_procesar = a_procesar[0:cant_por_iteracion]
     ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
     # OJO - aca precomputar los ids_a_procesar es importante
     # si en lugar de hacer esto, al final se ejecuta
@@ -283,11 +299,25 @@ def consumir_novedades_carga():
         cargas__in=ids_a_procesar
     ).distinct()
     for mesa_categoria_con_novedades in mesa_categorias_con_novedades:
-        consolidar_cargas(mesa_categoria_con_novedades)
+        try:
+            consolidar_cargas(mesa_categoria_con_novedades)
+        except Exception as e:
+            # Logueamos la excepción y continuamos.
+            capture_message(
+                f"""
+                Excepción {e} al procesar la mesa-categoría
+                {mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None}.
+                """
+            )
+            logger.error('Carga',
+                mesa_categoria=mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None,
+                error=str(e)
+            )
 
     # Todas procesadas
     procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
+
 
 @transaction.atomic
 def liberar_mesacategorias_y_attachments():
@@ -296,10 +326,17 @@ def liberar_mesacategorias_y_attachments():
     """
     Fiscal.liberar_mesacategorias_y_attachments()
 
-def consumir_novedades():
-    return (consumir_novedades_identificacion(), 
-        consumir_novedades_carga(),
-        liberar_mesacategorias_y_attachments()
+
+def consumir_novedades(cant_por_iteracion=None):
+    """
+    Recibe un parámetro que indica cuántos elementos procesar en cada iteración.
+    Esto permite que muchas novedades de un tipo (eg, identificación)
+    no impidan el procesamiento de las de otro tipo (eg, carga).
+    None se interpreta como sin límite.
+    """
+    liberar_mesacategorias_y_attachments()
+    return (consumir_novedades_identificacion(cant_por_iteracion), 
+        consumir_novedades_carga(cant_por_iteracion)
     )
 
 
