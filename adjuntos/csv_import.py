@@ -514,7 +514,7 @@ class CSVImporter:
                 id__in=opciones_faltantes).values_list('nombre', flat=True))
             tipo_carga = "parcial" if es_parcial else "total"
             self.anadir_error(
-                f'Los resultados para la carga {tipo_carga} para la categoría {categoria} '
+                f'Los resultados para la carga {tipo_carga} para la categoría {categoria.categoria_general} '
                 f'deben estar completos. '
                 f'Faltan las opciones: {nombres_opciones_faltantes}.')
 
