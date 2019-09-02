@@ -8,6 +8,8 @@ from elecciones.models import Mesa, Seccion, Circuito, Distrito
 
 from .widgets import Select
 
+import re
+
 MENSAJES_ERROR = {
     'distrito': '',
     'seccion': 'Esta sección no pertenece al distrito',
@@ -233,25 +235,17 @@ class IdentificacionForm(forms.ModelForm):
         mesa = Mesa.objects.filter(query_nro_mesa)
 
         if not mesa:
-            # Saco los ceros de adelante por si la cantidad de ceros varía
-            # y busco que el campo 'numero' contenga mesa_nro.
-            query_nro_mesa = Q(numero__contains=nro_mesa.lstrip('0'))
+            # Separo el nro de mesa dividiéndolo por letra o caracter
+            # especial para buscar la primera parte del número de mesa.
+            # ejemplo:
+            # 23/7 queda como ['23', '7']
+            # 47B queda como ['47', 'B']
+            mesa_nro_split = re.findall(r'[A-Za-z]+|\d+|^\w', nro_mesa)
+            # Busco solo la parte 1 con o sin ceros
+            query_nro_mesa = (Q(numero=mesa_nro_split[0]) |
+                                Q(numero=mesa_nro_split[0].lstrip('0')))
             query_nro_mesa &= lookup_mesa
             mesa = Mesa.objects.filter(query_nro_mesa)
-
-            if not mesa:
-                # Separo el nro de mesa dividiéndolo por letra o caracter
-                # especial para buscar la primera parte del número de mesa.
-                # ejemplo:
-                # 23/7 queda como ['23', '7']
-                # 47B queda como ['47', 'B']
-                mesa_nro_split = re.findall(r'[A-Za-z]+|\d+|^\w', nro_mesa)
-                # Busco solo la parte 1 con o sin ceros
-                query_nro_mesa = (Q(numero=mesa_nro_split[0]) |
-                                    Q(numero=mesa_nro_split[0].lstrip('0')))
-                query_nro_mesa &= lookup_mesa
-                mesa = Mesa.objects.filter(query_nro_mesa)
-
         return mesa[0] if mesa else None
 
 class PreIdentificacionForm(forms.ModelForm):
