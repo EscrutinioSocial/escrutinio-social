@@ -445,7 +445,3 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
 
     def mostrar_mensaje_archivos_cargados(self, c):
         messages.success(self.request, f'Subiste {c} archivos CSV. Gracias!')
-
-    def archivo_template_csv(self):
-        return None # No estoy segura qué hacer aca
-

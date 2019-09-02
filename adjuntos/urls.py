@@ -10,6 +10,4 @@ urlpatterns = [
         name='asignar-mesa-ub'),
     url(r'^ub/agregar$', views.AgregarAdjuntosDesdeUnidadBasica.as_view(), name="agregar-adjuntos-ub"),
     url(r'^agregar-adjuntos-csv/$', views.AgregarAdjuntosCSV.as_view(), name="agregar-adjuntos-csv"),
-    url((r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': 'templates/'}),
-        views.AgregarAdjuntosCSV.archivo_template_csv, name="template_csv"),
 ]
