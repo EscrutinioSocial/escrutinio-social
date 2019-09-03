@@ -65,7 +65,7 @@ class Command(BaseCommand):
 
         if not created:
             # Reportamos que no se hizo ninguna asociación mesa-categoría.
-            self.warning(f'No se hizo ninguna asosiación mesa-categoría para la categoría {categoria}. '
+            self.warning(f'No se hizo ninguna asociación mesa-categoría para la categoría {categoria}. '
                          f'Línea {linea}.'
             )
             return categoria
