@@ -5,7 +5,7 @@ import math
 from elecciones.models import Mesa, Carga, VotoMesaReportado, Opcion, CategoriaOpcion
 from django.db import transaction
 from django.db.utils import IntegrityError
-
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from escrutinio_social import settings
 from fiscales.models import Fiscal
 import structlog
@@ -58,8 +58,10 @@ class DatosInvalidosError(CSVImportacionError):
 class PermisosInvalidosError(CSVImportacionError):
     pass
 
+
 class ErroresAcumulados(CSVImportacionError):
     pass
+
 
 class CSVImporter:
     """
@@ -96,15 +98,24 @@ class CSVImporter:
         self.cant_mesas_importadas = 0
         self.errores = []
 
+    def leer_fragmento_de_in_memory_uploaded_file(self, archivo):
+        for chunk in archivo.chunks():
+            return str(chunk)
+
     def autodetectar_separador(self, archivo):
         """
         Esta función infiere el caracter de separación en base a la primera línea del archivo.
         Lo hacemos de esta manera porque los mecanismos de autodetección de Pandas, al igual
         que los de uso de múltiples caracteres de separación traen diversos problemas.
         """
-        f = open(archivo, "r")
-        line = f.readline()
-        f.close()
+        if type(archivo) == InMemoryUploadedFile:
+            # Es un archivo in memory.
+            line = self.leer_fragmento_de_in_memory_uploaded_file(archivo)
+        else:
+            # Es un archivo normal.
+            f = open(archivo, "r")
+            line = f.readline()
+            f.close()
         separador = ','
         max = 0
         for candidato in [',', ';', '\t']:
