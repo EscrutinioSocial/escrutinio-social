@@ -8,6 +8,8 @@ from elecciones.models import Mesa, Seccion, Circuito, Distrito
 
 from .widgets import Select
 
+import re
+
 MENSAJES_ERROR = {
     'distrito': '',
     'seccion': 'Esta sección no pertenece al distrito',
@@ -180,13 +182,13 @@ class IdentificacionForm(forms.ModelForm):
                 self.add_error('circuito', 'Sección y/o circuito deben estar completos')
                 intento_identificacion = False
 
-        # no tenemos la data necesaria, no seguimos identificando
+        # No tenemos la data necesaria, no seguimos identificando.
         if not intento_identificacion:
             return self.cleaned_data
 
         self.cleaned_data['distrito'] = distrito
 
-        # Intentamos obtener la mesa con distrito y numero de mesa
+        # Intentamos obtener la mesa con distrito y número de mesa.
         lookup_mesa = Q(circuito__seccion__distrito=distrito)
 
         if seccion_nro:
@@ -195,9 +197,10 @@ class IdentificacionForm(forms.ModelForm):
         if circuito_nro:
             lookup_mesa &= Q(circuito__numero=circuito_nro)
 
-        mesa = self.fields['mesa'].get_object(mesa_nro, lookup_mesa)
-        # Intetamos obtener la seccion y circuito con lo que tengamos
-        # a nuestra disposición (distrito, mesa ó los valores del form).
+        mesa = self.buscar_mesa(mesa_nro, lookup_mesa)
+
+        # Intentamos obtener la sección y circuito con lo que tengamos
+        # a nuestra disposición (distrito, mesa o los valores del form).
         seccion, circuito = self.check_seccion_circuito(distrito, mesa)
 
         if seccion:
@@ -215,6 +218,35 @@ class IdentificacionForm(forms.ModelForm):
 
         return self.cleaned_data
 
+    def buscar_mesa(self, mesa_nro, lookup_mesa):
+        """
+        Esta función busca una mesa en base al input que envía el usuario
+        realizando una serie de normalizaciones tendientes a encontrarla por más
+        que esté escrita de formas "raras".
+
+        La busca de forma literal, eliminándole los ceros, sacándole su parte alfanumérica,
+        etc.
+        """
+        # Nos aseguramos de que sea texto.
+        nro_mesa = str(mesa_nro).strip()
+        # Primero busco como viene o sacando ceros adelante.
+        query_nro_mesa = Q(numero=nro_mesa) | Q(numero=nro_mesa.lstrip('0'))
+        query_nro_mesa &= lookup_mesa
+        mesa = Mesa.objects.filter(query_nro_mesa)
+
+        if not mesa:
+            # Separo el nro de mesa dividiéndolo por letra o caracter
+            # especial para buscar la primera parte del número de mesa.
+            # ejemplo:
+            # 23/7 queda como ['23', '7']
+            # 47B queda como ['47', 'B']
+            mesa_nro_split = re.findall(r'[A-Za-z]+|\d+|^\w', nro_mesa)
+            # Busco solo la parte 1 con o sin ceros
+            query_nro_mesa = (Q(numero=mesa_nro_split[0]) |
+                                Q(numero=mesa_nro_split[0].lstrip('0')))
+            query_nro_mesa &= lookup_mesa
+            mesa = Mesa.objects.filter(query_nro_mesa)
+        return mesa[0] if mesa else None
 
 class PreIdentificacionForm(forms.ModelForm):
     """
@@ -226,14 +258,14 @@ class PreIdentificacionForm(forms.ModelForm):
     )
 
     seccion = SelectField(
-         required=False,
-         queryset=Seccion.objects.all(),
-         label='Sección',
+        required=False,
+        queryset=Seccion.objects.all(),
+        label='Sección',
     )
 
     circuito = SelectField(
-         required=False,
-         queryset=Circuito.objects.all(),
+        required=False,
+        queryset=Circuito.objects.all(),
     )
 
     class Meta:

@@ -165,3 +165,129 @@ def test_preidentificacion_parcial_ok(db):
         'distrito': m1.circuito.seccion.distrito.id
     })
     assert form.is_valid()
+
+def test_identificacion_busqueda_de_mesa(db):
+    c1 = CircuitoFactory()
+
+    # se crea la mesa 123 para chequear que no debe devolver nunca esta mesa
+    # si se buscan alternativas de la 23
+    m0 = MesaFactory(numero='123', circuito=c1)
+    m1 = MesaFactory(numero='23', circuito=c1)
+
+    # el usuario ingresa 023, le devuelve la mesa 23
+    form = IdentificacionForm({
+        'mesa': '023',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m1
+
+    # el usuario ingresa 23/8, como no existe le devuelve la mesa 2
+    form = IdentificacionForm({
+        'mesa': '23/8',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m1
+
+    # el usuario ingresa 23 como no existe le devuelve la mesa 23
+    form = IdentificacionForm({
+        'mesa': '23',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m1
+
+    # se crea la mesa 23/8
+    m2 = MesaFactory(numero='23/8', circuito=c1)
+
+    # el usuario ingresa 00023/8, existe 23/8 le devuelve la mesa 23/8
+    form = IdentificacionForm({
+        'mesa': '00023/8',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m2
+
+    # el usuario ingresa 23/8, existe 23/8 le devuelve la mesa 23/8
+    form = IdentificacionForm({
+        'mesa': '23/8',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m2
+
+    # el usuario ingresa 00023/4, como no existe le devuelve la mesa 23
+    form = IdentificacionForm({
+        'mesa': '00023/4',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m1
+
+    # el usuario ingresa '  0023/8 ', le devuelve la mesa 23/8
+    form = IdentificacionForm({
+        'mesa': '  0023/8 ',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m2
+
+    # el usuario ingresa 5, como no existe le devuelve error
+    form = IdentificacionForm({
+        'mesa': '5',
+        'circuito': c1.numero,
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert not form.is_valid()
+    assert form.errors['mesa'] == ['Esta mesa no pertenece al circuito']
+
+    # buscar mesa en distrito 2 sin pasar circuito en el form
+    d2 = DistritoFactory(numero='2')
+    s2 = SeccionFactory(numero='2', distrito=d2)
+    c2 = CircuitoFactory(numero='2', seccion=s2)
+    m3 = MesaFactory(numero='24/8', circuito=c2)
+    form = IdentificacionForm({
+        'mesa': '0024/8',
+        'seccion': s2.numero,
+        'distrito': d2.id,
+        'circuito': ''
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m3
+
+    # buscar mesa en distrito 2 sin pasar sección en el form
+    form = IdentificacionForm({
+        'mesa': '0024/8',
+        'seccion': '',
+        'distrito': d2.id,
+        'circuito': c2.numero
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m3
+
+    # buscar mesa en distrito 2 sin pasar cricuito ni sección en el form
+    form = IdentificacionForm({
+        'mesa': '0024/8',
+        'seccion': '',
+        'distrito': d2.id,
+        'circuito': ''
+    })
+    assert not form.is_valid()
+    assert form.errors['seccion'] == ['Sección y/o circuito deben estar completos']
+    assert form.errors['circuito'] == ['Sección y/o circuito deben estar completos']
