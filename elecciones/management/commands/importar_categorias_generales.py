@@ -15,7 +15,7 @@ from .basic_command import BaseCommand
 class Command(BaseCommand):
     """
     Formato:
-        XXX Arreglar.
+        nombre,slug
     """
     help = "Importar categorías generales."
 

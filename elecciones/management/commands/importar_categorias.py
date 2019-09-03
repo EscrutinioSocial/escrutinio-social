@@ -16,7 +16,7 @@ PRIORIDAD_DEFAULT = 20000
 class Command(BaseCommand):
     """
     Formato:
-        XXX Arreglar.
+        nombre, slug, categoriageneral_slug, distrito_nro, seccion_nro, secciones_list, prioridad, extranjeros
     """
     help = "Importar categorías asociando mesas."
 
@@ -43,6 +43,14 @@ class Command(BaseCommand):
         categoria_slug = row['slug']
         categoria_nombre = row['nombre']
         categoria_general = CategoriaGeneral.objects.get(slug=row['categoriageneral_slug'])
+
+        prioridad_categoria = self.to_nat(row, 'prioridad', linea)
+        if prioridad_categoria is None:
+            self.warning(f'La categoría {categoria_slug} no define la prioridad de la categoría o no es un natural.'
+                         f' Se setea en el valor por defecto {PRIORIDAD_DEFAULT}. Línea {linea}.'
+            )
+            prioridad_categoria = PRIORIDAD_DEFAULT
+
         defaults = {
             'prioridad': prioridad_categoria,
             'nombre': categoria_nombre,
@@ -77,13 +85,6 @@ class Command(BaseCommand):
             )
         extranjeros = bool(extranjeros)
 
-        prioridad_categoria = self.to_nat(row, 'categoria_prioridad', linea)
-        if prioridad_categoria is None:
-            self.warning(f'La categoría {categoria_slug} no define la prioridad de la categoría o no es un natural.'
-                         f' Se setea en el valor por defecto {PRIORIDAD_DEFAULT}. Línea {linea}.'
-            )
-            prioridad_categoria = PRIORIDAD_DEFAULT
-
         lookup = Q()
         # Se asocian las mesas a la categoría sólo cuando se crea la categoría.
         if distrito_nro and not secciones_nat:
@@ -106,7 +107,6 @@ class Command(BaseCommand):
 
         return categoria
 
-
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
@@ -115,4 +115,3 @@ class Command(BaseCommand):
         for linea, row in enumerate(reader, 1):
 
             self.crear_o_actualizar_categoria(linea, row)
-
