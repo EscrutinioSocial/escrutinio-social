@@ -4,7 +4,9 @@ from django.db.models import Q
 from django.db.utils import IntegrityError
 from pathlib import Path
 from csv import DictReader
-from elecciones.models import CategoriaGeneral, Categoria, CategoriaOpcion, Mesa, MesaCategoria
+from elecciones.models import (
+    CategoriaGeneral, Categoria, CategoriaOpcion, Mesa, MesaCategoria, Distrito, Seccion
+)
 import datetime
 from django.db import transaction
 
@@ -17,6 +19,9 @@ class Command(BaseCommand):
     """
     Formato:
         nombre, slug, categoriageneral_slug, distrito_nro, seccion_nro, secciones_list, prioridad, extranjeros
+
+    - La sección de seccion_nro sirve para buscar "Intendente de (la sección) X".
+    - Las secciones de secciones_list son aquellas a cuyas mesas hay que agregar la categoría.
     """
     help = "Importar categorías asociando mesas."
 
@@ -25,9 +30,11 @@ class Command(BaseCommand):
         Devuelve la categoría creada o encontrada.
         """
 
-        distrito_nro = self.to_nat(row, 'distrito_nro', linea)
-        seccion_nro = self.to_nat(row, 'seccion_nro', linea)
-        secciones_list = row['secciones_list']
+        distrito_nro = self.to_nat(row, 'distrito_nro', linea) if row['distrito_nro'] else None
+        # La sección para buscar "Intendente de X".
+        seccion_nro = self.to_nat(row, 'seccion_nro', linea) if row['seccion_nro'] else None
+        secciones_list = row['secciones_list']  # Las secciones a cuyas mesas hay que agregar la categoría.
+        secciones_nat = None
 
         if secciones_list:
             secciones = secciones_list.split(',')
@@ -55,7 +62,7 @@ class Command(BaseCommand):
             'prioridad': prioridad_categoria,
             'nombre': categoria_nombre,
             'categoria_general': categoria_general,
-            'distrito': Distrito.objects.get(numero=distrito_nro) if distrito_nro else None
+            'distrito': Distrito.objects.get(numero=distrito_nro) if distrito_nro else None,
             'seccion': Seccion.objects.get(numero=seccion_nro, distrito__numero=distrito_nro) if seccion_nro else None
         }
         try:
@@ -78,7 +85,7 @@ class Command(BaseCommand):
             )
             return categoria
 
-        extranjeros = self.to_nat(row, 'extranjeros', linea 0)
+        extranjeros = self.to_nat(row, 'extranjeros', linea, 0)
         if extranjeros is None:
             self.warning(f'La categoría {categoria_slug} no tiene seteado el campo extranjero, o no es 0 o 1.'
                          f' Se asume que no corresponde a extranjeros. Línea {linea}.'
