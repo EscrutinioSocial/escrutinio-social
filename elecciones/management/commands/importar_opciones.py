@@ -13,11 +13,10 @@ from .basic_command import BaseCommand
 class Command(BaseCommand):
     """
     Formato:
-        partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_nombre,opcion_nombre_corto,partido_orden,orden,categoria_slug
+        partido_nombre,partido_nombre_corto,partido_codigo,partido_color,opcion_nombre,opcion_nombre_corto,opcion_codigo,categoria_slug,orden
         FRENTE DE TODOS,FRENTE DE TODOS,136,,CELESTE Y BLANCA A,CELESTE Y BLANCA A,1,1,Presidente_y_Vicepresidente
     """
-    help = "Importar partidos y opciones y los asocia a las categorías correspondientes."
-
+    help = "Importar partidos y opciones, y los asocia a las categorías correspondientes."
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -28,7 +27,7 @@ class Command(BaseCommand):
 
             # Categoría
             categoria_slug = row['categoria_slug']
-            categoria = Categoria.objecs.get(slug=categoria_slug)
+            categoria = Categoria.objects.get(slug=categoria_slug)
 
             # Partido.
             codigo = row['partido_codigo']
