@@ -152,7 +152,7 @@ def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inici
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'falta_total_votos.csv', usr_unidad_basica).procesar()
     assert cant_mesas_ok == 0
-    assert "Faltan las opciones: ['total de votos']." in errores
+    assert f"Faltan las opciones: ['{Opcion.total_votos().nombre}']." in errores
     assert Carga.objects.count() == 0
 
 

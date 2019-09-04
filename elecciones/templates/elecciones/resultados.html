@@ -94,7 +94,7 @@
             </thead>
             <tbody>
                 {% with resultados.tabla_positivos as tabla %}
-                {% include "elecciones/tabla_resultados_numerables.html" with responsive=True incluir_votos=True %}
+                {% include "elecciones/tabla_resultados_positivos.html" with responsive=True incluir_votos=True %}
                 {% endwith %}
             </tbody>
         </table>
@@ -108,7 +108,7 @@
                 </tr>
             </thead>
 
-            {% include "elecciones/tabla_resultados_no_numerables.html" with responsive=True %}
+            {% include "elecciones/tabla_resultados_no_positivos.html" with responsive=True %}
         </table>
 
         {% if show_plot %}

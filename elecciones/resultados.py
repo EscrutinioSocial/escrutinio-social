@@ -267,7 +267,7 @@ class Sumarizador():
             else:
                 # 3.2 Opciones no partidarias
                 # TODO ¿Puede realmente pasar que no vengan las opciones completas?
-                votos_no_positivos[opcion.nombre.lower()] = sum_votos if sum_votos else 0
+                votos_no_positivos[opcion.nombre_corto] = sum_votos if sum_votos else 0
 
         return votos_positivos, votos_no_positivos
 
@@ -427,16 +427,16 @@ class ResultadosBase():
         return self.resultados.total_mesas
 
     def total_blancos(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre'], '-')
+        return self.resultados.votos_no_positivos.get(settings.OPCION_BLANCOS['nombre_corto'], '-')
 
     def total_nulos(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre'], '-')
+        return self.resultados.votos_no_positivos.get(settings.OPCION_NULOS['nombre_corto'], '-')
 
     def total_votos(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre'], '-')
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_VOTOS['nombre_corto'], '-')
 
     def total_sobres(self):
-        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre'], '-')
+        return self.resultados.votos_no_positivos.get(settings.OPCION_TOTAL_SOBRES['nombre_corto'], '-')
 
     def porcentaje_positivos(self):
         return porcentaje(self.total_positivos(), self.votantes())
@@ -474,7 +474,7 @@ class Resultados(ResultadosBase):
                 for opciones_partido in self.resultados.votos_positivos.values()
             )
         else:
-            nombre_opcion_total = Opcion.total_votos().nombre
+            nombre_opcion_total = Opcion.total_votos().nombre_corto
             total = self.resultados.votos_no_positivos[nombre_opcion_total]
             total_no_positivos = self.total_no_positivos()
             total_positivos = max(total - total_no_positivos, 0)
@@ -487,8 +487,8 @@ class Resultados(ResultadosBase):
         Devuelve el total de votos no positivos, sumando los votos a cada opción no partidaria
         y excluyendo la opción que corresponde a totales (como el total de votantes o de sobres).
         """
-        nombre_opcion_total = Opcion.total_votos().nombre
-        nombre_opcion_sobres = Opcion.sobres().nombre
+        nombre_opcion_total = Opcion.total_votos().nombre_corto
+        nombre_opcion_sobres = Opcion.sobres().nombre_corto
         return sum(
             votos for opcion, votos in self.resultados.votos_no_positivos.items()
             if opcion not in (nombre_opcion_total, nombre_opcion_sobres)
@@ -507,7 +507,7 @@ class ResultadoCombinado(ResultadosBase):
             'electores_en_mesas_escrutadas': 0,
             'votos_positivos': {},
 
-            'votos_no_positivos': {opcion['nombre']: 0 for opcion in [
+            'votos_no_positivos': {opcion['nombre_corto']: 0 for opcion in [
                 settings.OPCION_BLANCOS,
                 settings.OPCION_NULOS,
                 settings.OPCION_TOTAL_VOTOS,

@@ -69,7 +69,10 @@ class CategoriaFactory(DjangoModelFactory):
         # Toda categoría debe tener las opciones no partidarias.
         orden = 1000  # Las mandamos 'al fondo' en el orden.
         for nombre in Opcion.opciones_no_partidarias():
-            opcion, _ = Opcion.objects.get_or_create(**getattr(settings, nombre))
+            opcion, created = Opcion.objects.get_or_create(**getattr(settings, nombre))
+            if created:
+                opcion.nombre = opcion.nombre_corto
+                opcion.save(update_fields=['nombre'])
             defaults = {'orden': orden}
             CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion, defaults=defaults)
             orden += 1
