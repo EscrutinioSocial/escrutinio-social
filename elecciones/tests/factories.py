@@ -59,7 +59,10 @@ class CategoriaFactory(DjangoModelFactory):
 
         # Toda categoría debe tener las opciones no partidarias
         for nombre in Opcion.opciones_no_partidarias():
-            opcion, _ = Opcion.objects.get_or_create(**getattr(settings, nombre))
+            opcion, created = Opcion.objects.get_or_create(**getattr(settings, nombre))
+            if created:
+                opcion.nombre = opcion.nombre_corto
+                opcion.save(update_fields=['nombre'])
             CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion)
 
         if extracted is not None:
