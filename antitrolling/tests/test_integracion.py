@@ -419,10 +419,10 @@ def test_identificaciones_troll(db, settings):
         assert attach_4.status == Attachment.STATUS.sin_identificar
         assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
         assert mesa_categoria_1.carga_testigo is not None
-        assert mesa_categoria_1.orden_de_carga is not None
+        assert mesa_categoria_1.coeficiente_para_orden_de_carga is not None
         assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
         assert mesa_categoria_2.carga_testigo is not None
-        assert mesa_categoria_2.orden_de_carga is not None
+        assert mesa_categoria_2.coeficiente_para_orden_de_carga is not None
         assert not fiscal_1.troll
         assert Identificacion.objects.filter(procesada=False).count() == 0
         assert Identificacion.objects.filter(invalidada=True).count() == 0
@@ -441,10 +441,10 @@ def test_identificaciones_troll(db, settings):
         assert attach_4.status == Attachment.STATUS.identificada
         assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
         assert mesa_categoria_1.carga_testigo is not None
-        assert mesa_categoria_1.orden_de_carga is not None
+        assert mesa_categoria_1.coeficiente_para_orden_de_carga is not None
         assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
         assert mesa_categoria_2.carga_testigo is not None
-        assert mesa_categoria_2.orden_de_carga is not None
+        assert mesa_categoria_2.coeficiente_para_orden_de_carga is not None
         assert fiscal_1.troll
         assert Identificacion.objects.filter(procesada=False).count() == 3
         assert Identificacion.objects.filter(invalidada=True).count() == 3
@@ -463,10 +463,10 @@ def test_identificaciones_troll(db, settings):
         assert attach_4.status == Attachment.STATUS.identificada
         assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
         assert mesa_categoria_1.carga_testigo is not None
-        assert mesa_categoria_1.orden_de_carga is None
+        assert mesa_categoria_1.coeficiente_para_orden_de_carga is None
         assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
         assert mesa_categoria_2.carga_testigo is not None
-        assert mesa_categoria_2.orden_de_carga is not None
+        assert mesa_categoria_2.coeficiente_para_orden_de_carga is not None
         assert fiscal_1.troll
         assert Identificacion.objects.filter(procesada=False).count() == 0
         assert Identificacion.objects.filter(invalidada=True).count() == 3
@@ -481,10 +481,10 @@ def test_identificaciones_troll(db, settings):
         refrescar_data()
         assert mesa_categoria_1.status == MesaCategoria.STATUS.sin_cargar
         assert mesa_categoria_1.carga_testigo is None
-        assert mesa_categoria_1.orden_de_carga is None
+        assert mesa_categoria_1.coeficiente_para_orden_de_carga is None
         assert mesa_categoria_2.status == MesaCategoria.STATUS.total_consolidada_dc
         assert mesa_categoria_2.carga_testigo is not None
-        assert mesa_categoria_2.orden_de_carga is not None
+        assert mesa_categoria_2.coeficiente_para_orden_de_carga is not None
         assert fiscal_1.troll
         assert Identificacion.objects.filter(procesada=False).count() == 0
         assert Identificacion.objects.filter(invalidada=True).count() == 3

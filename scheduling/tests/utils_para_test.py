@@ -15,11 +15,11 @@ def verificar_registro_prioridad(regi, desde_proporcion, hasta_proporcion, prior
     assert regi.hasta_cantidad == hasta_cantidad
 
 
-def verificar_valores_scheduling_mesacat(mesa, cat, percentil, orden_de_llegada, orden_de_carga):
+def verificar_valores_scheduling_mesacat(mesa, cat, percentil, orden_de_llegada, coeficiente_para_orden_de_carga):
     mesacat = MesaCategoria.objects.filter(mesa=mesa, categoria=cat)[0]
     assert mesacat.percentil == percentil
     assert mesacat.orden_de_llegada == orden_de_llegada
-    assert mesacat.orden_de_carga == orden_de_carga
+    assert mesacat.coeficiente_para_orden_de_carga == coeficiente_para_orden_de_carga
 
 
 def siguiente_mesa_a_cargar():
@@ -34,7 +34,7 @@ def verificar_siguiente_mesacat(mesa, categoria, saltear=0):
         mesacat = siguiente_mesa_a_cargar()
     if not (mesacat.mesa == mesa and mesacat.categoria == categoria):
         print(f'verificación siguiente mesacat falla, la mesacat encontrada es:')
-        print(f'mesa: {mesacat.mesa}  --  categoria: {mesacat.categoria}  --  orden de carga: {mesacat.orden_de_carga}')
+        print(f'mesa: {mesacat.mesa}  --  categoria: {mesacat.categoria}  --  orden de carga: {mesacat.coeficiente_para_orden_de_carga}')
     assert mesacat.mesa == mesa
     assert mesacat.categoria == categoria
     return mesacat

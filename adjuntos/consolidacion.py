@@ -344,7 +344,7 @@ def consumir_novedades(cant_por_iteracion=None):
 def actualizar_orden_de_carga(sender, instance=None, created=False, **kwargs):
     if instance.mesa and instance.identificacion_testigo:
         # Un nuevo attachment para una mesa ya identificada
-        # (es decir, con orden de carga ya definido) la vuelve a actualizar.
+        # (es decir, con coeficiente de orden de carga ya definido) la vuelve a actualizar.
         a_actualizar = MesaCategoria.objects.filter(mesa=instance.mesa)
         for mc in a_actualizar:
-            mc.actualizar_orden_de_carga()
+            mc.actualizar_coeficiente_para_orden_de_carga()
