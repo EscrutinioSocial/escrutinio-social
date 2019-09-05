@@ -12,6 +12,7 @@ from elecciones.tests.factories import (
     SeccionFactory,
     CircuitoFactory,
     MesaFactory,
+    CategoriaGeneralFactory,
     CategoriaFactory,
     OpcionFactory,
     CategoriaOpcionFactory,
@@ -102,7 +103,11 @@ def carga_inicial(db):
 
     categorias = []
     for categoria, prioritaria in CATEGORIAS:
-        categoria_bd = CategoriaFactory(nombre=categoria)
+        categoria_general = CategoriaGeneralFactory(nombre=categoria)
+        # La categoría en sí tiene un nombre arbitrario para testear que
+        # el matching sea en base a la categoría general.
+        categoria_bd = CategoriaFactory(nombre=f'Categoría {categoria}',
+            categoria_general=categoria_general)
 
         # La factory las crea con unas opciones que hacen ruido en estos tests.
         for nombre in ['opc1', 'opc2', 'opc3', 'opc4']:
