@@ -97,62 +97,6 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_const
     assert MesaCategoria.objects.siguiente() == mc2
 
 
-@pytest.mark.skip('Reformular con nuevo scheduling.')
-def test_siguiente_prioriza_categoria(db):
-    f = FiscalFactory()
-    c = CategoriaFactory(prioridad=2)
-    c2 = CategoriaFactory(prioridad=1)
-    mc1 = MesaCategoriaFactory(
-        status=MesaCategoria.STATUS.parcial_sin_consolidar,
-        categoria=c,
-        coeficiente_para_orden_de_carga=0
-    )
-    mc2 = MesaCategoriaFactory(
-        categoria=c2,
-        status=MesaCategoria.STATUS.parcial_sin_consolidar,
-        coeficiente_para_orden_de_carga=0
-    )
-    # se recibe la mc con categoria más baja
-    assert MesaCategoria.objects.siguiente() == mc2
-    mc2.asignar_a_fiscal(f)
-    assert MesaCategoria.objects.siguiente() == mc1
-    mc1.asignar_a_fiscal(f)
-    assert MesaCategoria.objects.siguiente() is None
-
-@pytest.mark.skip('Reformular con nuevo scheduling.')
-def test_siguiente_prioriza_mesa(db):
-    f = FiscalFactory()
-    mc1 = MesaCategoriaFactory(
-        status=MesaCategoria.STATUS.parcial_sin_consolidar,
-        mesa__prioridad=2,
-        categoria__nombre='foo',
-        coeficiente_para_orden_de_carga=0
-    )
-    mc2 = MesaCategoriaFactory(
-        status=MesaCategoria.STATUS.parcial_sin_consolidar,
-        mesa__prioridad=1,
-        categoria__nombre='foo',
-        coeficiente_para_orden_de_carga=0
-    )
-
-    # se recibe la mc con mesa con prioridad menor
-    assert MesaCategoria.objects.siguiente() == mc2
-    mc2.asignar_a_fiscal(f)
-    assert MesaCategoria.objects.siguiente() == mc1
-    mc1.asignar_a_fiscal(f)
-    assert MesaCategoria.objects.siguiente() is None
-
-
-@pytest.mark.skip('Reformular con nuevo scheduling.')
-@pytest.mark.parametrize('total', [10, 40])
-def test_actualizar_orden_de_carga(db, total):
-    c = CircuitoFactory()
-    MesaFactory.create_batch(total, circuito=c)
-    for i, mc in enumerate(MesaCategoria.objects.defer('coeficiente_para_orden_de_carga').all(), 1):
-        mc.actualizar_coeficiente_para_orden_de_carga()
-        assert mc.coeficiente_para_orden_de_carga == int(round(i/total, 2) * 100)
-
-
 def test_identificadas_excluye_sin_orden(db):
     m1 = MesaFactory()
     AttachmentFactory(mesa=m1)
