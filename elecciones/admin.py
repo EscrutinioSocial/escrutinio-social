@@ -15,6 +15,7 @@ from .models import (
     Carga,
     Opcion,
     CategoriaOpcion,
+    CategoriaGeneral,
     Categoria,
     VotoMesaReportado,
     MesaCategoria,
@@ -275,6 +276,12 @@ class OpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ['id', 'nombre_corto', 'partido', 'nombre']
 
 
+class CategoriaGeneralAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
+    list_display = ['nombre', 'slug']
+    search_fields = ['nombre', 'slug']
+    ordering = ['nombre']
+
+
 class CategoriaAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     list_display = ['categoria_general', 'nombre', 'activa', 'distrito', 'seccion']
     search_fields = ['nombre']
@@ -363,6 +370,7 @@ admin.site.register(MesaCategoria, MesaCategoriaAdmin)
 admin.site.register(VotoMesaReportado, VotoMesaReportadoAdmin)
 admin.site.register(Opcion, OpcionAdmin)
 admin.site.register(Categoria, CategoriaAdmin)
+admin.site.register(CategoriaGeneral, CategoriaGeneralAdmin)
 admin.site.register(CategoriaOpcion, CategoriaOpcionAdmin)
 admin.site.register(TecnicaProyeccion, TecnicaProyeccionAdmin)
 admin.site.register(AgrupacionCircuitos, AgrupacionCircuitosAdmin)

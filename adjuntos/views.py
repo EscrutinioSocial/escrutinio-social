@@ -429,19 +429,22 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
         return HttpResponseForbidden()
 
     def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion):
-        # Valida la info del archivo.
         try:
-            cant_mesas_ok, errores = CSVImporter(adjunto, self.request.user).procesar()
-            if cant_mesas_ok > 0:
-                messages.info(self.request, f'{adjunto.name} ingresó {cant_mesas_ok} y produjo los siguientes errores:\n{errores}')
+            cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(adjunto, self.request.user).procesar()
+            if cant_mesas_ok > 0 or cant_mesas_parcialmente_ok>0:
+                messages.info(self.request, 
+                    f"{adjunto.name} ingresó {cant_mesas_ok} mesas sin problemas, "
+                    "{cant_mesas_parcialmente_ok} ingresaron alguna categoría y produjo "
+                    "los siguientes errores:\n{errores}"
+                )
             else:
                 messages.error(self.request, f'{adjunto.name} produjo los siguientes errores:\n{errores}')
         except Exception as e:
-            messages.error(self.request, f'{adjunto.name} ignorado. {str(e)}')
+            messages.error(self.request, f'{adjunto.name} no importado debido al siguiente error: {str(e)}')
         return None
 
     def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
-        messages.warning(self.request, f'{nombre_archivo} ignorado. No es un archivo CSV')
+        messages.warning(self.request, f'{nombre_archivo} ignorado. No es un archivo CSV.')
 
     def mostrar_mensaje_archivos_cargados(self, c):
         messages.success(self.request, f'Subiste {c} archivos CSV. Gracias!')

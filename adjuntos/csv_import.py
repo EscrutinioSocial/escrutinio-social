@@ -98,6 +98,7 @@ class CSVImporter:
         self.logger.debug("Importando archivo '%s'.", archivo)
         self.cant_errores = 0
         self.cant_mesas_importadas = 0
+        self.cant_mesas_parcialmente_importadas = 0
         self.errores = []
 
     def leer_fragmento_de_in_memory_uploaded_file(self, archivo):
@@ -141,7 +142,7 @@ class CSVImporter:
 
         self.validar_mesas()
         self.cargar_info()
-        return self.cant_mesas_importadas, '\n'.join(self.errores)
+        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(self.errores)
 
     def anadir_error(self, error):
         self.cant_errores += 1
@@ -239,15 +240,19 @@ class CSVImporter:
             return
 
         mesa_ok = True
+        alguna_cat_ok = False
         for mesa_categoria in mesa_bd.mesacategoria_set.all():
             try:
                 self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias)
+                alguna_cat_ok = True
             except ErroresAcumulados:
                 # Es sólo para evitar el commit.
                 mesa_ok = False
 
         if mesa_ok:
             self.cant_mesas_importadas += 1
+        elif alguna_cat_ok:
+            self.cant_mesas_parcialmente_importadas += 1
 
     @transaction.atomic
     def cargar_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
