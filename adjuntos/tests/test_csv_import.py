@@ -2,8 +2,11 @@ import os
 
 import pytest
 from django.conf import settings
+from elecciones.tests.conftest import fiscal_client, setup_groups # noqa
+from django.urls import reverse
+from http import HTTPStatus
 from django.contrib.auth.models import Group
-
+from django.core.files.uploadedfile import SimpleUploadedFile
 from adjuntos.csv_import import (ColumnasInvalidasError, CSVImporter, DatosInvalidosError,
                                  PermisosInvalidosError)
 from elecciones.models import Carga, VotoMesaReportado, CategoriaOpcion, Opcion
@@ -341,4 +344,20 @@ def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
 
     # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene
     # además opción no prioritaria.
+    assert cargas_totales.count() == 2
+
+
+def test_web_upload(fiscal_client, carga_inicial):
+    archivo = 'info_resultados_ok.csv'
+    content = open(PATH_ARCHIVOS_TEST + archivo, 'rb')
+    file = SimpleUploadedFile(archivo, content.read(), content_type="text/csv")
+    data = {
+        'file_field': (file,),
+    }
+
+    response = fiscal_client.post(reverse('agregar-adjuntos-csv'), data)
+    assert response.status_code == HTTPStatus.FOUND
+
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
     assert cargas_totales.count() == 2

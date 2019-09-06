@@ -114,6 +114,8 @@ class CSVImporter:
         if type(archivo) == InMemoryUploadedFile:
             # Es un archivo in memory.
             line = self.leer_fragmento_de_in_memory_uploaded_file(archivo)
+            # Lo reseteamos.
+            archivo.seek(0)
         else:
             # Es un archivo normal.
             f = open(archivo, "r")
