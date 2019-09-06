@@ -227,7 +227,7 @@ def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
     assert cant_mesas_ok == 0
     assert cant_mesas_parcialmente_ok == 1
     assert "Faltan las opciones: ['JpC']." in errores
-    assert Carga.objects.count() == len(CATEGORIAS) - 1
+    assert Carga.objects.count() == 0
 
 
 def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
