@@ -238,14 +238,16 @@ class CSVImporter:
             # No acumulamos el error porque ya se hizo en la validación.
             return
 
+        mesa_ok = True
         for mesa_categoria in mesa_bd.mesacategoria_set.all():
             try:
                 self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias)
             except ErroresAcumulados:
                 # Es sólo para evitar el commit.
-                pass
+                mesa_ok = False
 
-        self.cant_mesas_importadas += 1
+        if mesa_ok:
+            self.cant_mesas_importadas += 1
 
     @transaction.atomic
     def cargar_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
