@@ -27,8 +27,7 @@ class PartidoFactory(DjangoModelFactory):
     class Meta:
         model = 'elecciones.Partido'
 
-    orden = factory.Sequence(lambda n: n + 1)
-    nombre = factory.LazyAttribute(lambda obj: f"Partido {obj.orden}")
+    nombre = factory.Sequence(lambda n: f'Partido {n + 1}')
 
 
 class OpcionFactory(DjangoModelFactory):
@@ -37,9 +36,18 @@ class OpcionFactory(DjangoModelFactory):
         model = 'elecciones.Opcion'
         django_get_or_create = ('nombre', )
 
-    nombre = factory.LazyAttribute(lambda obj: f"Opción {obj.orden}")
+    nombre = factory.Sequence(lambda n: f'Opción {n + 1}')
     partido = factory.SubFactory(PartidoFactory)
-    orden = factory.Sequence(lambda n: n + 1)
+
+
+class CategoriaGeneralFactory(DjangoModelFactory):
+
+    class Meta:
+        model = 'elecciones.CategoriaGeneral'
+        django_get_or_create = ('nombre', )
+
+    nombre = factory.Sequence(lambda n: f'Categoría general {n + 1}')
+    slug = factory.Sequence(lambda n: f'categoría_general_{n + 1}')
 
 
 class CategoriaFactory(DjangoModelFactory):
@@ -48,7 +56,8 @@ class CategoriaFactory(DjangoModelFactory):
         model = 'elecciones.Categoria'
         django_get_or_create = ('nombre', )
 
-    nombre = factory.Sequence(lambda n: f'elecciones{n + 1}')
+    categoria_general = factory.SubFactory(CategoriaGeneralFactory)
+    nombre = factory.Sequence(lambda n: f'Categoría {n + 1}')
     slug = factory.LazyAttribute(lambda obj: obj.nombre)
 
     @factory.post_generation
@@ -57,10 +66,16 @@ class CategoriaFactory(DjangoModelFactory):
         if not create:
             return
 
-        # Toda categoría debe tener las opciones no partidarias
+        # Toda categoría debe tener las opciones no partidarias.
+        orden = 1000  # Las mandamos 'al fondo' en el orden.
         for nombre in Opcion.opciones_no_partidarias():
-            opcion, _ = Opcion.objects.get_or_create(**getattr(settings, nombre))
-            CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion)
+            opcion, created = Opcion.objects.get_or_create(**getattr(settings, nombre))
+            if created:
+                opcion.nombre = opcion.nombre_corto
+                opcion.save(update_fields=['nombre'])
+            defaults = {'orden': orden}
+            CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion, defaults=defaults)
+            orden += 1
 
         if extracted is not None:
             #
@@ -82,6 +97,7 @@ class CategoriaOpcionFactory(DjangoModelFactory):
 
     categoria = factory.SubFactory(CategoriaFactory, nombre='default')
     opcion = factory.SubFactory(OpcionFactory)
+    orden = factory.Sequence(lambda n: n + 1)
 
 
 class DistritoFactory(DjangoModelFactory):

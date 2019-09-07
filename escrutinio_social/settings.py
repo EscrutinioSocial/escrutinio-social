@@ -408,11 +408,11 @@ PRIORIDADES_STANDARD_CATEGORIA = [
 # Por ejemplo:
 #
 # blanco = Opcion.objects.get(**OPCION_BLANCOS)
-OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'nombre': 'votos en blanco', 'partido': None, 'codigo': '10000'}
-OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'nombre': 'votos nulos', 'partido': None, 'codigo': '10001'}
-OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'nombre': 'total de votos', 'partido': None, 'codigo': '10010'}
-OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'nombre': 'total de sobres', 'partido': None}
-KEY_VOTOS_POSITIVOS = 'Votos Positivos'
+OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'partido': None, 'codigo': '10000'}
+OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'partido': None, 'codigo': '10001'}
+OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'partido': None, 'codigo': '10010'}
+OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'partido': None}
+KEY_VOTOS_POSITIVOS = 'votos_positivos'
 
 NOMBRE_CATEGORIA_PRESI_Y_VICE = 'Presidente y vice'
 NOMBRE_CATEGORIA_GOB_Y_VICE_PBA = 'Gobernador y vice'

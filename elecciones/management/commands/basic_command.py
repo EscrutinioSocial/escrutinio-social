@@ -6,12 +6,24 @@ from csv import DictReader
 from elecciones.models import Distrito, Seccion, Circuito, LugarVotacion, Mesa, Categoria
 import datetime
 
+
 class BaseCommand(BaseCommand):
-    
+
+    def add_arguments(self, parser):
+        parser.add_argument('archivo_datos',
+                            type=str,
+                            default=None,
+                            help='Archivo de datos.'
+        )
+
+    def handle(self, *args, **options):
+        self.verbosity = int(options['verbosity'])
+        self.CSV = Path(options['archivo_datos'])
+
     def log(self, message, level=2, ending='\n'):
         if level <= self.verbosity:
             self.stdout.write(message, ending=ending)
-            
+
     def success(self, msg, level=3, ending='\n'):
         self.log(self.style.SUCCESS(msg), level, ending=ending)
 
@@ -20,7 +32,7 @@ class BaseCommand(BaseCommand):
 
     def error_log(self, msg, ending='\n'):
         self.log(self.style.ERROR(msg), 0, ending=ending)
-        
+
     def log_creacion(self, object, created=True, level=3, ending='\n'):
         modelo = object._meta.model.__name__
         if created:
@@ -35,7 +47,7 @@ class BaseCommand(BaseCommand):
         except KeyError:
             self.error_log(f'No está {field_name} en la línea {n}.')
             return None
-        
+
         try:
             value = int(value)
         except (ValueError, TypeError) as e:
@@ -59,3 +71,9 @@ class BaseCommand(BaseCommand):
             self.error_log(f'El valor {value} del campo {field_name} no es positivo. Línea {n}.')
             return None
         return value
+
+    def to_float(self, val):
+        try:
+            return float(val.replace(',', '.'))
+        except Exception:
+            return None

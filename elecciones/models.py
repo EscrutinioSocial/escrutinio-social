@@ -775,14 +775,13 @@ class Partido(models.Model):
     """
     Representa un partido político o alianza, que contiene :py:class:`opciones <Opcion>`.
     """
-    orden = models.PositiveIntegerField(help_text='Orden opcion')
     numero = models.PositiveIntegerField(null=True, blank=True)
     codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True, db_index=True)
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=30, default='')
     color = models.CharField(max_length=30, default='', blank=True)
     referencia = models.CharField(max_length=30, default='', blank=True)
-    ordering = ['orden']
+    ordering = ['numero']
 
     def __str__(self):
         return self.nombre
@@ -824,7 +823,6 @@ class Opcion(models.Model):
     partido = models.ForeignKey(
         Partido, null=True, on_delete=models.SET_NULL, blank=True, related_name='opciones'
     )  # blanco, / recurrido / etc
-    orden = models.PositiveIntegerField(help_text='Orden en la boleta', null=True, blank=True)
 
     codigo_dne = models.PositiveIntegerField(
         null=True, blank=True, help_text='Nº asignado en la base de datos de resultados oficiales'
@@ -833,7 +831,7 @@ class Opcion(models.Model):
     class Meta:
         verbose_name = 'Opción'
         verbose_name_plural = 'Opciones'
-        ordering = ['orden']
+        ordering = ['partido', 'nombre_corto']
 
     @property
     def color(self):
@@ -891,6 +889,23 @@ class Eleccion(models.Model):
         verbose_name_plural = 'Elecciones'
 
 
+class CategoriaGeneral(models.Model):
+    """
+    A diferencia del modelo `Categoria`, éste representa una categoría sin
+    asociación geográfica. Por ejemplo "Intendente", sin decir de dónde.
+
+    Sirve para poder de alguna manera agrupar a todas las categorías "Intendende de X",
+    además de para permitir meter aquí atributos de visualización comunes a ellas, así
+    como también nombres de columnas en, por ejemplo, el CSV.
+    """
+    eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
+    slug = models.SlugField(max_length=100, unique=True)
+    nombre = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.nombre
+
+
 class Categoria(models.Model):
     """
     Representa una categoría electiva, es decir, una "columna" del acta.
@@ -900,6 +915,17 @@ class Categoria(models.Model):
     que incluyen las partidarias (boletas) y blanco, nulo, etc.
     """
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
+    categoria_general = models.ForeignKey(CategoriaGeneral, null=False,
+        on_delete=models.CASCADE, related_name='categorias'
+    )
+    # Información geográfica para anclar una categoría a una provincia o municipio.
+    distrito = models.ForeignKey(
+        Distrito, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    seccion = models.ForeignKey(
+        Seccion, null=True, blank=True, on_delete=models.SET_NULL
+    )
+
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100, db_index=True)
     opciones = models.ManyToManyField(Opcion, through='CategoriaOpcion', related_name='categorias')
@@ -944,7 +970,7 @@ class Categoria(models.Model):
         qs = self.opciones.all()
         if solo_prioritarias:
             qs = qs.filter(categoriaopcion__prioritaria=True)
-        return qs.distinct().order_by('orden')
+        return qs.distinct().order_by('categoriaopcion__orden')
 
     @classmethod
     def para_mesas(cls, mesas):
@@ -996,6 +1022,7 @@ class Categoria(models.Model):
 class CategoriaOpcion(models.Model):
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
     opcion = models.ForeignKey('Opcion', on_delete=models.CASCADE)
+    orden = models.PositiveIntegerField(help_text='Orden en el acta', null=True, blank=True)
     prioritaria = models.BooleanField(default=False)
 
     class Meta:
@@ -1072,7 +1099,7 @@ class Carga(TimeStampedModel):
         # Si ya hay firma y no están forzando, listo.
         if self.firma and not forzar:
             return
-        tuplas = (f'{o}-{v}' for (o, v) in self.opcion_votos().order_by('opcion__orden'))
+        tuplas = (f'{o}-{v}' for (o, v) in self.opcion_votos().order_by('opcion__id'))
         self.firma = '|'.join(tuplas)
         self.save(update_fields=['firma'])
 

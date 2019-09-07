@@ -1,30 +1,21 @@
 from decimal import Decimal
-from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
 from csv import DictReader
 from elecciones.models import Seccion, Circuito, Distrito
-import datetime
 
 from .basic_command import BaseCommand
 
 CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/prioridad_scheduling.csv'
 
 
-def to_float(val):
-    try:
-        return float(val.replace(',', '.'))
-    except:
-        return None
-
-
 class Command(BaseCommand):
-    help = "Importar hasta circuitos"
-            
-    def handle(self, *args, **options):
+    help = "Setea prioridades de scheduling"
 
-        self.verbosity = options.get('verbosity',1)
-        reader = DictReader(CSV.open())
+    def handle(self, *args, **options):
+        super().handle(*args, **options)
+
+        reader = DictReader(self.CSV.open())
 
         for c, row in enumerate(reader, 1):
             seccion_nombre = row['seccion_nombre']
@@ -38,7 +29,7 @@ class Command(BaseCommand):
                 seccion = Seccion.objects.get(numero=seccion_nro, distrito__numero=distrito_nro)
             except Seccion.DoesNotExist:
                 distrito = Distrito.objects.get(numero=distrito_nro)
-                self.log(f'La sección {seccion_nombre} no existe en el distrito {distrito}',0)
+                self.log(f'La sección {seccion_nombre} no existe en el distrito {distrito}', 0)
                 continue
 
             # chequeamos tener naturales
