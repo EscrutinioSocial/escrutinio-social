@@ -511,7 +511,8 @@ class MesaCategoria(models.Model):
 
     def actualizar_coeficiente_para_orden_de_carga(self):
         """
-        Actualiza `self.coeficiente_para_orden_de_carga` a partir de las prioridades por seccion y categoria
+        Actualiza `self.coeficiente_para_orden_de_carga` a partir de las prioridades
+        por sección y categoría.
         """
         # evitar import circular
         from scheduling.models import mapa_prioridades_para_mesa_categoria
@@ -536,8 +537,8 @@ class MesaCategoria(models.Model):
 
     def recalcular_coeficiente_para_orden_de_carga(self):
         """
-        Actualiza el valor de `self.coeficiente_para_orden_de_carga` a partir de las prioridades por sección y categoría,
-        **sin** disparar el `save` correspondiente.
+        Actualiza el valor de `self.coeficiente_para_orden_de_carga` a partir de las prioridades
+        por sección y categoría, **sin** disparar el `save` correspondiente.
         """
         # evitar import circular
         from scheduling.models import mapa_prioridades_para_mesa_categoria
@@ -612,8 +613,8 @@ class MesaCategoria(models.Model):
     @classmethod
     def recalcular_coeficiente_para_orden_de_carga_para_categoria(cls, categoria):
         """
-        Recalcula el coeficiente_para_orden_de_carga de las MesaCategoria correspondientes a la categoría indicada
-        que estén pendientes de carga.
+        Recalcula el coeficiente_para_orden_de_carga de las MesaCategoria correspondientes
+        a la categoría indicada que estén pendientes de carga.
         Se usa como acción derivada del cambio de prioridades en la categoría.
         """
         mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \
@@ -623,8 +624,8 @@ class MesaCategoria(models.Model):
     @classmethod
     def recalcular_coeficiente_para_orden_de_carga_para_seccion(cls, seccion):
         """
-        Recalcula el coeficiente_para_orden_de_carga de las MesaCategoria correspondientes a la sección indicada
-        que estén pendientes de carga.
+        Recalcula el coeficiente_para_orden_de_carga de las MesaCategoria correspondientes
+        a la sección indicada que estén pendientes de carga.
         Se usa como acción derivada del cambio de prioridades en la categoría.
         """
         mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \

@@ -108,6 +108,7 @@ def test_identificadas_excluye_sin_orden(db):
     assert mc1 not in MesaCategoria.objects.identificadas()
     assert mc2 in MesaCategoria.objects.identificadas()
 
+
 def test_liberacion_vuelve_al_ruedo(db, settings):
     """
     Este test verifica que la acción del consolidador libera mesas que nunca recibieron resultados.
@@ -149,3 +150,31 @@ def test_liberacion_vuelve_al_ruedo(db, settings):
     assert MesaCategoria.objects.siguiente() == mc1
     mc1.refresh_from_db()
     assert mc1.cant_fiscales_asignados == cant_asignaciones - 1
+
+
+def test_siguiente_prioriza_categoria(db, settings):
+    f = FiscalFactory()
+    c = CategoriaFactory(prioridad=2)
+    c2 = CategoriaFactory(prioridad=1)
+    m1 = MesaFactory()
+    AttachmentFactory(mesa=m1)
+    mc1 = MesaCategoriaFactory(
+        status=MesaCategoria.STATUS.parcial_sin_consolidar,
+        categoria=c,
+        mesa=m1,
+    )
+    mc1.actualizar_coeficiente_para_orden_de_carga()
+    m2 = MesaFactory()
+    AttachmentFactory(mesa=m2)
+    mc2 = MesaCategoriaFactory(
+        categoria=c2,
+        status=MesaCategoria.STATUS.parcial_sin_consolidar,
+        mesa=m2,
+    )
+    mc2.actualizar_coeficiente_para_orden_de_carga()
+    # Se recibe la mc con categoria más prioritaria.
+    assert MesaCategoria.objects.siguiente() == mc2
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc2.asignar_a_fiscal()
+    # Luego la de la categoría menos prioritaria.
+    assert MesaCategoria.objects.siguiente() == mc1
