@@ -178,3 +178,43 @@ def test_siguiente_prioriza_categoria(db, settings):
         mc2.asignar_a_fiscal()
     # Luego la de la categoría menos prioritaria.
     assert MesaCategoria.objects.siguiente() == mc1
+
+
+def test_siguiente_prioriza_seccion(db, settings):
+    f = FiscalFactory()
+    c = CategoriaFactory()
+    # Si se pone 
+    #     m1 = MesaFactory(circuito__seccion__prioridad_hasta_2=10000)
+    # no funciona. 
+    # Intuyo que es porque en MesaFactory, el circuito se setea mediante un LazyAttribute, 
+    # y los seteos que van como argumentos de la Factory se estarían ejecutando antes de
+    # que se apliquen los LazyAttribute.
+    # Lo único que hice fue la prueba empírica de agregar "lugar_votacion__" antes, y ver que sí setea
+    # la prioridad de la sección. No llegué a entender la documentación de factory boy en la medida necesaria.
+
+    m1 = MesaFactory(lugar_votacion__circuito__seccion__prioridad_hasta_2=10000)
+    AttachmentFactory(mesa=m1)
+    mc1 = MesaCategoriaFactory(
+        status=MesaCategoria.STATUS.parcial_sin_consolidar,
+        categoria=c,
+        mesa=m1,
+    )
+    mc1.actualizar_coeficiente_para_orden_de_carga()
+    m2 = MesaFactory(lugar_votacion__circuito__seccion__prioridad_hasta_2=42)
+    AttachmentFactory(mesa=m2)
+    mc2 = MesaCategoriaFactory(
+        categoria=c,
+        status=MesaCategoria.STATUS.parcial_sin_consolidar,
+        mesa=m2,
+    )
+    mc2.actualizar_coeficiente_para_orden_de_carga()
+    assert mc1.percentil == 1
+    assert mc1.mesa.circuito.seccion.prioridad_hasta_2 == 10000
+    assert mc2.percentil == 1
+    assert mc2.mesa.circuito.seccion.prioridad_hasta_2 == 42
+    # Se recibe la mc de la sección más prioritaria.
+    assert MesaCategoria.objects.siguiente() == mc2
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc2.asignar_a_fiscal()
+    # Luego la de la sección con prioridad menos prioritaria.
+    assert MesaCategoria.objects.siguiente() == mc1
