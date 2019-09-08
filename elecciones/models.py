@@ -919,23 +919,23 @@ class Categoria(models.Model):
     tracker = FieldTracker(fields=['prioridad'])
 
     # Foto de ejemplo para mostrar a los validadores
-    foto_ejemplo = VersatileImageField(
-        upload_to='elecciones/categorias',
-        null=True,
-        blank=True,
-        width_field='width',
-        height_field='height'
-    )
-    height = models.PositiveIntegerField(
-        'Image Height',
-        blank=True,
-        null=True
-    )
-    width = models.PositiveIntegerField(
-        'Image Width',
-        blank=True,
-        null=True
-    )
+    # foto_ejemplo = VersatileImageField(
+    #     upload_to='elecciones/categorias',
+    #     null=True,
+    #     blank=True,
+    #     width_field='width',
+    #     height_field='height'
+    # )
+    # height = models.PositiveIntegerField(
+    #     'Image Height',
+    #     blank=True,
+    #     null=True
+    # )
+    # width = models.PositiveIntegerField(
+    #     'Image Width',
+    #     blank=True,
+    #     null=True
+    # )
 
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])
