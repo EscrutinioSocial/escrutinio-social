@@ -891,6 +891,25 @@ class CategoriaGeneral(models.Model):
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100, unique=True)
 
+    # Foto de ejemplo para mostrar a los validadores
+    foto_ejemplo = VersatileImageField(
+        upload_to='elecciones/categorias',
+        null=True,
+        blank=True,
+        width_field='width',
+        height_field='height'
+    )
+    height = models.PositiveIntegerField(
+        'Image Height',
+        blank=True,
+        null=True
+    )
+    width = models.PositiveIntegerField(
+        'Image Width',
+        blank=True,
+        null=True
+    )
+
     def __str__(self):
         return self.nombre
 
@@ -943,25 +962,6 @@ class Categoria(models.Model):
 
     # Tracker de cambios en el atributo prioridad, usado en la función que dispara en el post_save
     tracker = FieldTracker(fields=['prioridad'])
-
-    # Foto de ejemplo para mostrar a los validadores
-    # foto_ejemplo = VersatileImageField(
-    #     upload_to='elecciones/categorias',
-    #     null=True,
-    #     blank=True,
-    #     width_field='width',
-    #     height_field='height'
-    # )
-    # height = models.PositiveIntegerField(
-    #     'Image Height',
-    #     blank=True,
-    #     null=True
-    # )
-    # width = models.PositiveIntegerField(
-    #     'Image Width',
-    #     blank=True,
-    #     null=True
-    # )
 
     def get_absolute_url(self):
         return reverse('resultados-categoria', args=[self.id])

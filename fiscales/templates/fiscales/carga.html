@@ -161,15 +161,15 @@ $(document).ready(function(){
 {% endblock card-action %}
 
 {% block information %}
-  {% if categoria.foto_ejemplo %}
+  {% if categoria.categoria_general.foto_ejemplo %}
     <div class="card small info">
-        <img class="responsive-img" src="{{ categoria.foto_ejemplo.thumbnail.600x.url }}">
+        <img class="responsive-img" src="{{ categoria.categoria_general.foto_ejemplo.thumbnail.600x.url }}">
     </div>
     <div id="cambio-categoria" class="modal">
       <div class="modal-content">
         <h4>Atención: cambio de categoría</h4>
         <p>Vamos a continuar cargando <strong>{{ categoria }}</strong>.</p>
-        <img class="responsive-img" src="{{ categoria.foto_ejemplo.thumbnail.600x.url }}">
+        <img class="responsive-img" src="{{ categoria.categoria_general.foto_ejemplo.thumbnail.600x.url }}">
       </div>
       <div class="modal-footer">
         <a href="#!" class="modal-close waves-effect waves-green btn-flat">Aceptar</a>
