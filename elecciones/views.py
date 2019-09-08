@@ -170,7 +170,7 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
         context['show_plot'] = settings.SHOW_PLOT
 
         # Agregamos al contexto el modo de elección; para cada partido decidimos
-        # que porcentaje vamos a visualizar (porcentaje_positivos o
+        # qué porcentaje vamos a visualizar (porcentaje_positivos o
         # porcentaje_validos) dependiendo del tipo de elección.
         context['modo_eleccion'] = settings.MODO_ELECCION
         # Para no hardcodear las opciones en el html las agregamos al contexto.

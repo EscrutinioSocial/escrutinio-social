@@ -1,29 +1,17 @@
-from decimal import Decimal
-from django.core.management.base import BaseCommand
 from django.conf import settings
-from pathlib import Path
 from csv import DictReader
 from elecciones.models import Seccion, Circuito, Distrito
-import datetime
 
 from .basic_command import BaseCommand
-
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/circuitos.csv'
-
-
-def to_float(val):
-    try:
-        return float(val.replace(',', '.'))
-    except:
-        return None
 
 
 class Command(BaseCommand):
     help = "Importar hasta circuitos"
 
     def handle(self, *args, **options):
-        self.verbosity = int(options['verbosity'])
-        reader = DictReader(CSV.open())
+        super().handle(*args, **options)
+
+        reader = DictReader(self.CSV.open())
 
         for c, row in enumerate(reader, 1):
             distrito_nro = row['distrito_nro']

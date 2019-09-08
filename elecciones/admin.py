@@ -259,7 +259,6 @@ class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'carga',
         'id',
         'opcion',
-        'opcion_orden',
         'votos',
     ]
     list_display_links = list_display
@@ -270,24 +269,23 @@ class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'carga__mesa_categoria__mesa__lugar_votacion__nombre'
     ]
 
-    def opcion_orden(self, obj):
-        return obj.opcion.orden
 
 
 class OpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
-    list_display = ['id', 'nombre_corto', 'partido', 'nombre', 'orden']
+    list_display = ['id', 'nombre_corto', 'partido', 'nombre']
 
 
 class CategoriaAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
-    list_display = ['nombre', 'activa', 'color', 'back_color']
+    list_display = ['categoria_general', 'nombre', 'activa', 'distrito', 'seccion']
     search_fields = ['nombre']
     list_filter = ['activa']
+    ordering = ['categoria_general__nombre', 'nombre']
     form = CategoriaForm
 
 
 class CategoriaOpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     search_fields = ['categoria__nombre', 'opcion__nombre']
-    ordering = ['categoria__nombre', 'opcion__orden']
+    ordering = ['categoria__nombre', 'orden']
 
 
 class TecnicaProyeccionAdmin(admin.ModelAdmin):
@@ -296,7 +294,6 @@ class TecnicaProyeccionAdmin(admin.ModelAdmin):
 
 
 class AgrupacionCircuitoInline(admin.TabularInline):
-    # TODO quitar este modelo intermedio inutil y relacionar directamente con  circuito
     model = AgrupacionCircuito
     raw_id_fields = ['circuito']
     extra = 1
@@ -317,7 +314,7 @@ class VotoMesaReportadoInline(admin.TabularInline):
     can_delete = False
     fields = ['opcion', 'votos']
     readonly_fields = ['opcion']
-    ordering = ['opcion__orden']
+    ordering = ['opcion__id']
 
 
 class CargaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):

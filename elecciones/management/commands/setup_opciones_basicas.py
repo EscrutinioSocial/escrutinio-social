@@ -17,9 +17,7 @@ class Command(BaseCommand):
         for constant, (nombre_default, orden) in Command.defaults.items():
             criterio_dict = getattr(settings, f'OPCION_{constant}')
 
-            # estrictamente, el nombre no deberia importar para el filtro
-            # si viene nombre en el criterio lo usamos como default
-            # ver !111
+            # Si viene nombre en el criterio lo usamos como default
             nombre = criterio_dict['nombre'] if 'nombre' in criterio_dict else nombre_default
 
             opcion, creada = Opcion.objects.get_or_create(

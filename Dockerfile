@@ -13,12 +13,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 #RUN mkdir /src
 WORKDIR /src
-#ADD requirements.txt /src/
-#ADD requirements /src/requirements
-ADD . /src/
+ADD requirements.txt /src/
+ADD requirements /src/requirements
 RUN pip install -r requirements.txt
+ADD . /src/
 
-# dejamos un archivo version.txt con el timestamp de cuando fue generada esa version
+# Dejamos un archivo version.txt con el timestamp de cuándo fue generada esa versión
 RUN mkdir /version
 RUN date +"%Y%m%d%H%M" > /version/version.txt
 

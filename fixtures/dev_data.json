@@ -810,7 +810,6 @@
   "model": "elecciones.partido",
   "pk": 1,
   "fields": {
-    "orden": 1,
     "numero": null,
     "codigo": "p1",
     "nombre": "Partido 1",
@@ -823,7 +822,6 @@
   "model": "elecciones.partido",
   "pk": 2,
   "fields": {
-    "orden": 2,
     "numero": null,
     "codigo": "p2",
     "nombre": "Partido 2",
@@ -836,7 +834,6 @@
   "model": "elecciones.partido",
   "pk": 3,
   "fields": {
-    "orden": 3,
     "numero": null,
     "codigo": "p3",
     "nombre": "Partido 3",
@@ -854,7 +851,6 @@
     "nombre_corto": "blanco",
     "codigo": "10000",
     "partido": null,
-    "orden": 10,
     "codigo_dne": null
   }
 },
@@ -867,7 +863,6 @@
     "nombre_corto": "opc1",
     "codigo": "001",
     "partido": 1,
-    "orden": 2,
     "codigo_dne": null
   }
 },
@@ -880,7 +875,6 @@
     "nombre_corto": "opc2",
     "codigo": "002",
     "partido": 2,
-    "orden": 3,
     "codigo_dne": null
   }
 },
@@ -893,7 +887,6 @@
     "nombre_corto": "opc3",
     "codigo": "003",
     "partido": 3,
-    "orden": 4,
     "codigo_dne": null
   }
 },
@@ -906,7 +899,6 @@
     "nombre_corto": "nulos",
     "codigo": "10001",
     "partido": null,
-    "orden": 11,
     "codigo_dne": null
   }
 },
@@ -919,7 +911,6 @@
     "nombre_corto": "total_votos",
     "codigo": "10010",
     "partido": null,
-    "orden": 12,
     "codigo_dne": null
   }
 },
@@ -932,7 +923,6 @@
     "nombre_corto": "sobres",
     "codigo": null,
     "partido": null,
-    "orden": 13,
     "codigo_dne": null
   }
 },
@@ -945,10 +935,29 @@
   }
 },
 {
+  "model": "elecciones.categoriageneral",
+  "pk": 1,
+  "fields": {
+    "eleccion": null,
+    "slug": "presidente-vice",
+    "nombre": "Presidente y vice"
+  }
+},
+{
+  "model": "elecciones.categoriageneral",
+  "pk": 2,
+  "fields": {
+    "eleccion": 1,
+    "slug": "intendente",
+    "nombre": "Intendente"
+  }
+},
+{
   "model": "elecciones.categoria",
   "pk": 1,
   "fields": {
     "eleccion": null,
+    "categoria_general": 1,
     "slug": "presidente-vice",
     "nombre": "Presidente y vice",
     "color": "black",
@@ -964,6 +973,7 @@
   "pk": 2,
   "fields": {
     "eleccion": 1,
+    "categoria_general": 2,
     "slug": "int-circuito-2",
     "nombre": "Int circuito 2",
     "color": "black",

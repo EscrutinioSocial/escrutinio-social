@@ -295,8 +295,8 @@ def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client, a
 
 def test_formset_en_carga_total_muestra_todos(db, fiscal_client, admin_user):
     c = CategoriaFactory(id=100, opciones=[])
-    o = CategoriaOpcionFactory(categoria=c, opcion__orden=3, prioritaria=True).opcion
-    o2 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=False).opcion
+    o = CategoriaOpcionFactory(categoria=c, orden=3, prioritaria=True).opcion
+    o2 = CategoriaOpcionFactory(categoria=c, orden=1, prioritaria=False).opcion
     mc = MesaCategoriaFactory(categoria=c)
     mc.asignar_a_fiscal()
     admin_user.fiscal.asignar_mesa_categoria(mc)  # Para que no lo mande a otra por falta de permisos.
@@ -312,12 +312,12 @@ def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, admi
     settings.MIN_COINCIDENCIAS_CARGAS = 1
 
     c = CategoriaFactory(id=25000, opciones=[])
-    # Notar que el orden no coincide con el id
 
-    o1 = CategoriaOpcionFactory(categoria=c, opcion__orden=3, prioritaria=True).opcion
-    o2 = CategoriaOpcionFactory(categoria=c, opcion__orden=1, prioritaria=False).opcion
-    o3 = CategoriaOpcionFactory(categoria=c, opcion__orden=2, prioritaria=False).opcion
-    o4 = CategoriaOpcionFactory(categoria=c, opcion__orden=4, prioritaria=True).opcion
+    # Notar que el orden no coincide con el id
+    o1 = CategoriaOpcionFactory(categoria=c, orden=3, prioritaria=True).opcion
+    o2 = CategoriaOpcionFactory(categoria=c, orden=1, prioritaria=False).opcion
+    o3 = CategoriaOpcionFactory(categoria=c, orden=2, prioritaria=False).opcion
+    o4 = CategoriaOpcionFactory(categoria=c, orden=4, prioritaria=True).opcion
 
     mc = MesaCategoriaFactory(categoria=c)
     mc.asignar_a_fiscal()
@@ -359,15 +359,18 @@ def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, admi
 
 def test_formset_reusa_metadata(db, fiscal_client, admin_user):
     # hay una categoria con una opcion metadata ya consolidada
-    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata, orden=1)
+    o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
     cat1 = CategoriaFactory(opciones=[o1])
+    cat1op1 = CategoriaOpcionFactory(categoria=cat1, opcion=o1, orden=1)
     mc = MesaCategoriaFactory(categoria=cat1, status=MesaCategoria.STATUS.total_consolidada_dc)
     carga = CargaFactory(mesa_categoria=mc, tipo='total')
     VotoMesaReportadoFactory(carga=carga, opcion=o1, votos=10)
 
     # otra categoria incluye la misma metadata.
-    o2 = OpcionFactory(orden=2)
+    o2 = OpcionFactory()
     cat2 = CategoriaFactory(opciones=[o1, o2])
+    cat2op1 = CategoriaOpcionFactory(categoria=cat2, opcion=o1, orden=1)
+    cat2op1 = CategoriaOpcionFactory(categoria=cat2, opcion=o2, orden=2)
     mc2 = MesaCategoriaFactory(categoria=cat2, mesa=mc.mesa)
 
     mc2.asignar_a_fiscal()
@@ -456,8 +459,8 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     mesa_categoria_1 = MesaCategoriaFactory(mesa=mesa, categoria=categoria_1, orden_de_carga=1)
     mesa_categoria_2 = MesaCategoriaFactory(mesa=mesa, categoria=categoria_2, orden_de_carga=2)
 
-    opcion_1 = OpcionFactory(orden=1)
-    opcion_2 = OpcionFactory(orden=2)
+    opcion_1 = OpcionFactory()
+    opcion_2 = OpcionFactory()
 
     CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_1, prioritaria=True)
     CategoriaOpcionFactory(categoria=categoria_1, opcion=opcion_2, prioritaria=True)

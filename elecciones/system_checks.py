@@ -207,3 +207,51 @@ def mesas_electores(app_configs, **kwargs):
                 )
             )
     return errors
+
+
+@register(Tags.models, deploy=True)
+def categorias_ok(app_configs, **kwargs):
+    """
+    Chequea que la información geográfica de las categorías concida con las mesas que tienen asociadas.
+    """
+    errors = []
+
+    # Categorías asociadas a distrito.
+    for categoria in Categoria.objects.filter(activa=True, distrito__isnull=False):
+        mesas = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion__distrito=categoria.distrito
+        ).exclude(
+            circuito__seccion__distrito=categoria.distrito
+        )
+
+        if mesas.exists():
+            errors.append(
+                Error(
+                    f'La categoria {categoria} está asociada al distrito {categoria.distrito} '
+                    f'pero tiene mesas en otros distritos ({mesas}).',
+                    hint='Chequear o bien las mesas o bien el distrito de la categoria.',
+                    obj=categoria,
+                    id='elecciones.E051',
+                )
+            )
+
+    # Categorías asociadas a sección.
+    for categoria in Categoria.objects.filter(activa=True, seccion__isnull=False):
+        mesas = Mesa.objects.filter(
+            lugar_votacion__circuito__seccion=categoria.seccion
+        ).exclude(
+            circuito__seccion=categoria.seccion
+        )
+
+        if mesas.exists():
+            errors.append(
+                Error(
+                    f'La categoria {categoria} está asociada a la sección {categoria.seccion} '
+                    f'pero tiene mesas en otras secciones ({mesas}).',
+                    hint='Chequear o bien las mesas o bien la sección de la categoria.',
+                    obj=categoria,
+                    id='elecciones.E051',
+                )
+            )
+
+    return errors
