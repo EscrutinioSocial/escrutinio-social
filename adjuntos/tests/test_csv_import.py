@@ -169,7 +169,7 @@ def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
         PATH_ARCHIVOS_TEST + 'falta_total_votos.csv', usr_unidad_basica).procesar()
     assert cant_mesas_ok == 0
     assert cant_mesas_parcialmente_ok == 0
-    assert f"Faltan las opciones: ['{Opcion.total_votos().nombre}']." in errores
+    assert f"Faltan las opciones: ['{Opcion.total_votos().nombre}'] en la mesa" in errores
     assert Carga.objects.count() == 0
 
 
@@ -229,7 +229,7 @@ def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
         PATH_ARCHIVOS_TEST + 'falta_jpc_carga_parcial.csv', usr_unidad_basica).procesar()
     assert cant_mesas_ok == 0
     assert cant_mesas_parcialmente_ok == 1
-    assert "Faltan las opciones: ['JpC']." in errores
+    assert "Faltan las opciones: ['JpC'] en la mesa" in errores
     assert Carga.objects.count() == 0
 
 
@@ -239,7 +239,7 @@ def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
     assert cant_mesas_ok == 0
     assert cant_mesas_parcialmente_ok == 1
     assert "Los resultados para la carga total para la categoría Intendente, Concejales y Consejeros Escolares deben estar completos. " \
-           "Faltan las opciones: ['JpC']." in errores
+           "Faltan las opciones: ['JpC'] en la mesa" in errores
     assert Carga.objects.count() == len(CATEGORIAS) - 1
 
 
@@ -258,7 +258,7 @@ def test_acumula_errores(db, usr_unidad_basica, carga_inicial):
     assert cant_mesas_ok == 0
     assert cant_mesas_parcialmente_ok == 0
     assert 'Los resultados deben ser números enteros positivos.' in errores
-    assert "Faltan las opciones: ['JpC']." in errores
+    assert "Faltan las opciones: ['JpC'] en la mesa" in errores
     assert Carga.objects.count() == 0
 
 
