@@ -58,13 +58,15 @@
 <div class="card">
   <div class="card-content">
     <div class="card-title">
+      {% if resultados_carga %}
       Resultados de la carga
+      {% endif %}
     </div>
     <div class="scroll">
       <ul class="collection" style="box-shadow: none!important; border:0;">
-        {% for level, message in messages_lateral %}
+        {% for level, message in resultados_carga %}
             <li class="collection-item" style="box-shadow: none!important; border-bottom:1pt gray solid;">
-              {{ message }}
+              {{ message |safe }}
               <span class="badge">
                   {% if level == DEFAULT_MESSAGE_LEVELS.WARNING %}
                     <i class="btn-small material-icons red-text text-lighten-3" >error</i>

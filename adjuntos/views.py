@@ -235,12 +235,13 @@ class AgregarAdjuntos(FormView):
     """
     Permite subir una o más imágenes, generando instancias de ``Attachment``
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
-    via `messages` framework.
+    vía `messages` framework o en el lateral de la pantalla de carga.
     """
 
     def __init__(self, types=('image/jpeg', 'image/png'), **kwargs):
         super().__init__(**kwargs)
         self.types = types
+        self.resultados_carga = []
 
     form_class = AgregarAttachmentsForm
 
@@ -251,6 +252,7 @@ class AgregarAdjuntos(FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['url_to_post'] = reverse(self.url_to_post)
+        context['resultados_carga'] = self.resultados_carga
         return context
 
     def post(self, request, *args, **kwargs):
@@ -259,16 +261,25 @@ class AgregarAdjuntos(FormView):
         files = request.FILES.getlist('file_field')
         pre_identificacion = kwargs.get('pre_identificacion', None)
         if form.is_valid():
-            contador_fotos = 0
+            contador_archivos = 0
             for file in files:
                 instance = self.procesar_adjunto(file, request.user.fiscal, pre_identificacion)
                 if instance is not None:
-                    contador_fotos = contador_fotos + 1
-            if contador_fotos:
-                self.mostrar_mensaje_archivos_cargados(contador_fotos)
-            return redirect(reverse(self.url_to_post))
+                    contador_archivos = contador_archivos + 1
+            if contador_archivos:
+                self.mostrar_mensaje_archivos_cargados(contador_archivos)
+            if self.resultados_carga:
+                # Hay que volver a mostrar la misma pantalla.
+                context = self.get_context_data()
+                return self.render_to_response(context)
+            else:
+                return redirect(reverse(self.url_to_post))
+
 
         return self.form_invalid(form)
+
+    def agregar_resultado_carga(self, nivel, mensaje):
+        self.resultados_carga.append((nivel, mensaje))
 
     def procesar_adjunto(self, adjunto, subido_por, pre_identificacion=None):
         if adjunto.content_type not in self.types:
@@ -421,7 +432,6 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
 
     def __init__(self):
         super().__init__(types=CSV_MIMETYPES)
-        self.messages_lateral = []
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
@@ -429,47 +439,26 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             return super().dispatch(request, *args, **kwargs)
         return HttpResponseForbidden()
 
-    def post(self, request, *args, **kwargs):
-        form_class = self.get_form_class()
-        form = self.get_form(form_class)
-        files = request.FILES.getlist('file_field')
-        if form.is_valid():
-            for file in files:
-                instance = self.procesar_adjunto(file, request.user.fiscal, None)
-
-            context = self.get_context_data()
-            return self.render_to_response(context)
-
-        return self.form_invalid(form)
-
-    def agregar_mensaje(self, nivel, mensaje):
-        self.messages_lateral.append((nivel, mensaje))
-
     def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion):
         messages.add_message(self.request, messages.INFO, f"Procesando {adjunto.name}, aguarde por favor...")
         try:
             cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(adjunto, self.request.user).procesar()
-            self.agregar_mensaje(
+            self.agregar_resultado_carga(
                 messages.SUCCESS if cant_mesas_ok > 0 else messages.INFO,
-               f"{adjunto.name} ingresó {cant_mesas_ok} mesas sin problemas, ")
-            self.agregar_mensaje(
+               f"➡️ <b>{adjunto.name}</b> ingresó <b>{cant_mesas_ok}</b> mesas sin problemas,")
+            self.agregar_resultado_carga(
                 messages.SUCCESS if cant_mesas_parcialmente_ok > 0 else messages.INFO,
-                f"{cant_mesas_parcialmente_ok} ingresaron alguna categoría ")
+                f"&nbsp;<b>{cant_mesas_parcialmente_ok}</b> ingresaron alguna categoría")
             if errores:
-                self.agregar_mensaje(
+                self.agregar_resultado_carga(
                     messages.INFO,
-                    "y produjo los siguientes errores: ")
+                    "&nbsp;y produjo <b>los siguientes errores</b>:")
                 for error in errores.split('\n'):
-                    self.agregar_mensaje(messages.WARNING, error)
+                    self.agregar_resultado_carga(messages.WARNING, f"&nbsp;&nbsp;{error}")
         except Exception as e:
-            self.agregar_mensaje(messages.WARNING, 
+            self.agregar_resultado_carga(messages.WARNING, 
                 f'{adjunto.name} no importado debido al siguiente error: {str(e)}')
         return None
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['messages_lateral'] = self.messages_lateral
-        return context
 
     def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
         messages.warning(self.request, f'{nombre_archivo} ignorado. No es un archivo CSV.')
