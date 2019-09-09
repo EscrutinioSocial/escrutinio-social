@@ -356,7 +356,7 @@ def test_web_upload(fiscal_client, carga_inicial):
     }
 
     response = fiscal_client.post(reverse('agregar-adjuntos-csv'), data)
-    assert response.status_code == HTTPStatus.FOUND
+    assert response.status_code == HTTPStatus.OK
 
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
