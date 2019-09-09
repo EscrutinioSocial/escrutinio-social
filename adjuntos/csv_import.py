@@ -17,6 +17,8 @@ logger = logging.getLogger('csv_import')
 # Primer dato: nombre de la columna, segundo: si es parte de una categoría o no,
 # tercero, si es obligatorio o puede no estar (dado que en distintas provincias se votan distintas
 # categorías).
+COL_CANT_ELECTORES = 'cantidad de electores del padron'
+COL_CANT_SOBRES = 'cantidad de sobres en la urna'
 COLUMNAS_DEFAULT = [
     # Identificación de la mesa.
     ('seccion', False, True), ('distrito', False, True),
@@ -33,8 +35,8 @@ COLUMNAS_DEFAULT = [
     ('legisladores provinciales', True, False),  # Para el caso de legislatura unicameral.
     ('intendente, concejales y consejeros escolares', True, False),
     # Metadata.
-    ('cantidad de electores del padron', False, True),
-    ('cantidad de sobres en la urna', False, True),
+    (COL_CANT_ELECTORES, False, True),
+    (COL_CANT_SOBRES, False, True),
 ]
 
 
@@ -96,6 +98,7 @@ class CSVImporter:
         self.logger.debug("Importando archivo '%s'.", archivo)
         self.cant_errores = 0
         self.cant_mesas_importadas = 0
+        self.cant_mesas_parcialmente_importadas = 0
         self.errores = []
 
     def leer_fragmento_de_in_memory_uploaded_file(self, archivo):
@@ -111,6 +114,8 @@ class CSVImporter:
         if type(archivo) == InMemoryUploadedFile:
             # Es un archivo in memory.
             line = self.leer_fragmento_de_in_memory_uploaded_file(archivo)
+            # Lo reseteamos.
+            archivo.seek(0)
         else:
             # Es un archivo normal.
             f = open(archivo, "r")
@@ -139,7 +144,7 @@ class CSVImporter:
 
         self.validar_mesas()
         self.cargar_info()
-        return self.cant_mesas_importadas, '\n'.join(self.errores)
+        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(self.errores)
 
     def anadir_error(self, error):
         self.cant_errores += 1
@@ -226,9 +231,7 @@ class CSVImporter:
             pass
         return valor
 
-    @transaction.atomic
     def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
-        cant_errores_al_empezar = self.cant_errores
         self.logger.debug("- Procesando mesa '%s'.", mesa)
         try:
             # Obtengo la mesa correspondiente.
@@ -238,53 +241,59 @@ class CSVImporter:
             # No acumulamos el error porque ya se hizo en la validación.
             return
 
-        self.cantidad_electores_mesa = None
-        self.cantidad_sobres_mesa = None
-
-        # Vamos a acumular las cargas.
-        cargas = []
-
-        # Analizo por categoria-mesa, y por cada categoria-mesa, todos los partidos posibles
+        mesa_ok = True
+        alguna_cat_ok = False
         for mesa_categoria in mesa_bd.mesacategoria_set.all():
-            cargas.append((mesa_categoria.categoria,
-                           self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria,
-                                                      columnas_categorias)))
+            try:
+                self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias)
+                alguna_cat_ok = True
+            except ErroresAcumulados:
+                # Es sólo para evitar el commit.
+                mesa_ok = False
 
-        # Esto lo puedo hacer recién acá porque tengo que iterar por todas las "categorías" primero
-        # para encontrar la de la metadata.
-        for categoria, (carga_parcial, carga_total) in cargas:
-            if carga_parcial:
-                carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
+        if mesa_ok:
+            self.cant_mesas_importadas += 1
+        elif alguna_cat_ok:
+            self.cant_mesas_parcialmente_importadas += 1
 
-            # A todas las cargas le tengo que agregar el total de electores y de sobres.
-            self.agregar_electores_y_sobres(mesa, carga_parcial)
-            self.agregar_electores_y_sobres(mesa, carga_total)
+    @transaction.atomic
+    def cargar_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
+        cant_errores_al_empezar = self.cant_errores
 
-            self.logger.debug("----+ El settings.OPCIONES_CARGAS_TOTALES_COMPLETAS es %s",
-                              str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
-            if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
-                self.logger.debug("----+ Validando carga total.")
-                # Si el flag de cargas totales está activo y hay carga total, entonces verificamos que estén
-                # todas las opciones para todas las categorías.
-                opciones = CategoriaOpcion.objects.filter(
-                    categoria=categoria).values_list('opcion__id', flat=True)
-                self.validar_carga_total(carga_total, categoria, opciones)
+        carga_parcial, carga_total = self.carga_basica_mesa_categoria(mesa,
+                filas_de_la_mesa, mesa_categoria, columnas_categorias)
 
-            if carga_parcial:
-                self.logger.debug("----+ Validando carga parcial.")
-                # Si se cargaron las cargas parciales, entonces verificamos que estén todas las opciones
-                # de las categorias prioritarias
-                opciones = CategoriaOpcion.objects.filter(categoria=categoria, prioritaria=True).values_list(
-                    'opcion__id', flat=True)
-                self.validar_carga_parcial(carga_parcial, categoria, opciones)
+        if carga_parcial:
+            carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
 
-            self.borrar_carga_anterior(carga_parcial)
-            self.borrar_carga_anterior(carga_total)
+        # A todas las cargas le tengo que agregar el total de electores y de sobres.
+        self.agregar_electores_y_sobres(mesa, carga_parcial)
+        self.agregar_electores_y_sobres(mesa, carga_total)
+
+        # self.logger.debug("----+ El settings.OPCIONES_CARGAS_TOTALES_COMPLETAS es %s",
+        #                   str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
+        if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
+            self.logger.debug("----+ Validando carga total.")
+            # Si el flag de cargas totales está activo y hay carga total, entonces verificamos que estén
+            # todas las opciones de la categoría en la carga total.
+            opciones = CategoriaOpcion.objects.filter(
+                categoria=mesa_categoria.categoria).values_list('opcion__id', flat=True)
+            self.validar_carga_total(carga_total, mesa_categoria.categoria, opciones)
+
+        if carga_parcial:
+            self.logger.debug("----+ Validando carga parcial.")
+            # Si se cargaron las cargas parciales, entonces verificamos que estén las opciones
+            # prioritarias en la carga parcial.
+            opciones = CategoriaOpcion.objects.filter(categoria=mesa_categoria.categoria,
+                prioritaria=True).values_list('opcion__id', flat=True)
+            self.validar_carga_parcial(carga_parcial, mesa_categoria.categoria, opciones)
+
+        self.borrar_carga_anterior(carga_parcial)
+        self.borrar_carga_anterior(carga_total)
 
         if self.cant_errores > cant_errores_al_empezar:
-            # Evito el commit.
+            # Para que no se haga el commit.
             raise ErroresAcumulados()
-        self.cant_mesas_importadas += 1
 
     def borrar_carga_anterior(self, carga):
         """
@@ -309,9 +318,10 @@ class CSVImporter:
         self.logger.debug("----+ Borrando carga previa (%d) de tipo %s.", carga_previa.id, carga_previa.tipo)
         carga_previa.delete()
 
-    def cargar_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
+    def carga_basica_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
         """
-        Realiza la carga correspondiente a una mesa y una categoría.
+        Realiza la carga correspondiente a una mesa y una categoría (sólo leer el archivo y generar
+        los votos, no los análisis de completitud, etc).
         Devuelve la carga parcial y la total generadas.
         """
         categoria_bd = mesa_categoria.categoria
@@ -320,6 +330,9 @@ class CSVImporter:
 
         self.carga_total = None
         self.carga_parcial = None
+        self.cantidad_electores_mesa = None
+        self.cantidad_sobres_mesa = None
+
         seccion, circuito, mesa, distrito = mesa
 
         # Buscamos el nombre de la columna asociada a esta categoría
@@ -343,8 +356,8 @@ class CSVImporter:
             # número de lista que está en cero cuando se trata de metadata.
             if codigo_lista_en_csv == '0':
                 # Nos quedamos con la metadata.
-                self.cantidad_electores_mesa = fila['cantidad de electores del padron']
-                self.cantidad_sobres_mesa = fila['cantidad de sobres en la urna']
+                self.cantidad_electores_mesa = fila[COL_CANT_ELECTORES]
+                self.cantidad_sobres_mesa = fila[COL_CANT_SOBRES]
 
             else:
                 self.cargar_mesa_categoria_y_lista(
@@ -454,9 +467,6 @@ class CSVImporter:
         for mesa, filas_de_la_mesa in grupos_mesas:
             try:
                 self.cargar_mesa(mesa, filas_de_la_mesa, columnas_categorias)
-            except ErroresAcumulados:
-                # Es sólo para evitar el commit.
-                pass
             except IntegrityError as e:
                 if 'votomesareportado_votos_check' in str(e):
                     self.anadir_error(
@@ -506,21 +516,21 @@ class CSVImporter:
             raise PermisosInvalidosError('Su usuario no tiene los permisos necesarios para realizar '
                                          'esta acción.')
 
-    def validar_carga(self, carga, categoria, opciones_de_carga, es_parcial):
+    def validar_carga(self, carga, categoria, opciones_de_la_categoria, es_parcial):
         """
-        Valida que la carga tenga todas las opciones disponibles para votar en esa mesa. Si corresponde a una carga
-        parcial se valida que estén las opciones correspondientes a las categorías prioritarias.
-        Si es una carga total, se verifica que estén todas las opciones para esa mesa.
+        Valida que la carga tenga todas las opciones disponibles para votar en esa mesa.
+        Si corresponde a una carga parcial se valida que estén las opciones correspondientes
+        a las categorías prioritarias.
+        Si es una carga total, se verifica que estén todas las opciones para esa mesa-cat.
 
         :param parcial: Booleano, sirve para describir si se quiere validar una carga parcial
         (correspondiente a los partidos prioritarios).
-        :param categoria: Objeto categoria que queremos verificar que esté completo.
+        :param categoria: Objeto de tipo Categoria que queremos verificar que esté completo.
         """
         opciones_votadas = carga.listado_de_opciones()
-        opciones_de_la_categoria = opciones_de_carga
         opciones_faltantes = set(opciones_de_la_categoria) - set(opciones_votadas)
 
-        if opciones_faltantes != set():
+        if len(opciones_faltantes) > 0:
             nombres_opciones_faltantes = list(Opcion.objects.filter(
                 id__in=opciones_faltantes).values_list('nombre', flat=True))
             tipo_carga = "parcial" if es_parcial else "total"
