@@ -258,13 +258,13 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
                 Excepción {e} al procesar la identificación {attachment.id if attachment else None}.
                 """
             )
-            logger.error('Identificacion',
+            logger.error('Identificación',
                 attachment=attachment.id if attachment else None,
                 error=str(e)
             )
 
-    # Todas procesadas
-    procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
+    # Todas procesadas (hay que seleccionar desde Identificacion porque 'a_procesar' ya fue sliceado).
+    procesadas = Identificacion.objects.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
 
 
@@ -314,8 +314,8 @@ def consumir_novedades_carga(cant_por_iteracion=None):
                 error=str(e)
             )
 
-    # Todas procesadas
-    procesadas = a_procesar.filter(id__in=ids_a_procesar).update(procesada=True)
+    # Todas procesadas (hay que seleccionar desde Carga porque 'a_procesar' ya fue sliceado).
+    procesadas = Carga.objects.filter(id__in=ids_a_procesar).update(procesada=True)
     return procesadas
 
 
