@@ -3,6 +3,30 @@
 
 {% block page_title %}Subir actas{% endblock %}
 
+{% block extrahead %}
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style type="text/css">
+
+  .left-panel {
+      flex-basis: 60%;
+      margin-left: 0.375rem;
+  }
+
+  .right-panel {
+      flex-basis: 40%;
+      margin-left: 0.375rem;
+  }
+
+  .scroll {
+      height: 335px;
+      overflow-x: auto;
+      overflow-x: hidden;
+  }
+
+</style>
+
+{% endblock %}
+
 {% block left-panel %}
 <div class="card">
 
@@ -28,3 +52,31 @@
     </div>
 </div>
 {% endblock %}
+
+
+{% block right-panel %}
+<div class="card">
+  <div class="card-content">
+    <div class="card-title">
+      Resultados de la carga
+    </div>
+    <div class="scroll">
+      <ul class="collection" style="box-shadow: none!important; border:0;">
+        {% for level, message in messages_lateral %}
+            <li class="collection-item" style="box-shadow: none!important; border-bottom:1pt gray solid;">
+              {{ message }}
+              <span class="badge">
+                  {% if level == DEFAULT_MESSAGE_LEVELS.WARNING %}
+                    <i class="btn-small material-icons red-text text-lighten-3" >error</i>
+                  {% endif %}
+                  {% if level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
+                    <i class="btn-small material-icons green-text text-lighten-1">done</i>
+                  {% endif %}
+              </span>
+            </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock right-panel %}

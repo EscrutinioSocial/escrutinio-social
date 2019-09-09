@@ -421,6 +421,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
 
     def __init__(self):
         super().__init__(types=CSV_MIMETYPES)
+        self.messages_lateral = []
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
@@ -428,20 +429,47 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             return super().dispatch(request, *args, **kwargs)
         return HttpResponseForbidden()
 
+    def post(self, request, *args, **kwargs):
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        files = request.FILES.getlist('file_field')
+        if form.is_valid():
+            for file in files:
+                instance = self.procesar_adjunto(file, request.user.fiscal, None)
+
+            context = self.get_context_data()
+            return self.render_to_response(context)
+
+        return self.form_invalid(form)
+
+    def agregar_mensaje(self, nivel, mensaje):
+        self.messages_lateral.append((nivel, mensaje))
+
     def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion):
+        messages.add_message(self.request, messages.INFO, f"Procesando {adjunto.name}, aguarde por favor...")
         try:
             cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(adjunto, self.request.user).procesar()
-            if cant_mesas_ok > 0 or cant_mesas_parcialmente_ok>0:
-                messages.info(self.request, 
-                    f"{adjunto.name} ingresó {cant_mesas_ok} mesas sin problemas, "
-                    "{cant_mesas_parcialmente_ok} ingresaron alguna categoría y produjo "
-                    "los siguientes errores:\n{errores}"
-                )
-            else:
-                messages.error(self.request, f'{adjunto.name} produjo los siguientes errores:\n{errores}')
+            self.agregar_mensaje(
+                messages.SUCCESS if cant_mesas_ok > 0 else messages.INFO,
+               f"{adjunto.name} ingresó {cant_mesas_ok} mesas sin problemas, ")
+            self.agregar_mensaje(
+                messages.SUCCESS if cant_mesas_parcialmente_ok > 0 else messages.INFO,
+                f"{cant_mesas_parcialmente_ok} ingresaron alguna categoría ")
+            if errores:
+                self.agregar_mensaje(
+                    messages.INFO,
+                    "y produjo los siguientes errores: ")
+                for error in errores.split('\n'):
+                    self.agregar_mensaje(messages.WARNING, error)
         except Exception as e:
-            messages.error(self.request, f'{adjunto.name} no importado debido al siguiente error: {str(e)}')
+            self.agregar_mensaje(messages.WARNING, 
+                f'{adjunto.name} no importado debido al siguiente error: {str(e)}')
         return None
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['messages_lateral'] = self.messages_lateral
+        return context
 
     def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
         messages.warning(self.request, f'{nombre_archivo} ignorado. No es un archivo CSV.')
