@@ -3,6 +3,7 @@ from constance.test import override_config
 
 from antitrolling.models import (
     EventoScoringTroll, CambioEstadoTroll,
+    aplicar_marca_troll,
     aumentar_scoring_troll_identificacion, aumentar_scoring_troll_carga
 )
 from elecciones.models import MesaCategoria
@@ -20,7 +21,7 @@ from .utils_para_test import (
 def test_aplicar_marca_troll(db):
     fiscal = nuevo_fiscal()
     assert not fiscal.troll 
-    fiscal.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal)
     assert fiscal.troll
 
 

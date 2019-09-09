@@ -6,7 +6,7 @@ from adjuntos.consolidacion import (
     consolidar_identificaciones, consolidar_cargas,
     consumir_novedades_carga, consumir_novedades_identificacion
 )
-from antitrolling.models import EventoScoringTroll
+from antitrolling.models import EventoScoringTroll, aplicar_marca_troll
 from elecciones.tests.factories import (
     MesaFactory, AttachmentFactory,
     CategoriaFactory, CategoriaOpcionFactory)
@@ -560,7 +560,7 @@ def test_troll_parcial_dc_a_sin_consolidar(db, settings):
         assert mesa_categoria_1.status == MesaCategoria.STATUS.parcial_consolidada_dc
         assert Carga.objects.filter(invalidada=True).count() == 0
 
-        fiscal_2.aplicar_marca_troll()
+        aplicar_marca_troll(fiscal_2)
         consumir_novedades_carga()
         refrescar_data([mesa_categoria_1, fiscal_2])
 
@@ -599,7 +599,7 @@ def test_troll_total_sin_consolidar_a_parcial_sin_consolidar(db, settings):
     assert mesa_categoria_1.status == MesaCategoria.STATUS.total_sin_consolidar
     assert Carga.objects.filter(invalidada=True).count() == 0
 
-    fiscal_2.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal_2)
     consumir_novedades_carga()
     refrescar_data([mesa_categoria_1, fiscal_2])
 
@@ -634,7 +634,7 @@ def test_troll_total_consolidada_dc_a_parcial_sin_consolidar(db, settings):
     assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
     assert Carga.objects.filter(invalidada=True).count() == 0
 
-    fiscal_2.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal_2)
     consumir_novedades_carga()
     refrescar_data([mesa_categoria_1, fiscal_2])
 
@@ -672,7 +672,7 @@ def test_troll_total_consolidada_dc_a_parcial_sin_consolidar(db, settings):
     assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
     assert Carga.objects.filter(invalidada=True).count() == 0
 
-    fiscal_2.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal_2)
     consumir_novedades_identificacion()
     consumir_novedades_carga()
     refrescar_data([mesa_categoria_1, fiscal_2])
@@ -714,7 +714,7 @@ def test_troll_total_consolidada_dc_a_total_sin_consolidar(db, settings):
     assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
     assert Carga.objects.filter(invalidada=True).count() == 0
 
-    fiscal_3.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal_3)
     consumir_novedades_identificacion()
     consumir_novedades_carga()
     refrescar_data([mesa_categoria_1, fiscal_3])
