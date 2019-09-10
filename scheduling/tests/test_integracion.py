@@ -165,7 +165,7 @@ def test_orden_de_carga_cantidad_mesas_prioritarias(db, settings):
 
 def test_orden_de_carga_overflow_numerico(db, settings):
     """
-    Se verifica que ante prioridades altas, el orden_de_carga que entrega la aplicación
+    Se verifica que ante prioridades altas, el coeficiente_para_orden_de_carga que entrega la aplicación
     no supera el límite de un entero en la base de datos.
     """
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1

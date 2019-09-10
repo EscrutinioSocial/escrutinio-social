@@ -6,9 +6,6 @@ from elecciones.models import Seccion, Circuito, Distrito
 
 from .basic_command import BaseCommand
 
-CSV = Path(settings.BASE_DIR) / 'elecciones/data/2019/paso-nacional/prioridad_scheduling.csv'
-
-
 class Command(BaseCommand):
     help = "Setea prioridades de scheduling"
 

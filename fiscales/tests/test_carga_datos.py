@@ -51,7 +51,7 @@ def test_siguiente_accion_balancea(fiscal_client, cant_attachments, cant_mcs, co
     mesas = MesaFactory.create_batch(cant_mcs)
     for i in range(cant_mcs):
         attachment_identificado = AttachmentFactory(mesa=mesas[i], status='identificada')
-        MesaCategoriaFactory(mesa=mesas[i], orden_de_carga=1)
+        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1)
 
     # Como la URL de identificación pasa un id no predictible
     # y no nos importa acá saber exactamente a que instancia se relaciona la acción
@@ -215,7 +215,7 @@ def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client,
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa)
     c1 = CategoriaFactory(requiere_cargas_parciales=True)
-    m1c1 = MesaCategoriaFactory(categoria=c1, orden_de_carga=0.1, status=status, mesa=mesa)
+    m1c1 = MesaCategoriaFactory(categoria=c1, coeficiente_para_orden_de_carga=0.1, status=status, mesa=mesa)
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
@@ -225,7 +225,7 @@ def test_siguiente_happy_path_parcial_y_total(db, fiscal_client, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa, status='identificada')
-    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, orden_de_carga=1,
+    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, coeficiente_para_orden_de_carga=1,
         mesa=mesa
     )
     response = fiscal_client.get(reverse('siguiente-accion'))
@@ -257,10 +257,10 @@ def test_siguiente_manda_a_parcial_si_es_requerido(db, fiscal_client, settings):
     a1 = AttachmentFactory(mesa=m1, status='identificada')
     m2 = MesaFactory()
     a2 = AttachmentFactory(mesa=m2, status='identificada')
-    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=False, orden_de_carga=1,
+    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=False, coeficiente_para_orden_de_carga=1,
         mesa=m1
     )
-    mc2 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, orden_de_carga=2,
+    mc2 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, coeficiente_para_orden_de_carga=2,
         mesa=m2
     )
 
@@ -456,8 +456,8 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
 
     mesa = MesaFactory(categorias=[categoria_1, categoria_2])
 
-    mesa_categoria_1 = MesaCategoriaFactory(mesa=mesa, categoria=categoria_1, orden_de_carga=1)
-    mesa_categoria_2 = MesaCategoriaFactory(mesa=mesa, categoria=categoria_2, orden_de_carga=2)
+    mesa_categoria_1 = MesaCategoriaFactory(mesa=mesa, categoria=categoria_1, coeficiente_para_orden_de_carga=1)
+    mesa_categoria_2 = MesaCategoriaFactory(mesa=mesa, categoria=categoria_2, coeficiente_para_orden_de_carga=2)
 
     opcion_1 = OpcionFactory()
     opcion_2 = OpcionFactory()
@@ -478,7 +478,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     assert MesaCategoria.objects.count() == 2
 
     for mc in MesaCategoria.objects.all():
-        mc.actualizar_orden_de_carga()
+        mc.actualizar_coeficiente_para_orden_de_carga()
 
     nombre_categoria = "Un nombre en particular" # Sin tilde que si no falla el 'in' más abajo.
     categoria_1.nombre = nombre_categoria
@@ -493,7 +493,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     # Nos aseguramos que haya cargado el template específico para UB. No es una redirección.
     assert response.status_code == HTTPStatus.OK
     assert url_carga in str(response.content)
-    # categoria1 debería aparecer primero porque su mesa categoria tiene un orden_de_carga más grande
+    # categoria1 debería aparecer primero porque su mesa categoria tiene un coeficiente_para_orden_de_carga más grande
     assert nombre_categoria in str(response.content)
 
     tupla_opciones_electores = [(opcion_1.id, mesa.electores // 2, mesa.electores // 2), (opcion_2.id, mesa.electores // 2, mesa.electores // 2)]
@@ -541,7 +541,7 @@ def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
 def test_carga_sin_permiso(fiscal_client, admin_user, mocker):
     fiscal = admin_user.fiscal
     capture = mocker.patch('fiscales.views.capture_message')
-    mc = MesaCategoriaFactory(orden_de_carga=1)
+    mc = MesaCategoriaFactory(coeficiente_para_orden_de_carga=1)
     response = fiscal_client.get(reverse('carga-total', args=[mc.id]))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('siguiente-accion')  # Manda a asignar una nueva.
