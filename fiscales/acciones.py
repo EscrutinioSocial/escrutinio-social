@@ -5,6 +5,7 @@ from constance import config
 from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
 from fiscales.models import Tarea
+from scheduling.models import ColaCargaPendientes
 
 @transaction.atomic
 def siguiente_accion(request):
@@ -38,10 +39,9 @@ def elegir_siguiente_accion_en_el_momento(request):
     - En otro caso, no hay nada para hacer
     """
     attachments = Attachment.objects.sin_identificar(request.user.fiscal, for_update=True)
-    con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True)
-
+    
     cant_fotos = attachments.count()
-    cant_cargas = con_carga_pendiente.count()
+    cant_cargas = ColaCargaPendientes.objects.count()
 
     # Mandamos al usuario a identificar mesas si hay fotos y no hay cargas pendientes
     # o si la cantidad de mesas a identificar supera a la cantidad de cargas pendientes
@@ -52,7 +52,10 @@ def elegir_siguiente_accion_en_el_momento(request):
         if foto:
             return IdentificacionDeFoto(request, foto)
     elif cant_cargas:
-        mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
+        with transaction.atomic():
+            item = ColaCargaPendientes.objects.select_for_update(skip_locked=True).order_by('orden').first()
+            mesacategoria = item.mesaCategoria
+            item.delete()
         if mesacategoria:
             return CargaCategoriaEnActa(request, mesacategoria)
     return NoHayAccion(request)

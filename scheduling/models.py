@@ -1,8 +1,26 @@
 from django.db import models
 from django.conf import settings
-from elecciones.models import (Seccion, Categoria)
+from elecciones.models import (Seccion, Categoria, MesaCategoria)
 
+class ColaCargaPendientes(models.Model):
+    """
+    Modelo que mantiene los trabajos de carga de votos pendientes a hacer.
+    """
+    mesaCategoria = models.ForeignKey(MesaCategoria, on_delete=models.CASCADE)
+    # este campo lo calcula el encolador.
+    orden = models.PositiveIntegerField(db_index=True)
+    ## tiene sentido?
+    carga_parcial = models.BooleanField(default=False)
+    numero_carga = models.PositiveIntegerField(default=1)
+    ## esto lo usamos para afinidad
+    # categoria = models.CharField(max_length=100,db_index=True)
+    ## Si queremos evitar que el mismo fiscal que identificó el acta cargue votos. 
+    #fiscal = models.ForeignKey('Fiscal', on_delete=models.NULL)
 
+    class Meta:
+        unique_together = ('mesaCategoria', 'numero_carga')
+    
+    
 class PrioridadScheduling(models.Model):
     """
     Representa una prioridad distinta de la standard para 

@@ -493,7 +493,9 @@ CONSTANCE_CONFIG = {
     'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas.', int),
     'SCORING_TROLL_PROBLEMA_DESCARTADO': (200, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
     'MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS': (2, 'Este multiplicador se utiliza al computar "cant_asignaciones_realizadas_redondeadas" en el schedulling de attachments y mesa-categorías.', int),
-        'TAMANO_COLA_TAREAS': (100, 'Tamaño de la cola de tareas preasignadas.', int),
+    'TAMANO_COLA_TAREAS': (100, 'Tamaño de la cola de tareas preasignadas.', int),
+    'PAUSA_SCHEDULER' : (60, 'Frecuencia de ejecución del scheduler (en segundos)', int),
+    'LARGO_COLA_USUARIOS_ACTIVOS' : (1.5, 'Factor de multiplicación para agregar tareas.', float),
 }
 
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
