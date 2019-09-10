@@ -453,7 +453,7 @@ ME_OPCION_GEN = 'GENERALES'
 
 # Seteamos el modo de elección; la manera en que visualización de porcentajes de
 # votos de la elección. Las opciones posibles son: ME_OPCION_PASO y ME_OPCION_GEN
-MODO_ELECCION = ME_OPCION_PASO
+MODO_ELECCION = ME_OPCION_GEN
 
 MC_STATUS_CHOICE = Choices(
     # Cargas parcial divergentes sin consolidar
