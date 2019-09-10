@@ -134,13 +134,14 @@ class CSVImporter:
 
     def procesar(self):
         """
-        Devuelve la cantidad de mesas importadas como primer comoponente del par
-        y como segundo todos aquellos errores que se pueden reportar en batch.
+        Devuelve la cantidad de mesas importadas como primer comoponente del par,
+        la cantidad de mesas de las que se importó al menos una categoría como segundo,
+        y como tercero todos aquellos errores que se pueden reportar en batch.
         """
         self.validar()
         if self.cant_errores > 0:
             # Si hay errores en la validación no seguimos.
-            return 0, '\n'.join(self.errores)
+            return 0, 0, '\n'.join(self.errores)
 
         self.validar_mesas()
         self.cargar_info()
