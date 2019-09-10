@@ -444,7 +444,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(adjunto, self.request.user).procesar()
             self.agregar_resultado_carga(
                 messages.SUCCESS if cant_mesas_ok > 0 else messages.INFO,
-               f"➡️ <b>{adjunto.name}</b> ingresó <b>{cant_mesas_ok}</b> mesas sin problemas,")
+               f"➡️ El archivo <b>{adjunto.name}</b> ingresó <b>{cant_mesas_ok}</b> mesas sin problemas,")
             self.agregar_resultado_carga(
                 messages.SUCCESS if cant_mesas_parcialmente_ok > 0 else messages.INFO,
                 f"&nbsp;<b>{cant_mesas_parcialmente_ok}</b> ingresaron alguna categoría")
