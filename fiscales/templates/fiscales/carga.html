@@ -118,7 +118,7 @@ $(document).ready(function(){
 {% endblock %}
 
 
-{% block page_title %}Cargar Acta {% endblock %}
+{% block page_title %}Cargar acta{% endblock %}
 
 
 {% block card-content %}
@@ -161,21 +161,24 @@ $(document).ready(function(){
 {% endblock card-action %}
 
 {% block information %}
-  {% if categoria.categoria_general.foto_ejemplo %}
     <div class="card small info">
+      Carga de <strong>{{ categoria }}</strong>
+      {% if categoria.categoria_general.foto_ejemplo %}
         <img class="responsive-img" src="{{ categoria.categoria_general.foto_ejemplo.thumbnail.600x.url }}">
+      {% endif %}
     </div>
     <div id="cambio-categoria" class="modal">
       <div class="modal-content">
         <h4>Atención: cambio de categoría</h4>
         <p>Vamos a continuar cargando <strong>{{ categoria }}</strong>.</p>
+        {% if categoria.categoria_general.foto_ejemplo %}
         <img class="responsive-img" src="{{ categoria.categoria_general.foto_ejemplo.thumbnail.600x.url }}">
+        {% endif %}
       </div>
       <div class="modal-footer">
         <a href="#!" class="modal-close waves-effect waves-green btn-flat">Aceptar</a>
       </div>
     </div>
-  {% endif %}
 {% endblock information %}
 
 {% block right-panel %}
