@@ -12,7 +12,7 @@
   <div class="modal-content video">
     <span class="close-modal-content">&times;</span>
      <iframe width="854" height="480" src="{{ url_video_instructivo }}">
-     </iframe> 
+     </iframe>
   </div>
 </div>
 {% endblock %}
@@ -150,6 +150,9 @@
           </div>
       </form>
   </div>
+  {% block information %}
+  {% endblock information %}
+
   {% if recibir_problema %}
   {% include "problemas/problema.html" %}
   {% endif %}
@@ -186,7 +189,7 @@
                 corremos el seteo del height después de la inicialización de Darkroom.
                 antes a veces no se seteaba el height del contenedor porque Darkroom no había terminado de cargar
                 el evento ready se tiraba, pero luego Darkroom asincrónicamente cambia el HTML, entonces había una condición de carrera
-                el seteo ahora se hace en initialize, que es un callback que nos da Darkroom 
+                el seteo ahora se hace en initialize, que es un callback que nos da Darkroom
                 */
               initialize: function() {
                 calcularYSetearAlturaContenedorDarkroom();
@@ -212,7 +215,7 @@
       $('.modal').modal();
       fields.map(e => (e[2]) ? initializeSimpleSelect(e[0],e[2], ocultoSeccionCircuito) : null);
       fields.map(e => $('#'+e[0]+'_input').on("keyup",delay(e[1], 300)));
-      
+
       $('#distrito_input').attr('tabindex', 1);
       $('#id_seccion').attr('tabindex', 2);
       $('#id_circuito').attr('tabindex', 3);
@@ -264,7 +267,7 @@
     modal_video_instructivo.style.display = "block";
   }
 
-  // When the user clicks the button, open the modal 
+  // When the user clicks the button, open the modal
   btn_video_instructivo.onclick = function(event) {
     event.preventDefault()
     modal_video_instructivo.style.display = "block";

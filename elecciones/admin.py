@@ -26,6 +26,7 @@ from .models import (
     ConfiguracionComputo,
     ConfiguracionComputoDistrito,
     CargaOficialControl,
+    CategoriaGeneral,
 )
 from .forms import CategoriaForm, SeccionForm
 from django.http import HttpResponseRedirect
@@ -295,6 +296,10 @@ class CategoriaOpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     ordering = ['categoria__nombre', 'orden']
 
 
+class CategoriaGeneralAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
+    list_display = ['nombre']
+
+
 class TecnicaProyeccionAdmin(admin.ModelAdmin):
     search_fields = ['nombre']
     ordering = ['nombre']
@@ -372,6 +377,7 @@ admin.site.register(Opcion, OpcionAdmin)
 admin.site.register(Categoria, CategoriaAdmin)
 admin.site.register(CategoriaGeneral, CategoriaGeneralAdmin)
 admin.site.register(CategoriaOpcion, CategoriaOpcionAdmin)
+admin.site.register(CategoriaGeneral, CategoriaGeneralAdmin)
 admin.site.register(TecnicaProyeccion, TecnicaProyeccionAdmin)
 admin.site.register(AgrupacionCircuitos, AgrupacionCircuitosAdmin)
 admin.site.register(ConfiguracionComputo, ConfiguracionComputoAdmin)

@@ -17,6 +17,7 @@ from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
 from constance import config
 import structlog
+from versatileimagefield.fields import VersatileImageField
 
 logger = structlog.get_logger(__name__)
 
@@ -76,7 +77,6 @@ class Distrito(models.Model):
     numero = models.CharField(null=True, max_length=10, db_index=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
-    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
     objects = DistritoManager()
 
@@ -141,11 +141,7 @@ class Seccion(models.Model):
     numero = models.CharField(null=True, max_length=10, db_index=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
-    # esta es la prioridad del "viejo" modelo de scheduling, está deprecada a la espera del refactor
-    # que permita borrarla
-    prioridad = models.PositiveIntegerField(
-        default=0, null=True, blank=True, validators=[MaxValueValidator(1000)])
-    # estos son los nuevos atributos que intervienen en el modelo actual de scheduling
+    # Estos son los atributos que intervienen en el modelo actual de scheduling.
     prioridad_hasta_2 = models.PositiveIntegerField(
         default=None, null=True, blank=True, validators=[MaxValueValidator(1000000), MinValueValidator(1)]
     )
@@ -193,7 +189,7 @@ class Seccion(models.Model):
             return f"{self.distrito.nombre_completo()} - {self.nombre}"
 
     def natural_key(self):
-        return self.distrito.natural_key() + (self.numero, ) 
+        return self.distrito.natural_key() + (self.numero, )
     natural_key.dependencies = ['elecciones.distrito']
 
 class Circuito(models.Model):
@@ -208,7 +204,6 @@ class Circuito(models.Model):
     numero = models.CharField(max_length=10, db_index=True)
     nombre = models.CharField(max_length=100)
     electores = models.PositiveIntegerField(default=0)
-    prioridad = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(9)])
 
     class Meta:
         verbose_name = 'Circuito electoral'
@@ -333,7 +328,7 @@ class LugarVotacion(models.Model):
 class MesaCategoriaQuerySet(models.QuerySet):
     campos_de_orden = [
         'cant_fiscales_asignados_redondeados',  # Primero las que tienen menos gente trabajando en ellas.
-        'prioridad_status', 'orden_de_carga',
+        'prioridad_status', 'coeficiente_para_orden_de_carga',
         'cant_asignaciones_realizadas_redondeadas',  # En caso de empate no damos siempre la de menor id.
         'id',
     ]
@@ -345,7 +340,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         # Si bien parece redundante chequear orden de carga y attachment preferimos
         # estar seguros de que no se cuele una mesa sin foto.
-        return self.filter(orden_de_carga__isnull=False).exclude(mesa__attachments=None)
+        return self.filter(coeficiente_para_orden_de_carga__isnull=False).exclude(mesa__attachments=None)
 
     def sin_problemas(self):
         """
@@ -400,7 +395,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def redondear_cant_fiscales_asignados_y_de_asignaciones(self):
         """
-        Redondea la cantidad de fiscales asignados y de asignaciones a múltiplos de 
+        Redondea la cantidad de fiscales asignados y de asignaciones a múltiplos de
         ``settings.MIN_COINCIDENCIAS_CARGAS`` para que al asignar mesas
         no se pospongan indefinidamente mesas que fueron entregadas ya a algún
         fiscal.
@@ -409,7 +404,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
             cant_fiscales_asignados_redondeados=F(
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_CARGAS,
             cant_asignaciones_realizadas_redondeadas=F(
-                'cant_asignaciones_realizadas') / 
+                'cant_asignaciones_realizadas') /
                 (config.MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS * settings.MIN_COINCIDENCIAS_CARGAS),
         )
 
@@ -474,16 +469,16 @@ class MesaCategoria(models.Model):
 
     # Entero que se define como el procentaje (redondeado) de mesas del circuito
     # ya identificadas al momento de identificar la mesa.
-    # Incide en el cálculo del orden_de_carga.
+    # Incide en el cálculo del coeficiente_para_orden_de_carga.
     percentil = models.PositiveIntegerField(null=True, blank=True)
 
     # En qué orden se identificó esta MesaCategoría dentro de las del circuito.
-    # Incide en el cálculo del orden_de_carga.
+    # Incide en el cálculo del coeficiente_para_orden_de_carga.
     # aumenta en forma correlativa, salvo colisiones que no perjudican al uso en una medida relevante.
     orden_de_llegada = models.PositiveIntegerField(null=True, blank=True)
 
     # Orden relativo de carga, usado en la prioritización.
-    orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
+    coeficiente_para_orden_de_carga = models.PositiveIntegerField(null=True, blank=True)
 
     # Registra a cuántos fiscales se les entregó la mesa para que trabajen en ella.
     cant_fiscales_asignados = models.PositiveIntegerField(
@@ -515,9 +510,10 @@ class MesaCategoria(models.Model):
         self.save(update_fields=['cant_fiscales_asignados'])
         logger.info('mc desasignada', id=self.id)
 
-    def actualizar_orden_de_carga(self):
+    def actualizar_coeficiente_para_orden_de_carga(self):
         """
-        Actualiza `self.orden_de_carga` a partir de las prioridades por seccion y categoria
+        Actualiza `self.coeficiente_para_orden_de_carga` a partir de las prioridades
+        por sección y categoría.
         """
         # evitar import circular
         from scheduling.models import mapa_prioridades_para_mesa_categoria
@@ -530,27 +526,27 @@ class MesaCategoria(models.Model):
 
         self.orden_de_llegada = identificadas + 1
         self.percentil = math.floor((identificadas * 100) / total) + 1
-        self.recalcular_orden_de_carga()
+        self.recalcular_coeficiente_para_orden_de_carga()
         logger.info(
             'actualizar orden',
             id=self.id,
-            coef=self.orden_de_carga,
+            coef=self.coeficiente_para_orden_de_carga,
             llegada=self.orden_de_llegada,
             p=self.percentil
         )
-        self.save(update_fields=['orden_de_carga', 'orden_de_llegada', 'percentil'])
+        self.save(update_fields=['coeficiente_para_orden_de_carga', 'orden_de_llegada', 'percentil'])
 
-    def recalcular_orden_de_carga(self):
+    def recalcular_coeficiente_para_orden_de_carga(self):
         """
-        Actualiza el valor de `self.orden_de_carga` a partir de las prioridades por sección y categoría,
-        **sin** disparar el `save` correspondiente.
+        Actualiza el valor de `self.coeficiente_para_orden_de_carga` a partir de las prioridades
+        por sección y categoría, **sin** disparar el `save` correspondiente.
         """
         # evitar import circular
         from scheduling.models import mapa_prioridades_para_mesa_categoria
 
         prioridades = mapa_prioridades_para_mesa_categoria(self)
         valor_para = prioridades.valor_para(self.percentil - 1, self.orden_de_llegada)
-        self.orden_de_carga = min(valor_para * self.percentil, MAX_INT_DB)
+        self.coeficiente_para_orden_de_carga = min(valor_para * self.percentil, MAX_INT_DB)
 
     def invalidar_cargas(self):
         """
@@ -616,32 +612,32 @@ class MesaCategoria(models.Model):
         self.save(update_fields=['parcial_oficial'])
 
     @classmethod
-    def recalcular_orden_de_carga_para_categoria(cls, categoria):
+    def recalcular_coeficiente_para_orden_de_carga_para_categoria(cls, categoria):
         """
-        Recalcula el orden_de_carga de las MesaCategoria correspondientes a la categoría indicada
-        que estén pendientes de carga.
+        Recalcula el coeficiente_para_orden_de_carga de las MesaCategoria correspondientes
+        a la categoría indicada que estén pendientes de carga.
         Se usa como acción derivada del cambio de prioridades en la categoría.
         """
         mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \
             .sin_consolidar_por_doble_carga().filter(categoria=categoria)
-        cls.recalcular_orden_de_carga_mesas(mesa_cats_a_actualizar)
+        cls.recalcular_coeficiente_para_orden_de_carga_mesas(mesa_cats_a_actualizar)
 
     @classmethod
-    def recalcular_orden_de_carga_para_seccion(cls, seccion):
+    def recalcular_coeficiente_para_orden_de_carga_para_seccion(cls, seccion):
         """
-        Recalcula el orden_de_carga de las MesaCategoria correspondientes a la sección indicada
-        que estén pendientes de carga.
+        Recalcula el coeficiente_para_orden_de_carga de las MesaCategoria correspondientes
+        a la sección indicada que estén pendientes de carga.
         Se usa como acción derivada del cambio de prioridades en la categoría.
         """
         mesa_cats_a_actualizar = cls.objects.identificadas().sin_problemas() \
             .sin_consolidar_por_doble_carga().filter(mesa__circuito__seccion=seccion)
-        cls.recalcular_orden_de_carga_mesas(mesa_cats_a_actualizar)
+        cls.recalcular_coeficiente_para_orden_de_carga_mesas(mesa_cats_a_actualizar)
 
     @classmethod
-    def recalcular_orden_de_carga_mesas(cls, mesa_cats):
+    def recalcular_coeficiente_para_orden_de_carga_mesas(cls, mesa_cats):
         for mesa_cat in mesa_cats:
-            mesa_cat.recalcular_orden_de_carga()
-        cls.objects.bulk_update(mesa_cats, ['orden_de_carga'])
+            mesa_cat.recalcular_coeficiente_para_orden_de_carga()
+        cls.objects.bulk_update(mesa_cats, ['coeficiente_para_orden_de_carga'])
 
 
 class Mesa(models.Model):
@@ -672,7 +668,6 @@ class Mesa(models.Model):
     )
     url = models.URLField(blank=True, help_text='url al telegrama')
     electores = models.PositiveIntegerField(null=True, blank=True)
-    prioridad = models.PositiveIntegerField(default=0)
     extranjeros = models.BooleanField(default=False)
 
     class Meta:
@@ -725,10 +720,10 @@ class Mesa(models.Model):
         """
         logger.info('invalidar asignacion attachment', mesa=self.id)
         for mc in MesaCategoria.objects.filter(mesa=self):
-            mc.orden_de_carga = None
+            mc.coeficiente_para_orden_de_carga = None
             mc.percentil = None
             mc.orden_de_llegada = None
-            mc.save(update_fields=['orden_de_carga', 'percentil', 'orden_de_llegada'])
+            mc.save(update_fields=['coeficiente_para_orden_de_carga', 'percentil', 'orden_de_llegada'])
             mc.invalidar_cargas()
 
     def metadata(self):
@@ -889,6 +884,25 @@ class CategoriaGeneral(models.Model):
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
     slug = models.SlugField(max_length=100, unique=True)
     nombre = models.CharField(max_length=100, unique=True)
+
+    # Foto de ejemplo para mostrar a los validadores
+    foto_ejemplo = VersatileImageField(
+        upload_to='elecciones/categorias',
+        null=True,
+        blank=True,
+        width_field='width',
+        height_field='height'
+    )
+    height = models.PositiveIntegerField(
+        'Image Height',
+        blank=True,
+        null=True
+    )
+    width = models.PositiveIntegerField(
+        'Image Width',
+        blank=True,
+        null=True
+    )
 
     def __str__(self):
         return self.nombre
@@ -1296,7 +1310,7 @@ def actualizar_prioridades_categoria(sender, instance, created, **kwargs):
 
     if created or instance.tracker.has_changed('prioridad'):
         registrar_prioridad_categoria(instance)
-        MesaCategoria.recalcular_orden_de_carga_para_categoria(instance)
+        MesaCategoria.recalcular_coeficiente_para_orden_de_carga_para_categoria(instance)
 
 
 @receiver(post_save, sender=Seccion)
@@ -1308,7 +1322,7 @@ def actualizar_prioridades_seccion(sender, instance, created, **kwargs):
             or instance.tracker.has_changed('prioridad_2_a_10')  \
     or instance.tracker.has_changed('prioridad_10_a_100'):
         registrar_prioridades_seccion(instance)
-        MesaCategoria.recalcular_orden_de_carga_para_seccion(instance)
+        MesaCategoria.recalcular_coeficiente_para_orden_de_carga_para_seccion(instance)
 
 
 @receiver(pre_save, sender=Distrito)

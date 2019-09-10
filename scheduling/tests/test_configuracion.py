@@ -77,7 +77,7 @@ def test_configuracion_seccion_set_hasta_cantidad_no_prioridad(db, settings):
 
 def test_cambio_prioridades_general(db, settings):
     """
-    Se verifica el efecto de cambiar prioridades de una categoría o sección, en los orden_de_carga de las MesaCategoria.
+    Se verifica el efecto de cambiar prioridades de una categoría o sección, en los coeficiente_para_orden_de_carga de las MesaCategoria.
     Se desarrolla una "historia" que combina identificaciones, cargas y cambios de prioridad.
     Se verifica que cada cambio de prioridades afecta exactamente a las MesaCategoria que corresponde.
     El autor pide disculpas por anticipado por la longitud de este test.
@@ -248,7 +248,7 @@ def test_cambio_prioridades_general(db, settings):
 def test_cambio_prioridades_volver_parcialmente_a_default(db, settings):
     """
     Verifico que si para una sección, se vuelven algunos valores de prioridad al valor por defecto,
-    entonces los orden_de_carga de las mesas se modifiquen de acuerdo a lo esperado.
+    entonces los coeficiente_para_orden_de_carga de las mesas se modifiquen de acuerdo a lo esperado.
     """
     asignar_prioridades_standard(settings)
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
@@ -308,7 +308,7 @@ def test_cambio_prioridades_asigno_cantidad_minima_mesas_maxima_prioridad(db, se
     """
     Verifico que si para una sección, se cambia únicamente la cantidad mínima de mesas 
     que deben considerarse para la máxima prioridad, 
-    los orden_de_carga se actualizan en forma correcta
+    los coeficiente_para_orden_de_carga se actualizan en forma correcta
     """
     asignar_prioridades_standard(settings)
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
