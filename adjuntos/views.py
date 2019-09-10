@@ -268,8 +268,9 @@ class AgregarAdjuntos(FormView):
                     contador_archivos = contador_archivos + 1
             if contador_archivos > 0:
                 self.mostrar_mensaje_archivos_cargados(contador_archivos)
-            if self.resultados_carga:
-                # Hay que volver a mostrar la misma pantalla.
+            if len(self.resultados_carga) > 0:
+                # Hay que volver a mostrar la misma pantalla para que se muestren
+                # los resultados de carga.
                 return self.render_to_response(self.get_context_data())
             else:
                 return redirect(reverse(self.url_to_post))
