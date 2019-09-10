@@ -9,8 +9,8 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from escrutinio_social import settings
 from fiscales.models import Fiscal
 import structlog
-
-
+from threading import Thread
+import time
 import logging
 logger = logging.getLogger('csv_import')
 
@@ -71,6 +71,7 @@ class CSVImporter:
     Recibe por parámetro el file o path al file y el usuario que sube el archivo.
     """
     def __init__(self, archivo, usuario):
+        self.debug = False
         self.logger = logger
         self.archivo = archivo
         converters = {
@@ -95,11 +96,12 @@ class CSVImporter:
         self.mesas_matches = {}
         self.carga_total = None
         self.carga_parcial = None
-        self.logger.debug("Importando archivo '%s'.", archivo)
+        self.log_debug(f"Importando archivo '{archivo}'.")
         self.cant_errores = 0
         self.cant_mesas_importadas = 0
         self.cant_mesas_parcialmente_importadas = 0
         self.errores = []
+        self.procesamiento_terminado = False
 
     def leer_fragmento_de_in_memory_uploaded_file(self, archivo):
         for chunk in archivo.chunks():
@@ -129,29 +131,58 @@ class CSVImporter:
                 max = cant
                 separador = candidato
 
-        self.logger.debug("Usando %s como separador.", separador)
+        self.log_debug(f"Usando {separador} como separador.")
         return separador
 
-    def procesar(self):
+    def resultados(self):
         """
-        Devuelve la cantidad de mesas importadas como primer comoponente del par,
+        Devuelve la cantidad de mesas importadas como primer componente de la tupla,
         la cantidad de mesas de las que se importó al menos una categoría como segundo,
         y como tercero todos aquellos errores que se pueden reportar en batch.
         """
+        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(self.errores)
+
+    def procesar(self):
+
         self.validar()
         if self.cant_errores > 0:
             # Si hay errores en la validación no seguimos.
-            return 0, 0, '\n'.join(self.errores)
+            return self.resultados()
 
         self.validar_mesas()
         self.cargar_info()
-        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(self.errores)
+        self.procesamiento_terminado = True
+        return self.resultados()
+
+    def yield_errores(self):
+        """
+        Entrega los errores gradualmente.
+        """
+        cant_errores_entregados = 0
+        while not self.procesamiento_terminado:
+            # Espero a que se produzca un nuevo error o que se termine.
+            while not self.procesamiento_terminado and cant_errores_entregados == self.cant_errores:
+                time.sleep(5)
+            yield self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, self.errores[cant_errores_entregados]
+            cant_errores_entregados += 1
+        yield self.resultados()
+
+    def procesar_parcialmente(self):
+        t = Thread(target=self.procesar)
+        t.daemon = False
+        t.start()
+        return self.yield_errores()
 
     def anadir_error(self, error):
         self.cant_errores += 1
         texto_error = f'{self.cant_errores} - {error}'
         self.errores.append(texto_error)
-        self.logger.error(texto_error)
+        #self.logger.error(texto_error)
+
+    def log_debug(self, mensaje):
+        if not self.debug:
+            return
+        self.logger.debug(mensaje)
 
     def validar(self):
         """
@@ -233,7 +264,7 @@ class CSVImporter:
         return valor
 
     def cargar_mesa(self, mesa, filas_de_la_mesa, columnas_categorias):
-        self.logger.debug("- Procesando mesa '%s'.", mesa)
+        self.log_debug(f"- Procesando mesa '{mesa}'.")
         try:
             # Obtengo la mesa correspondiente.
             mesa_bd = self.mesas_matches[mesa[2]]
@@ -271,10 +302,8 @@ class CSVImporter:
         self.agregar_electores_y_sobres(mesa, carga_parcial)
         self.agregar_electores_y_sobres(mesa, carga_total)
 
-        # self.logger.debug("----+ El settings.OPCIONES_CARGAS_TOTALES_COMPLETAS es %s",
-        #                   str(settings.OPCIONES_CARGAS_TOTALES_COMPLETAS))
         if settings.OPCIONES_CARGAS_TOTALES_COMPLETAS and carga_total:
-            self.logger.debug("----+ Validando carga total.")
+            self.log_debug("----+ Validando carga total.")
             # Si el flag de cargas totales está activo y hay carga total, entonces verificamos que estén
             # todas las opciones de la categoría en la carga total.
             opciones = CategoriaOpcion.objects.filter(
@@ -282,7 +311,7 @@ class CSVImporter:
             self.validar_carga_total(mesa, carga_total, mesa_categoria.categoria, opciones)
 
         if carga_parcial:
-            self.logger.debug("----+ Validando carga parcial.")
+            self.log_debug("----+ Validando carga parcial.")
             # Si se cargaron las cargas parciales, entonces verificamos que estén las opciones
             # prioritarias en la carga parcial.
             opciones = CategoriaOpcion.objects.filter(categoria=mesa_categoria.categoria,
@@ -316,7 +345,7 @@ class CSVImporter:
             # No hay carga previa.
             return
 
-        self.logger.debug("----+ Borrando carga previa (%d) de tipo %s.", carga_previa.id, carga_previa.tipo)
+        self.log_debug(f"----+ Borrando carga previa ({carga_previa.id}) de tipo {carga_previa.tipo}.")
         carga_previa.delete()
 
     def carga_basica_mesa_categoria(self, mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias):
@@ -327,7 +356,7 @@ class CSVImporter:
         """
         categoria_bd = mesa_categoria.categoria
         categoria_general = categoria_bd.categoria_general
-        self.logger.debug("-- Procesando categoría '%s' (corresponde con '%s').", categoria_bd, categoria_general)
+        self.log_debug(f"-- Procesando categoría '{categoria_bd}' (corresponde con '{categoria_general}').")
 
         self.carga_total = None
         self.carga_parcial = None
@@ -445,8 +474,7 @@ class CSVImporter:
                                          votos=cantidad_votos,
                                          opcion=opcion_sobres
                                          )
-        self.logger.debug("---- Agregando %d votos a %s en carga %s.", cantidad_votos, opcion_sobres,
-                          carga.tipo)
+        self.log_debug(f"---- Agregando {cantidad_votos} votos a {opcion_sobres} en carga {carga.tipo}.")
 
     def dato_ausente(self, dato):
         """
@@ -492,7 +520,7 @@ class CSVImporter:
                     mesa_categoria=mesa_categoria,
                     fiscal=self.fiscal
                 )
-                self.logger.debug("--- Creando carga parcial.")
+                self.log_debug("--- Creando carga parcial.")
             carga = self.carga_parcial
         else:
             if not self.carga_total:
@@ -502,10 +530,10 @@ class CSVImporter:
                     mesa_categoria=mesa_categoria,
                     fiscal=self.fiscal
                 )
-                self.logger.debug("--- Creando carga total.")
+                self.log_debug("--- Creando carga total.")
             carga = self.carga_total
 
-        self.logger.debug("---- Agregando %d votos a %s en carga %s.", cantidad_votos, opcion_bd, carga.tipo)
+        self.log_debug(f"---- Agregando {cantidad_votos} votos a {opcion_bd} en carga {carga.tipo}.")
         VotoMesaReportado.objects.create(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
 
     def validar_usuario(self):

@@ -19,7 +19,16 @@ class Command(BaseCommand):
         super().handle(*args, **options)
 
         usr = Fiscal.objects.all().first()
-        cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(self.CSV, usr.user).procesar()
+        #cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(self.CSV, usr.user).procesar()
+        #print(f"{cant_mesas_ok} mesas ok, {cant_mesas_parcialmente_ok} mesas parcialmente ok. "
+        #	f"Errores: {errores}"
+        #)
+        csvimporter = CSVImporter(self.CSV, usr.user)
+
+        errores = csvimporter.procesar_parcialmente()
+        for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
+            print("Error: ", error)
+
         print(f"{cant_mesas_ok} mesas ok, {cant_mesas_parcialmente_ok} mesas parcialmente ok. "
-        	f"Errores: {errores}"
+           #f"Errores: {error}"
         )
