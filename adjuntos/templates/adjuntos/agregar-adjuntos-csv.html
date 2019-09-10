@@ -1,8 +1,9 @@
 {% extends "adjuntos/agregar-adjuntos.html" %}
 {% load i18n material_form material_frontend %}
+{% load staticfiles %}
 
 {% block page_title %}Subir archivos CSV{% endblock %}
 {% block page_subtitle %}Cargar CSV{% endblock %}
-{% block breadcrumbs_items %}<a href="{{ settings.STATIC_URL }}/static/formato_csv.csv">Archivo template CSV</a>{% endblock breadcrumbs_items %}
+{% block breadcrumbs_items %}<a href="{% static 'formato_csv.csv' %}">Archivo template CSV</a>{% endblock breadcrumbs_items %}
 {% block card-title %}Subir CSV{% endblock card-title %}
 {% block button_text %}Subir{% endblock button_text %}
