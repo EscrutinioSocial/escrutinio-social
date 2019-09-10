@@ -266,15 +266,13 @@ class AgregarAdjuntos(FormView):
                 instance = self.procesar_adjunto(file, request.user.fiscal, pre_identificacion)
                 if instance is not None:
                     contador_archivos = contador_archivos + 1
-            if contador_archivos:
+            if contador_archivos > 0:
                 self.mostrar_mensaje_archivos_cargados(contador_archivos)
             if self.resultados_carga:
                 # Hay que volver a mostrar la misma pantalla.
-                context = self.get_context_data()
-                return self.render_to_response(context)
+                return self.render_to_response(self.get_context_data())
             else:
                 return redirect(reverse(self.url_to_post))
-
 
         return self.form_invalid(form)
 
