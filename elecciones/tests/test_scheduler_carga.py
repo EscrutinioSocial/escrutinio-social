@@ -35,16 +35,16 @@ def test_identificacion_consolidada_calcula_orden_de_prioridad(db):
     mc1 = MesaCategoriaFactory()
     mesa = mc1.mesa
     mc2 = MesaCategoriaFactory(mesa=mesa)
-    assert mc1.orden_de_carga is None
-    assert mc2.orden_de_carga is None
+    assert mc1.coeficiente_para_orden_de_carga is None
+    assert mc2.coeficiente_para_orden_de_carga is None
 
     # Emulo consolidación.
     i = IdentificacionFactory(status='identificada', mesa=mc1.mesa, fiscal=FiscalFactory())
     AttachmentFactory(status='identificada', mesa=mesa, identificacion_testigo=i)
     mc1.refresh_from_db()
     mc2.refresh_from_db()
-    assert mc1.orden_de_carga is not None
-    assert mc2.orden_de_carga is not None
+    assert mc1.coeficiente_para_orden_de_carga is not None
+    assert mc2.coeficiente_para_orden_de_carga is not None
 
 
 def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_constance, django_assert_num_queries):
@@ -56,7 +56,7 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_const
     mc1 = MesaCategoriaFactory(
         status=MesaCategoria.STATUS.parcial_sin_consolidar,
         categoria=c,
-        orden_de_carga=1.0,
+        coeficiente_para_orden_de_carga=1.0,
         mesa=m1
     )
     m2 = MesaFactory()
@@ -64,7 +64,7 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_const
     mc2 = MesaCategoriaFactory(
         categoria=c,
         status=MesaCategoria.STATUS.total_en_conflicto,
-        orden_de_carga=99.0,
+        coeficiente_para_orden_de_carga=99.0,
         mesa=m2
     )
     m3 = MesaFactory()
@@ -72,7 +72,7 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_const
     mc3 = MesaCategoriaFactory(
         categoria=c,
         status=MesaCategoria.STATUS.total_en_conflicto,
-        orden_de_carga=2.0,
+        coeficiente_para_orden_de_carga=2.0,
         mesa=m3
     )
     with django_assert_num_queries(11):
@@ -97,72 +97,17 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_const
     assert MesaCategoria.objects.siguiente() == mc2
 
 
-@pytest.mark.skip('Reformular con nuevo scheduling.')
-def test_siguiente_prioriza_categoria(db):
-    f = FiscalFactory()
-    c = CategoriaFactory(prioridad=2)
-    c2 = CategoriaFactory(prioridad=1)
-    mc1 = MesaCategoriaFactory(
-        status=MesaCategoria.STATUS.parcial_sin_consolidar,
-        categoria=c,
-        orden_de_carga=0
-    )
-    mc2 = MesaCategoriaFactory(
-        categoria=c2,
-        status=MesaCategoria.STATUS.parcial_sin_consolidar,
-        orden_de_carga=0
-    )
-    # se recibe la mc con categoria más baja
-    assert MesaCategoria.objects.siguiente() == mc2
-    mc2.asignar_a_fiscal(f)
-    assert MesaCategoria.objects.siguiente() == mc1
-    mc1.asignar_a_fiscal(f)
-    assert MesaCategoria.objects.siguiente() is None
-
-@pytest.mark.skip('Reformular con nuevo scheduling.')
-def test_siguiente_prioriza_mesa(db):
-    f = FiscalFactory()
-    mc1 = MesaCategoriaFactory(
-        status=MesaCategoria.STATUS.parcial_sin_consolidar,
-        mesa__prioridad=2,
-        categoria__nombre='foo',
-        orden_de_carga=0
-    )
-    mc2 = MesaCategoriaFactory(
-        status=MesaCategoria.STATUS.parcial_sin_consolidar,
-        mesa__prioridad=1,
-        categoria__nombre='foo',
-        orden_de_carga=0
-    )
-
-    # se recibe la mc con mesa con prioridad menor
-    assert MesaCategoria.objects.siguiente() == mc2
-    mc2.asignar_a_fiscal(f)
-    assert MesaCategoria.objects.siguiente() == mc1
-    mc1.asignar_a_fiscal(f)
-    assert MesaCategoria.objects.siguiente() is None
-
-
-@pytest.mark.skip('Reformular con nuevo scheduling.')
-@pytest.mark.parametrize('total', [10, 40])
-def test_actualizar_orden_de_carga(db, total):
-    c = CircuitoFactory()
-    MesaFactory.create_batch(total, circuito=c)
-    for i, mc in enumerate(MesaCategoria.objects.defer('orden_de_carga').all(), 1):
-        mc.actualizar_orden_de_carga()
-        assert mc.orden_de_carga == int(round(i/total, 2) * 100)
-
-
 def test_identificadas_excluye_sin_orden(db):
     m1 = MesaFactory()
     AttachmentFactory(mesa=m1)
     mc1 = MesaCategoriaFactory(mesa=m1)
     m2 = MesaFactory()
     AttachmentFactory(mesa=m2)
-    mc2 = MesaCategoriaFactory(orden_de_carga=0.1, mesa=m2)
-    assert mc1.orden_de_carga is None
+    mc2 = MesaCategoriaFactory(coeficiente_para_orden_de_carga=0.1, mesa=m2)
+    assert mc1.coeficiente_para_orden_de_carga is None
     assert mc1 not in MesaCategoria.objects.identificadas()
     assert mc2 in MesaCategoria.objects.identificadas()
+
 
 def test_liberacion_vuelve_al_ruedo(db, settings):
     """
@@ -176,7 +121,7 @@ def test_liberacion_vuelve_al_ruedo(db, settings):
     mc1 = MesaCategoriaFactory(
         status=MesaCategoria.STATUS.parcial_sin_consolidar,
         categoria=c,
-        orden_de_carga=1.0,
+        coeficiente_para_orden_de_carga=1.0,
         mesa=m1
     )
     m3 = MesaFactory()
@@ -184,7 +129,7 @@ def test_liberacion_vuelve_al_ruedo(db, settings):
     mc3 = MesaCategoriaFactory(
         categoria=c,
         status=MesaCategoria.STATUS.total_en_conflicto,
-        orden_de_carga=2.0,
+        coeficiente_para_orden_de_carga=2.0,
         mesa=m3
     )
     assert MesaCategoria.objects.siguiente() == mc1
@@ -205,3 +150,71 @@ def test_liberacion_vuelve_al_ruedo(db, settings):
     assert MesaCategoria.objects.siguiente() == mc1
     mc1.refresh_from_db()
     assert mc1.cant_fiscales_asignados == cant_asignaciones - 1
+
+
+def test_siguiente_prioriza_categoria(db, settings):
+    f = FiscalFactory()
+    c = CategoriaFactory(prioridad=2)
+    c2 = CategoriaFactory(prioridad=1)
+    m1 = MesaFactory()
+    AttachmentFactory(mesa=m1)
+    mc1 = MesaCategoriaFactory(
+        status=MesaCategoria.STATUS.parcial_sin_consolidar,
+        categoria=c,
+        mesa=m1,
+    )
+    mc1.actualizar_coeficiente_para_orden_de_carga()
+    m2 = MesaFactory()
+    AttachmentFactory(mesa=m2)
+    mc2 = MesaCategoriaFactory(
+        categoria=c2,
+        status=MesaCategoria.STATUS.parcial_sin_consolidar,
+        mesa=m2,
+    )
+    mc2.actualizar_coeficiente_para_orden_de_carga()
+    # Se recibe la mc con categoria más prioritaria.
+    assert MesaCategoria.objects.siguiente() == mc2
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc2.asignar_a_fiscal()
+    # Luego la de la categoría menos prioritaria.
+    assert MesaCategoria.objects.siguiente() == mc1
+
+
+def test_siguiente_prioriza_seccion(db, settings):
+    f = FiscalFactory()
+    c = CategoriaFactory()
+    # Si se pone 
+    #     m1 = MesaFactory(circuito__seccion__prioridad_hasta_2=10000)
+    # no funciona. 
+    # Intuyo que es porque en MesaFactory, el circuito se setea mediante un LazyAttribute, 
+    # y los seteos que van como argumentos de la Factory se estarían ejecutando antes de
+    # que se apliquen los LazyAttribute.
+    # Lo único que hice fue la prueba empírica de agregar "lugar_votacion__" antes, y ver que sí setea
+    # la prioridad de la sección. No llegué a entender la documentación de factory boy en la medida necesaria.
+
+    m1 = MesaFactory(lugar_votacion__circuito__seccion__prioridad_hasta_2=10000)
+    AttachmentFactory(mesa=m1)
+    mc1 = MesaCategoriaFactory(
+        status=MesaCategoria.STATUS.parcial_sin_consolidar,
+        categoria=c,
+        mesa=m1,
+    )
+    mc1.actualizar_coeficiente_para_orden_de_carga()
+    m2 = MesaFactory(lugar_votacion__circuito__seccion__prioridad_hasta_2=42)
+    AttachmentFactory(mesa=m2)
+    mc2 = MesaCategoriaFactory(
+        categoria=c,
+        status=MesaCategoria.STATUS.parcial_sin_consolidar,
+        mesa=m2,
+    )
+    mc2.actualizar_coeficiente_para_orden_de_carga()
+    assert mc1.percentil == 1
+    assert mc1.mesa.circuito.seccion.prioridad_hasta_2 == 10000
+    assert mc2.percentil == 1
+    assert mc2.mesa.circuito.seccion.prioridad_hasta_2 == 42
+    # Se recibe la mc de la sección más prioritaria.
+    assert MesaCategoria.objects.siguiente() == mc2
+    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        mc2.asignar_a_fiscal()
+    # Luego la de la sección con prioridad menos prioritaria.
+    assert MesaCategoria.objects.siguiente() == mc1

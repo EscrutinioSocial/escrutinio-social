@@ -360,8 +360,7 @@
   "fields": {
     "numero": "1",
     "nombre": "Distrito \u00fanico",
-    "electores": 800,
-    "prioridad": 0
+    "electores": 800
   }
 },
 {
@@ -372,8 +371,7 @@
     "seccion_politica": null,
     "numero": "1",
     "nombre": "Secci\u00f3n 1",
-    "electores": 440,
-    "prioridad": 0
+    "electores": 440
   }
 },
 {
@@ -384,8 +382,7 @@
     "seccion_politica": null,
     "numero": "2",
     "nombre": "Secci\u00f3n 2",
-    "electores": 360,
-    "prioridad": 0
+    "electores": 360
   }
 },
 {
@@ -396,8 +393,7 @@
     "localidad_cabecera": null,
     "numero": "1",
     "nombre": "Circuito 1.1",
-    "electores": 200,
-    "prioridad": 0
+    "electores": 200
   }
 },
 {
@@ -408,8 +404,7 @@
     "localidad_cabecera": null,
     "numero": "2",
     "nombre": "Circuito 1.2",
-    "electores": 240,
-    "prioridad": 0
+    "electores": 240
   }
 },
 {
@@ -420,8 +415,7 @@
     "localidad_cabecera": null,
     "numero": "3",
     "nombre": "Circuito 2.3",
-    "electores": 180,
-    "prioridad": 0
+    "electores": 180
   }
 },
 {
@@ -432,8 +426,7 @@
     "localidad_cabecera": null,
     "numero": "4",
     "nombre": "Circuito 2.4",
-    "electores": 180,
-    "prioridad": 0
+    "electores": 180
   }
 },
 {
@@ -582,7 +575,7 @@
     "carga_testigo": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": 0
+    "coeficiente_para_orden_de_carga": 0
   }
 },
 {
@@ -595,7 +588,7 @@
     "carga_testigo": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null
   }
 },
 {
@@ -608,7 +601,7 @@
     "carga_testigo": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": 0
+    "coeficiente_para_orden_de_carga": 0
   }
 },
 {
@@ -621,7 +614,7 @@
     "carga_testigo": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null
   }
 },
 {
@@ -634,7 +627,7 @@
     "carga_testigo": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null
   }
 },
 {
@@ -647,7 +640,7 @@
     "carga_testigo": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null
   }
 },
 {
@@ -660,7 +653,7 @@
     "carga_testigo": 2,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": 0
+    "coeficiente_para_orden_de_carga": 0
   }
 },
 {
@@ -673,7 +666,7 @@
     "carga_testigo": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null
   }
 },
 {
@@ -686,7 +679,7 @@
     "carga_testigo": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null
   }
 },
 {
@@ -699,7 +692,7 @@
     "carga_testigo": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "orden_de_carga": 0
+    "coeficiente_para_orden_de_carga": 0
   }
 },
 {
@@ -711,8 +704,7 @@
     "circuito": 1,
     "lugar_votacion": 1,
     "url": "",
-    "electores": 100,
-    "prioridad": 0
+    "electores": 100
   }
 },
 {
@@ -724,8 +716,7 @@
     "circuito": 1,
     "lugar_votacion": 2,
     "url": "",
-    "electores": 100,
-    "prioridad": 0
+    "electores": 100
   }
 },
 {
@@ -737,8 +728,7 @@
     "circuito": 2,
     "lugar_votacion": 3,
     "url": "",
-    "electores": 120,
-    "prioridad": 0
+    "electores": 120
   }
 },
 {
@@ -750,8 +740,7 @@
     "circuito": 2,
     "lugar_votacion": 4,
     "url": "",
-    "electores": 120,
-    "prioridad": 0
+    "electores": 120
   }
 },
 {
@@ -763,8 +752,7 @@
     "circuito": 3,
     "lugar_votacion": 5,
     "url": "",
-    "electores": 90,
-    "prioridad": 0
+    "electores": 90
   }
 },
 {
@@ -776,8 +764,7 @@
     "circuito": 3,
     "lugar_votacion": 6,
     "url": "",
-    "electores": 90,
-    "prioridad": 0
+    "electores": 90
   }
 },
 {
@@ -789,8 +776,7 @@
     "circuito": 4,
     "lugar_votacion": 7,
     "url": "",
-    "electores": 90,
-    "prioridad": 0
+    "electores": 90
   }
 },
 {
@@ -802,8 +788,7 @@
     "circuito": 4,
     "lugar_votacion": 8,
     "url": "",
-    "electores": 90,
-    "prioridad": 0
+    "electores": 90
   }
 },
 {
