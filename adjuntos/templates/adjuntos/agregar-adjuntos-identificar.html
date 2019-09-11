@@ -2,26 +2,7 @@
 {% load i18n material_form material_frontend %}
 {% load staticfiles %}
 {% block extrahead %}
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-<style type="text/css">
-
-  .left-panel {
-      flex-basis: 60%;
-      margin-left: 0.375rem;
-  }
-
-  .right-panel {
-      flex-basis: 40%;
-      margin-left: 0.375rem;
-  }
-
-  .scroll {
-      height: 335px;
-      overflow-x: auto;
-      overflow-x: hidden;
-  }
-
-</style>
+{{ block.super }}
 {% endblock %}
 {% block js %}
 {{ block.super }}

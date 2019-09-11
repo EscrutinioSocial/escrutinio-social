@@ -250,21 +250,7 @@ class AgregarAdjuntos(FormView):
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        request = self.request
-        initial = {}
-        if request.user:
-            fiscal = request.user.fiscal
-            if fiscal.seccion:
-                # Si el fiscal tiene una sección precargada tomamos los datos de ahí.
-                initial['seccion'] = fiscal.seccion
-                initial['distrito'] = fiscal.seccion.distrito
-            elif fiscal.distrito:
-                # Si no tiene sección, pero sí un distrito, vamos con eso.
-                initial['distrito'] = fiscal.distrito
-        pre_identificacion_form = PreIdentificacionForm(initial=initial)
-        context['attachment_form'] = AgregarAttachmentsForm()
-        context['pre_identificacion_form'] = pre_identificacion_form
+        context = super(AgregarAdjuntos, self).get_context_data(**kwargs)
         context['url_to_post'] = reverse(self.url_to_post)
         context['resultados_carga'] = self.resultados_carga
         return context
@@ -381,6 +367,24 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     """
     url_to_post = 'agregar-adjuntos'
     template_name = 'adjuntos/agregar-adjuntos-identificar.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(AgregarAdjuntosPreidentificar, self).get_context_data(**kwargs)
+        request = self.request
+        initial = {}
+        if request.user:
+            fiscal = request.user.fiscal
+            if fiscal.seccion:
+                # Si el fiscal tiene una sección precargada tomamos los datos de ahí.
+                initial['seccion'] = fiscal.seccion
+                initial['distrito'] = fiscal.seccion.distrito
+            elif fiscal.distrito:
+                # Si no tiene sección, pero sí un distrito, vamos con eso.
+                initial['distrito'] = fiscal.distrito
+        pre_identificacion_form = PreIdentificacionForm(initial=initial)
+        context['attachment_form'] = AgregarAttachmentsForm()
+        context['pre_identificacion_form'] = pre_identificacion_form
+        return context
 
     def post(self, request, *args, **kwargs):
         form_class = AgregarAttachmentsForm
