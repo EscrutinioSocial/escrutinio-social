@@ -251,6 +251,20 @@ class AgregarAdjuntos(FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        request = self.request
+        initial = {}
+        if request.user:
+            fiscal = request.user.fiscal
+            if fiscal.seccion:
+                # Si el fiscal tiene una sección precargada tomamos los datos de ahí.
+                initial['seccion'] = fiscal.seccion
+                initial['distrito'] = fiscal.seccion.distrito
+            elif fiscal.distrito:
+                # Si no tiene sección, pero sí un distrito, vamos con eso.
+                initial['distrito'] = fiscal.distrito
+        pre_identificacion_form = PreIdentificacionForm(initial=initial)
+        context['attachment_form'] = AgregarAttachmentsForm()
+        context['pre_identificacion_form'] = pre_identificacion_form
         context['url_to_post'] = reverse(self.url_to_post)
         context['resultados_carga'] = self.resultados_carga
         return context
@@ -296,21 +310,23 @@ class AgregarAdjuntos(FormView):
             instance.save()
             return instance
         except IntegrityError:
-            messages.warning(
-                self.request, (
-                    f'El archivo {adjunto.name} ya fue subido con anterioridad. <br>'
-                    'Verificá si era el que querías subir y, si lo era, '
-                    'no tenés que hacer nada.<br> ¡Gracias!'
-                ),
-                extra_tags='safe'
+            self.agregar_resultado_carga(
+                messages.WARNING,
+                f'El archivo {adjunto.name} ya fue subido con anterioridad. <br>'
             )
         return None
 
     def mostrar_mensaje_archivos_cargados(self, contador):
-        messages.success(self.request, f'Subiste {contador} imágenes de actas. Gracias!')
+        self.agregar_resultado_carga(
+            messages.INFO if contador == 0 else messages.SUCCESS,
+            f'Subiste {contador} imágenes de actas. Gracias!'
+        )
 
     def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
-        messages.warning(self.request, f'{nombre_archivo} ignorado. No es una imagen')
+        self.agregar_resultado_carga(
+            self.WARNING,
+            f'{nombre_archivo} ignorado. No es una imagen'
+        )
 
 
 class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
@@ -365,25 +381,6 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     """
     url_to_post = 'agregar-adjuntos'
     template_name = 'adjuntos/agregar-adjuntos-identificar.html'
-
-    def get(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        attachment_form = AgregarAttachmentsForm()
-        initial = {}
-        if request.user:
-            fiscal = request.user.fiscal
-            if fiscal.seccion:
-                # Si el fiscal tiene una sección precargada tomamos los datos de ahí.
-                initial['seccion'] = fiscal.seccion
-                initial['distrito'] = fiscal.seccion.distrito
-            elif fiscal.distrito:
-                # Si no tiene sección, pero sí un distrito, vamos con eso.
-                initial['distrito'] = fiscal.distrito
-        pre_identificacion_form = PreIdentificacionForm(initial=initial)
-        context['attachment_form'] = attachment_form
-        context['pre_identificacion_form'] = pre_identificacion_form
-
-        return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         form_class = AgregarAttachmentsForm
@@ -455,7 +452,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
                 for error in errores.split('\n'):
                     self.agregar_resultado_carga(messages.WARNING, f"&nbsp;&nbsp;{error}")
         except Exception as e:
-            self.agregar_resultado_carga(messages.WARNING, 
+            self.agregar_resultado_carga(messages.WARNING,
                 f'{adjunto.name} no importado debido al siguiente error: {str(e)}')
         return None
 
