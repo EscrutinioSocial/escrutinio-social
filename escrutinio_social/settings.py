@@ -499,8 +499,9 @@ URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
 
 
 APP_VERSION_NUMBER = 'dev'
-if os.path.isfile("/version/version.txt"):
-    with open("/version/version.txt") as v_file:
+ver_file = '/tmp/version/version.txt'
+if os.path.isfile(ver_file):
+    with open(ver_file) as v_file:
         APP_VERSION_NUMBER = v_file.read()
 
 # Para los tests no se importan los local settings.

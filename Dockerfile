@@ -19,8 +19,8 @@ RUN pip install -r requirements.txt
 ADD . /src/
 
 # Dejamos un archivo version.txt con el timestamp de cuándo fue generada esa versión
-RUN mkdir /version
-RUN date +"%Y%m%d%H%M" > /version/version.txt
+RUN mkdir /tmp/version
+RUN date +"%Y%m%d%H%M" > /tmp/version/version.txt
 
 EXPOSE 8000
 CMD ["bash", "entrypoint.sh"]
