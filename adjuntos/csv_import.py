@@ -70,8 +70,8 @@ class CSVImporter:
     Clase encargada de procesar un archivo CSV y validarlo.
     Recibe por parámetro el file o path al file y el usuario que sube el archivo.
     """
-    def __init__(self, archivo, usuario):
-        self.debug = False
+    def __init__(self, archivo, usuario, debug=False):
+        self.debug = debug
         self.logger = logger
         self.archivo = archivo
         converters = {
