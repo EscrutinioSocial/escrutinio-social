@@ -376,7 +376,8 @@ class CSVImporter:
 
         # Se encontró la categoría de la mesa en el archivo.
         columna_de_la_categoria = matcheos[0]
-        # Los votos son por partido así que debemos iterar por todas las filas
+        votos_a_cargar = []
+        # Los votos son por partido así que debemos iterar por todas las filas.
         for indice, fila in filas_de_la_mesa.iterrows():
             codigo_lista_en_csv = fila['nro de lista']
             self.celda_analizada = CeldaCSVImporter(
@@ -391,11 +392,13 @@ class CSVImporter:
 
             else:
                 self.cargar_mesa_categoria_y_lista(
-                    fila, codigo_lista_en_csv, columna_de_la_categoria, mesa_categoria, categoria_bd)
+                    fila, codigo_lista_en_csv, columna_de_la_categoria, mesa_categoria, categoria_bd, votos_a_cargar)
+
+        VotoMesaReportado.objects.bulk_create(votos_a_cargar)
 
         return self.carga_parcial, self.carga_total
 
-    def cargar_mesa_categoria_y_lista(self, fila, codigo_lista_en_csv, columna_de_la_categoria, mesa_categoria, categoria_bd):
+    def cargar_mesa_categoria_y_lista(self, fila, codigo_lista_en_csv, columna_de_la_categoria, mesa_categoria, categoria_bd, votos_a_cargar):
         """
         Analiza los votos de una mesa dada, una categoría dada y una fila dada.
         """
@@ -440,7 +443,7 @@ class CSVImporter:
             categoria=categoria_bd
         ).first()
         self.cargar_votos(cantidad_votos, opcion_categoria, mesa_categoria,
-                          opcion_bd)
+                          opcion_bd, votos_a_cargar)
 
     def copiar_carga_parcial_en_total(self, carga_parcial, carga_total):
         """
@@ -450,10 +453,12 @@ class CSVImporter:
         if not carga_total:
             return
 
+        votos_a_cargar = []
         for voto_mesa_reportado_parcial in carga_parcial.reportados.all():
-            VotoMesaReportado.objects.create(votos=voto_mesa_reportado_parcial.votos,
-                                             opcion=voto_mesa_reportado_parcial.opcion, carga=carga_total)
+            votos_a_cargar.append(VotoMesaReportado(votos=voto_mesa_reportado_parcial.votos,
+                                             opcion=voto_mesa_reportado_parcial.opcion, carga=carga_total))
 
+        VotoMesaReportado.objects.bulk_create(votos_a_cargar)
         return carga_total
 
     def agregar_electores_y_sobres(self, mesa, carga):
@@ -511,7 +516,7 @@ class CSVImporter:
             except Exception as e:
                 raise e
 
-    def cargar_votos(self, cantidad_votos, opcion_categoria, mesa_categoria, opcion_bd):
+    def cargar_votos(self, cantidad_votos, opcion_categoria, mesa_categoria, opcion_bd, votos_a_cargar):
         if opcion_categoria.prioritaria:
             if not self.carga_parcial:
                 self.carga_parcial = Carga.objects.create(
@@ -534,7 +539,8 @@ class CSVImporter:
             carga = self.carga_total
 
         self.log_debug(f"---- Agregando {cantidad_votos} votos a {opcion_bd} en carga {carga.tipo}.")
-        VotoMesaReportado.objects.create(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
+        #VotoMesaReportado.objects.create(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
+        votos_a_cargar.append(VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd))
 
     def validar_usuario(self):
         try:
