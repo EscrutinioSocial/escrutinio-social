@@ -299,6 +299,8 @@ class AgregarAdjuntos(FormView):
             self.agregar_resultado_carga(
                 messages.WARNING,
                 f'El archivo {adjunto.name} ya fue subido con anterioridad. <br>'
+                'Verificá si era el que querías subir y, si lo era, '
+                'no tenés que hacer nada.<br> ¡Gracias!'
             )
         return None
 
