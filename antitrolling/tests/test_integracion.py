@@ -41,6 +41,8 @@ def test_asociacion_attachment_con_antitrolling(db, settings):
         # Hasta acá no debería asociarse la mesa, ergo no se afecta el scoring troll de ningun fiscal
         consolidar_identificaciones(attach)
         for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
+            fiscal.refresh_from_db()
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
             assert fiscal.scoring_troll() == 0
 
         # se agregan dos nuevas identificaciones: el fiscal 2 identifica la misma mesa que el 1, el fiscal 4 reporta un problema
@@ -49,6 +51,8 @@ def test_asociacion_attachment_con_antitrolling(db, settings):
         # ahora si deberia asociarse la mesa, y como consecuencia,
         # aumentar el scoring troll para los fiscales 3 y 4 que identificaron distinto a lo que se decidio
         consolidar_identificaciones(attach)
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
+            fiscal.refresh_from_db()
         assert fiscal_1.scoring_troll() == 0
         assert fiscal_2.scoring_troll() == 0
         assert fiscal_3.scoring_troll() == 180
@@ -83,6 +87,8 @@ def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db, settings):
         # la consolidacion no deberia afectar el scoring de ningun fiscal, porque la mesa_categoria no queda consolidada
         consolidar_cargas(mesa_categoria)
         for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5]:
+            fiscal.refresh_from_db()
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5]:
             assert fiscal.scoring_troll() == 0
 
         # entra una quinta carga, coincidente con la segunda
@@ -90,6 +96,8 @@ def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db, settings):
         # ahora la mesa_categoria queda consolidada, y por lo tanto, deberia afectarse el scoring de los fiscales
         # cuya carga no coincide con la aceptada
         consolidar_cargas(mesa_categoria)
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5]:
+            fiscal.refresh_from_db()
         assert fiscal_1.scoring_troll() == 2
         assert fiscal_2.scoring_troll() == 0
         assert fiscal_3.scoring_troll() == 50

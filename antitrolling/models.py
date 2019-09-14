@@ -8,7 +8,6 @@ from model_utils.fields import StatusField
 from elecciones.models import MesaCategoria, Mesa
 from adjuntos.models import Attachment
 
-
 class EventoScoringTroll(TimeStampedModel):
     """
     Representa un evento que afecta el scoring troll de un fiscal; puede aumentarlo o disminuirlo.
@@ -101,7 +100,7 @@ def registrar_cambio_scoring_troll(fiscal, variacion, evento):
 
 def marcar_explicitamente_fiscal_troll(fiscal, actor):
     evento = crear_evento_marca_explicita_como_troll(fiscal, actor)
-    marcar_fiscal_troll(self, evento)
+    marcar_fiscal_troll(fiscal, evento)
 
 
 def marcar_fiscal_troll(fiscal, evento_disparador):
@@ -122,12 +121,14 @@ def aplicar_marca_troll(fiscal):
     """
     Se marca al fiscal indicado como troll, y se ejecutan las consecuencias de dicha decisión.
     """
+    from antitrolling.efecto import efecto_determinacion_fiscal_troll
+
     fiscal.troll = True
     fiscal.save(update_fields=['troll'])
-    efecto_determinacion_fiscal_troll(self)
+    efecto_determinacion_fiscal_troll(fiscal)
 
 
-def marcar_explicitamente_fiscal_no_troll(fiscal, actor, nuevo_scoring)
+def marcar_explicitamente_fiscal_no_troll(fiscal, actor, nuevo_scoring):
     """
     Un UE decidió, explícitamente, quitarle a un fiscal la marca de troll.
     """
@@ -203,7 +204,7 @@ def aumentar_scoring_troll_problema_descartado(variacion, fiscal_afectado, mesa,
         fiscal_afectado=fiscal_afectado,
         variacion=variacion
     )
-    registrar_cambio_scoring_troll(fiscal, variacion, nuevo_evento)
+    registrar_cambio_scoring_troll(fiscal_afectado, variacion, nuevo_evento)
 
 
 def crear_evento_marca_explicita_como_troll(fiscal, actor):

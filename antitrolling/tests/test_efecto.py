@@ -49,6 +49,9 @@ def test_efecto_consolidar_asociacion_attachment(db, settings):
         # a la mesa que se indica como asociada al attachment
         cantidad_eventos_antes = EventoScoringTroll.objects.count()
         efecto_scoring_troll_asociacion_attachment(attach, mesa_1)
+
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
+            fiscal.refresh_from_db()
         assert EventoScoringTroll.objects.count() == cantidad_eventos_antes + 2
         assert fiscal_1.scoring_troll() == 0
         assert fiscal_2.scoring_troll() == 0
@@ -159,6 +162,8 @@ def test_efecto_confirmar_carga_mesa_categoria(db):
     efecto_scoring_troll_confirmacion_carga(mesa_categoria)
 
     # ahora los fiscales que cargaron distinto a lo aceptado deberian tener mas scoring, el resto no
+    for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
+        fiscal.refresh_from_db()
     assert fiscal_1.scoring_troll() == 2
     assert fiscal_2.scoring_troll() == 0
     assert fiscal_3.scoring_troll() == 50
