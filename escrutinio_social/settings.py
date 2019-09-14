@@ -488,7 +488,7 @@ CONSTANCE_CONFIG = {
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
     'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text'),
     'CONFIGURACION_COMPUTO_PUBLICA': ('inicial', 'Nombre de la configuración que se utiliza para publicar resultados.'),
-    'SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL': (500, 'Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll.', int),
+    'SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL': (1500, 'Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll.', int),
     'SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada.', int),
     'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas.', int),
     'SCORING_TROLL_PROBLEMA_DESCARTADO': (200, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
