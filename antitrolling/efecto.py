@@ -3,7 +3,9 @@ from adjuntos.models import Identificacion
 from elecciones.models import Carga, CargasIncompatiblesError
 from .models import (
     aumentar_scoring_troll_carga,
+    disminuir_scoring_troll_carga,
     aumentar_scoring_troll_identificacion,
+    disminuir_scoring_troll_identificacion,
     aumentar_scoring_troll_problema_descartado,
     EventoScoringTroll
 )
@@ -27,6 +29,14 @@ def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
                 config.SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA,
                 identificacion
             )
+        else:
+            #  Para cada identificación del attachment que sí coincida en mesa,
+            #  disminuir el scoring troll del fiscal que la hizo
+            disminuir_scoring_troll_identificacion(
+                config.SCORING_TROLL_DESCUENTO_ACCION_CORRECTA,
+                identificacion
+            )
+
 
 
 def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
@@ -56,6 +66,11 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
                 config.SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA,
                 carga,
                 EventoScoringTroll.MOTIVOS.indica_problema_mesa_categoria_confirmada
+            )
+        elif carga.tipo == testigo.tipo and carga.firma == testigo.firma:
+            # se disminuye el scoring del fiscal que cargo los valores aceptados
+            disminuir_scoring_troll_carga(
+                config.SCORING_TROLL_DESCUENTO_ACCION_CORRECTA, carga
             )
 
 

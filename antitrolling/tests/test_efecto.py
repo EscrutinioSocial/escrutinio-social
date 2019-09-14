@@ -28,7 +28,7 @@ def test_efecto_consolidar_asociacion_attachment(db, settings):
     O sea, que se aumente el scoring de los fiscales que hicieron identificaciones distintas
     a la aceptada, y que no aumente el scoring de los fiscales que hicieron la identificacion aceptada.
     """
-    with override_config(SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 180):
+    with override_config(SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 180, SCORING_TROLL_DESCUENTO_ACCION_CORRECTA = 40):
         fiscal_1 = nuevo_fiscal()
         fiscal_2 = nuevo_fiscal()
         fiscal_3 = nuevo_fiscal()
@@ -52,9 +52,9 @@ def test_efecto_consolidar_asociacion_attachment(db, settings):
 
         for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
             fiscal.refresh_from_db()
-        assert EventoScoringTroll.objects.count() == cantidad_eventos_antes + 2
-        assert fiscal_1.scoring_troll() == 0
-        assert fiscal_2.scoring_troll() == 0
+        assert EventoScoringTroll.objects.count() == cantidad_eventos_antes + 4
+        assert fiscal_1.scoring_troll() == -40
+        assert fiscal_2.scoring_troll() == -40
         assert fiscal_3.scoring_troll() == 180
         assert fiscal_4.scoring_troll() == 180
 

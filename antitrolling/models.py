@@ -23,6 +23,8 @@ class EventoScoringTroll(TimeStampedModel):
         ('problema_descartado', 'Se descarta un "problema" reportado por el usuario.'),
         ('marca_explicita_troll', 'Un usuario marca explitimamente a un fiscal como troll'),
         ('remocion_marca_troll', 'Se remueve la marca de troll a un fiscal'),
+        ('carga_aceptada', 'Carga los valores aceptados'),
+        ('identificacion_aceptada', 'Realiza una identificación con la decisión aceptada'),
     )
     # descripción del motivo para cambiar el scoring troll de un fiscal
     motivo = models.CharField(max_length=50, choices=MOTIVOS)
@@ -91,8 +93,6 @@ def registrar_cambio_scoring_troll(fiscal, variacion, evento):
     fiscal.cambiar_scoring_troll(variacion)
     if not era_troll and fiscal.scoring_troll() >= config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
         marcar_fiscal_troll(fiscal, evento)
-    elif era_troll and fiscal.scoring_troll() < config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
-        marcar_fiscal_no_troll(fiscal, evento)
 
 
 
@@ -167,16 +167,18 @@ def aumentar_scoring_troll_identificacion(variacion, identificacion):
     Aumenta el scoring troll de un fiscal por motivos relacionados con una identificacion.
     Si corresponde, marcar al fiscal como troll.
     """
+    afectar_scoring_troll_evento_automatico(
+        identificacion.fiscal, EventoScoringTroll.MOTIVOS.identificacion_attachment_distinta_a_confirmada,
+        identificacion.attachment, None, variacion)
 
-    fiscal = identificacion.fiscal
-    nuevo_evento = EventoScoringTroll.objects.create(
-        motivo=EventoScoringTroll.MOTIVOS.identificacion_attachment_distinta_a_confirmada,
-        attachment=identificacion.attachment,
-        automatico=True,
-        fiscal_afectado=fiscal,
-        variacion=variacion
-    )
-    registrar_cambio_scoring_troll(fiscal, variacion, nuevo_evento)
+
+def disminuir_scoring_troll_identificacion(variacion, identificacion):
+    """
+    Disminuye el scoring de un fiscal que identificó un attachment tomando la decisión aceptada.
+    """
+    afectar_scoring_troll_evento_automatico(
+        identificacion.fiscal, EventoScoringTroll.MOTIVOS.identificacion_aceptada,
+        identificacion.attachment, None, variacion * -1)
 
 
 def aumentar_scoring_troll_carga(variacion, carga, motivo):
@@ -184,10 +186,24 @@ def aumentar_scoring_troll_carga(variacion, carga, motivo):
     Aumenta el scoring troll de un fiscal por motivos relacionados con una carga.
     Si corresponde, marcar al fiscal como troll.
     """
-    fiscal = carga.fiscal
+    afectar_scoring_troll_evento_automatico(
+        carga.fiscal, motivo, None, carga.mesa_categoria, variacion)
+
+
+def disminuir_scoring_troll_carga(variacion, carga):
+    """
+    Disminuye el scoring de un fiscal que realizó una carga con los valores aceptados.
+    """
+    afectar_scoring_troll_evento_automatico(
+        carga.fiscal, EventoScoringTroll.MOTIVOS.carga_aceptada, 
+        None, carga.mesa_categoria, variacion * -1)
+
+
+def afectar_scoring_troll_evento_automatico(fiscal, motivo, attachment, mesacat, variacion):
     nuevo_evento = EventoScoringTroll.objects.create(
         motivo=motivo,
-        mesa_categoria=carga.mesa_categoria,
+        attachment=attachment,
+        mesa_categoria=mesacat,
         automatico=True,
         fiscal_afectado=fiscal,
         variacion=variacion
