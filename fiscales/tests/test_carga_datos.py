@@ -357,7 +357,12 @@ def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, admi
     assert response.context['formset'][3].fields['votos'].widget.attrs['readonly'] is True
 
 
+@pytest.mark.skip(reason='Inestable')
 def test_formset_reusa_metadata(db, fiscal_client, admin_user):
+    # causa de la inestabilidad: las opciones no partidarias aparecen en el formset,
+    # a veces antes de [o1,o2], a veces después.
+    # Carlos Lombardi, 14/09/2019
+
     # hay una categoria con una opcion metadata ya consolidada
     o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
     cat1 = CategoriaFactory(opciones=[o1])

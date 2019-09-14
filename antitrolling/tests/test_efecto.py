@@ -133,41 +133,42 @@ def test_efecto_confirmar_carga_mesa_categoria(db):
     y que no aumente el scoring de los fiscales que hicieron la identificacion aceptada.
     """
 
-    # escenario
-    fiscal_1 = nuevo_fiscal()
-    fiscal_2 = nuevo_fiscal()
-    fiscal_3 = nuevo_fiscal()
-    fiscal_4 = nuevo_fiscal()
-    categoria = nueva_categoria(["o1", "o2", "o3"])
-    mesa = MesaFactory(categorias=[categoria])
-    mesa_categoria = MesaCategoria.objects.filter(mesa=mesa).first()
+    with override_config(SCORING_TROLL_DESCUENTO_ACCION_CORRECTA=30):
+        # escenario
+        fiscal_1 = nuevo_fiscal()
+        fiscal_2 = nuevo_fiscal()
+        fiscal_3 = nuevo_fiscal()
+        fiscal_4 = nuevo_fiscal()
+        categoria = nueva_categoria(["o1", "o2", "o3"])
+        mesa = MesaFactory(categorias=[categoria])
+        mesa_categoria = MesaCategoria.objects.filter(mesa=mesa).first()
 
-    # simulo que se hacen cuatro cargas, tengo que pedir explicitamente que se actualice la firma
-    # (lo hace la UI de carga)
-    carga1 = nueva_carga(mesa_categoria, fiscal_1, [32, 20, 10])
-    carga2 = nueva_carga(mesa_categoria, fiscal_2, [30, 20, 10])
-    carga3 = nueva_carga(mesa_categoria, fiscal_3, [5, 40, 15])
-    carga4 = nueva_carga(mesa_categoria, fiscal_4, [30, 20, 10])
-    for carga in [carga1, carga2, carga3, carga4]:
-        carga.actualizar_firma()
+        # simulo que se hacen cuatro cargas, tengo que pedir explicitamente que se actualice la firma
+        # (lo hace la UI de carga)
+        carga1 = nueva_carga(mesa_categoria, fiscal_1, [32, 20, 10])
+        carga2 = nueva_carga(mesa_categoria, fiscal_2, [30, 20, 10])
+        carga3 = nueva_carga(mesa_categoria, fiscal_3, [5, 40, 15])
+        carga4 = nueva_carga(mesa_categoria, fiscal_4, [30, 20, 10])
+        for carga in [carga1, carga2, carga3, carga4]:
+            carga.actualizar_firma()
 
-    # se define que las cargas de fiscal_2 y fiscal_4 son las correctas
-    mesa_categoria.actualizar_status(MesaCategoria.STATUS.total_consolidada_dc, carga2)
+        # se define que las cargas de fiscal_2 y fiscal_4 son las correctas
+        mesa_categoria.actualizar_status(MesaCategoria.STATUS.total_consolidada_dc, carga2)
 
-    # antes de afectar el scoring troll: los cuatro fiscales tienen scoring 0
-    for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
-        assert fiscal.scoring_troll() == 0
+        # antes de afectar el scoring troll: los cuatro fiscales tienen scoring 0
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
+            assert fiscal.scoring_troll() == 0
 
-    # hago la afectacion de scoring trol
-    efecto_scoring_troll_confirmacion_carga(mesa_categoria)
+        # hago la afectacion de scoring trol
+        efecto_scoring_troll_confirmacion_carga(mesa_categoria)
 
-    # ahora los fiscales que cargaron distinto a lo aceptado deberian tener mas scoring, el resto no
-    for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
-        fiscal.refresh_from_db()
-    assert fiscal_1.scoring_troll() == 2
-    assert fiscal_2.scoring_troll() == 0
-    assert fiscal_3.scoring_troll() == 50
-    assert fiscal_4.scoring_troll() == 0
+        # ahora los fiscales que cargaron distinto a lo aceptado deberian tener mas scoring, el resto no
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
+            fiscal.refresh_from_db()
+        assert fiscal_1.scoring_troll() == 2
+        assert fiscal_2.scoring_troll() == -30
+        assert fiscal_3.scoring_troll() == 50
+        assert fiscal_4.scoring_troll() == -30
 
 
 def test_efecto_marcar_fiscal_como_troll(db):
@@ -276,21 +277,23 @@ def test_efecto_de_ser_troll(db):
 
 
 def test_efecto_ignora_cargas_incompatibles(db, caplog):
-    fiscal_1 = nuevo_fiscal()
-    fiscal_2 = nuevo_fiscal()
-    mesa_categoria = MesaCategoriaFactory()
-    carga_1 = nueva_carga(mesa_categoria, fiscal_1, [30, 20, 10])
-    carga_1.actualizar_firma()
-    mesa_categoria.carga_testigo = carga_1
-    mesa_categoria.save()
+    with override_config(SCORING_TROLL_DESCUENTO_ACCION_CORRECTA=28):
+        fiscal_1 = nuevo_fiscal()
+        fiscal_2 = nuevo_fiscal()
+        mesa_categoria = MesaCategoriaFactory()
+        carga_1 = nueva_carga(mesa_categoria, fiscal_1, [30, 20, 10])
+        carga_1.actualizar_firma()
+        mesa_categoria.carga_testigo = carga_1
+        mesa_categoria.save()
 
-    # incompatible
-    carga_2 = nueva_carga(mesa_categoria, fiscal_2, [30, 20])
-    carga_2.actualizar_firma()
-    efecto_scoring_troll_confirmacion_carga(mesa_categoria)
+        # incompatible
+        carga_2 = nueva_carga(mesa_categoria, fiscal_2, [30, 20])
+        carga_2.actualizar_firma()
+        efecto_scoring_troll_confirmacion_carga(mesa_categoria)
 
-    # se ignoran las diferencias, no afecta
-    assert EventoScoringTroll.objects.count() == 0
+        # se ignoran las diferencias, sólo se genera evento con variación negativa para la carga testigo
+        assert EventoScoringTroll.objects.count() == 1
+        assert EventoScoringTroll.objects.get().variacion == -28
 
 
 def test_efecto_diferencia_1(db, caplog):
@@ -306,12 +309,11 @@ def test_efecto_diferencia_1(db, caplog):
     carga_2 = nueva_carga(mesa_categoria, fiscal_2, [30, 20, 9])
     carga_2.actualizar_firma()
     efecto_scoring_troll_confirmacion_carga(mesa_categoria)
-    # hay un sólo evento troll y la diferencia es 1
-    assert EventoScoringTroll.objects.get().variacion == carga_1 - carga_2 == 1
+    # hay un solo evento troll del fiscal 2, y la diferencia es 1
+    assert EventoScoringTroll.objects.filter(fiscal_afectado=fiscal_2).get().variacion == carga_1 - carga_2 == 1
 
 def test_efecto_problema_descartado(db):
     fiscal_1 = nuevo_fiscal()
-    fiscal_2 = nuevo_fiscal()
 
     a = AttachmentFactory()
     m1 = MesaFactory()
@@ -325,4 +327,5 @@ def test_efecto_problema_descartado(db):
     problema.descartar(nuevo_fiscal().user)
 
     from constance import config
-    assert EventoScoringTroll.objects.get().variacion == config.SCORING_TROLL_PROBLEMA_DESCARTADO
+    assert EventoScoringTroll.objects.filter(
+        fiscal_afectado=fiscal_1).get().variacion == config.SCORING_TROLL_PROBLEMA_DESCARTADO
