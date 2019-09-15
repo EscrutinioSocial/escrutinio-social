@@ -192,7 +192,7 @@ class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
 
 
 class PartidoAdmin(admin.ModelAdmin):
-    list_display = ('numero', 'nombre')
+    list_display = ('codigo', 'nombre')
     list_display_links = list_display
 
 

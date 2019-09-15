@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
         # Categoría Gobernador.
         categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA)
-        codigos = [settings.CODIGO_PARTIDO_NOSOTROS, settings.CODIGO_PARTIDO_ELLOS_BA]
+        codigos = [settings.CODIGO_PARTIDO_NOSOTROS_BA, settings.CODIGO_PARTIDO_ELLOS_BA]
         self.configurar_categoria_prioritaria(categoria, codigos)
 
     def configurar_categoria_prioritaria(self, categoria, codigos):

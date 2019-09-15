@@ -424,7 +424,8 @@ URL_ARCHIVO_IMPORTAR_CORREO[SLUG_CATEGORIA_GOB_Y_VICE_PBA] = 'https://sheets.goo
 # Código de partidos principales para validaciones.
 CODIGO_PARTIDO_NOSOTROS = '136'
 CODIGO_PARTIDO_ELLOS = '135'
-CODIGO_PARTIDO_ELLOS_BA = '502'
+CODIGO_PARTIDO_NOSOTROS_BA = '136'
+CODIGO_PARTIDO_ELLOS_BA = '135'
 
 # Cada cuánto tiempo actualizar el campo last_seen de un Fiscal.
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
