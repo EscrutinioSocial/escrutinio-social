@@ -22,7 +22,7 @@ class Command(BaseCommand):
 
             opcion, creada = Opcion.objects.get_or_create(
                 **criterio_dict,
-                defaults={'nombre': nombre, 'orden': orden},
+                defaults={'nombre': nombre},
             )
 
             if creada:

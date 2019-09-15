@@ -161,7 +161,7 @@ def test_preidentificacion_create_view_post(fiscal_client):
         'distrito': mesa_1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('agregar-adjuntos'), data)
-    assert response.status_code == HTTPStatus.FOUND
+    assert response.status_code == HTTPStatus.OK
 
     attachment = Attachment.objects.all().first()
 
@@ -184,7 +184,7 @@ def test_preidentificacion_seccion_y_distrito_create_view_post(fiscal_client):
         'distrito': mesa_1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('agregar-adjuntos'), data)
-    assert response.status_code == HTTPStatus.FOUND
+    assert response.status_code == HTTPStatus.OK
 
     attachment = Attachment.objects.all().first()
 
@@ -205,7 +205,7 @@ def test_preidentificacion_solo_distrito_create_view_post(fiscal_client):
         'distrito': mesa_1.circuito.seccion.distrito.id,
     }
     response = fiscal_client.post(reverse('agregar-adjuntos'), data)
-    assert response.status_code == HTTPStatus.FOUND
+    assert response.status_code == HTTPStatus.OK
 
     attachment = Attachment.objects.all().first()
 

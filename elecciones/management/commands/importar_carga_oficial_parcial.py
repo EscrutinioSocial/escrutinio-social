@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
 import requests
+from django.db import transaction
 from datetime import datetime
 import pytz
 from fiscales.models import Fiscal
@@ -30,8 +31,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--categoria", type=str, dest="categoria",
-            help="Categoria a analizar (default %(default)s).",
-            default=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE
+            help="Slug de categoría a analizar (default %(default)s).",
+            default=settings.SLUG_CATEGORIA_PRESI_Y_VICE
         )
 
     def get_opcion(self, codigo_partido):
@@ -44,11 +45,11 @@ class Command(BaseCommand):
         return self.get_opcion(settings.CODIGO_PARTIDO_ELLOS)
 
     def handle(self, *args, **options):
-        nombre_categoria = options['categoria']
-        self.categoria = Categoria.objects.get(nombre=nombre_categoria)
+        slug_categoria = options['categoria']
+        self.categoria = Categoria.objects.get(slug=slug_categoria)
         print("Vamos a importar la categoría:", self.categoria)
 
-        url = settings.URL_ARCHIVO_IMPORTAR_CORREO[nombre_categoria]
+        url = settings.URL_ARCHIVO_IMPORTAR_CORREO[slug_categoria]
         r = requests.get(url=url, params=PARAMS)
         values = r.json()['values']
         ultima_guardada_con_exito = None
@@ -89,31 +90,29 @@ class Command(BaseCommand):
                     mesa = Mesa.objects.get(numero=row['Mesa'], circuito=circuito)
                     mesa_categoria = MesaCategoria.objects.get(mesa=mesa, categoria=self.categoria)
 
-                    # TODO
-                    # INICIO TRANSACCION
-                    # ESTA PARTE DEBERIA ESTAR EN UNA TRANSACCION Y HACER
-                    # UN ROLLBACK EN CASO DE QUE FALLE
-                    carga = Carga.objects.create(
-                        mesa_categoria=mesa_categoria,
-                        tipo=tipo,
-                        fiscal=fiscal,
-                        origen=Carga.SOURCES.csv
-                    )
+                    with transaction.atomic:
+                        carga = Carga.objects.create(
+                            mesa_categoria=mesa_categoria,
+                            tipo=tipo,
+                            fiscal=fiscal,
+                            origen=Carga.SOURCES.csv
+                        )
 
-                    VotoMesaReportado.objects.create(carga=carga, opcion=opcion_nosotros, votos=row['136-Frente de Todos'])
-                    VotoMesaReportado.objects.create(carga=carga, opcion=opcion_ellos, votos=row['135-JxC'])
-                    VotoMesaReportado.objects.create(carga=carga, opcion=opcion_blancos, votos=row['Blancos'])
-                    VotoMesaReportado.objects.create(carga=carga, opcion=opcion_nulos, votos=row['Nulos'])
-                    VotoMesaReportado.objects.create(carga=carga, opcion=opcion_total, votos=row['Total'])
+                        votos_a_crear = []
+                        for nombre_opcion in ['136-Frente de Todos', '135-JxC', 'Blancos', 'Nulos', 'Total']:
+                            votos_a_crear.append(
+                                VotoMesaReportado(
+                                    carga=carga, opcion=opcion_nosotros,
+                                    votos=row[nombre_opcion]
+                                )
+                            )
+                        VotoMesaReportado.objects.bulk_create(votos_a_crear)
+                        # actualizo la firma así no es necesario correr consolidar_identificaciones_y_cargas
+                        carga.actualizar_firma()
 
-                    # actualizo la firma así no es necesario correr consolidar_identificaciones_y_cargas
-                    carga.actualizar_firma()
-
-                    # Si hay cargas repetidas esto hace que se tome la ultima
-                    # en el proceso de comparar_mesas_con_correo
-                    mesa_categoria.actualizar_parcial_oficial(carga)
-
-                    # FIN TRANSACCION
+                        # Si hay cargas repetidas esto hace que se tome la última
+                        # en el proceso de comparar_mesas_con_correo.
+                        mesa_categoria.actualizar_parcial_oficial(carga)
 
                     ultima_guardada_con_exito = datetime.strptime(row['Marca temporal'], '%d/%m/%Y %H:%M:%S').replace(tzinfo=tz)
 

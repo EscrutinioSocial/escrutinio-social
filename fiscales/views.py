@@ -576,7 +576,7 @@ class AutocompleteBaseListView(ListView):
 class DistritoBaseListView(AutocompleteBaseListView):
     model = Distrito
 
-    def get_queryset(self,request):
+    def get_queryset(self, request):
         qs = Distrito.objects.all()
         if request.GET['id']:
             qs = qs.filter(numero=request.GET['id'])
@@ -608,7 +608,7 @@ class SeccionSimpleListView(autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Seccion.objects.all()
         lookups = Q()
-        distrito = self.forwarded.get('distrito',None)
+        distrito = self.forwarded.get('distrito', None)
         if distrito:
             lookups &= Q(distrito_id=distrito)
         if self.q:
@@ -623,7 +623,7 @@ class DistritoListView(AjaxListView):
     def get_queryset(self):
         qs = Distrito.objects.all()
         lookups = Q()
-        ident = self.request.GET.get('ident',None)
+        ident = self.request.GET.get('ident', None)
         if ident is not None:
             return qs.filter(id=ident)
         if self.q:
@@ -637,16 +637,16 @@ class SeccionListView(AjaxListView):
     def get_queryset(self):
         qs = Seccion.objects.all()
         lookups = Q()
-        distrito = self.forwarded.get('distrito',None)
-        ident = self.request.GET.get('ident',None)
+        distrito = self.forwarded.get('distrito', None)
+        ident = self.request.GET.get('ident', None)
         if ident is not None:
             return qs.filter(id=ident)
         if self.q:
             lookups = Q(numero__iexact=self.q)
         if distrito:
             lookups &= Q(distrito_id=distrito)
-        mesa = self.forwarded.get('mesa',None)
-        desdeMesa = self.forwarded.get('desdeMesa',None)
+        mesa = self.forwarded.get('mesa', None)
+        desdeMesa = self.forwarded.get('desdeMesa', None)
         if mesa and desdeMesa:
             mesas = Mesa.objects.filter(id=mesa).values('circuito__seccion_id')
             lookups &= Q(id__in=mesas)
@@ -659,19 +659,19 @@ class CircuitoListView(AjaxListView):
     def get_queryset(self):
         qs = Circuito.objects.all()
         lookups = Q()
-        ident = self.request.GET.get('ident',None)
+        ident = self.request.GET.get('ident', None)
         if ident is not None:
             return qs.filter(id=ident)
         if self.q:
             lookups = Q(numero__iexact=self.q)
-        seccion = self.forwarded.get('seccion',None)
+        seccion = self.forwarded.get('seccion', None)
         if seccion and seccion != "-1":
             lookups &= Q(seccion_id=seccion)
-        distrito = self.forwarded.get('distrito',None)
+        distrito = self.forwarded.get('distrito', None)
         if distrito:
             lookups &= Q(seccion__distrito_id=distrito)
-        mesa = self.forwarded.get('mesa',None)
-        desdeMesa = self.forwarded.get('desdeMesa',None)
+        mesa = self.forwarded.get('mesa', None)
+        desdeMesa = self.forwarded.get('desdeMesa', None)
         if mesa and desdeMesa:
             mesas = Mesa.objects.filter(id=mesa).values('circuito_id')
             lookups &= Q(id__in=mesas)

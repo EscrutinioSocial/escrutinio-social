@@ -2,6 +2,7 @@
 {% load i18n material_form material_frontend staticfiles %}
 
 {% block js %}
+<script src="{% static 'fiscales/js/cambio-categoria.js' %}"></script>
 {{ block.super }}
 
 <style>
@@ -19,7 +20,7 @@
 }
 
 .opcion-partido{
-    margin-top: -2pt; 
+    margin-top: -2pt;
     line-height: 0.9;
 }
 
@@ -33,7 +34,7 @@ h5 {
     padding-top: 1rem !important;
     padding-left: 1em !important;
 }
-  
+
 .collection {
     border: 0pt !important;
     padding-top: 0rem !important;
@@ -45,7 +46,7 @@ h5 {
     display: flex;
     line-height: 1.4rem !important;
     vertical-align: bottom !important;
-    padding : 0px 0px !important; 
+    padding : 0px 0px !important;
 }
 
 .collection-item > dmc-select {
@@ -73,7 +74,7 @@ dmc-select select {
   padding: 0;
   padding-right: .8em;
   text-align-last: right;
-}
+}<script src="{% static 'js/darkroom.js' %}"></script>
 
 .carga-acta-inline > dmc-select select::-ms-expand {
   display: none;
@@ -83,6 +84,10 @@ dmc-select select {
     background-color: {{ categoria.back_color }};
 }
 
+.info {
+  text-align: right;
+  padding: 5px;
+}
 </style>
 
 <script type="text/javascript">
@@ -102,7 +107,7 @@ $(document).ready(function(){
     }
     {% endif %}
     $('.modal').modal();
-
+    cargandoCategoria('{{ categoria }}');
 });
 </script>
 {% endblock js %}
@@ -113,12 +118,12 @@ $(document).ready(function(){
 {% endblock %}
 
 
-{% block page_title %}Cargar Acta {% endblock %}
+{% block page_title %}Cargar acta{% endblock %}
 
 
 {% block card-content %}
     <div class="card-title">
-      <h5 style='background-color:{{ categoria.back_color }}; color: {{ categoria.color }}'><strong>{{ categoria }}</strong></h5>
+      <h5 style='color: {{ categoria.color }}'><strong>{{ categoria }}</strong></h5>
     </div>
     {{ formset.management_form }}
     <div class="carga-acta-inline collection">
@@ -154,6 +159,27 @@ $(document).ready(function(){
     </div>
   {% endif %}
 {% endblock card-action %}
+
+{% block information %}
+    <div class="card small info">
+      Carga de <strong>{{ categoria }}</strong>
+      {% if categoria.categoria_general.foto_ejemplo %}
+        <img class="responsive-img" src="{{ categoria.categoria_general.foto_ejemplo.thumbnail.600x.url }}">
+      {% endif %}
+    </div>
+    <div id="cambio-categoria" class="modal">
+      <div class="modal-content">
+        <h4>Atención: cambio de categoría</h4>
+        <p>Vamos a continuar cargando <strong>{{ categoria }}</strong>.</p>
+        {% if categoria.categoria_general.foto_ejemplo %}
+        <img class="responsive-img" src="{{ categoria.categoria_general.foto_ejemplo.thumbnail.600x.url }}">
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Aceptar</a>
+      </div>
+    </div>
+{% endblock information %}
 
 {% block right-panel %}
     <script src="{% static 'js/fabric.js' %}"></script>

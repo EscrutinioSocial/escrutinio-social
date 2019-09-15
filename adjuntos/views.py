@@ -235,12 +235,13 @@ class AgregarAdjuntos(FormView):
     """
     Permite subir una o más imágenes, generando instancias de ``Attachment``
     Si una imagen ya existe en el sistema, se exluye con un mensaje de error
-    via `messages` framework.
+    vía `messages` framework o en el lateral de la pantalla de carga.
     """
 
     def __init__(self, types=('image/jpeg', 'image/png'), **kwargs):
         super().__init__(**kwargs)
         self.types = types
+        self.resultados_carga = []
 
     form_class = AgregarAttachmentsForm
 
@@ -249,8 +250,9 @@ class AgregarAdjuntos(FormView):
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        context = super(AgregarAdjuntos, self).get_context_data(**kwargs)
         context['url_to_post'] = reverse(self.url_to_post)
+        context['resultados_carga'] = self.resultados_carga
         return context
 
     def post(self, request, *args, **kwargs):
@@ -259,16 +261,24 @@ class AgregarAdjuntos(FormView):
         files = request.FILES.getlist('file_field')
         pre_identificacion = kwargs.get('pre_identificacion', None)
         if form.is_valid():
-            contador_fotos = 0
+            contador_archivos = 0
             for file in files:
                 instance = self.procesar_adjunto(file, request.user.fiscal, pre_identificacion)
                 if instance is not None:
-                    contador_fotos = contador_fotos + 1
-            if contador_fotos:
-                self.mostrar_mensaje_archivos_cargados(contador_fotos)
-            return redirect(reverse(self.url_to_post))
+                    contador_archivos = contador_archivos + 1
+            if contador_archivos > 0:
+                self.mostrar_mensaje_archivos_cargados(contador_archivos)
+            if len(self.resultados_carga) > 0:
+                # Hay que volver a mostrar la misma pantalla para que se muestren
+                # los resultados de carga.
+                return self.render_to_response(self.get_context_data())
+            else:
+                return redirect(reverse(self.url_to_post))
 
         return self.form_invalid(form)
+
+    def agregar_resultado_carga(self, nivel, mensaje):
+        self.resultados_carga.append((nivel, mensaje))
 
     def procesar_adjunto(self, adjunto, subido_por, pre_identificacion=None):
         if adjunto.content_type not in self.types:
@@ -286,21 +296,25 @@ class AgregarAdjuntos(FormView):
             instance.save()
             return instance
         except IntegrityError:
-            messages.warning(
-                self.request, (
-                    f'El archivo {adjunto.name} ya fue subido con anterioridad. <br>'
-                    'Verificá si era el que querías subir y, si lo era, '
-                    'no tenés que hacer nada.<br> ¡Gracias!'
-                ),
-                extra_tags='safe'
+            self.agregar_resultado_carga(
+                messages.WARNING,
+                f'El archivo {adjunto.name} ya fue subido con anterioridad. <br>'
+                'Verificá si era el que querías subir y, si lo era, '
+                'no tenés que hacer nada.<br> ¡Gracias!'
             )
         return None
 
     def mostrar_mensaje_archivos_cargados(self, contador):
-        messages.success(self.request, f'Subiste {contador} imágenes de actas. Gracias!')
+        self.agregar_resultado_carga(
+            messages.INFO if contador == 0 else messages.SUCCESS,
+            f'Subiste {contador} imágenes de actas. Gracias!'
+        )
 
     def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
-        messages.warning(self.request, f'{nombre_archivo} ignorado. No es una imagen')
+        self.agregar_resultado_carga(
+            self.WARNING,
+            f'{nombre_archivo} ignorado. No es una imagen'
+        )
 
 
 class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
@@ -356,9 +370,9 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     url_to_post = 'agregar-adjuntos'
     template_name = 'adjuntos/agregar-adjuntos-identificar.html'
 
-    def get(self, request, *args, **kwargs):
-        context = self.get_context_data()
-        attachment_form = AgregarAttachmentsForm()
+    def get_context_data(self, **kwargs):
+        context = super(AgregarAdjuntosPreidentificar, self).get_context_data(**kwargs)
+        request = self.request
         initial = {}
         if request.user:
             fiscal = request.user.fiscal
@@ -370,10 +384,9 @@ class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
                 # Si no tiene sección, pero sí un distrito, vamos con eso.
                 initial['distrito'] = fiscal.distrito
         pre_identificacion_form = PreIdentificacionForm(initial=initial)
-        context['attachment_form'] = attachment_form
+        context['attachment_form'] = AgregarAttachmentsForm()
         context['pre_identificacion_form'] = pre_identificacion_form
-
-        return self.render_to_response(context)
+        return context
 
     def post(self, request, *args, **kwargs):
         form_class = AgregarAttachmentsForm
@@ -429,18 +442,24 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
         return HttpResponseForbidden()
 
     def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion):
+        messages.add_message(self.request, messages.INFO, f"Procesando {adjunto.name}, aguarde por favor...")
         try:
             cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(adjunto, self.request.user).procesar()
-            if cant_mesas_ok > 0 or cant_mesas_parcialmente_ok>0:
-                messages.info(self.request, 
-                    f"{adjunto.name} ingresó {cant_mesas_ok} mesas sin problemas, "
-                    "{cant_mesas_parcialmente_ok} ingresaron alguna categoría y produjo "
-                    "los siguientes errores:\n{errores}"
-                )
-            else:
-                messages.error(self.request, f'{adjunto.name} produjo los siguientes errores:\n{errores}')
+            self.agregar_resultado_carga(
+                messages.SUCCESS if cant_mesas_ok > 0 else messages.INFO,
+               f"➡️ El archivo <b>{adjunto.name}</b> ingresó <b>{cant_mesas_ok}</b> mesas sin problemas,")
+            self.agregar_resultado_carga(
+                messages.SUCCESS if cant_mesas_parcialmente_ok > 0 else messages.INFO,
+                f"&nbsp;<b>{cant_mesas_parcialmente_ok}</b> ingresaron alguna categoría")
+            if errores:
+                self.agregar_resultado_carga(
+                    messages.INFO,
+                    "&nbsp;y produjo <b>los siguientes errores</b>:")
+                for error in errores.split('\n'):
+                    self.agregar_resultado_carga(messages.WARNING, f"&nbsp;&nbsp;{error}")
         except Exception as e:
-            messages.error(self.request, f'{adjunto.name} no importado debido al siguiente error: {str(e)}')
+            self.agregar_resultado_carga(messages.WARNING,
+                f'{adjunto.name} no importado debido al siguiente error: {str(e)}')
         return None
 
     def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):

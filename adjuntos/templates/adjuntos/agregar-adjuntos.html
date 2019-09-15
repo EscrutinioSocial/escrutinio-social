@@ -3,6 +3,29 @@
 
 {% block page_title %}Subir actas{% endblock %}
 
+{% block extrahead %}
+<style type="text/css">
+
+  .left-panel {
+      flex-basis: 60%;
+      margin-left: 0.375rem;
+  }
+
+  .right-panel {
+      flex-basis: 40%;
+      margin-left: 0.375rem;
+  }
+
+  .scroll {
+      height: 335px;
+      overflow-x: auto;
+      overflow-x: hidden;
+  }
+
+</style>
+
+{% endblock %}
+
 {% block left-panel %}
 <div class="card">
 
@@ -28,3 +51,37 @@
     </div>
 </div>
 {% endblock %}
+
+
+{% block right-panel %}
+<div class="card">
+  <div class="card-content">
+    <div class="card-title">
+      {% if resultados_carga %}
+      Resultados de la carga
+      {% endif %}
+    </div>
+    <div class="scroll">
+      <ul class="collection" style="box-shadow: none!important; border:0;">
+        {% for level, message in resultados_carga %}
+            <li class="collection-item" style="box-shadow: none!important; border-bottom:1pt gray solid;">
+              <div class="row">
+                <span class="col s10">
+                {{ message |safe }}
+                </span>
+                <span class="badge col s2">
+                    {% if level == DEFAULT_MESSAGE_LEVELS.WARNING %}
+                      <i class="btn-small material-icons red-text text-lighten-3" >error</i>
+                    {% endif %}
+                    {% if level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
+                      <i class="btn-small material-icons green-text text-lighten-1">done</i>
+                    {% endif %}
+                </span>
+              </div>
+            </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock right-panel %}

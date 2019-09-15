@@ -8,13 +8,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Categoría Presidente.
-        categoria = Categoria.objects.get(nombre=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE)
+        categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
         codigos = [settings.CODIGO_PARTIDO_NOSOTROS, settings.CODIGO_PARTIDO_ELLOS]
         self.configurar_categoria_prioritaria(categoria, codigos)
 
         # Categoría Gobernador.
-        m = Mesa.objects.filter(circuito__seccion__distrito__numero="2")[0]
-        categoria = m.categorias.get(nombre=settings.NOMBRE_CATEGORIA_GOB_Y_VICE_PBA)
+        categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA)
         codigos = [settings.CODIGO_PARTIDO_NOSOTROS, settings.CODIGO_PARTIDO_ELLOS_BA]
         self.configurar_categoria_prioritaria(categoria, codigos)
 

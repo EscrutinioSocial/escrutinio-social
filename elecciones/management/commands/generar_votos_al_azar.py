@@ -81,13 +81,13 @@ class Command(BaseCommand):
         parser.add_argument("--solo_distrito", type=int, dest="solo_distrito",
                             help="Analizar sólo el distrito indicado (default %(default)s).", default=None)
         parser.add_argument("--categoria", type=str, dest="categoria",
-                            help="Categoria a poblar (default %(default)s).", default=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE)
+                            help="Slug categoria a poblar (default %(default)s).", default=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
 
     def handle(self, *args, **kwargs):
         """
         """
         nombre_categoria = kwargs['categoria']
-        self.categoria = Categoria.objects.get(nombre=nombre_categoria)
+        self.categoria = Categoria.objects.get(slug=nombre_categoria)
         print("Vamos a poblar la categoría:", self.categoria)
 
         self.asignar_nivel_agregacion(kwargs)

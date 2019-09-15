@@ -278,7 +278,7 @@ class CSVImporter:
             # todas las opciones de la categoría en la carga total.
             opciones = CategoriaOpcion.objects.filter(
                 categoria=mesa_categoria.categoria).values_list('opcion__id', flat=True)
-            self.validar_carga_total(carga_total, mesa_categoria.categoria, opciones)
+            self.validar_carga_total(mesa, carga_total, mesa_categoria.categoria, opciones)
 
         if carga_parcial:
             self.logger.debug("----+ Validando carga parcial.")
@@ -286,7 +286,7 @@ class CSVImporter:
             # prioritarias en la carga parcial.
             opciones = CategoriaOpcion.objects.filter(categoria=mesa_categoria.categoria,
                 prioritaria=True).values_list('opcion__id', flat=True)
-            self.validar_carga_parcial(carga_parcial, mesa_categoria.categoria, opciones)
+            self.validar_carga_parcial(mesa, carga_parcial, mesa_categoria.categoria, opciones)
 
         self.borrar_carga_anterior(carga_parcial)
         self.borrar_carga_anterior(carga_total)
@@ -399,7 +399,7 @@ class CSVImporter:
             self.anadir_error(f'El número de lista {codigo_lista_en_csv} no fue '
                               f'encontrado asociado la categoría '
                               f'{categoria_bd.nombre}, revise que sea '
-                              f'el correcto.')
+                              f'el correcto ({self.celda_analizada}).')
             return
         elif not opcion_bd and cantidad_votos == 0:
             # Me están reportando cero votos para una opción no asociada a la categoría.
@@ -516,7 +516,7 @@ class CSVImporter:
             raise PermisosInvalidosError('Su usuario no tiene los permisos necesarios para realizar '
                                          'esta acción.')
 
-    def validar_carga(self, carga, categoria, opciones_de_la_categoria, es_parcial):
+    def validar_carga(self, mesa, carga, categoria, opciones_de_la_categoria, es_parcial):
         """
         Valida que la carga tenga todas las opciones disponibles para votar en esa mesa.
         Si corresponde a una carga parcial se valida que estén las opciones correspondientes
@@ -537,13 +537,13 @@ class CSVImporter:
             self.anadir_error(
                 f'Los resultados para la carga {tipo_carga} para la categoría {categoria.categoria_general} '
                 f'deben estar completos. '
-                f'Faltan las opciones: {nombres_opciones_faltantes}.')
+                f'Faltan las opciones: {nombres_opciones_faltantes} en la mesa {mesa}.')
 
-    def validar_carga_parcial(self, carga_parcial, categoria, opciones_de_carga):
-        self.validar_carga(carga_parcial, categoria, opciones_de_carga, True)
+    def validar_carga_parcial(self, mesa, carga_parcial, categoria, opciones_de_carga):
+        self.validar_carga(mesa, carga_parcial, categoria, opciones_de_carga, True)
 
-    def validar_carga_total(self, carga_total, categoria, opciones_de_carga):
-        self.validar_carga(carga_total, categoria, opciones_de_carga, False)
+    def validar_carga_total(self, mesa, carga_total, categoria, opciones_de_carga):
+        self.validar_carga(mesa, carga_total, categoria, opciones_de_carga, False)
 
 
 class CeldaCSVImporter:
