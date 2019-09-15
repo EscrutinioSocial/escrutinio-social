@@ -1,8 +1,12 @@
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from fiscales.models import Fiscal
 from django.contrib.auth.decorators import user_passes_test, login_required
+from django.views.generic.base import TemplateView
+
+from constance import config
+from fiscales.models import Fiscal
+
 
 NO_PERMISSION_REDIRECT = 'permission-denied'
 
@@ -24,3 +28,17 @@ def cambiar_status_troll(request, fiscal_id, prender):
         f'Validador {fiscal} modificado.',
     )
     return redirect('admin:fiscales_fiscal_changelist')
+
+
+class MonitorAntitrolling(TemplateView):
+    """
+    Vista principal monitor antitrolling.
+    """
+
+    template_name = "antitrolling/monitoreo_antitrolling.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fiscales'] = Fiscal.objects.count()
+        context['umbral_troll'] = config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL
+        return context

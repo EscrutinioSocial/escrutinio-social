@@ -1,0 +1,38 @@
+{% extends "fiscales/base.html" %}
+{% load staticfiles %}
+
+{% block extrahead %}
+<style type="text/css">
+    .left-panel {
+        flex-basis: 100%;
+    }
+
+    table.striped>tbody>tr:nth-child(odd) {
+        background-color: rgba(170, 213, 213, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block title %} Monitoreo antitrolling {% endblock %}
+
+{% block page_title %} Monitoreo antitrolling {% endblock %}
+
+{% block left-panel %}
+<div class="row">
+    <div class="col s6">
+        <div class="row" style="margin-bottom: 40px">
+            <div class="col s10">Puntaje mínimo para considerar troll</div>
+            <div class="col s2">{{ umbral_troll }}</div>
+        </div>
+
+        <div class="row">
+            <div class="col s8">Cantidad fiscales</div>
+            <div class="col s2">{{ fiscales }}</div>
+            <div class="col s2">100 %</div>
+        </div>
+    </div>
+</div>
+{% endblock left-panel %}
+
+{% block messages %}
+{% endblock messages %}
