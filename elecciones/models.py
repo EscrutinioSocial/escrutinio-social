@@ -404,6 +404,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
         return self.annotate(
             prioridad_status=models.Case(
                 *whens,
+                default=models.Value('0'),
                 output_field=models.IntegerField(),
             )
         )

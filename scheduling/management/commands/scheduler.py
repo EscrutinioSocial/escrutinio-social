@@ -14,7 +14,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         while True:
             cant_tareas = scheduler()
-            logger.error(
+            logger.debug(
                 'Encolado',
                 cargas=cant_tareas
             )

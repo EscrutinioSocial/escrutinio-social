@@ -276,6 +276,11 @@ LOGGING = {
             "filename": "logs/csv_import_line.log",
             "formatter": "key_value",
         },
+        "scheduler_file": {
+            "class": "logging.handlers.WatchedFileHandler",
+            "filename": "logs/scheduler.log",
+            "formatter": "plain_console",
+        },
         "consolidador_file": {
             "class": "logging.handlers.WatchedFileHandler",
             "filename": "logs/consolidador.log",
@@ -297,6 +302,10 @@ LOGGING = {
         },
         "csv_import": {
             "handlers": ["console", "csv_import_file"] if not TESTING else ["console"],
+            "level": "DEBUG",
+        },
+        "scheduler": {
+            "handlers": ["console", "scheduler_file"] if not TESTING else ["console"],
             "level": "DEBUG",
         },
         "": {
@@ -495,8 +504,9 @@ CONSTANCE_CONFIG = {
     'SCORING_TROLL_PROBLEMA_DESCARTADO': (200, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
     'MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS': (2, 'Este multiplicador se utiliza al computar "cant_asignaciones_realizadas_redondeadas" en el schedulling de attachments y mesa-categorías.', int),
     'TAMANO_COLA_TAREAS': (100, 'Tamaño de la cola de tareas preasignadas.', int),
-    'PAUSA_SCHEDULER' : (60, 'Frecuencia de ejecución del scheduler (en segundos)', int),
-    'LARGO_COLA_USUARIOS_ACTIVOS' : (1.5, 'Factor de multiplicación para agregar tareas.', float),
+    'PAUSA_SCHEDULER' : (60, 'Frecuencia de ejecución del scheduler (en segundos).', int),
+    'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS' : (1.5, 'Factor de multiplicación para agregar tareas.', float),
+    'CANTIDAD_CARGAS_POR_RONDA': (2, 'Cantidad de veces que se inserta una tarea en la cola.', int),
 }
 
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'

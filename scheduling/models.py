@@ -1,12 +1,12 @@
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from elecciones.models import (Seccion, Categoria, MesaCategoria)
 
-class ColaCargaPendientes(models.Model):
+class ColaCargasPendientes(models.Model):
     """
     Modelo que mantiene los trabajos de carga de votos pendientes a hacer.
     """
-    mesaCategoria = models.ForeignKey(MesaCategoria, on_delete=models.CASCADE)
+    mesa_categoria = models.ForeignKey(MesaCategoria, on_delete=models.CASCADE)
     # este campo lo calcula el encolador.
     orden = models.PositiveIntegerField(db_index=True)
     ## tiene sentido?
@@ -18,8 +18,23 @@ class ColaCargaPendientes(models.Model):
     #fiscal = models.ForeignKey('Fiscal', on_delete=models.NULL)
 
     class Meta:
-        unique_together = ('mesaCategoria', 'numero_carga')
+        unique_together = ('mesa_categoria', 'numero_carga')
+
+def largo_cola():
+    return ColaCargasPendientes.objects.count()
     
+def siguiente_tarea(fiscal):
+    mesa_categoria = None
+    with transaction.atomic():
+        item = ColaCargasPendientes.objects.select_for_update(skip_locked=True).exclude(
+            mesa_categoria__cargas__fiscal=fiscal
+        ).order_by('orden').first()
+        if item:
+            mesa_categoria = item.mesa_categoria
+            item.delete()
+
+    return mesa_categoria
+        
     
 class PrioridadScheduling(models.Model):
     """
