@@ -1056,7 +1056,7 @@ class CategoriaOpcion(models.Model):
 
     def __str__(self):
         prioritaria = ' (es prioritaria)' if self.prioritaria else ''
-        return f'{self.categoria} - {self.opcion} {prioritaria}'
+        return f'{self.categoria} - {self.opcion} (orden {self.orden}){prioritaria}'
 
     def set_prioritaria(self):
         self.prioritaria = True
