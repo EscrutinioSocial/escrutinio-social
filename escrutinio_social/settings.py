@@ -506,7 +506,7 @@ CONSTANCE_CONFIG = {
     'TAMANO_COLA_TAREAS': (100, 'Tamaño de la cola de tareas preasignadas.', int),
     'PAUSA_SCHEDULER' : (60, 'Frecuencia de ejecución del scheduler (en segundos).', int),
     'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS' : (1.5, 'Factor de multiplicación para agregar tareas.', float),
-    'CANTIDAD_CARGAS_POR_RONDA': (2, 'Cantidad de veces que se inserta una tarea en la cola.', int),
+    'COTA_INFERIOR_COLA': (100, 'Cantidad mínima de tareas que se encolan.', int),
 }
 
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'

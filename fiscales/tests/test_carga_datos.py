@@ -23,7 +23,8 @@ from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion, consumir_novedades_carga
 
 from elecciones.tests.test_models import consumir_novedades_y_actualizar_objetos
-
+from scheduling.scheduler import scheduler
+from scheduling.models import largo_cola, ColaCargasPendientes, siguiente_tarea
 
 def test_siguiente_accion_sin_mesas(fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
@@ -53,6 +54,7 @@ def test_siguiente_accion_balancea(fiscal_client, cant_attachments, cant_mcs, co
         attachment_identificado = AttachmentFactory(mesa=mesas[i], status='identificada')
         MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1)
 
+    scheduler()
     # Como la URL de identificación pasa un id no predictible
     # y no nos importa acá saber exactamente a que instancia se relaciona la acción
     # lo que evalúo es que redirija a una url que empiece así.
@@ -83,57 +85,76 @@ def test_siguiente_accion_redirige_a_cargar_resultados(db, settings, client, set
     # Ambas consolidadas vía csv.
     consumir_novedades_identificacion()
 
+    m1c1 = MesaCategoria.objects.get(mesa=m1, categoria=c1)
+    m2c1 = MesaCategoria.objects.get(mesa=m2, categoria=c1)
+    m2c2 = MesaCategoria.objects.get(mesa=m2, categoria=c2)
+    m1c1.coeficiente_para_orden_de_carga = 500
+    m2c1.coeficiente_para_orden_de_carga = 800
+    m2c2.coeficiente_para_orden_de_carga = 10000
+    m1c1.save(update_fields=['coeficiente_para_orden_de_carga'])
+    m2c1.save(update_fields=['coeficiente_para_orden_de_carga'])
+    m2c2.save(update_fields=['coeficiente_para_orden_de_carga'])
+
+    scheduler()
+    assert largo_cola() == 3
+
     # Los fiscales que voy a usar.
     fiscales = FiscalFactory.create_batch(20)
     indice_fiscal = 0
-
+    
     m1c1 = MesaCategoria.objects.get(mesa=m1, categoria=c1)
-    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
-        fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
-        indice_fiscal += 1
-        response = fiscal_client.get(reverse('siguiente-accion'))
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse('carga-total', args=[m1c1.id])
+    # for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+    fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
+    #    indice_fiscal += 1
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('carga-total', args=[m1c1.id])
+        
         # Cerramos la sesión para que el client pueda reutilizarse sin que nos diga
         # que ya estamos logueados.
-        fiscal_client.logout()
+    
+    fiscal_client.logout()
 
     # Como m1c1 ya fue pedida por suficientes fiscales,
     # se pasa a la siguiente mesacategoría.
     m2c1 = MesaCategoria.objects.get(mesa=m2, categoria=c1)
-    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
-        fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
-        indice_fiscal += 1
-        response = fiscal_client.get(reverse('siguiente-accion'))
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse('carga-total', args=[m2c1.id])
-        fiscal_client.logout()
-
-    # Ahora la tercera.
-    m2c2 = MesaCategoria.objects.get(mesa=m2, categoria=c2)
-    for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
-        fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
-        indice_fiscal += 1
-        response = fiscal_client.get(reverse('siguiente-accion'))
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse('carga-total', args=[m2c2.id])
-        fiscal_client.logout()
-
-    # Ya no hay actas nuevas, vuelta a empezar.
+    # for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
     fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
-    indice_fiscal += 1
+    #     indice_fiscal += 1
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('carga-total', args=[m2c1.id])
+    fiscal_client.logout()
+
+    # # Ahora la tercera.
+    m2c2 = MesaCategoria.objects.get(mesa=m2, categoria=c2)
+    # for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+    fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
+    #     indice_fiscal += 1
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('carga-total', args=[m2c2.id])
+    fiscal_client.logout()
+
+
+    scheduler()
+    assert largo_cola() == 3
+
+    # # Ya no hay actas nuevas, vuelta a empezar.
+    fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
+    # indice_fiscal += 1
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=[m1c1.id])
     fiscal_client.logout()
 
-    # Se libera una.
-    m2c2.desasignar_a_fiscal()
-    fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
-    indice_fiscal += 1
-    response = fiscal_client.get(reverse('siguiente-accion'))
-    assert response.status_code == HTTPStatus.FOUND
-    assert response.url == reverse('carga-total', args=[m2c2.id])
+    # # Se libera una.
+    # m2c2.desasignar_a_fiscal()
+    # fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
+    # indice_fiscal += 1
+    # response = fiscal_client.get(reverse('siguiente-accion'))
+    # assert response.status_code == HTTPStatus.FOUND
+    # assert response.url == reverse('carga-total', args=[m2c2.id])
 
 
 def test_siguiente_accion_considera_cant_asignaciones_realizadas(db, fiscal_client, settings):
@@ -154,48 +175,51 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas(db, fiscal_clie
     )
     # Ambas consolidadas vía csv.
     consumir_novedades_identificacion()
+    scheduler()
+    assert largo_cola() == 3
 
     m1c1 = MesaCategoria.objects.get(mesa=m1, categoria=c1)
-    for i in range(settings.MIN_COINCIDENCIAS_CARGAS * 2):
-        response = fiscal_client.get(reverse('siguiente-accion'))
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse('carga-total', args=[m1c1.id])
-        # Fiscal devuelve.
-        m1c1.desasignar_a_fiscal()
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('carga-total', args=[m1c1.id])
+    # Fiscal devuelve.
+    m1c1.desasignar_a_fiscal()
 
     # Como m1c1 ya fue pedida por suficientes fiscales,
     # se pasa a la siguiente mesacategoría por más que m1c1 esté en
     # cero fiscales asignados. Ie, no da siempre la misma tarea.
     m1c1.refresh_from_db()
     assert m1c1.cant_fiscales_asignados == 0
-    assert m1c1.cant_asignaciones_realizadas == settings.MIN_COINCIDENCIAS_CARGAS * 2
+    assert m1c1.cant_asignaciones_realizadas == 1 # settings.MIN_COINCIDENCIAS_CARGAS * 2
     m2c1 = MesaCategoria.objects.get(mesa=m2, categoria=c1)
     assert m2c1.cant_fiscales_asignados == 0
     assert m2c1.cant_asignaciones_realizadas == 0
-    for i in range(settings.MIN_COINCIDENCIAS_CARGAS * 2):
-        response = fiscal_client.get(reverse('siguiente-accion'))
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse('carga-total', args=[m2c1.id])
+
+    # for i in range(settings.MIN_COINCIDENCIAS_CARGAS * 2):
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('carga-total', args=[m2c1.id])
         # Fiscal devuelve.
-        m2c1.desasignar_a_fiscal()
+    m2c1.desasignar_a_fiscal()
 
     m2c1.refresh_from_db()
     assert m2c1.cant_fiscales_asignados == 0
-    assert m2c1.cant_asignaciones_realizadas == settings.MIN_COINCIDENCIAS_CARGAS * 2
+    assert m2c1.cant_asignaciones_realizadas == 1 # settings.MIN_COINCIDENCIAS_CARGAS * 2
 
     # Ahora la tercera
     m2c2 = MesaCategoria.objects.get(mesa=m2, categoria=c2)
-    for i in range(settings.MIN_COINCIDENCIAS_CARGAS * 2):
-        response = fiscal_client.get(reverse('siguiente-accion'))
-        assert response.status_code == HTTPStatus.FOUND
-        assert response.url == reverse('carga-total', args=[m2c2.id])
-        # Fiscal devuelve.
-        m2c2.desasignar_a_fiscal()
+    # for i in range(settings.MIN_COINCIDENCIAS_CARGAS * 2):
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('carga-total', args=[m2c2.id])
+    # Fiscal devuelve.
+    m2c2.desasignar_a_fiscal()
 
     m2c2.refresh_from_db()
     assert m2c2.cant_fiscales_asignados == 0
-    assert m2c2.cant_asignaciones_realizadas == settings.MIN_COINCIDENCIAS_CARGAS * 2
+    assert m2c2.cant_asignaciones_realizadas == 1 # settings.MIN_COINCIDENCIAS_CARGAS * 2
 
+    scheduler()
     # Ya no hay actas nuevas, vuelta a empezar.
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
@@ -216,6 +240,10 @@ def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client,
     a = AttachmentFactory(mesa=mesa)
     c1 = CategoriaFactory(requiere_cargas_parciales=True)
     m1c1 = MesaCategoriaFactory(categoria=c1, coeficiente_para_orden_de_carga=0.1, status=status, mesa=mesa)
+
+    scheduler()
+    assert largo_cola() == 1
+
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
@@ -228,12 +256,16 @@ def test_siguiente_happy_path_parcial_y_total(db, fiscal_client, settings):
     mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, coeficiente_para_orden_de_carga=1,
         mesa=mesa
     )
+    scheduler()
+    
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-parcial', args=[mc1.id])
 
     carga = CargaFactory(mesa_categoria=mc1, tipo='parcial')
     consumir_novedades_carga()
+    scheduler()
+    
     mc1.refresh_from_db()
     assert mc1.status == MesaCategoria.STATUS.parcial_consolidada_dc
     assert mc1.carga_testigo == carga
@@ -243,6 +275,7 @@ def test_siguiente_happy_path_parcial_y_total(db, fiscal_client, settings):
 
     carga = CargaFactory(mesa_categoria=mc1, tipo='total')
     consumir_novedades_carga()
+    scheduler()
     mc1.refresh_from_db()
     assert mc1.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mc1.carga_testigo == carga
@@ -263,7 +296,7 @@ def test_siguiente_manda_a_parcial_si_es_requerido(db, fiscal_client, settings):
     mc2 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, coeficiente_para_orden_de_carga=2,
         mesa=m2
     )
-
+    scheduler()
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=[mc1.id])

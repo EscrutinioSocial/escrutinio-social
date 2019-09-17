@@ -9,16 +9,8 @@ class ColaCargasPendientes(models.Model):
     mesa_categoria = models.ForeignKey(MesaCategoria, on_delete=models.CASCADE)
     # este campo lo calcula el encolador.
     orden = models.PositiveIntegerField(db_index=True)
-    ## tiene sentido?
-    carga_parcial = models.BooleanField(default=False)
-    numero_carga = models.PositiveIntegerField(default=1)
     ## esto lo usamos para afinidad
     # categoria = models.CharField(max_length=100,db_index=True)
-    ## Si queremos evitar que el mismo fiscal que identificó el acta cargue votos. 
-    #fiscal = models.ForeignKey('Fiscal', on_delete=models.NULL)
-
-    class Meta:
-        unique_together = ('mesa_categoria', 'numero_carga')
 
 def largo_cola():
     return ColaCargasPendientes.objects.count()

@@ -4,24 +4,12 @@ from constance import config
 
 from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
-from fiscales.models import Tarea
 from scheduling.models import siguiente_tarea, largo_cola
 
 @transaction.atomic
 def siguiente_accion(request):
-    tarea = Tarea.proxima()
+    return elegir_siguiente_accion_en_el_momento(request)
 
-    if not tarea:
-        # Se acabo la cola, elegimos en el momento.
-        return elegir_siguiente_accion_en_el_momento(request)
-
-    # Hay una tarea, se la asignamos al fiscal.
-    tarea.asignar(request.user.fiscal)
-
-    if tarea.attachment:
-        return IdentificacionDeFoto(request, tarea.attachment)
-    elif tarea.mesa_categoria:
-        return CargaCategoriaEnActa(request, tarea.mesa_categoria)
 
 def elegir_siguiente_accion_en_el_momento(request):
     """
