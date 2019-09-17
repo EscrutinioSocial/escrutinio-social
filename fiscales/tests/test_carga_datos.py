@@ -24,7 +24,8 @@ from adjuntos.consolidacion import consumir_novedades_identificacion, consumir_n
 
 from elecciones.tests.test_models import consumir_novedades_y_actualizar_objetos
 from scheduling.scheduler import scheduler
-from scheduling.models import largo_cola, ColaCargasPendientes, siguiente_tarea
+from scheduling.models import ColaCargasPendientes
+
 
 def test_siguiente_accion_sin_mesas(fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
@@ -96,12 +97,12 @@ def test_siguiente_accion_redirige_a_cargar_resultados(db, settings, client, set
     m2c2.save(update_fields=['coeficiente_para_orden_de_carga'])
 
     scheduler()
-    assert largo_cola() == 3
+    assert ColaCargasPendientes.largo_cola() == 3
 
     # Los fiscales que voy a usar.
     fiscales = FiscalFactory.create_batch(20)
     indice_fiscal = 0
-    
+
     m1c1 = MesaCategoria.objects.get(mesa=m1, categoria=c1)
     # for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
     fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
@@ -109,10 +110,9 @@ def test_siguiente_accion_redirige_a_cargar_resultados(db, settings, client, set
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=[m1c1.id])
-        
-        # Cerramos la sesión para que el client pueda reutilizarse sin que nos diga
-        # que ya estamos logueados.
-    
+
+    # Cerramos la sesión para que el client pueda reutilizarse sin que nos diga
+    # que ya estamos logueados.
     fiscal_client.logout()
 
     # Como m1c1 ya fue pedida por suficientes fiscales,
@@ -136,9 +136,8 @@ def test_siguiente_accion_redirige_a_cargar_resultados(db, settings, client, set
     assert response.url == reverse('carga-total', args=[m2c2.id])
     fiscal_client.logout()
 
-
     scheduler()
-    assert largo_cola() == 3
+    assert ColaCargasPendientes.largo_cola() == 3
 
     # # Ya no hay actas nuevas, vuelta a empezar.
     fiscal_client = fiscal_client_from_fiscal(client, fiscales[indice_fiscal])
@@ -176,7 +175,7 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas(db, fiscal_clie
     # Ambas consolidadas vía csv.
     consumir_novedades_identificacion()
     scheduler()
-    assert largo_cola() == 3
+    assert ColaCargasPendientes.largo_cola() == 3
 
     m1c1 = MesaCategoria.objects.get(mesa=m1, categoria=c1)
     response = fiscal_client.get(reverse('siguiente-accion'))
@@ -219,7 +218,7 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas(db, fiscal_clie
     assert m2c2.cant_fiscales_asignados == 0
     assert m2c2.cant_asignaciones_realizadas == 1 # settings.MIN_COINCIDENCIAS_CARGAS * 2
 
-    scheduler()
+    ColaCargasPendientes.scheduler()
     # Ya no hay actas nuevas, vuelta a empezar.
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
@@ -242,7 +241,7 @@ def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client,
     m1c1 = MesaCategoriaFactory(categoria=c1, coeficiente_para_orden_de_carga=0.1, status=status, mesa=mesa)
 
     scheduler()
-    assert largo_cola() == 1
+    assert ColaCargasPendientes.largo_cola() == 1
 
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
