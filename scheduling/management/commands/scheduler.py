@@ -13,9 +13,15 @@ logger = structlog.get_logger('scheduler')
 class Command(BaseCommand):
     help = "Scheduler asincrónico. Encola mesas-categorías con fotos para identificar."
 
+    def add_arguments(self, parser):
+        parser.add_argument("--cant_elem_consolidador",
+            type=int, default=100,
+            help="Cantidad de elementos a procesar por corrida del consolidador (None es sin límite, default %(default)s)."
+        )
+
     def handle(self, *args, **options):
         while True:
-            consolidador(ejecutado_desde='Scheduler')
+            consolidador(cant_por_iteracion=options['cant_elem_consolidador'], ejecutado_desde='Scheduler')
             cant_tareas = scheduler()
             logger.debug(
                 'Encolado',
