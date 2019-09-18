@@ -1,18 +1,24 @@
 from django.db import models, transaction
 from django.conf import settings
+from django.db.models import Q
 from elecciones.models import (Seccion, Categoria, MesaCategoria)
-
+from adjuntos.models import Attachment
 
 class ColaCargasPendientes(models.Model):
     """
     Modelo que mantiene los trabajos de carga de votos pendientes a hacer.
     """
-    mesa_categoria = models.ForeignKey(MesaCategoria, on_delete=models.CASCADE)
+    mesa_categoria = models.ForeignKey(MesaCategoria, on_delete=models.CASCADE, null=True)
+    attachment = models.ForeignKey(Attachment, on_delete=models.CASCADE, null=True)
     # Este campo lo calcula el encolador.
     orden = models.PositiveIntegerField(db_index=True)
+    numero_carga = models.PositiveIntegerField(default=1)
     ## Esto lo usamos para afinidad
     # categoria = models.CharField(max_length=100,db_index=True)
 
+    class Meta:
+        unique_together = ('mesa_categoria', 'numero_carga')
+        
     @classmethod
     def largo_cola(cls):
         return cls.objects.count()
@@ -25,14 +31,17 @@ class ColaCargasPendientes(models.Model):
         Debe invocarse dentro de una transacción.
         """
         mesa_categoria = None
+        attachment = None
         item = cls.objects.select_for_update(skip_locked=True).exclude(
-            mesa_categoria__cargas__fiscal=fiscal
+            Q(mesa_categoria__cargas__fiscal=fiscal) |
+            Q(attachment__identificaciones__fiscal=fiscal)
         ).order_by('orden').first()
         if item:
             mesa_categoria = item.mesa_categoria
+            attachment = item.attachment
             item.delete()
-
-        return mesa_categoria
+        
+        return (mesa_categoria, attachment)
 
 
 class PrioridadScheduling(models.Model):

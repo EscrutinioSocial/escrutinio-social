@@ -22,9 +22,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         while True:
             consolidador(cant_por_iteracion=options['cant_elem_consolidador'], ejecutado_desde='Scheduler')
-            cant_tareas = scheduler()
+            (cant_tareas, cant_cargas, cant_ident) = scheduler()
             logger.debug(
                 'Encolado',
-                cargas=cant_tareas
+                tareas=cant_tareas,
+                cargas=cant_cargas,
+                identificaciones=cant_ident
             )
             time.sleep(config.PAUSA_SCHEDULER)

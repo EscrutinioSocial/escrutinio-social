@@ -7,43 +7,16 @@ from elecciones.models import MesaCategoria
 from scheduling.models import ColaCargasPendientes
 
 
-@transaction.atomic
 def siguiente_accion(request):
     return elegir_siguiente_accion_en_el_momento(request)
 
-
+@transaction.atomic
 def elegir_siguiente_accion_en_el_momento(request):
-    """
-    Elige la siguiente acción a ejecutarse de acuerdo a los siguientes criterios:
-
-    - Si sólo hay actas sin cargar la accion será identificar una de ellas.
-
-    - Si sólo hay mesas con carga pendiente (es decir, que tienen categorias sin cargar),
-      se elige una por orden de prioridad.
-
-    - Si hay tanto mesas como actas pendientes, se elige identicar
-      si el tamaño de la cola de identificaciones pendientes es X veces el tamaño de la
-      cola de carga (siendo X la variable config.COEFICIENTE_IDENTIFICACION_VS_CARGA).
-
-    - En otro caso, no hay nada para hacer
-    """
-    attachments = Attachment.objects.sin_identificar(request.user.fiscal, for_update=True)
-
-    cant_fotos = attachments.count()
-    cant_cargas = ColaCargasPendientes.largo_cola()
-
-    # Mandamos al usuario a identificar mesas si hay fotos y no hay cargas pendientes
-    # o si la cantidad de mesas a identificar supera a la cantidad de cargas pendientes
-    # multiplicada por cierto coeficiente configurable.
-    if (cant_fotos and not cant_cargas or
-            cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
-        foto = attachments.priorizadas().first()
-        if foto:
-            return IdentificacionDeFoto(request, foto)
-    elif cant_cargas:
-        mesa_categoria = ColaCargasPendientes.siguiente_tarea(request.user.fiscal)
-        if mesa_categoria:
-            return CargaCategoriaEnActa(request, mesa_categoria)
+    (mesa_categoria,foto) = ColaCargasPendientes.siguiente_tarea(request.user.fiscal)
+    if mesa_categoria:
+        return CargaCategoriaEnActa(request, mesa_categoria)
+    if foto:
+        return IdentificacionDeFoto(request, foto)
     return NoHayAccion(request)
 
 
