@@ -43,6 +43,15 @@ class ColaCargasPendientes(models.Model):
         
         return (mesa_categoria, attachment)
 
+    @classmethod
+    def debug(cls, fiscal):
+        return cls.objects.exclude(
+            Q(mesa_categoria__cargas__fiscal=fiscal) |
+            Q(attachment__identificaciones__fiscal=fiscal)
+        ).order_by('orden')
+
+    def __str__(self):
+        return f'({self.orden}) <{self.mesa_categoria}, {self.attachment}>'
 
 class PrioridadScheduling(models.Model):
     """

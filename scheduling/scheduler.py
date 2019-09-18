@@ -16,36 +16,8 @@ def count_active_sessions():
 
 @transaction.atomic
 def scheduler():
-    largo_cola = ColaCargasPendientes.largo_cola()
-    ultimo = ColaCargasPendientes.objects.order_by('-orden').first()
-    orden_inicial = ultimo.orden if ultimo else 0
-    cota_inferior_largo = max(count_active_sessions(), config.COTA_INFERIOR_COLA)
-    long_cola = int(cota_inferior_largo * config.FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS) - largo_cola
-
-    # El campo calculado `orden` busca definir un orden total sobre
-    # las cargas pendientes. La idea subyacente es un orden
-    # lexicográfico de los siguientes ítems:
-    #
-    # (1) importancia de la mesa categoría de acuerdo a la categoría y
-    # la zona geográfica (teniendo en cuenta cargas de esa zona).
-    # (2) la prioridad del status (menos cargas menos prioridad)
-    # (3) la cantidad de asignaciones ya hechas (penalizamos levemente las
-    # mesas categorías que asignamos más veces).
-    #
-    # Los coeficientes buscan asegurar ese orden lexicográfico; no
-    # multiplicamos (1) porque ya de por sí suelen tener números altos.
-    orden = (F('coeficiente_para_orden_de_carga') +
-             F('prioridad_status') * 100 +
-             F('cant_asignaciones_realizadas') * 10)
-
-    mc_con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(
-        for_update=False
-    ).anotar_prioridad_status().annotate(
-        orden=ExpressionWrapper(orden, output_field=PositiveIntegerField())
-    ).order_by('orden', 'id')
-
     """
-    Elige la siguiente acción a ejecutarse de acuerdo a los siguientes criterios:
+    Puebla lo cola de elementos a asignar de acuerdo al siguiente criterio:
 
     - Si sólo hay actas sin cargar la accion será identificar una de ellas.
 
@@ -56,28 +28,40 @@ def scheduler():
       si el tamaño de la cola de identificaciones pendientes es X veces el tamaño de la
       cola de carga (siendo X la variable config.COEFICIENTE_IDENTIFICACION_VS_CARGA).
 
-    - En otro caso, no hay nada para hacer
+    - En otro caso, no hay nada para hacer.
     """
-    attachments = Attachment.objects.sin_identificar(for_update=False)
+    largo_cola = ColaCargasPendientes.largo_cola()
+    ultimo = ColaCargasPendientes.objects.order_by('-orden').first()
+    orden_inicial = ultimo.orden if ultimo else 0
+    cota_inferior_largo = max(count_active_sessions(), config.COTA_INFERIOR_COLA)
+    long_cola = int(cota_inferior_largo * config.FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS) - largo_cola
 
-    cant_fotos = attachments.count()
+    mc_con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=False)
+    attachments_sin_identificar = Attachment.objects.sin_identificar(for_update=False)
+
+    cant_fotos = attachments_sin_identificar.count()
     cant_cargas = mc_con_carga_pendiente.count()
 
-    identificaciones = iter(attachments.priorizadas())
-    cargas = iter(mc_con_carga_pendiente)
+    identificaciones = iter(attachments_sin_identificar.priorizadas())
+    cargas = iter(mc_con_carga_pendiente.ordenadas_por_prioridad_batch())
     
-    (nuevas, k, num_cargas, num_idents) = ([], orden_inicial, 0, 0)
+    nuevas, k, num_cargas, num_idents = [], orden_inicial, 0, 0
     
     for j in range(long_cola):
         mc = next(cargas, None)
         foto = next(identificaciones, None)
 
-        # si no hay nada por agregar terminamos el loop.
+        # Si no hay nada por agregar terminamos el loop.
         if mc is None and foto is None:
             break
 
-        turno_mesa = j % config.COEFICIENTE_IDENTIFICACION_VS_CARGA != 0
-        if mc and (turno_mesa or foto is None):
+        # Encolamos una mc si es lo único que hay disponible, o 
+        # si hay "suficientemente menos" fotos que cargas, donde
+        # "suficientemente menos" involucra el multiplicador `COEFICIENTE_IDENTIFICACION_VS_CARGA`.
+        turno_mc = (cant_cargas and not cant_fotos or
+            cant_fotos < cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA)
+
+        if mc and (turno_mc or foto is None):
             cant_unidades = settings.MIN_COINCIDENCIAS_CARGAS
             # Si ya está consolidada por CSV hay que hacer una carga menos.
             if mc.status in [MesaCategoria.STATUS.parcial_consolidada_csv, MesaCategoria.STATUS.total_consolidada_csv]:
@@ -92,16 +76,17 @@ def scheduler():
                 k += 1
 
             num_cargas += 1
+            cant_cargas = max(0, cant_cargas - 1)  # No debería hacerse negativo, pero por las dudas.
             continue
 
-        # si hay una foto y toca encolar foto ó si no hay mesa
-        if foto and (not turno_mesa or mc is None):
+        # Si hay una foto y toca encolar foto o si no hay mesa.
+        if foto and (not turno_mc or mc is None):
             nuevas.append(ColaCargasPendientes(attachment=foto, orden=k))
             k += 1
             num_idents += 1
+            cant_fotos = max(0, cant_fotos - 1)  # No debería hacerse negativo, pero por las dudas.
             continue
 
-        
     ColaCargasPendientes.objects.bulk_create(nuevas, ignore_conflicts=True)
 
     return (k - orden_inicial, num_cargas, num_idents)

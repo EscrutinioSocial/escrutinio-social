@@ -504,8 +504,9 @@ CONSTANCE_CONFIG = {
     'SCORING_TROLL_PROBLEMA_DESCARTADO': (200, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
     'MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS': (2, 'Este multiplicador se utiliza al computar "cant_asignaciones_realizadas_redondeadas" en el schedulling de attachments y mesa-categorías.', int),
     'TAMANO_COLA_TAREAS': (100, 'Tamaño de la cola de tareas preasignadas.', int),
-    'PAUSA_SCHEDULER' : (60, 'Frecuencia de ejecución del scheduler (en segundos).', int),
-    'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS' : (1.5, 'Factor de multiplicación para agregar tareas.', float),
+    'PAUSA_SCHEDULER': (60, 'Frecuencia de ejecución del scheduler (en segundos).', int),
+    'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS': (1.5, 'Factor de multiplicación para agregar tareas.', float),
+    'ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA': (True, 'Asignar tareas en el momento si la cola está vacía?', bool),
     'COTA_INFERIOR_COLA': (100, 'Cantidad mínima de tareas que se encolan.', int),
 }
 

@@ -6,17 +6,51 @@ from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
 from scheduling.models import ColaCargasPendientes
 
-
-def siguiente_accion(request):
-    return elegir_siguiente_accion_en_el_momento(request)
-
 @transaction.atomic
-def elegir_siguiente_accion_en_el_momento(request):
-    (mesa_categoria,foto) = ColaCargasPendientes.siguiente_tarea(request.user.fiscal)
+def siguiente_accion(request):
+    """
+    Define la siguiente acción en base a la cola de tareas preexistente.
+    """
+    (mesa_categoria, foto) = ColaCargasPendientes.siguiente_tarea(request.user.fiscal)
     if mesa_categoria:
         return CargaCategoriaEnActa(request, mesa_categoria)
     if foto:
         return IdentificacionDeFoto(request, foto)
+    siguiente = elegir_siguiente_accion_en_el_momento(request) if config.ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA else NoHayAccion(request)
+    return siguiente
+
+def elegir_siguiente_accion_en_el_momento(request):
+    """
+    Elige la siguiente acción a ejecutarse
+
+    - si sólo hay actas sin cargar la accion será identificar una de ellas al azar
+
+    - si sólo hay mesas con carga pendiente (es decir, que tienen categorias sin cargar),
+      se elige una por orden de prioridad
+
+    - si hay tanto mesas como actas pendientes, se elige identicar
+      si el tamaño de la cola de identificaciones pendientes es X veces el tamaño de la
+      cola de carga (siendo X la variable config.COEFICIENTE_IDENTIFICACION_VS_CARGA).
+    - caso contrario, no hay nada para hacer
+    """
+    attachments = Attachment.objects.sin_identificar(request.user.fiscal, for_update=True)
+    con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True)
+
+    cant_fotos = attachments.count()
+    cant_cargas = con_carga_pendiente.count()
+
+    # Mandamos al usuario a identificar mesas si hay fotos y no hay cargas pendientes
+    # o si la cantidad de mesas a identificar supera a la cantidad de cargas pendientes
+    # por cierto coeficiente configurable.
+    if (cant_fotos and not cant_cargas or
+            cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
+        foto = attachments.priorizadas().first()
+        if foto:
+            return IdentificacionDeFoto(request, foto)
+    elif cant_cargas:
+        mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
+        if mesacategoria:
+            return CargaCategoriaEnActa(request, mesacategoria)
     return NoHayAccion(request)
 
 

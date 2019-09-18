@@ -341,10 +341,16 @@ class MesaCategoriaQuerySet(models.QuerySet):
         'id',
     ]
 
+    # La asignación batch desde el scheduler prioriza así:
+    # Primero el orden que la prioridad geográifica.
+    # Segundo, el status (sin cargar, consolidada, inconsistente, etc.)
+    # Tercero, la cantidad de asignaciones ya hechas (penalizamos levemente las
+    # mesas categorías que asignamos más veces).
+    # En caso de empate, la de menor id (que es la más vieja).
     campos_de_orden_batch = [
-        'cant_fiscales_asignados',  # Primero las que tienen menos gente trabajando en ellas.
-        'prioridad_status', 'orden_de_carga',
-        'cant_asignaciones_realizadas',  # En caso de empate no damos siempre la de menor id.
+        'coeficiente_para_orden_de_carga',
+        'prioridad_status',
+        'cant_asignaciones_realizadas',
         'id',
     ]
 
