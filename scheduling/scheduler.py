@@ -19,7 +19,22 @@ def scheduler():
     cota_inferior_largo = max(count_active_sessions(), config.COTA_INFERIOR_COLA)
     long_cola = int(cota_inferior_largo * config.FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS) - ColaCargasPendientes.largo_cola()
 
-    orden = F('coeficiente_para_orden_de_carga') + F('prioridad_status') * 100 + F('cant_asignaciones_realizadas') * 10
+    # El campo calculado `orden` busca definir un orden total sobre
+    # las cargas pendientes. La idea subyacente es un orden
+    # lexicográfico de los siguientes ítems:
+    #
+    # (1) importancia de la mesa categoría de acuerdo a la categoría y
+    # la zona geográfica (teniendo en cuenta cargas de esa zona).
+    # (2) la prioridad del status (menos cargas menos prioridad)
+    # (3) la cantidad de asignaciones ya hechas (penalizamos levemente las
+    # mesas categorías que asignamos más veces).
+    #
+    # Los coeficientes buscan asegurar ese orden lexicográfico; no
+    # multiplicamos (1) porque ya de por sí suelen tener números altos.
+    orden = (F('coeficiente_para_orden_de_carga') +
+             F('prioridad_status') * 100 +
+             F('cant_asignaciones_realizadas') * 10)
+
     mc_con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(
         for_update=False
     ).anotar_prioridad_status().annotate(
@@ -38,7 +53,7 @@ def scheduler():
 
         for i in range(cant_unidades):
             # Encolo tantas unidades como haga falta.
-            nuevas.append(ColaCargasPendientes(mesa_categoria=nueva, orden=nueva.orden + k))
+            nuevas.append(ColaCargasPendientes(mesa_categoria=nueva, orden=nueva.orden + k + i))
             k += 1
 
     ColaCargasPendientes.objects.bulk_create(nuevas, ignore_conflicts=True)
