@@ -58,6 +58,9 @@ function abrirArbolDistritoSeccionCircuito() {
     $hoja.find('.collapsible-header i').first().click();
     $hoja.removeClass('active');
     $hoja.addClass('selected');
+    $('#slide-out').animate({
+        scrollTop: $hoja.offset().top
+    }, 1000);
   }
 }
 
