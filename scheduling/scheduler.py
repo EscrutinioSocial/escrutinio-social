@@ -15,7 +15,7 @@ def count_active_sessions():
 
 
 @transaction.atomic
-def scheduler():
+def scheduler(reconstruir_la_cola):
     """
     Puebla lo cola de elementos a asignar de acuerdo al siguiente criterio:
 
@@ -30,6 +30,9 @@ def scheduler():
 
     - En otro caso, no hay nada para hacer.
     """
+    if reconstruir_la_cola:
+        ColaCargasPendientes.vaciar()
+
     largo_cola = ColaCargasPendientes.largo_cola()
     ultimo = ColaCargasPendientes.objects.order_by('-orden').first()
     orden_inicial = ultimo.orden if ultimo else 0
