@@ -181,6 +181,10 @@ class Fiscal(models.Model):
         Al hacer esto se desasigna la mesa_categoría ya que puede tener
         asignada una de las dos tareas a la vez.
         """
+        # La llamada a limpiar_asignacion_previa() no es necesaria en el contexto 'normal'
+        # porque en acciones.py se liberan invoca explícitamente antes de asignarle una mesa,
+        # y se hace de forma tal de evitar deadlocks. Se deja aquí para que la función sea
+        # 'completa' y para facilitar la escritura de tests.
         self.limpiar_asignacion_previa()
         self.asignar_attachment_o_mesacategoria(attachment, None)
 
@@ -190,6 +194,10 @@ class Fiscal(models.Model):
         Al hacer esto se desasigna el attachment ya que puede tener
         asignada una de las dos tareas a la vez.
         """
+        # La llamada a limpiar_asignacion_previa() no es necesaria en el contexto 'normal'
+        # porque en acciones.py se liberan invoca explícitamente antes de asignarle una mesa,
+        # y se hace de forma tal de evitar deadlocks. Se deja aquí para que la función sea
+        # 'completa' y para facilitar la escritura de tests.
         self.limpiar_asignacion_previa()
         self.asignar_attachment_o_mesacategoria(None, mesa_categoria)
 
