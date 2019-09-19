@@ -1,4 +1,4 @@
-from django.db import models, transaction
+from django.db import models, transaction, connection
 from django.conf import settings
 from django.db.models import Q
 from elecciones.models import (Seccion, Categoria, MesaCategoria)
@@ -42,6 +42,12 @@ class ColaCargasPendientes(models.Model):
             item.delete()
         
         return (mesa_categoria, attachment)
+
+    @classmethod
+    def vaciar(cls):
+        #cls.objects.all().delete()
+        with connection.cursor() as cursor:
+            cursor.execute(f'TRUNCATE TABLE {cls._meta.db_table} CASCADE')
 
     @classmethod
     def debug(cls, fiscal):
