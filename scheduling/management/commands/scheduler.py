@@ -41,8 +41,7 @@ class Command(BaseCommand):
                     cargas=cant_cargas,
                     identificaciones=cant_ident
                 )
-            except Exception:
-                except Exception as e:
+            except Exception as e:
                 # Logueamos la excepción y continuamos.
                 capture_message(
                     f"""
