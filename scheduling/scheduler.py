@@ -15,7 +15,7 @@ def count_active_sessions():
 
 
 @transaction.atomic
-def scheduler(reconstruir_la_cola):
+def scheduler(reconstruir_la_cola=False):
     """
     Puebla lo cola de elementos a asignar de acuerdo al siguiente criterio:
 

@@ -6,6 +6,7 @@ from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
 from scheduling.models import ColaCargasPendientes
 
+
 @transaction.atomic
 def siguiente_accion(request):
     """
@@ -18,6 +19,7 @@ def siguiente_accion(request):
         return IdentificacionDeFoto(request, foto)
     siguiente = elegir_siguiente_accion_en_el_momento(request) if config.ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA else NoHayAccion(request)
     return siguiente
+
 
 def elegir_siguiente_accion_en_el_momento(request):
     """
