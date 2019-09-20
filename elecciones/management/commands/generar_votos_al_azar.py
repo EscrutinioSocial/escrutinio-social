@@ -39,20 +39,26 @@ class Command(BaseCommand):
         mesa_categoria = MesaCategoria.objects.get(categoria=self.categoria, mesa=mesa)
         fiscal = Fiscal.objects.all().first()
 
-        carga = Carga.objects.create(
-            tipo=Carga.TIPOS.total,
-            fiscal=fiscal,
-            origen=Carga.SOURCES.csv,
-            mesa_categoria=mesa_categoria
-        )
+        cargas = []
+        for i in range(self.cant_cargas):
+            cargas.append(
+                Carga.objects.create(
+                    tipo=Carga.TIPOS.total,
+                    fiscal=fiscal,
+                    origen=Carga.SOURCES.csv,
+                    mesa_categoria=mesa_categoria
+                )
+            )
         opciones_ids = CategoriaOpcion.objects.filter(categoria=self.categoria).values('opcion__id')
         for opcion in Opcion.objects.filter(id__in=opciones_ids):
             self.alerta_mesa(mesa, "Poblando opción %s" % opcion)
-            VotoMesaReportado.objects.create(
-                carga=carga,
-                opcion=opcion,
-                votos=random.randint(1, 101)
-            )
+            votos = random.randint(1, 101)
+            for i in range(self.cant_cargas):
+                VotoMesaReportado.objects.create(
+                    carga=cargas[i],
+                    opcion=opcion,
+                    votos=votos
+                )
 
     def poblar_circuito(self, circuito):
         for mesa in circuito.mesas.all():
@@ -75,22 +81,26 @@ class Command(BaseCommand):
 
         # Nivel de agregación a analizar
         parser.add_argument("--solo_seccion", type=int, dest="solo_seccion",
-                            help="Analizar sólo la sección indicada (default %(default)s).", default=None)
+                            help="Poblar sólo la sección indicada (default %(default)s).", default=None)
         parser.add_argument("--solo_circuito", type=int, dest="solo_circuito",
-                            help="Analizar sólo el circuito indicado (default %(default)s).", default=None)
+                            help="Poblar sólo el circuito indicado (default %(default)s).", default=None)
         parser.add_argument("--solo_distrito", type=int, dest="solo_distrito",
-                            help="Analizar sólo el distrito indicado (default %(default)s).", default=None)
+                            help="Poblar sólo el distrito indicado (default %(default)s).", default=None)
         parser.add_argument("--categoria", type=str, dest="categoria",
-                            help="Slug categoria a poblar (default %(default)s).", default=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
+                            help="Slug categoría a poblar (default %(default)s).", default=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
+
+        parser.add_argument("--cant_cargas", type=int, dest="cant_cargas",
+                            help="Cuántas cargas generar (sirve para que consolide, default %(default)s).", default=1)
 
     def handle(self, *args, **kwargs):
         """
         """
-        nombre_categoria = kwargs['categoria']
-        self.categoria = Categoria.objects.get(slug=nombre_categoria)
+        slug_categoria = kwargs['categoria']
+        self.categoria = Categoria.objects.get(slug=slug_categoria)
         print("Vamos a poblar la categoría:", self.categoria)
 
         self.asignar_nivel_agregacion(kwargs)
+        self.cant_cargas = kwargs['cant_cargas']
         self.poblar_segun_nivel_agregacion()
 
     def poblar_segun_nivel_agregacion(self):
