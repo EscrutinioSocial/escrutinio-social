@@ -33,7 +33,7 @@ COLUMNAS_DEFAULT = [
     ('senadores provinciales', True, False),
     ('diputados provinciales', True, False),
     ('legisladores provinciales', True, False),  # Para el caso de legislatura unicameral.
-    ('intendente, concejales y consejeros escolares', True, False),
+    ('intendentes, concejales y consejeros escolares', True, False),
     # Metadata.
     (COL_CANT_ELECTORES, False, True),
     (COL_CANT_SOBRES, False, True),
