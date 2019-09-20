@@ -20,6 +20,7 @@ from adjuntos.models import Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
 from .test_models import consumir_novedades_y_actualizar_objetos
 from .utils import tecnica_proyeccion, cargar_votos
+from elecciones.tests.conftest import setup_groups, fiscal_client_from_fiscal    # noqa
 
 
 def test_resultados_pide_login(db, client, url_resultados):
@@ -522,7 +523,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     assert resultados.total_mesas_escrutadas() == 2
 
 
-def test_siguiente_accion_cargar_acta(fiscal_client, settings):
+def test_siguiente_accion_cargar_acta(client, setup_groups, settings):
     c = CategoriaFactory(nombre='default')
     m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
     m2 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
@@ -530,21 +531,30 @@ def test_siguiente_accion_cargar_acta(fiscal_client, settings):
     mc2 = MesaCategoriaFactory(mesa=m2, categoria=c)
     consumir_novedades_identificacion()
 
+    fiscales = FiscalFactory.create_batch(4)
+
     # Todas estas veces debería darme la misma.
     for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
+        fiscal_client = fiscal_client_from_fiscal(client, fiscales[i])
         response = fiscal_client.get(reverse('siguiente-accion'))
         assert response.status_code == HTTPStatus.FOUND
         assert response.url == reverse('carga-total', args=(mc1.id, ))
         mc1.refresh_from_db()
         assert mc1.cant_fiscales_asignados == i + 1
+        # Cerramos la sesión para que el client pueda reutilizarse sin que nos diga
+        # que ya estamos logueados.
+        fiscal_client.logout()
 
     # Ahora la siguiente.
+    fiscal_client = fiscal_client_from_fiscal(client, fiscales[i+1])
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=(mc2.id, ))
+    fiscal_client.logout()
 
     # Devuelvo la primera y pido de nuevo. Debería volver a darme la primera.
     mc1.desasignar_a_fiscal()
+    fiscal_client = fiscal_client_from_fiscal(client, fiscales[i+2])
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=(mc1.id, ))
