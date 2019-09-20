@@ -178,27 +178,23 @@ class Fiscal(models.Model):
     def asignar_attachment(self, attachment):
         """
         Asigna al fiscal un attachment para que trabaje en él.
-        Al hacer esto se desasigna la mesa_categoría ya que puede tener
-        asignada una de las dos tareas a la vez.
+
+        Tiene como prerrequisito que se hayan hecho un llamado previo a
+        limpiar_asignacion_previa() para desasignar la asignación anterior.
+        No se hace aquí para evitar deadlocks (ver #317), se hace desde
+        acciones.py en una transacción independiente.
         """
-        # La llamada a limpiar_asignacion_previa() no es necesaria en el contexto 'normal'
-        # porque en acciones.py se liberan invoca explícitamente antes de asignarle una mesa,
-        # y se hace de forma tal de evitar deadlocks. Se deja aquí para que la función sea
-        # 'completa' y para facilitar la escritura de tests.
-        self.limpiar_asignacion_previa()
         self.asignar_attachment_o_mesacategoria(attachment, None)
 
     def asignar_mesa_categoria(self, mesa_categoria):
         """
         Asigna al fiscal una mesa_categoria para que trabaje en ella.
-        Al hacer esto se desasigna el attachment ya que puede tener
-        asignada una de las dos tareas a la vez.
+
+        Tiene como prerrequisito que se hayan hecho un llamado previo a
+        limpiar_asignacion_previa() para desasignar la asignación anterior.
+        No se hace aquí para evitar deadlocks (ver #317), se hace desde
+        acciones.py en una transacción independiente.
         """
-        # La llamada a limpiar_asignacion_previa() no es necesaria en el contexto 'normal'
-        # porque en acciones.py se liberan invoca explícitamente antes de asignarle una mesa,
-        # y se hace de forma tal de evitar deadlocks. Se deja aquí para que la función sea
-        # 'completa' y para facilitar la escritura de tests.
-        self.limpiar_asignacion_previa()
         self.asignar_attachment_o_mesacategoria(None, mesa_categoria)
 
     @transaction.atomic
