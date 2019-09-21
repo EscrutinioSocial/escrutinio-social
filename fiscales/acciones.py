@@ -7,20 +7,28 @@ from elecciones.models import MesaCategoria
 from scheduling.models import ColaCargasPendientes
 
 
-@transaction.atomic
 def siguiente_accion(request):
+    # Libero los recursos que tenía tomados el fiscal.
+    # Es importante hacerlo en otra transacción para no provocar un deadlock.
+    with transaction.atomic():
+        request.user.fiscal.limpiar_asignacion_previa()
+    # Y ahora comienza otra tr.
+    return elegir_siguiente_accion(request)
+
+def elegir_siguiente_accion(request):
     """
     Define la siguiente acción en base a la cola de tareas preexistente.
     """
-    (mesa_categoria, foto) = ColaCargasPendientes.siguiente_tarea(request.user.fiscal)
-    if mesa_categoria:
-        return CargaCategoriaEnActa(request, mesa_categoria)
-    if foto:
-        return IdentificacionDeFoto(request, foto)
-    siguiente = elegir_siguiente_accion_en_el_momento(request) if config.ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA else NoHayAccion(request)
+    with transaction.atomic():
+        (mesa_categoria, foto) = ColaCargasPendientes.siguiente_tarea(request.user.fiscal)
+        if mesa_categoria:
+            return CargaCategoriaEnActa(request, mesa_categoria)
+        if foto:
+            return IdentificacionDeFoto(request, foto)
+        siguiente = elegir_siguiente_accion_en_el_momento(request) if config.ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA else NoHayAccion(request)
     return siguiente
 
-
+@transaction.atomic
 def elegir_siguiente_accion_en_el_momento(request):
     """
     Elige la siguiente acción a ejecutarse
@@ -58,9 +66,7 @@ def elegir_siguiente_accion_en_el_momento(request):
 
 class IdentificacionDeFoto():
     """
-    Acción sobre una foto (attachment):
-    estampa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para su clasificación.
+    Acción de identificación de una foto (attachment).
     """
 
     def __init__(self, request, attachment):
@@ -78,9 +84,8 @@ class IdentificacionDeFoto():
 
 class CargaCategoriaEnActa():
     """
-    Acción sobre una mesa-categoría:
-    estampa en la mesa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para la carga de la mesa/categoría dependiendo
+    Acción de carga de votos en una mesa-categoría.
+    Redirige a la vista para la carga de la mesa/categoría dependiendo
     de la configuracion de la categoría.
     """
 

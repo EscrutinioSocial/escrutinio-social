@@ -447,7 +447,7 @@ def test_siguiente_happy_path_parcial_y_total_con_scheduler(db, fiscal_client, s
     assert response.status_code == HTTPStatus.OK
     assert 'No hay actas para cargar' in str(response.content)
 
-def test_siguiente_manda_a_parcial_si_es_requerido_sin_scheduler(db, fiscal_client, settings):
+def test_siguiente_manda_a_parcial_si_es_requerido_sin_scheduler(db, client, setup_groups, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
     m1 = MesaFactory()
     a1 = AttachmentFactory(mesa=m1, status=Identificacion.STATUS.identificada)
@@ -460,12 +460,19 @@ def test_siguiente_manda_a_parcial_si_es_requerido_sin_scheduler(db, fiscal_clie
         mesa=m2
     )
 
+    fiscales = FiscalFactory.create_batch(2)
+
+    # Da mc1 porque es más prioritaria.
+    fiscal_client = fiscal_client_from_fiscal(client, fiscales[0])
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=[mc1.id])
+    # Cerramos la sesión para que el client pueda reutilizarse sin que nos diga
+    # que ya estamos logueados.
+    fiscal_client.logout()
 
     # mc1 fue asignada, ahora da mc2
-
+    fiscal_client = fiscal_client_from_fiscal(client, fiscales[1])
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-parcial', args=[mc2.id])

@@ -1,3 +1,5 @@
+import pytest
+
 from scheduling.models import (
     mapa_prioridades_desde_setting, mapa_prioridades_para_categoria, mapa_prioridades_para_seccion,
     mapa_prioridades_para_mesa_categoria

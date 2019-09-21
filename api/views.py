@@ -235,7 +235,7 @@ def listar_opciones(request, id_categoria):
     Permite listar las opciones por categorías.
 
     Por defecto se listan sólo las opciones prioritarias (`solo_prioritarias=true`).
-    Las opciones se ordenan de forma ascendente según el campo orden (orden en la boleta).
+    Las opciones se ordenan de forma ascendente según el campo orden (orden en el acta).
     """
     c = get_object_or_404(Categoria, id=id_categoria)
     serializer = ListarOpcionesQuerySerializer(data=request.query_params)
