@@ -319,7 +319,6 @@ def consumir_novedades_carga(cant_por_iteracion=None):
     return procesadas
 
 
-@transaction.atomic
 def liberar_mesacategorias_y_attachments():
     """
     Para la documentación ver a la función a la que se llama.
