@@ -85,6 +85,7 @@ class Command(BaseCommand):
             )
             return categoria
 
+        # Se asocian las mesas a la categoría sólo cuando se crea la categoría.
         extranjeros = self.to_nat(row, 'extranjeros', linea, 0)
         if extranjeros is None:
             self.warning(f'La categoría {categoria_slug} no tiene seteado el campo extranjero, o no es 0 o 1.'
@@ -93,13 +94,16 @@ class Command(BaseCommand):
         extranjeros = bool(extranjeros)
 
         lookup = Q()
-        # Se asocian las mesas a la categoría sólo cuando se crea la categoría.
-        if distrito_nro and not secciones_nat:
-            lookup &= Q(circuito__seccion__distrito__numero=distrito_nro)
-        elif distrito_nro and secciones_nat:
+        if distrito_nro and secciones_nat:
             lookup &= Q(circuito__seccion__distrito__numero=distrito_nro,
                         circuito__seccion__numero__in=secciones_nat
             )
+        elif distrito_nro and seccion_nro:
+            lookup &= Q(circuito__seccion__distrito__numero=distrito_nro,
+                        circuito__seccion__numero=seccion_nro
+            )
+        elif distrito_nro:
+            lookup &= Q(circuito__seccion__distrito__numero=distrito_nro)
 
         # Sólo excluimos si la categoría es xenófoba...
         if not extranjeros:

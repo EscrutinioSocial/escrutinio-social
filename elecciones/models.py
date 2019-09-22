@@ -260,8 +260,8 @@ class LugarVotacion(models.Model):
     calidad = models.CharField(
         max_length=20, help_text='calidad de la geolocalizacion', editable=False, blank=True
     )
-    # denormalización para hacer queries más simples
-    # se sincronizan con ``geom`` en el método save()
+    # Denormalización para hacer queries más simples.
+    # Se sincronizan con ``geom`` en el método save().
     latitud = models.FloatField(null=True, editable=False)
     longitud = models.FloatField(null=True, editable=False)
 
@@ -275,7 +275,15 @@ class LugarVotacion(models.Model):
             self.longitud, self.latitud = self.geom['coordinates']
         else:
             self.longitud, self.latitud = None, None
+        if 'update_fields' in kwargs:
+            kwargs['update_fields'].append('longitud')
+            kwargs['update_fields'].append('latitud')
         super().save(*args, **kwargs)
+
+    def actualizar_geom(self, info_geolocalizacion, estado_geolocalizacion):
+        self.geom = info_geolocalizacion
+        self.estado_geolocalizacion = estado_geolocalizacion
+        self.save(update_fields=['geom', 'estado_geolocalizacion'])
 
     @property
     def coordenadas(self):
@@ -1035,7 +1043,7 @@ class CategoriaOpcion(models.Model):
 
     def __str__(self):
         prioritaria = ' (es prioritaria)' if self.prioritaria else ''
-        return f'{self.categoria} - {self.opcion} {prioritaria}'
+        return f'{self.categoria} - {self.opcion} (orden {self.orden}){prioritaria}'
 
     def set_prioritaria(self):
         self.prioritaria = True

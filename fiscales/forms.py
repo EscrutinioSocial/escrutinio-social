@@ -75,7 +75,7 @@ class FiscalForm(forms.ModelForm):
 
     class Meta:
         model = Fiscal
-        exclude = []
+        exclude = ['attachment_asignado', 'mesa_categoria_asignada']
 
 
 class ReferidoForm(forms.Form):

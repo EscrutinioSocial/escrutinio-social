@@ -251,7 +251,7 @@ def test_siguiente_happy_path_parcial_y_total(db, fiscal_client, settings):
     assert response.status_code == HTTPStatus.OK
 
 
-def test_siguiente_manda_a_parcial_si_es_requerido(db, fiscal_client, settings):
+def test_siguiente_manda_a_parcial_si_es_requerido(db, client, setup_groups, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
     m1 = MesaFactory()
     a1 = AttachmentFactory(mesa=m1, status='identificada')
@@ -264,12 +264,19 @@ def test_siguiente_manda_a_parcial_si_es_requerido(db, fiscal_client, settings):
         mesa=m2
     )
 
+    fiscales = FiscalFactory.create_batch(2)
+
+    # Da mc1 porque es más prioritaria.
+    fiscal_client = fiscal_client_from_fiscal(client, fiscales[0])
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-total', args=[mc1.id])
+    # Cerramos la sesión para que el client pueda reutilizarse sin que nos diga
+    # que ya estamos logueados.
+    fiscal_client.logout()
 
     # mc1 fue asignada, ahora da mc2
-
+    fiscal_client = fiscal_client_from_fiscal(client, fiscales[1])
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-parcial', args=[mc2.id])
@@ -357,23 +364,24 @@ def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, admi
     assert response.context['formset'][3].fields['votos'].widget.attrs['readonly'] is True
 
 
-@pytest.mark.skip(reason='Inestable')
 def test_formset_reusa_metadata(db, fiscal_client, admin_user):
-    # causa de la inestabilidad: las opciones no partidarias aparecen en el formset,
-    # a veces antes de [o1,o2], a veces después.
-    # Carlos Lombardi, 14/09/2019
-
-    # hay una categoria con una opcion metadata ya consolidada
+    # Hay una categoria con una opcion metadata ya consolidada.
     o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
     cat1 = CategoriaFactory(opciones=[o1])
+    from elecciones.models import CategoriaOpcion
+    # Me aseguro de que no estuviese asociada con otro orden.
+    CategoriaOpcion.objects.filter(categoria=cat1, opcion=o1).delete()
     cat1op1 = CategoriaOpcionFactory(categoria=cat1, opcion=o1, orden=1)
     mc = MesaCategoriaFactory(categoria=cat1, status=MesaCategoria.STATUS.total_consolidada_dc)
     carga = CargaFactory(mesa_categoria=mc, tipo='total')
     VotoMesaReportadoFactory(carga=carga, opcion=o1, votos=10)
 
-    # otra categoria incluye la misma metadata.
+    # Otra categoría incluye la misma metadata.
     o2 = OpcionFactory()
     cat2 = CategoriaFactory(opciones=[o1, o2])
+    # Me aseguro de que no estuviesen asociadas con otro orden.
+    CategoriaOpcion.objects.filter(categoria=cat2, opcion=o1).delete()
+    CategoriaOpcion.objects.filter(categoria=cat2, opcion=o2).delete()
     cat2op1 = CategoriaOpcionFactory(categoria=cat2, opcion=o1, orden=1)
     cat2op1 = CategoriaOpcionFactory(categoria=cat2, opcion=o2, orden=2)
     mc2 = MesaCategoriaFactory(categoria=cat2, mesa=mc.mesa)

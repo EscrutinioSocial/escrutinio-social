@@ -63,7 +63,7 @@ class Command(BaseCommand):
                     )
 
                 # Idealmente deberíamos tener el número de electores por escuela, al menos.
-                # escuela.electores = int(row['electores']) #no los tenemos aca
+                # escuela.electores = int(row['electores']) #no los tenemos por ahora
 
                 coordenadas = (self.to_float(row['longitud']), self.to_float(row['latitud']))
                 if isinstance(coordenadas[0], float) and isinstance(coordenadas[1], float):
@@ -72,9 +72,7 @@ class Command(BaseCommand):
                 else:
                     info_geolocalizacion = None
                     estado_geolocalizacion = 0
-                escuela.geom = info_geolocalizacion
-                escuela.estado_geolocalizacion = estado_geolocalizacion
-                escuela.save()
+                escuela.actualizar_geom(info_geolocalizacion, estado_geolocalizacion)
 
                 self.log_creacion(escuela, created)
 
@@ -114,7 +112,6 @@ class Command(BaseCommand):
                                          f'en la escuela {escuela}. Línea {c}'
                             )
                             continue
-                        mesa.save()
                         self.log_creacion(mesa, created, level=4)
 
                 else:

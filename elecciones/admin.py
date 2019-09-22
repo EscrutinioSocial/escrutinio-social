@@ -192,7 +192,7 @@ class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
 
 
 class PartidoAdmin(admin.ModelAdmin):
-    list_display = ('numero', 'nombre')
+    list_display = ('codigo', 'nombre')
     list_display_links = list_display
 
 
@@ -273,7 +273,7 @@ class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
 
 
 class OpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
-    list_display = ['id', 'nombre_corto', 'partido', 'nombre']
+    list_display = ['codigo', 'nombre_corto', 'partido', 'nombre']
 
 
 class CategoriaGeneralAdmin(DjangoQLSearchMixin, admin.ModelAdmin):

@@ -65,15 +65,19 @@
       <ul class="collection" style="box-shadow: none!important; border:0;">
         {% for level, message in resultados_carga %}
             <li class="collection-item" style="box-shadow: none!important; border-bottom:1pt gray solid;">
-              {{ message |safe }}
-              <span class="badge">
-                  {% if level == DEFAULT_MESSAGE_LEVELS.WARNING %}
-                    <i class="btn-small material-icons red-text text-lighten-3" >error</i>
-                  {% endif %}
-                  {% if level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
-                    <i class="btn-small material-icons green-text text-lighten-1">done</i>
-                  {% endif %}
-              </span>
+              <div class="row">
+                <span class="col s10">
+                {{ message |safe }}
+                </span>
+                <span class="badge col s2">
+                    {% if level == DEFAULT_MESSAGE_LEVELS.WARNING %}
+                      <i class="btn-small material-icons red-text text-lighten-3" >error</i>
+                    {% endif %}
+                    {% if level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
+                      <i class="btn-small material-icons green-text text-lighten-1">done</i>
+                    {% endif %}
+                </span>
+              </div>
             </li>
         {% endfor %}
       </ul>

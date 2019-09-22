@@ -320,7 +320,7 @@ class Command(BaseCommand):
         parser.add_argument("--solo_distrito", type=int, dest="solo_distrito",
                             help="Analizar sólo el distrito indicado (default %(default)s).", default=None)
         parser.add_argument("--categoria", type=str, dest="categoria",
-                            help="Categoria a analizar (default %(default)s).", default=settings.NOMBRE_CATEGORIA_PRESI_Y_VICE)
+                            help="Slug categoría a analizar (default %(default)s).", default=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
 
         # Opciones a considerar
         parser.add_argument("--tipo_de_agregacion",
@@ -348,7 +348,7 @@ class Command(BaseCommand):
         self.tipo_de_agregacion = kwargs['tipo_de_agregacion']
 
         nombre_categoria = kwargs['categoria']
-        self.categoria = Categoria.objects.get(nombre=nombre_categoria)
+        self.categoria = Categoria.objects.get(slug=nombre_categoria)
         print("Vamos a analizar la categoría:", self.categoria)
 
         self.asignar_nivel_agregacion(kwargs)

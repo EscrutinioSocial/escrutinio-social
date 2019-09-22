@@ -6,8 +6,16 @@ from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
 
 
-@transaction.atomic
 def siguiente_accion(request):
+    # Libero los recursos que tenía tomados el fiscal.
+    # Es importante hacerlo en otra transacción para no provocar un deadlock.
+    with transaction.atomic():
+        request.user.fiscal.limpiar_asignacion_previa()
+    # Y ahora comienza otra tr.
+    return elegir_siguiente_accion(request)
+
+@transaction.atomic
+def elegir_siguiente_accion(request):
     """
     Elige la siguiente acción a ejecutarse
 
@@ -44,9 +52,7 @@ def siguiente_accion(request):
 
 class IdentificacionDeFoto():
     """
-    Acción sobre una foto (attachment):
-    estampa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para su clasificación.
+    Acción de identificación de una foto (attachment).
     """
 
     def __init__(self, request, attachment):
@@ -64,9 +70,8 @@ class IdentificacionDeFoto():
 
 class CargaCategoriaEnActa():
     """
-    Acción sobre una mesa-categoría:
-    estampa en la mesa el tiempo de "asignación" para que se excluya durante el periodo
-    de guarda y redirige a la vista para la carga de la mesa/categoría dependiendo
+    Acción de carga de votos en una mesa-categoría.
+    Redirige a la vista para la carga de la mesa/categoría dependiendo
     de la configuracion de la categoría.
     """
 
