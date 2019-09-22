@@ -5,6 +5,10 @@
 <style type="text/css">
     .left-panel {
         flex-basis: 100%;
+        min-width: 70%
+    }
+    .right-panel {
+        min-width: 30%
     }
 
     table.striped>tbody>tr:nth-child(odd) {
@@ -18,37 +22,41 @@
 {% block page_title %} Monitoreo antitrolling {% endblock %}
 
 {% block left-panel %}
-<div class="row">
-    <div class="col s8">
-        <div class="row" style="margin-bottom: 40px">
-            <div class="col s10">Scoring mínimo para considerar troll</div>
-            <div class="col s2">{{ umbral_troll }}</div>
-        </div>
+<div class="row" style="font-size: 120%; margin-left: 20px">
+    <div class="row" style="margin-bottom: 40px; margin-top: 30px">
+        <div class="col s5" style="background-color: dodgerblue; font-weight: bold">Scoring mínimo para considerar troll</div>
+        <div class="col s2" style="background-color: lightsteelblue">{{ umbral_troll }}</div>
+    </div>
 
+    <div class="row" style="margin-bottom: 30px; border-width: 2px; border-style: solid">
+        <div class="col s7">Cantidad fiscales</div>
+        <div class="col s1">{{ fiscales }}</div>
+        <div class="col s2">100 %</div>
+    </div>
+
+    <div class="row" style="background-color: wheat">
+        <div class="col s7">{{ fiscales_troll.texto_porcentaje }}</div>
+        <div class="col s1">{{ fiscales_troll.cantidad }}</div>
+        <div class="col s2">{{ fiscales_troll.porcentaje }} %</div>
+        <div class="col s2">{{ fiscales_troll.indicador_peligro }}</div>
+    </div>
+
+    <div style="background-color: lavender">
+        <div class="row" style="margin-bottom: 0px">
+            <div class="col s7">No considerados troll</div>
+        </div>
         <div class="row">
-            <div class="col s7">Cantidad fiscales</div>
-            <div class="col s1">{{ fiscales }}</div>
-            <div class="col s2">100 %</div>
+            <div class="col s7">(organizados por puntaje)</div>
         </div>
-
-        <div class="row">
-            <div class="col s7">{{ fiscales_troll.texto_porcentaje }}</div>
-            <div class="col s1">{{ fiscales_troll.cantidad }}</div>
-            <div class="col s2">{{ fiscales_troll.porcentaje }} %</div>
-        </div>
-
-        <div class="row">
-            <div class="col s7">No considerados troll, discriminados por puntaje</div>
-        </div>
-
+        
         {% for rango in rangos_scoring %}
-            <div class="row">
-                <div class="col s4">{{ rango.texto_porcentaje }}</div>
-                <div class="col s3">({{ rango.texto_rango }})</div>
-                <div class="col s1">{{ rango.cantidad }}</div>
-                <div class="col s2">{{ rango.porcentaje }} %</div>
-                <div class="col s2">{{ rango.indicador_peligro }}</div>
-            </div>
+        <div class="row">
+            <div class="col s4">{{ rango.texto_porcentaje }}</div>
+            <div class="col s3">({{ rango.texto_rango }})</div>
+            <div class="col s1">{{ rango.cantidad }}</div>
+            <div class="col s2">{{ rango.porcentaje }} %</div>
+            <div class="col s2">{{ rango.indicador_peligro }}</div>
+        </div>
         {% endfor %}
     </div>
 </div>

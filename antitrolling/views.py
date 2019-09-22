@@ -44,7 +44,7 @@ class MonitorAntitrolling(TemplateView):
         context = super().get_context_data(**kwargs)
         context['umbral_troll'] = ParametrosAntitrolling.umbral_troll
         context['fiscales'] = ParametrosAntitrolling.cantidad_fiscales
-        context['fiscales_troll'] = FiscalesTroll().info_para_renderizar()
+        context['fiscales_troll'] = FiscalesTroll().set_umbrales_de_peligro(3, 5, 7).info_para_renderizar()
         rangos_scoring = [
             FiscalesEnRangoScoringTroll().setRangoPorcentajes(80, None).set_umbrales_de_peligro(5, 7, 10),
             FiscalesEnRangoScoringTroll().setRangoPorcentajes(60, 80).set_umbrales_de_peligro(10, 15, 20),
