@@ -135,7 +135,7 @@ def test_identificacion_problema_create_view_post_ajax(fiscal_client, admin_user
 
 def test_identificacion_sin_permiso(fiscal_client, admin_user, mocker):
     fiscal = admin_user.fiscal
-    capture = mocker.patch('adjuntos.views.capture_message')
+    capture = mocker.patch('adjuntos.views.identificacion_create.capture_message')
     a = AttachmentFactory()
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
     assert response.status_code == HTTPStatus.FOUND
