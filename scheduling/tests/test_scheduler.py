@@ -65,14 +65,14 @@ def test_scheduler(db, settings):
     consumir_novedades_identificacion()
     scheduler()
     assert ColaCargasPendientes.largo_cola() == 16
-    cola_primera = ColaCargasPendientes.objects.all()
+    cola_primera = list(ColaCargasPendientes.objects.all())
 
     consumir_novedades_identificacion()
     scheduler()
     # Al volver ejecutar el scheduler sin que haya novedades se mantiene la
     # misma cantidad de tareas.
     assert ColaCargasPendientes.largo_cola() == 16
-    cola_segunda = ColaCargasPendientes.objects.all()
+    cola_segunda = list(ColaCargasPendientes.objects.all())
 
     # Testeamos la igualdad de las colas con la inclusión mutua.
     for i in cola_primera:

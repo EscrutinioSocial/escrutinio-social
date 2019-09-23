@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('mesa_categoria', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='elecciones.MesaCategoria')),
             ],
             options={
-                'unique_together': {('mesa_categoria', 'numero_carga')},
+                'unique_together': {('mesa_categoria', 'numero_carga'), ('attachment', 'numero_carga')},
             },
         ),
     ]
