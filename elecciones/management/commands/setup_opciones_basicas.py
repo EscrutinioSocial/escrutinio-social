@@ -22,7 +22,7 @@ class Command(BaseCommand):
 
             opcion, creada = Opcion.objects.get_or_create(
                 **criterio_dict,
-                defaults={'nombre': nombre, 'orden': orden},
+                defaults={'nombre': nombre},
             )
 
             if creada:
@@ -34,8 +34,9 @@ class Command(BaseCommand):
                     self.style.WARNING(f'{opcion} preexistía.')
                 )
             for categoria in Categoria.objects.all():
-                _, creada = CategoriaOpcion.objects.get_or_create(
-                    categoria=categoria, opcion=opcion
+                _, creada = CategoriaOpcion.objects.update_or_create(
+                    categoria=categoria, opcion=opcion,
+                    defaults={'orden': orden}
                 )
                 if creada:
                     self.stdout.write(
