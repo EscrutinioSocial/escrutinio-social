@@ -1,11 +1,10 @@
-from django.db import models, transaction
-from django.db.models import Sum, Count, Q, F, ExpressionWrapper, PositiveIntegerField
+from django.db import transaction
 from django.contrib.sessions.models import Session
 from django.utils import timezone
 from constance import config
 from django.conf import settings
 from adjuntos.models import Attachment
-from elecciones.models import MesaCategoria, Carga, Categoria
+from elecciones.models import MesaCategoria
 from .models import ColaCargasPendientes
 
 
@@ -36,7 +35,7 @@ def scheduler(reconstruir_la_cola=False):
     largo_cola = ColaCargasPendientes.largo_cola()
     ultimo = ColaCargasPendientes.objects.order_by('-orden').first()
     orden_inicial = ultimo.orden if ultimo else 0
-    cota_inferior_largo = max(count_active_sessions(), config.COTA_INFERIOR_COLA)
+    cota_inferior_largo = max(count_active_sessions(), config.COTA_INFERIOR_COLA_TAREAS)
     long_cola = int(cota_inferior_largo * config.FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS) - largo_cola
 
     mc_con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=False)
@@ -47,17 +46,17 @@ def scheduler(reconstruir_la_cola=False):
 
     identificaciones = iter(attachments_sin_identificar.priorizadas())
     cargas = iter(mc_con_carga_pendiente.ordenadas_por_prioridad_batch())
-    
+
     nuevas, k, num_cargas, num_idents = [], orden_inicial, 0, 0
 
-    
+
     for j in range(long_cola):
 
         # Si no hay nada por agregar terminamos el loop.
         if cant_fotos == 0 and cant_cargas == 0 :
             break
 
-        # Encolamos una mc si es lo único que hay disponible, o 
+        # Encolamos una mc si es lo único que hay disponible, o
         # si hay "suficientemente menos" fotos que cargas, donde
         # "suficientemente menos" involucra el multiplicador `COEFICIENTE_IDENTIFICACION_VS_CARGA`.
         turno_mc = (
@@ -77,7 +76,7 @@ def scheduler(reconstruir_la_cola=False):
                 cant_unidades = settings.MIN_COINCIDENCIAS_CARGAS - 1
             # Si está en conflicto sólo necesitamos una carga más.
             elif mc.status in [MesaCategoria.STATUS.parcial_en_conflicto, MesaCategoria.STATUS.total_en_conflicto]:
-               cant_unidades = 1
+                cant_unidades = 1
 
             for i in range(cant_unidades):
                 # Encolo tantas unidades como haga falta.

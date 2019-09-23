@@ -155,11 +155,18 @@ class Fiscal(models.Model):
         postergados por demasiado tiempo.
         """
         desde = timezone.now() - timedelta(minutes=settings.TIMEOUT_TAREAS)
-        fiscales_con_timeout = Fiscal.objects.select_for_update(skip_locked=True).filter(
-            asignacion_ultima_tarea__lt=desde)
-        for fiscal in fiscales_con_timeout:
+        fiscales_para_limpiar_asignacion_previa = []
+        with transaction.atomic():
+            fiscales_con_timeout = Fiscal.objects.select_for_update(skip_locked=True).filter(
+                asignacion_ultima_tarea__lt=desde)
+            for fiscal in fiscales_con_timeout:
+                fiscal.resetear_timeout_asignacion_tareas()
+                fiscales_para_limpiar_asignacion_previa.append(fiscal)
+
+        # Por fuera de la transacción realizamos la limpieza de las mesascat o
+        # attachments que tuviera asignados, para evitar deadlocks (ver #321).
+        for fiscal in fiscales_para_limpiar_asignacion_previa:
             fiscal.limpiar_asignacion_previa()
-            fiscal.resetear_timeout_asignacion_tareas()
 
     def limpiar_asignacion_previa(self):
         """

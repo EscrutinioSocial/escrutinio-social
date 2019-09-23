@@ -15,6 +15,7 @@ def siguiente_accion(request):
     # Y ahora comienza otra tr.
     return elegir_siguiente_accion(request)
 
+
 def elegir_siguiente_accion(request):
     """
     Define la siguiente acción en base a la cola de tareas preexistente.
@@ -27,6 +28,7 @@ def elegir_siguiente_accion(request):
             return IdentificacionDeFoto(request, foto)
         siguiente = elegir_siguiente_accion_en_el_momento(request) if config.ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA else NoHayAccion(request)
     return siguiente
+
 
 @transaction.atomic
 def elegir_siguiente_accion_en_el_momento(request):

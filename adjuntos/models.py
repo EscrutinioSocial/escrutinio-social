@@ -101,7 +101,7 @@ class AttachmentQuerySet(models.QuerySet):
             cant_fiscales_asignados_redondeados=F(
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_IDENTIFICACION,
             cant_asignaciones_realizadas_redondeadas=F(
-                'cant_asignaciones_realizadas') / 
+                'cant_asignaciones_realizadas') /
                 (config.MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS * settings.MIN_COINCIDENCIAS_IDENTIFICACION),
         )
 
@@ -117,12 +117,6 @@ class AttachmentQuerySet(models.QuerySet):
             'id'
         )
 
-    def priorizadas_para_la_cola(self):
-        return self.order_by(
-            'cant_fiscales_asignados',
-            'cant_asignaciones_realizadas',
-            'id'
-        )
 
 class Attachment(TimeStampedModel):
     """
