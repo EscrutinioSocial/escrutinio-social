@@ -10,6 +10,7 @@ from scheduling.scheduler import scheduler
 
 logger = structlog.get_logger('consolidador')
 
+
 def consolidador(cant_por_iteracion=100, ejecutado_desde=''):
     msg = f'Consolidación desde {ejecutado_desde}' if ejecutado_desde != '' else 'Consolidación'
     n_identificaciones, n_cargas = consumir_novedades(cant_por_iteracion)
@@ -18,6 +19,7 @@ def consolidador(cant_por_iteracion=100, ejecutado_desde=''):
         identificaciones=n_identificaciones,
         cargas=n_cargas
     )
+
 
 class Command(BaseCommand):
     help = "Consolidador asincrónico"
