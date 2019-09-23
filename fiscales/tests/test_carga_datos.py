@@ -714,7 +714,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     for mc in MesaCategoria.objects.all():
         mc.actualizar_coeficiente_para_orden_de_carga()
 
-    nombre_categoria = "Un nombre en particular" # Sin tilde que si no falla el 'in' más abajo.
+    nombre_categoria = "Un nombre en particular"  # Sin tilde que si no falla el 'in' más abajo.
     categoria_1.nombre = nombre_categoria
     categoria_1.save(update_fields=['nombre'])
 
@@ -732,7 +732,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
 
     tupla_opciones_electores = [(opcion_1.id, mesa.electores // 2, mesa.electores // 2), (opcion_2.id, mesa.electores // 2, mesa.electores // 2)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
-    with django_assert_num_queries(46):
+    with django_assert_num_queries(48):
         response = fiscal_client.post(url_carga, request_data)
 
     # Tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
@@ -758,7 +758,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
 
     # La mesa no tiene más categorías, nos devuelve a la pantalla de carga de adjuntos.
-    
+
     assert response.status_code == 302
     # Hacemos el get hacia donde nos manda el redirect.
     response = fiscal_client.get(response.url)

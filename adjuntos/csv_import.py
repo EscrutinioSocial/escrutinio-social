@@ -430,7 +430,7 @@ class CSVImporter:
 
         if not opcion_bd and cantidad_votos > 0:
             self.anadir_error(f'El número de lista {codigo_lista_en_csv} no fue '
-                              f'encontrado asociado la categoría '
+                              f'encontrado asociado a la categoría '
                               f'{categoria_bd.nombre}, revise que sea '
                               f'el correcto ({self.celda_analizada}).')
             return
