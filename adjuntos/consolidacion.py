@@ -86,7 +86,7 @@ def consolidar_cargas_con_problemas(cargas_que_reportan_problemas):
 
     return MesaCategoria.STATUS.con_problemas, None
 
-
+@transaction.atomic
 def consolidar_cargas(mesa_categoria):
     """
     Consolida todas las cargas de la MesaCategoria parámetro.
@@ -152,6 +152,7 @@ def consolidar_cargas(mesa_categoria):
         efecto_scoring_troll_confirmacion_carga(mesa_categoria)
 
 
+@transaction.atomic
 def consolidar_identificaciones(attachment):
     """
     Consolida todas las identificaciones del Attachment parámetro.
@@ -236,14 +237,16 @@ def consolidar_identificaciones(attachment):
         mesa_anterior.invalidar_asignacion_attachment()
 
 
-@transaction.atomic
+
 def consumir_novedades_identificacion(cant_por_iteracion=None):
-    a_procesar = Identificacion.objects.select_for_update(skip_locked=True).filter(procesada=False)
-    if cant_por_iteracion:
-        a_procesar = a_procesar[0:cant_por_iteracion]
-    # OJO - acá precomputar los ids_a_procesar es importante
-    # ver comentario en consumir_novedades_carga()
-    ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+    with transaction.atomic():
+        # Lo hacemos en una transacción para no competir con otros consolidadores.
+        a_procesar = Identificacion.objects.select_for_update(skip_locked=True).filter(procesada=False)
+        if cant_por_iteracion:
+            a_procesar = a_procesar[0:cant_por_iteracion]
+        # OJO - acá precomputar los ids_a_procesar es importante
+        # ver comentario en consumir_novedades_carga()
+        ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
 
     attachments_con_novedades = Attachment.objects.filter(
         identificaciones__in=ids_a_procesar
@@ -268,12 +271,13 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
     return procesadas
 
 
-@transaction.atomic
 def consumir_novedades_carga(cant_por_iteracion=None):
-    a_procesar = Carga.objects.select_for_update(skip_locked=True).filter(procesada=False)
-    if cant_por_iteracion:
-        a_procesar = a_procesar[0:cant_por_iteracion]
-    ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+    with transaction.atomic():
+        # Lo hacemos en una transacción para no competir con otros consolidadores.
+        a_procesar = Carga.objects.select_for_update(skip_locked=True).filter(procesada=False)
+        if cant_por_iteracion:
+            a_procesar = a_procesar[0:cant_por_iteracion]
+        ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
     # OJO - aca precomputar los ids_a_procesar es importante
     # si en lugar de hacer esto, al final se ejecuta
     #    a_procesar.update(procesada=True)
