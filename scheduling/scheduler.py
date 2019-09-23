@@ -49,22 +49,28 @@ def scheduler(reconstruir_la_cola=False):
     cargas = iter(mc_con_carga_pendiente.ordenadas_por_prioridad_batch())
     
     nuevas, k, num_cargas, num_idents = [], orden_inicial, 0, 0
+
     
     for j in range(long_cola):
-        mc = next(cargas, None)
-        foto = next(identificaciones, None)
 
         # Si no hay nada por agregar terminamos el loop.
-        if mc is None and foto is None:
+        if cant_fotos == 0 and cant_cargas == 0 :
             break
 
         # Encolamos una mc si es lo único que hay disponible, o 
         # si hay "suficientemente menos" fotos que cargas, donde
         # "suficientemente menos" involucra el multiplicador `COEFICIENTE_IDENTIFICACION_VS_CARGA`.
-        turno_mc = (cant_cargas and not cant_fotos or
-            cant_fotos < cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA)
+        turno_mc = (
+            (cant_cargas > 0 and cant_fotos == 0) or
+            cant_fotos < cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA
+        )
 
-        if mc and (turno_mc or foto is None):
+        if turno_mc:
+            # Mantenemos el invariante que `cant_cargas >=0` y si
+            # estamos en este punto sabemos que `cant_cargas > 0`.
+            mc = next(cargas)
+            cant_cargas -= 1
+
             cant_unidades = settings.MIN_COINCIDENCIAS_CARGAS
             # Si ya está consolidada por CSV hay que hacer una carga menos.
             if mc.status in [MesaCategoria.STATUS.parcial_consolidada_csv, MesaCategoria.STATUS.total_consolidada_csv]:
@@ -79,16 +85,24 @@ def scheduler(reconstruir_la_cola=False):
                 k += 1
 
             num_cargas += 1
-            cant_cargas = max(0, cant_cargas - 1)  # No debería hacerse negativo, pero por las dudas.
             continue
 
-        # Si hay una foto y toca encolar foto o si no hay mesa.
-        if foto and (not turno_mc or mc is None):
-            nuevas.append(ColaCargasPendientes(attachment=foto, orden=k))
-            k += 1
+        # Toca encolar foto. El chequeo `cant_fotos > 0` sólo tiene sentido
+        # si `config.COEFICIENTE_IDENTIFICACION_CARGA <= 0`.
+        if not turno_mc and cant_fotos > 0:
+            foto = next(identificaciones)
+            cant_fotos -= 1
+
+            cant_unidades = settings.MIN_COINCIDENCIAS_IDENTIFICACION
+            # Si hay alguna identificación asumimos que sólo falta una para consolidar.
+            if foto.identificaciones.exists():
+                cant_unidades = 1
+
+            for i in range(cant_unidades):
+                nuevas.append(ColaCargasPendientes(attachment=foto, orden=k, numero_carga=i))
+                k += 1
+
             num_idents += 1
-            cant_fotos = max(0, cant_fotos - 1)  # No debería hacerse negativo, pero por las dudas.
-            continue
 
     ColaCargasPendientes.objects.bulk_create(nuevas, ignore_conflicts=True)
 

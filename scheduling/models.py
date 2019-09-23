@@ -17,24 +17,29 @@ class ColaCargasPendientes(models.Model):
     # categoria = models.CharField(max_length=100,db_index=True)
 
     class Meta:
-        unique_together = ('mesa_categoria', 'numero_carga')
+        unique_together = [['mesa_categoria', 'numero_carga'],
+                           ['attachment', 'numero_carga']
+        ]
+        verbose_name = 'Cola de Identificaciones y Cargas pendientes'
+        verbose_name_plural = 'Cola de Identificaciones y Cargas pendientes'
         
     @classmethod
     def largo_cola(cls):
         return cls.objects.count()
 
     @classmethod
-    def siguiente_tarea(cls, fiscal):
+    def siguiente_tarea(cls, fiscal=None):
         """
         Obtiene la siguiente tarea de la cola.
         El fiscal parámetro indica que deben excluirse mesascat que ya hayan sido cargadas por él.
         Debe invocarse dentro de una transacción.
         """
+        excluir = (Q(mesa_categoria__cargas__fiscal=fiscal) |
+                   Q(attachment__identificaciones__fiscal=fiscal)) if fiscal else Q()
         mesa_categoria = None
         attachment = None
         item = cls.objects.select_for_update(skip_locked=True).exclude(
-            Q(mesa_categoria__cargas__fiscal=fiscal) |
-            Q(attachment__identificaciones__fiscal=fiscal)
+            excluir
         ).order_by('orden').first()
         if item:
             mesa_categoria = item.mesa_categoria
