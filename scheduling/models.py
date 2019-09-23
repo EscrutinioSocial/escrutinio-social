@@ -4,6 +4,7 @@ from django.db.models import Q
 from elecciones.models import (Seccion, Categoria, MesaCategoria)
 from adjuntos.models import Attachment
 
+
 class ColaCargasPendientes(models.Model):
     """
     Modelo que mantiene los trabajos de carga de votos pendientes a hacer.
@@ -13,16 +14,15 @@ class ColaCargasPendientes(models.Model):
     # Este campo lo calcula el encolador.
     orden = models.PositiveIntegerField(db_index=True)
     numero_carga = models.PositiveIntegerField(default=1)
-    ## Esto lo usamos para afinidad
-    # categoria = models.CharField(max_length=100,db_index=True)
 
     class Meta:
-        unique_together = [['mesa_categoria', 'numero_carga'],
-                           ['attachment', 'numero_carga']
+        unique_together = [
+            ['mesa_categoria', 'numero_carga'],
+            ['attachment', 'numero_carga']
         ]
         verbose_name = 'Cola de Identificaciones y Cargas pendientes'
         verbose_name_plural = 'Cola de Identificaciones y Cargas pendientes'
-        
+
     @classmethod
     def largo_cola(cls):
         return cls.objects.count()
@@ -45,14 +45,14 @@ class ColaCargasPendientes(models.Model):
             mesa_categoria = item.mesa_categoria
             attachment = item.attachment
             item.delete()
-        
+
         return (mesa_categoria, attachment)
 
     @classmethod
     def vaciar(cls):
         #cls.objects.all().delete()
         with connection.cursor() as cursor:
-            cursor.execute(f'TRUNCATE TABLE {cls._meta.db_table} CASCADE')
+            cursor.execute(f'TRUNCATE TABLE {cls._meta.db_table}')
 
     @classmethod
     def debug(cls, fiscal):
@@ -63,6 +63,7 @@ class ColaCargasPendientes(models.Model):
 
     def __str__(self):
         return f'({self.orden}) <{self.mesa_categoria}, {self.attachment}>'
+
 
 class PrioridadScheduling(models.Model):
     """

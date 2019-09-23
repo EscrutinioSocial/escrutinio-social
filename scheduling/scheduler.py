@@ -49,11 +49,10 @@ def scheduler(reconstruir_la_cola=False):
 
     nuevas, k, num_cargas, num_idents = [], orden_inicial, 0, 0
 
-
     for j in range(long_cola):
 
         # Si no hay nada por agregar terminamos el loop.
-        if cant_fotos == 0 and cant_cargas == 0 :
+        if cant_fotos == 0 and cant_cargas == 0:
             break
 
         # Encolamos una mc si es lo único que hay disponible, o
