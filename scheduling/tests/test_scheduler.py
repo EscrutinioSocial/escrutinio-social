@@ -18,7 +18,6 @@ from elecciones.tests.conftest import fiscal_client, setup_groups, fiscal_client
 from constance.test import override_config
 from scheduling.models import ColaCargasPendientes
 from adjuntos.models import Identificacion, Attachment
-
 from adjuntos.consolidacion import consumir_novedades_identificacion, consumir_novedades_carga
 from scheduling.scheduler import scheduler
 
@@ -36,14 +35,14 @@ def test_scheduler(db, settings):
     m1 = MesaFactory(categorias=[c1])
     IdentificacionFactory(
         mesa=m1,
-        status='identificada',
+        status=Identificacion.STATUS.identificada,
         source=Identificacion.SOURCES.web,
     )
     m2 = MesaFactory(categorias=[c1, c2])
 
     IdentificacionFactory(
         mesa=m2,
-        status='identificada',
+        status=Identificacion.STATUS.identificada,
         source=Identificacion.SOURCES.csv,
     )
 
@@ -59,7 +58,7 @@ def test_scheduler(db, settings):
     # IdentificationFactory.
 
     scheduler()
-    assert ColaCargasPendientes.largo_cola() == 12
+    assert ColaCargasPendientes.largo_cola() == 5 * settings.MIN_COINCIDENCIAS_IDENTIFICACION + 2 * (settings.MIN_COINCIDENCIAS_IDENTIFICACION - 1)
 
     # Al consumir las novedades de identificación, se consolidan las
     # categorías de la segunda mesa, así que agregamos 4 tareas.

@@ -83,8 +83,13 @@ def scheduler(reconstruir_la_cola=False):
 
         # Si hay una foto y toca encolar foto o si no hay mesa.
         if foto and (not turno_mc or mc is None):
-            nuevas.append(ColaCargasPendientes(attachment=foto, orden=k))
-            k += 1
+            cant_unidades = settings.MIN_COINCIDENCIAS_IDENTIFICACION
+            if foto.identificaciones.count() > 0:
+                cant_unidades -= 1
+
+            for i in range(cant_unidades):
+                nuevas.append(ColaCargasPendientes(attachment=foto, orden=k, numero_carga=i))
+                k += 1
             num_idents += 1
             cant_fotos = max(0, cant_fotos - 1)  # No debería hacerse negativo, pero por las dudas.
             continue
