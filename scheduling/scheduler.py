@@ -13,7 +13,6 @@ def count_active_sessions():
     return sessions
 
 
-@transaction.atomic
 def scheduler(reconstruir_la_cola=False):
     """
     Puebla lo cola de elementos a asignar de acuerdo al siguiente criterio:
@@ -29,9 +28,6 @@ def scheduler(reconstruir_la_cola=False):
 
     - En otro caso, no hay nada para hacer.
     """
-    if reconstruir_la_cola:
-        ColaCargasPendientes.vaciar()
-
     largo_cola = ColaCargasPendientes.largo_cola()
     ultimo = ColaCargasPendientes.objects.order_by('-orden').first()
     orden_inicial = ultimo.orden if ultimo else 0
@@ -102,6 +98,9 @@ def scheduler(reconstruir_la_cola=False):
 
             num_idents += 1
 
-    ColaCargasPendientes.objects.bulk_create(nuevas, ignore_conflicts=True)
+    with transaction.atomic():
+        if reconstruir_la_cola:
+            ColaCargasPendientes.vaciar()
+        ColaCargasPendientes.objects.bulk_create(nuevas, ignore_conflicts=True)
 
     return (k - orden_inicial, num_cargas, num_idents)
