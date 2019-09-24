@@ -81,8 +81,8 @@ class FiscalesEnRangoScoringTroll():
         self.cantidad = None
         return self
 
-    def set_umbrales_de_peligro(self, rojo, naranja, amarillo):
-        self.indicador_de_peligro = IndicadorDePeligro().set_umbrales(rojo, naranja, amarillo)
+    def set_umbrales_de_peligro(self, amarillo, naranja, rojo):
+        self.indicador_de_peligro = IndicadorDePeligro().set_umbrales(amarillo, naranja, rojo)
         return self
 
     def cantidad_fiscales(self):
@@ -113,9 +113,9 @@ class FiscalesEnRangoScoringTroll():
         if self.desde_scoring != None and self.hasta_scoring != None:
             return f"{self.desde_scoring} - {self.hasta_scoring}"
         elif self.desde_scoring != None and self.hasta_scoring == None:
-            return f"{self.desde_scoring} en adelante"
+            return f"{self.desde_scoring} o más"
         elif self.desde_scoring == None and self.hasta_scoring != None:
-            return f"hasta {self.hasta_scoring}"
+            return f"{self.hasta_scoring} o menos"
         else:
             return "sin límites"
 
@@ -170,7 +170,7 @@ class IndicadorDePeligro():
     indicador_amarillo = "amarillo"
     indicador_verde = "verde"
 
-    def set_umbrales(self, umbral_rojo, umbral_naranja, umbral_amarillo):
+    def set_umbrales(self, umbral_amarillo, umbral_naranja, umbral_rojo):
         self.umbral_rojo = umbral_rojo
         self.umbral_naranja = umbral_naranja
         self.umbral_amarillo = umbral_amarillo
@@ -190,3 +190,10 @@ class IndicadorDePeligro():
 class NoHayPeligro():
     def indicador_peligro(self, valor):
         return IndicadorDePeligro.indicador_verde
+
+
+def limpiar_marcas_troll(request):
+    # Fiscal.destrolleo_masivo(request.user.fiscal, 0)
+    print('en limpiar_marcas_troll')
+    print(request.POST.copy().get('hasta_puntaje'))
+    return redirect("monitoreo-antitrolling")

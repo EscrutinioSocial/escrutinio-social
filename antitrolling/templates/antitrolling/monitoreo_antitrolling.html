@@ -5,14 +5,31 @@
 <style type="text/css">
     .left-panel {
         flex-basis: 100%;
-        min-width: 70%
+        min-width: 60%
     }
     .right-panel {
-        min-width: 30%
+        min-width: 40%
     }
 
     table.striped>tbody>tr:nth-child(odd) {
         background-color: rgba(170, 213, 213, 0.3);
+    }
+    .verde {
+    }
+    .amarillo {
+        background-color: khaki
+    }
+    .naranja {
+        background-color: orange
+    }
+    .rojo {
+        background-color: crimson
+    }
+    .dato_destacado {
+        font-weight: bold
+    }
+    .recuadro {
+        border-width: 2px; border-style: solid
     }
 </style>
 {% endblock %}
@@ -24,40 +41,70 @@
 {% block left-panel %}
 <div class="row" style="font-size: 120%; margin-left: 20px">
     <div class="row" style="margin-bottom: 40px; margin-top: 30px">
-        <div class="col s5" style="background-color: dodgerblue; font-weight: bold">Scoring mínimo para considerar troll</div>
-        <div class="col s2" style="background-color: lightsteelblue">{{ umbral_troll }}</div>
+        <div class="col s8 dato_destacado" style="background-color: dodgerblue;">Scoring mínimo para considerar troll</div>
+        <div class="col s4" style="background-color: lightsteelblue">{{ umbral_troll }}</div>
     </div>
 
-    <div class="row" style="margin-bottom: 30px; border-width: 2px; border-style: solid">
-        <div class="col s7">Cantidad fiscales</div>
-        <div class="col s1">{{ fiscales }}</div>
-        <div class="col s2">100 %</div>
+    <div class="row recuadro" style="margin-bottom: 50px;">
+        <div class="col s8 dato_destacado">Cantidad total fiscales</div>
+        <div class="col s2">{{ fiscales }}</div>
+        <div class="col s2">100,0 %</div>
     </div>
 
-    <div class="row" style="background-color: wheat">
-        <div class="col s7">{{ fiscales_troll.texto_porcentaje }}</div>
-        <div class="col s1">{{ fiscales_troll.cantidad }}</div>
-        <div class="col s2">{{ fiscales_troll.porcentaje }} %</div>
-        <div class="col s2">{{ fiscales_troll.indicador_peligro }}</div>
-    </div>
-
-    <div style="background-color: lavender">
-        <div class="row" style="margin-bottom: 0px">
-            <div class="col s7">No considerados troll</div>
-        </div>
-        <div class="row">
-            <div class="col s7">(organizados por puntaje)</div>
+    <div class="recuadro">
+        <div class="row {{ fiscales_troll.indicador_peligro }}" style="background-color: lightblue; margin-bottom: 30px">
+            <div class="col s8 dato_destacado">{{ fiscales_troll.texto_porcentaje }}</div>
+            <div class="col s2">{{ fiscales_troll.cantidad }}</div>
+            <div class="col s2">{{ fiscales_troll.porcentaje }} %</div>
         </div>
         
-        {% for rango in rangos_scoring %}
-        <div class="row">
-            <div class="col s4">{{ rango.texto_porcentaje }}</div>
-            <div class="col s3">({{ rango.texto_rango }})</div>
-            <div class="col s1">{{ rango.cantidad }}</div>
-            <div class="col s2">{{ rango.porcentaje }} %</div>
-            <div class="col s2">{{ rango.indicador_peligro }}</div>
+        <div style="background-color: lavender">
+            <div class="row">
+                <div class="col s5 dato_destacado">No considerados troll</div>
+                <div class="col s7">organizados por puntaje</div>
+            </div>
+        
+            {% for rango in rangos_scoring %}
+            <div class="row {{ rango.indicador_peligro }}">
+                <div class="col s5">{{ rango.texto_porcentaje }}</div>
+                <div class="col s3">({{ rango.texto_rango }})</div>
+                <div class="col s2">{{ rango.cantidad }}</div>
+                <div class="col s2">{{ rango.porcentaje }} %</div>
+            </div>
+            {% endfor %}
+
+            <div class="row" style="margin-bottom: 0px">
+            </div>
         </div>
-        {% endfor %}
+    </div>
+
+    <div class="recuadro" style="margin-top: 50px; padding-left: 15px; padding-right: 15px">
+        <form action="limpiar_marcas_troll" method="POST">
+            {% csrf_token %}
+            <div class="row" style="margin-top: 10px; margin-bottom: 20px; ">
+                <div class="col s12 dato_destacado" style="background-color: darkseagreen; color: aquamarine">
+                    Quitar marca de troll
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col s6">Fiscales con puntaje hasta</div>
+                <div class="col s3">
+                    <input id="hasta_puntaje" name="hasta_puntaje" type="number" style="height: 2rem" value="50000" tabindex="1">
+                </div>
+                <div class="col s3">puntos</div>
+            </div>
+            <div class="row">
+                <div class="col s6">Puntaje a asignar</div>
+                <div class="col s3">
+                    <input id="nuevo_puntaje" name="nuevo_puntaje" type="number" style="height: 2rem" value="0" tabindex="1">
+                </div>
+                <div class="col s3">puntos</div>
+            </div>
+            <div class="row" style="margin-top: 20px; margin-bottom: 20px">
+                <button type="submit" class="btn waves-effect waves-light white-text" style="margin-left: 70%">Confirmar</button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock left-panel %}
