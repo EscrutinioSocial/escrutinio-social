@@ -427,6 +427,9 @@ CODIGO_PARTIDO_ELLOS = '135'
 CODIGO_PARTIDO_NOSOTROS_BA = '136'
 CODIGO_PARTIDO_ELLOS_BA = '135'
 
+# Número del Distrito Provincia de Buenos Aires
+DISTRITO_PBA = '2'
+
 # Cada cuánto tiempo actualizar el campo last_seen de un Fiscal.
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
 

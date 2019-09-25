@@ -59,10 +59,11 @@ class IdentificacionCreateView(CreateView):
             return initial
         if pre_identificacion.distrito is not None:
             initial['distrito'] = pre_identificacion.distrito
-        if pre_identificacion.seccion is not None:
-            initial['seccion'] = pre_identificacion.seccion.numero
-        if pre_identificacion.circuito is not None:
-            initial['circuito'] = pre_identificacion.circuito.numero
+            if pre_identificacion.distrito.numero == settings.DISTRITO_PBA:
+                if pre_identificacion.seccion is not None:
+                    initial['seccion'] = pre_identificacion.seccion.numero
+                if pre_identificacion.circuito is not None:
+                    initial['circuito'] = pre_identificacion.circuito.numero
         return initial
 
     def get(self, *args, **kwargs):
