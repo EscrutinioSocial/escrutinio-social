@@ -65,6 +65,7 @@ class CategoriaSerializer(serializers.Serializer):
 
 class ListarOpcionesQuerySerializer(serializers.Serializer):
     solo_prioritarias = serializers.BooleanField(default=True)
+    excluir_optativas = serializers.BooleanField(default=True)
 
 
 class OpcionSerializer(serializers.Serializer):
