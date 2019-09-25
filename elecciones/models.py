@@ -799,7 +799,7 @@ class Opcion(models.Model):
     # Tipos no positivos son blanco, nulos, etc
     # Metada son campos extras como "total de votos", "total de sobres", etc.
     # que son únicos por mesa (no están en cada categoría).
-    TIPOS = Choices('positivo', 'no_positivo', 'metadata')
+    TIPOS = Choices('positivo', 'no_positivo', 'metadata', 'metadata_optativa')
     tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
 
     nombre = models.CharField(max_length=100)
@@ -837,6 +837,10 @@ class Opcion(models.Model):
     @classmethod
     def opciones_no_partidarias(cls):
         return ['OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_TOTAL_SOBRES', 'OPCION_NULOS']
+
+    @classmethod
+    def opciones_no_partidarias_obligatorias(cls):
+        return ['OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_NULOS']
 
     @classmethod
     def blancos(cls):
@@ -971,13 +975,15 @@ class Categoria(models.Model):
     def get_url_avance_de_carga(self):
         return reverse('avance-carga', args=[self.id])
 
-    def opciones_actuales(self, solo_prioritarias=False):
+    def opciones_actuales(self, solo_prioritarias=False, excluir_optativas=False):
         """
-        Devuelve las opciones asociadas a la categoría en el orden dado
+        Devuelve las opciones asociadas a la categoría en el orden correspondiente.
         Determina el orden de la filas a cargar, tal como se definen
         en el acta.
         """
         qs = self.opciones.all()
+        if excluir_optativas:
+            qs = qs.exclude(categoriaopcion__opcion__tipo=Opcion.TIPOS.metadata_optativa)
         if solo_prioritarias:
             qs = qs.filter(categoriaopcion__prioritaria=True)
         return qs.distinct().order_by('categoriaopcion__orden')

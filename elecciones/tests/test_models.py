@@ -46,6 +46,10 @@ def test_opciones_actuales(db):
         Opcion.blancos(), Opcion.total_votos(), Opcion.sobres(), Opcion.nulos()
     ]
     assert list(c.opciones_actuales(solo_prioritarias=True)) == [o1]
+    assert list(c.opciones_actuales(excluir_optativas=True)) == [
+        o1, o3, o2,
+        Opcion.blancos(), Opcion.total_votos(), Opcion.nulos()
+    ]
 
 
 def test_categorias_para_mesa(db):

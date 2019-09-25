@@ -903,7 +903,7 @@
   "model": "elecciones.opcion",
   "pk": 7,
   "fields": {
-    "tipo": "metadata",
+    "tipo": "metadata_optativa",
     "nombre": "total de sobres",
     "nombre_corto": "sobres",
     "codigo": null,
