@@ -52,7 +52,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$150000$yO1AGta2T5NR$QwoW3cGLh93dNgOPoClxcr4OEKg4aO63WE1gK/ZLH+8=",
-    "last_login": "2019-07-30T17:19:15.715Z",
+    "last_login": "2019-09-25T19:31:45.276Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -194,167 +194,6 @@
   }
 },
 {
-  "model": "fiscales.fiscal",
-  "pk": 1,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "13a16943-1f43-4061-8fed-cfd08a8b8145",
-    "email_confirmado": false,
-    "apellido": "Admin",
-    "nombres": "Fiscal",
-    "tipo_dni": "DNI",
-    "dni": "0000000",
-    "troll": false,
-    "user": 1,
-    "seccion": null,
-    "referente": null,
-    "referente_certeza": 100,
-    "referencia_confirmada": false,
-    "referente_nombres": null,
-    "referente_apellido": null,
-    "referido_por_codigos": null
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 2,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "3e3f001f-9798-4a6c-8b2c-0334b0b80938",
-    "email_confirmado": false,
-    "apellido": "Validador",
-    "nombres": "Usuario",
-    "tipo_dni": "DNI",
-    "dni": "00000000",
-    "troll": false,
-    "user": 2,
-    "seccion": null,
-    "referente": null,
-    "referente_certeza": 100,
-    "referencia_confirmada": false,
-    "referente_nombres": null,
-    "referente_apellido": null,
-    "referido_por_codigos": null
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 3,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "a16facb7-c992-4546-88fc-78fda4a9e16f",
-    "email_confirmado": false,
-    "apellido": "Fiscal",
-    "nombres": "Bot",
-    "tipo_dni": "DNI",
-    "dni": "00000001",
-    "troll": false,
-    "user": 6,
-    "seccion": null,
-    "referente": null,
-    "referente_certeza": 100,
-    "referencia_confirmada": false,
-    "referente_nombres": null,
-    "referente_apellido": null,
-    "referido_por_codigos": null
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 4,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "967e7cdb-cfd7-4818-a6bd-8fc6149d5c23",
-    "email_confirmado": false,
-    "apellido": "Usuario",
-    "nombres": "Supervisor",
-    "tipo_dni": "DNI",
-    "dni": "00000002",
-    "troll": false,
-    "user": 5,
-    "seccion": null,
-    "referente": null,
-    "referente_certeza": 100,
-    "referencia_confirmada": false,
-    "referente_nombres": null,
-    "referente_apellido": null,
-    "referido_por_codigos": null
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 5,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "221fe3b8-d83e-4bca-b6f3-a2584e3170d4",
-    "email_confirmado": false,
-    "apellido": "Usuario",
-    "nombres": "Visualizador",
-    "tipo_dni": "DNI",
-    "dni": "00000003",
-    "troll": false,
-    "user": 4,
-    "seccion": null,
-    "referente": null,
-    "referente_certeza": 100,
-    "referencia_confirmada": false,
-    "referente_nombres": null,
-    "referente_apellido": null,
-    "referido_por_codigos": null
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 6,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "ed7b0ee7-75da-4250-b3e5-f19c8af04982",
-    "email_confirmado": false,
-    "apellido": "Usuario",
-    "nombres": "Unidad B\u00e1sica",
-    "tipo_dni": "DNI",
-    "dni": "00000004",
-    "troll": false,
-    "user": 3,
-    "seccion": null,
-    "referente": null,
-    "referente_certeza": 100,
-    "referencia_confirmada": false,
-    "referente_nombres": null,
-    "referente_apellido": null,
-    "referido_por_codigos": null
-  }
-},
-{
-  "model": "fiscales.fiscal",
-  "pk": 7,
-  "fields": {
-    "estado": "CONFIRMADO",
-    "notas": "",
-    "codigo_confirmacion": "44934047-355e-4e4a-8a65-2ebcd36cbfe0",
-    "email_confirmado": false,
-    "apellido": "Usuario",
-    "nombres": "Visualizador Sensible",
-    "tipo_dni": "DNI",
-    "dni": "00000005",
-    "troll": false,
-    "user": 7,
-    "seccion": null,
-    "referente": null,
-    "referente_certeza": 100,
-    "referencia_confirmada": false,
-    "referente_nombres": null,
-    "referente_apellido": null,
-    "referido_por_codigos": null
-  }
-},
-{
   "model": "elecciones.distrito",
   "pk": 1,
   "fields": {
@@ -371,7 +210,11 @@
     "seccion_politica": null,
     "numero": "1",
     "nombre": "Secci\u00f3n 1",
-    "electores": 440
+    "electores": 440,
+    "prioridad_hasta_2": null,
+    "prioridad_2_a_10": null,
+    "prioridad_10_a_100": null,
+    "cantidad_minima_prioridad_hasta_2": null
   }
 },
 {
@@ -382,7 +225,11 @@
     "seccion_politica": null,
     "numero": "2",
     "nombre": "Secci\u00f3n 2",
-    "electores": 360
+    "electores": 360,
+    "prioridad_hasta_2": null,
+    "prioridad_2_a_10": null,
+    "prioridad_10_a_100": null,
+    "cantidad_minima_prioridad_hasta_2": null
   }
 },
 {
@@ -438,6 +285,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
+    "numero": null,
     "electores": 100,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -455,6 +303,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
+    "numero": null,
     "electores": 100,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -472,6 +321,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
+    "numero": null,
     "electores": 120,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -489,6 +339,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
+    "numero": null,
     "electores": 120,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -506,6 +357,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
+    "numero": null,
     "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -523,6 +375,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
+    "numero": null,
     "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -540,6 +393,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
+    "numero": null,
     "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -557,6 +411,7 @@
     "direccion": "direccion",
     "barrio": "",
     "ciudad": "",
+    "numero": null,
     "electores": 90,
     "geom": null,
     "estado_geolocalizacion": 0,
@@ -569,130 +424,204 @@
   "model": "elecciones.mesacategoria",
   "pk": 1,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "sin_cargar",
     "mesa": 1,
     "categoria": 1,
     "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": 0
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 2,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "sin_cargar",
     "mesa": 2,
     "categoria": 1,
     "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 3,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "sin_cargar",
     "mesa": 3,
     "categoria": 1,
     "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": 0
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 4,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "sin_cargar",
     "mesa": 4,
     "categoria": 1,
     "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 5,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "sin_cargar",
     "mesa": 5,
     "categoria": 1,
     "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 6,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "sin_cargar",
     "mesa": 6,
     "categoria": 1,
     "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 7,
   "fields": {
-    "status": "80_total_consolidada_dc",
+    "status": "sin_cargar",
     "mesa": 7,
     "categoria": 1,
-    "carga_testigo": 2,
+    "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": 0
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 8,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "sin_cargar",
     "mesa": 8,
     "categoria": 1,
     "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 9,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "sin_cargar",
     "mesa": 8,
     "categoria": 2,
     "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": null
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
   "model": "elecciones.mesacategoria",
   "pk": 10,
   "fields": {
-    "status": "00_sin_cargar",
+    "status": "sin_cargar",
     "mesa": 7,
     "categoria": 2,
     "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
     "percentil": null,
     "orden_de_llegada": null,
-    "coeficiente_para_orden_de_carga": 0
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 11,
+  "fields": {
+    "status": "sin_cargar",
+    "mesa": 3,
+    "categoria": 3,
+    "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
+    "percentil": null,
+    "orden_de_llegada": null,
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
+  }
+},
+{
+  "model": "elecciones.mesacategoria",
+  "pk": 12,
+  "fields": {
+    "status": "sin_cargar",
+    "mesa": 4,
+    "categoria": 3,
+    "carga_testigo": null,
+    "carga_oficial": null,
+    "parcial_oficial": null,
+    "percentil": null,
+    "orden_de_llegada": null,
+    "coeficiente_para_orden_de_carga": null,
+    "cant_fiscales_asignados": 0,
+    "cant_asignaciones_realizadas": 0
   }
 },
 {
@@ -704,7 +633,8 @@
     "circuito": 1,
     "lugar_votacion": 1,
     "url": "",
-    "electores": 100
+    "electores": 100,
+    "extranjeros": false
   }
 },
 {
@@ -716,7 +646,8 @@
     "circuito": 1,
     "lugar_votacion": 2,
     "url": "",
-    "electores": 100
+    "electores": 100,
+    "extranjeros": false
   }
 },
 {
@@ -728,7 +659,8 @@
     "circuito": 2,
     "lugar_votacion": 3,
     "url": "",
-    "electores": 120
+    "electores": 120,
+    "extranjeros": false
   }
 },
 {
@@ -740,7 +672,8 @@
     "circuito": 2,
     "lugar_votacion": 4,
     "url": "",
-    "electores": 120
+    "electores": 120,
+    "extranjeros": false
   }
 },
 {
@@ -752,7 +685,8 @@
     "circuito": 3,
     "lugar_votacion": 5,
     "url": "",
-    "electores": 90
+    "electores": 90,
+    "extranjeros": false
   }
 },
 {
@@ -764,7 +698,8 @@
     "circuito": 3,
     "lugar_votacion": 6,
     "url": "",
-    "electores": 90
+    "electores": 90,
+    "extranjeros": false
   }
 },
 {
@@ -776,7 +711,8 @@
     "circuito": 4,
     "lugar_votacion": 7,
     "url": "",
-    "electores": 90
+    "electores": 90,
+    "extranjeros": false
   }
 },
 {
@@ -788,7 +724,8 @@
     "circuito": 4,
     "lugar_votacion": 8,
     "url": "",
-    "electores": 90
+    "electores": 90,
+    "extranjeros": false
   }
 },
 {
@@ -796,9 +733,9 @@
   "pk": 1,
   "fields": {
     "numero": null,
-    "codigo": "p1",
-    "nombre": "Partido 1",
-    "nombre_corto": "partido1",
+    "codigo": "135",
+    "nombre": "FpT",
+    "nombre_corto": "FdT",
     "color": "",
     "referencia": ""
   }
@@ -808,9 +745,9 @@
   "pk": 2,
   "fields": {
     "numero": null,
-    "codigo": "p2",
-    "nombre": "Partido 2",
-    "nombre_corto": "partido2",
+    "codigo": "136",
+    "nombre": "JpC",
+    "nombre_corto": "JpC",
     "color": "",
     "referencia": ""
   }
@@ -844,9 +781,9 @@
   "pk": 2,
   "fields": {
     "tipo": "positivo",
-    "nombre": "opc1",
-    "nombre_corto": "opc1",
-    "codigo": "001",
+    "nombre": "FpT opc",
+    "nombre_corto": "FpT opc",
+    "codigo": "136",
     "partido": 1,
     "codigo_dne": null
   }
@@ -856,9 +793,9 @@
   "pk": 3,
   "fields": {
     "tipo": "positivo",
-    "nombre": "opc2",
-    "nombre_corto": "opc2",
-    "codigo": "002",
+    "nombre": "JpC opc",
+    "nombre_corto": "JpC opc",
+    "codigo": "135",
     "partido": 2,
     "codigo_dne": null
   }
@@ -959,9 +896,12 @@
   "model": "elecciones.categoriageneral",
   "pk": 1,
   "fields": {
-    "eleccion": null,
-    "slug": "presidente-vice",
-    "nombre": "Presidente y vice"
+    "eleccion": 1,
+    "slug": "PV",
+    "nombre": "Presidente y vice",
+    "foto_ejemplo": "",
+    "height": null,
+    "width": null
   }
 },
 {
@@ -969,24 +909,41 @@
   "pk": 2,
   "fields": {
     "eleccion": 1,
-    "slug": "intendente",
-    "nombre": "Intendente"
+    "slug": "Int",
+    "nombre": "Intendente",
+    "foto_ejemplo": "",
+    "height": null,
+    "width": null
+  }
+},
+{
+  "model": "elecciones.categoriageneral",
+  "pk": 3,
+  "fields": {
+    "eleccion": 1,
+    "slug": "G",
+    "nombre": "Gobernador y vice",
+    "foto_ejemplo": "",
+    "height": null,
+    "width": null
   }
 },
 {
   "model": "elecciones.categoria",
   "pk": 1,
   "fields": {
-    "eleccion": null,
+    "eleccion": 1,
     "categoria_general": 1,
-    "slug": "presidente-vice",
+    "distrito": null,
+    "seccion": null,
+    "slug": "PV",
     "nombre": "Presidente y vice",
     "color": "black",
     "back_color": "white",
     "activa": true,
-    "sensible": false,
-    "requiere_cargas_parciales": false,
-    "prioridad": 0
+    "sensible": true,
+    "requiere_cargas_parciales": true,
+    "prioridad": 2
   }
 },
 {
@@ -995,6 +952,8 @@
   "fields": {
     "eleccion": 1,
     "categoria_general": 2,
+    "distrito": null,
+    "seccion": null,
     "slug": "int-circuito-2",
     "nombre": "Int circuito 2",
     "color": "black",
@@ -1006,11 +965,30 @@
   }
 },
 {
+  "model": "elecciones.categoria",
+  "pk": 3,
+  "fields": {
+    "eleccion": 1,
+    "categoria_general": 3,
+    "distrito": null,
+    "seccion": null,
+    "slug": "GB_PBA",
+    "nombre": "Gobernador y vice PBA",
+    "color": "black",
+    "back_color": "white",
+    "activa": true,
+    "sensible": true,
+    "requiere_cargas_parciales": true,
+    "prioridad": 3
+  }
+},
+{
   "model": "elecciones.categoriaopcion",
   "pk": 1,
   "fields": {
     "categoria": 1,
     "opcion": 2,
+    "orden": 10,
     "prioritaria": true
   }
 },
@@ -1020,7 +998,8 @@
   "fields": {
     "categoria": 1,
     "opcion": 3,
-    "prioritaria": false
+    "orden": 20,
+    "prioritaria": true
   }
 },
 {
@@ -1029,6 +1008,7 @@
   "fields": {
     "categoria": 1,
     "opcion": 4,
+    "orden": 30,
     "prioritaria": true
   }
 },
@@ -1038,6 +1018,7 @@
   "fields": {
     "categoria": 1,
     "opcion": 1,
+    "orden": 10000,
     "prioritaria": true
   }
 },
@@ -1047,6 +1028,7 @@
   "fields": {
     "categoria": 2,
     "opcion": 2,
+    "orden": 1,
     "prioritaria": false
   }
 },
@@ -1056,6 +1038,7 @@
   "fields": {
     "categoria": 2,
     "opcion": 3,
+    "orden": 2,
     "prioritaria": false
   }
 },
@@ -1065,6 +1048,7 @@
   "fields": {
     "categoria": 2,
     "opcion": 4,
+    "orden": 3,
     "prioritaria": false
   }
 },
@@ -1074,6 +1058,7 @@
   "fields": {
     "categoria": 2,
     "opcion": 1,
+    "orden": 10000,
     "prioritaria": false
   }
 },
@@ -1083,6 +1068,7 @@
   "fields": {
     "categoria": 2,
     "opcion": 5,
+    "orden": 10001,
     "prioritaria": false
   }
 },
@@ -1092,7 +1078,8 @@
   "fields": {
     "categoria": 1,
     "opcion": 5,
-    "prioritaria": false
+    "orden": 10001,
+    "prioritaria": true
   }
 },
 {
@@ -1101,6 +1088,7 @@
   "fields": {
     "categoria": 2,
     "opcion": 7,
+    "orden": 10011,
     "prioritaria": false
   }
 },
@@ -1110,6 +1098,7 @@
   "fields": {
     "categoria": 2,
     "opcion": 6,
+    "orden": 10010,
     "prioritaria": false
   }
 },
@@ -1119,7 +1108,8 @@
   "fields": {
     "categoria": 1,
     "opcion": 6,
-    "prioritaria": false
+    "orden": 10010,
+    "prioritaria": true
   }
 },
 {
@@ -1128,7 +1118,8 @@
   "fields": {
     "categoria": 1,
     "opcion": 7,
-    "prioritaria": false
+    "orden": 10011,
+    "prioritaria": true
   }
 },
 {
@@ -1137,7 +1128,8 @@
   "fields": {
     "categoria": 1,
     "opcion": 8,
-    "prioritaria": false
+    "orden": 10002,
+    "prioritaria": true
   }
 },
 {
@@ -1146,7 +1138,8 @@
   "fields": {
     "categoria": 1,
     "opcion": 9,
-    "prioritaria": false
+    "orden": 10003,
+    "prioritaria": true
   }
 },
 {
@@ -1155,7 +1148,8 @@
   "fields": {
     "categoria": 1,
     "opcion": 10,
-    "prioritaria": false
+    "orden": 10004,
+    "prioritaria": true
   }
 },
 {
@@ -1164,6 +1158,7 @@
   "fields": {
     "categoria": 2,
     "opcion": 8,
+    "orden": 10002,
     "prioritaria": false
   }
 },
@@ -1173,6 +1168,7 @@
   "fields": {
     "categoria": 2,
     "opcion": 9,
+    "orden": 10003,
     "prioritaria": false
   }
 },
@@ -1182,109 +1178,108 @@
   "fields": {
     "categoria": 2,
     "opcion": 10,
+    "orden": 10004,
     "prioritaria": false
   }
 },
 {
-  "model": "elecciones.carga",
-  "pk": 1,
+  "model": "elecciones.categoriaopcion",
+  "pk": 21,
   "fields": {
-    "created": "2019-07-04T19:51:27.212Z",
-    "modified": "2019-07-04T19:51:27.212Z",
-    "invalidada": false,
-    "tipo": "problema",
-    "origen": "web",
-    "mesa_categoria": 1,
-    "fiscal": 1,
-    "firma": "2-10|3-20|4-30|1-10",
-    "procesada": true
-  }
-},
-{
-  "model": "elecciones.carga",
-  "pk": 2,
-  "fields": {
-    "created": "2019-07-19T04:43:18.044Z",
-    "modified": "2019-07-19T04:43:18.045Z",
-    "invalidada": false,
-    "tipo": "total",
-    "origen": "web",
-    "mesa_categoria": 7,
-    "fiscal": 1,
-    "firma": "2-10|3-20|4-33|1-14",
-    "procesada": true
-  }
-},
-{
-  "model": "elecciones.votomesareportado",
-  "pk": 1,
-  "fields": {
-    "carga": 1,
-    "opcion": 2,
-    "votos": 10
-  }
-},
-{
-  "model": "elecciones.votomesareportado",
-  "pk": 2,
-  "fields": {
-    "carga": 1,
-    "opcion": 3,
-    "votos": 20
-  }
-},
-{
-  "model": "elecciones.votomesareportado",
-  "pk": 3,
-  "fields": {
-    "carga": 1,
-    "opcion": 4,
-    "votos": 30
-  }
-},
-{
-  "model": "elecciones.votomesareportado",
-  "pk": 4,
-  "fields": {
-    "carga": 1,
+    "categoria": 3,
     "opcion": 1,
-    "votos": 10
+    "orden": 10000,
+    "prioritaria": true
   }
 },
 {
-  "model": "elecciones.votomesareportado",
-  "pk": 5,
+  "model": "elecciones.categoriaopcion",
+  "pk": 22,
   "fields": {
-    "carga": 2,
+    "categoria": 3,
+    "opcion": 5,
+    "orden": 10001,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 23,
+  "fields": {
+    "categoria": 3,
+    "opcion": 6,
+    "orden": 10010,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 24,
+  "fields": {
+    "categoria": 3,
+    "opcion": 7,
+    "orden": 10011,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 25,
+  "fields": {
+    "categoria": 3,
+    "opcion": 8,
+    "orden": 10002,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 26,
+  "fields": {
+    "categoria": 3,
+    "opcion": 9,
+    "orden": 10003,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 27,
+  "fields": {
+    "categoria": 3,
+    "opcion": 10,
+    "orden": 10004,
+    "prioritaria": true
+  }
+},
+{
+  "model": "elecciones.categoriaopcion",
+  "pk": 28,
+  "fields": {
+    "categoria": 3,
     "opcion": 2,
-    "votos": 10
+    "orden": 1,
+    "prioritaria": true
   }
 },
 {
-  "model": "elecciones.votomesareportado",
-  "pk": 6,
+  "model": "elecciones.categoriaopcion",
+  "pk": 29,
   "fields": {
-    "carga": 2,
+    "categoria": 3,
     "opcion": 3,
-    "votos": 20
+    "orden": 2,
+    "prioritaria": true
   }
 },
 {
-  "model": "elecciones.votomesareportado",
-  "pk": 7,
+  "model": "elecciones.categoriaopcion",
+  "pk": 30,
   "fields": {
-    "carga": 2,
+    "categoria": 3,
     "opcion": 4,
-    "votos": 33
-  }
-},
-{
-  "model": "elecciones.votomesareportado",
-  "pk": 8,
-  "fields": {
-    "carga": 2,
-    "opcion": 1,
-    "votos": 14
+    "orden": 3,
+    "prioritaria": false
   }
 },
 {
@@ -1342,6 +1337,216 @@
   "fields": {
     "circuito": 4,
     "agrupacion": 2
+  }
+},
+{
+  "model": "fiscales.fiscal",
+  "pk": 1,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "13a16943-1f43-4061-8fed-cfd08a8b8145",
+    "email_confirmado": false,
+    "apellido": "Admin",
+    "nombres": "Fiscal",
+    "tipo_dni": "DNI",
+    "dni": "0000000",
+    "troll": false,
+    "user": 1,
+    "seccion": null,
+    "session_key": "udamvjy2ui2sq8ggkeughj6hhlbdgh6q",
+    "last_seen": "2019-09-25T21:54:48.282Z",
+    "distrito": null,
+    "referente": null,
+    "referente_certeza": 100,
+    "referencia_confirmada": false,
+    "referente_nombres": null,
+    "referente_apellido": null,
+    "referido_por_codigos": null,
+    "ingreso_alguna_vez": false,
+    "asignacion_ultima_tarea": null,
+    "attachment_asignado": null,
+    "mesa_categoria_asignada": null
+  }
+},
+{
+  "model": "fiscales.fiscal",
+  "pk": 2,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "3e3f001f-9798-4a6c-8b2c-0334b0b80938",
+    "email_confirmado": false,
+    "apellido": "Validador",
+    "nombres": "Usuario",
+    "tipo_dni": "DNI",
+    "dni": "00000000",
+    "troll": false,
+    "user": 2,
+    "seccion": null,
+    "session_key": null,
+    "last_seen": null,
+    "distrito": null,
+    "referente": null,
+    "referente_certeza": 100,
+    "referencia_confirmada": false,
+    "referente_nombres": null,
+    "referente_apellido": null,
+    "referido_por_codigos": null,
+    "ingreso_alguna_vez": false,
+    "asignacion_ultima_tarea": null,
+    "attachment_asignado": null,
+    "mesa_categoria_asignada": null
+  }
+},
+{
+  "model": "fiscales.fiscal",
+  "pk": 3,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "a16facb7-c992-4546-88fc-78fda4a9e16f",
+    "email_confirmado": false,
+    "apellido": "Fiscal",
+    "nombres": "Bot",
+    "tipo_dni": "DNI",
+    "dni": "00000001",
+    "troll": false,
+    "user": 6,
+    "seccion": null,
+    "session_key": null,
+    "last_seen": null,
+    "distrito": null,
+    "referente": null,
+    "referente_certeza": 100,
+    "referencia_confirmada": false,
+    "referente_nombres": null,
+    "referente_apellido": null,
+    "referido_por_codigos": null,
+    "ingreso_alguna_vez": false,
+    "asignacion_ultima_tarea": null,
+    "attachment_asignado": null,
+    "mesa_categoria_asignada": null
+  }
+},
+{
+  "model": "fiscales.fiscal",
+  "pk": 4,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "967e7cdb-cfd7-4818-a6bd-8fc6149d5c23",
+    "email_confirmado": false,
+    "apellido": "Usuario",
+    "nombres": "Supervisor",
+    "tipo_dni": "DNI",
+    "dni": "00000002",
+    "troll": false,
+    "user": 5,
+    "seccion": null,
+    "session_key": null,
+    "last_seen": null,
+    "distrito": null,
+    "referente": null,
+    "referente_certeza": 100,
+    "referencia_confirmada": false,
+    "referente_nombres": null,
+    "referente_apellido": null,
+    "referido_por_codigos": null,
+    "ingreso_alguna_vez": false,
+    "asignacion_ultima_tarea": null,
+    "attachment_asignado": null,
+    "mesa_categoria_asignada": null
+  }
+},
+{
+  "model": "fiscales.fiscal",
+  "pk": 5,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "221fe3b8-d83e-4bca-b6f3-a2584e3170d4",
+    "email_confirmado": false,
+    "apellido": "Usuario",
+    "nombres": "Visualizador",
+    "tipo_dni": "DNI",
+    "dni": "00000003",
+    "troll": false,
+    "user": 4,
+    "seccion": null,
+    "session_key": null,
+    "last_seen": null,
+    "distrito": null,
+    "referente": null,
+    "referente_certeza": 100,
+    "referencia_confirmada": false,
+    "referente_nombres": null,
+    "referente_apellido": null,
+    "referido_por_codigos": null,
+    "ingreso_alguna_vez": false,
+    "asignacion_ultima_tarea": null,
+    "attachment_asignado": null,
+    "mesa_categoria_asignada": null
+  }
+},
+{
+  "model": "fiscales.fiscal",
+  "pk": 6,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "ed7b0ee7-75da-4250-b3e5-f19c8af04982",
+    "email_confirmado": false,
+    "apellido": "Usuario",
+    "nombres": "Unidad B\u00e1sica",
+    "tipo_dni": "DNI",
+    "dni": "00000004",
+    "troll": false,
+    "user": 3,
+    "seccion": null,
+    "session_key": null,
+    "last_seen": null,
+    "distrito": null,
+    "referente": null,
+    "referente_certeza": 100,
+    "referencia_confirmada": false,
+    "referente_nombres": null,
+    "referente_apellido": null,
+    "referido_por_codigos": null,
+    "ingreso_alguna_vez": false,
+    "asignacion_ultima_tarea": null,
+    "attachment_asignado": null,
+    "mesa_categoria_asignada": null
+  }
+},
+{
+  "model": "fiscales.fiscal",
+  "pk": 7,
+  "fields": {
+    "estado": "CONFIRMADO",
+    "notas": "",
+    "codigo_confirmacion": "44934047-355e-4e4a-8a65-2ebcd36cbfe0",
+    "email_confirmado": false,
+    "apellido": "Usuario",
+    "nombres": "Visualizador Sensible",
+    "tipo_dni": "DNI",
+    "dni": "00000005",
+    "troll": false,
+    "user": 7,
+    "seccion": null,
+    "session_key": null,
+    "last_seen": null,
+    "distrito": null,
+    "referente": null,
+    "referente_certeza": 100,
+    "referencia_confirmada": false,
+    "referente_nombres": null,
+    "referente_apellido": null,
+    "referido_por_codigos": null,
+    "ingreso_alguna_vez": false,
+    "asignacion_ultima_tarea": null,
+    "attachment_asignado": null,
+    "mesa_categoria_asignada": null
   }
 }
 ]
