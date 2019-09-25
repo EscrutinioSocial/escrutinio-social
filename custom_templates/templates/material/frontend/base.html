@@ -7,17 +7,26 @@
 
         {% block sidenav_header %}
         <li>
-
-
             <div class="card-image">
               <a href="/">
                 <img src="{% static 'img/left-top.png' %}" alt="" class="responsive-img"/>
               </a>
-
             </div>
         </li>
         {% endblock %}
 
+	{% block topbar_links %}
+        {% if user.is_authenticated %}
+        <li>
+	  <a href="#" data-turbolinks="false"><i class="material-icons left">face</i>{{user.fiscal.nombres}} {{user.fiscal.apellido}}</a>
+        </li>
+        <li>
+	  <a href="{% url 'logout' %}" data-turbolinks="false"><i class="material-icons right">exit_to_app</i>{% trans "Log out" %}</a>
+        </li>
+	{% else %}
+        <li><a href="{% url 'login' %}" data-turbolinks="false"><i class="material-icons right">lock_open</i>{% trans "Log in" %}</a></li>
+	{% endif %}
+	{% endblock %}
 
         {% block messages %}
         <dmc-snackbar>
