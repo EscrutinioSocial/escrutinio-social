@@ -25,6 +25,9 @@ def opciones_metadata(app_configs, **kwargs):
         'OPCION_BLANCOS',
         'OPCION_TOTAL_VOTOS',
         'OPCION_TOTAL_SOBRES',
+        'OPCION_RECURRIDOS',
+        'OPCION_ID_IMPUGNADA',
+        'OPCION_COMANDO_ELECTORAL',
     ]
     # Deben existir las opciones en la base
     for opcion_setting in opciones_en_settings:

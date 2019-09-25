@@ -799,6 +799,9 @@ class Opcion(models.Model):
     # Tipos no positivos son blanco, nulos, etc
     # Metada son campos extras como "total de votos", "total de sobres", etc.
     # que son únicos por mesa (no están en cada categoría).
+    # Metada optativa es la metadata que recolectamos de los que nos mandan
+    # por CSV (de manera optativa, y porque es data que si está, sirve ante
+    # un eventual reclamos), pero que no le queremos pedir al usuario que cargue.
     TIPOS = Choices('positivo', 'no_positivo', 'metadata', 'metadata_optativa')
     tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
 

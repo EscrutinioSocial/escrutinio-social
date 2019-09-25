@@ -303,6 +303,17 @@ def test_procesar_csv_carga_reemplaza_anterior(db, usr_unidad_basica, carga_inic
     assert cargas_repetidas.count() == 0
 
 
+def test_procesar_csv_acepta_metadata_opcional(db, usr_unidad_basica, carga_inicial):
+    cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
+        PATH_ARCHIVOS_TEST + 'info_resultados_ok_con_metadata_optativa.csv', usr_unidad_basica).procesar()
+    assert cant_mesas_ok == 1
+    assert cant_mesas_parcialmente_ok == 0
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    assert cargas_totales.count() == 2
+    # XXX Hacer que se pueda poner en cargas parciales.
+
+
 def test_procesar_csv_otros_separadores(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok_separados_por_punto_y_coma.csv', usr_unidad_basica).procesar()
     assert cant_mesas_ok == 1
