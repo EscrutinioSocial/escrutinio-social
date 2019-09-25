@@ -365,7 +365,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                 if desde_ub:
                     consolidar_cargas(mesa_categoria)
 
-            messages.success(request, f'Guardada categoría {categoria} para {mesa}')
+            messages.success(request, f'Carga de {categoria} en mesa {mesa} guardada.')
         except Exception as e:
             # Este catch estaba desde cuando no podía haber múltiples cargas para una
             # misma mesa-categoría.
