@@ -358,19 +358,19 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def sin_consolidar_por_doble_carga(self):
         """
-        Excluye las instancias no consolidadas con doble carga.
+        Excluye las instancias consolidadas con doble carga.
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
 
     def sin_consolidar_por_csv(self):
         """
-        Excluye las instancias no consolidadas con doble carga.
+        Excluye las instancias consolidadas por CSV.
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_csv)
 
     def sin_cargas_del_fiscal(self, fiscal):
         """
-        Excluye las instancias que tengan alguna carga del fiscal indicado
+        Excluye las instancias que tengan alguna carga del fiscal indicado.
         """
         return self.exclude(cargas__fiscal=fiscal)
 

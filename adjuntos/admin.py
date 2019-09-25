@@ -7,11 +7,13 @@ from django_admin_row_actions import AdminRowActionsMixin
 class IdentificacionInline(admin.StackedInline):
     model = Identificacion
     extra = 0
+    raw_id_fields = ('fiscal', 'mesa')
 
 class AttachmentAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     list_display = ('status', 'mesa', 'foto', 'foto_edited', 'cant_fiscales_asignados', 'pre_identificacion')
     list_filter = ('status',)
     search_fields = ('mesa__numero',)
+    raw_id_fields = ('email', 'mesa', 'subido_por', 'pre_identificacion', 'identificacion_testigo')
 
     def get_row_actions(self, obj):
         row_actions = []

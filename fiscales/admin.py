@@ -182,6 +182,7 @@ class FiscalAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     search_fields = ('apellido', 'nombres', 'dni',)
     list_display_links = ('__str__',)
     list_filter = (TieneReferente, CertezaFilter, 'troll', EsStaffFilter, 'estado')
+    raw_id_fields = ('attachment_asignado', 'mesa_categoria_asignada', 'referente', 'user')
 
     inlines = [
         EventoScoringTrollInline,
