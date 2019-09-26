@@ -59,6 +59,14 @@ class IdentificacionCreateView(CreateView):
             return initial
         if pre_identificacion.distrito is not None:
             initial['distrito'] = pre_identificacion.distrito
+            # Sólo vamos a precargar Sección y Circuito si el distrito es Provincia
+            # de Buenos Aires, para cualquier otro distrito no los vamos a precargar
+            # ya que estos campos se ocultan al usuario y no va a poder editarlos.
+            #
+            # Si los precargamos corremos el riesgo de que si en la preidentificación
+            # estaba mal la sección o el circuito obtendremos el error de que la mesa
+            # no corresponde a dicha combinación y el usuario no podrá corregirlos
+            # ya que los campos están ocultos.
             if pre_identificacion.distrito.numero == settings.DISTRITO_PBA:
                 if pre_identificacion.seccion is not None:
                     initial['seccion'] = pre_identificacion.seccion.numero
