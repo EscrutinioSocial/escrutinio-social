@@ -255,6 +255,11 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
         try:
             consolidar_identificaciones(attachment)
         except Exception as e:
+            # Eliminamos los ids de las identificaciones que no se procesaron
+            # para no marcarlas como procesada=True
+            ids_no_procesados = attachment.identificaciones.values_list('id', flat=True)
+            ids_a_procesar = list(set(ids_a_procesar) - set(ids_no_procesados))
+
             # Logueamos la excepción y continuamos.
             capture_message(
                 f"""
@@ -306,6 +311,11 @@ def consumir_novedades_carga(cant_por_iteracion=None):
         try:
             consolidar_cargas(mesa_categoria_con_novedades)
         except Exception as e:
+            # Eliminamos los ids de las cargas que no se procesaron
+            # para no marcarlas como procesada=True
+            ids_no_procesados = mesa_categoria_con_novedades.cargas.values_list('id', flat=True)
+            ids_a_procesar = list(set(ids_a_procesar) - set(ids_no_procesados))
+
             # Logueamos la excepción y continuamos.
             capture_message(
                 f"""

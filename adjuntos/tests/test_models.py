@@ -1,4 +1,5 @@
 import pytest
+from unittest import mock
 from django.db import IntegrityError
 from elecciones.tests.factories import (
     AttachmentFactory,
@@ -263,3 +264,53 @@ def test_ciclo_de_vida_problemas_descartar(db):
     a.refresh_from_db()
     assert a.status == Attachment.STATUS.identificada
     assert a.mesa == m1
+
+def test_identificacion_consolidada_una_ok_una_error(db):
+    # En esta variable se almacena el comportamiento que tendrá  cada llamado a
+    # la función consolidar_identificaciones para cada identicacion de un attachment
+    # a procesar.
+    # Los attachments a, c y e se procesarán con normalidad y su identificación
+    # quedará maracada como procesadas=True.
+    # Para los attachments b y d se lanzará una Exception y su identicación
+    # quedará como procesada=False.
+    side_effects = [
+        mock.DEFAULT, #comportamiento para a
+        Exception('error'), #comportamiento para b
+        mock.DEFAULT, #comportamiento para c
+        Exception('error'), #comportamiento para d
+        mock.DEFAULT #comportamiento para e
+    ]
+    with mock.patch('adjuntos.consolidacion.consolidar_identificaciones', side_effect=side_effects):
+        m1 = MesaFactory()
+        a = AttachmentFactory()
+        b = AttachmentFactory()
+        c = AttachmentFactory()
+        d = AttachmentFactory()
+        e = AttachmentFactory()
+        i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+        i2 = IdentificacionFactory(attachment=b, status='identificada', mesa=m1)
+        i3 = IdentificacionFactory(attachment=c, status='identificada', mesa=m1)
+        i4 = IdentificacionFactory(attachment=d, status='identificada', mesa=m1)
+        i5 = IdentificacionFactory(attachment=e, status='identificada', mesa=m1)
+
+        cant_novedades = Identificacion.objects.filter(procesada=False).count()
+        assert cant_novedades == 5
+        consumir_novedades_identificacion()
+
+        # Chequeamos que las no procesadas son 2
+        no_procesadas = Identificacion.objects.filter(procesada=False)
+        assert no_procesadas.count() == 2
+
+        # Chequeamos que las no procesadas son i2 e i4
+        no_procesadas_ids = map(lambda x: x.id, no_procesadas)
+        assert set([i2.id, i4.id]) == set(no_procesadas_ids)
+        # no_procesadas_ids = map(lambda x: x.attachment.id, no_procesadas)
+        # assert set([b.id, d.id]) == set(no_procesadas_ids)
+
+        # Chequeamos que las procesadas son 3
+        procesadas = Identificacion.objects.filter(procesada=True)
+        assert procesadas.count() == 3
+
+        # Chequeamos que las procesadas son i1, i3 e i5
+        procesadas_ids = map(lambda x: x.id, procesadas)
+        assert set([i1.id, i3.id, i5.id]) == set(procesadas_ids)
