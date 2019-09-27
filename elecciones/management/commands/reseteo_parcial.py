@@ -1,8 +1,7 @@
-from django.conf import settings
 from django.db.utils import IntegrityError
 from django.db import transaction
 from django.core.management.base import BaseCommand
-from adjuntos.models import Attachment
+from adjuntos.models import Attachment, PreIdentificacion
 from problemas.models import Problema
 from elecciones.models import (VotoMesaReportado, Carga, MesaCategoria)
 from fiscales.models import Fiscal
@@ -23,6 +22,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def resetear(self):
         Attachment.objects.all().delete()
+        PreIdentificacion.objects.all().delete()
         Problema.objects.all().delete()
         VotoMesaReportado.objects.all().delete()
         Carga.objects.all().delete()
