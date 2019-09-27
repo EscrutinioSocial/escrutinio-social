@@ -265,7 +265,7 @@ def test_ciclo_de_vida_problemas_descartar(db):
     assert a.status == Attachment.STATUS.identificada
     assert a.mesa == m1
 
-def test_identificacion_consolidada_una_ok_una_error(db):
+def test_identificacion_consolidada_tres_ok_dos_error(db):
     # En esta variable se almacena el comportamiento que tendrá  cada llamado a
     # la función consolidar_identificaciones para cada identicacion de un attachment
     # a procesar.
@@ -304,8 +304,6 @@ def test_identificacion_consolidada_una_ok_una_error(db):
         # Chequeamos que las no procesadas son i2 e i4
         no_procesadas_ids = map(lambda x: x.id, no_procesadas)
         assert set([i2.id, i4.id]) == set(no_procesadas_ids)
-        # no_procesadas_ids = map(lambda x: x.attachment.id, no_procesadas)
-        # assert set([b.id, d.id]) == set(no_procesadas_ids)
 
         # Chequeamos que las procesadas son 3
         procesadas = Identificacion.objects.filter(procesada=True)
