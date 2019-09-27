@@ -32,6 +32,7 @@ git+https://github.com/mgaitan/django-versatileimagefield@one-dimension-resize#e
 # PR open at https://github.com/pytest-dev/pytest-cov/pull/311
 # pytest-cov==2.7.1
 git+https://github.com/mgaitan/pytest-cov.git@260-cov-fail-under-float
+git+https://github.com/mgaitan/django-exportable-admin.git@dj21
 gunicorn==19.9.0
 html2text==2016.9.19
 IPython==7.5.0
