@@ -6,7 +6,7 @@ from adjuntos.consolidacion import (
     consolidar_identificaciones, consolidar_cargas,
     consumir_novedades_carga, consumir_novedades_identificacion
 )
-from antitrolling.models import EventoScoringTroll
+from antitrolling.models import EventoScoringTroll, aplicar_marca_troll
 from elecciones.tests.factories import (
     MesaFactory, AttachmentFactory,
     CategoriaFactory, CategoriaOpcionFactory)
@@ -26,7 +26,7 @@ def test_asociacion_attachment_con_antitrolling(db, settings):
 
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 2
     settings.MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
-    with override_config(SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA=180):
+    with override_config(SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA=180, SCORING_TROLL_DESCUENTO_ACCION_CORRECTA=28):
         fiscal_1 = nuevo_fiscal()
         fiscal_2 = nuevo_fiscal()
         fiscal_3 = nuevo_fiscal()
@@ -41,6 +41,8 @@ def test_asociacion_attachment_con_antitrolling(db, settings):
         # Hasta acá no debería asociarse la mesa, ergo no se afecta el scoring troll de ningun fiscal
         consolidar_identificaciones(attach)
         for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
+            fiscal.refresh_from_db()
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
             assert fiscal.scoring_troll() == 0
 
         # se agregan dos nuevas identificaciones: el fiscal 2 identifica la misma mesa que el 1, el fiscal 4 reporta un problema
@@ -49,8 +51,10 @@ def test_asociacion_attachment_con_antitrolling(db, settings):
         # ahora si deberia asociarse la mesa, y como consecuencia,
         # aumentar el scoring troll para los fiscales 3 y 4 que identificaron distinto a lo que se decidio
         consolidar_identificaciones(attach)
-        assert fiscal_1.scoring_troll() == 0
-        assert fiscal_2.scoring_troll() == 0
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4]:
+            fiscal.refresh_from_db()
+        assert fiscal_1.scoring_troll() == -28
+        assert fiscal_2.scoring_troll() == -28
         assert fiscal_3.scoring_troll() == 180
         assert fiscal_4.scoring_troll() == 180
 
@@ -64,7 +68,7 @@ def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db, settings):
 
     settings.MIN_COINCIDENCIAS_CARGAS = 2
     settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
-    with override_config(SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA = 150):
+    with override_config(SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA=150, SCORING_TROLL_DESCUENTO_ACCION_CORRECTA=40):
         # escenario
         fiscal_1 = nuevo_fiscal()
         fiscal_2 = nuevo_fiscal()
@@ -83,6 +87,8 @@ def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db, settings):
         # la consolidacion no deberia afectar el scoring de ningun fiscal, porque la mesa_categoria no queda consolidada
         consolidar_cargas(mesa_categoria)
         for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5]:
+            fiscal.refresh_from_db()
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5]:
             assert fiscal.scoring_troll() == 0
 
         # entra una quinta carga, coincidente con la segunda
@@ -90,11 +96,13 @@ def test_confirmacion_carga_total_mesa_categoria_con_antitrolling(db, settings):
         # ahora la mesa_categoria queda consolidada, y por lo tanto, deberia afectarse el scoring de los fiscales
         # cuya carga no coincide con la aceptada
         consolidar_cargas(mesa_categoria)
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5]:
+            fiscal.refresh_from_db()
         assert fiscal_1.scoring_troll() == 2
-        assert fiscal_2.scoring_troll() == 0
+        assert fiscal_2.scoring_troll() == -40
         assert fiscal_3.scoring_troll() == 50
         assert fiscal_4.scoring_troll() == 150
-        assert fiscal_5.scoring_troll() == 0
+        assert fiscal_5.scoring_troll() == -40
 
 
 def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
@@ -128,8 +136,8 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
     carga_2_1_2 = nueva_carga(mesa_categoria_2_1, fiscal_2, [60, 30, 15])
     carga_2_1_4 = nueva_carga(mesa_categoria_2_1, fiscal_4, [60, 30, 15])
     mesa_categoria_2_2 = MesaCategoria.objects.filter(mesa=mesa_2, categoria=categoria_2).first()
-    carga_2_2_1 = nueva_carga(mesa_categoria_2_2, fiscal_1, [60, 20, 18, 7])  # 40 de diferencia
-    carga_2_2_4 = nueva_carga(mesa_categoria_2_2, fiscal_4, [40, 30, 25, 10])
+    carga_2_2_1 = nueva_carga(mesa_categoria_2_2, fiscal_1, [75, 10, 18, 7])  # 80 de diferencia
+    carga_2_2_4 = nueva_carga(mesa_categoria_2_2, fiscal_4, [35, 30, 35, 10])
 
     def refrescar_data():
         for mesa_categoria in [mesa_categoria_1_1, mesa_categoria_1_2, mesa_categoria_2_1, mesa_categoria_2_2]:
@@ -137,18 +145,19 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
         for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5]:
             fiscal.refresh_from_db()
 
-    with override_config(SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 50):
+    with override_config(SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL=50, SCORING_TROLL_DESCUENTO_ACCION_CORRECTA=30):
         assert Carga.objects.filter(procesada=False).count() == 9
         assert Carga.objects.filter(invalidada=True).count() == 0
         assert not fiscal_1.troll
 
-        # hasta aca: (1,1), (1,2) y (2,1) consolidadas, (2,2) en conflicto, fiscal_1 tiene 20 de scoring troll
+        # hasta aca: (1,1), (1,2) y (2,1) consolidadas, (2,2) en conflicto, fiscal_1 tiene -10 de scoring troll
+        # (20 de la diferencia de (1,1), -30 porque sus valores son los aceptados en (1,2))
         consumir_novedades_carga()
         refrescar_data()
         for mesa_categoria in [mesa_categoria_1_1, mesa_categoria_1_2, mesa_categoria_2_1]:
             assert mesa_categoria.status == MesaCategoria.STATUS.total_consolidada_dc
         assert mesa_categoria_2_2.status == MesaCategoria.STATUS.total_en_conflicto
-        assert fiscal_1.scoring_troll() == 20
+        assert fiscal_1.scoring_troll() == -10
         assert not fiscal_1.troll
         assert Carga.objects.filter(procesada=False).count() == 0
         assert Carga.objects.filter(invalidada=True).count() == 0
@@ -156,13 +165,13 @@ def test_carga_confirmada_troll_vuelve_a_sin_consolidar(db, settings):
         # ahora hago una carga que confirma la MC (2,2). Esto tiene que desencadenar que
         # - el fiscal 1 se detecta como troll
         # - sus cargas pasan a invalidadas y pendientes de proceso
-        carga_2_2_5 = nueva_carga(mesa_categoria_2_2, fiscal_5, [40, 30, 25, 10])
+        carga_2_2_5 = nueva_carga(mesa_categoria_2_2, fiscal_5, [35, 30, 35, 10])
         assert Carga.objects.filter(procesada=False).count() == 1
         consumir_novedades_carga()
         refrescar_data()
         assert mesa_categoria_2_2.status == MesaCategoria.STATUS.total_consolidada_dc
         assert fiscal_1.troll
-        assert fiscal_1.scoring_troll() == 60
+        assert fiscal_1.scoring_troll() == 70
         assert Carga.objects.filter(invalidada=True).count() == 3
         assert Carga.objects.filter(procesada=False).count() == 3
         for carga in Carga.objects.filter(fiscal=fiscal_1):
@@ -560,7 +569,7 @@ def test_troll_parcial_dc_a_sin_consolidar(db, settings):
         assert mesa_categoria_1.status == MesaCategoria.STATUS.parcial_consolidada_dc
         assert Carga.objects.filter(invalidada=True).count() == 0
 
-        fiscal_2.aplicar_marca_troll()
+        aplicar_marca_troll(fiscal_2)
         consumir_novedades_carga()
         refrescar_data([mesa_categoria_1, fiscal_2])
 
@@ -599,7 +608,7 @@ def test_troll_total_sin_consolidar_a_parcial_sin_consolidar(db, settings):
     assert mesa_categoria_1.status == MesaCategoria.STATUS.total_sin_consolidar
     assert Carga.objects.filter(invalidada=True).count() == 0
 
-    fiscal_2.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal_2)
     consumir_novedades_carga()
     refrescar_data([mesa_categoria_1, fiscal_2])
 
@@ -634,7 +643,7 @@ def test_troll_total_consolidada_dc_a_parcial_sin_consolidar(db, settings):
     assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
     assert Carga.objects.filter(invalidada=True).count() == 0
 
-    fiscal_2.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal_2)
     consumir_novedades_carga()
     refrescar_data([mesa_categoria_1, fiscal_2])
 
@@ -672,7 +681,7 @@ def test_troll_total_consolidada_dc_a_parcial_sin_consolidar(db, settings):
     assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
     assert Carga.objects.filter(invalidada=True).count() == 0
 
-    fiscal_2.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal_2)
     consumir_novedades_identificacion()
     consumir_novedades_carga()
     refrescar_data([mesa_categoria_1, fiscal_2])
@@ -714,7 +723,7 @@ def test_troll_total_consolidada_dc_a_total_sin_consolidar(db, settings):
     assert mesa_categoria_1.status == MesaCategoria.STATUS.total_consolidada_dc
     assert Carga.objects.filter(invalidada=True).count() == 0
 
-    fiscal_3.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal_3)
     consumir_novedades_identificacion()
     consumir_novedades_carga()
     refrescar_data([mesa_categoria_1, fiscal_3])

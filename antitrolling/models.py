@@ -8,7 +8,6 @@ from model_utils.fields import StatusField
 from elecciones.models import MesaCategoria, Mesa
 from adjuntos.models import Attachment
 
-
 class EventoScoringTroll(TimeStampedModel):
     """
     Representa un evento que afecta el scoring troll de un fiscal; puede aumentarlo o disminuirlo.
@@ -24,6 +23,8 @@ class EventoScoringTroll(TimeStampedModel):
         ('problema_descartado', 'Se descarta un "problema" reportado por el usuario.'),
         ('marca_explicita_troll', 'Un usuario marca explitimamente a un fiscal como troll'),
         ('remocion_marca_troll', 'Se remueve la marca de troll a un fiscal'),
+        ('carga_aceptada', 'Carga los valores aceptados'),
+        ('identificacion_aceptada', 'Realiza una identificación con la decisión aceptada'),
     )
     # descripción del motivo para cambiar el scoring troll de un fiscal
     motivo = models.CharField(max_length=50, choices=MOTIVOS)
@@ -51,8 +52,8 @@ class EventoScoringTroll(TimeStampedModel):
     # referencia al data entry cuyo scoring troll cambia como consecuencia de este evento
     fiscal_afectado = models.ForeignKey('fiscales.Fiscal', null=False, related_name='eventos_scoring_troll', on_delete=models.CASCADE)
 
-    # cuánto varía el scoring troll del fiscal afectado."
-    # Valores positivos para aumento de scoring, valores positivos para disminución"
+    # cuánto varía el scoring troll del fiscal afectado.
+    # Valores positivos para aumento de scoring, valores positivos para disminución
     variacion = models.IntegerField(null=False, default=0)
 
 
@@ -85,6 +86,80 @@ class CambioEstadoTroll(TimeStampedModel):
     troll = models.BooleanField(default=True)
 
 
+# Funciones internas
+
+def registrar_cambio_scoring_troll(fiscal, variacion, evento):
+    era_troll = fiscal.troll
+    fiscal.cambiar_scoring_troll(variacion)
+    if not era_troll and fiscal.scoring_troll() >= config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
+        marcar_fiscal_troll(fiscal, evento)
+
+
+
+# Funciones para manejar el status de troll de un fiscal
+
+def marcar_explicitamente_fiscal_troll(fiscal, actor):
+    evento = crear_evento_marca_explicita_como_troll(fiscal, actor)
+    marcar_fiscal_troll(fiscal, evento)
+
+
+def marcar_fiscal_troll(fiscal, evento_disparador):
+    """
+    Se marca a un fiscal como troll
+    """
+    CambioEstadoTroll.objects.create(
+        automatico=evento_disparador.automatico,
+        evento_disparador=evento_disparador,
+        actor=evento_disparador.actor,
+        fiscal_afectado=fiscal,
+        troll=True
+    )
+    aplicar_marca_troll(fiscal)
+
+
+def aplicar_marca_troll(fiscal):
+    """
+    Se marca al fiscal indicado como troll, y se ejecutan las consecuencias de dicha decisión.
+    """
+    from antitrolling.efecto import efecto_determinacion_fiscal_troll
+
+    fiscal.troll = True
+    fiscal.save(update_fields=['troll'])
+    efecto_determinacion_fiscal_troll(fiscal)
+
+
+def marcar_explicitamente_fiscal_no_troll(fiscal, actor, nuevo_scoring):
+    """
+    Un UE decidió, explícitamente, quitarle a un fiscal la marca de troll.
+    """
+    variacion = nuevo_scoring - fiscal.scoring_troll()
+    evento = crear_evento_quitar_explicitamente_marca_troll(fiscal, actor, variacion)
+    fiscal.cambiar_scoring_troll(variacion)
+    marcar_fiscal_no_troll(fiscal, evento)
+
+
+def marcar_fiscal_no_troll(fiscal, evento_disparador):
+    """
+    Se marca a un fiscal como no troll
+    """
+    CambioEstadoTroll.objects.create(
+        automatico=evento_disparador.automatico,
+        evento_disparador=evento_disparador,
+        actor=evento_disparador.actor,
+        fiscal_afectado=fiscal,
+        troll=False
+    )
+    quitar_marca_troll(fiscal)
+
+
+def quitar_marca_troll(fiscal):
+    """
+    Se quita la marca de troll al fiscal indicado. Esta decisión no tiene consecuencias.
+    """
+    fiscal.troll = False
+    fiscal.save(update_fields=['troll'])
+
+
 # Funciones para manejo de scoring troll
 
 def aumentar_scoring_troll_identificacion(variacion, identificacion):
@@ -92,19 +167,18 @@ def aumentar_scoring_troll_identificacion(variacion, identificacion):
     Aumenta el scoring troll de un fiscal por motivos relacionados con una identificacion.
     Si corresponde, marcar al fiscal como troll.
     """
+    afectar_scoring_troll_evento_automatico(
+        identificacion.fiscal, EventoScoringTroll.MOTIVOS.identificacion_attachment_distinta_a_confirmada,
+        identificacion.attachment, None, variacion)
 
-    fiscal = identificacion.fiscal
-    scoring_anterior = fiscal.scoring_troll()
-    nuevo_evento = EventoScoringTroll.objects.create(
-        motivo=EventoScoringTroll.MOTIVOS.identificacion_attachment_distinta_a_confirmada,
-        attachment=identificacion.attachment,
-        automatico=True,
-        fiscal_afectado=fiscal,
-        variacion=variacion
-    )
-    scoring_actualizado = scoring_anterior + variacion
-    if scoring_actualizado >= config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
-        marcar_fiscal_troll(fiscal, nuevo_evento)
+
+def disminuir_scoring_troll_identificacion(variacion, identificacion):
+    """
+    Disminuye el scoring de un fiscal que identificó un attachment tomando la decisión aceptada.
+    """
+    afectar_scoring_troll_evento_automatico(
+        identificacion.fiscal, EventoScoringTroll.MOTIVOS.identificacion_aceptada,
+        identificacion.attachment, None, variacion * -1)
 
 
 def aumentar_scoring_troll_carga(variacion, carga, motivo):
@@ -112,22 +186,32 @@ def aumentar_scoring_troll_carga(variacion, carga, motivo):
     Aumenta el scoring troll de un fiscal por motivos relacionados con una carga.
     Si corresponde, marcar al fiscal como troll.
     """
-    fiscal = carga.fiscal
-    scoring_anterior = fiscal.scoring_troll()
+    afectar_scoring_troll_evento_automatico(
+        carga.fiscal, motivo, None, carga.mesa_categoria, variacion)
+
+
+def disminuir_scoring_troll_carga(variacion, carga):
+    """
+    Disminuye el scoring de un fiscal que realizó una carga con los valores aceptados.
+    """
+    afectar_scoring_troll_evento_automatico(
+        carga.fiscal, EventoScoringTroll.MOTIVOS.carga_aceptada, 
+        None, carga.mesa_categoria, variacion * -1)
+
+
+def afectar_scoring_troll_evento_automatico(fiscal, motivo, attachment, mesacat, variacion):
     nuevo_evento = EventoScoringTroll.objects.create(
         motivo=motivo,
-        mesa_categoria=carga.mesa_categoria,
+        attachment=attachment,
+        mesa_categoria=mesacat,
         automatico=True,
         fiscal_afectado=fiscal,
         variacion=variacion
     )
-    scoring_actualizado = scoring_anterior + variacion
-    if scoring_actualizado >= config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
-        marcar_fiscal_troll(fiscal, nuevo_evento)
+    registrar_cambio_scoring_troll(fiscal, variacion, nuevo_evento)
 
 
 def aumentar_scoring_troll_problema_descartado(variacion, fiscal_afectado, mesa, attachment):
-    scoring_anterior = fiscal_afectado.scoring_troll()
     nuevo_evento = EventoScoringTroll.objects.create(
         motivo=EventoScoringTroll.MOTIVOS.problema_descartado,
         attachment=attachment,
@@ -136,9 +220,8 @@ def aumentar_scoring_troll_problema_descartado(variacion, fiscal_afectado, mesa,
         fiscal_afectado=fiscal_afectado,
         variacion=variacion
     )
-    scoring_actualizado = scoring_anterior + variacion
-    if scoring_actualizado >= config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL:
-        marcar_fiscal_troll(fiscal_afectado, nuevo_evento)
+    registrar_cambio_scoring_troll(fiscal_afectado, variacion, nuevo_evento)
+
 
 def crear_evento_marca_explicita_como_troll(fiscal, actor):
     """
@@ -156,39 +239,21 @@ def crear_evento_marca_explicita_como_troll(fiscal, actor):
     return nuevo_evento
 
 
-def registrar_fiscal_no_es_troll(fiscal, nuevo_scoring, actor):
+def crear_evento_quitar_explicitamente_marca_troll(fiscal, actor, variacion):
     """
-    Un usuario (el 'actor') determina que un fiscal que estaba señalado como troll
-    debe perder esa característica, asignándole un nuevo scoring troll.
+    Se crea, registra y devuelve un EventoScoringTroll que indica que un usuario (el 'actor')
+    indica explícitamente que un fiscal ya no debe ser considerado troll
     """
-
-    # nuevo EventoScoringTroll
     nuevo_evento = EventoScoringTroll.objects.create(
         motivo=EventoScoringTroll.MOTIVOS.remocion_marca_troll,
         automatico=False,
         actor=actor,
         fiscal_afectado=fiscal,
-        variacion=nuevo_scoring - fiscal.scoring_troll()
+        variacion=variacion
     )
-    # nuevo CambioEstadoTroll
-    CambioEstadoTroll.objects.create(
-        automatico=nuevo_evento.automatico,
-        evento_disparador=nuevo_evento,
-        actor=nuevo_evento.actor,
-        fiscal_afectado=fiscal,
-        troll=False
-    )
+    return nuevo_evento
 
 
-def marcar_fiscal_troll(fiscal, evento_disparador):
-    """
-    Se marca a un fiscal como troll
-    """
-    CambioEstadoTroll.objects.create(
-        automatico=evento_disparador.automatico,
-        evento_disparador=evento_disparador,
-        actor=evento_disparador.actor,
-        fiscal_afectado=fiscal,
-        troll=True
-    )
-    fiscal.aplicar_marca_troll()
+
+
+
