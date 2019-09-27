@@ -34,7 +34,7 @@ class VotosListSerializer(serializers.ListSerializer):
             opciones[votos['categoria']].append(votos['opcion'])
 
         for categoria, opciones in opciones.items():
-            prioritarias = categoria.opciones_actuales(solo_prioritarias=True)
+            prioritarias = categoria.opciones_actuales(solo_prioritarias=True, excluir_optativas=True)
             faltantes = [opc for opc in prioritarias if opc not in opciones]
             if faltantes:
                 raise serializers.ValidationError(
