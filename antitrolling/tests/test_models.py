@@ -3,7 +3,9 @@ from constance.test import override_config
 
 from antitrolling.models import (
     EventoScoringTroll, CambioEstadoTroll,
-    aumentar_scoring_troll_identificacion, aumentar_scoring_troll_carga
+    aplicar_marca_troll,
+    aumentar_scoring_troll_identificacion, aumentar_scoring_troll_carga,
+    disminuir_scoring_troll_identificacion, disminuir_scoring_troll_carga
 )
 from elecciones.models import MesaCategoria
 
@@ -20,7 +22,7 @@ from .utils_para_test import (
 def test_aplicar_marca_troll(db):
     fiscal = nuevo_fiscal()
     assert not fiscal.troll 
-    fiscal.aplicar_marca_troll()
+    aplicar_marca_troll(fiscal)
     assert fiscal.troll
 
 
@@ -72,7 +74,7 @@ def test_quitar_marca_troll(db, settings):
         assert not segundo_cambio_estado.troll
 
 
-def test_registro_evento_scoring_identificacion(db):
+def test_registro_evento_scoring_identificacion_incorrecta(db):
     """
     Se comprueba que un EventoScoringTroll se genere con los valores correctos.
     """
@@ -95,30 +97,71 @@ def test_registro_evento_scoring_identificacion(db):
     assert evento.variacion == 100
 
 
+def test_registro_evento_scoring_identificacion_correcta(db):
+    """
+    Se comprueba que un EventoScoringTroll correspondiente a una identificación correcta, 
+    se genere con los valores correctos.
+    """
+
+    fiscal = nuevo_fiscal()
+    attach = AttachmentFactory()
+    mesa = MesaFactory()
+    identi = identificar(attach, mesa, fiscal)
+
+    cantidad_eventos_antes = EventoScoringTroll.objects.count()
+    disminuir_scoring_troll_identificacion(80, identi)
+    assert EventoScoringTroll.objects.count() == cantidad_eventos_antes + 1
+    assert fiscal.eventos_scoring_troll.count() == 1
+    evento = fiscal.eventos_scoring_troll.first()
+    assert evento.motivo == EventoScoringTroll.MOTIVOS.identificacion_aceptada
+    assert evento.mesa_categoria is None
+    assert evento.attachment == attach
+    assert evento.automatico
+    assert evento.actor is None
+    assert evento.fiscal_afectado == fiscal
+    assert evento.variacion == -80
+
+
 
 def test_registro_evento_scoring_carga(db):
     """
     Se comprueba que un EventoScoringTroll se genere con los valores correctos.
+    Se verifica con eventos de aumento y de disminución de scoring.
     """
 
     # creo escenario
-    fiscal = nuevo_fiscal()
+    fiscal1 = nuevo_fiscal()
+    fiscal2 = nuevo_fiscal()
     categoria = nueva_categoria(["o1", "o2", "o3"])
     mesa = MesaFactory(categorias=[categoria])
     mesa_categoria = MesaCategoria.objects.filter(mesa=mesa).first()
-    carga = nueva_carga(mesa_categoria, fiscal, [30, 20, 10])
+    carga1 = nueva_carga(mesa_categoria, fiscal1, [30, 20, 10])
+    carga2 = nueva_carga(mesa_categoria, fiscal2, [24, 20, 10])
 
-    assert fiscal.eventos_scoring_troll.count() == 0
-    aumentar_scoring_troll_carga(42, carga, EventoScoringTroll.MOTIVOS.carga_valores_distintos_a_confirmados)
-    assert fiscal.eventos_scoring_troll.count() == 1
-    evento = fiscal.eventos_scoring_troll.first()
-    assert evento.motivo == EventoScoringTroll.MOTIVOS.carga_valores_distintos_a_confirmados
-    assert evento.mesa_categoria == mesa_categoria
-    assert evento.attachment is None
-    assert evento.automatico
-    assert evento.actor is None
-    assert evento.fiscal_afectado == fiscal
-    assert evento.variacion == 42
+    assert fiscal1.eventos_scoring_troll.count() == 0
+    assert fiscal2.eventos_scoring_troll.count() == 0
+    aumentar_scoring_troll_carga(42, carga1, EventoScoringTroll.MOTIVOS.carga_valores_distintos_a_confirmados)
+    disminuir_scoring_troll_carga(60, carga2)
+    assert fiscal1.eventos_scoring_troll.count() == 1
+    assert fiscal2.eventos_scoring_troll.count() == 1
+
+    evento1 = fiscal1.eventos_scoring_troll.first()
+    assert evento1.motivo == EventoScoringTroll.MOTIVOS.carga_valores_distintos_a_confirmados
+    assert evento1.mesa_categoria == mesa_categoria
+    assert evento1.attachment is None
+    assert evento1.automatico
+    assert evento1.actor is None
+    assert evento1.fiscal_afectado == fiscal1
+    assert evento1.variacion == 42
+
+    evento2 = fiscal2.eventos_scoring_troll.first()
+    assert evento2.motivo == EventoScoringTroll.MOTIVOS.carga_aceptada
+    assert evento2.mesa_categoria == mesa_categoria
+    assert evento2.attachment is None
+    assert evento2.automatico
+    assert evento2.actor is None
+    assert evento2.fiscal_afectado == fiscal2
+    assert evento2.variacion == -60
 
 
 def test_registro_cambio_estado_troll(db, settings):

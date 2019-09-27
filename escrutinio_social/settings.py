@@ -441,6 +441,9 @@ CODIGO_PARTIDO_ELLOS = '135'
 CODIGO_PARTIDO_NOSOTROS_BA = '136'
 CODIGO_PARTIDO_ELLOS_BA = '135'
 
+# Número del Distrito Provincia de Buenos Aires
+DISTRITO_PBA = '2'
+
 # Cada cuánto tiempo actualizar el campo last_seen de un Fiscal.
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
 
@@ -507,6 +510,7 @@ CONSTANCE_CONFIG = {
     'SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada.', int),
     'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas.', int),
     'SCORING_TROLL_PROBLEMA_DESCARTADO': (200, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
+    'SCORING_TROLL_DESCUENTO_ACCION_CORRECTA': (50, 'Cuánto disminuye el scoring de troll para cada acción aceptada de un fiscal.', int),
     'MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS': (2, 'Este multiplicador se utiliza al computar "cant_asignaciones_realizadas_redondeadas" en el schedulling de attachments y mesa-categorías.', int),
 }
 
