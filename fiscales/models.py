@@ -320,8 +320,8 @@ class Fiscal(models.Model):
 
 
     @classmethod
-    def destrolleo_masivo(cls, actor, nuevo_scoring):
-        for fiscal in Fiscal.objects.filter(troll=True):
+    def destrolleo_masivo(cls, actor, hasta_scoring, nuevo_scoring):
+        for fiscal in Fiscal.objects.filter(troll=True).filter(puntaje_scoring_troll__lte=hasta_scoring):
             fiscal.quitar_marca_troll(actor, nuevo_scoring)
 
 

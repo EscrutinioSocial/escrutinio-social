@@ -31,6 +31,12 @@
     .recuadro {
         border-width: 2px; border-style: solid
     }
+    .lone_row_in_frame {
+        margin-bottom: 0px
+    }
+    .lone_row_in_frame_section {
+        margin-bottom: 10px
+    }
 </style>
 {% endblock %}
 
@@ -40,30 +46,37 @@
 
 {% block left-panel %}
 <div class="row" style="font-size: 120%; margin-left: 20px">
-    <div class="row" style="margin-bottom: 40px; margin-top: 30px">
-        <div class="col s8 dato_destacado" style="background-color: dodgerblue;">Scoring mínimo para considerar troll</div>
-        <div class="col s4" style="background-color: lightsteelblue">{{ umbral_troll }}</div>
-    </div>
-
-    <div class="row recuadro" style="margin-bottom: 50px;">
-        <div class="col s8 dato_destacado">Cantidad total fiscales</div>
-        <div class="col s2">{{ fiscales }}</div>
-        <div class="col s2">100,0 %</div>
+    <div class="recuadro" style="margin-bottom: 60px; margin-top: 30px">
+        <div class="row lone_row_in_frame">
+            <div class="col s8 dato_destacado" style="background-color: dodgerblue;">Scoring mínimo para considerar troll</div>
+            <div class="col s4" style="background-color: lightsteelblue">{{ umbral_troll }}</div>
+        </div>
     </div>
 
     <div class="recuadro">
-        <div class="row {{ fiscales_troll.indicador_peligro }}" style="background-color: lightblue; margin-bottom: 30px">
+        <div class="row lone_row_in_frame_section" style="background-color: lightskyblue">
+            <div class="col s8 dato_destacado">Cantidad total fiscales</div>
+            <div class="col s2">{{ fiscales }}</div>
+            <div class="col s2">100,0 %</div>
+        </div>
+
+        <div class="row {{ fiscales_troll.indicador_peligro }} lone_row_in_frame_section" style="background-color: lightblue">
             <div class="col s8 dato_destacado">{{ fiscales_troll.texto_porcentaje }}</div>
             <div class="col s2">{{ fiscales_troll.cantidad }}</div>
             <div class="col s2">{{ fiscales_troll.porcentaje }} %</div>
         </div>
-        
+
+        <div class="row {{ fiscales_no_troll.indicador_peligro }}" style="background-color: lavender">
+            <div class="col s8 dato_destacado">{{ fiscales_no_troll.texto_porcentaje }}</div>
+            <div class="col s2">{{ fiscales_no_troll.cantidad }}</div>
+            <div class="col s2">{{ fiscales_no_troll.porcentaje }} %</div>
+        </div>
+
         <div style="background-color: lavender">
             <div class="row">
-                <div class="col s5 dato_destacado">No considerados troll</div>
-                <div class="col s7">organizados por puntaje</div>
+                <div class="col s12">no considerados troll, discriminados por puntaje</div>
             </div>
-        
+
             {% for rango in rangos_scoring %}
             <div class="row {{ rango.indicador_peligro }}">
                 <div class="col s5">{{ rango.texto_porcentaje }}</div>
@@ -74,6 +87,29 @@
             {% endfor %}
 
             <div class="row" style="margin-bottom: 0px">
+            </div>
+        </div>
+    </div>
+
+    <div class="recuadro" style="margin-top: 40px">
+        <div>
+            <div class="row">
+                <div class="col s12">
+                    <span class="dato_destacado">Indicadores de riesgo</span>
+                    <span>en el cuadro anterior</span>
+                </div>
+            </div>
+            <div class="row amarillo">
+                <div class="col s5">Amarillo</div>
+                <div class="col s7">Riesgo moderado</div>
+            </div>
+            <div class="row naranja">
+                <div class="col s5">Naranja</div>
+                <div class="col s7">Riesgo considerable - reforzar monitoreo</div>
+            </div>
+            <div class="row rojo">
+                <div class="col s5">Rojo</div>
+                <div class="col s7">Alarma - posible necesidad de acción inmediata</div>
             </div>
         </div>
     </div>
@@ -109,5 +145,3 @@
 </div>
 {% endblock left-panel %}
 
-{% block messages %}
-{% endblock messages %}

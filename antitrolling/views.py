@@ -45,7 +45,9 @@ class MonitorAntitrolling(TemplateView):
         context = super().get_context_data(**kwargs)
         context['umbral_troll'] = ParametrosAntitrolling.umbral_troll
         context['fiscales'] = ParametrosAntitrolling.cantidad_fiscales
-        context['fiscales_troll'] = FiscalesTroll().set_umbrales_de_peligro(3, 5, 7).info_para_renderizar()
+        data_troll = FiscalesTroll().set_umbrales_de_peligro(3, 5, 7)
+        context['fiscales_troll'] = data_troll.info_para_renderizar()
+        context['fiscales_no_troll'] = FiscalesNoTroll(data_troll).info_para_renderizar()
         rangos_scoring = [
             FiscalesEnRangoScoringTroll().setRangoPorcentajes(80, None).set_umbrales_de_peligro(5, 7, 10),
             FiscalesEnRangoScoringTroll().setRangoPorcentajes(60, 80).set_umbrales_de_peligro(10, 15, 20),
@@ -97,9 +99,9 @@ class FiscalesEnRangoScoringTroll():
     def texto_porcentaje(self):
         if self.desde_porcentaje != None and self.hasta_porcentaje != None:
             if self.desde_porcentaje == 0:
-                return f"Hasta el {self.hasta_porcentaje} %"
+                return f"Hasta el {self.hasta_porcentaje} %  del mínimo"
             else:
-                return f"{self.desde_porcentaje} % - {self.hasta_porcentaje} %"
+                return f"{self.desde_porcentaje} % - {self.hasta_porcentaje} % del mínimo"
         elif (self.desde_porcentaje != None and self.hasta_porcentaje == None):
             return f"Más del {self.desde_porcentaje} % del mínimo"
         elif (self.desde_porcentaje == None and self.hasta_porcentaje != None):
@@ -154,6 +156,22 @@ class FiscalesTroll(FiscalesEnRangoScoringTroll):
         return ""
 
 
+class FiscalesNoTroll(FiscalesEnRangoScoringTroll):
+    def __init__(self, data_troll):
+        super().__init__()
+        self.data_troll = data_troll
+        self.cantidad = ParametrosAntitrolling.cantidad_fiscales - data_troll.cantidad_fiscales()
+
+    def build_query(self):
+        raise Exception("Should not build query for a FiscalesNoTroll instance")
+
+    def texto_porcentaje(self):
+        return "No considerados troll"
+
+    def texto_rango(self):
+        return ""
+
+
 class RangoScoringParaRenderizar():
     def __init__(self, info_fiscales_en_rango):
         self.info_fiscales = info_fiscales_en_rango
@@ -195,17 +213,20 @@ class NoHayPeligro():
 
 @login_required
 def limpiar_marcas_troll(request):
-    # Fiscal.destrolleo_masivo(request.user.fiscal, 0)
     print('en limpiar_marcas_troll')
-    print(request.POST.copy().get('hasta_puntaje'))
-    messages.info(request, 'mostrando mensaje che')
+    request_data = request.POST.copy()
+    try: 
+        hasta_scoring = int(request.POST.copy().get('hasta_puntaje'))
+        nuevo_scoring = int(request.POST.copy().get('nuevo_puntaje'))
+        if (hasta_scoring >= 0):
+            Fiscal.destrolleo_masivo(request.user.fiscal, hasta_scoring, nuevo_scoring)
+            messages.info(
+                request, 
+                f'Quitada la marca troll para fiscales con scoring hasta {hasta_scoring} - arrancan con scoring {nuevo_scoring}')
+        else:
+            messages.info(request, 'El límite de puntaje para quitar la marca troll debe ser positivo')
+    except ValueError:
+        messages.info(request, 'Debe ingresar valores numéricos')
     return redirect("monitoreo-antitrolling")
-    # return redirect("monitoreo-antitrolling-con-mensaje", mensaje="hola-manola")
 
 
-@login_required
-def monitor_antitrolling_con_mensaje(request, mensaje_key):
-    messages.info(request, 'mostrando mensaje che')
-    print('mostrando mensaje')
-    print(mensaje_key)
-    return redirect("monitoreo-antitrolling")
