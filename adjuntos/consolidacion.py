@@ -237,7 +237,6 @@ def consolidar_identificaciones(attachment):
         mesa_anterior.invalidar_asignacion_attachment()
 
 
-
 def consumir_novedades_identificacion(cant_por_iteracion=None):
     with transaction.atomic():
         # Lo hacemos en una transacción para no competir con otros consolidadores.
@@ -256,10 +255,9 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
             consolidar_identificaciones(attachment)
         except Exception as e:
             # Eliminamos los ids de las identificaciones que no se procesaron
-            # para no marcarlas como procesada=True
-            ids_no_procesados = attachment.identificaciones.values_list('id', flat=True)
-            for id in ids_no_procesados:
-                if id in ids_a_procesar: ids_a_procesar.remove(id)
+            # para no marcarlas como procesada=True.
+            for identificacion in attachment.identificaciones.all():
+                ids_a_procesar.remove(identificacion.id)
 
             # Logueamos la excepción y continuamos.
             capture_message(
@@ -313,10 +311,9 @@ def consumir_novedades_carga(cant_por_iteracion=None):
             consolidar_cargas(mesa_categoria_con_novedades)
         except Exception as e:
             # Eliminamos los ids de las cargas que no se procesaron
-            # para no marcarlas como procesada=True
-            ids_no_procesados = mesa_categoria_con_novedades.cargas.values_list('id', flat=True)
-            for id in ids_no_procesados:
-                if id in ids_a_procesar: ids_a_procesar.remove(id)
+            # para no marcarlas como procesada=True.
+            for carga in mesa_categoria_con_novedades.cargas.all():
+                ids_a_procesar.remove(carga.id)
 
             # Logueamos la excepción y continuamos.
             capture_message(
