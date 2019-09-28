@@ -5,18 +5,14 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import FormView
-from django.core.serializers import serialize
 
 import structlog
 
-from adjuntos.forms import (
-    AgregarAttachmentsForm,
-    IdentificacionForm
-)
-from adjuntos.models import Attachment, Identificacion
-from problemas.models import Problema
+from adjuntos.forms import AgregarAttachmentsForm
+from adjuntos.models import Attachment
 
 logger = structlog.get_logger(__name__)
+
 
 class AgregarAdjuntos(FormView):
     """

@@ -2,17 +2,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.utils.decorators import method_decorator
-from django.core.serializers import serialize
 
 import structlog
 
 from adjuntos.csv_import import CSVImporter
-from adjuntos.forms import (
-    IdentificacionForm,
-    AgregarAttachmentsCSV
-)
-from adjuntos.models import Attachment, Identificacion
-from problemas.models import Problema
+from adjuntos.forms import AgregarAttachmentsCSV
 from .agregar_adjuntos import AgregarAdjuntos
 
 logger = structlog.get_logger(__name__)
@@ -28,6 +22,7 @@ CSV_MIMETYPES = (
     'text/comma-separated-values',
     'text/x-comma-separated-values',
 )
+
 
 class AgregarAdjuntosCSV(AgregarAdjuntos):
     """
