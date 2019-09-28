@@ -8,6 +8,7 @@ import structlog
 from adjuntos.csv_import import CSVImporter
 from adjuntos.forms import AgregarAttachmentsCSV
 from .agregar_adjuntos import AgregarAdjuntos
+from adjuntos.models import CSVTareaDeImportacion
 
 logger = structlog.get_logger(__name__)
 
@@ -45,21 +46,13 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
         return HttpResponseForbidden()
 
     def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion):
-        messages.add_message(self.request, messages.INFO, f"Procesando {adjunto.name}, aguarde por favor...")
         try:
-            cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(adjunto, self.request.user).procesar()
-            self.agregar_resultado_carga(
-                messages.SUCCESS if cant_mesas_ok > 0 else messages.INFO,
-               f"➡️ El archivo <b>{adjunto.name}</b> ingresó <b>{cant_mesas_ok}</b> mesas sin problemas,")
-            self.agregar_resultado_carga(
-                messages.SUCCESS if cant_mesas_parcialmente_ok > 0 else messages.INFO,
-                f"&nbsp;<b>{cant_mesas_parcialmente_ok}</b> ingresaron alguna categoría")
-            if errores:
-                self.agregar_resultado_carga(
-                    messages.INFO,
-                    "&nbsp;y produjo <b>los siguientes errores</b>:")
-                for error in errores.split('\n'):
-                    self.agregar_resultado_carga(messages.WARNING, f"&nbsp;&nbsp;{error}")
+            tarea_importacion_csv = CSVTareaDeImportacion()
+            tarea_importacion_csv.status = CSVTareaDeImportacion.STATUS.pendiente
+            tarea_importacion_csv.fiscal = subido_por
+            tarea_importacion_csv.csv = adjunto
+            tarea_importacion_csv.save()
+            messages.add_message(self.request, messages.INFO, f"Procesando {adjunto.name}, aguarde por favor...")
         except Exception as e:
             self.agregar_resultado_carga(messages.WARNING,
                 f'{adjunto.name} no importado debido al siguiente error: {str(e)}')

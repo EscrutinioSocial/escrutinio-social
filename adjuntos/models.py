@@ -361,3 +361,24 @@ class PreIdentificacion(TimeStampedModel):
 
     def __str__(self):
         return f'{self.distrito} - {self.seccion} - {self.circuito} (subida por {self.fiscal})'
+
+
+class CSVTareaDeImportacion(TimeStampedModel):
+
+    csv = models.FileField()
+
+    STATUS = Choices(
+        'pendiente',
+        'en progreso',
+        'procesado',
+        'error'
+    )
+
+    status = StatusField(choices_name='STATUS', choices=STATUS)
+    errores = models.TextField(null=True, blank=True)
+    fiscal = models.ForeignKey(
+        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    mesas_total_ok = models.PositiveIntegerField(default=0)
+    mesas_parc_ok = models.PositiveIntegerField(default=0)
