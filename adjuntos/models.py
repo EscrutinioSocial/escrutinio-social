@@ -313,6 +313,8 @@ class Identificacion(TimeStampedModel):
     attachment = models.ForeignKey(
         Attachment, related_name='identificaciones', on_delete=models.CASCADE
     )
+    # Se utiliza para permitir concurrencia entre consolidadores.
+    tomada_por_consolidador = models.DateTimeField(default=None, null=True, blank=True)
     procesada = models.BooleanField(default=False)
     invalidada = models.BooleanField(default=False)
 

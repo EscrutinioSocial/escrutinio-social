@@ -24,6 +24,8 @@ class Migration(migrations.Migration):
             ],
             options={
                 'unique_together': {('mesa_categoria', 'numero_carga'), ('attachment', 'numero_carga')},
+                'verbose_name': 'Cola de Identificaciones y Cargas pendientes',
+                'verbose_name_plural': 'Cola de Identificaciones y Cargas pendientes',
             },
         ),
     ]

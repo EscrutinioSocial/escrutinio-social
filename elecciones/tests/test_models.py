@@ -1,6 +1,8 @@
 import pytest
 from django.core.management import call_command
 from django.conf import settings
+from datetime import timedelta
+from django.utils import timezone
 from random import shuffle
 from constance.test import override_config
 from .factories import (
@@ -187,6 +189,29 @@ def test_total_consolidada_multi_carga_con_minimo_1(db, settings):
     assert mc.status == MesaCategoria.STATUS.sin_cargar
     c1 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
     consumir_novedades_y_actualizar_objetos([mc])
+    assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
+    assert mc.carga_testigo == c1
+
+
+def test_consolidador_honra_timeout(db, settings):
+    settings.MIN_COINCIDENCIAS_CARGAS = 1
+    mc = MesaCategoriaFactory()
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    c1 = CargaFactory(
+        mesa_categoria=mc, tipo='total', firma='1-10',
+        tomada_por_consolidador=timezone.now() - timedelta(minutes=settings.TIMEOUT_CONSOLIDACION - 1)
+    )
+    consumir_novedades_y_actualizar_objetos([mc, c1])
+    # No la tomó aún.
+    assert c1.procesada is False
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+
+    c1.tomada_por_consolidador = timezone.now() - timedelta(minutes=settings.TIMEOUT_CONSOLIDACION + 1)
+    c1.save()
+
+    # Ahora sí.
+    consumir_novedades_y_actualizar_objetos([mc, c1])
+    assert c1.procesada is True
     assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mc.carga_testigo == c1
 
