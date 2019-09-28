@@ -193,6 +193,17 @@ def test_total_consolidada_multi_carga_con_minimo_1(db, settings):
     assert mc.carga_testigo == c1
 
 
+def test_consolidador_marca_timeout(db, settings):
+    mc = MesaCategoriaFactory()
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+    c1 = CargaFactory(mesa_categoria=mc, tipo='total', firma='1-10')
+    assert c1.tomada_por_consolidador is None
+    assert c1.procesada is False
+    consumir_novedades_y_actualizar_objetos([c1])
+    assert c1.tomada_por_consolidador is not None
+    assert c1.procesada is True
+
+
 def test_consolidador_honra_timeout(db, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
     mc = MesaCategoriaFactory()
