@@ -5,10 +5,10 @@
 <style type="text/css">
     .left-panel {
         flex-basis: 100%;
-        min-width: 60%
+        min-width: 58%
     }
     .right-panel {
-        min-width: 40%
+        min-width: 36%
     }
 
     table.striped>tbody>tr:nth-child(odd) {
@@ -23,19 +23,23 @@
         background-color: orange
     }
     .rojo {
-        background-color: crimson
+        background-color: lightcoral
     }
     .dato_destacado {
         font-weight: bold
     }
     .recuadro {
-        border-width: 2px; border-style: solid
+        border-width: 2px; border-style: solid; 
+        margin-top: 40px
     }
     .lone_row_in_frame {
         margin-bottom: 0px
     }
     .lone_row_in_frame_section {
         margin-bottom: 10px
+    }
+    .screen_part {
+        font-size: 120%; margin-left: 20px
     }
 </style>
 {% endblock %}
@@ -45,8 +49,8 @@
 {% block page_title %} Monitoreo antitrolling {% endblock %}
 
 {% block left-panel %}
-<div class="row" style="font-size: 120%; margin-left: 20px">
-    <div class="recuadro" style="margin-bottom: 60px; margin-top: 30px">
+<div class="row screen_part">
+    <div class="recuadro" style="margin-bottom: 60px">
         <div class="row lone_row_in_frame">
             <div class="col s8 dato_destacado" style="background-color: dodgerblue;">Scoring mínimo para considerar troll</div>
             <div class="col s4" style="background-color: lightsteelblue">{{ umbral_troll }}</div>
@@ -96,7 +100,7 @@
             <div class="row">
                 <div class="col s12">
                     <span class="dato_destacado">Indicadores de riesgo</span>
-                    <span>en el cuadro anterior</span>
+                    <span>en los cuadros anteriores</span>
                 </div>
             </div>
             <div class="row amarillo">
@@ -145,3 +149,44 @@
 </div>
 {% endblock left-panel %}
 
+{% block right-panel %}
+<div class="row screen_part">
+    <div class="recuadro" style="background-color: ivory">
+        <div class="row"  style="background-color: powderblue; padding-bottom: 10px">
+            <div class="col s12">
+                <span class="dato_destacado">Identificaciones</span>
+                <span>procesadas</span>
+            </div>
+        </div>
+
+        {% for dato in identificaciones %}
+        <div>
+            <div class="row {{ dato.indicador_peligro }}">
+                <div class="col s6">{{ dato.texto }}</div>
+                <div class="col s3">{{ dato.cantidad }}</div>
+                <div class="col s3">{{ dato.porcentaje }} %</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="recuadro" style="background-color: ivory">
+        <div class="row" style="background-color: powderblue; padding-bottom: 10px">
+            <div class="col s12">
+                <span class="dato_destacado">Cargas</span>
+                <span>procesadas</span>
+            </div>
+        </div>
+
+        {% for dato in cargas %}
+        <div>
+            <div class="row {{ dato.indicador_peligro }}">
+                <div class="col s6">{{ dato.texto }}</div>
+                <div class="col s3">{{ dato.cantidad }}</div>
+                <div class="col s3">{{ dato.porcentaje }} %</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock right-panel %}

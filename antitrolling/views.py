@@ -7,6 +7,8 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 from django.views.generic.base import TemplateView
 
 from constance import config
+from elecciones.models import Carga
+from adjuntos.models import Identificacion
 from fiscales.models import Fiscal
 
 
@@ -43,7 +45,9 @@ class MonitorAntitrolling(TemplateView):
     def get_context_data(self, **kwargs):
         ParametrosAntitrolling.reset()
         context = super().get_context_data(**kwargs)
+        # umbral troll
         context['umbral_troll'] = ParametrosAntitrolling.umbral_troll
+        # data fiscales
         context['fiscales'] = ParametrosAntitrolling.cantidad_fiscales
         data_troll = FiscalesTroll().set_umbrales_de_peligro(3, 5, 7)
         context['fiscales_troll'] = data_troll.info_para_renderizar()
@@ -56,6 +60,9 @@ class MonitorAntitrolling(TemplateView):
             FiscalesEnRangoScoringTroll().setRangoPorcentajes(None, 0),
         ]
         context['rangos_scoring'] = [rango.info_para_renderizar() for rango in rangos_scoring]
+        # data acciones
+        context['identificaciones'] = GeneradorInfoAcciones(Identificacion.objects.filter(procesada=True)).rangos()
+        context['cargas'] = GeneradorInfoAcciones(Carga.objects.filter(procesada=True)).rangos()
         return context
 
 
@@ -172,6 +179,28 @@ class FiscalesNoTroll(FiscalesEnRangoScoringTroll):
         return ""
 
 
+class GeneradorInfoAcciones():
+    def __init__(self, query_inicial):
+        super().__init__()
+        self.query_inicial = query_inicial
+        self._rangos = None
+
+    def calcular(self):
+        if not self._rangos:
+            cantidad_total_acciones = self.query_inicial.count()
+            cantidad_validas = self.query_inicial.filter(invalidada=False).count()
+            cantidad_invalidadas = cantidad_total_acciones - cantidad_validas
+            self._rangos = [
+                RangoAccionesParaRenderizar('Total', cantidad_total_acciones, cantidad_total_acciones),
+                RangoAccionesParaRenderizar('Válidas', cantidad_validas, cantidad_total_acciones),
+                RangoAccionesParaRenderizar('Invalidadas', cantidad_invalidadas, cantidad_total_acciones).set_umbrales_de_peligro(4,7,10)
+            ]
+
+    def rangos(self):
+        self.calcular()
+        return self._rangos
+
+
 class RangoScoringParaRenderizar():
     def __init__(self, info_fiscales_en_rango):
         self.info_fiscales = info_fiscales_en_rango
@@ -181,7 +210,22 @@ class RangoScoringParaRenderizar():
         self.porcentaje = round(info_fiscales_en_rango.porcentaje_fiscales(), 2)
         self.indicador_peligro = info_fiscales_en_rango.indicador_peligro()
 
-    
+
+class RangoAccionesParaRenderizar():
+    def __init__(self, texto, cantidad, cantidad_total):
+        self.texto = texto
+        self.cantidad = cantidad
+        porcentaje_calculado = 100 if cantidad == cantidad_total else (cantidad * 100) / cantidad_total
+        self.porcentaje = round(porcentaje_calculado, 2)
+        self.calcular_indicador_peligro(NoHayPeligro())
+
+    def set_umbrales_de_peligro(self, amarillo, naranja, rojo):
+        self.calcular_indicador_peligro(IndicadorDePeligro().set_umbrales(amarillo, naranja, rojo))
+        return self
+
+    def calcular_indicador_peligro(self, criterio_peligro):
+        self.indicador_peligro = criterio_peligro.indicador_peligro(self.porcentaje)
+
 
 class IndicadorDePeligro():
     indicador_rojo = "rojo"
