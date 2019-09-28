@@ -31,6 +31,7 @@ def cambiar_status_troll(request, fiscal_id, prender):
     )
     return redirect('admin:fiscales_fiscal_changelist')
 
+    
 
 class MonitorAntitrolling(TemplateView):
     """
@@ -192,8 +193,19 @@ class NoHayPeligro():
         return IndicadorDePeligro.indicador_verde
 
 
+@login_required
 def limpiar_marcas_troll(request):
     # Fiscal.destrolleo_masivo(request.user.fiscal, 0)
     print('en limpiar_marcas_troll')
     print(request.POST.copy().get('hasta_puntaje'))
+    messages.info(request, 'mostrando mensaje che')
+    return redirect("monitoreo-antitrolling")
+    # return redirect("monitoreo-antitrolling-con-mensaje", mensaje="hola-manola")
+
+
+@login_required
+def monitor_antitrolling_con_mensaje(request, mensaje_key):
+    messages.info(request, 'mostrando mensaje che')
+    print('mostrando mensaje')
+    print(mensaje_key)
     return redirect("monitoreo-antitrolling")
