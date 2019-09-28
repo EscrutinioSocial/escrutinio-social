@@ -59,7 +59,10 @@
 
     <div class="recuadro">
         <div class="row lone_row_in_frame_section" style="background-color: lightskyblue">
-            <div class="col s8 dato_destacado">Cantidad total fiscales</div>
+            <div class="col s8">
+                <div class="dato_destacado">Cantidad total fiscales</div>
+                <div>(se consideran sólo los que accedieron al sistema)</div>
+            </div>
             <div class="col s2">{{ fiscales }}</div>
             <div class="col s2">100,0 %</div>
         </div>
@@ -78,7 +81,7 @@
 
         <div style="background-color: lavender">
             <div class="row">
-                <div class="col s12">no considerados troll, discriminados por puntaje</div>
+                <div class="col s12">no considerados troll, discriminados por scoring</div>
             </div>
 
             {% for rango in rangos_scoring %}

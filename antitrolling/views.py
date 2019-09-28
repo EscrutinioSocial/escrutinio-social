@@ -73,7 +73,7 @@ class ParametrosAntitrolling():
     @classmethod
     def reset(cls):
         cls.umbral_troll = config.SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL
-        cls.cantidad_fiscales = Fiscal.objects.count()
+        cls.cantidad_fiscales = Fiscal.objects.filter(ingreso_alguna_vez=True).count()
 
 
 class FiscalesEnRangoScoringTroll():
@@ -121,11 +121,11 @@ class FiscalesEnRangoScoringTroll():
 
     def texto_rango(self):
         if self.desde_scoring != None and self.hasta_scoring != None:
-            return f"{self.desde_scoring} - {self.hasta_scoring}"
+            return f"{self.desde_scoring} a {self.hasta_scoring} puntos"
         elif self.desde_scoring != None and self.hasta_scoring == None:
-            return f"{self.desde_scoring} o más"
+            return f"{self.desde_scoring} puntos o más"
         elif self.desde_scoring == None and self.hasta_scoring != None:
-            return f"{self.hasta_scoring} o menos"
+            return f"{self.hasta_scoring} puntos o menos"
         else:
             return "sin límites"
 
@@ -141,7 +141,7 @@ class FiscalesEnRangoScoringTroll():
             self.cantidad = query.count()
 
     def build_query(self):
-        query = Fiscal.objects.filter(troll=False)
+        query = Fiscal.objects.filter(ingreso_alguna_vez=True).filter(troll=False)
         if (self.desde_scoring != None):
             query = query.filter(puntaje_scoring_troll__gte=self.desde_scoring)
         if (self.hasta_scoring != None):
@@ -154,7 +154,7 @@ class FiscalesTroll(FiscalesEnRangoScoringTroll):
         super().__init__()
 
     def build_query(self):
-        return Fiscal.objects.filter(troll=True)
+        return Fiscal.objects.filter(ingreso_alguna_vez=True).filter(troll=True)
 
     def texto_porcentaje(self):
         return "Considerados troll"
