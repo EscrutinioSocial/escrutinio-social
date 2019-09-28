@@ -171,14 +171,14 @@ def test_identificacion_consolidada_con_minimo_1(db, settings):
     assert a.status == Attachment.STATUS.identificada
 
 
-def test_consolidador_marca_timeout(db, settings):
+def test_consolidador_desmarca_timeout(db, settings):
     a = AttachmentFactory()
     m1 = MesaFactory()
     i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
     assert i1.tomada_por_consolidador is None
     consumir_novedades_identificacion()
     i1.refresh_from_db()
-    assert i1.tomada_por_consolidador is not None
+    assert i1.tomada_por_consolidador is None
     assert i1.procesada is True
 
 

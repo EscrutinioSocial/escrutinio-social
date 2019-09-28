@@ -276,7 +276,12 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
             )
 
     # Todas procesadas (hay que seleccionar desde Identificacion porque 'a_procesar' ya fue sliceado).
-    procesadas = Identificacion.objects.filter(id__in=ids_a_procesar).update(procesada=True)
+    procesadas = Identificacion.objects.filter(
+        id__in=ids_a_procesar
+    ).update(
+        procesada=True,
+        tomada_por_consolidador=None
+    )
     return procesadas
 
 
@@ -316,7 +321,11 @@ def consumir_novedades_carga(cant_por_iteracion=None):
             )
 
     # Todas procesadas (hay que seleccionar desde Carga porque 'a_procesar' ya fue sliceado).
-    procesadas = Carga.objects.filter(id__in=ids_a_procesar).update(procesada=True)
+    procesadas = Carga.objects.filter(
+        id__in=ids_a_procesar
+    ).update(
+        procesada=True, tomada_por_consolidador=None
+    )
     return procesadas
 
 
