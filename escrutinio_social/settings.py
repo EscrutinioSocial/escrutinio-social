@@ -420,7 +420,21 @@ PRIORIDADES_STANDARD_CATEGORIA = [
 OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'partido': None, 'codigo': '10000'}
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'partido': None, 'codigo': '10001'}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'partido': None, 'codigo': '10010'}
-OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'partido': None}
+# Las que siguen son la metadata optativa, es decir, la metadata que recolectamos de los que nos mandan
+# por CSV (si lo mandan), pero que no le queremos pedir al usuario.
+OPCION_TOTAL_SOBRES = {
+    'tipo': 'metadata_optativa', 'nombre_corto': 'sobres', 'partido': None, 'codigo': '10011'
+}
+OPCION_RECURRIDOS = {
+    'tipo': 'metadata_optativa', 'nombre_corto': 'recurridos', 'partido': None, 'codigo': '10002'
+}
+OPCION_ID_IMPUGNADA = {
+    'tipo': 'metadata_optativa', 'nombre_corto': 'id_impugnada', 'partido': None, 'codigo': '10003'
+}
+OPCION_COMANDO_ELECTORAL = {
+    'tipo': 'metadata_optativa', 'nombre_corto': 'comando_electoral', 'partido': None, 'codigo': '10004'
+}
+
 KEY_VOTOS_POSITIVOS = 'votos_positivos'
 
 SLUG_CATEGORIA_PRESI_Y_VICE = 'PV'
@@ -435,6 +449,9 @@ CODIGO_PARTIDO_NOSOTROS = '136'
 CODIGO_PARTIDO_ELLOS = '135'
 CODIGO_PARTIDO_NOSOTROS_BA = '136'
 CODIGO_PARTIDO_ELLOS_BA = '135'
+
+# Número del Distrito Provincia de Buenos Aires
+DISTRITO_PBA = '2'
 
 # Cada cuánto tiempo actualizar el campo last_seen de un Fiscal.
 LAST_SEEN_UPDATE_INTERVAL = 2 * 60  # en segundos.
@@ -502,6 +519,7 @@ CONSTANCE_CONFIG = {
     'SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada.', int),
     'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas.', int),
     'SCORING_TROLL_PROBLEMA_DESCARTADO': (200, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
+    'SCORING_TROLL_DESCUENTO_ACCION_CORRECTA': (50, 'Cuánto disminuye el scoring de troll para cada acción aceptada de un fiscal.', int),
     'MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS': (2, 'Este multiplicador se utiliza al computar "cant_asignaciones_realizadas_redondeadas" en el schedulling de attachments y mesa-categorías.', int),
     'PAUSA_SCHEDULER': (60, 'Frecuencia de ejecución del scheduler (en segundos).', int),
     'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS': (1.5, 'Factor de multiplicación para agregar tareas.', float),

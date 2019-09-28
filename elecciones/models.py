@@ -371,19 +371,19 @@ class MesaCategoriaQuerySet(models.QuerySet):
 
     def sin_consolidar_por_doble_carga(self):
         """
-        Excluye las instancias no consolidadas con doble carga.
+        Excluye las instancias consolidadas con doble carga.
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_dc)
 
     def sin_consolidar_por_csv(self):
         """
-        Excluye las instancias no consolidadas con doble carga.
+        Excluye las instancias consolidadas por CSV.
         """
         return self.exclude(status=MesaCategoria.STATUS.total_consolidada_csv)
 
     def sin_cargas_del_fiscal(self, fiscal):
         """
-        Excluye las instancias que tengan alguna carga del fiscal indicado
+        Excluye las instancias que tengan alguna carga del fiscal indicado.
         """
         return self.exclude(cargas__fiscal=fiscal)
 
@@ -786,7 +786,7 @@ class Partido(models.Model):
     Representa un partido político o alianza, que contiene :py:class:`opciones <Opcion>`.
     """
     numero = models.PositiveIntegerField(null=True, blank=True)
-    codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True, db_index=True)
+    codigo = models.CharField(max_length=10, help_text='Código de partido', null=True, blank=True, db_index=True)
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=30, default='')
     color = models.CharField(max_length=30, default='', blank=True)
@@ -818,7 +818,10 @@ class Opcion(models.Model):
     # Tipos no positivos son blanco, nulos, etc
     # Metada son campos extras como "total de votos", "total de sobres", etc.
     # que son únicos por mesa (no están en cada categoría).
-    TIPOS = Choices('positivo', 'no_positivo', 'metadata')
+    # Metada optativa es la metadata que recolectamos de los que nos mandan
+    # por CSV (de manera optativa, y porque es data que si está, sirve ante
+    # un eventual reclamos), pero que no le queremos pedir al usuario que cargue.
+    TIPOS = Choices('positivo', 'no_positivo', 'metadata', 'metadata_optativa')
     tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
 
     nombre = models.CharField(max_length=100)
@@ -827,7 +830,7 @@ class Opcion(models.Model):
     # Dado que muchas veces la justicia no le pone un código a las "sub listas"
     # en las PASO, se termina sintentizando y podría ser largo.
     codigo = models.CharField(
-        max_length=30, help_text='Codigo de opción', null=True, blank=True,
+        max_length=30, help_text='Código de opción', null=True, blank=True,
         db_index=True
     )
     partido = models.ForeignKey(
@@ -855,7 +858,14 @@ class Opcion(models.Model):
 
     @classmethod
     def opciones_no_partidarias(cls):
-        return ['OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_TOTAL_SOBRES', 'OPCION_NULOS']
+        return [
+            'OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_TOTAL_SOBRES', 'OPCION_NULOS',
+            'OPCION_RECURRIDOS', 'OPCION_ID_IMPUGNADA', 'OPCION_COMANDO_ELECTORAL',
+        ]
+
+    @classmethod
+    def opciones_no_partidarias_obligatorias(cls):
+        return ['OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_NULOS']
 
     @classmethod
     def blancos(cls):
@@ -872,6 +882,18 @@ class Opcion(models.Model):
     @classmethod
     def sobres(cls):
         return cls.objects.get(**settings.OPCION_TOTAL_SOBRES)
+
+    @classmethod
+    def recurridos(cls):
+        return cls.objects.get(**settings.OPCION_RECURRIDOS)
+
+    @classmethod
+    def id_impugnada(cls):
+        return cls.objects.get(**settings.OPCION_ID_IMPUGNADA)
+
+    @classmethod
+    def comando_electoral(cls):
+        return cls.objects.get(**settings.OPCION_COMANDO_ELECTORAL)
 
     def __str__(self):
         if self.partido:
@@ -990,15 +1012,17 @@ class Categoria(models.Model):
     def get_url_avance_de_carga(self):
         return reverse('avance-carga', args=[self.id])
 
-    def opciones_actuales(self, solo_prioritarias=False):
+    def opciones_actuales(self, solo_prioritarias=False, excluir_optativas=False):
         """
-        Devuelve las opciones asociadas a la categoría en el orden dado
+        Devuelve las opciones asociadas a la categoría en el orden correspondiente.
         Determina el orden de la filas a cargar, tal como se definen
         en el acta.
         """
         qs = self.opciones.all()
         if solo_prioritarias:
             qs = qs.filter(categoriaopcion__prioritaria=True)
+        if excluir_optativas:
+            qs = qs.exclude(categoriaopcion__opcion__tipo=Opcion.TIPOS.metadata_optativa)
         return qs.distinct().order_by('categoriaopcion__orden')
 
     @classmethod

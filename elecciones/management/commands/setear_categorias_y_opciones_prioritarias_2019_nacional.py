@@ -27,12 +27,16 @@ class Command(BaseCommand):
         # Opciones prioritarias.
         for cod_partido in codigos:
             categoriaopcion = CategoriaOpcion.objects.get(
-                    categoria=categoria,
-                    opcion__partido__codigo=cod_partido,
+                categoria=categoria,
+                opcion__partido__codigo=cod_partido,
             )
             categoriaopcion.set_prioritaria()
 
-        for opcion in [Opcion.blancos(), Opcion.nulos(), Opcion.total_votos()]:
+        opciones_obligatorias = [
+            Opcion.blancos(), Opcion.nulos(), Opcion.total_votos(), Opcion.sobres(),
+            Opcion.recurridos(), Opcion.id_impugnada(), Opcion.comando_electoral(),
+        ]
+        for opcion in opciones_obligatorias:
             categoriaopcion = CategoriaOpcion.objects.get(
                 categoria=categoria,
                 opcion=opcion,

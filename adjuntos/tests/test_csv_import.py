@@ -95,6 +95,10 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     assert 'Faltan datos en el archivo de la siguiente categoría' in str(e.value)
     assert Carga.objects.count() == 0
 
+def hacer_prioritaria_en_cat(categoria, opcion):
+    cat_opcion = categoria.categoriaopcion_set.get(opcion=opcion)
+    cat_opcion.prioritaria = True
+    cat_opcion.save()
 
 @pytest.fixture()
 def carga_inicial(db):
@@ -127,20 +131,13 @@ def carga_inicial(db):
             CategoriaOpcionFactory(categoria=categoria_bd, prioritaria=False, opcion=c2019)
         if prioritaria:
             # Adecuamos las opciones prioritarias.
-            total_votos = Opcion.total_votos()
-            total_votos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=total_votos)
-            total_votos_cat_opcion.prioritaria = True
-            total_votos_cat_opcion.save()
-
-            blancos = Opcion.blancos()
-            blancos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=blancos)
-            blancos_cat_opcion.prioritaria = True
-            blancos_cat_opcion.save()
-
-            nulos = Opcion.nulos()
-            nulos_cat_opcion = categoria_bd.categoriaopcion_set.get(opcion=nulos)
-            nulos_cat_opcion.prioritaria = True
-            nulos_cat_opcion.save()
+            hacer_prioritaria_en_cat(categoria_bd, Opcion.total_votos())
+            hacer_prioritaria_en_cat(categoria_bd, Opcion.blancos())
+            hacer_prioritaria_en_cat(categoria_bd, Opcion.nulos())
+            hacer_prioritaria_en_cat(categoria_bd, Opcion.sobres())
+            hacer_prioritaria_en_cat(categoria_bd, Opcion.recurridos())
+            hacer_prioritaria_en_cat(categoria_bd, Opcion.id_impugnada())
+            hacer_prioritaria_en_cat(categoria_bd, Opcion.comando_electoral())
 
     MesaFactory(numero='4012', lugar_votacion__circuito=circ, electores=100, circuito=circ,
                 categorias=categorias)
@@ -301,6 +298,18 @@ def test_procesar_csv_carga_reemplaza_anterior(db, usr_unidad_basica, carga_inic
     cargas_repetidas = Carga.objects.filter(id__in=ids_viejos)
     # No quedó ninguna de las viejas.
     assert cargas_repetidas.count() == 0
+
+
+def test_procesar_csv_acepta_metadata_opcional(db, usr_unidad_basica, carga_inicial):
+    cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
+        PATH_ARCHIVOS_TEST + 'info_resultados_ok_con_metadata_optativa.csv', usr_unidad_basica).procesar()
+    assert cant_mesas_ok == 1
+    assert cant_mesas_parcialmente_ok == 0
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    assert cargas_totales.count() == 2
+    cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial)
+    assert cargas_parciales.count() == len(CATEGORIAS) - 1
 
 
 def test_procesar_csv_otros_separadores(db, usr_unidad_basica, carga_inicial):

@@ -12,4 +12,7 @@ def test_setup_opciones(db):
     assert Opcion.objects.get(**settings.OPCION_TOTAL_VOTOS)
     assert Opcion.objects.get(**settings.OPCION_TOTAL_SOBRES)
     assert Opcion.objects.get(**settings.OPCION_NULOS)
-    assert c.opciones.count() == 4
+    assert Opcion.objects.get(**settings.OPCION_RECURRIDOS)
+    assert Opcion.objects.get(**settings.OPCION_ID_IMPUGNADA)
+    assert Opcion.objects.get(**settings.OPCION_COMANDO_ELECTORAL)
+    assert c.opciones.count() == 7

@@ -232,7 +232,7 @@ def listar_categorias(request):
 )
 def listar_opciones(request, id_categoria):
     """
-    Permite listar las opciones por categorías.
+    Permite listar las opciones por categorías. No envía las opciones de metadata optativas.
 
     Por defecto se listan sólo las opciones prioritarias (`solo_prioritarias=true`).
     Las opciones se ordenan de forma ascendente según el campo orden (orden en el acta).
