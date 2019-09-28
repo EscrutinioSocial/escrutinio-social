@@ -283,10 +283,10 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     mesa = mesa_categoria.mesa
     categoria = mesa_categoria.categoria
     if request.method == 'GET':
-        logger.info('carga inicio', mc=mesa_categoria.id, tipo=tipo)
+        logger.info('Carga inicio', mc=mesa_categoria.id, tipo=tipo)
 
-    # Tenemos la lista de opciones ordenadas como la lista.
-    opciones = categoria.opciones_actuales(solo_prioritarias)
+    # Tenemos la lista de opciones ordenadas como el acta.
+    opciones = categoria.opciones_actuales(solo_prioritarias, excluir_optativas=True)
 
     datos_previos = mesa_categoria.datos_previos(tipo)
 
@@ -365,7 +365,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                 if desde_ub:
                     consolidar_cargas(mesa_categoria)
 
-            messages.success(request, f'Guardada categoría {categoria} para {mesa}')
+            messages.success(request, f'Carga de {categoria} en mesa {mesa} guardada.')
         except Exception as e:
             # Este catch estaba desde cuando no podía haber múltiples cargas para una
             # misma mesa-categoría.
@@ -449,7 +449,7 @@ class ReporteDeProblemaCreateView(FormView):
 @user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
 def detalle_mesa_categoria(request, categoria_id, mesa_numero, carga_id=None):
     """
-    Muestra la carga actual de la categoria para la mesa
+    Muestra la carga actual de la categoría para la mesa
     """
     mc = get_object_or_404(
         MesaCategoria,

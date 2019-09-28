@@ -309,7 +309,7 @@ def test_formset_en_carga_total_muestra_todos(db, fiscal_client, admin_user):
     admin_user.fiscal.asignar_mesa_categoria(mc)  # Para que no lo mande a otra por falta de permisos.
     totales = reverse('carga-total', args=[mc.id])
     response = fiscal_client.get(totales)
-    assert len(response.context['formset']) == 2 + len(Opcion.opciones_no_partidarias())
+    assert len(response.context['formset']) == 2 + len(Opcion.opciones_no_partidarias_obligatorias())
     assert response.context['formset'][0].fields['opcion'].choices == [(o2.id, o2)]
     assert response.context['formset'][1].fields['opcion'].choices == [(o.id, o)]
 
@@ -347,7 +347,7 @@ def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, admi
     response = fiscal_client.get(totales)
 
     # Tenemos las tres opciones en orden
-    assert len(response.context['formset']) == 4 + len(Opcion.opciones_no_partidarias())
+    assert len(response.context['formset']) == 4 + len(Opcion.opciones_no_partidarias_obligatorias())
     assert response.context['formset'][0].initial['opcion'] == o2
     assert response.context['formset'][1].initial['opcion'] == o3
     assert response.context['formset'][2].initial['opcion'] == o1
@@ -389,7 +389,7 @@ def test_formset_reusa_metadata(db, fiscal_client, admin_user):
     mc2.asignar_a_fiscal()
     admin_user.fiscal.asignar_mesa_categoria(mc2)
     response = fiscal_client.get(reverse('carga-total', args=[mc2.id]))
-    assert len(response.context['formset']) == 2 + len(Opcion.opciones_no_partidarias())
+    assert len(response.context['formset']) == 2 + len(Opcion.opciones_no_partidarias_obligatorias())
     assert response.context['formset'][0].initial['opcion'] == o1
     assert response.context['formset'][1].initial['opcion'] == o2
 

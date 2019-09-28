@@ -411,7 +411,21 @@ PRIORIDADES_STANDARD_CATEGORIA = [
 OPCION_BLANCOS = {'tipo': 'no_positivo', 'nombre_corto': 'blanco', 'partido': None, 'codigo': '10000'}
 OPCION_NULOS = {'tipo': 'no_positivo', 'nombre_corto': 'nulos', 'partido': None, 'codigo': '10001'}
 OPCION_TOTAL_VOTOS = {'tipo': 'metadata', 'nombre_corto': 'total_votos', 'partido': None, 'codigo': '10010'}
-OPCION_TOTAL_SOBRES = {'tipo': 'metadata', 'nombre_corto': 'sobres', 'partido': None}
+# Las que siguen son la metadata optativa, es decir, la metadata que recolectamos de los que nos mandan
+# por CSV (si lo mandan), pero que no le queremos pedir al usuario.
+OPCION_TOTAL_SOBRES = {
+    'tipo': 'metadata_optativa', 'nombre_corto': 'sobres', 'partido': None, 'codigo': '10011'
+}
+OPCION_RECURRIDOS = {
+    'tipo': 'metadata_optativa', 'nombre_corto': 'recurridos', 'partido': None, 'codigo': '10002'
+}
+OPCION_ID_IMPUGNADA = {
+    'tipo': 'metadata_optativa', 'nombre_corto': 'id_impugnada', 'partido': None, 'codigo': '10003'
+}
+OPCION_COMANDO_ELECTORAL = {
+    'tipo': 'metadata_optativa', 'nombre_corto': 'comando_electoral', 'partido': None, 'codigo': '10004'
+}
+
 KEY_VOTOS_POSITIVOS = 'votos_positivos'
 
 SLUG_CATEGORIA_PRESI_Y_VICE = 'PV'

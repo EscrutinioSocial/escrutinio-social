@@ -306,17 +306,13 @@ class CSVImporter:
             self.log_debug("----+ Validando carga total.")
             # Si el flag de cargas totales está activo y hay carga total, entonces verificamos que estén
             # todas las opciones de la categoría en la carga total.
-            opciones = CategoriaOpcion.objects.filter(
-                categoria=mesa_categoria.categoria).values_list('opcion__id', flat=True)
-            self.validar_carga_total(mesa, carga_total, mesa_categoria.categoria, opciones)
+            self.validar_carga_total(mesa, carga_total, mesa_categoria.categoria)
 
         if carga_parcial:
             self.log_debug("----+ Validando carga parcial.")
             # Si se cargaron las cargas parciales, entonces verificamos que estén las opciones
             # prioritarias en la carga parcial.
-            opciones = CategoriaOpcion.objects.filter(categoria=mesa_categoria.categoria,
-                prioritaria=True).values_list('opcion__id', flat=True)
-            self.validar_carga_parcial(mesa, carga_parcial, mesa_categoria.categoria, opciones)
+            self.validar_carga_parcial(mesa, carga_parcial, mesa_categoria.categoria)
 
         self.borrar_carga_anterior(carga_parcial)
         self.borrar_carga_anterior(carga_total)
@@ -551,7 +547,7 @@ class CSVImporter:
             raise PermisosInvalidosError('Su usuario no tiene los permisos necesarios para realizar '
                                          'esta acción.')
 
-    def validar_carga(self, mesa, carga, categoria, opciones_de_la_categoria, es_parcial):
+    def validar_carga(self, mesa, carga, categoria, es_parcial):
         """
         Valida que la carga tenga todas las opciones disponibles para votar en esa mesa.
         Si corresponde a una carga parcial se valida que estén las opciones correspondientes
@@ -562,6 +558,9 @@ class CSVImporter:
         (correspondiente a los partidos prioritarios).
         :param categoria: Objeto de tipo Categoria que queremos verificar que esté completo.
         """
+        opciones_de_la_categoria = categoria.opciones_actuales(
+            solo_prioritarias=es_parcial, excluir_optativas=True
+        ).values_list('id', flat=True)
         opciones_votadas = carga.listado_de_opciones()
         opciones_faltantes = set(opciones_de_la_categoria) - set(opciones_votadas)
 
@@ -574,11 +573,11 @@ class CSVImporter:
                 f'deben estar completos. '
                 f'Faltan las opciones: {nombres_opciones_faltantes} en la mesa {mesa}.')
 
-    def validar_carga_parcial(self, mesa, carga_parcial, categoria, opciones_de_carga):
-        self.validar_carga(mesa, carga_parcial, categoria, opciones_de_carga, True)
+    def validar_carga_parcial(self, mesa, carga_parcial, categoria):
+        self.validar_carga(mesa, carga_parcial, categoria, True)
 
-    def validar_carga_total(self, mesa, carga_total, categoria, opciones_de_carga):
-        self.validar_carga(mesa, carga_total, categoria, opciones_de_carga, False)
+    def validar_carga_total(self, mesa, carga_total, categoria):
+        self.validar_carga(mesa, carga_total, categoria, False)
 
 
 class CeldaCSVImporter:
