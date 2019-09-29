@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, render
 import structlog
 
@@ -11,6 +12,8 @@ from .agregar_adjuntos import AgregarAdjuntos
 from adjuntos.models import CSVTareaDeImportacion
 
 logger = structlog.get_logger(__name__)
+
+NO_PERMISSION_REDIRECT = 'permission-denied'
 
 CSV_MIMETYPES = (
     'application/csv.ms-excel',
@@ -65,11 +68,19 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
         messages.success(self.request, f'Subiste {c} archivos CSV. Gracias!')
 
 
-# XXX Chequear permisos.
-# XXX Dejar pasar a admin.
+@login_required
+@user_passes_test(
+    lambda u: u.fiscal.esta_en_algun_grupo(('supervisores', 'unidades basicas')),
+    login_url=NO_PERMISSION_REDIRECT
+)
 def status_importacion_csv(request, csv_id):
     fiscal = request.user.fiscal
-    tarea = get_object_or_404(CSVTareaDeImportacion, id=csv_id, fiscal=fiscal)
+
+    # Si es supervisor puede ver cualquier CSV. Si no, sólo los suyos.
+    if fiscal.esta_en_grupo('supervisores'):
+        tarea = get_object_or_404(CSVTareaDeImportacion, id=csv_id)
+    else:
+        tarea = get_object_or_404(CSVTareaDeImportacion, id=csv_id, fiscal=fiscal)
 
     context = {}
     context['csv_file'] = tarea.csv_file.name
