@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.utils.decorators import method_decorator
-
+from django.shortcuts import get_object_or_404, render
 import structlog
 
 from adjuntos.csv_import import CSVImporter
@@ -63,3 +63,33 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
 
     def mostrar_mensaje_archivos_cargados(self, c):
         messages.success(self.request, f'Subiste {c} archivos CSV. Gracias!')
+
+
+# XXX Chequear permisos.
+# XXX Dejar pasar a admin.
+def status_importacion_csv(request, csv_id):
+    fiscal = request.user.fiscal
+    tarea = get_object_or_404(CSVTareaDeImportacion, id=csv_id, fiscal=fiscal)
+
+    context = {}
+    context['csv_file'] = tarea.csv_file.name
+    context['status'] = tarea.status
+    context['ult_actualizacion'] = tarea.last_updated
+    resultados_carga = []
+
+    # Cantidad de mesas importadas:
+    resultados_carga.append((
+        messages.SUCCESS if tarea.mesas_total_ok > 0 else messages.INFO,
+       f"<b>{tarea.mesas_total_ok}</b> mesas sin problemas,"
+    ))
+    resultados_carga.append((
+        messages.SUCCESS if tarea.mesas_parc_ok > 0 else messages.INFO,
+        f"&nbsp;<b>{tarea.mesas_parc_ok}</b> ingresaron alguna categoría"
+    ))
+
+    # Muestro los errores.
+    if tarea.errores:
+        for error in tarea.errores.split('\n'):
+            resultados_carga.append((messages.WARNING, f"{error}"))
+    context['resultados_carga'] = resultados_carga
+    return render(request, 'adjuntos/status-importacion-csv.html', context=context)
