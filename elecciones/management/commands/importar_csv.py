@@ -3,6 +3,7 @@ from adjuntos.models import CSVTareaDeImportacion
 from fiscales.models import Fiscal
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.conf import settings
 from threading import Thread
 from pathlib import Path
 import threading
@@ -83,11 +84,32 @@ class Command(BaseCommand):
             tarea.cambiar_status(CSVTareaDeImportacion.STATUS.en_progreso)
         return tarea
 
+    def determinar_path(self, tarea):
+        path = Path(tarea.csv_file.name)
+        # Pruebo directamente.
+        if path.exists():
+            return path
+        # Pruebo con prefijo de media.
+        path = settings.MEDIA_ROOT / path
+        if path.exists():
+            return path
+        return None  # No lo encontramos.
+
     def worker_import_file(self, tarea):
         """
         Hace la importación de un archivo propiamente dicha.
         """
-        csvimporter = CSVImporter(Path(tarea.csv_file.name), self.usr.user, self.debug)
+        path = self.determinar_path(tarea)
+
+        if not path:
+            mensaje = f"archivo {tarea.csv_file.name} no encontrado."
+            self.logger.error("[%d] Tarea %s abortada: %s", self.thread_local.worker_id, tarea, mensaje)
+            tarea.errores = mensaje
+            tarea.save_errores()
+            tarea.fin_procesamiento(0, 0)
+            return
+
+        csvimporter = CSVImporter(path, self.usr.user, self.debug)
         errores = csvimporter.procesar_parcialmente()
         i = 0
         if not tarea.errores:

@@ -4,6 +4,7 @@ from django.http import HttpResponseForbidden
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 import structlog
 
 from adjuntos.csv_import import CSVImporter
@@ -55,10 +56,17 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             tarea_importacion_csv.fiscal = subido_por
             tarea_importacion_csv.csv_file = adjunto
             tarea_importacion_csv.save()
-            messages.add_message(self.request, messages.INFO, f"Procesando {adjunto.name}, aguarde por favor...")
+            #messages.add_message(self.request, messages.INFO, f"Procesando {adjunto.name}, aguarde por favor...")
+            url = reverse('status-importacion-csv', kwargs={'csv_id': tarea_importacion_csv.id})
+            self.agregar_resultado_carga(
+                messages.SUCCESS,
+                f'{adjunto.name} importado. Podés ver su estado de procesamiento <a href="{url}">aquí</a>.'
+            )
         except Exception as e:
-            self.agregar_resultado_carga(messages.WARNING,
-                f'{adjunto.name} no importado debido al siguiente error: {str(e)}')
+            self.agregar_resultado_carga(
+                messages.WARNING,
+                f'{adjunto.name} no importado debido al siguiente error: {str(e)}'
+            )
         return None
 
     def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
@@ -86,17 +94,19 @@ def status_importacion_csv(request, csv_id):
     context['csv_file'] = tarea.csv_file.name
     context['status'] = tarea.status
     context['ult_actualizacion'] = tarea.last_updated
+    context['fiscal'] = tarea.fiscal
     resultados_carga = []
 
     # Cantidad de mesas importadas:
-    resultados_carga.append((
-        messages.SUCCESS if tarea.mesas_total_ok > 0 else messages.INFO,
-       f"<b>{tarea.mesas_total_ok}</b> mesas importadas sin problemas."
-    ))
-    resultados_carga.append((
-        messages.SUCCESS if tarea.mesas_parc_ok > 0 else messages.INFO,
-        f"<b>{tarea.mesas_parc_ok}</b> ingresaron alguna categoría."
-    ))
+    if tarea.status != CSVTareaDeImportacion.STATUS.pendiente:
+        resultados_carga.append((
+            messages.SUCCESS if tarea.mesas_total_ok > 0 else messages.INFO,
+           f"<b>{tarea.mesas_total_ok}</b> mesas importadas sin problemas."
+        ))
+        resultados_carga.append((
+            messages.SUCCESS if tarea.mesas_parc_ok > 0 else messages.INFO,
+            f"<b>{tarea.mesas_parc_ok}</b> ingresaron alguna categoría."
+        ))
 
     # Muestro los errores.
     if tarea.errores:

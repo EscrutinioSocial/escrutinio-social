@@ -36,8 +36,9 @@
             {{ csv_file |safe }}
             {% endblock card-title %}
        	</div>
-       	<strong>Estado</strong>: {{ status }}<br>
+       	<strong>Estado</strong>: <b>{{ status }}</b><br>
        	<strong>Últ. actualización</strong>: {{ ult_actualizacion }}<br>
+       	<strong>Subido por:</strong> {{ fiscal }}<br>
     </div>
 </div>
 {% endblock %}

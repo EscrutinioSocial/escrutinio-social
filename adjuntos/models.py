@@ -365,7 +365,7 @@ class PreIdentificacion(TimeStampedModel):
 
 class CSVTareaDeImportacion(TimeStampedModel):
 
-    csv_file = models.FileField()
+    csv_file = models.FileField(upload_to='csv/')
 
     STATUS = Choices(
         'pendiente',
