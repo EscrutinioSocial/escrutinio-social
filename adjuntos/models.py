@@ -365,20 +365,37 @@ class PreIdentificacion(TimeStampedModel):
 
 class CSVTareaDeImportacion(TimeStampedModel):
 
-    csv = models.FileField()
+    csv_file = models.FileField()
 
     STATUS = Choices(
         'pendiente',
-        'en progreso',
+        'en_progreso',
         'procesado',
         'error'
     )
 
-    status = StatusField(choices_name='STATUS', choices=STATUS)
-    errores = models.TextField(null=True, blank=True)
+    status = StatusField(choices_name='STATUS', choices=STATUS, default=STATUS.pendiente)
+    errores = models.TextField(null=True, blank=True, default=None)
     fiscal = models.ForeignKey(
         'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
     )
 
     mesas_total_ok = models.PositiveIntegerField(default=0)
     mesas_parc_ok = models.PositiveIntegerField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)  # Se graba ante cada cambio.
+
+    def cambiar_status(self, status):
+        self.status = status
+        self.save(update_fields=['status'])
+
+    def fin_procesamiento(self, cant_mesas_ok, cant_mesas_parcialmente_ok):
+        self.mesas_total_ok = cant_mesas_ok
+        self.mesas_parc_ok = cant_mesas_parcialmente_ok
+        self.status = CSVTareaDeImportacion.STATUS.procesado
+        self.save(update_fields=['mesas_total_ok', 'mesas_parc_ok', 'status'])
+
+    def save_errores(self):
+        self.save(update_fields=['errores'])
+
+    def __str__(self):
+        return f'{self.id} - {self.csv_file}'

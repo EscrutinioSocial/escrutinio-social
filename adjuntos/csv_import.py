@@ -147,6 +147,7 @@ class CSVImporter:
         self.validar()
         if self.cant_errores > 0:
             # Si hay errores en la validación no seguimos.
+            self.procesamiento_terminado = True  # Para que termine el thread de yield.
             return self.resultados()
 
         self.validar_mesas()

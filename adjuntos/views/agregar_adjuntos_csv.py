@@ -50,7 +50,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             tarea_importacion_csv = CSVTareaDeImportacion()
             tarea_importacion_csv.status = CSVTareaDeImportacion.STATUS.pendiente
             tarea_importacion_csv.fiscal = subido_por
-            tarea_importacion_csv.csv = adjunto
+            tarea_importacion_csv.csv_file = adjunto
             tarea_importacion_csv.save()
             messages.add_message(self.request, messages.INFO, f"Procesando {adjunto.name}, aguarde por favor...")
         except Exception as e:
