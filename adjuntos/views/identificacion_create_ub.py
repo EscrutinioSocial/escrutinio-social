@@ -1,17 +1,15 @@
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.views.generic.edit import CreateView
-from django.core.serializers import serialize
 from django.db import transaction
 
 import structlog
 
 from adjuntos.consolidacion import consolidar_identificaciones
-from adjuntos.models import Attachment, Identificacion
-from problemas.models import Problema
+from adjuntos.models import Identificacion
 from .identificacion_create import IdentificacionCreateView
 
 logger = structlog.get_logger(__name__)
+
 
 class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
     template_name = "adjuntos/asignar-mesa-ub.html"
