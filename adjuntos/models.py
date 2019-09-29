@@ -370,8 +370,7 @@ class CSVTareaDeImportacion(TimeStampedModel):
     STATUS = Choices(
         'pendiente',
         'en_progreso',
-        'procesado',
-        'error'
+        'procesado'
     )
 
     status = StatusField(choices_name='STATUS', choices=STATUS, default=STATUS.pendiente)
@@ -383,6 +382,10 @@ class CSVTareaDeImportacion(TimeStampedModel):
     mesas_total_ok = models.PositiveIntegerField(default=0)
     mesas_parc_ok = models.PositiveIntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)  # Se graba ante cada cambio.
+
+    class Meta:
+        verbose_name = 'Tarea de importación de CSV'
+        verbose_name_plural = 'Tareas de importación de CSVs'
 
     def cambiar_status(self, status):
         self.status = status

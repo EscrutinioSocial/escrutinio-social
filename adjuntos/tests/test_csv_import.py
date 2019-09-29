@@ -22,6 +22,8 @@ from elecciones.tests.factories import (
     MesaCategoriaFactory,
     FiscalFactory,
     UserFactory)
+from adjuntos.models import CSVTareaDeImportacion
+from elecciones.management.commands.importar_csv import Command as ImportarCSV
 
 PATH_ARCHIVOS_TEST = os.path.dirname(os.path.abspath(__file__)) + '/archivos/'
 CATEGORIAS = [('Presidente y vice', True), ('Gobernador y vice', True),
@@ -364,8 +366,26 @@ def test_web_upload(fiscal_client, carga_inicial):
         'file_field': (file,),
     }
 
+    assert CSVTareaDeImportacion.objects.count() == 0
+
     response = fiscal_client.post(reverse('agregar-adjuntos-csv'), data)
     assert response.status_code == HTTPStatus.OK
+
+    assert CSVTareaDeImportacion.objects.count() == 1
+
+    tarea = CSVTareaDeImportacion.objects.first()
+
+    assert tarea.status == CSVTareaDeImportacion.STATUS.pendiente
+
+    importar_csv = ImportarCSV()
+
+    importar_csv.wait_and_process_task()
+
+    tarea.reload_from_bd()
+
+    assert tarea.status == CSVTareaDeImportacion.STATUS.procesado
+    assert tarea.mesas_total_ok == 1
+    assert tarea.mesas_parc_ok == 0
 
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 

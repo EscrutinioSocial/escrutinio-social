@@ -18,11 +18,22 @@ class Command(BaseCommand):
     """
     help = "Importador de CSV."
 
-    def handle(self, *args, **options):
-
-        self.debug = options['debug']
+    def __init__(self, *args, **kwargs):
+        """
+        Se inicializa explícitamente para que el módulo pueda llamarse desde los tests.
+        """
+        super().__init__(*args, **kwargs)
+        self.finalizar = False
         self.usr = Fiscal.objects.all().first()
         self.logger = logging.getLogger('csv_import')
+        self.espera_tarea = 1
+        self.thread_local = threading.local()
+        self.thread_local.worker_id = 0
+        self.debug = False
+
+    def handle(self, *args, **options):
+        self.debug = options['debug']
+        self.usr = Fiscal.objects.all().first()
         self.espera_tarea = options['espera_tarea']
 
         if options['file']:
