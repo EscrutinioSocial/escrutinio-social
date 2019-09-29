@@ -7,11 +7,11 @@ from antitrolling.models import (
     aumentar_scoring_troll_identificacion, aumentar_scoring_troll_carga,
     disminuir_scoring_troll_identificacion, disminuir_scoring_troll_carga
 )
-from elecciones.models import MesaCategoria
+from elecciones.models import MesaCategoria, Carga
 from fiscales.models import Fiscal
 
 from elecciones.tests.factories import (
-    MesaFactory, AttachmentFactory
+    MesaFactory, AttachmentFactory, CategoriaFactory
 )
 
 from .utils_para_test import (
@@ -21,10 +21,10 @@ from .utils_para_test import (
 
 from antitrolling.views import (
     FiscalesEnRangoScoringTroll, ParametrosAntitrolling, IndicadorDePeligro,
-    FiscalesTroll, FiscalesNoTroll
+    FiscalesTroll, FiscalesNoTroll, GeneradorInfoAcciones
 )
 
-def test_fiscales_en_rango(db):
+def test_data_fiscales_para_monitoreo_antitrolling(db):
     fiscal_1 = nuevo_fiscal()
     fiscal_2 = nuevo_fiscal()
     fiscal_3 = nuevo_fiscal()
@@ -100,3 +100,61 @@ def test_fiscales_en_rango(db):
         data_no_troll = FiscalesNoTroll(data_troll)
         assert data_no_troll.cantidad_fiscales() == 6
         assert data_no_troll.porcentaje_fiscales() == 75
+
+
+def test_data_acciones_para_monitoreo_antitrolling(db):
+    # 40 mesas con su mesacat
+    # 30 cargas, 22 procesadas, de esas 1 inválidas
+    # de las 8 no procesadas, 2 inválidas
+
+    presi = CategoriaFactory()
+    fiscal = nuevo_fiscal()
+    for ix in range(40):
+        nueva_mesa = MesaFactory(categorias=[presi])
+        mesacat = MesaCategoria.objects.filter(mesa=nueva_mesa, categoria=presi).first()
+        if (ix < 30):
+            carga = nueva_carga(mesacat, fiscal, [20,15], Carga.TIPOS.parcial)
+            if (ix < 1):
+                carga.invalidada = True
+                carga.procesada = True
+            elif (ix < 22):
+                carga.invalidada = False
+                carga.procesada = True
+            elif (ix < 24):
+                carga.invalidada = True
+                carga.procesada = False
+            else:
+                carga.invalidada = False
+                carga.procesada = False
+            carga.save(update_fields=['invalidada', 'procesada'])
+
+    ParametrosAntitrolling.reset()
+    rangos = GeneradorInfoAcciones(Carga.objects).rangos()
+    rango_total = next(rango for rango in rangos if rango.texto == 'Total')
+    assert rango_total.cantidad == 30
+    assert rango_total.porcentaje == 100
+    rango_validas = next(rango for rango in rangos if rango.texto == 'Válidas procesadas')
+    assert rango_validas.cantidad == 21
+    assert rango_validas.porcentaje == 70
+    rango_pendientes = next(rango for rango in rangos if rango.texto == 'Pendientes de proceso')
+    assert rango_pendientes.cantidad == 6
+    assert rango_pendientes.porcentaje == 20
+    rango_invalidas = next(rango for rango in rangos if rango.texto == 'Invalidadas')
+    assert rango_invalidas.cantidad == 3
+    assert rango_invalidas.porcentaje == 10
+    assert rango_invalidas.indicador_peligro == IndicadorDePeligro.indicador_rojo
+
+    # con otros valores de peligro, corresponde otro indicador para el mismo porcentaje
+    rango_invalidas.set_umbrales_de_peligro(8, 15, 30)
+    assert rango_invalidas.cantidad == 3
+    assert rango_invalidas.porcentaje == 10
+    assert rango_invalidas.indicador_peligro == IndicadorDePeligro.indicador_amarillo
+    rango_invalidas.set_umbrales_de_peligro(28, 35, 50)
+    assert rango_invalidas.cantidad == 3
+    assert rango_invalidas.porcentaje == 10
+    assert rango_invalidas.indicador_peligro == IndicadorDePeligro.indicador_verde
+    
+
+
+
+

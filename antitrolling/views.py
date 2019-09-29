@@ -61,8 +61,8 @@ class MonitorAntitrolling(TemplateView):
         ]
         context['rangos_scoring'] = [rango.info_para_renderizar() for rango in rangos_scoring]
         # data acciones
-        context['identificaciones'] = GeneradorInfoAcciones(Identificacion.objects.filter(procesada=True)).rangos()
-        context['cargas'] = GeneradorInfoAcciones(Carga.objects.filter(procesada=True)).rangos()
+        context['identificaciones'] = GeneradorInfoAcciones(Identificacion.objects).rangos()
+        context['cargas'] = GeneradorInfoAcciones(Carga.objects).rangos()
         return context
 
 
@@ -188,11 +188,13 @@ class GeneradorInfoAcciones():
     def calcular(self):
         if not self._rangos:
             cantidad_total_acciones = self.query_inicial.count()
-            cantidad_validas = self.query_inicial.filter(invalidada=False).count()
-            cantidad_invalidadas = cantidad_total_acciones - cantidad_validas
+            cantidad_pendientes = self.query_inicial.filter(invalidada=False).filter(procesada=False).count()
+            cantidad_invalidadas = self.query_inicial.filter(invalidada=True).count()
+            cantidad_validas = cantidad_total_acciones - (cantidad_invalidadas + cantidad_pendientes)
             self._rangos = [
                 RangoAccionesParaRenderizar('Total', cantidad_total_acciones, cantidad_total_acciones),
-                RangoAccionesParaRenderizar('Válidas', cantidad_validas, cantidad_total_acciones),
+                RangoAccionesParaRenderizar('Válidas procesadas', cantidad_validas, cantidad_total_acciones),
+                RangoAccionesParaRenderizar('Pendientes de proceso', cantidad_pendientes, cantidad_total_acciones),
                 RangoAccionesParaRenderizar('Invalidadas', cantidad_invalidadas, cantidad_total_acciones).set_umbrales_de_peligro(4,7,10)
             ]
 
