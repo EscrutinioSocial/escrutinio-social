@@ -99,6 +99,8 @@ class Command(BaseCommand):
         if not tarea.errores:
             tarea.errores = ''
         for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
+            if not error.endswith('\n'):
+                error = error + '\n'
             tarea.errores = tarea.errores + error
             i += 1
             if i == 20:

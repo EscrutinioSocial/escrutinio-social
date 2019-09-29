@@ -134,13 +134,14 @@ class CSVImporter:
         self.log_debug(f"Usando {separador} como separador.")
         return separador
 
-    def resultados(self):
+    def resultados(self, cant_errores_entregados=0):
         """
         Devuelve la cantidad de mesas importadas como primer componente de la tupla,
         la cantidad de mesas de las que se importó al menos una categoría como segundo,
         y como tercero todos aquellos errores que se pueden reportar en batch.
         """
-        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(self.errores)
+        errores_pendientes = self.errores[cant_errores_entregados:]
+        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(errores_pendientes)
 
     def procesar(self):
 
@@ -162,11 +163,11 @@ class CSVImporter:
         cant_errores_entregados = 0
         while not self.procesamiento_terminado:
             # Espero a que se produzca un nuevo error o que se termine.
-            while not self.procesamiento_terminado and cant_errores_entregados == self.cant_errores:
+            while not self.procesamiento_terminado and cant_errores_entregados <= self.cant_errores + 1:
                 time.sleep(5)
             yield self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, self.errores[cant_errores_entregados]
             cant_errores_entregados += 1
-        yield self.resultados()
+        yield self.resultados(cant_errores_entregados)
 
     def procesar_parcialmente(self):
         t = Thread(target=self.procesar)
@@ -570,7 +571,7 @@ class CSVImporter:
                 id__in=opciones_faltantes).values_list('nombre', flat=True))
             tipo_carga = "parcial" if es_parcial else "total"
             self.anadir_error(
-                f'Los resultados para la carga {tipo_carga} para la categoría {categoria.categoria_general} '
+                f'Los resultados para la carga {tipo_carga} de la categoría {categoria.categoria_general} '
                 f'deben estar completos. '
                 f'Faltan las opciones: {nombres_opciones_faltantes} en la mesa {mesa}.')
 

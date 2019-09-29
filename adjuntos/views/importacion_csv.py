@@ -91,15 +91,16 @@ def status_importacion_csv(request, csv_id):
     # Cantidad de mesas importadas:
     resultados_carga.append((
         messages.SUCCESS if tarea.mesas_total_ok > 0 else messages.INFO,
-       f"<b>{tarea.mesas_total_ok}</b> mesas sin problemas,"
+       f"<b>{tarea.mesas_total_ok}</b> mesas importadas sin problemas."
     ))
     resultados_carga.append((
         messages.SUCCESS if tarea.mesas_parc_ok > 0 else messages.INFO,
-        f"&nbsp;<b>{tarea.mesas_parc_ok}</b> ingresaron alguna categoría"
+        f"<b>{tarea.mesas_parc_ok}</b> ingresaron alguna categoría."
     ))
 
     # Muestro los errores.
     if tarea.errores:
+        resultados_carga.append((messages.INFO, "<b>Se produjeron los siguientes errores</b>:"))
         for error in tarea.errores.split('\n'):
             resultados_carga.append((messages.WARNING, f"{error}"))
     context['resultados_carga'] = resultados_carga

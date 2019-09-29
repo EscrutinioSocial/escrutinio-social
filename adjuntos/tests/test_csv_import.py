@@ -235,7 +235,7 @@ def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
         PATH_ARCHIVOS_TEST + 'falta_jpc_carga_total.csv', usr_unidad_basica).procesar()
     assert cant_mesas_ok == 0
     assert cant_mesas_parcialmente_ok == 1
-    assert "Los resultados para la carga total para la categoría Intendentes, Concejales y Consejeros Escolares deben estar completos. " \
+    assert "Los resultados para la carga total de la categoría Intendentes, Concejales y Consejeros Escolares deben estar completos. " \
            "Faltan las opciones: ['JpC'] en la mesa" in errores
     assert Carga.objects.count() == len(CATEGORIAS) - 1
 
