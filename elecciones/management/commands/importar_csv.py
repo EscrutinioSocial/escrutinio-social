@@ -58,19 +58,13 @@ class Command(BaseCommand):
                             )
 
     def importar_ahora(self, file):
-        # cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(self.CSV, usr.user).procesar()
-        # print(f"{cant_mesas_ok} mesas ok, {cant_mesas_parcialmente_ok} mesas parcialmente ok. "
-        #   f"Errores: {errores}"
-        # )
         csvimporter = CSVImporter(Path(file), self.usr.user, self.debug)
 
         errores = csvimporter.procesar_parcialmente()
         for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
             print("Error: ", error)
 
-        print(f"{cant_mesas_ok} mesas ok, {cant_mesas_parcialmente_ok} mesas parcialmente ok. "
-              # f"Errores: {error}"
-              )
+        print(f"{cant_mesas_ok} mesas ok, {cant_mesas_parcialmente_ok} mesas parcialmente ok. ")
 
     def crear_tarea(self, archivo):
         CSVTareaDeImportacion.objects.create(

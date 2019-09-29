@@ -82,10 +82,13 @@ class CSVImporter:
             'Nro de mesa': self.canonizar,
             'Nro de lista': self.canonizar,
         }
+        # Para evitar el warning de "Both a converter and dtype were specified",
+        # mapeo de la columna 5 en adelante a string, evitando las primeras que tienen converter.
+        dtype_dict = {i: str for i in range(5, len(COLUMNAS_DEFAULT) + 1)}
         separador = self.autodetectar_separador(archivo)
         self.df = pd.read_csv(self.archivo,
             na_values=["n/a", "na", "-"],
-            dtype=str,
+            dtype=dtype_dict,
             converters=converters,
             index_col=False,  # La primera columna no es el índice.
             sep=separador,
