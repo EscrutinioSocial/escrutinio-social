@@ -381,7 +381,6 @@ class CSVTareaDeImportacion(TimeStampedModel):
 
     mesas_total_ok = models.PositiveIntegerField(default=0)
     mesas_parc_ok = models.PositiveIntegerField(default=0)
-    last_updated = models.DateTimeField(auto_now=True)  # Se graba ante cada cambio.
 
     class Meta:
         verbose_name = 'Tarea de importación de CSV'

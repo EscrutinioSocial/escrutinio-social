@@ -6,20 +6,37 @@
 {% block extrahead %}
 <style type="text/css">
 
+  div.resultado_csv_import {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 32px;
+  }
+
+  div.resultado_csv_import div {
+    font-weight: bold;
+    font-size: 16px;
+  }
+
   .left-panel {
-      flex-basis: 10%;
+      flex-basis: 25%;
       margin-left: 0.375rem;
   }
 
   .right-panel {
-      flex-basis: 90%;
+      flex-basis: 75%;
       margin-left: 0.375rem;
   }
 
   .scroll {
-      height: 335px;
+      height: 70vh;
       overflow-x: auto;
       overflow-x: hidden;
+  }
+
+  ul.errores_csv {
+      box-shadow: none !important; 
+      border:0;
+      margin-top: 10px;
   }
 
 </style>
@@ -36,7 +53,7 @@
             {{ csv_file |safe }}
             {% endblock card-title %}
        	</div>
-       	<strong>Estado</strong>: <b>{{ status }}</b><br>
+       	<strong>Estado</strong>: <b>{{ status | title }}</b><br>
        	<strong>Últ. actualización</strong>: {{ ult_actualizacion }}<br>
        	<strong>Subido por:</strong> {{ fiscal }}<br>
     </div>
@@ -49,27 +66,28 @@
   <div class="card-content">
     <div class="card-title">
       {% if resultados_carga %}
-      Resultados de la carga:
+      Resultados de la carga
       {% endif %}
     </div>
     <div class="scroll">
-      <ul class="collection" style="box-shadow: none!important; border:0;">
+      <div class="row">
+        <div class="col s4 resultado_csv_import">
+            <div>Mesas importadas en todas las categorías</div>
+            {{ mesas_total_ok }}
+        </div>
+        <div class="col s4 resultado_csv_import">
+            <div title="Mesas importadas en alguna categoría">Mesas importadas parcialmente</div>
+            {{ mesas_parc_ok }}
+        </div>
+        <div class="col s4 resultado_csv_import">
+            <div>Errores en el proceso de importación</div>
+            <span style="color: red">{{ resultados_carga | length }}</span>
+        </div>
+      </div>
+      <h6>Detalle de los errores</h6>
+      <ul class="collection errores_csv">
         {% for level, message in resultados_carga %}
-            <li class="collection-item" style="box-shadow: none!important; border-bottom:1pt gray solid;">
-              <div class="row">
-                <span class="col s10">
-                {{ message |safe }}
-                </span>
-                <span class="badge col s2">
-                    {% if level == DEFAULT_MESSAGE_LEVELS.WARNING %}
-                      <i class="btn-small material-icons red-text text-lighten-3" >error</i>
-                    {% endif %}
-                    {% if level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
-                      <i class="btn-small material-icons green-text text-lighten-1">done</i>
-                    {% endif %}
-                </span>
-              </div>
-            </li>
+            <li class="collection-item">{{ message |safe }}</li>
         {% endfor %}
       </ul>
     </div>

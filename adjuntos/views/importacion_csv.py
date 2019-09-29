@@ -95,22 +95,13 @@ def status_importacion_csv(request, csv_id):
     context['status'] = tarea.status
     context['ult_actualizacion'] = tarea.last_updated
     context['fiscal'] = tarea.fiscal
-    resultados_carga = []
+    context['mesas_total_ok'] = tarea.mesas_total_ok
+    context['mesas_parc_ok'] = tarea.mesas_parc_ok
 
-    # Cantidad de mesas importadas:
-    if tarea.status != CSVTareaDeImportacion.STATUS.pendiente:
-        resultados_carga.append((
-            messages.SUCCESS if tarea.mesas_total_ok > 0 else messages.INFO,
-           f"<b>{tarea.mesas_total_ok}</b> mesas importadas sin problemas."
-        ))
-        resultados_carga.append((
-            messages.SUCCESS if tarea.mesas_parc_ok > 0 else messages.INFO,
-            f"<b>{tarea.mesas_parc_ok}</b> ingresaron alguna categoría."
-        ))
+    resultados_carga = []
 
     # Muestro los errores.
     if tarea.errores:
-        resultados_carga.append((messages.INFO, "<b>Se produjeron los siguientes errores</b>:"))
         for error in tarea.errores.split('\n'):
             resultados_carga.append((messages.WARNING, f"{error}"))
     context['resultados_carga'] = resultados_carga
