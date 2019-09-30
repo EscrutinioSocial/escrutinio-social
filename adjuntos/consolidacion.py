@@ -255,7 +255,7 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
         # OJO - acá precomputar los ids_a_procesar es importante
         # ver comentario en consumir_novedades_carga()
         ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
-        a_procesar.update(tomada_por_consolidador=ahora)
+        Identificacion.objects.filter(id__in=ids_a_procesar).update(tomada_por_consolidador=ahora)
 
     attachments_con_novedades = Attachment.objects.filter(
         identificaciones__in=ids_a_procesar
@@ -299,7 +299,7 @@ def consumir_novedades_carga(cant_por_iteracion=None):
         if cant_por_iteracion:
             a_procesar = a_procesar[0:cant_por_iteracion]
         ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
-        a_procesar.update(tomada_por_consolidador=ahora)
+        Carga.objects.filter(id__in=ids_a_procesar).update(tomada_por_consolidador=ahora)
     # OJO - acá precomputar los ids_a_procesar es importante. Ver (*) al final de este doc para detalles.
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
         cargas__in=ids_a_procesar
