@@ -14,7 +14,6 @@ class GeneradorDatosFotos():
         if (self.cantidad_mesas == None):
             self.cantidad_mesas = self.query_inicial_mesas().count()
             self.mesas_con_foto_identificada = self.query_inicial_mesas().exclude(attachments=None).count()
-            self.preidendificaciones = self.query_inicial_preidentificaciones().count()
 
     def datos_comunes(self):
         return [
@@ -30,9 +29,6 @@ class GeneradorDatosFotos():
 class GeneradorDatosFotosNacional(GeneradorDatosFotos):
     def query_inicial_mesas(self):
         return Mesa.objects
-
-    def query_inicial_preidentificaciones(self):
-        return PreIdentificacion.objects
 
     def calcular(self):
         super().calcular()
@@ -66,9 +62,35 @@ class GeneradorDatosFotosDistrital(GeneradorDatosFotos):
     def query_inicial_mesas(self):
         return Mesa.objects.filter(circuito__seccion__distrito__numero=self.distrito)
 
-    def query_inicial_preidentificaciones(self):
-        return PreIdentificacion.objects.filter(distrito__numero = self.distrito)
 
+
+class GeneradorDatosPreidentificaciones():
+    def __init__(self, query_inicial=PreIdentificacion.objects):
+        self.cantidad_total = None
+        self.query_inicial = query_inicial
+
+    def datos(self):
+        self.calcular()
+        return [
+            DatoAvanceDeCargaResumen("Total", self.cantidad_total, self.cantidad_total),
+            DatoAvanceDeCargaResumen("Identificación a mesa confirmada",
+                                     self.identificadas, self.cantidad_total),
+            DatoAvanceDeCargaResumen("Sin identificación a mesa confirmada",
+                                     self.sin_identificar, self.cantidad_total),
+        ]
+
+    def calcular(self):
+        if (self.cantidad_total == None):
+            self.cantidad_total = self.query_inicial.count()
+            self.identificadas = self.query_inicial.filter(attachment__status=Attachment.STATUS.identificada).count()
+            self.sin_identificar = self.cantidad_total - self.identificadas
+
+
+
+    # def query_inicial_preidentificaciones(self):
+    #     return PreIdentificacion.objects
+    # def query_inicial_preidentificaciones(self):
+    #     return PreIdentificacion.objects.filter(distrito__numero=self.distrito)
 
 
 class DatoAvanceDeCargaResumen():
