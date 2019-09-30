@@ -1,6 +1,7 @@
 import math
 from datetime import timedelta
 from collections import defaultdict
+from functools import lru_cache
 
 from django.dispatch import receiver
 from django.conf import settings
@@ -93,6 +94,20 @@ class Distrito(models.Model):
     def natural_key(self):
         return (self.numero, )
 
+    @lru_cache(128)
+    def get_secciones(self):
+        """
+        Esta función está pensada para ser usada desde templates, para que pueda ser cacheada.
+        """
+        return self.secciones.all()
+
+    @lru_cache(128)
+    def get_secciones_politicas(self):
+        """
+        Esta función está pensada para ser usada desde templates, para que pueda ser cacheada.
+        """
+        return self.secciones_politicas.all()
+
 
 class SeccionPolitica(models.Model):
     """
@@ -125,7 +140,7 @@ class SeccionPolitica(models.Model):
 
 class SeccionManager(models.Manager):
     def get_by_natural_key(self, distrito, numero):
-        return self.get(distrito__numero = distrito, numero = numero)
+        return self.get(distrito__numero=distrito, numero=numero)
 
 
 class Seccion(models.Model):
@@ -191,6 +206,17 @@ class Seccion(models.Model):
     def natural_key(self):
         return self.distrito.natural_key() + (self.numero, )
     natural_key.dependencies = ['elecciones.distrito']
+
+    @lru_cache(128)
+    def get_circuitos(self):
+        """
+        Esta función está pensada para ser usada desde templates, para que pueda ser cacheada.
+        """
+        circuitos = []
+        for circuito in self.circuitos.all():
+            circuitos.append({'id': circuito.id, 'nombre': circuito.nombre})
+        return circuitos
+
 
 class Circuito(models.Model):
     """

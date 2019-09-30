@@ -9,7 +9,7 @@
             </a>
         </div>
         <div class="collapsible-body">
-            {% for seccion_politica in distrito.secciones_politicas.all %}
+            {% for seccion_politica in distrito.get_secciones_politicas %}
             <ul class="collapsible collapsible-accordion">
                 <li id="seccion_politica-{{seccion_politica.id}}">
                     <div class="collapsible-header">
@@ -19,14 +19,14 @@
                         </a>
                     </div>
                     <div class="collapsible-body">
-                        {% with seccion_politica.secciones.all as secciones %}
+                        {% with seccion_politica.get_secciones as secciones %}
                         {% include "elecciones/arbol_seccion.html" with incluir_seccion_politica=True %}
                         {% endwith %}
                     </div>
                 </li>
             </ul>
             {% endfor %}
-            {% with distrito.secciones.all as secciones %}
+            {% with distrito.get_secciones as secciones %}
             {% include "elecciones/arbol_seccion.html" with incluir_seccion_politica=False %}
             {% endwith %}
         </div>
