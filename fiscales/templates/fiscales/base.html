@@ -85,8 +85,14 @@
 
 {% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_superuser %}
 <li>
-    <a href="{% url "avance-carga" %}" class="collapsible-header"
-        data-turbolinks="false">Avance de carga<i class="material-icons">insert_chart</i></a>
+    <a href="{% url "monitoreo-antitrolling" %}" class="collapsible-header" data-turbolinks="false">
+        Monitoreo antitrolling<i class="material-icons">map</i>
+    </a>
+</li>
+
+<li>
+    <a href="{% url "avance-carga" %}" class="collapsible-header" data-turbolinks="false">Avance de carga<i
+            class="material-icons">insert_chart</i></a>
 </li>
 
 <li>
