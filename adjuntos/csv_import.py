@@ -148,7 +148,7 @@ class CSVImporter:
 
     def procesar(self):
         self.validar()
-        self.procesar_post_validar()
+        return self.procesar_post_validar()
 
     def procesar_post_validar(self):
         if self.cant_errores > 0:
