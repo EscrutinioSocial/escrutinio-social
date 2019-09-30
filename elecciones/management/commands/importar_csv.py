@@ -120,7 +120,8 @@ class Command(BaseCommand):
             tarea.fin_procesamiento(0, 0)
             return
 
-        csvimporter = CSVImporter(path, self.usr.user, self.debug)
+        print(tarea.fiscal.user)
+        csvimporter = CSVImporter(path, tarea.fiscal.user, self.debug)
         errores = csvimporter.procesar_parcialmente()
         i = 0
         if not tarea.errores:

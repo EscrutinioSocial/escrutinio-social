@@ -259,9 +259,9 @@ class Fiscal(models.Model):
         return f'{self.nombres} {self.apellido}'
 
     def esta_en_grupo(self, nombre_grupo):
-        print(self, nombre_grupo)
+
         grupo = Group.objects.get(name=nombre_grupo)
-        print(grupo)
+
         return grupo in self.user.groups.all()
 
     def esta_en_algun_grupo(self, nombres_grupos):

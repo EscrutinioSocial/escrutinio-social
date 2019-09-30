@@ -45,8 +45,6 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
-        print("POR ACá")
-        print(request.user, request.user.fiscal)
         if request.user.fiscal.esta_en_grupo('unidades basicas'):
             return super().dispatch(request, *args, **kwargs)
         return HttpResponseForbidden()

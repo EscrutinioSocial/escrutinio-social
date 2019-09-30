@@ -532,7 +532,6 @@ class ResultadoCombinado(ResultadosBase):
             }
             for partido, votos_partido in other.resultados.votos_positivos.items()
         }
-        print(self.resultados.votos_positivos)
 
         # Sumar el resto de los atributos en resultados
         for attr in ['total_mesas', 'total_mesas_escrutadas', 'electores', 'electores_en_mesas_escrutadas']:
