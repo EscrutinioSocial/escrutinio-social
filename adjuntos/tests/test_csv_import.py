@@ -381,7 +381,7 @@ def test_web_upload(fiscal_client, carga_inicial):
 
     importar_csv.wait_and_process_task()
 
-    tarea.reload_from_bd()
+    tarea.refresh_from_db()
 
     assert tarea.status == CSVTareaDeImportacion.STATUS.procesado
     assert tarea.mesas_total_ok == 1
