@@ -175,7 +175,11 @@ class CSVImporter:
         yield self.resultados(cant_errores_entregados)
 
     def procesar_parcialmente(self):
-        self.validar()
+        try:
+            self.validar()
+        except Exception as e:
+            self.anadir_error(str(e))
+            return self.resultados()
         t = Thread(target=self.procesar_post_validar)
         t.daemon = False
         t.start()
