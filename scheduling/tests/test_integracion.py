@@ -1,5 +1,3 @@
-import pytest
-
 from elecciones.models import (
     MesaCategoria, Carga
 )
@@ -51,10 +49,9 @@ def test_orden_de_carga_escenario_base(db, settings):
     verificar_valores_scheduling_mesacat(mesas[24], gv, 97, 25, 970000)
 
 
-
 def test_orden_de_carga_seccion_categoria_prioritaria(db, settings):
     """
-    Se verifica la asignacion de ordenes de carga para una seccion prioritaria, 
+    Se verifica la asignacion de ordenes de carga para una seccion prioritaria,
     con una categoria prioritaria y una standard
     """
     asignar_prioridades_standard(settings)
@@ -73,7 +70,7 @@ def test_orden_de_carga_seccion_categoria_prioritaria(db, settings):
     PrioridadSchedulingFactory(categoria=pv, desde_proporcion=0, hasta_proporcion=100, prioridad=20)
 
     [mesas] = crear_mesas([lugar_votacion], categorias, 200)
-    
+
     # primera mesa
     identificar_mesa(mesas[0], fiscal)
     verificar_valores_scheduling_mesacat(mesas[0], pv, 1, 1, 20)
@@ -96,7 +93,7 @@ def test_orden_de_carga_seccion_categoria_prioritaria(db, settings):
     verificar_valores_scheduling_mesacat(mesas[4], gv, 3, 5, 1500)
 
     # mesa 19
-    for nro in range(5,19):
+    for nro in range(5, 19):
         identificar_mesa(mesas[nro], fiscal)
     verificar_valores_scheduling_mesacat(mesas[18], pv, 10, 19, 1000)
     verificar_valores_scheduling_mesacat(mesas[18], gv, 10, 19, 5000)
@@ -229,7 +226,7 @@ def test_secuencia_carga_secciones_standard_prioritaria(db, settings):
 
 def test_secuencia_carga_escenario_complejo_1(db, settings):
     """
-    Se verifica la secuencia con la que se asignan mesas considerando 
+    Se verifica la secuencia con la que se asignan mesas considerando
     - dos secciones, una standard y una moderadamente prioritaria, de 50 mesas cada una
     - dos categorias, una standard y una muy prioritaria
     """
