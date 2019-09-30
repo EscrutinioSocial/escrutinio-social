@@ -8,6 +8,7 @@ from antitrolling.models import (
     disminuir_scoring_troll_identificacion, disminuir_scoring_troll_carga
 )
 from elecciones.models import MesaCategoria
+from fiscales.models import Fiscal
 
 from elecciones.tests.factories import (
     MesaFactory, AttachmentFactory
@@ -249,3 +250,59 @@ def test_marcar_explicitamente_como_troll(db):
     assert cambio_estado.actor == usuario_experto
     assert cambio_estado.evento_disparador == primer_evento
     assert cambio_estado.troll
+
+
+def test_desmarca_masiva(db, settings):
+    fiscal_1 = nuevo_fiscal()
+    fiscal_2 = nuevo_fiscal()
+    fiscal_3 = nuevo_fiscal()
+    fiscal_4 = nuevo_fiscal()
+    fiscal_5 = nuevo_fiscal()
+    fiscal_6 = nuevo_fiscal()
+    fiscal_7 = nuevo_fiscal()
+
+    attach = AttachmentFactory()
+    mesa_1 = MesaFactory()
+    mesa_2 = MesaFactory()
+    mesa_3 = MesaFactory()
+    mesa_4 = MesaFactory()
+    mesa_5 = MesaFactory()
+
+    with override_config(SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL=200):
+        identi_1 = reportar_problema_attachment(attach, fiscal_1)
+        identi_2 = identificar(attach, mesa_1, fiscal_2)
+        identi_3 = identificar(attach, mesa_2, fiscal_3)
+        identi_4 = identificar(attach, mesa_3, fiscal_4)
+        identi_5 = identificar(attach, mesa_4, fiscal_5)
+        identi_6 = identificar(attach, mesa_5, fiscal_6)
+
+        aumentar_scoring_troll_identificacion(300, identi_1)
+        aumentar_scoring_troll_identificacion(400, identi_2)
+        aumentar_scoring_troll_identificacion(500, identi_3)
+        aumentar_scoring_troll_identificacion(100, identi_4)
+        aumentar_scoring_troll_identificacion(50, identi_5)
+
+        assert fiscal_1.troll
+        assert fiscal_2.troll
+        assert fiscal_3.troll
+        assert not fiscal_4.troll
+        assert not fiscal_5.troll
+        assert not fiscal_6.troll
+
+        Fiscal.destrolleo_masivo(fiscal_7, 450, 80)
+        for fiscal in [fiscal_1, fiscal_2, fiscal_3, fiscal_4, fiscal_5, fiscal_6]:
+            fiscal.refresh_from_db()
+
+        assert not fiscal_1.troll
+        assert fiscal_1.scoring_troll() == 80
+        assert not fiscal_2.troll
+        assert fiscal_2.scoring_troll() == 80
+        eventos = list(fiscal_2.eventos_scoring_troll.order_by('created').all())
+        assert len(eventos) == 2
+        assert eventos[1].variacion == -320
+        assert fiscal_3.troll
+        assert not fiscal_4.troll
+        assert fiscal_4.scoring_troll() == 100
+        assert not fiscal_5.troll
+        assert fiscal_5.scoring_troll() == 50
+        assert not fiscal_6.troll

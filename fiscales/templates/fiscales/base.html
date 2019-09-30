@@ -79,14 +79,22 @@
     <a href="{{ url }}" class="collapsible-header" data-turbolinks="false">Actuar sobre acta<i
             class="material-icons">dvr</i><span class="badge">{{ mesas_pendientes_count }}</span></a>
 </li>
-{% endif  %}
+{% endif %}
 
 <li></li>
 
+{% if request.user.fiscal.esta_en_grupo_supervisores or request.user.is_superuser %}
+<li>
+    <a href="{% url "monitoreo-antitrolling" %}" class="collapsible-header" data-turbolinks="false">
+        Monitoreo antitrolling<i class="material-icons">map</i>
+    </a>
+</li>
+{% endif %}
+
 {% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_superuser %}
 <li>
-    <a href="{% url "avance-carga" %}" class="collapsible-header"
-        data-turbolinks="false">Avance de carga<i class="material-icons">insert_chart</i></a>
+    <a href="{% url "avance-carga" %}" class="collapsible-header" data-turbolinks="false">Avance de carga<i
+            class="material-icons">insert_chart</i></a>
 </li>
 
 <li>
