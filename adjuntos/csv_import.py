@@ -147,8 +147,10 @@ class CSVImporter:
         return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(errores_pendientes)
 
     def procesar(self):
-
         self.validar()
+        self.procesar_post_validar()
+
+    def procesar_post_validar(self):
         if self.cant_errores > 0:
             # Si hay errores en la validación no seguimos.
             self.procesamiento_terminado = True  # Para que termine el thread de yield.
@@ -173,7 +175,8 @@ class CSVImporter:
         yield self.resultados(cant_errores_entregados)
 
     def procesar_parcialmente(self):
-        t = Thread(target=self.procesar)
+        self.validar()
+        t = Thread(target=self.procesar_post_validar)
         t.daemon = False
         t.start()
         return self.yield_errores()
@@ -182,7 +185,6 @@ class CSVImporter:
         self.cant_errores += 1
         texto_error = f'{self.cant_errores} - {error}'
         self.errores.append(texto_error)
-        #self.logger.error(texto_error)
 
     def log_debug(self, mensaje):
         if not self.debug:
@@ -540,7 +542,6 @@ class CSVImporter:
             carga = self.carga_total
 
         self.log_debug(f"---- Agregando {cantidad_votos} votos a {opcion_bd} en carga {carga.tipo}.")
-        #VotoMesaReportado.objects.create(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
         votos_a_cargar.append(VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd))
 
     def validar_usuario(self):
