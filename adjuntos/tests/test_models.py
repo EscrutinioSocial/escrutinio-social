@@ -8,11 +8,14 @@ from elecciones.tests.factories import (
     FiscalFactory,
     IdentificacionFactory,
     MesaFactory,
+    MesaCategoriaFactory,
+    CargaFactory
 )
 from adjuntos.models import Attachment, Identificacion
 from adjuntos.consolidacion import consumir_novedades_identificacion
+from adjuntos.consolidacion import consumir_novedades_carga
 from problemas.models import ReporteDeProblema, Problema
-
+from elecciones.models import Carga
 
 def test_attachment_unico(db):
     a = AttachmentFactory()
@@ -354,3 +357,50 @@ def test_identificacion_consolidada_tres_ok_dos_error(db):
         # Chequeamos que las procesadas son i1, i3 e i5
         procesadas_ids = map(lambda x: x.id, procesadas)
         assert set([i1.id, i3.id, i5.id]) == set(procesadas_ids)
+
+def test_consumir_novedades_carga_tres_ok_tres_error(db, settings):
+    # En esta variable se almacena el comportamiento que tendrá  cada llamado a
+    # la función consolidar_cargas para cada mesa_categoria a procesar.
+    # Las mc1, mc3 y mc5 se procesarán con normalidad y sus cargas c1, c3 y c6
+    # quedarán marcadas como procesadas=True.
+    # Para las mc2 y mc4 se lanzará una Exception y sus cargas c2, c4 y c5
+    # quedarán como procesada=False.
+    side_effects = [
+        mock.DEFAULT, #comportamiento para mc1
+        Exception('error'), #comportamiento para mc2
+        mock.DEFAULT, #comportamiento para mc3
+        Exception('error'), #comportamiento para mc4
+        mock.DEFAULT #comportamiento para mc5
+    ]
+    with mock.patch('adjuntos.consolidacion.consolidar_cargas', side_effect=side_effects):
+        m1 = MesaFactory()
+        m2 = MesaFactory()
+        mc1 = MesaCategoriaFactory(mesa=m1)
+        mc2 = MesaCategoriaFactory(mesa=m1)
+        mc3 = MesaCategoriaFactory(mesa=m2)
+        mc4 = MesaCategoriaFactory(mesa=m2)
+        mc5 = MesaCategoriaFactory(mesa=m2)
+        c1 = CargaFactory(mesa_categoria=mc1, tipo='parcial')
+        c2 = CargaFactory(mesa_categoria=mc2, tipo='total')
+        c3 = CargaFactory(mesa_categoria=mc3, tipo='total')
+        c4 = CargaFactory(mesa_categoria=mc4, tipo='total')
+        c5 = CargaFactory(mesa_categoria=mc4, tipo='parcial')
+        c6 = CargaFactory(mesa_categoria=mc5, tipo='total')
+
+        consumir_novedades_carga()
+
+        # Chequeamos que las no procesadas son 3
+        no_procesadas = Carga.objects.filter(procesada=False)
+        assert no_procesadas.count() == 3
+
+        # Chequeamos que las no procesadas son c2, c4 y c5
+        no_procesadas_ids = map(lambda x: x.id, no_procesadas)
+        assert set([c2.id, c4.id, c5.id]) == set(no_procesadas_ids)
+
+        # Chequeamos que las procesadas son 3
+        procesadas = Carga.objects.filter(procesada=True)
+        assert procesadas.count() == 3
+
+        # # Chequeamos que las procesadas son c1, c3 y c6
+        procesadas_ids = map(lambda x: x.id, procesadas)
+        assert set([c1.id, c3.id, c6.id]) == set(procesadas_ids)
