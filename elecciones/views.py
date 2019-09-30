@@ -1,5 +1,5 @@
 from urllib import parse
-from functools import lru_cache
+
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect
@@ -152,20 +152,6 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
 
         return super().get(request, *args, **kwargs)
 
-    @lru_cache(128)
-    def get_distritos(self):
-        return Distrito.objects.all().order_by('nombre')
-
-    @lru_cache(512)
-    def get_circuitos(self):
-        circuitos_dict = {}
-        for seccion in Seccion.objects.all():
-            circuitos = []
-            for circuito in seccion.circuitos.all():
-                circuitos.append(circuito)
-            circuitos_dict[seccion.id] = circuitos
-        return circuitos_dict
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -211,8 +197,7 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
             categorias = categorias.exclude(sensible=True)
 
         context['categorias'] = categorias.order_by('id')
-        context['distritos'] = self.get_distritos()
-        context['circuitos'] = self.get_circuitos()
+        context['distritos'] = Distrito.objects.all().order_by('numero')
         return context
 
     def create_sumarizador(self):
@@ -403,10 +388,6 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         return [settings.SIN_PROYECCION] + [(str(tecnica.id), tecnica.nombre)
                                             for tecnica in Proyecciones.tecnicas_de_proyeccion()]
 
-    @lru_cache(128)
-    def get_distritos(self):
-        return Distrito.objects.all().order_by('nombre')
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -426,7 +407,7 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         # a las mesas.
         mesas = self.sumarizador.mesas(categoria)
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
-        context['distritos'] = self.get_distritos()
+        context['distritos'] = Distrito.objects.all().order_by('nombre')
         context['mostrar_electores'] = not settings.OCULTAR_CANTIDADES_DE_ELECTORES
         return context
 
