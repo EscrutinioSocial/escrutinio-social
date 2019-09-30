@@ -25,7 +25,6 @@ class Migration(migrations.Migration):
                 ('errores', models.TextField(blank=True, default=None, null=True)),
                 ('mesas_total_ok', models.PositiveIntegerField(default=0)),
                 ('mesas_parc_ok', models.PositiveIntegerField(default=0)),
-                ('last_updated', models.DateTimeField(auto_now=True)),
                 ('fiscal', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='fiscales.Fiscal')),
             ],
             options={

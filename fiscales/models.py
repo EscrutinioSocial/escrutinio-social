@@ -259,9 +259,9 @@ class Fiscal(models.Model):
         return f'{self.nombres} {self.apellido}'
 
     def esta_en_grupo(self, nombre_grupo):
-
+        print(self, nombre_grupo)
         grupo = Group.objects.get(name=nombre_grupo)
-
+        print(grupo)
         return grupo in self.user.groups.all()
 
     def esta_en_algun_grupo(self, nombres_grupos):
@@ -317,7 +317,8 @@ class Fiscal(models.Model):
 
     def natural_key(self):
         return (self.tipo_dni, self.dni)
-    natural_key.dependencies = ['elecciones.distrito', 'elecciones.seccion', 'auth.user']    
+    natural_key.dependencies = ['elecciones.distrito', 'elecciones.seccion', 'auth.user']
+
 
 @receiver(post_save, sender=Fiscal)
 def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, **kwargs):

@@ -45,6 +45,8 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
+        print("POR ACá")
+        print(request.user, request.user.fiscal)
         if request.user.fiscal.esta_en_grupo('unidades basicas'):
             return super().dispatch(request, *args, **kwargs)
         return HttpResponseForbidden()
@@ -56,7 +58,6 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             tarea_importacion_csv.fiscal = subido_por
             tarea_importacion_csv.csv_file = adjunto
             tarea_importacion_csv.save()
-            #messages.add_message(self.request, messages.INFO, f"Procesando {adjunto.name}, aguarde por favor...")
             url = reverse('status-importacion-csv', kwargs={'csv_id': tarea_importacion_csv.id})
             self.agregar_resultado_carga(
                 messages.SUCCESS,
@@ -78,7 +79,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
 
 @login_required
 @user_passes_test(
-    lambda u: u.fiscal.esta_en_algun_grupo(('supervisores', 'unidades basicas')),
+    lambda u: u.fiscal.esta_en_algun_grupo(['supervisores', 'unidades basicas']),
     login_url=NO_PERMISSION_REDIRECT
 )
 def status_importacion_csv(request, csv_id):

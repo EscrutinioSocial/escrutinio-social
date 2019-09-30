@@ -22,7 +22,6 @@ from elecciones.models import (
 # los objetos de esta aplicacion: Seccion, Categoria, MesaCategoria
 
 
-
 def definir_prioridades_seccion_categoria(settings):
     asignar_prioridades_standard(settings)
     seccion_cuatro_prioridades = SeccionFactory(nombre="Cuatro prioridades")
@@ -56,33 +55,41 @@ def definir_prioridades_seccion_categoria(settings):
     crear_mesa(seccion_dos_cantidades)
     crear_mesa(seccion_prioritaria)
     crear_mesa(seccion_standard)
-    
+
 
 def crear_mesa(seccion):
     circuito = CircuitoFactory(seccion=seccion)
     lugar_votacion = LugarVotacionFactory(circuito=circuito)
     return MesaFactory(lugar_votacion=lugar_votacion)
 
+
 def seccion_cuatro_prioridades():
     return Seccion.objects.filter(nombre="Cuatro prioridades")[0]
+
 
 def seccion_dos_cantidades():
     return Seccion.objects.filter(nombre="Dos cantidades")[0]
 
+
 def seccion_prioritaria():
     return Seccion.objects.filter(nombre="Prioritaria")[0]
+
 
 def seccion_standard():
     return Seccion.objects.filter(nombre="Standard")[0]
 
+
 def mesa_en_seccion(seccion):
     return Mesa.objects.filter(lugar_votacion__circuito__seccion=seccion)[0]
+
 
 def categoria_pv():
     return Categoria.objects.filter(nombre="PV")[0]
 
+
 def categoria_gv():
     return Categoria.objects.filter(nombre="GV")[0]
+
 
 def categoria_standard():
     return Categoria.objects.filter(nombre="Standard")[0]
@@ -142,7 +149,7 @@ def test_prioridades_categoria(db, settings):
 ])
 def test_prioridades_mesacat_standard(db, settings, proporcion, orden_de_llegada, prioridad):
     """
-    Prioridades para una MesaCategoria para la cual ni la sección ni la categoría tienen 
+    Prioridades para una MesaCategoria para la cual ni la sección ni la categoría tienen
     asignadas prioridades distintas a las standard
     """
 
@@ -172,12 +179,12 @@ def test_prioridades_mesacat_seccion_prioritaria_100(db, settings, proporcion, o
     La maxima prioridad para la seccion rige hasta el 2% con un minimo de 7 mesas.
     """
     definir_prioridades_seccion_categoria(settings)
-    
+
     mesa_categoria = MesaCategoriaFactory(
         categoria=categoria_standard(), mesa=mesa_en_seccion(seccion_prioritaria()))
     prioridades = mapa_prioridades_para_mesa_categoria(mesa_categoria)
 
-    assert(prioridades.valor_para(proporcion,orden_de_llegada)) == prioridad
+    assert(prioridades.valor_para(proporcion, orden_de_llegada)) == prioridad
 
 
 @pytest.mark.parametrize('proporcion, orden_de_llegada, prioridad', [

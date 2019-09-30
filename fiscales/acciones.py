@@ -4,6 +4,7 @@ from constance import config
 
 from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
+from scheduling.models import ColaCargasPendientes
 
 
 def siguiente_accion(request):
@@ -14,8 +15,23 @@ def siguiente_accion(request):
     # Y ahora comienza otra tr.
     return elegir_siguiente_accion(request)
 
-@transaction.atomic
+
 def elegir_siguiente_accion(request):
+    """
+    Define la siguiente acción en base a la cola de tareas preexistente.
+    """
+    with transaction.atomic():
+        (mesa_categoria, foto) = ColaCargasPendientes.siguiente_tarea(request.user.fiscal)
+        if mesa_categoria:
+            return CargaCategoriaEnActa(request, mesa_categoria)
+        if foto:
+            return IdentificacionDeFoto(request, foto)
+        siguiente = elegir_siguiente_accion_en_el_momento(request) if config.ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA else NoHayAccion(request)
+    return siguiente
+
+
+@transaction.atomic
+def elegir_siguiente_accion_en_el_momento(request):
     """
     Elige la siguiente acción a ejecutarse
 

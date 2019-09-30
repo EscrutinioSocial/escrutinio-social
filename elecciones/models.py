@@ -341,6 +341,19 @@ class MesaCategoriaQuerySet(models.QuerySet):
         'id',
     ]
 
+    # La asignación batch desde el scheduler prioriza así:
+    # Primero el orden que la prioridad geográifica.
+    # Segundo, el status (sin cargar, consolidada, inconsistente, etc.)
+    # Tercero, la cantidad de asignaciones ya hechas (penalizamos levemente las
+    # mesas categorías que asignamos más veces).
+    # En caso de empate, la de menor id (que es la más vieja).
+    campos_de_orden_batch = [
+        'coeficiente_para_orden_de_carga',
+        'prioridad_status',
+        'cant_asignaciones_realizadas',
+        'id',
+    ]
+
     def identificadas(self):
         """
         Filtra instancias que tengan orden de carga definido
@@ -397,6 +410,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
         return self.annotate(
             prioridad_status=models.Case(
                 *whens,
+                default=models.Value('0'),
                 output_field=models.IntegerField(),
             )
         )
@@ -428,6 +442,11 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.ordenadas_por_prioridad().values(
             *self.campos_de_orden
+        )
+
+    def ordenadas_por_prioridad_batch(self):
+        return self.anotar_prioridad_status().order_by(
+            *self.campos_de_orden_batch
         )
 
     def mas_prioritaria(self):
@@ -1106,6 +1125,8 @@ class Carga(TimeStampedModel):
     mesa_categoria = models.ForeignKey(MesaCategoria, related_name='cargas', on_delete=models.CASCADE)
     fiscal = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
     firma = models.CharField(max_length=300, null=True, blank=True, editable=False)
+    # Se utiliza para permitir concurrencia entre consolidadores.
+    tomada_por_consolidador = models.DateTimeField(default=None, null=True, blank=True)
     procesada = models.BooleanField(default=False)
 
     @property

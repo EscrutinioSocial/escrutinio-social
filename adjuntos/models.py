@@ -101,7 +101,7 @@ class AttachmentQuerySet(models.QuerySet):
             cant_fiscales_asignados_redondeados=F(
                 'cant_fiscales_asignados') / settings.MIN_COINCIDENCIAS_IDENTIFICACION,
             cant_asignaciones_realizadas_redondeadas=F(
-                'cant_asignaciones_realizadas') / 
+                'cant_asignaciones_realizadas') /
                 (config.MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS * settings.MIN_COINCIDENCIAS_IDENTIFICACION),
         )
 
@@ -313,6 +313,8 @@ class Identificacion(TimeStampedModel):
     attachment = models.ForeignKey(
         Attachment, related_name='identificaciones', on_delete=models.CASCADE
     )
+    # Se utiliza para permitir concurrencia entre consolidadores.
+    tomada_por_consolidador = models.DateTimeField(default=None, null=True, blank=True)
     procesada = models.BooleanField(default=False)
     invalidada = models.BooleanField(default=False)
 

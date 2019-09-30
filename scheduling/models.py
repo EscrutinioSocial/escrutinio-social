@@ -1,18 +1,80 @@
-from django.db import models
+from django.db import models, transaction, connection
 from django.conf import settings
-from elecciones.models import (Seccion, Categoria)
+from django.db.models import Q
+from elecciones.models import (Seccion, Categoria, MesaCategoria)
+from adjuntos.models import Attachment
+
+
+class ColaCargasPendientes(models.Model):
+    """
+    Modelo que mantiene los trabajos de carga de votos pendientes a hacer.
+    """
+    mesa_categoria = models.ForeignKey(MesaCategoria, on_delete=models.CASCADE, null=True)
+    attachment = models.ForeignKey(Attachment, on_delete=models.CASCADE, null=True)
+    # Este campo lo calcula el encolador.
+    orden = models.PositiveIntegerField(db_index=True)
+    numero_carga = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        unique_together = [
+            ['mesa_categoria', 'numero_carga'],
+            ['attachment', 'numero_carga']
+        ]
+        verbose_name = 'Cola de Identificaciones y Cargas pendientes'
+        verbose_name_plural = 'Cola de Identificaciones y Cargas pendientes'
+
+    @classmethod
+    def largo_cola(cls):
+        return cls.objects.count()
+
+    @classmethod
+    def siguiente_tarea(cls, fiscal=None):
+        """
+        Obtiene la siguiente tarea de la cola.
+        El fiscal parámetro indica que deben excluirse mesascat que ya hayan sido cargadas por él.
+        Debe invocarse dentro de una transacción.
+        """
+        excluir = (Q(mesa_categoria__cargas__fiscal=fiscal) |
+                   Q(attachment__identificaciones__fiscal=fiscal)) if fiscal else Q()
+        mesa_categoria = None
+        attachment = None
+        item = cls.objects.select_for_update(skip_locked=True).exclude(
+            excluir
+        ).order_by('orden').first()
+        if item:
+            mesa_categoria = item.mesa_categoria
+            attachment = item.attachment
+            item.delete()
+
+        return (mesa_categoria, attachment)
+
+    @classmethod
+    def vaciar(cls):
+        #cls.objects.all().delete()
+        with connection.cursor() as cursor:
+            cursor.execute(f'TRUNCATE TABLE {cls._meta.db_table}')
+
+    @classmethod
+    def debug(cls, fiscal):
+        return cls.objects.exclude(
+            Q(mesa_categoria__cargas__fiscal=fiscal) |
+            Q(attachment__identificaciones__fiscal=fiscal)
+        ).order_by('orden')
+
+    def __str__(self):
+        return f'({self.orden}) <{self.mesa_categoria}, {self.attachment}>'
 
 
 class PrioridadScheduling(models.Model):
     """
-    Representa una prioridad distinta de la standard para 
+    Representa una prioridad distinta de la standard para
     una determinada categoria o seccion.
     Una prioridad aplica o no, dependiendo de la proporcion de las MesaCategoria que tengan foto asociada,
     y el orden de llegada de la foto de cada MesaCategoria.
 
     Se pueden establecer dos criterios para que esta prioridad aplique,
-    - desde / hasta proporcion de MesaCategoria con foto. 
-    - hasta cantidad, de acuerdo al orden de llegada de la foto. 
+    - desde / hasta proporcion de MesaCategoria con foto.
+    - hasta cantidad, de acuerdo al orden de llegada de la foto.
       El uso de este segundo criterio es optativo; hasta_cantidad acepta null/None.
     Se considera la disyuncion entre estos criterios.
     """
@@ -32,7 +94,7 @@ class PrioridadScheduling(models.Model):
 
     @classmethod
     def mapa_prioridades(cls, query_set):
-        """ 
+        """
         Crea un MapaPrioridades a partir de QuerySet de ProridadScheduling.
         """
         mapa = MapaPrioridades()
@@ -72,7 +134,7 @@ def registrar_prioridades_seccion(seccion):
     # hasta 2%
     if seccion.prioridad_hasta_2 or seccion.cantidad_minima_prioridad_hasta_2:
         nueva_prioridad_scheduling = PrioridadScheduling(
-            seccion=seccion, desde_proporcion=0, hasta_proporcion=2, 
+            seccion=seccion, desde_proporcion=0, hasta_proporcion=2,
             prioridad=seccion.prioridad_hasta_2, hasta_cantidad=seccion.cantidad_minima_prioridad_hasta_2)
         nueva_prioridad_scheduling.save()
 
@@ -117,7 +179,7 @@ class RegistroDePrioridad():
 
 class MapaPrioridades():
     """
-    Representa un mapa entre proporción y prioridad, armado a partir de un conjunto 
+    Representa un mapa entre proporción y prioridad, armado a partir de un conjunto
     de instancias de RegistroDePrioridad.
     P.ej. desde_proporcion 4% a 8%, corresponde prioridad 10.
     """
@@ -197,8 +259,8 @@ class MapaPrioridadesProducto():
 
 
 def registro_prioridad_desde_estructura(estructura):
-    """ 
-    Crea un RegistroPrioridad a partir de una estructura 
+    """
+    Crea un RegistroPrioridad a partir de una estructura
     {'desde_proporcion': nro, 'hasta_proporcion': nro, 'prioridad': nro, 'hasta_cantidad': nro}
     donde el hasta_cantidad es optativo
     """
@@ -209,7 +271,7 @@ def registro_prioridad_desde_estructura(estructura):
 
 
 def mapa_prioridades_desde_setting(setting):
-    """ 
+    """
     Crea un MapaPrioridades a partir de una lista [{'desde_proporcion': nro, 'hasta_proporcion': nro, 'prioridad': nro}]
     que es el formato que tiene la especificación de prioridades en los settings.
     """
@@ -220,7 +282,7 @@ def mapa_prioridades_desde_setting(setting):
 
 
 def mapa_prioridades_para_seccion(seccion):
-    """ 
+    """
     Crea y devuelve el MapaPrioridades que corresponde a una Seccion, de acuerdo a las PrioridadScheduling
     que hubiera definidas.
     """
@@ -236,7 +298,7 @@ def mapa_prioridades_default_seccion():
 
 
 def mapa_prioridades_para_categoria(categoria):
-    """ 
+    """
     Crea y devuelve el MapaPrioridades que corresponde a una Categoria, de acuerdo a las PrioridadScheduling
     que hubiera definidas.
     """
@@ -244,7 +306,7 @@ def mapa_prioridades_para_categoria(categoria):
 
 
 def mapa_prioridades_para_mesa_categoria(mesa_categoria):
-    """ 
+    """
     Crea y devuelve el MapaPrioridades que corresponde a una MesaCategoria, de acuerdo a su categoria y a su seccion
     """
     # obtengo los mapas para seccion y categoria, con default a lo que sale de los settings
@@ -256,4 +318,3 @@ def mapa_prioridades_para_mesa_categoria(mesa_categoria):
 
     # a la MesaCategoria le corresponde el __producto__ entre seccion y categoria
     return MapaPrioridadesProducto(mapa_seccion, mapa_categoria)
-

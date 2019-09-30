@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.shortcuts import reverse
 from .models import Attachment, Identificacion, CSVTareaDeImportacion
 from django_admin_row_actions import AdminRowActionsMixin
+from django_exportable_admin.admin import ExportableAdmin
 
 
 class CSVTareaDeImportacionAdmin(AdminRowActionsMixin, admin.ModelAdmin):
@@ -16,7 +17,7 @@ class IdentificacionInline(admin.StackedInline):
     raw_id_fields = ('fiscal', 'mesa')
 
 
-class AttachmentAdmin(AdminRowActionsMixin, admin.ModelAdmin):
+class AttachmentAdmin(AdminRowActionsMixin, ExportableAdmin):
     list_display = ('status', 'mesa', 'foto', 'foto_edited', 'cant_fiscales_asignados', 'subido_por', 'pre_identificacion')
     list_filter = ('status',)
     search_fields = ('mesa__numero', 'subido_por__user__username')
