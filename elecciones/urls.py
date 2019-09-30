@@ -18,6 +18,8 @@ urlpatterns = [
         views.AvanceDeCargaCategoria.as_view(),
         name='avance-carga'
     ),
+    url('avance_carga_resumen',
+        views.AvanceDeCargaResumen.as_view(), name='avance-carga-resumen'),
     url(
         r'^resultados/(?P<pk>\d+)?$',
         views.ResultadosCategoria.as_view(),

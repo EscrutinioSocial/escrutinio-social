@@ -29,6 +29,7 @@ from .models import (
     NIVELES_DE_AGREGACION,
 )
 from .resultados import Proyecciones, AvanceDeCarga, NIVEL_DE_AGREGACION, create_sumarizador
+from .resultados_resumen import GeneradorDatosFotosConsolidado, GeneradorDatosPreidentificacionesConsolidado
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
@@ -493,3 +494,20 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
 
     def get_tecnica_de_proyeccion(self):
         return self.tecnica_de_proyeccion
+
+
+class AvanceDeCargaResumen(TemplateView):
+    """
+    Vista principal avance de carga resumen
+    """
+
+    template_name = "elecciones/avance_carga_resumen.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # data fotos
+        generador_datos_fotos = GeneradorDatosFotosConsolidado()
+        context['data_fotos_nacion_pba'] = generador_datos_fotos.datos_nacion_pba()
+        context['data_fotos_solo_nacion'] = generador_datos_fotos.datos_solo_nacion()
+        context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado().datos()
+        return context

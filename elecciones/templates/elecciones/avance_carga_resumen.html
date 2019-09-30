@@ -1,0 +1,84 @@
+{% extends "fiscales/base.html" %}
+{% load staticfiles %}
+
+{% block extrahead %}
+<style type="text/css">
+
+  .left-panel {
+      flex-basis: 100%;
+  }
+
+  table.striped > tbody > tr:nth-child(odd) {
+      background-color: rgba(170, 213, 213, 0.3);
+  }
+
+  .recuadro {
+      border-width: 2px; border-style: solid; 
+      margin-top: 40px
+  }
+
+  .titulo {
+      font-weight: bold
+  }
+
+  .gran_titulo {
+      font-size: 120%; font-weight: bold
+  }
+
+</style>
+{% endblock %}
+
+{% block title %} Avance de carga {% endblock %}
+
+{% block page_title %} Avance de carga - resumen {% endblock %}
+
+{% block left-panel %}
+<div class="row" style="margin-top: 30px; margin-left: 20px">
+  <div class="row">
+    <div class="col s4"></div>
+    <div class="col s2 gran_titulo">Total país</div>
+    <div class="col s2"></div>
+    <div class="col s2 gran_titulo">PBA</div>
+  </div>
+
+  <div class="recuadro" style="margin-top: 0px">
+    <div class="row" style="background-color: aquamarine">
+      <div class="col s12 gran_titulo">Fotos</div>
+    </div>
+    {% for dato in data_fotos_nacion_pba %}
+    <div class="row">
+      <div class="col s4">{{ dato.texto }}</div>
+      <div class="col s2">{{ dato.cantidad_nacion }}</div>
+      <div class="col s2">{{ dato.porcentaje_nacion }} %</div>
+      <div class="col s2">{{ dato.cantidad_pba }}</div>
+      <div class="col s2">{{ dato.porcentaje_pba }} %</div>
+    </div>
+    {% endfor %}
+    {% for dato in data_fotos_solo_nacion %}
+    <div class="row">
+      <div class="col s4">{{ dato.texto }}</div>
+      <div class="col s2">{{ dato.cantidad_nacion }}</div>
+      <div class="col s2">{{ dato.porcentaje_nacion }} %</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="recuadro">
+    <div class="row" style="background-color: aquamarine">
+      <div class="col s12 gran_titulo">Preidentificaciones</div>
+    </div>
+    {% for dato in data_preidentificaciones %}
+    <div class="row">
+      <div class="col s4">{{ dato.texto }}</div>
+      <div class="col s2">{{ dato.cantidad_nacion }}</div>
+      <div class="col s2">{{ dato.porcentaje_nacion }} %</div>
+      <div class="col s2">{{ dato.cantidad_pba }}</div>
+      <div class="col s2">{{ dato.porcentaje_pba }} %</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock left-panel %}
+
+{% block messages %}
+{% endblock messages %}
