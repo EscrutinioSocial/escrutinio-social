@@ -341,6 +341,19 @@ class MesaCategoriaQuerySet(models.QuerySet):
         'id',
     ]
 
+    # La asignación batch desde el scheduler prioriza así:
+    # Primero el orden que la prioridad geográifica.
+    # Segundo, el status (sin cargar, consolidada, inconsistente, etc.)
+    # Tercero, la cantidad de asignaciones ya hechas (penalizamos levemente las
+    # mesas categorías que asignamos más veces).
+    # En caso de empate, la de menor id (que es la más vieja).
+    campos_de_orden_batch = [
+        'coeficiente_para_orden_de_carga',
+        'prioridad_status',
+        'cant_asignaciones_realizadas',
+        'id',
+    ]
+
     def identificadas(self):
         """
         Filtra instancias que tengan orden de carga definido
@@ -397,6 +410,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
         return self.annotate(
             prioridad_status=models.Case(
                 *whens,
+                default=models.Value('0'),
                 output_field=models.IntegerField(),
             )
         )
@@ -428,6 +442,11 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.ordenadas_por_prioridad().values(
             *self.campos_de_orden
+        )
+
+    def ordenadas_por_prioridad_batch(self):
+        return self.anotar_prioridad_status().order_by(
+            *self.campos_de_orden_batch
         )
 
     def mas_prioritaria(self):
@@ -767,7 +786,7 @@ class Partido(models.Model):
     Representa un partido político o alianza, que contiene :py:class:`opciones <Opcion>`.
     """
     numero = models.PositiveIntegerField(null=True, blank=True)
-    codigo = models.CharField(max_length=10, help_text='Codigo de partido', null=True, blank=True, db_index=True)
+    codigo = models.CharField(max_length=10, help_text='Código de partido', null=True, blank=True, db_index=True)
     nombre = models.CharField(max_length=100)
     nombre_corto = models.CharField(max_length=30, default='')
     color = models.CharField(max_length=30, default='', blank=True)
@@ -799,7 +818,10 @@ class Opcion(models.Model):
     # Tipos no positivos son blanco, nulos, etc
     # Metada son campos extras como "total de votos", "total de sobres", etc.
     # que son únicos por mesa (no están en cada categoría).
-    TIPOS = Choices('positivo', 'no_positivo', 'metadata')
+    # Metada optativa es la metadata que recolectamos de los que nos mandan
+    # por CSV (de manera optativa, y porque es data que si está, sirve ante
+    # un eventual reclamos), pero que no le queremos pedir al usuario que cargue.
+    TIPOS = Choices('positivo', 'no_positivo', 'metadata', 'metadata_optativa')
     tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
 
     nombre = models.CharField(max_length=100)
@@ -808,7 +830,7 @@ class Opcion(models.Model):
     # Dado que muchas veces la justicia no le pone un código a las "sub listas"
     # en las PASO, se termina sintentizando y podría ser largo.
     codigo = models.CharField(
-        max_length=30, help_text='Codigo de opción', null=True, blank=True,
+        max_length=30, help_text='Código de opción', null=True, blank=True,
         db_index=True
     )
     partido = models.ForeignKey(
@@ -836,7 +858,14 @@ class Opcion(models.Model):
 
     @classmethod
     def opciones_no_partidarias(cls):
-        return ['OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_TOTAL_SOBRES', 'OPCION_NULOS']
+        return [
+            'OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_TOTAL_SOBRES', 'OPCION_NULOS',
+            'OPCION_RECURRIDOS', 'OPCION_ID_IMPUGNADA', 'OPCION_COMANDO_ELECTORAL',
+        ]
+
+    @classmethod
+    def opciones_no_partidarias_obligatorias(cls):
+        return ['OPCION_BLANCOS', 'OPCION_TOTAL_VOTOS', 'OPCION_NULOS']
 
     @classmethod
     def blancos(cls):
@@ -853,6 +882,18 @@ class Opcion(models.Model):
     @classmethod
     def sobres(cls):
         return cls.objects.get(**settings.OPCION_TOTAL_SOBRES)
+
+    @classmethod
+    def recurridos(cls):
+        return cls.objects.get(**settings.OPCION_RECURRIDOS)
+
+    @classmethod
+    def id_impugnada(cls):
+        return cls.objects.get(**settings.OPCION_ID_IMPUGNADA)
+
+    @classmethod
+    def comando_electoral(cls):
+        return cls.objects.get(**settings.OPCION_COMANDO_ELECTORAL)
 
     def __str__(self):
         if self.partido:
@@ -971,15 +1012,17 @@ class Categoria(models.Model):
     def get_url_avance_de_carga(self):
         return reverse('avance-carga', args=[self.id])
 
-    def opciones_actuales(self, solo_prioritarias=False):
+    def opciones_actuales(self, solo_prioritarias=False, excluir_optativas=False):
         """
-        Devuelve las opciones asociadas a la categoría en el orden dado
+        Devuelve las opciones asociadas a la categoría en el orden correspondiente.
         Determina el orden de la filas a cargar, tal como se definen
         en el acta.
         """
         qs = self.opciones.all()
         if solo_prioritarias:
             qs = qs.filter(categoriaopcion__prioritaria=True)
+        if excluir_optativas:
+            qs = qs.exclude(categoriaopcion__opcion__tipo=Opcion.TIPOS.metadata_optativa)
         return qs.distinct().order_by('categoriaopcion__orden')
 
     @classmethod
@@ -1082,6 +1125,8 @@ class Carga(TimeStampedModel):
     mesa_categoria = models.ForeignKey(MesaCategoria, related_name='cargas', on_delete=models.CASCADE)
     fiscal = models.ForeignKey('fiscales.Fiscal', on_delete=models.CASCADE)
     firma = models.CharField(max_length=300, null=True, blank=True, editable=False)
+    # Se utiliza para permitir concurrencia entre consolidadores.
+    tomada_por_consolidador = models.DateTimeField(default=None, null=True, blank=True)
     procesada = models.BooleanField(default=False)
 
     @property

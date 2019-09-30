@@ -363,7 +363,7 @@ def test_listar_opciones_todas(admin_client):
     response = admin_client.get(url, data={'solo_prioritarias': False}, format='json')
 
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.data) == 8
+    assert len(response.data) == 7
 
     opciones = [(opc['id'], opc['nombre'], opc['nombre_corto'], opc['codigo']) for opc in response.data]
     assert opciones == [
@@ -374,7 +374,7 @@ def test_listar_opciones_todas(admin_client):
     ] + [(
         opcion.id, opcion.nombre, opcion.nombre_corto, opcion.codigo
     ) for opcion in [
-        Opcion.blancos(), Opcion.total_votos(), Opcion.sobres(), Opcion.nulos()
+        Opcion.blancos(), Opcion.total_votos(), Opcion.nulos()
     ]]
 
 

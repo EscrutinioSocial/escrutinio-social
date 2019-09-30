@@ -309,7 +309,7 @@ class VotoMesaModelForm(forms.ModelForm):
         )
         self.fields['votos'].label = ''
         self.fields['votos'].required = True
-        self.fields['votos'].widget.attrs = {'required':''}
+        self.fields['votos'].widget.attrs = {'required': ''}
 
     class Meta:
         model = VotoMesaReportado
@@ -356,7 +356,7 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
             votos = form.cleaned_data.get('votos')
             if votos is None:
                 raise ValidationError(_('Invalid value'), code='invalid')
-            if not opcion.tipo == Opcion.TIPOS.metadata:
+            if opcion.tipo not in [Opcion.TIPOS.metadata, Opcion.TIPOS.metadata_optativa]:
                 suma += votos
 
             previos = self.datos_previos.get(opcion.id, None)
@@ -387,19 +387,18 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
         cantidad_forms = self.data['form-TOTAL_FORMS']
         mismos_datos = True
         for i in range(int(cantidad_forms)):
-            mismos_datos = mismos_datos and (self.data['form-'+str(i)+'-valor-previo']
-                                            == self.data['form-'+str(i)+'-votos'])
+            mismos_datos = mismos_datos and (self.data['form-' + str(i) + '-valor-previo']
+                                            == self.data['form-' + str(i) + '-votos'])
 
         if not mismos_datos:
             for form in self.forms:
                 opcion = form.cleaned_data.get('opcion')
                 votos = form.cleaned_data.get('votos')
-                #todos 0
+
                 if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_NOSOTROS:
                     if votos == 0:
                         warnings.append(f'La cantidad de votos de {opcion.nombre_corto} es cero.')
 
-                #jxc 0
                 if opcion.partido and opcion.partido.codigo == settings.CODIGO_PARTIDO_ELLOS:
                     if votos == 0:
                         warnings.append(f'La cantidad de votos de {opcion.nombre_corto} es cero.')
@@ -418,12 +417,12 @@ class BaseVotoMesaReportadoFormSet(BaseModelFormSet):
                 # cambios al confirmar el warning
                 data = form.data.copy()
                 for i in range(int(cantidad_forms)):
-                    data['form-'+str(i)+'-valor-previo'] = data['form-'+str(i)+'-votos']
+                    data['form-' + str(i) + '-valor-previo'] = data['form-' + str(i) + '-votos']
 
                 form.data = data
 
             if warnings:
-                warnings[-1] = mark_safe( warnings[-1] +
+                warnings[-1] = mark_safe(warnings[-1] +
                     '<br><br>¿Confirma que están cargados correctamente los valores que figuran en el acta?')
                 raise forms.ValidationError(warnings)
 

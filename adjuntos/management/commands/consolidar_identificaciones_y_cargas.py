@@ -1,11 +1,24 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from adjuntos.consolidacion import consumir_novedades
+
 import time
 import structlog
 
+from adjuntos.consolidacion import consumir_novedades
+from scheduling.scheduler import scheduler
+
 
 logger = structlog.get_logger('consolidador')
+
+
+def consolidador(cant_por_iteracion=100, ejecutado_desde=''):
+    msg = f'Consolidación desde {ejecutado_desde}' if ejecutado_desde != '' else 'Consolidación'
+    n_identificaciones, n_cargas = consumir_novedades(cant_por_iteracion)
+    logger.debug(
+        msg,
+        identificaciones=n_identificaciones,
+        cargas=n_cargas
+    )
 
 
 class Command(BaseCommand):
@@ -20,10 +33,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         cant_por_iteracion = options['cant']
         while True:
-            n_identificaciones, n_cargas = consumir_novedades(cant_por_iteracion)
-            logger.debug(
-                'Consolidación',
-                identificaciones=n_identificaciones,
-                cargas=n_cargas
-            )
+            consolidador(cant_por_iteracion)
             time.sleep(settings.PAUSA_CONSOLIDACION)

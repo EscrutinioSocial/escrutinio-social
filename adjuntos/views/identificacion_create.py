@@ -117,7 +117,7 @@ class IdentificacionCreateView(CreateView):
         self.attachment.desasignar_a_fiscal()  # Le bajamos la cuenta.
         messages.info(
             self.request,
-            f'Identificada mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito}',
+            f'Mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito} identificada',
         )
         logger.info('Fin identificación', id=self.attachment.id)
         return super().form_valid(form)

@@ -1,6 +1,8 @@
 import pytest
 from unittest import mock
 from django.db import IntegrityError
+from datetime import timedelta
+from django.utils import timezone
 from elecciones.tests.factories import (
     AttachmentFactory,
     FiscalFactory,
@@ -168,6 +170,46 @@ def test_identificacion_consolidada_con_minimo_1(db, settings):
     assert a.identificacion_testigo == i1
     assert a.mesa == m1
     assert a.status == Attachment.STATUS.identificada
+
+
+def test_consolidador_desmarca_timeout(db, settings):
+    a = AttachmentFactory()
+    m1 = MesaFactory()
+    i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+    assert i1.tomada_por_consolidador is None
+    consumir_novedades_identificacion()
+    i1.refresh_from_db()
+    assert i1.tomada_por_consolidador is None
+    assert i1.procesada is True
+
+
+def test_consolidador_honra_timeout(db, settings):
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
+    a = AttachmentFactory()
+    m1 = MesaFactory()
+    i1 = IdentificacionFactory(
+        attachment=a, status='identificada', mesa=m1,
+        tomada_por_consolidador=timezone.now() - timedelta(minutes=settings.TIMEOUT_CONSOLIDACION - 1)
+    )
+    consumir_novedades_identificacion()
+    a.refresh_from_db()
+    i1.refresh_from_db()
+    # No la tomó aún.
+    assert i1.procesada is False
+
+    assert a.status == Attachment.STATUS.sin_identificar
+    i1.tomada_por_consolidador = timezone.now() - timedelta(minutes=settings.TIMEOUT_CONSOLIDACION + 1)
+    i1.save()
+    consumir_novedades_identificacion()
+    a.refresh_from_db()
+    i1.refresh_from_db()
+
+    # Ahora sí
+    assert i1.procesada is True
+    assert a.identificacion_testigo == i1
+    assert a.mesa == m1
+    assert a.status == Attachment.STATUS.identificada
+
 
 def test_ciclo_de_vida_problemas_resolver(db):
     a = AttachmentFactory()

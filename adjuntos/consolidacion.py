@@ -4,8 +4,10 @@ from adjuntos.models import Attachment, Identificacion
 from elecciones.models import Carga, MesaCategoria
 from fiscales.models import Fiscal
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.dispatch import receiver
+from django.utils import timezone
+from datetime import timedelta
 from django.db.models.signals import post_save
 from problemas.models import Problema
 from antitrolling.efecto import (
@@ -238,14 +240,22 @@ def consolidar_identificaciones(attachment):
 
 
 def consumir_novedades_identificacion(cant_por_iteracion=None):
+    ahora = timezone.now()
+    desde = ahora - timedelta(minutes=settings.TIMEOUT_CONSOLIDACION)
     with transaction.atomic():
         # Lo hacemos en una transacción para no competir con otros consolidadores.
-        a_procesar = Identificacion.objects.select_for_update(skip_locked=True).filter(procesada=False)
+        a_procesar = Identificacion.objects.select_for_update(
+            skip_locked=True
+        ).filter(
+            Q(tomada_por_consolidador__isnull=True) | Q(tomada_por_consolidador__lt=desde),
+            procesada=False
+        )
         if cant_por_iteracion:
             a_procesar = a_procesar[0:cant_por_iteracion]
         # OJO - acá precomputar los ids_a_procesar es importante
         # ver comentario en consumir_novedades_carga()
         ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+        Identificacion.objects.filter(id__in=ids_a_procesar).update(tomada_por_consolidador=ahora)
 
     attachments_con_novedades = Attachment.objects.filter(
         identificaciones__in=ids_a_procesar
@@ -271,38 +281,31 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
             )
 
     # Todas procesadas (hay que seleccionar desde Identificacion porque 'a_procesar' ya fue sliceado).
-    procesadas = Identificacion.objects.filter(id__in=ids_a_procesar).update(procesada=True)
+    procesadas = Identificacion.objects.filter(
+        id__in=ids_a_procesar
+    ).update(
+        procesada=True,
+        tomada_por_consolidador=None
+    )
     return procesadas
 
 
 def consumir_novedades_carga(cant_por_iteracion=None):
+    ahora = timezone.now()
+    desde = ahora - timedelta(minutes=settings.TIMEOUT_CONSOLIDACION)
     with transaction.atomic():
         # Lo hacemos en una transacción para no competir con otros consolidadores.
-        a_procesar = Carga.objects.select_for_update(skip_locked=True).filter(procesada=False)
+        a_procesar = Carga.objects.select_for_update(
+            skip_locked=True
+        ).filter(
+            Q(tomada_por_consolidador__isnull=True) | Q(tomada_por_consolidador__lt=desde),
+            procesada=False,
+        )
         if cant_por_iteracion:
             a_procesar = a_procesar[0:cant_por_iteracion]
         ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
-    # OJO - aca precomputar los ids_a_procesar es importante
-    # si en lugar de hacer esto, al final se ejecuta
-    #    a_procesar.update(procesada=True)
-    # entonces se pasa a procesadas **todas** las cargas que tuvieren procesada=False
-    # **al final** del proceso.
-    #
-    # En particular, si se detecta a un fiscal como troll, se pasan todas sus cargas a
-    # invalidada=True y procesada=False, para que **la siguiente** consolidacion de cargas
-    # recompute el estado de las MesaCategoria.
-    # Pero también podría pasar que entren nuevas cargas mientras se ejecuta la consolidación.
-    # En ambos casos, es importante que se respete que esas cargas están pendientes de proceso.
-    #
-    # Técnicamente, por más que se haga el SELECT arriba, si se pone
-    #    a_procesar.update(procesada=True)
-    # el SQL generado por Django es de la forma
-    #    UPDATE carga SET procesada=True WHERE procesada=False
-    # considera **la condición** del SELECT, no su resultado.
-    # Al obtener los ids, se fuerza a que el SQL sea así:
-    #    UPDATE carga SET procesada=True WHERE id in [...lista_precalculada_de_ids...]
-    #
-    # Carlos Lombardi, 2019.07.24
+        Carga.objects.filter(id__in=ids_a_procesar).update(tomada_por_consolidador=ahora)
+    # OJO - acá precomputar los ids_a_procesar es importante. Ver (*) al final de este doc para detalles.
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
         cargas__in=ids_a_procesar
     ).distinct()
@@ -328,7 +331,11 @@ def consumir_novedades_carga(cant_por_iteracion=None):
             )
 
     # Todas procesadas (hay que seleccionar desde Carga porque 'a_procesar' ya fue sliceado).
-    procesadas = Carga.objects.filter(id__in=ids_a_procesar).update(procesada=True)
+    procesadas = Carga.objects.filter(
+        id__in=ids_a_procesar
+    ).update(
+        procesada=True, tomada_por_consolidador=None
+    )
     return procesadas
 
 
@@ -360,3 +367,26 @@ def actualizar_orden_de_carga(sender, instance=None, created=False, **kwargs):
         a_actualizar = MesaCategoria.objects.filter(mesa=instance.mesa)
         for mc in a_actualizar:
             mc.actualizar_coeficiente_para_orden_de_carga()
+
+# (*) Explicación de por qué es necesario obtener los ids de las cargas:
+# 
+# Si en lugar de hacer esto, al final se ejecuta
+#    a_procesar.update(procesada=True)
+# entonces se pasa a procesadas **todas** las cargas que tuvieren procesada=False
+# **al final** del proceso.
+#
+# En particular, si se detecta a un fiscal como troll, se pasan todas sus cargas a
+# invalidada=True y procesada=False, para que **la siguiente** consolidacion de cargas
+# recompute el estado de las MesaCategoria.
+# Pero también podría pasar que entren nuevas cargas mientras se ejecuta la consolidación.
+# En ambos casos, es importante que se respete que esas cargas están pendientes de proceso.
+#
+# Técnicamente, por más que se haga el SELECT arriba, si se pone
+#    a_procesar.update(procesada=True)
+# el SQL generado por Django es de la forma
+#    UPDATE carga SET procesada=True WHERE procesada=False
+# considera **la condición** del SELECT, no su resultado.
+# Al obtener los ids, se fuerza a que el SQL sea así:
+#    UPDATE carga SET procesada=True WHERE id in [...lista_precalculada_de_ids...]
+#
+# Carlos Lombardi, 2019.07.24
