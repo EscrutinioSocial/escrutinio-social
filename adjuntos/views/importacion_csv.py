@@ -92,7 +92,7 @@ def status_importacion_csv(request, csv_id):
     context = {}
     context['csv_file'] = tarea.csv_file.name
     context['status'] = tarea.status
-    context['ult_actualizacion'] = tarea.last_updated
+    context['ult_actualizacion'] = tarea.modified
     context['fiscal'] = tarea.fiscal
     context['mesas_total_ok'] = tarea.mesas_total_ok
     context['mesas_parc_ok'] = tarea.mesas_parc_ok
