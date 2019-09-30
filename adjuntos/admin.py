@@ -5,7 +5,7 @@ from django_admin_row_actions import AdminRowActionsMixin
 
 
 class CSVTareaDeImportacionAdmin(AdminRowActionsMixin, admin.ModelAdmin):
-    list_display = ('id', 'csv_file', 'fiscal', 'status', 'mesas_total_ok', 'mesas_parc_ok', 'last_updated')
+    list_display = ('id', 'csv_file', 'fiscal', 'status', 'mesas_total_ok', 'mesas_parc_ok', 'created', 'modified')
     list_filter = ('status',)
     search_fields = ('csv_file', 'fiscal__user__username')
 
