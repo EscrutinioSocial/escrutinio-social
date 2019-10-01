@@ -1,7 +1,9 @@
 from django.db import models, transaction, connection
 from django.conf import settings
-from django.db.models import Q
-from elecciones.models import (Seccion, Categoria, MesaCategoria)
+from django.db.models import Q, F, ExpressionWrapper, Case, When
+from constance import config
+
+from elecciones.models import (Distrito, Seccion, Categoria, MesaCategoria)
 from adjuntos.models import Attachment
 
 
@@ -14,7 +16,9 @@ class ColaCargasPendientes(models.Model):
     # Este campo lo calcula el encolador.
     orden = models.PositiveIntegerField(db_index=True)
     numero_carga = models.PositiveIntegerField(default=1)
-
+    # Denormalización para facilitar el cálculo de afinidad.
+    distrito = models.ForeignKey(Distrito, null=True, blank=True, on_delete=models.SET_NULL)
+    
     class Meta:
         unique_together = [
             ['mesa_categoria', 'numero_carga'],
@@ -36,11 +40,28 @@ class ColaCargasPendientes(models.Model):
         """
         excluir = (Q(mesa_categoria__cargas__fiscal=fiscal) |
                    Q(attachment__identificaciones__fiscal=fiscal)) if fiscal else Q()
-        mesa_categoria = None
-        attachment = None
-        item = cls.objects.select_for_update(skip_locked=True).exclude(
+        mesa_categoria , attachment = None , None
+        
+        query = cls.objects.select_for_update(skip_locked=True).exclude(
             excluir
-        ).order_by('orden').first()
+        ).order_by('orden')
+        
+        # Se privilegia a las tareas del distrito en las que viene trabajando el fiscal.
+        if fiscal and fiscal.distrito_afin:
+            orden_afin = Case(
+                When(distrito=fiscal.distrito_afin,
+                     then=F('orden')-config.BONUS_AFINIDAD_GEOGRAFICA
+                ),
+                default=F('orden'),
+                output_field=models.IntegerField()
+            )
+            query = cls.objects.select_for_update(skip_locked=True).exclude(
+                excluir
+            ).annotate(
+                orden_afin=orden_afin
+            ).order_by('orden_afin')
+            
+        item = query.first()
         if item:
             mesa_categoria = item.mesa_categoria
             attachment = item.attachment

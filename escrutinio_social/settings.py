@@ -529,6 +529,7 @@ CONSTANCE_CONFIG = {
     'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS': (1.5, 'Factor de multiplicación para agregar tareas.', float),
     'ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA': (True, 'Asignar tareas en el momento si la cola está vacía?', bool),
     'COTA_INFERIOR_COLA_TAREAS': (100, 'Cantidad mínima de tareas que se encolan.', int),
+    'BONUS_AFINIDAD_GEOGRAFICA': (10, 'Cuánta prioridad ganann las tareas del distrito en que viene trabajando un fiscal.', int),
 }
 
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
