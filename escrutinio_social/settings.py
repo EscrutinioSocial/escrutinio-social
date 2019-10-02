@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
     'django_exportable_admin',
     'anymail',
     'localflavor',
@@ -84,6 +85,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -546,6 +548,8 @@ if not TESTING:
         from .local_settings import *  # noqa
     except ImportError:
         pass
+
+INTERNAL_IPS = ['172.20.0.1']
 
 
 OCULTAR_CANTIDADES_DE_ELECTORES = True

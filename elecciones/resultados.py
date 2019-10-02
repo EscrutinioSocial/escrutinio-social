@@ -332,6 +332,9 @@ class ResultadosBase():
         """
         return dict(self.resultados)
 
+    def __str__(self):
+        return f"Resultados: ({self.tabla_positivos}, {self.tabla_no_positivos})"
+
     @lru_cache(128)
     def tabla_positivos(self):
         """
