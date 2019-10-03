@@ -1,5 +1,4 @@
 from urllib import parse
-
 from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -25,7 +24,9 @@ from elecciones.models import (
     NIVELES_AGREGACION,
     NIVELES_DE_AGREGACION,
 )
-from elecciones.resultados import Proyecciones, AvanceDeCarga, NIVEL_DE_AGREGACION, create_sumarizador
+from elecciones.proyecciones import Proyecciones, create_sumarizador
+from elecciones.sumarizador import NIVEL_DE_AGREGACION
+from elecciones.avance_carga import AvanceDeCarga
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
@@ -95,7 +96,11 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
             categorias = categorias.exclude(sensible=True)
 
         context['categorias'] = categorias.order_by('id')
-        context['distritos'] = Distrito.objects.all().order_by('numero')
+        context['distritos'] = Distrito.objects.all().prefetch_related(
+            'secciones_politicas',
+            'secciones',
+            'secciones__circuitos'
+        ).order_by('numero')
         return context
 
     def create_sumarizador(self):

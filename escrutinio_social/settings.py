@@ -547,5 +547,12 @@ if not TESTING:
     except ImportError:
         pass
 
+USAR_DJANGO_DEBUG_TOOLBAR = True
+
+if DEBUG and USAR_DJANGO_DEBUG_TOOLBAR:
+    INTERNAL_IPS = ['172.20.0.1']
+    MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE
+    INSTALLED_APPS += ['debug_toolbar']
+
 
 OCULTAR_CANTIDADES_DE_ELECTORES = True
