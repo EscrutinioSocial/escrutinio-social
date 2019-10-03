@@ -197,7 +197,11 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
             categorias = categorias.exclude(sensible=True)
 
         context['categorias'] = categorias.order_by('id')
-        context['distritos'] = Distrito.objects.all().order_by('numero')
+        context['distritos'] = Distrito.objects.all().prefetch_related(
+            'secciones_politicas',
+            'secciones',
+            'secciones__circuitos'
+        ).order_by('numero')
         return context
 
     def create_sumarizador(self):
