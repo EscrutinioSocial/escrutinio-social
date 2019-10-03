@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
 
-from .definiciones import *
+from .definiciones import VisualizadoresOnlyMixin
 
 from elecciones.models import (
     Distrito,
@@ -14,7 +14,10 @@ from elecciones.models import (
     Mesa,
     OPCIONES_A_CONSIDERAR,
     TIPOS_DE_AGREGACIONES,
+    NIVELES_AGREGACION,
 )
+from elecciones.proyecciones import Proyecciones
+from elecciones.avance_carga import AvanceDeCarga
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
