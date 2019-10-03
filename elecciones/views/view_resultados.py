@@ -85,7 +85,6 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
         context['object'] = categoria
         context['categoria_id'] = categoria.id
         resultados = self.get_resultados(categoria)
-        print(resultados.tabla_positivos())
         context['resultados'] = resultados
         context['show_plot'] = settings.SHOW_PLOT
 

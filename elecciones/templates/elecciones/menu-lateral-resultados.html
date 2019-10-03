@@ -3,7 +3,6 @@
 
 {% block title %}Resultados{% endblock %}
 
-{% block page_title %}Resultados para {{para|default:para}}{% endblock %}
 
 {% block js %}
 {{ block.super }}
@@ -12,9 +11,6 @@
 
  {% block head %}
     {{ block.super }}
-    {% if show_plot %}
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    {% endif %}
     <link href="{% static 'elecciones/resultados.css' %}" rel="stylesheet" type="text/css">
     <!-- 4 include the jQuery library -->
     <!-- XXX creo que ya está jquery -->
@@ -34,7 +30,6 @@
     <div id="resultados"></div>
   </div>
 </div> -->
-<script src="/static/data.js"></script>
 <script>
   // Construyo el árbol.
   url_base = '/elecciones/resultados-cuerpo-central/'
@@ -44,17 +39,17 @@
   {% for distrito in distritos %}
     // Las secciones.
     arbol_secciones = []
-    {% for seccion in distrito.secciones.all %}
-      // Los circuitos.
-      arbol_circuitos = []
-      {% for circuito in seccion.circuitos.all %}
-        url = url_base + '?circuito=' + {{ circuito.id }}
-        arbol_circuitos.push({'text': '{{ circuito.nombre }}', 'a_attr': url, 'children': []})
-      {% endfor %}
-      url = url_base + '?seccion=' + {{ seccion.id }}
-      arbol_secciones.push({'text': '{{ seccion.nombre }}', 'a_attr': url, 'children': arbol_circuitos})
+    // {% for seccion in distrito.secciones.all %}
+    //   // Los circuitos.
+    //   arbol_circuitos = []
+    //   {% for circuito in seccion.circuitos.all %}
+    //     url = url_base + '?circuito=' + {{ circuito.id }}
+    //     arbol_circuitos.push({'text': '{{ circuito.nombre }}', 'a_attr': url, 'children': []})
+    //   {% endfor %}
+    //   url = url_base + '?seccion=' + {{ seccion.id }}
+    //   arbol_secciones.push({'text': '{{ seccion.nombre }}', 'a_attr': url, 'children': arbol_circuitos})
 
-    {% endfor %}
+    // {% endfor %}
 
     url = url_base + '?distrito=' + {{ distrito.id }}
     arbol_distritos.push({'text': '{{ distrito.nombre }}', 'a_attr': url, 'children': arbol_secciones})
@@ -64,7 +59,7 @@
   
   $('#jstree').jstree({'core': {'data': arbol_pais}}
     ).bind("select_node.jstree", function (e, data) {
-      console.log(data.node.a_attr.href);
+      //console.log(data.node.a_attr.href);
       var href_address = data.node.a_attr.href;
       document.getElementById("resultados").innerHTML='<object type="text/html" data="'+href_address+'"  width="100%" height="800px"></object>';
       //open(href_address);
