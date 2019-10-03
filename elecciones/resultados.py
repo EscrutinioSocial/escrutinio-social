@@ -261,6 +261,3 @@ class ResultadoCombinado(ResultadosBase):
 
     def total_no_positivos(self):
         return self._total_no_positivos
-
-
-
