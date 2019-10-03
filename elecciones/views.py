@@ -1,5 +1,4 @@
 from urllib import parse
-from django.utils.functional import cached_property
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, redirect
@@ -28,7 +27,9 @@ from .models import (
     NIVELES_AGREGACION,
     NIVELES_DE_AGREGACION,
 )
-from .resultados import Proyecciones, AvanceDeCarga, NIVEL_DE_AGREGACION, create_sumarizador
+from .proyecciones import Proyecciones, create_sumarizador
+from .sumarizador import NIVEL_DE_AGREGACION
+from .avance_carga import AvanceDeCarga
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
