@@ -15,7 +15,7 @@ from .models import (
     OPCIONES_A_CONSIDERAR,
     NIVELES_DE_AGREGACION,
 )
-from .resultados import Resultados, ResultadoCombinado
+from .resultados import Resultados
 
 
 NIVEL_DE_AGREGACION = {
@@ -256,28 +256,3 @@ class Sumarizador():
         self.categoria = categoria
         self.mesas_a_considerar = self.mesas(categoria)
         return Resultados(self.opciones_a_considerar, self.calcular(categoria, self.mesas_a_considerar))
-
-
-class SumarizadorCombinado():
-
-    def __init__(self, configuracion):
-        self.configuracion = configuracion
-
-    @property
-    def filtros(self):
-        """
-        El sumarizador combinado siempre es para el total país.
-        """
-        return
-
-    def mesas(self, categoria):
-        """
-            Devuelve todas las mesas para la categoría especificada
-        """
-        return Mesa.objects.filter(categorias=categoria).distinct()
-
-    def get_resultados(self, categoria):
-        return sum((
-            create_sumarizador(configuracion_distrito=configuracion_distrito).get_resultados(categoria)
-            for configuracion_distrito in self.configuracion.configuraciones.all()
-        ), ResultadoCombinado())

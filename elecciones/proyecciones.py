@@ -1,11 +1,13 @@
 from functools import lru_cache
 from django.db.models import Q, F, Sum, Subquery, OuterRef, Count
 from .models import (
+    Mesa,
     TecnicaProyeccion,
     AgrupacionCircuito,
     NIVELES_DE_AGREGACION,
 )
-from .sumarizador import Sumarizador, SumarizadorCombinado
+from .resultados import ResultadoCombinado
+from .sumarizador import Sumarizador
 
 
 def create_sumarizador(
@@ -223,3 +225,28 @@ class Proyecciones(Sumarizador):
     @classmethod
     def tecnicas_de_proyeccion(cls):
         return TecnicaProyeccion.objects.all()
+
+
+class SumarizadorCombinado():
+
+    def __init__(self, configuracion):
+        self.configuracion = configuracion
+
+    @property
+    def filtros(self):
+        """
+        El sumarizador combinado siempre es para el total país.
+        """
+        return
+
+    def mesas(self, categoria):
+        """
+            Devuelve todas las mesas para la categoría especificada
+        """
+        return Mesa.objects.filter(categorias=categoria).distinct()
+
+    def get_resultados(self, categoria):
+        return sum((
+            create_sumarizador(configuracion_distrito=configuracion_distrito).get_resultados(categoria)
+            for configuracion_distrito in self.configuracion.configuraciones.all()
+        ), ResultadoCombinado())
