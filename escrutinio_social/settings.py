@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'debug_toolbar',
     'django_exportable_admin',
     'anymail',
     'localflavor',
@@ -85,7 +84,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -549,7 +547,12 @@ if not TESTING:
     except ImportError:
         pass
 
-INTERNAL_IPS = ['172.20.0.1']
+USAR_DJANGO_DEBUG_TOOLBAR = False
+
+if DEBUG and USAR_DJANGO_DEBUG_TOOLBAR:
+    INTERNAL_IPS = ['172.20.0.1']
+    MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE
+    INSTALLED_APPS += ['debug_toolbar']
 
 
 OCULTAR_CANTIDADES_DE_ELECTORES = True

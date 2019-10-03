@@ -55,13 +55,10 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    import debug_toolbar
-    from django.urls import include, path
-    urlpatterns = [
-        path('__debug__/', include(debug_toolbar.urls)),
-
-        # For django versions before 2.0:
-        # url(r'^__debug__/', include(debug_toolbar.urls)),
-
-    ] + urlpatterns
-    SHOW_TOOLBAR_CALLBACK = True
+    if settings.USAR_DJANGO_DEBUG_TOOLBAR:
+        import debug_toolbar
+        from django.urls import include, path
+        urlpatterns = [
+            path('__debug__/', include(debug_toolbar.urls)),
+        ] + urlpatterns
+        SHOW_TOOLBAR_CALLBACK = True
