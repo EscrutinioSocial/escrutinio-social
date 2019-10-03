@@ -40,14 +40,6 @@ def menu_lateral_resultados(request, categoria_id):
         return redirect('resultados-nuevo-menu', categoria_id=categoria_presi_y_vice.id)
 
     context = {}
-    context['para'] = 'todo el país'
-
-    categoria = get_object_or_404(Categoria, id=categoria_id)
-    context['object'] = categoria
-    context['categoria_id'] = categoria.id
-    context['resultados'] = None
-    context['show_plot'] = settings.SHOW_PLOT
-
     context['distritos'] = Distrito.objects.all().extra(
         select={'numero_int': 'CAST(numero AS INTEGER)'}
     ).prefetch_related(
@@ -92,7 +84,9 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
         categoria = get_object_or_404(Categoria, id=pk)
         context['object'] = categoria
         context['categoria_id'] = categoria.id
-        context['resultados'] = self.get_resultados(categoria)
+        resultados = self.get_resultados(categoria)
+        print(resultados.tabla_positivos())
+        context['resultados'] = resultados
         context['show_plot'] = settings.SHOW_PLOT
 
         # Agregamos al contexto el modo de elección; para cada partido decidimos

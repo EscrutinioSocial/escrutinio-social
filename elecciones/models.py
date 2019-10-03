@@ -64,7 +64,7 @@ def canonizar(valor):
 
 class DistritoManager(models.Manager):
     def get_by_natural_key(self, numero):
-        return self.get(numero = numero)
+        return self.get(numero=numero)
 
 
 class Distrito(models.Model):
@@ -92,6 +92,14 @@ class Distrito(models.Model):
 
     def natural_key(self):
         return (self.numero, )
+
+    def get_secciones(self):
+        """
+        Todas las secciones del distrito ordenadas por número.
+        """
+        return self.secciones.all().extra(
+            select={'numero_int': 'CAST(numero AS INTEGER)'}
+        ).order_by('numero_int')
 
 
 class SeccionPolitica(models.Model):
@@ -125,7 +133,7 @@ class SeccionPolitica(models.Model):
 
 class SeccionManager(models.Manager):
     def get_by_natural_key(self, distrito, numero):
-        return self.get(distrito__numero = distrito, numero = numero)
+        return self.get(distrito__numero=distrito, numero=numero)
 
 
 class Seccion(models.Model):
@@ -173,6 +181,14 @@ class Seccion(models.Model):
         verbose_name = 'Sección electoral'
         verbose_name_plural = 'Secciones electorales'
 
+    def get_circuitos(self):
+        """
+        Todos los circuitos de las sección ordenados por número.
+        """
+        return self.circuitos.all().extra(
+            select={'numero_int': 'CAST(numero AS INTEGER)'}
+        ).order_by('numero_int')
+
     def resultados_url(self):
         return reverse('resultados-primera-categoria') + f'?seccion={self.id}'
 
@@ -191,6 +207,7 @@ class Seccion(models.Model):
     def natural_key(self):
         return self.distrito.natural_key() + (self.numero, )
     natural_key.dependencies = ['elecciones.distrito']
+
 
 class Circuito(models.Model):
     """

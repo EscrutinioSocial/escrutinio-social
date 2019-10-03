@@ -318,13 +318,10 @@ class Fiscal(models.Model):
         return (self.tipo_dni, self.dni)
     natural_key.dependencies = ['elecciones.distrito', 'elecciones.seccion', 'auth.user']
 
-
-
     @classmethod
     def destrolleo_masivo(cls, actor, hasta_scoring, nuevo_scoring):
         for fiscal in Fiscal.objects.filter(troll=True).filter(puntaje_scoring_troll__lte=hasta_scoring):
             fiscal.quitar_marca_troll(actor, nuevo_scoring)
-
 
 
 @receiver(post_save, sender=Fiscal)
