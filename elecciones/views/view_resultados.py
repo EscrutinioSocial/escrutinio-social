@@ -1,6 +1,6 @@
 from urllib import parse
 from django.conf import settings
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
@@ -29,6 +29,33 @@ from elecciones.sumarizador import NIVEL_DE_AGREGACION
 from elecciones.avance_carga import AvanceDeCarga
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
+
+
+# XXX Falta permisos.
+def menu_lateral_resultados(request, categoria_id):
+
+    # Si no viene categoría mandamos a PV.
+    if categoria_id is None:
+        categoria_presi_y_vice = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
+        return redirect('resultados-nuevo-menu', categoria_id=categoria_presi_y_vice.id)
+
+    context = {}
+    context['para'] = 'todo el país'
+
+    categoria = get_object_or_404(Categoria, id=categoria_id)
+    context['object'] = categoria
+    context['categoria_id'] = categoria.id
+    context['resultados'] = None
+    context['show_plot'] = settings.SHOW_PLOT
+
+    context['distritos'] = Distrito.objects.all().extra(
+        select={'numero_int': 'CAST(numero AS INTEGER)'}
+    ).prefetch_related(
+        'secciones_politicas',
+        'secciones',
+        'secciones__circuitos'
+    ).order_by('numero_int')
+    return render(request, 'elecciones/menu-lateral-resultados.html', context=context)
 
 
 class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
@@ -211,6 +238,10 @@ class MesasDeCircuito(ResultadosCategoria):
         if 'mesa' in url_params_original:
             del url_params_original['mesa']
         return parse.urlencode(url_params_original)
+
+
+class ResultadosCategoriaCuerpoCentral(ResultadosCategoria):
+    template_name = "elecciones/resultados-cuerpo-central.html"
 
 
 class ResultadosExport(ResultadosCategoria):

@@ -1,0 +1,53 @@
+{% extends "fiscales/base.html" %}
+{% load staticfiles %}
+
+{% block title %}Resultados{% endblock %}
+
+{% block page_title %}Resultados para {{para|default:para}}{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+{% endblock %}
+
+ {% block head %}
+    {{ block.super }}
+    {% if show_plot %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    {% endif %}
+    <link href="{% static 'elecciones/resultados.css' %}" rel="stylesheet" type="text/css">
+    <!-- 4 include the jQuery library -->
+    <!-- XXX creo que ya está jquery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+    <!-- 5 include the minified jstree source -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+ {% endblock %}
+
+{% block sidenav_items %}
+<div id="jstree"></div>
+<!-- <div style="width: 100%;">
+  <div style="float:left;width: 20%;">
+    <div id="jstree"></div>
+  </div>
+
+  <div style="float:left;width: 80%;">
+    <div id="resultados"></div>
+  </div>
+</div> -->
+<script src="/static/data.js"></script>
+  <script>
+  $('#jstree').jstree({ 'core' : { 'data' : data}}
+    ).bind("select_node.jstree", function (e,data) {
+      console.log(data.node.a_attr.href);
+      var href_address = data.node.a_attr.href;
+      document.getElementById("resultados").innerHTML='<object type="text/html" data="'+href_address+'"  width="100%" height="800px"></object>';
+      //open(href_address);
+});
+
+  </script>
+{% endblock %}
+{% block left-panel %}
+<div style="float:left;width: 100%;">
+  <div id="resultados"></div>
+</div>
+{% endblock %}

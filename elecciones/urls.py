@@ -19,9 +19,19 @@ urlpatterns = [
         name='avance-carga'
     ),
     url(
+        r'^resultados-nuevo-menu/(?P<categoria_id>\d+)?$',
+        views.menu_lateral_resultados,
+        name='resultados-nuevo-menu'
+    ),
+    url(
         r'^resultados/(?P<pk>\d+)?$',
         views.ResultadosCategoria.as_view(),
         name='resultados-categoria'
+    ),
+    url(
+        r'^resultados-cuerpo-central/(?P<pk>\d+)?$',
+        views.ResultadosCategoriaCuerpoCentral.as_view(),
+        name='resultados-categoria-cuerpo-central'
     ),
     url(
         r'^resultados/mesas_circuito/(?P<pk>\d+)?$',
