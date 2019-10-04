@@ -325,12 +325,16 @@ class Fiscal(models.Model):
 
 
 @receiver(post_save, sender=Fiscal)
-def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, **kwargs):
+def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, update_fields=None, **kwargs):
     """
     Cuando se crea o actualiza una instancia de ``Fiscal`` en estado confirmado
     que no tiene usuario asociado, automáticamente se crea uno ``auth.User``
     utilizando el DNI como `username`.
     """
+    if 'last_seen' in update_fields and len(update_fields) == 1:
+        # Si sólo se actualiza el last_seen no hacemos nada más.
+        return
+
     if not instance.user and instance.dni and instance.estado in ('AUTOCONFIRMADO', 'CONFIRMADO'):
         user = User(
             username=re.sub("[^0-9]", "", instance.dni),
