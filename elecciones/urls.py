@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls import url
 from . import views, data_views
-from fancy_cache import cache_page
 from django.contrib.auth.decorators import login_required
-
+from django.views.decorators.cache import cache_page
 
 cached = cache_page(300)
 
@@ -25,7 +24,7 @@ urlpatterns = [
     ),
     url(
         r'^resultados/(?P<pk>\d+)?$',
-        views.ResultadosCategoria.as_view(),
+        cache_page(0)(views.ResultadosCategoria.as_view()),
         name='resultados-categoria'
     ),
     url(

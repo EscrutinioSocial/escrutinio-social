@@ -348,10 +348,14 @@ DEFAULT_CEL_LOCAL = '0351 15 XXXXX'
 FULL_SITE_URL = 'https://this-site.com'
 
 CACHES = {
+    # 'default': {
+    #     'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    #     # 'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+    #     'LOCATION': '/var/tmp/django_cache',
+    # }
     'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        # 'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/var/tmp/django_cache',
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'elecciones_cache',
     }
 }
 
