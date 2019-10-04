@@ -839,10 +839,10 @@ class Opcion(models.Model):
     # por CSV (de manera optativa, y porque es data que si está, sirve ante
     # un eventual reclamos), pero que no le queremos pedir al usuario que cargue.
     TIPOS = Choices('positivo', 'no_positivo', 'metadata', 'metadata_optativa')
-    tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
+    tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo, db_index=True)
 
     nombre = models.CharField(max_length=100)
-    nombre_corto = models.CharField(max_length=20, default='')
+    nombre_corto = models.CharField(max_length=20, default='', db_index=True)
     # El código de opción corresponde con el nro de lista en los archivos CSV.
     # Dado que muchas veces la justicia no le pone un código a las "sub listas"
     # en las PASO, se termina sintentizando y podría ser largo.
@@ -1242,7 +1242,7 @@ class TecnicaProyeccion(models.Model):
     Contiene una lista de AgrupacionCircuitos que debería en total cubrir a todos los circuitos
     correspondientes a la categoria que se desea proyectar.
     """
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100, db_index=True)
 
     class Meta:
         ordering = ('nombre', )

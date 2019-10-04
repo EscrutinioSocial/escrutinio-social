@@ -353,9 +353,13 @@ CACHES = {
     #     # 'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
     #     'LOCATION': '/var/tmp/django_cache',
     # }
-    'default': {
+    'dbcache': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'elecciones_cache',
+    },
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
     }
 }
 
@@ -518,7 +522,7 @@ CONSTANCE_ADDITIONAL_FIELDS = {
 }
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
-CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
+CONSTANCE_DATABASE_CACHE_BACKEND = 'dbcache'
 CONSTANCE_CONFIG = {
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
     'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text'),
@@ -554,6 +558,7 @@ if not TESTING:
 USAR_DJANGO_DEBUG_TOOLBAR = True
 
 if DEBUG and USAR_DJANGO_DEBUG_TOOLBAR:
+    # Recordar el pip install django-debug-toolbar
     INTERNAL_IPS = ['172.20.0.1']
     MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE
     INSTALLED_APPS += ['debug_toolbar']
