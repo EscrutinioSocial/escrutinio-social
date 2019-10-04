@@ -33,7 +33,7 @@ class ResultadosBase():
     la sumatoria de muchos resultados en un ResultadoCombinado
     """
     def __init__(self, resultados):
-        print("---- Creating ", self, "----")
+        print("---- Creating resultados ", resultados, "----")
         self.resultados = resultados
 
     def data(self):
@@ -44,7 +44,7 @@ class ResultadosBase():
         return dict(self.resultados)
 
     def __str__(self):
-        return f"Resultados: ({self.tabla_positivos}, {self.tabla_no_positivos})"
+        return f"Resultados: ({self.tabla_positivos()}, {self.tabla_no_positivos()})"
 
     @lru_cache(128)
     def tabla_positivos(self):
@@ -63,6 +63,7 @@ class ResultadosBase():
                       positivos y en blanco.
                     - porcentaje_total: porcentaje sobre el total de votos.
         """
+        print("tabla_positivos")
         votos_positivos = {}
         blancos = self.total_blancos() if self.total_blancos() != '-' else 0
         for partido, votos_por_opcion in self.resultados.votos_positivos.items():
@@ -96,6 +97,7 @@ class ResultadosBase():
         También incluye porcentajes calculados sobre el total de votos de la mesa.
         """
         # TODO Falta un criterio de ordenamiento para las opciones no positivas.
+        print("tabla_no_positivos")
         tabla_no_positivos = {
             nombre_opcion: {
                 "votos": votos,
@@ -126,6 +128,7 @@ class ResultadosBase():
         return self.resultados.electores_en_mesas_escrutadas
 
     def porcentaje_mesas_escrutadas(self):
+        print("porcentaje_mesas_escrutadas")
         return porcentaje(self.total_mesas_escrutadas(), self.total_mesas())
 
     def porcentaje_escrutado(self):
@@ -246,7 +249,6 @@ class ResultadoCombinado(ResultadosBase):
             }
             for partido, votos_partido in other.resultados.votos_positivos.items()
         }
-        print(self.resultados.votos_positivos)
 
         # Sumar el resto de los atributos en resultados
         for attr in ['total_mesas', 'total_mesas_escrutadas', 'electores', 'electores_en_mesas_escrutadas']:

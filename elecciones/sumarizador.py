@@ -275,17 +275,25 @@ class Sumarizador():
         # 1) Mesas.
         # Me quedo con las mesas que corresponden de acuerdo a los parámetros
         # y la categoría, que tengan la carga testigo para esa categoría.
+        print("mesas")
         mesas_escrutadas = self.mesas_escrutadas()
         total_mesas_escrutadas = mesas_escrutadas.count()
+        print(total_mesas_escrutadas)
         total_mesas = mesas.count()
+        print(total_mesas)
 
         # 2) Electores.
         electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
+        print("electores: ", electores)
         electores_en_mesas_escrutadas = mesas_escrutadas.aggregate(v=Sum('electores'))['v'] or 0
+        print("electores_en_mesas_escrutadas: ", electores_en_mesas_escrutadas)
 
         # 3) Votos
         votos_por_opcion = self.votos_por_opcion(categoria, mesas)
+        print('votos_por_opcion: ', votos_por_opcion)
         votos_positivos, votos_no_positivos = self.agrupar_votos(votos_por_opcion)
+        print("votos_positivos: ", votos_positivos)
+        print("votos_no_positivos: ", votos_no_positivos)
 
         return AttrDict({
             "total_mesas": total_mesas,
@@ -296,6 +304,7 @@ class Sumarizador():
             "votos_no_positivos": votos_no_positivos,
         })
 
+    @lru_cache(128)
     def get_resultados(self, categoria):
         """
         Realiza la contabilidad para la categoría, invocando al método ``calcular``.
