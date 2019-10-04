@@ -141,12 +141,12 @@ class Sumarizador():
         lookups_de_mesas, prefiero mantenerlos juntos
         """
 
-        # Shortcut para mesas que se resuelve por otro mecanismo
-        if self.filtros.model is Mesa:
-            return [categoria for mesa in self.filtros for categoria in mesa.categorias]
-
         lookups = Q(distrito__isnull=True)
         if self.filtros:
+            # Shortcut para mesas que se resuelve por otro mecanismo
+            if self.filtros.model is Mesa:
+                return [categoria for mesa in self.filtros for categoria in mesa.categorias]
+
             distritos = None
             secciones = None
 
