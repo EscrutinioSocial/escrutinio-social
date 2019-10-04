@@ -7,6 +7,9 @@
 {% block js %}
 {{ block.super }}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+
+<!--  <link rel="stylesheet" href="http://www.orangehilldev.com/jstree-bootstrap-theme/demo/assets/dist/themes/proton/style.css" />
+ -->
 {% endblock %}
 
  {% block head %}
@@ -20,6 +23,7 @@
  {% endblock %}
 
 {% block sidenav_items %}
+<input id="search-input" class="search-input"/>
 <div id="jstree"></div>
 <!-- <div style="width: 100%;">
   <div style="float:left;width: 20%;">
@@ -39,31 +43,52 @@
   {% for distrito in distritos %}
     // Las secciones.
     arbol_secciones = []
-    // {% for seccion in distrito.secciones.all %}
-    //   // Los circuitos.
-    //   arbol_circuitos = []
-    //   {% for circuito in seccion.circuitos.all %}
-    //     url = url_base + '?circuito=' + {{ circuito.id }}
-    //     arbol_circuitos.push({'text': '{{ circuito.nombre }}', 'a_attr': url, 'children': []})
-    //   {% endfor %}
-    //   url = url_base + '?seccion=' + {{ seccion.id }}
-    //   arbol_secciones.push({'text': '{{ seccion.nombre }}', 'a_attr': url, 'children': arbol_circuitos})
+    {% for seccion in distrito.secciones.all %}
+      // Los circuitos.
+      arbol_circuitos = []
+      {% for circuito in seccion.circuitos.all %}
+        url = url_base + '?circuito=' + {{ circuito.id }}
+        arbol_circuitos.push({'text': '{{ circuito.nombre }}', 'a_attr': url, 'children': []})
+      {% endfor %}
+      url = url_base + '?seccion=' + {{ seccion.id }}
+      arbol_secciones.push({'text': '{{ seccion.nombre }}', 'a_attr': url, 'children': arbol_circuitos})
 
-    // {% endfor %}
+    {% endfor %}
 
     url = url_base + '?distrito=' + {{ distrito.id }}
     arbol_distritos.push({'text': '{{ distrito.nombre }}', 'a_attr': url, 'children': arbol_secciones})
   {% endfor %}
   
   arbol_pais = {'text': 'Todo el país', 'a_attr': url_base, 'children': arbol_distritos}
-  
-  $('#jstree').jstree({'core': {'data': arbol_pais}}
-    ).bind("select_node.jstree", function (e, data) {
+
+  $(function () {
+  $('#jstree').jstree({
+    'core': {
+      'data': arbol_pais,
+       // 'themes': {
+       //      'name': 'proton',
+       //      'responsive': true
+       //  },
+        'plugins': [ 'search' ]
+    }
+  }).bind("select_node.jstree", function (e, data) {
       //console.log(data.node.a_attr.href);
       var href_address = data.node.a_attr.href;
       document.getElementById("resultados").innerHTML='<object type="text/html" data="'+href_address+'"  width="100%" height="800px"></object>';
       //open(href_address);
   });
+  var to = false;
+  $('.search-input').keyup(function () {
+    if(to) { clearTimeout(to); }
+    to = setTimeout(function () {
+      var v = $('.search-input').val();
+      $('#jstree').jstree('search', v);
+    }, 250);
+  });    
+});
+
+
+
 
 </script>
 {% endblock %}
