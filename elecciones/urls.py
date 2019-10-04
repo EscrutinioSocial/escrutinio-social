@@ -19,7 +19,7 @@ urlpatterns = [
     ),
     url(
         r'^resultados-nuevo-menu/(?P<categoria_id>\d+)?$',
-        views.menu_lateral_resultados,
+        cache_page(60 * 60)(views.menu_lateral_resultados),
         name='resultados-nuevo-menu'
     ),
     url(
@@ -29,7 +29,7 @@ urlpatterns = [
     ),
     url(
         r'^resultados-cuerpo-central/(?P<pk>\d+)?$',
-        views.ResultadosCategoriaCuerpoCentral.as_view(),
+        cache_page(5 * 60)(views.ResultadosCategoriaCuerpoCentral.as_view()),
         name='resultados-categoria-cuerpo-central'
     ),
     url(
@@ -47,7 +47,7 @@ urlpatterns = [
     ),
     url(
         r'^resultados-en-base-a-configuración/(?P<pk>\d+)?$',
-        views.ResultadosComputoCategoria.as_view(),        
+        views.ResultadosComputoCategoria.as_view(),
         name='resultados-en-base-a-configuración'
-    ),    
+    ),
 ]
