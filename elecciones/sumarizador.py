@@ -9,6 +9,7 @@ from .models import (
     Opcion,
     VotoMesaReportado,
     LugarVotacion,
+    Categoria,
     MesaCategoria,
     Mesa,
     TIPOS_DE_AGREGACIONES,
@@ -132,6 +133,52 @@ class Sumarizador():
             elif self.filtros.model is Mesa:
                 lookups = Q(id__in=self.filtros)
         return lookups
+
+    def categorias(self):
+        """
+        Devuelve la lista de categorias posibles de acuerdo al model recibido.
+        Esto podría no ser responsabilidad del sumarizador, pero su lógica es muy parecida a la de
+        lookups_de_mesas, prefiero mantenerlos juntos
+        """
+
+        # Shortcut para mesas que se resuelve por otro mecanismo
+        if self.filtros.model is Mesa:
+            return [categoria for mesa in self.filtros for categoria in mesa.categorias]
+
+        lookups = Q(distrito__isnull=True)
+        if self.filtros:
+            distritos = None
+            secciones = None
+
+            if self.filtros.model is Distrito:
+                distritos = self.filtros
+
+            elif self.filtros.model is SeccionPolitica:
+                # TODO Esto es dudoso porque al entrar a Buenos Aires muestra todas las categorías
+                # de diputados/senadores provinciales. Sin embargo, si lo sacamos no hay otra forma
+                # de llegar a ver esas categorías. Creo que el arbol debería incorporar las secciones
+                # políticas como un subnivel.
+                distritos = [seccion_politica.distrito for seccion_politica in self.filtros]
+
+            elif self.filtros.model is Seccion:
+                secciones = self.filtros
+
+            elif self.filtros.model is Circuito:
+                secciones = [circuito.seccion for circuito in self.filtros]
+
+            elif self.filtros.model is LugarVotacion:
+                secciones = [lugar_votacion.circuito.seccion for lugar_votacion in self.filtros]
+
+            if secciones and not distritos:
+                distritos = [seccion.distrito for seccion in secciones]
+
+            if distritos:
+                lookups = lookups | Q(distrito__in=distritos, seccion__isnull=True)
+
+            if secciones:
+                lookups = lookups | Q(seccion__in=secciones)
+
+        return Categoria.objects.filter(lookups)
 
     @lru_cache(128)
     def mesas(self, categoria):

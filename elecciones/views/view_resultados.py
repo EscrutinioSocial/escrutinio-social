@@ -117,8 +117,7 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
 
         # Para el cálculo se filtran categorías activas que estén relacionadas
         # a las mesas.
-        mesas = self.sumarizador.mesas(categoria)
-        categorias = Categoria.para_mesas(mesas)
+        categorias = self.sumarizador.categorias()
         if self.ocultar_sensibles:
             categorias = categorias.exclude(sensible=True)
 
