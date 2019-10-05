@@ -68,10 +68,13 @@ def scheduler(reconstruir_la_cola=False):
 
             for i in range(cant_unidades):
                 # Encolo tantas unidades como haga falta.
-                nuevas.append(ColaCargasPendientes(mesa_categoria = mc,
-                                                   orden = k,
-                                                   numero_carga = i,
-                                                   distrito = mc.mesa.distrito)
+                nuevas.append(
+                    ColaCargasPendientes(
+                        mesa_categoria=mc,
+                        orden=k,
+                        numero_carg=i,
+                        distrito=mc.mesa.distrito
+                    )
                 )
                 k += 1
 
@@ -83,17 +86,20 @@ def scheduler(reconstruir_la_cola=False):
         if not turno_mc and cant_fotos > 0:
             foto = next(identificaciones)
             cant_fotos -= 1
-            
+
             cant_unidades = settings.MIN_COINCIDENCIAS_IDENTIFICACION
             # Si hay alguna identificación asumimos que sólo falta una para consolidar.
             if foto.identificaciones.exists():
                 cant_unidades = 1
 
             for i in range(cant_unidades):
-                nuevas.append(ColaCargasPendientes(attachment = foto,
-                                                   orden = k,
-                                                   numero_carga = i,
-                                                   distrito = foto.distrito_preidentificacion)
+                nuevas.append(
+                    ColaCargasPendientes(
+                        attachment=foto,
+                        orden=k,
+                        numero_carga=i,
+                        distrito=foto.distrito_preidentificacion
+                    )
                 )
                 k += 1
 
