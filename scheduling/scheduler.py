@@ -1,16 +1,9 @@
 from django.db import transaction
-from django.contrib.sessions.models import Session
-from django.utils import timezone
 from constance import config
 from django.conf import settings
 from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
-from .models import ColaCargasPendientes
-
-
-def count_active_sessions():
-    sessions = Session.objects.filter(expire_date__gte=timezone.now()).count()
-    return sessions
+from .models import ColaCargasPendientes, count_active_sessions
 
 
 def scheduler(reconstruir_la_cola=False):

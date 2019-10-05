@@ -1,6 +1,8 @@
 from django.db import models, transaction, connection
-from django.conf import settings
 from django.db.models import Q, F, ExpressionWrapper, Case, When
+from django.contrib.sessions.models import Session
+from django.utils import timezone
+from django.conf import settings
 from constance import config
 
 from elecciones.models import (Distrito, Seccion, Categoria, MesaCategoria)
@@ -27,6 +29,10 @@ class ColaCargasPendientes(models.Model):
         verbose_name = 'Cola de Identificaciones y Cargas pendientes'
         verbose_name_plural = 'Cola de Identificaciones y Cargas pendientes'
 
+        indexes = [
+            models.Index(fields=['distrito', 'orden'],name='orden_distrito')
+        ]
+        
     @classmethod
     def largo_cola(cls):
         return cls.objects.count()
@@ -35,30 +41,36 @@ class ColaCargasPendientes(models.Model):
     def siguiente_tarea(cls, fiscal=None):
         """
         Obtiene la siguiente tarea de la cola.
-        El fiscal parámetro indica que deben excluirse mesascat que ya hayan sido cargadas por él.
+        El parámetro fiscal indica que deben excluirse mesascat que ya hayan sido cargadas por él, si hay poques usuaries.
         Debe invocarse dentro de una transacción.
         """
-        excluir = (Q(mesa_categoria__cargas__fiscal=fiscal) |
-                   Q(attachment__identificaciones__fiscal=fiscal)) if fiscal else Q()
+
         mesa_categoria , attachment = None , None
         
-        query = cls.objects.select_for_update(skip_locked=True).exclude(excluir)
-        
-        # Se privilegia a las tareas del distrito en las que viene trabajando el fiscal.
-        if fiscal and fiscal.distrito_afin:
-            orden_afin = Case(
-                When(distrito=fiscal.distrito_afin,
-                     then=F('orden')-config.BONUS_AFINIDAD_GEOGRAFICA
-                ),
-                default=F('orden'),
-                output_field=models.IntegerField()
-            )
-            query = query.order_by(orden_afin)
-        else:
-            query = query.order_by('orden')
-            
+        query = cls.objects.select_for_update(skip_locked=True).order_by('orden')
+        query_afin = None
+
+        if fiscal:
+            # Si hay pocos usuaries, evitamos darle tareas en la que
+            # le fiscal estuvo involucrade.
+            if count_active_sessions() < config.UMBRAL_EXCLUIR_TAREAS_FISCAL:
+                excluir = (
+                      Q(mesa_categoria__cargas__fiscal=fiscal) 
+                    | Q(attachment__identificaciones__fiscal=fiscal)
+                )
+                query = query.exclude(excluir)
+
+            # Se privilegia a las tareas del distrito en las que viene
+            # trabajando el fiscal.
+            if fiscal.distrito_afin:
+                query_afin = query.filter(distrito=fiscal.distrito_afin)
+
         item = query.first()
+
         if item:
+            item_afin = query_afin.first() if query_afin else None
+            if item_afin and item_afin.orden - config.BONUS_AFINIDAD_GEOGRAFICA <= item.orden:
+                item = item_afin
             mesa_categoria = item.mesa_categoria
             attachment = item.attachment
             item.delete()
@@ -80,6 +92,11 @@ class ColaCargasPendientes(models.Model):
 
     def __str__(self):
         return f'({self.orden}) <{self.mesa_categoria}, {self.attachment}>'
+
+
+def count_active_sessions():
+    sessions = Session.objects.filter(expire_date__gte=timezone.now()).count()
+    return sessions
 
 
 class PrioridadScheduling(models.Model):
