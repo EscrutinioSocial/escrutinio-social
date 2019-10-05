@@ -42,9 +42,7 @@ class ColaCargasPendientes(models.Model):
                    Q(attachment__identificaciones__fiscal=fiscal)) if fiscal else Q()
         mesa_categoria , attachment = None , None
         
-        query = cls.objects.select_for_update(skip_locked=True).exclude(
-            excluir
-        ).order_by('orden')
+        query = cls.objects.select_for_update(skip_locked=True).exclude(excluir)
         
         # Se privilegia a las tareas del distrito en las que viene trabajando el fiscal.
         if fiscal and fiscal.distrito_afin:
@@ -55,11 +53,9 @@ class ColaCargasPendientes(models.Model):
                 default=F('orden'),
                 output_field=models.IntegerField()
             )
-            query = cls.objects.select_for_update(skip_locked=True).exclude(
-                excluir
-            ).annotate(
-                orden_afin=orden_afin
-            ).order_by('orden_afin')
+            query = query.order_by(orden_afin)
+        else:
+            query = query.order_by('orden')
             
         item = query.first()
         if item:
