@@ -45,7 +45,7 @@ class ColaCargasPendientes(models.Model):
         Debe invocarse dentro de una transacción.
         """
 
-        mesa_categoria , attachment = None , None
+        mesa_categoria, attachment = None, None
         
         query = cls.objects.select_for_update(skip_locked=True).order_by('orden')
         query_afin = None

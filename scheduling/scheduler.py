@@ -72,7 +72,7 @@ def scheduler(reconstruir_la_cola=False):
                     ColaCargasPendientes(
                         mesa_categoria=mc,
                         orden=k,
-                        numero_carg=i,
+                        numero_carga=i,
                         distrito=mc.mesa.distrito
                     )
                 )
