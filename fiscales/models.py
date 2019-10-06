@@ -209,7 +209,6 @@ class Fiscal(models.Model):
         distrito = mesa_categoria.mesa.distrito
         self.asignar_attachment_o_mesacategoria(None, mesa_categoria, distrito)
 
-    @transaction.atomic
     def asignar_attachment_o_mesacategoria(self, attachment, mesa_categoria, distrito_afin=None):
         self.attachment_asignado = attachment
         self.mesa_categoria_asignada = mesa_categoria
