@@ -1,5 +1,7 @@
+from functools import reduce
+
 from escrutinio_social import settings
-from elecciones.models import Mesa
+from elecciones.models import Mesa, MesaCategoria
 from adjuntos.models import Attachment, PreIdentificacion
 
 
@@ -7,18 +9,11 @@ class GeneradorDatosFotos():
     def __init__(self):
         self.cantidad_mesas = None
 
-    def datos(self):
-        self.calcular()
-        return [*self.datos_comunes(), *self.datos_particulares()]
-
     def calcular(self):
         if (self.cantidad_mesas == None):
             self.cantidad_mesas = self.query_inicial_mesas().count()
             self.mesas_con_foto_identificada = self.query_inicial_mesas().exclude(attachments=None).count()
 
-
-    def datos_particulares(self):
-        return []
 
 
 class GeneradorDatosFotosNacional(GeneradorDatosFotos):
@@ -37,16 +32,6 @@ class GeneradorDatosFotosNacional(GeneradorDatosFotos):
             self.mesas_con_foto_identificada + self.fotos_con_problema_confirmado + self.fotos_en_proceso + self.fotos_sin_acciones
         )
 
-    def datos_particulares(self):
-        return [
-            DatoAvanceDeCargaResumen("Fotos con problema confirmado",
-                                     self.fotos_con_problema_confirmado, self.cantidad_mesas),
-            DatoAvanceDeCargaResumen("Fotos en proceso de identificación",
-                                     self.fotos_en_proceso, self.cantidad_mesas),
-            DatoAvanceDeCargaResumen("Fotos sin acciones de identificación",
-                                     self.fotos_sin_acciones, self.cantidad_mesas),
-            DatoAvanceDeCargaResumen("Mesas sin foto (estimado)", self.mesas_sin_foto, self.cantidad_mesas)
-        ]
 
 
 class GeneradorDatosFotosDistrital(GeneradorDatosFotos):
@@ -95,16 +80,6 @@ class GeneradorDatosPreidentificaciones():
         self.cantidad_total = None
         self.query_inicial = query_inicial
 
-    def datos(self):
-        self.calcular()
-        return [
-            DatoAvanceDeCargaResumen("Total", self.cantidad_total, self.cantidad_total),
-            DatoAvanceDeCargaResumen("Identificación a mesa confirmada",
-                                     self.identificadas, self.cantidad_total),
-            DatoAvanceDeCargaResumen("Sin identificación a mesa confirmada",
-                                     self.sin_identificar, self.cantidad_total),
-        ]
-
     def calcular(self):
         if (self.cantidad_total == None):
             self.cantidad_total = self.query_inicial.count()
@@ -134,10 +109,94 @@ class GeneradorDatosPreidentificacionesConsolidado():
         ]
 
 
-    # def query_inicial_preidentificaciones(self):
-    #     return PreIdentificacion.objects
-    # def query_inicial_preidentificaciones(self):
-    #     return PreIdentificacion.objects.filter(distrito__numero=self.distrito)
+class GeneradorDatosCarga():
+    def __init__(self, query_inicial):
+        self.query_inicial = query_inicial
+
+    def calcular(self):
+        if (self.dato_total == None):
+            self.dato_total = self.crear_dato(query_inicial)
+            self.dato_carga_confirmada = self.restringir_por_statuses(self.statuses_carga_confirmada())
+            self.dato_carga_csv = self.restringir_por_statuses(self.statuses_carga_csv())
+            self.dato_carga_en_proceso = self.restringir_por_statuses(self.statuses_carga_en_proceso())
+            self.dato_carga_sin_carga = self.restringir_por_statuses(self.statuses_sin_carga())
+            self.dato_carga_con_problemas = self.restringir_por_statuses(self.statuses_con_problemas())
+            
+    def restringir_por_statuses(self, statuses):
+        if len(statuses) == 0:
+            return self.query_inicial
+
+        queries_por_status = [self.query_inicial.filter(status=status) for status in statuses]
+        return reduce(lambda x,y: x | y, queries_por_status)
+
+    def crear_dato(self, query):
+        return query.count()
+
+    def statuses_con_problemas(self):
+        return [MesaCategoria.STATUS.con_problemas]
+
+
+class GeneradorDatosCargaParcial(GeneradorDatosCarga):
+    def statuses_carga_confirmada(self):
+        return [
+                MesaCategoria.STATUS.parcial_consolidada_csv,
+                MesaCategoria.STATUS.total_sin_consolidar,
+                MesaCategoria.STATUS.total_en_conflicto,
+                MesaCategoria.STATUS.total_consolidada_csv,
+                MesaCategoria.STATUS.total_consolidada_dc
+            ]
+
+    def statuses_carga_csv(self):
+        return [MesaCategoria.STATUS.parcial_consolidada_csv]
+
+    def statuses_carga_en_proceso(self):
+        return [MesaCategoria.STATUS.parcial_en_conflicto, MesaCategoria.STATUS.parcial_sin_consolidar]
+
+    def statuses_sin_carga(self):
+        return [MesaCategoria.STATUS.sin_cargar]
+
+
+class GeneradorDatosCargaTotal(GeneradorDatosCarga):
+    def statuses_carga_confirmada(self):
+        return [MesaCategoria.STATUS.total_consolidada_dc]
+
+    def statuses_carga_csv(self):
+        return [MesaCategoria.STATUS.total_consolidada_csv]
+
+    def statuses_carga_en_proceso(self):
+        return [MesaCategoria.STATUS.total_en_conflicto, MesaCategoria.STATUS.total_sin_consolidar]
+
+    def statuses_sin_carga(self):
+        return [
+            MesaCategoria.STATUS.parcial_consolidada_dc,
+            MesaCategoria.STATUS.parcial_consolidada_csv,
+            MesaCategoria.STATUS.parcial_en_conflicto,
+            MesaCategoria.STATUS.parcial_sin_consolidar,
+            MesaCategoria.STATUS.sin_cargar
+        ]
+
+
+
+# Con carga confirmada
+#     ('total_consolidada_dc', 'total consolidada doble carga'),
+
+# Con carga desde CSV
+#     ('total_consolidada_csv', 'total consolidada CSV'),
+
+# Con otras cargas sin confirmar
+#     ('total_sin_consolidar', 'total sin consolidar'),
+#     ('total_en_conflicto', 'total en conflicto'),
+
+# Sin carga
+#     ('parcial_consolidada_dc', 'parcial consolidada doble carga'),
+#     ('parcial_en_conflicto', 'parcial en conflicto'),
+#     ('parcial_sin_consolidar', 'parcial sin consolidar'),
+#     ('parcial_consolidada_csv', 'parcial consolidada CSV'),
+# ('sin_cargar', 'sin cargar'),
+
+# En problemas
+# ('con_problemas', 'con problemas')
+
 
 
 class DatoConNacionYPBA():
