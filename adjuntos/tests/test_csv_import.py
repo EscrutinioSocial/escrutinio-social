@@ -97,10 +97,12 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     assert 'Faltan datos en el archivo de la siguiente categoría' in str(e.value)
     assert Carga.objects.count() == 0
 
+
 def hacer_prioritaria_en_cat(categoria, opcion):
     cat_opcion = categoria.categoriaopcion_set.get(opcion=opcion)
     cat_opcion.prioritaria = True
     cat_opcion.save()
+
 
 @pytest.fixture()
 def carga_inicial(db):
@@ -358,6 +360,7 @@ def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
     assert cargas_totales.count() == 2
 
 
+@pytest.mark.django_db(transaction=True)
 def test_web_upload(fiscal_client, carga_inicial):
     archivo = 'info_resultados_ok.csv'
     content = open(PATH_ARCHIVOS_TEST + archivo, 'rb')

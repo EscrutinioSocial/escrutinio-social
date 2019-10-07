@@ -168,10 +168,14 @@ class CSVImporter:
         cant_errores_entregados = 0
         while not self.procesamiento_terminado:
             # Espero a que se produzca un nuevo error o que se termine.
-            while not self.procesamiento_terminado and cant_errores_entregados <= self.cant_errores + 1:
+            while (
+                not self.procesamiento_terminado and
+                cant_errores_entregados == self.cant_errores
+            ):
                 time.sleep(5)
-            yield self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, self.errores[cant_errores_entregados]
-            cant_errores_entregados += 1
+            if not self.procesamiento_terminado:
+                yield self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, self.errores[cant_errores_entregados]
+                cant_errores_entregados += 1
         yield self.resultados(cant_errores_entregados)
 
     def procesar_parcialmente(self):
