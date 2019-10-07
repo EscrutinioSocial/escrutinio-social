@@ -260,6 +260,8 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
     attachments_con_novedades = Attachment.objects.filter(
         identificaciones__in=ids_a_procesar
     ).distinct()
+    con_error = []
+
     for attachment in attachments_con_novedades:
         try:
             consolidar_identificaciones(attachment)
@@ -270,10 +272,31 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
                 Excepción {e} al procesar la identificación {attachment.id if attachment else None}.
                 """
             )
-            logger.error('Identificación',
+            logger.error(
+                'Identificación',
                 attachment=attachment.id if attachment else None,
                 error=str(e)
             )
+
+            try:
+                # Eliminamos los ids de las identificaciones que no se procesaron
+                # para no marcarlas como procesada=True.
+                for identificacion in attachment.identificaciones.all():
+                    ids_a_procesar.remove(identificacion.id)
+                    con_error.append(identificacion.id)
+            except Exception as e:
+                # Logueamos la excepción y continuamos.
+                capture_message(
+                    f"""
+                    Excepción {e} al manejar la excepción de la identificación
+                    {attachment.id if attachment else None}.
+                    """
+                )
+                logger.error(
+                    'Identificación (excepción)',
+                    attachment=attachment.id if attachment else None,
+                    error=str(e)
+                )
 
     # Todas procesadas (hay que seleccionar desde Identificacion porque 'a_procesar' ya fue sliceado).
     procesadas = Identificacion.objects.filter(
@@ -282,6 +305,10 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
         procesada=True,
         tomada_por_consolidador=None
     )
+    # Las que tuvieron error no están procesadas pero se liberan.
+    if con_error:
+        Carga.objects.filter(id__in=con_error).update(tomada_por_consolidador=None)
+
     return procesadas
 
 
@@ -301,9 +328,12 @@ def consumir_novedades_carga(cant_por_iteracion=None):
         ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
         Carga.objects.filter(id__in=ids_a_procesar).update(tomada_por_consolidador=ahora)
     # OJO - acá precomputar los ids_a_procesar es importante. Ver (*) al final de este doc para detalles.
+
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
         cargas__in=ids_a_procesar
     ).distinct()
+    con_error = []
+
     for mesa_categoria_con_novedades in mesa_categorias_con_novedades:
         try:
             consolidar_cargas(mesa_categoria_con_novedades)
@@ -315,10 +345,30 @@ def consumir_novedades_carga(cant_por_iteracion=None):
                 {mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None}.
                 """
             )
-            logger.error('Carga',
+            logger.error(
+                'Carga',
                 mesa_categoria=mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None,
                 error=str(e)
             )
+
+            try:
+                # Eliminamos los ids de las cargas que no se procesaron
+                # para no marcarlas como procesada=True.
+                for carga in mesa_categoria_con_novedades.cargas.all():
+                    ids_a_procesar.remove(carga.id)
+                    con_error.append(carga.id)
+            except Exception as e:
+                capture_message(
+                    f"""
+                    Excepción {e} al manejar la excepción de la mesa-categoría
+                    {mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None}.
+                    """
+                )
+                logger.error(
+                    'Carga (excepción)',
+                    mesa_categoria=mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None,
+                    error=str(e)
+                )
 
     # Todas procesadas (hay que seleccionar desde Carga porque 'a_procesar' ya fue sliceado).
     procesadas = Carga.objects.filter(
@@ -326,6 +376,10 @@ def consumir_novedades_carga(cant_por_iteracion=None):
     ).update(
         procesada=True, tomada_por_consolidador=None
     )
+    # Las que tuvieron error no están procesadas pero se liberan.
+    if con_error:
+        Carga.objects.filter(id__in=con_error).update(tomada_por_consolidador=None)
+
     return procesadas
 
 

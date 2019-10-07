@@ -1,16 +1,9 @@
 from django.db import transaction
-from django.contrib.sessions.models import Session
-from django.utils import timezone
 from constance import config
 from django.conf import settings
 from adjuntos.models import Attachment
 from elecciones.models import MesaCategoria
-from .models import ColaCargasPendientes
-
-
-def count_active_sessions():
-    sessions = Session.objects.filter(expire_date__gte=timezone.now()).count()
-    return sessions
+from .models import ColaCargasPendientes, count_active_sessions
 
 
 def scheduler(reconstruir_la_cola=False):
@@ -75,7 +68,14 @@ def scheduler(reconstruir_la_cola=False):
 
             for i in range(cant_unidades):
                 # Encolo tantas unidades como haga falta.
-                nuevas.append(ColaCargasPendientes(mesa_categoria=mc, orden=k, numero_carga=i))
+                nuevas.append(
+                    ColaCargasPendientes(
+                        mesa_categoria=mc,
+                        orden=k,
+                        numero_carga=i,
+                        distrito=mc.mesa.distrito
+                    )
+                )
                 k += 1
 
             num_cargas += 1
@@ -93,7 +93,14 @@ def scheduler(reconstruir_la_cola=False):
                 cant_unidades = 1
 
             for i in range(cant_unidades):
-                nuevas.append(ColaCargasPendientes(attachment=foto, orden=k, numero_carga=i))
+                nuevas.append(
+                    ColaCargasPendientes(
+                        attachment=foto,
+                        orden=k,
+                        numero_carga=i,
+                        distrito=foto.distrito_preidentificacion
+                    )
+                )
                 k += 1
 
             num_idents += 1

@@ -289,6 +289,12 @@ class Attachment(TimeStampedModel):
             )
         return result
 
+    @property
+    def distrito_preidentificacion(self):
+        if self.pre_identificacion is not None:
+            return self.pre_identificacion.distrito        
+        return None
+        
     def __str__(self):
         return f'{self.id} {self.foto} ({self.mimetype})'
 

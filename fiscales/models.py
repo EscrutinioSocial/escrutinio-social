@@ -138,6 +138,9 @@ class Fiscal(models.Model):
     attachment_asignado = models.ForeignKey(Attachment, related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
     mesa_categoria_asignada = models.ForeignKey(MesaCategoria, related_name='fiscal_asignado', null=True, blank=True, on_delete=models.SET_NULL)
 
+    # Distrito en el que estuvo trabajando hasta ahora.
+    distrito_afin = models.ForeignKey(Distrito, null=True, blank=True, on_delete=models.SET_NULL, related_name='fiscal_afin')
+    
     class Meta:
         verbose_name_plural = 'Fiscales'
         unique_together = (('tipo_dni', 'dni'), )
@@ -191,7 +194,8 @@ class Fiscal(models.Model):
         No se hace aquí para evitar deadlocks (ver #317), se hace desde
         acciones.py en una transacción independiente.
         """
-        self.asignar_attachment_o_mesacategoria(attachment, None)
+        distrito = attachment.distrito_preidentificacion
+        self.asignar_attachment_o_mesacategoria(attachment, None, distrito)
 
     def asignar_mesa_categoria(self, mesa_categoria):
         """
@@ -202,14 +206,20 @@ class Fiscal(models.Model):
         No se hace aquí para evitar deadlocks (ver #317), se hace desde
         acciones.py en una transacción independiente.
         """
-        self.asignar_attachment_o_mesacategoria(None, mesa_categoria)
+        distrito = mesa_categoria.mesa.distrito
+        self.asignar_attachment_o_mesacategoria(None, mesa_categoria, distrito)
 
-    @transaction.atomic
-    def asignar_attachment_o_mesacategoria(self, attachment, mesa_categoria):
+    def asignar_attachment_o_mesacategoria(self, attachment, mesa_categoria, distrito_afin=None):
         self.attachment_asignado = attachment
         self.mesa_categoria_asignada = mesa_categoria
+        self.distrito_afin = distrito_afin
         self.asignacion_ultima_tarea = timezone.now()
-        self.save(update_fields=['asignacion_ultima_tarea', 'attachment_asignado', 'mesa_categoria_asignada'])
+        self.save(update_fields=[
+            'asignacion_ultima_tarea',
+            'attachment_asignado',
+            'mesa_categoria_asignada',
+            'distrito_afin'
+        ])
 
     def resetear_timeout_asignacion_tareas(self):
         self.asignacion_ultima_tarea = None
@@ -314,10 +324,17 @@ class Fiscal(models.Model):
         self.ingreso_alguna_vez = True
         self.save(update_fields=['ingreso_alguna_vez'])
 
-
     def natural_key(self):
         return (self.tipo_dni, self.dni)
     natural_key.dependencies = ['elecciones.distrito', 'elecciones.seccion', 'auth.user']
+
+
+
+    @classmethod
+    def destrolleo_masivo(cls, actor, hasta_scoring, nuevo_scoring):
+        for fiscal in Fiscal.objects.filter(troll=True).filter(puntaje_scoring_troll__lte=hasta_scoring):
+            fiscal.quitar_marca_troll(actor, nuevo_scoring)
+
 
 
 @receiver(post_save, sender=Fiscal)
