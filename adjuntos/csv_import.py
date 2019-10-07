@@ -247,7 +247,6 @@ class CSVImporter:
         # Obtener todos los combos diferentes de: número de mesa, circuito, sección, distrito para validar
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         mesa_circuito_seccion_distrito = list(mesa for mesa, grupo in grupos_mesas)
-
         for seccion, circuito, nro_de_mesa, distrito in mesa_circuito_seccion_distrito:
             try:
                 match_mesa = Mesa.obtener_mesa_en_circuito_seccion_distrito(
@@ -257,6 +256,8 @@ class CSVImporter:
                     f'No existe mesa {nro_de_mesa} en circuito {circuito}, sección {seccion} y '
                     f'distrito {distrito}.'
                 )
+                self.log_debug(f'No existe mesa {nro_de_mesa} en circuito {circuito}, sección {seccion} y '
+                               f'distrito {distrito}.')
                 continue
             self.mesas_matches[nro_de_mesa] = match_mesa
             self.mesas.append(match_mesa)
@@ -280,6 +281,7 @@ class CSVImporter:
             # Obtengo la mesa correspondiente.
             mesa_bd = self.mesas_matches[mesa[2]]
         except KeyError:
+            self.log_debug(f"-- Mesa {mesa} no tiene match")
             # Si la mesa no existe no la importamos.
             # No acumulamos el error porque ya se hizo en la validación.
             return
