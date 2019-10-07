@@ -53,9 +53,9 @@ class GeneradorDatosFotosConsolidado():
         self.nacion.calcular()
         self.pba.calcular()
         return [
-            DatoConNacionYPBA("Cantidad de mesas", self.nacion.cantidad_mesas,
+            DatoDoble("Cantidad de mesas", self.nacion.cantidad_mesas,
                               self.nacion.cantidad_mesas, self.pba.cantidad_mesas, self.pba.cantidad_mesas),
-            DatoConNacionYPBA("Mesas con foto identificada", 
+            DatoDoble("Mesas con foto identificada", 
                                 self.nacion.mesas_con_foto_identificada, self.nacion.cantidad_mesas, 
                                 self.pba.mesas_con_foto_identificada, self.pba.cantidad_mesas),
         ]
@@ -64,13 +64,13 @@ class GeneradorDatosFotosConsolidado():
         self.nacion.calcular()
         self.pba.calcular()
         return [
-            DatoConNacionYPBA("Fotos con problema confirmado",
+            DatoDoble("Fotos con problema confirmado",
                                      self.nacion.fotos_con_problema_confirmado, self.nacion.cantidad_mesas),
-            DatoConNacionYPBA("Fotos en proceso de identificación",
+            DatoDoble("Fotos en proceso de identificación",
                                      self.nacion.fotos_en_proceso, self.nacion.cantidad_mesas),
-            DatoConNacionYPBA("Fotos sin acciones de identificación",
+            DatoDoble("Fotos sin acciones de identificación",
                                      self.nacion.fotos_sin_acciones, self.nacion.cantidad_mesas),
-            DatoConNacionYPBA("Mesas sin foto (estimado)",
+            DatoDoble("Mesas sin foto (estimado)",
                               self.nacion.mesas_sin_foto, self.nacion.cantidad_mesas)
         ]
 
@@ -98,12 +98,12 @@ class GeneradorDatosPreidentificacionesConsolidado():
         self.nacion.calcular()
         self.pba.calcular()
         return [
-            DatoConNacionYPBA("Total", self.nacion.cantidad_total,
+            DatoDoble("Total", self.nacion.cantidad_total,
                               self.nacion.cantidad_total, self.pba.cantidad_total, self.pba.cantidad_total),
-            DatoConNacionYPBA("Con identificación a mesa consolidada", 
+            DatoDoble("Con identificación a mesa consolidada", 
                               self.nacion.identificadas, self.nacion.cantidad_total, 
                               self.pba.identificadas, self.pba.cantidad_total),
-            DatoConNacionYPBA("Sin identificación a mesa consolidada", 
+            DatoDoble("Sin identificación a mesa consolidada", 
                               self.nacion.sin_identificar, self.nacion.cantidad_total, 
                               self.pba.sin_identificar, self.pba.cantidad_total),
         ]
@@ -112,15 +112,16 @@ class GeneradorDatosPreidentificacionesConsolidado():
 class GeneradorDatosCarga():
     def __init__(self, query_inicial):
         self.query_inicial = query_inicial
+        self.dato_total = None
 
     def calcular(self):
         if (self.dato_total == None):
-            self.dato_total = self.crear_dato(query_inicial)
-            self.dato_carga_confirmada = self.restringir_por_statuses(self.statuses_carga_confirmada())
-            self.dato_carga_csv = self.restringir_por_statuses(self.statuses_carga_csv())
-            self.dato_carga_en_proceso = self.restringir_por_statuses(self.statuses_carga_en_proceso())
-            self.dato_carga_sin_carga = self.restringir_por_statuses(self.statuses_sin_carga())
-            self.dato_carga_con_problemas = self.restringir_por_statuses(self.statuses_con_problemas())
+            self.dato_total = self.crear_dato(self.query_inicial)
+            self.dato_carga_confirmada = self.crear_dato(self.restringir_por_statuses(self.statuses_carga_confirmada()))
+            self.dato_carga_csv = self.crear_dato(self.restringir_por_statuses(self.statuses_carga_csv()))
+            self.dato_carga_en_proceso = self.crear_dato(self.restringir_por_statuses(self.statuses_carga_en_proceso()))
+            self.dato_carga_sin_carga = self.crear_dato(self.restringir_por_statuses(self.statuses_sin_carga()))
+            self.dato_carga_con_problemas=self.crear_dato(self.restringir_por_statuses(self.statuses_con_problemas()))
             
     def restringir_por_statuses(self, statuses):
         if len(statuses) == 0:
@@ -139,15 +140,15 @@ class GeneradorDatosCarga():
 class GeneradorDatosCargaParcial(GeneradorDatosCarga):
     def statuses_carga_confirmada(self):
         return [
-                MesaCategoria.STATUS.parcial_consolidada_csv,
+                MesaCategoria.STATUS.parcial_consolidada_dc,
                 MesaCategoria.STATUS.total_sin_consolidar,
                 MesaCategoria.STATUS.total_en_conflicto,
-                MesaCategoria.STATUS.total_consolidada_csv,
                 MesaCategoria.STATUS.total_consolidada_dc
             ]
 
     def statuses_carga_csv(self):
-        return [MesaCategoria.STATUS.parcial_consolidada_csv]
+        return [MesaCategoria.STATUS.parcial_consolidada_csv,
+                MesaCategoria.STATUS.total_consolidada_csv]
 
     def statuses_carga_en_proceso(self):
         return [MesaCategoria.STATUS.parcial_en_conflicto, MesaCategoria.STATUS.parcial_sin_consolidar]
@@ -176,37 +177,53 @@ class GeneradorDatosCargaTotal(GeneradorDatosCarga):
         ]
 
 
+class GeneradorDatosCargaConsolidado():
+    def __init__(self):
+        super().__init__()
+        self.crear_categorias()
 
-# Con carga confirmada
-#     ('total_consolidada_dc', 'total consolidada doble carga'),
+    def query_inicial(self, slug_categoria):
+        return MesaCategoria.objects.filter(categoria__slug=slug_categoria)
 
-# Con carga desde CSV
-#     ('total_consolidada_csv', 'total consolidada CSV'),
+    def datos(self):
+        self.pv.calcular()
+        self.gv.calcular()
+        return [
+            DatoDoble("Total de mesas", self.pv.dato_total, self.pv.dato_total,
+                      self.gv.dato_total, self.gv.dato_total),
+            DatoDoble("Con carga confirmada", self.pv.dato_carga_confirmada, self.pv.dato_total,
+                      self.gv.dato_carga_confirmada, self.gv.dato_total),
+            DatoDoble("Con carga desde CSV", self.pv.dato_carga_csv, self.pv.dato_total,
+                      self.gv.dato_carga_csv, self.gv.dato_total),
+            DatoDoble("Con otras cargas sin confirmar", self.pv.dato_carga_en_proceso, self.pv.dato_total,
+                      self.gv.dato_carga_en_proceso, self.gv.dato_total),
+            DatoDoble("Sin carga", self.pv.dato_carga_sin_carga, self.pv.dato_total,
+                      self.gv.dato_carga_sin_carga, self.gv.dato_total),
+            DatoDoble("Con problemas", self.pv.dato_carga_con_problemas, self.pv.dato_total,
+                      self.gv.dato_carga_con_problemas, self.gv.dato_total),
+        ]
 
-# Con otras cargas sin confirmar
-#     ('total_sin_consolidar', 'total sin consolidar'),
-#     ('total_en_conflicto', 'total en conflicto'),
 
-# Sin carga
-#     ('parcial_consolidada_dc', 'parcial consolidada doble carga'),
-#     ('parcial_en_conflicto', 'parcial en conflicto'),
-#     ('parcial_sin_consolidar', 'parcial sin consolidar'),
-#     ('parcial_consolidada_csv', 'parcial consolidada CSV'),
-# ('sin_cargar', 'sin cargar'),
-
-# En problemas
-# ('con_problemas', 'con problemas')
+class GeneradorDatosCargaParcialConsolidado(GeneradorDatosCargaConsolidado):
+    def crear_categorias(self):
+        self.pv = GeneradorDatosCargaParcial(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE))
+        self.gv = GeneradorDatosCargaParcial(self.query_inicial(settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA))
 
 
+class GeneradorDatosCargaTotalConsolidado(GeneradorDatosCargaConsolidado):
+    def crear_categorias(self):
+        self.pv = GeneradorDatosCargaTotal(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE))
+        self.gv = GeneradorDatosCargaTotal(self.query_inicial(settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA))
 
-class DatoConNacionYPBA():
-    def __init__(self, texto, cantidad_nacion, cantidad_total_nacion, cantidad_pba=None, cantidad_total_pba=None):
+
+class DatoDoble():
+    def __init__(self, texto, cantidad_1, cantidad_total_1, cantidad_2=None, cantidad_total_2=None):
         self.texto = texto
-        self.cantidad_nacion = cantidad_nacion
-        self.porcentaje_nacion = porcentaje(cantidad_nacion, cantidad_total_nacion)
-        if (cantidad_pba != None):
-            self.cantidad_pba = cantidad_pba
-            self.porcentaje_pba = porcentaje(cantidad_pba, cantidad_total_pba)
+        self.cantidad_1 = cantidad_1
+        self.porcentaje_1 = porcentaje(cantidad_1, cantidad_total_1)
+        if (cantidad_2 != None):
+            self.cantidad_2 = cantidad_2
+            self.porcentaje_2 = porcentaje(cantidad_2, cantidad_total_2)
 
 
 def porcentaje(parcial, total):

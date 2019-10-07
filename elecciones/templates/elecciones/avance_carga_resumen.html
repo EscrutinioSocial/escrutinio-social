@@ -22,6 +22,10 @@
   }
 
   .gran_titulo {
+      font-size: 140%; font-weight: bold
+  }
+
+  .titulo {
       font-size: 120%; font-weight: bold
   }
 
@@ -34,46 +38,93 @@
 
 {% block left-panel %}
 <div class="row" style="margin-top: 30px; margin-left: 20px">
-  <div class="row">
-    <div class="col s4"></div>
-    <div class="col s2 gran_titulo">Total país</div>
-    <div class="col s2"></div>
-    <div class="col s2 gran_titulo">PBA</div>
-  </div>
-
-  <div class="recuadro" style="margin-top: 0px">
-    <div class="row" style="background-color: aquamarine">
+  <div class="recuadro" style="margin-top: 0px; background-color: powderblue">
+    <div class="row" style="background-color: lightskyblue; margin-bottom: 10px; padding-bottom: 10px">
       <div class="col s12 gran_titulo">Fotos</div>
     </div>
-    {% for dato in data_fotos_nacion_pba %}
     <div class="row">
-      <div class="col s4">{{ dato.texto }}</div>
-      <div class="col s2">{{ dato.cantidad_nacion }}</div>
-      <div class="col s2">{{ dato.porcentaje_nacion }} %</div>
-      <div class="col s2">{{ dato.cantidad_pba }}</div>
-      <div class="col s2">{{ dato.porcentaje_pba }} %</div>
+      <div class="col s4"></div>
+      <div class="col s2 titulo">Total país</div>
+      <div class="col s2"></div>
+      <div class="col s2 titulo">PBA</div>
     </div>
-    {% endfor %}
-    {% for dato in data_fotos_solo_nacion %}
+    <div >
+      {% for dato in data_fotos_nacion_pba %}
+      <div class="row">
+        <div class="col s4">{{ dato.texto }}</div>
+        <div class="col s2">{{ dato.cantidad_1 }}</div>
+        <div class="col s2">{{ dato.porcentaje_1 }} %</div>
+        <div class="col s2">{{ dato.cantidad_2 }}</div>
+        <div class="col s2">{{ dato.porcentaje_2 }} %</div>
+      </div>
+      {% endfor %}
+      {% for dato in data_fotos_solo_nacion %}
+      <div class="row">
+        <div class="col s4">{{ dato.texto }}</div>
+        <div class="col s2">{{ dato.cantidad_1 }}</div>
+        <div class="col s2">{{ dato.porcentaje_1 }} %</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="recuadro" style="background-color: blanchedalmond">
+    <div class="row" style="background-color: lightcoral; margin-bottom: 10px; padding-bottom: 10px">
+      <div class="col s12 gran_titulo">Carga parcial</div>
+    </div>
+    <div class="row">
+      <div class="col s4"></div>
+      <div class="col s4 titulo">Presidente y vice</div>
+      <div class="col s4 titulo">Gobernador PBA</div>
+    </div>
+    {% for dato in data_carga_parcial %}
     <div class="row">
       <div class="col s4">{{ dato.texto }}</div>
-      <div class="col s2">{{ dato.cantidad_nacion }}</div>
-      <div class="col s2">{{ dato.porcentaje_nacion }} %</div>
+      <div class="col s2">{{ dato.cantidad_1 }}</div>
+      <div class="col s2">{{ dato.porcentaje_1 }} %</div>
+      <div class="col s2">{{ dato.cantidad_2 }}</div>
+      <div class="col s2">{{ dato.porcentaje_2 }} %</div>
     </div>
     {% endfor %}
   </div>
 
-  <div class="recuadro">
-    <div class="row" style="background-color: aquamarine">
+  <div class="recuadro" style="background-color: mistyrose">
+    <div class="row" style="background-color: lightpink; margin-bottom: 10px; padding-bottom: 10px">
+      <div class="col s12 gran_titulo">Carga total</div>
+    </div>
+    <div class="row">
+      <div class="col s4"></div>
+      <div class="col s4 titulo">Presidente y vice</div>
+      <div class="col s4 titulo">Gobernador PBA</div>
+    </div>
+    {% for dato in data_carga_total %}
+    <div class="row">
+      <div class="col s4">{{ dato.texto }}</div>
+      <div class="col s2">{{ dato.cantidad_1 }}</div>
+      <div class="col s2">{{ dato.porcentaje_1 }} %</div>
+      <div class="col s2">{{ dato.cantidad_2 }}</div>
+      <div class="col s2">{{ dato.porcentaje_2 }} %</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="recuadro" style="background-color: paleturquoise">
+    <div class="row" style="background-color: turquoise; margin-bottom: 10px; padding-bottom: 10px">
       <div class="col s12 gran_titulo">Preidentificaciones</div>
+    </div>
+    <div class="row">
+      <div class="col s4"></div>
+      <div class="col s2 titulo">Total país</div>
+      <div class="col s2"></div>
+      <div class="col s2 titulo">PBA</div>
     </div>
     {% for dato in data_preidentificaciones %}
     <div class="row">
       <div class="col s4">{{ dato.texto }}</div>
-      <div class="col s2">{{ dato.cantidad_nacion }}</div>
-      <div class="col s2">{{ dato.porcentaje_nacion }} %</div>
-      <div class="col s2">{{ dato.cantidad_pba }}</div>
-      <div class="col s2">{{ dato.porcentaje_pba }} %</div>
+      <div class="col s2">{{ dato.cantidad_1 }}</div>
+      <div class="col s2">{{ dato.porcentaje_1 }} %</div>
+      <div class="col s2">{{ dato.cantidad_2 }}</div>
+      <div class="col s2">{{ dato.porcentaje_2 }} %</div>
     </div>
     {% endfor %}
   </div>
