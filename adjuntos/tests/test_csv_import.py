@@ -231,7 +231,7 @@ def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
     assert cant_mesas_ok == 0
     assert cant_mesas_parcialmente_ok == 1
     assert "Faltan las opciones: ['JpC'] en la mesa" in errores
-    assert Carga.objects.count() == 0
+    assert Carga.objects.count() == 1
 
 
 def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
@@ -361,7 +361,7 @@ def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_web_upload(fiscal_client, carga_inicial):
+def test_web_upload_sin_errores(fiscal_client, carga_inicial):
     archivo = 'info_resultados_ok.csv'
     content = open(PATH_ARCHIVOS_TEST + archivo, 'rb')
     file = SimpleUploadedFile(archivo, content.read(), content_type="text/csv")
@@ -393,3 +393,39 @@ def test_web_upload(fiscal_client, carga_inicial):
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
     assert cargas_totales.count() == 2
+
+
+@pytest.mark.django_db(transaction=True)
+def test_web_upload_con_errores(fiscal_client, carga_inicial):
+    archivo = 'falta_jpc_carga_parcial.csv'
+    content = open(PATH_ARCHIVOS_TEST + archivo, 'rb')
+    file = SimpleUploadedFile(archivo, content.read(), content_type="text/csv")
+    data = {
+        'file_field': (file,),
+    }
+
+    assert CSVTareaDeImportacion.objects.count() == 0
+
+    response = fiscal_client.post(reverse('agregar-adjuntos-csv'), data)
+    assert response.status_code == HTTPStatus.OK
+
+    assert CSVTareaDeImportacion.objects.count() == 1
+
+    tarea = CSVTareaDeImportacion.objects.first()
+
+    assert tarea.status == CSVTareaDeImportacion.STATUS.pendiente
+
+    importar_csv = ImportarCSV()
+
+    importar_csv.wait_and_process_task()
+
+    tarea.refresh_from_db()
+
+    assert tarea.status == CSVTareaDeImportacion.STATUS.procesado
+    assert tarea.mesas_total_ok == 0
+    assert tarea.mesas_parc_ok == 1
+    assert "Faltan las opciones: ['JpC'] en la mesa" in tarea.errores
+
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    assert cargas_totales.count() == 1

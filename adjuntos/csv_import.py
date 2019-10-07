@@ -285,7 +285,7 @@ class CSVImporter:
             # Obtengo la mesa correspondiente.
             mesa_bd = self.mesas_matches[mesa[2]]
         except KeyError:
-            self.log_debug(f"-- Mesa {mesa} no tiene match")
+            self.log_debug(f"-- Mesa {mesa} no tiene match.")
             # Si la mesa no existe no la importamos.
             # No acumulamos el error porque ya se hizo en la validación.
             return
@@ -296,9 +296,11 @@ class CSVImporter:
             try:
                 self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias)
                 alguna_cat_ok = True
+                self.log_debug(f"-- {mesa_categoria.categoria} importada.")
             except ErroresAcumulados:
                 # Es sólo para evitar el commit.
                 mesa_ok = False
+                self.log_debug(f"-- {mesa_categoria.categoria} no importada.")
 
         if mesa_ok:
             self.cant_mesas_importadas += 1
