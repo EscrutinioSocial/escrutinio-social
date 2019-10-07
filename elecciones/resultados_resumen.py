@@ -64,14 +64,14 @@ class GeneradorDatosFotosConsolidado():
         self.nacion.calcular()
         self.pba.calcular()
         return [
-            DatoDoble("Fotos con problema confirmado",
-                                     self.nacion.fotos_con_problema_confirmado, self.nacion.cantidad_mesas),
             DatoDoble("Fotos en proceso de identificación",
                                      self.nacion.fotos_en_proceso, self.nacion.cantidad_mesas),
             DatoDoble("Fotos sin acciones de identificación",
                                      self.nacion.fotos_sin_acciones, self.nacion.cantidad_mesas),
             DatoDoble("Mesas sin foto (estimado)",
-                              self.nacion.mesas_sin_foto, self.nacion.cantidad_mesas)
+                              self.nacion.mesas_sin_foto, self.nacion.cantidad_mesas),
+            DatoDoble("Fotos con problema confirmado",
+                      self.nacion.fotos_con_problema_confirmado, self.nacion.cantidad_mesas),
         ]
 
 
@@ -180,11 +180,16 @@ class GeneradorDatosCargaTotal(GeneradorDatosCarga):
 class GeneradorDatosCargaConsolidado():
     def __init__(self):
         super().__init__()
+        self.query_base = MesaCategoria.objects
         self.crear_categorias()
 
     def query_inicial(self, slug_categoria):
-        return MesaCategoria.objects.filter(categoria__slug=slug_categoria)
+        return self.query_base.filter(categoria__slug=slug_categoria)
 
+    def set_query_base(self, query):
+        self.query_base = query
+        self.crear_categorias()
+        
     def datos(self):
         self.pv.calcular()
         self.gv.calcular()

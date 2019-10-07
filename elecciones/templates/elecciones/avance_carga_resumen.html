@@ -7,6 +7,10 @@
   .left-panel {
       flex-basis: 100%;
   }
+  .right-panel {
+      flex-basis: 2%;
+      min-width: 0px;
+  }
 
   table.striped > tbody > tr:nth-child(odd) {
       background-color: rgba(170, 213, 213, 0.3);
@@ -70,7 +74,14 @@
 
   <div class="recuadro" style="background-color: blanchedalmond">
     <div class="row" style="background-color: lightcoral; margin-bottom: 10px; padding-bottom: 10px">
-      <div class="col s12 gran_titulo">Carga parcial</div>
+      <div class="col s12 gran_titulo">
+        Carga parcial - 
+        {% if base_carga_parcial == 'todo' %}
+        todas las mesas
+        {% else %}
+        sólo mesas con foto identificada
+        {% endif %}
+      </div>
     </div>
     <div class="row">
       <div class="col s4"></div>
@@ -86,6 +97,22 @@
       <div class="col s2">{{ dato.porcentaje_2 }} %</div>
     </div>
     {% endfor %}
+    <div class="row">
+      <form class="col s3" action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total %}"
+        method="GET">
+        {% csrf_token %}
+        <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
+          Todas las mesas
+        </button>
+      </form>
+      <form class="col s6"
+        action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total %}" method="GET">
+        {% csrf_token %}
+        <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
+          Sólo mesas con foto identificada
+        </button>
+      </form>
+    </div>
   </div>
 
   <div class="recuadro" style="background-color: mistyrose">
@@ -130,6 +157,9 @@
   </div>
 </div>
 {% endblock left-panel %}
+
+{% block right-panel %}
+{% endblock right-panel %}
 
 {% block messages %}
 {% endblock messages %}

@@ -14,6 +14,8 @@ from constance import config
 
 import django_excel as excel
 
+from elecciones.models import MesaCategoria
+
 from .models import (
     Distrito,
     Seccion,
@@ -506,13 +508,23 @@ class AvanceDeCargaResumen(TemplateView):
 
     template_name = "elecciones/avance_carga_resumen.html"
 
+    def dispatch(self, *args, **kwargs):
+        self.base_carga_parcial = self.kwargs.get('carga_parcial')
+        self.base_carga_total = self.kwargs.get('carga_total')
+        return super().dispatch(*args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # data fotos
         generador_datos_fotos = GeneradorDatosFotosConsolidado()
+        generador_datos_carga_parcial = GeneradorDatosCargaParcialConsolidado()
+        if self.base_carga_parcial == "solo_con_fotos":
+            generador_datos_carga_parcial.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
+        context['base_carga_parcial'] = self.base_carga_parcial
+        context['base_carga_total'] = self.base_carga_total
         context['data_fotos_nacion_pba'] = generador_datos_fotos.datos_nacion_pba()
         context['data_fotos_solo_nacion'] = generador_datos_fotos.datos_solo_nacion()
         context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado().datos()
-        context['data_carga_parcial'] = GeneradorDatosCargaParcialConsolidado().datos()
+        context['data_carga_parcial'] = generador_datos_carga_parcial.datos()
         context['data_carga_total'] = GeneradorDatosCargaTotalConsolidado().datos()
         return context

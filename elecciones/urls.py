@@ -18,7 +18,7 @@ urlpatterns = [
         views.AvanceDeCargaCategoria.as_view(),
         name='avance-carga'
     ),
-    url('avance_carga_resumen',
+    url(r'^avance_carga_resumen/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)$',
         views.AvanceDeCargaResumen.as_view(), name='avance-carga-resumen'),
     url(
         r'^resultados/(?P<pk>\d+)?$',
