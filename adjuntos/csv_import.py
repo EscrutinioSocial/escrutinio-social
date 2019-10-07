@@ -137,13 +137,13 @@ class CSVImporter:
         self.log_debug(f"Usando {separador} como separador.")
         return separador
 
-    def resultados(self, cant_errores_entregados=0):
+    def resultados(self, cant_errores_ya_entregados=0):
         """
         Devuelve la cantidad de mesas importadas como primer componente de la tupla,
         la cantidad de mesas de las que se importó al menos una categoría como segundo,
         y como tercero todos aquellos errores que se pueden reportar en batch.
         """
-        errores_pendientes = self.errores[cant_errores_entregados:]
+        errores_pendientes = self.errores[cant_errores_ya_entregados:]
         return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(errores_pendientes)
 
     def procesar(self):
@@ -172,6 +172,8 @@ class CSVImporter:
                 not self.procesamiento_terminado and
                 cant_errores_entregados == self.cant_errores
             ):
+                # Dormimos unos segundos para no hacer busy-waiting y dar tiempo a que
+                # termine o se produzcan errores.
                 time.sleep(5)
             if not self.procesamiento_terminado:
                 yield self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, self.errores[cant_errores_entregados]
