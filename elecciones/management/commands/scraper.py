@@ -6,8 +6,8 @@ from django.core.management.base import BaseCommand
 from elecciones.models import Distrito, Seccion, Circuito, Eleccion, Categoria, Mesa, Partido, MesaCategoria, TIPOS_DE_AGREGACIONES, NIVELES_DE_AGREGACION, OPCIONES_A_CONSIDERAR
 from elecciones.resultados import Sumarizador
 from escrutinio_social import settings
-
-files_dir = 'scraper_data/'
+ 
+files_dir = "scraper_data/"
 regiones_file = 'regions.json'
 request_url = 'https://resultados.gob.ar/'
 escuelas_url = f"{request_url}assets/data/precincts/"
@@ -30,10 +30,9 @@ class Command(BaseCommand):
     # FIXME TODO: Por ahora no tenemos filtros. Acá habría que hacer los filtros de usuario
     def pasa_filtros(self, escuela, kwargs):
         # Las escuelas hay que buscarlas siempre, salvo que ya esté completo el envío de esas mesas....
-        return true
+        return True
 
     def cargar_circuitos(self, kwargs):
-        #FIXME TODO: Voy por aca
         self.circuitos = []
         with open(f"{files_dir}{regiones_file}") as json_file:
             valores = json.load(json_file)
@@ -51,11 +50,11 @@ class Command(BaseCommand):
     def cargar_escuelas(self, kwargs):
         self.escuelas = []
         # FIXME TODO: Ponerle un nombre declarativo a key y value. Pero todavia no se que son
-        for key_circuito, escuela in self.circuitos.items():
-            if (self.pasa_filtros(escuela, kwargs):
+        for escuela in self.circuitos:
+            if (self.pasa_filtros(escuela, kwargs)):
                 self.status(f"Se buscan todas las mesas Escrutadas del distrito: {escuela['distrito']}, seccion: {escuela['seccion']}, circuito: {escuela['circuito']}\n")
                 # FIXME, esto es feo porque busca descargar todas las escuelas. Habría que filtrar las que ya visitamos
-                for key_escuela, id_escuela in escuela['escuelas'].items():
+                for id_escuela in escuela['escuelas']:
                     self.escuelas_bajadas[id_escuela] = self.descargar_json_escuela(id_escuela)
 
     def descargar_json_escuela(self, id_escuela):
@@ -69,34 +68,35 @@ class Command(BaseCommand):
 
         '''
 
-        id = id_escuela if (id_escuela < 1000) else id_escuela // 1000
+        id = id_escuela if (int(id_escuela) < 1000) else int(id_escuela) // 1000
 
 
         # https://resultados.gob.ar/assets/data/precincts/14/s14002.json
         #https://resultados.gob.ar/assets/data/precincts/14/s14010.json
         #https://resultados.gob.ar/assets/data/precincts/7/s7455.json
         #url = f"https://resultados.gob.ar/assets/data/precincts/{id}/s{idEscuela}.json"
-        url = f"{self.escuelas_url}/{id}/s{id_escuela}.json"
+        url = f"{escuelas_url}/{id}/s{id_escuela}.json"
 
         self.status(f"descargando escuela: {url}\n")
         return self.descargar_json(url)
 
     def descargar_json(self, url):
         self.status(f"por descargar json de: {url}")  
+        headers = {}
         headers['Content-type'] = 'application/json'
         headers['Authorization'] = authorization_header 
         
-        self.status(f"heades a enviar: {resp}")  
+        self.status(f"heades a enviar: {headers}")  
         resp = requests.get(
             url,
             headers = headers
         )
     
         self.status(f"obtenido del get: {resp}")  
+        # FIXME: Ver bien cómo viene esta respuesta y que sea lo que quieren el resto
         return json.loads(resp)
-    }
 
-    def cargar_mesas(self):
+    def cargar_mesas(self, kwargs):
         self.mesas = []
         for key, value1 in self.escuelas_bajadas.items():
             for id_mesa, value in value1['datos']:
@@ -111,7 +111,6 @@ class Command(BaseCommand):
     def descargar_json_mesa(self, url):
         # https://resultados.gob.ar/assets/data/totalized_results/precincts/80/80443.json
         url = f"{mesas_url}{url}" # https://resultados.gob.ar/assets/data/totalized_results/$url
-        echo url
         return self.descargar_json(url)
 
 
@@ -194,11 +193,10 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         # FIXME TODO: Agregar los filtros
         self.filtros = kwargs
-        self.cargar_circuitos()
-        self.cargar_escuelas()
-        self.cargar_mesas()
+        self.cargar_circuitos(kwargs)
+        self.cargar_escuelas(kwargs)
+        self.cargar_mesas(kwargs)
         self.guardar_mesas()
-    }
 
         '''
         self.comparar_con_correo = kwargs['comparar_con_correo']
