@@ -35,9 +35,10 @@ ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVo
 def menu_lateral_resultados(request, categoria_id):
 
     # Si no viene categoría mandamos a PV.
+    categoria = categoria_id
     if categoria_id is None:
-        categoria_presi_y_vice = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
-        return redirect('resultados-nuevo-menu', categoria_id=categoria_presi_y_vice.id)
+        categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).id
+        return redirect('resultados-nuevo-menu', categoria_id=categoria)
 
     context = {}
     context['distritos'] = Distrito.objects.all().extra(
@@ -47,6 +48,7 @@ def menu_lateral_resultados(request, categoria_id):
         'secciones',
         'secciones__circuitos'
     ).order_by('numero_int')
+    context['cat_id'] = categoria
     return render(request, 'elecciones/menu-lateral-resultados.html', context=context)
 
 

@@ -1024,7 +1024,7 @@ class Categoria(models.Model):
     tracker = FieldTracker(fields=['prioridad'])
 
     def get_absolute_url(self):
-        return reverse('resultados-categoria', args=[self.id])
+        return reverse('resultados-nuevo-menu', args=[self.id])
 
     def get_url_avance_de_carga(self):
         return reverse('avance-carga', args=[self.id])
