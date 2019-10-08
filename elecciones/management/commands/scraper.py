@@ -93,8 +93,8 @@ class Command(BaseCommand):
         )
     
         self.status(f"obtenido del get: {resp}")  
-        # FIXME: Ver bien cómo viene esta respuesta y que sea lo que quieren el resto
-        return json.loads(resp)
+        # FIXME: Ver bien cómo viene esta respuesta y que sea lo que quieren el resto. Por ahora tira un 200 solamente y no un json
+        return json.loads(resp.text)
 
     def cargar_mesas(self, kwargs):
         self.mesas = []
