@@ -27,7 +27,6 @@ class Command(BaseCommand):
 
 
     # Toma un $value1['distrito'] . $value1['seccion'] . $value1['circuito']  y devuelve si corresponde o no.
-    # FIXME TODO: Por ahora no tenemos filtros. Acá habría que hacer los filtros de usuario
     def pasa_filtros_circuitos(self, circuito, kwargs):
         # Las escuelas hay que buscarlas siempre, salvo que ya esté completo el envío de esas mesas....
         # Puedo hacerlo con evaluación lazy ?
@@ -41,7 +40,6 @@ class Command(BaseCommand):
                     ret = ret and (kwargs["seccion"] == circuito["seccion"])
                     if (kwargs['circuito'] is not None):
                         ret = ret and (kwargs["circuito"] == circuito["circuito"])
-        self.status(f"{kwargs['distrito']} - {circuito['distrito']} - Ret: {ret}")
         return ret 
 
     def cargar_circuitos(self, kwargs):
@@ -66,7 +64,7 @@ class Command(BaseCommand):
         for circuito in self.circuitos:
             if (self.pasa_filtros_circuitos(circuito, kwargs)):
                 self.status(f"Se buscan todas las mesas Escrutadas de las escuelas de distrito: {circuito['distrito']}, seccion: {circuito['seccion']}, circuito: {circuito['circuito']}\n")
-                # FIXME, esto es feo porque busca descargar todas las escuelas. Habría que filtrar las que ya visitamos
+                # FIXME, esto es feo porque busca descargar todas las escuelas. Habría que filtrar las que ya visitamos segun timestamp o algo asi. Pero necesitamos el file de ejemplo a ver si hay ese dato
                 for id_escuela in circuito['escuelas']:
                     self.status(f"Buscando escuela: {id_escuela}")
                     # FIXME Pasarla por el filtro de escuelas y tal vez luego de mesas
