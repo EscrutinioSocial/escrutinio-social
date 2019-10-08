@@ -28,9 +28,21 @@ class Command(BaseCommand):
 
     # Toma un $value1['distrito'] . $value1['seccion'] . $value1['circuito']  y devuelve si corresponde o no.
     # FIXME TODO: Por ahora no tenemos filtros. Acá habría que hacer los filtros de usuario
-    def pasa_filtros(self, escuela, kwargs):
+    def pasa_filtros_circuitos(self, circuito, kwargs):
         # Las escuelas hay que buscarlas siempre, salvo que ya esté completo el envío de esas mesas....
-        return True
+        # Puedo hacerlo con evaluación lazy ?
+        if (kwargs['pais']): 
+            return True # Si es el país no sigo viendo nada
+        else:
+            ret = True
+            if (kwargs['distrito'] is not None): # Si no ponen pais y no ponen nada, tomamos como que es pais.
+                ret = ret and (kwargs["distrito"] == circuito["distrito"])
+                if(kwargs['seccion'] is not None):
+                    ret = ret and (kwargs["seccion"] == circuito["seccion"])
+                    if (kwargs['circuito'] is not None):
+                        ret = ret and (kwargs["circuito"] == circuito["circuito"])
+        self.status(f"{kwargs['distrito']} - {circuito['distrito']} - Ret: {ret}")
+        return ret 
 
     def cargar_circuitos(self, kwargs):
         self.circuitos = []
@@ -48,13 +60,16 @@ class Command(BaseCommand):
                     self.circuitos.append(circuito)
 
     def cargar_escuelas(self, kwargs):
+        self.status("Cargando escuelas:...")
         self.escuelas = []
         # FIXME TODO: Ponerle un nombre declarativo a key y value. Pero todavia no se que son
-        for escuela in self.circuitos:
-            if (self.pasa_filtros(escuela, kwargs)):
-                self.status(f"Se buscan todas las mesas Escrutadas del distrito: {escuela['distrito']}, seccion: {escuela['seccion']}, circuito: {escuela['circuito']}\n")
+        for circuito in self.circuitos:
+            if (self.pasa_filtros_circuitos(circuito, kwargs)):
+                self.status(f"Se buscan todas las mesas Escrutadas de las escuelas de distrito: {circuito['distrito']}, seccion: {circuito['seccion']}, circuito: {circuito['circuito']}\n")
                 # FIXME, esto es feo porque busca descargar todas las escuelas. Habría que filtrar las que ya visitamos
-                for id_escuela in escuela['escuelas']:
+                for id_escuela in circuito['escuelas']:
+                    self.status(f"Buscando escuela: {id_escuela}")
+                    # FIXME Pasarla por el filtro de escuelas y tal vez luego de mesas
                     self.escuelas_bajadas[id_escuela] = self.descargar_json_escuela(id_escuela)
 
     def descargar_json_escuela(self, id_escuela):
@@ -143,31 +158,25 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--escuela",
-                            type=int, dest="escuela",
+                            type=str, dest="escuela",
                             help=" Escuela a scrapear "
                             "(default %(default)s).",
                             default=None
                             )
-        parser.add_argument("--provincia",
-                            type=int, dest="provincia",
-                            help="Provincia a scrapear"
-                            "(default %(default)s).",
-                            default=None
-                            )
         parser.add_argument("--circuito",
-                            type=int, dest="circuito",
+                            type=str, dest="circuito",
                             help="Circuito a scrapear"
                             "(default %(default)s).",
                             default=None
                             )
         parser.add_argument("--seccion",
-                            type=int, dest="seccion",
+                            type=str, dest="seccion",
                             help="Seccion a scrapear"
                             "(default %(default)s).",
                             default=None
                             )
         parser.add_argument("--distrito",
-                            type=int, dest="distrito",
+                            type=str, dest="distrito",
                             help="Distrito a scrapear"
                             "(default %(default)s).",
                             default=None
