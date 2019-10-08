@@ -7,7 +7,7 @@ from elecciones.models import Distrito, Seccion, Circuito, Eleccion, Categoria, 
 from elecciones.resultados import Sumarizador
 from escrutinio_social import settings
 
-files_dir = 'scraper/'
+files_dir = 'scraper_data/'
 regiones_file = 'regions.json'
 request_url = 'https://resultados.gob.ar/'
 escuelas_url = f"{request_url}assets/data/precincts/"
