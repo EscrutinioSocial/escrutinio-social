@@ -144,8 +144,7 @@ class CSVImporter:
         y como tercero todos aquellos errores que se pueden reportar en batch.
         """
         errores_pendientes = self.errores[cant_errores_ya_entregados:]
-        errores = None if len(errores_pendientes) == 0 else '\n'.join(errores_pendientes)
-        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, errores
+        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(errores_pendientes)
 
     def procesar(self):
         self.validar()

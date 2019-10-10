@@ -126,14 +126,14 @@ class Command(BaseCommand):
         if not tarea.errores:
             tarea.errores = ''
         for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
-            if not error:
-                continue
+            if not error.endswith('\n'):
+                error = error + '\n'
             tarea.errores = tarea.errores + error
             i += 1
             if i == 20:
                 # Cada 20 errores grabamos.
                 i = 0
-                tarea.save_errores(cant_mesas_ok, cant_mesas_parcialmente_ok)
+                tarea.save_errores()
 
         # Si quedaron errores sin grabar los grabamos:
         if i > 0:
