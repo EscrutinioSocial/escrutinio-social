@@ -389,6 +389,7 @@ def test_web_upload_sin_errores(fiscal_client, carga_inicial):
     assert tarea.status == CSVTareaDeImportacion.STATUS.procesado
     assert tarea.mesas_total_ok == 1
     assert tarea.mesas_parc_ok == 0
+    assert tarea.errores is None
 
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
@@ -425,6 +426,7 @@ def test_web_upload_con_errores(fiscal_client, carga_inicial):
     assert tarea.mesas_total_ok == 0
     assert tarea.mesas_parc_ok == 1
     assert "Faltan las opciones: ['JpC'] en la mesa" in tarea.errores
+    assert len(tarea.errores.split('\n')) == 6  # 6 líneas de error.
 
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
