@@ -101,7 +101,7 @@ class FiscalesEnRangoScoringTroll():
 
     def porcentaje_fiscales(self):
         self.calcular()
-        return (self.cantidad * 100) / ParametrosAntitrolling.cantidad_fiscales
+        return 0 if ParametrosAntitrolling.cantidad_fiscales == 0 else (self.cantidad * 100) / ParametrosAntitrolling.cantidad_fiscales
 
     def texto_porcentaje(self):
         if self.desde_porcentaje != None and self.hasta_porcentaje != None:
