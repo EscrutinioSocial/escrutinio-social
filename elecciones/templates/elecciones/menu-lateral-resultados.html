@@ -2,6 +2,7 @@
 {% load staticfiles %}
 
 {% block title %}Resultados{% endblock %}
+{% block page_title %}Resultados{% endblock %}
 
 {% block js %}
 {{ block.super }}
@@ -11,9 +12,6 @@
  {% block head %}
     {{ block.super }}
     <link href="{% static 'elecciones/resultados.css' %}" rel="stylesheet" type="text/css">
-    <!-- 4 include the jQuery library -->
-    <!-- XXX creo que ya está jquery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
     <!-- 5 include the minified jstree source -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
@@ -98,6 +96,7 @@
       url: url_inicial,
       success: function(r) {
         document.getElementById('resultados').innerHTML=r
+        eval(document.getElementById('sumarizacion').innerHTML)
       },
       error: function(r) {
         console.log('ERROR', r)

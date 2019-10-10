@@ -171,7 +171,7 @@
 
 {% block messages %}
 
-<script type="text/javascript">
+<script type="text/javascript" id="sumarizacion">
 function aplicarSumarizacion() {
   var $select = $(this);
   var filterName = $select.attr('name');
@@ -184,7 +184,6 @@ function aplicarSumarizacion() {
 };
 
 $(document).ready(function() {
-  $('tabs').tabs();
   $('.tooltipped').tooltip();
 
   $('.show_detail').click(function(){
