@@ -1,8 +1,15 @@
 from django.contrib import admin
 from django.shortcuts import reverse
-from .models import Attachment, Identificacion
+from .models import Attachment, Identificacion, CSVTareaDeImportacion
 from django_admin_row_actions import AdminRowActionsMixin
 from django_exportable_admin.admin import ExportableAdmin
+
+
+class CSVTareaDeImportacionAdmin(AdminRowActionsMixin, admin.ModelAdmin):
+    list_display = ('id', 'csv_file', 'fiscal', 'status', 'mesas_total_ok', 'mesas_parc_ok', 'created', 'modified')
+    list_filter = ('status',)
+    search_fields = ('csv_file', 'fiscal__user__username')
+    raw_id_fields = ['fiscal']
 
 
 class IdentificacionInline(admin.StackedInline):
@@ -31,3 +38,4 @@ class AttachmentAdmin(AdminRowActionsMixin, ExportableAdmin):
 
 
 admin.site.register(Attachment, AttachmentAdmin)
+admin.site.register(CSVTareaDeImportacion, CSVTareaDeImportacionAdmin)

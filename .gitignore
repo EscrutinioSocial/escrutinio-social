@@ -117,3 +117,4 @@ crawl-resultados
 .DS_Store
 .idea
 *~
+.devcontainer.json

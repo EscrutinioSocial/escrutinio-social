@@ -289,6 +289,12 @@ class Attachment(TimeStampedModel):
             )
         return result
 
+    @property
+    def distrito_preidentificacion(self):
+        if self.pre_identificacion is not None:
+            return self.pre_identificacion.distrito        
+        return None
+        
     def __str__(self):
         return f'{self.id} {self.foto} ({self.mimetype})'
 
@@ -363,3 +369,43 @@ class PreIdentificacion(TimeStampedModel):
 
     def __str__(self):
         return f'{self.distrito} - {self.seccion} - {self.circuito} (subida por {self.fiscal})'
+
+
+class CSVTareaDeImportacion(TimeStampedModel):
+
+    csv_file = models.FileField(upload_to='csv/')
+
+    STATUS = Choices(
+        'pendiente',
+        'en_progreso',
+        'procesado'
+    )
+
+    status = StatusField(choices_name='STATUS', choices=STATUS, default=STATUS.pendiente)
+    errores = models.TextField(null=True, blank=True, default=None)
+    fiscal = models.ForeignKey(
+        'fiscales.Fiscal', null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    mesas_total_ok = models.PositiveIntegerField(default=0)
+    mesas_parc_ok = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Tarea de importación de CSV'
+        verbose_name_plural = 'Tareas de importación de CSVs'
+
+    def cambiar_status(self, status):
+        self.status = status
+        self.save(update_fields=['status'])
+
+    def fin_procesamiento(self, cant_mesas_ok, cant_mesas_parcialmente_ok):
+        self.mesas_total_ok = cant_mesas_ok
+        self.mesas_parc_ok = cant_mesas_parcialmente_ok
+        self.status = CSVTareaDeImportacion.STATUS.procesado
+        self.save(update_fields=['mesas_total_ok', 'mesas_parc_ok', 'status'])
+
+    def save_errores(self):
+        self.save(update_fields=['errores'])
+
+    def __str__(self):
+        return f'{self.id} - {self.csv_file}'

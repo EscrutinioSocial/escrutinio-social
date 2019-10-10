@@ -10,4 +10,5 @@ urlpatterns = [
         name='asignar-mesa-ub'),
     url(r'^ub/agregar$', views.AgregarAdjuntosDesdeUnidadBasica.as_view(), name="agregar-adjuntos-ub"),
     url(r'^agregar-adjuntos-csv/$', views.AgregarAdjuntosCSV.as_view(), name="agregar-adjuntos-csv"),
+    url(r'^status-importacion-csv/(?P<csv_id>\d+)$', views.status_importacion_csv, name="status-importacion-csv"),
 ]

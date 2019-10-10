@@ -14,6 +14,7 @@ from .agregar_adjuntos import AgregarAdjuntos
 
 logger = structlog.get_logger(__name__)
 
+
 class AgregarAdjuntosPreidentificar(AgregarAdjuntos):
     """
     Permite subir varias imágenes pre identificándolas.

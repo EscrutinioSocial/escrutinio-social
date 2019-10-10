@@ -1,24 +1,21 @@
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.core.serializers import serialize
 from django.db import transaction
 
 import structlog
 
 from adjuntos.forms import (
     AgregarAttachmentsForm,
-    IdentificacionForm,
     PreIdentificacionForm
 )
-from adjuntos.models import Attachment, Identificacion
-from problemas.models import Problema
 from .agregar_adjuntos import AgregarAdjuntos
 
 logger = structlog.get_logger(__name__)
 
 MENSAJE_NINGUN_ATTACHMENT_VALIDO = 'Ningún archivo es válido o nuevo.'
 MENSAJE_SOLO_UN_ACTA = 'Se debe subir una sola acta.'
+
 
 class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     """
@@ -35,7 +32,6 @@ class AgregarAdjuntosDesdeUnidadBasica(AgregarAdjuntos):
     def post(self, request, *args, **kwargs):
         form_class = self.get_form_class()
         form = self.get_form(form_class)
-        pre_identificacion_form = PreIdentificacionForm(self.request.POST)
         files = request.FILES.getlist('file_field')
 
         # No debería poder cargarse por UI más de una imagen, pero por las dudas lo chequeamos.

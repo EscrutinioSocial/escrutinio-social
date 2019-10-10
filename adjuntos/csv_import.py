@@ -82,10 +82,13 @@ class CSVImporter:
             'Nro de mesa': self.canonizar,
             'Nro de lista': self.canonizar,
         }
+        # Para evitar el warning de "Both a converter and dtype were specified",
+        # mapeo de la columna 5 en adelante a string, evitando las primeras que tienen converter.
+        dtype_dict = {i: str for i in range(5, len(COLUMNAS_DEFAULT) + 1)}
         separador = self.autodetectar_separador(archivo)
         self.df = pd.read_csv(self.archivo,
             na_values=["n/a", "na", "-"],
-            dtype=str,
+            dtype=dtype_dict,
             converters=converters,
             index_col=False,  # La primera columna no es el índice.
             sep=separador,
@@ -134,19 +137,23 @@ class CSVImporter:
         self.log_debug(f"Usando {separador} como separador.")
         return separador
 
-    def resultados(self):
+    def resultados(self, cant_errores_ya_entregados=0):
         """
         Devuelve la cantidad de mesas importadas como primer componente de la tupla,
         la cantidad de mesas de las que se importó al menos una categoría como segundo,
         y como tercero todos aquellos errores que se pueden reportar en batch.
         """
-        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(self.errores)
+        errores_pendientes = self.errores[cant_errores_ya_entregados:]
+        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(errores_pendientes)
 
     def procesar(self):
-
         self.validar()
+        return self.procesar_post_validar()
+
+    def procesar_post_validar(self):
         if self.cant_errores > 0:
             # Si hay errores en la validación no seguimos.
+            self.procesamiento_terminado = True  # Para que termine el thread de yield.
             return self.resultados()
 
         self.validar_mesas()
@@ -161,14 +168,25 @@ class CSVImporter:
         cant_errores_entregados = 0
         while not self.procesamiento_terminado:
             # Espero a que se produzca un nuevo error o que se termine.
-            while not self.procesamiento_terminado and cant_errores_entregados == self.cant_errores:
+            while (
+                not self.procesamiento_terminado and
+                cant_errores_entregados == self.cant_errores
+            ):
+                # Dormimos unos segundos para no hacer busy-waiting y dar tiempo a que
+                # termine o se produzcan errores.
                 time.sleep(5)
-            yield self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, self.errores[cant_errores_entregados]
-            cant_errores_entregados += 1
-        yield self.resultados()
+            if not self.procesamiento_terminado:
+                yield self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, self.errores[cant_errores_entregados]
+                cant_errores_entregados += 1
+        yield self.resultados(cant_errores_entregados)
 
     def procesar_parcialmente(self):
-        t = Thread(target=self.procesar)
+        try:
+            self.validar()
+        except Exception as e:
+            self.anadir_error(str(e))
+            return self.resultados()
+        t = Thread(target=self.procesar_post_validar)
         t.daemon = False
         t.start()
         return self.yield_errores()
@@ -177,7 +195,6 @@ class CSVImporter:
         self.cant_errores += 1
         texto_error = f'{self.cant_errores} - {error}'
         self.errores.append(texto_error)
-        #self.logger.error(texto_error)
 
     def log_debug(self, mensaje):
         if not self.debug:
@@ -236,7 +253,6 @@ class CSVImporter:
         # Obtener todos los combos diferentes de: número de mesa, circuito, sección, distrito para validar
         grupos_mesas = self.df.groupby(['seccion', 'circuito', 'nro de mesa', 'distrito'])
         mesa_circuito_seccion_distrito = list(mesa for mesa, grupo in grupos_mesas)
-
         for seccion, circuito, nro_de_mesa, distrito in mesa_circuito_seccion_distrito:
             try:
                 match_mesa = Mesa.obtener_mesa_en_circuito_seccion_distrito(
@@ -246,6 +262,8 @@ class CSVImporter:
                     f'No existe mesa {nro_de_mesa} en circuito {circuito}, sección {seccion} y '
                     f'distrito {distrito}.'
                 )
+                self.log_debug(f'No existe mesa {nro_de_mesa} en circuito {circuito}, sección {seccion} y '
+                               f'distrito {distrito}.')
                 continue
             self.mesas_matches[nro_de_mesa] = match_mesa
             self.mesas.append(match_mesa)
@@ -269,6 +287,7 @@ class CSVImporter:
             # Obtengo la mesa correspondiente.
             mesa_bd = self.mesas_matches[mesa[2]]
         except KeyError:
+            self.log_debug(f"-- Mesa {mesa} no tiene match.")
             # Si la mesa no existe no la importamos.
             # No acumulamos el error porque ya se hizo en la validación.
             return
@@ -279,9 +298,11 @@ class CSVImporter:
             try:
                 self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias)
                 alguna_cat_ok = True
+                self.log_debug(f"-- {mesa_categoria.categoria} importada.")
             except ErroresAcumulados:
                 # Es sólo para evitar el commit.
                 mesa_ok = False
+                self.log_debug(f"-- {mesa_categoria.categoria} no importada.")
 
         if mesa_ok:
             self.cant_mesas_importadas += 1
@@ -535,7 +556,6 @@ class CSVImporter:
             carga = self.carga_total
 
         self.log_debug(f"---- Agregando {cantidad_votos} votos a {opcion_bd} en carga {carga.tipo}.")
-        #VotoMesaReportado.objects.create(carga=carga, votos=cantidad_votos, opcion=opcion_bd)
         votos_a_cargar.append(VotoMesaReportado(carga=carga, votos=cantidad_votos, opcion=opcion_bd))
 
     def validar_usuario(self):
@@ -569,7 +589,7 @@ class CSVImporter:
                 id__in=opciones_faltantes).values_list('nombre', flat=True))
             tipo_carga = "parcial" if es_parcial else "total"
             self.anadir_error(
-                f'Los resultados para la carga {tipo_carga} para la categoría {categoria.categoria_general} '
+                f'Los resultados para la carga {tipo_carga} de la categoría {categoria.categoria_general} '
                 f'deben estar completos. '
                 f'Faltan las opciones: {nombres_opciones_faltantes} en la mesa {mesa}.')
 

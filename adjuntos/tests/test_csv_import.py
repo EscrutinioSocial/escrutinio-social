@@ -22,6 +22,8 @@ from elecciones.tests.factories import (
     MesaCategoriaFactory,
     FiscalFactory,
     UserFactory)
+from adjuntos.models import CSVTareaDeImportacion
+from elecciones.management.commands.importar_csv import Command as ImportarCSV
 
 PATH_ARCHIVOS_TEST = os.path.dirname(os.path.abspath(__file__)) + '/archivos/'
 CATEGORIAS = [('Presidente y vice', True), ('Gobernador y vice', True),
@@ -95,10 +97,12 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     assert 'Faltan datos en el archivo de la siguiente categoría' in str(e.value)
     assert Carga.objects.count() == 0
 
+
 def hacer_prioritaria_en_cat(categoria, opcion):
     cat_opcion = categoria.categoriaopcion_set.get(opcion=opcion)
     cat_opcion.prioritaria = True
     cat_opcion.save()
+
 
 @pytest.fixture()
 def carga_inicial(db):
@@ -227,7 +231,7 @@ def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
     assert cant_mesas_ok == 0
     assert cant_mesas_parcialmente_ok == 1
     assert "Faltan las opciones: ['JpC'] en la mesa" in errores
-    assert Carga.objects.count() == 0
+    assert Carga.objects.count() == 1
 
 
 def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
@@ -235,7 +239,7 @@ def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
         PATH_ARCHIVOS_TEST + 'falta_jpc_carga_total.csv', usr_unidad_basica).procesar()
     assert cant_mesas_ok == 0
     assert cant_mesas_parcialmente_ok == 1
-    assert "Los resultados para la carga total para la categoría Intendentes, Concejales y Consejeros Escolares deben estar completos. " \
+    assert "Los resultados para la carga total de la categoría Intendentes, Concejales y Consejeros Escolares deben estar completos. " \
            "Faltan las opciones: ['JpC'] en la mesa" in errores
     assert Carga.objects.count() == len(CATEGORIAS) - 1
 
@@ -356,7 +360,8 @@ def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
     assert cargas_totales.count() == 2
 
 
-def test_web_upload(fiscal_client, carga_inicial):
+@pytest.mark.django_db(transaction=True)
+def test_web_upload_sin_errores(fiscal_client, carga_inicial):
     archivo = 'info_resultados_ok.csv'
     content = open(PATH_ARCHIVOS_TEST + archivo, 'rb')
     file = SimpleUploadedFile(archivo, content.read(), content_type="text/csv")
@@ -364,9 +369,63 @@ def test_web_upload(fiscal_client, carga_inicial):
         'file_field': (file,),
     }
 
+    assert CSVTareaDeImportacion.objects.count() == 0
+
     response = fiscal_client.post(reverse('agregar-adjuntos-csv'), data)
     assert response.status_code == HTTPStatus.OK
+
+    assert CSVTareaDeImportacion.objects.count() == 1
+
+    tarea = CSVTareaDeImportacion.objects.first()
+
+    assert tarea.status == CSVTareaDeImportacion.STATUS.pendiente
+
+    importar_csv = ImportarCSV()
+
+    importar_csv.wait_and_process_task()
+
+    tarea.refresh_from_db()
+
+    assert tarea.status == CSVTareaDeImportacion.STATUS.procesado
+    assert tarea.mesas_total_ok == 1
+    assert tarea.mesas_parc_ok == 0
 
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
     assert cargas_totales.count() == 2
+
+
+@pytest.mark.django_db(transaction=True)
+def test_web_upload_con_errores(fiscal_client, carga_inicial):
+    archivo = 'falta_jpc_carga_parcial.csv'
+    content = open(PATH_ARCHIVOS_TEST + archivo, 'rb')
+    file = SimpleUploadedFile(archivo, content.read(), content_type="text/csv")
+    data = {
+        'file_field': (file,),
+    }
+
+    assert CSVTareaDeImportacion.objects.count() == 0
+
+    response = fiscal_client.post(reverse('agregar-adjuntos-csv'), data)
+    assert response.status_code == HTTPStatus.OK
+
+    assert CSVTareaDeImportacion.objects.count() == 1
+
+    tarea = CSVTareaDeImportacion.objects.first()
+
+    assert tarea.status == CSVTareaDeImportacion.STATUS.pendiente
+
+    importar_csv = ImportarCSV()
+
+    importar_csv.wait_and_process_task()
+
+    tarea.refresh_from_db()
+
+    assert tarea.status == CSVTareaDeImportacion.STATUS.procesado
+    assert tarea.mesas_total_ok == 0
+    assert tarea.mesas_parc_ok == 1
+    assert "Faltan las opciones: ['JpC'] en la mesa" in tarea.errores
+
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    assert cargas_totales.count() == 1

@@ -18,6 +18,7 @@ from problemas.forms import IdentificacionDeProblemaForm
 
 logger = structlog.get_logger(__name__)
 
+
 class IdentificacionCreateView(CreateView):
     """
     Esta es la vista que permite clasificar un acta,

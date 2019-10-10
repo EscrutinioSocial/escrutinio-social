@@ -88,19 +88,19 @@ def consolidar_cargas_con_problemas(cargas_que_reportan_problemas):
 
     return MesaCategoria.STATUS.con_problemas, None
 
+
 @transaction.atomic
-def consolidar_cargas(mesa_categoria):
+def consolidar_cargas_sin_antitrolling(mesa_categoria):
     """
     Consolida todas las cargas de la MesaCategoria parámetro.
+
+    El efecto antitrolling se trabaja por separado para hacerlo
+    por fuera de la transacción y evitar deadlocks.
     """
     statuses_que_permiten_analizar_carga_total = [
         MesaCategoria.STATUS.sin_cargar,
         MesaCategoria.STATUS.parcial_consolidada_dc,
         MesaCategoria.STATUS.parcial_consolidada_csv
-    ]
-    statuses_que_requieren_computar_efecto_trolling = [
-        MesaCategoria.STATUS.parcial_consolidada_dc,
-        MesaCategoria.STATUS.total_consolidada_dc
     ]
 
     # Por lo pronto el status es sin_cargar.
@@ -150,6 +150,20 @@ def consolidar_cargas(mesa_categoria):
             )
 
     mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
+    return status_resultante
+
+
+def consolidar_cargas(mesa_categoria):
+    """
+    Consolida todas las cargas de la MesaCategoria parámetro y computa el efecto antitrolling.
+    """
+    statuses_que_requieren_computar_efecto_trolling = [
+        MesaCategoria.STATUS.parcial_consolidada_dc,
+        MesaCategoria.STATUS.total_consolidada_dc
+    ]
+    status_resultante = consolidar_cargas_sin_antitrolling(mesa_categoria)
+
+    # Esto lo hacemos fuera de la transición para evitar deadlock (ver #337).
     if status_resultante in statuses_que_requieren_computar_efecto_trolling:
         efecto_scoring_troll_confirmacion_carga(mesa_categoria)
 
@@ -266,22 +280,37 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
         try:
             consolidar_identificaciones(attachment)
         except Exception as e:
-            # Eliminamos los ids de las identificaciones que no se procesaron
-            # para no marcarlas como procesada=True.
-            for identificacion in attachment.identificaciones.all():
-                ids_a_procesar.remove(identificacion.id)
-                con_error.append(identificacion.id)
-
             # Logueamos la excepción y continuamos.
             capture_message(
                 f"""
                 Excepción {e} al procesar la identificación {attachment.id if attachment else None}.
                 """
             )
-            logger.error('Identificación',
+            logger.error(
+                'Identificación',
                 attachment=attachment.id if attachment else None,
                 error=str(e)
             )
+
+            try:
+                # Eliminamos los ids de las identificaciones que no se procesaron
+                # para no marcarlas como procesada=True.
+                for identificacion in attachment.identificaciones.all():
+                    ids_a_procesar.remove(identificacion.id)
+                    con_error.append(identificacion.id)
+            except Exception as e:
+                # Logueamos la excepción y continuamos.
+                capture_message(
+                    f"""
+                    Excepción {e} al manejar la excepción de la identificación
+                    {attachment.id if attachment else None}.
+                    """
+                )
+                logger.error(
+                    'Identificación (excepción)',
+                    attachment=attachment.id if attachment else None,
+                    error=str(e)
+                )
 
     # Todas procesadas (hay que seleccionar desde Identificacion porque 'a_procesar' ya fue sliceado).
     procesadas = Identificacion.objects.filter(
@@ -323,12 +352,6 @@ def consumir_novedades_carga(cant_por_iteracion=None):
         try:
             consolidar_cargas(mesa_categoria_con_novedades)
         except Exception as e:
-            # Eliminamos los ids de las cargas que no se procesaron
-            # para no marcarlas como procesada=True.
-            for carga in mesa_categoria_con_novedades.cargas.all():
-                ids_a_procesar.remove(carga.id)
-                con_error.append(carga.id)
-
             # Logueamos la excepción y continuamos.
             capture_message(
                 f"""
@@ -336,10 +359,30 @@ def consumir_novedades_carga(cant_por_iteracion=None):
                 {mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None}.
                 """
             )
-            logger.error('Carga',
+            logger.error(
+                'Carga',
                 mesa_categoria=mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None,
                 error=str(e)
             )
+
+            try:
+                # Eliminamos los ids de las cargas que no se procesaron
+                # para no marcarlas como procesada=True.
+                for carga in mesa_categoria_con_novedades.cargas.all():
+                    ids_a_procesar.remove(carga.id)
+                    con_error.append(carga.id)
+            except Exception as e:
+                capture_message(
+                    f"""
+                    Excepción {e} al manejar la excepción de la mesa-categoría
+                    {mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None}.
+                    """
+                )
+                logger.error(
+                    'Carga (excepción)',
+                    mesa_categoria=mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None,
+                    error=str(e)
+                )
 
     # Todas procesadas (hay que seleccionar desde Carga porque 'a_procesar' ya fue sliceado).
     procesadas = Carga.objects.filter(
@@ -369,7 +412,8 @@ def consumir_novedades(cant_por_iteracion=None):
     None se interpreta como sin límite.
     """
     liberar_mesacategorias_y_attachments()
-    return (consumir_novedades_identificacion(cant_por_iteracion), 
+    return (
+        consumir_novedades_identificacion(cant_por_iteracion),
         consumir_novedades_carga(cant_por_iteracion)
     )
 
@@ -384,7 +428,7 @@ def actualizar_orden_de_carga(sender, instance=None, created=False, **kwargs):
             mc.actualizar_coeficiente_para_orden_de_carga()
 
 # (*) Explicación de por qué es necesario obtener los ids de las cargas:
-# 
+#
 # Si en lugar de hacer esto, al final se ejecuta
 #    a_procesar.update(procesada=True)
 # entonces se pasa a procesadas **todas** las cargas que tuvieren procesada=False
