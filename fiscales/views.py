@@ -264,7 +264,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     """
     fiscal = request.user.fiscal
     mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
-    modo = desde_ub or request.GET.get('modo_ub', False)
+    modo_ub = desde_ub or request.GET.get('modo_ub', False)
 
     # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
     if fiscal.mesa_categoria_asignada != mesa_categoria:
