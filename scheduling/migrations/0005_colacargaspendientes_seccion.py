@@ -17,4 +17,8 @@ class Migration(migrations.Migration):
             name='seccion',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='elecciones.Seccion'),
         ),
+        migrations.AddIndex(
+            model_name='colacargaspendientes',
+            index=models.Index(fields=['seccion', 'orden'], name='orden_seccion'),
+        ),
     ]

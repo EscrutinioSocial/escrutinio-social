@@ -32,7 +32,8 @@ class ColaCargasPendientes(models.Model):
         verbose_name_plural = 'Cola de Identificaciones y Cargas pendientes'
 
         indexes = [
-            models.Index(fields=['distrito', 'orden'], name='orden_distrito')
+            models.Index(fields=['distrito', 'orden'], name='orden_distrito'),
+            models.Index(fields=['seccion', 'orden'], name='orden_seccion')
         ]
 
     @classmethod
