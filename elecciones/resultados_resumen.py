@@ -100,10 +100,10 @@ class GeneradorDatosPreidentificacionesConsolidado():
         return [
             DatoDoble("Total", self.nacion.cantidad_total,
                               self.nacion.cantidad_total, self.pba.cantidad_total, self.pba.cantidad_total),
-            DatoDoble("Con identificación a mesa consolidada", 
+            DatoDoble("Con identificación consolidada", 
                               self.nacion.identificadas, self.nacion.cantidad_total, 
                               self.pba.identificadas, self.pba.cantidad_total),
-            DatoDoble("Sin identificación a mesa consolidada", 
+            DatoDoble("Sin identificación consolidada", 
                               self.nacion.sin_identificar, self.nacion.cantidad_total, 
                               self.pba.sin_identificar, self.pba.cantidad_total),
         ]
@@ -198,7 +198,7 @@ class GeneradorDatosCargaConsolidado():
                       self.gv.dato_total, self.gv.dato_total),
             DatoDoble("Con carga confirmada", self.pv.dato_carga_confirmada, self.pv.dato_total,
                       self.gv.dato_carga_confirmada, self.gv.dato_total),
-            DatoDoble("Con carga desde CSV", self.pv.dato_carga_csv, self.pv.dato_total,
+            DatoDoble("Con carga desde CSV sin confirmar", self.pv.dato_carga_csv, self.pv.dato_total,
                       self.gv.dato_carga_csv, self.gv.dato_total),
             DatoDoble("Con otras cargas sin confirmar", self.pv.dato_carga_en_proceso, self.pv.dato_total,
                       self.gv.dato_carga_en_proceso, self.gv.dato_total),

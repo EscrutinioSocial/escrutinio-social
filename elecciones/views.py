@@ -520,11 +520,14 @@ class AvanceDeCargaResumen(TemplateView):
         generador_datos_carga_parcial = GeneradorDatosCargaParcialConsolidado()
         if self.base_carga_parcial == "solo_con_fotos":
             generador_datos_carga_parcial.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
+        generador_datos_carga_total = GeneradorDatosCargaTotalConsolidado()
+        if self.base_carga_total == "solo_con_fotos":
+            generador_datos_carga_total.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
         context['base_carga_parcial'] = self.base_carga_parcial
         context['base_carga_total'] = self.base_carga_total
         context['data_fotos_nacion_pba'] = generador_datos_fotos.datos_nacion_pba()
         context['data_fotos_solo_nacion'] = generador_datos_fotos.datos_solo_nacion()
         context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado().datos()
         context['data_carga_parcial'] = generador_datos_carga_parcial.datos()
-        context['data_carga_total'] = GeneradorDatosCargaTotalConsolidado().datos()
+        context['data_carga_total'] = generador_datos_carga_total.datos()
         return context

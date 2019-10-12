@@ -98,13 +98,16 @@
     </div>
     {% endfor %}
     <div class="row">
-      <form class="col s3" action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total %}"
+      {% if base_carga_parcial == 'solo_con_fotos' %}
+      <form class="col s6" action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total %}"
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
           Todas las mesas
         </button>
       </form>
+      {% endif %}
+      {% if base_carga_parcial == 'todo' %}
       <form class="col s6"
         action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total %}" method="GET">
         {% csrf_token %}
@@ -112,6 +115,7 @@
           Sólo mesas con foto identificada
         </button>
       </form>
+      {% endif %}
     </div>
   </div>
 
@@ -133,6 +137,26 @@
       <div class="col s2">{{ dato.porcentaje_2 }} %</div>
     </div>
     {% endfor %}
+    <div class="row">
+      {% if base_carga_total == 'solo_con_fotos' %}
+      <form class="col s6" action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="todo" %}"
+        method="GET">
+        {% csrf_token %}
+        <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">
+          Todas las mesas
+        </button>
+      </form>
+      {% endif %}
+      {% if base_carga_total == 'todo' %}
+      <form class="col s6"
+        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" %}" method="GET">
+        {% csrf_token %}
+        <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">
+          Sólo mesas con foto identificada
+        </button>
+      </form>
+      {% endif %}
+    </div>
   </div>
 
   <div class="recuadro" style="background-color: paleturquoise">
