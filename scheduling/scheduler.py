@@ -31,7 +31,7 @@ def scheduler(reconstruir_la_cola=False):
     attachments_sin_identificar = Attachment.objects.sin_identificar(for_update=False)
 
     cant_fotos = attachments_sin_identificar.count()
-    cant_cargas = mc_con_carga_pendiente.count()
+    cant_cargas = MesaCategoria.objects.con_carga_parcial_pendiente().count()
 
     identificaciones = iter(attachments_sin_identificar.priorizadas())
     cargas = iter(mc_con_carga_pendiente.ordenadas_por_prioridad_batch())

@@ -51,7 +51,7 @@ def elegir_siguiente_accion_en_el_momento(request):
     con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True)
 
     cant_fotos = attachments.count()
-    cant_cargas = con_carga_pendiente.count()
+    cant_cargas = MesaCategoria.objects.con_carga_parcial_pendiente().count()
 
     # Mandamos al usuario a identificar mesas si hay fotos y no hay cargas pendientes
     # o si la cantidad de mesas a identificar supera a la cantidad de cargas pendientes
