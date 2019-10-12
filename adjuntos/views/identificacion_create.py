@@ -13,6 +13,8 @@ import structlog
 
 from adjuntos.forms import IdentificacionForm
 from adjuntos.models import Attachment, Identificacion
+from adjuntos.consolidacion import consolidar_identificaciones
+from fiscales.acciones import redirect_siguiente_accion
 from problemas.models import Problema
 from problemas.forms import IdentificacionDeProblemaForm
 
@@ -36,7 +38,9 @@ class IdentificacionCreateView(CreateView):
         return response
 
     def get_success_url(self):
-        return reverse('siguiente-accion')
+        modo_ub = self.request.GET.get('modo_ub', False)
+
+        return redirect_siguiente_accion(modo_ub)
 
     def identificacion(self):
         return self.object
@@ -105,17 +109,27 @@ class IdentificacionCreateView(CreateView):
         return context
 
     def form_invalid(self, form):
-        logger.info('Error identificacion', id=self.attachment.id)
+        logger.info('Error identificación', id=self.attachment.id)
         return super().form_invalid(form)
 
     @transaction.atomic
     def form_valid(self, form):
+        modo_ub = self.request.GET.get('modo_ub', False)
         identificacion = form.save(commit=False)
         identificacion.status = Attachment.STATUS.identificada
         identificacion.fiscal = self.request.user.fiscal
         identificacion.attachment = self.attachment
+
+        if modo_ub:
+            identificacion.source = Identificacion.SOURCES.csv
+
         identificacion.save()
         self.attachment.desasignar_a_fiscal()  # Le bajamos la cuenta.
+
+        if modo_ub:
+            # Como viene desde una UB consolidamos el attachment.
+            consolidar_identificaciones(identificacion.attachment)
+
         messages.info(
             self.request,
             f'Mesa Nº {identificacion.mesa} - circuito {identificacion.mesa.circuito} identificada',

@@ -1,4 +1,5 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, reverse
+from urllib.parse import urlencode
 from django.db import transaction
 from constance import config
 
@@ -20,12 +21,13 @@ def elegir_siguiente_accion(request):
     """
     Define la siguiente acción en base a la cola de tareas preexistente.
     """
+    modo_ub = request.GET.get('modo_ub') and request.user.fiscal.esta_en_grupo('unidades basicas')
     with transaction.atomic():
-        (mesa_categoria, foto) = ColaCargasPendientes.siguiente_tarea(request.user.fiscal)
+        (mesa_categoria, foto) = ColaCargasPendientes.siguiente_tarea(request.user.fiscal, modo_ub)
         if mesa_categoria:
-            return CargaCategoriaEnActa(request, mesa_categoria)
+            return CargaCategoriaEnActa(request, mesa_categoria, modo_ub)
         if foto:
-            return IdentificacionDeFoto(request, foto)
+            return IdentificacionDeFoto(request, foto, modo_ub)
         siguiente = elegir_siguiente_accion_en_el_momento(request) if config.ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA else NoHayAccion(request)
     return siguiente
 
@@ -66,22 +68,47 @@ def elegir_siguiente_accion_en_el_momento(request):
     return NoHayAccion(request)
 
 
+
 class IdentificacionDeFoto():
     """
     Acción de identificación de una foto (attachment).
     """
 
-    def __init__(self, request, attachment):
+    def __init__(self, request, attachment, modo_ub=False):
         self.request = request
         self.attachment = attachment
+        self.modo_ub = modo_ub
         # Asignamos el attachment al fiscal.
         request.user.fiscal.asignar_attachment(attachment)
         # Se registra que fue asignado a un fiscal.
         attachment.asignar_a_fiscal()
 
     def ejecutar(self):
-        # Se realiza el redirect
-        return redirect('asignar-mesa', attachment_id=self.attachment.id)
+        # Se realiza el redirect.
+        #return redirect('asignar-mesa', attachment_id=self.attachment.id)
+        base_url = reverse('asignar-mesa', kwargs={'attachment_id': self.attachment.id})
+        return redirect_con_modo_ub_opcional(base_url, self.modo_ub)
+
+
+def redirect_con_modo_ub_opcional(base_url, modo_ub):
+    if not modo_ub:
+        return redirect(base_url)
+    query_string = urlencode({'modo_ub': modo_ub})
+    url = f'{base_url}?{query_string}'
+    return redirect(url)
+
+
+def redirect_siguiente_accion(modo_ub):
+    """
+    Devuelve un reverse que apunta a siguiente acción con el parámetro modo_ub como corresponde.
+    """
+    base_url = reverse('siguiente-accion')
+    if not modo_ub:
+        # Shortcut.
+        return base_url
+    query_string = urlencode({'modo_ub': modo_ub})
+    url = f'{base_url}?{query_string}'
+    return url
 
 
 class CargaCategoriaEnActa():
@@ -91,9 +118,10 @@ class CargaCategoriaEnActa():
     de la configuracion de la categoría.
     """
 
-    def __init__(self, request, mc):
+    def __init__(self, request, mc, modo_ub=False):
         self.request = request
         self.mc = mc
+        self.modo_ub = modo_ub
         # Se marca que se inicia una carga.
         request.user.fiscal.asignar_mesa_categoria(mc)
         mc.asignar_a_fiscal()
@@ -108,8 +136,12 @@ class CargaCategoriaEnActa():
                     MesaCategoria.STATUS.parcial_consolidada_csv,
                 ]):
             # Sólo si la categoría requiere parciales y las parciales no están consolidadas.
-            return redirect('carga-parcial', mesacategoria_id=self.mc.id)
-        return redirect('carga-total', mesacategoria_id=self.mc.id)
+            url_base = 'carga-parcial'
+        else:
+            url_base = 'carga-total'
+
+        base_url = reverse(url_base, kwargs={'mesacategoria_id': self.mc.id})
+        return redirect_con_modo_ub_opcional(base_url, self.modo_ub)
 
 
 class NoHayAccion():

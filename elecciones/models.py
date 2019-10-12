@@ -666,6 +666,9 @@ class MesaCategoria(models.Model):
             mesa_cat.recalcular_coeficiente_para_orden_de_carga()
         cls.objects.bulk_update(mesa_cats, ['coeficiente_para_orden_de_carga'])
 
+    def __str__(self):
+        return f'Mesa {self.mesa} - cat {self.categoria}'
+
 
 class Mesa(models.Model):
     """
@@ -779,6 +782,10 @@ class Mesa(models.Model):
     @property
     def distrito(self):
         return self.circuito.seccion.distrito
+
+    @property
+    def seccion(self):
+        return self.circuito.seccion
 
 
 class Partido(models.Model):

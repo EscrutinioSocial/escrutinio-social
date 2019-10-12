@@ -53,7 +53,7 @@ def scheduler(reconstruir_la_cola=False):
         )
 
         if turno_mc:
-            # Mantenemos el invariante que `cant_cargas >=0` y si
+            # Mantenemos el invariante que `cant_cargas >= 0` y si
             # estamos en este punto sabemos que `cant_cargas > 0`.
             mc = next(cargas)
             cant_cargas -= 1
@@ -74,7 +74,7 @@ def scheduler(reconstruir_la_cola=False):
                         orden=k,
                         numero_carga=i,
                         distrito=mc.mesa.distrito,
-                        seccion=mc.mesa.distrito.seccion
+                        seccion=mc.mesa.seccion
                     )
                 )
                 k += 1
