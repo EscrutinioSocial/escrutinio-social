@@ -15,11 +15,11 @@
     <!-- 5 include the minified jstree source -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
-    <!-- <link rel="stylesheet" href="http://www.orangehilldev.com/jstree-bootstrap-theme/demo/assets/dist/themes/proton/style.css" /> -->
+    <link rel="stylesheet" href="http://www.orangehilldev.com/jstree-bootstrap-theme/demo/assets/dist/themes/proton/style.css" />
  {% endblock %}
 
 {% block sidenav_items %}
-<li><input id="search-input" class="search-input"/></li>
+<li class="jstree-search"><input id="search-input" placeholder="Buscador"/></li>
 <li style="overflow: auto; height: calc(100% - 240px);"><div id="jstree"></div></li>
 <script>
   // Construyo el árbol.
@@ -71,7 +71,15 @@
   $(function () {
     $('#jstree').jstree({
       'core': {
-        'data': arbol_pais
+        'data': arbol_pais,
+        'themes': {
+          'name': 'proton'
+        },
+      },
+      'plugins': ['search'],
+      'search':  {
+        'case_sensitive': false,
+        'show_only_matches': false
       }
     })
 
@@ -89,6 +97,15 @@
         }
       });
       return false;
+    });
+
+    var to = false;
+    $('#search-input').keyup(function () {
+      if(to) { clearTimeout(to); }
+      to = setTimeout(function () {
+        var v = $('#search-input').val();
+        $('#jstree').jstree(true).search(v);
+      }, 250);
     });
 
     // Carga inicial de los resultados en base a la url_inicial
