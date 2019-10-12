@@ -17,7 +17,7 @@ class IdentificacionCreateViewDesdeUnidadBasica(IdentificacionCreateView):
     def get_success_url(self):
         identificacion = self.object
         mesa_id = identificacion.mesa.id
-        return reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_id})
+        return reverse('cargar-desde-ub', kwargs={'mesa_id': mesa_id})
 
     @transaction.atomic
     def form_valid(self, form):
