@@ -73,7 +73,8 @@ def scheduler(reconstruir_la_cola=False):
                         mesa_categoria=mc,
                         orden=k,
                         numero_carga=i,
-                        distrito=mc.mesa.distrito
+                        distrito=mc.mesa.distrito,
+                        seccion=mc.mesa.distrito.seccion
                     )
                 )
                 k += 1
@@ -98,7 +99,8 @@ def scheduler(reconstruir_la_cola=False):
                         attachment=foto,
                         orden=k,
                         numero_carga=i,
-                        distrito=foto.distrito_preidentificacion
+                        distrito=foto.distrito_preidentificacion,
+                        seccion=foto.seccion_preidentificacion
                     )
                 )
                 k += 1
