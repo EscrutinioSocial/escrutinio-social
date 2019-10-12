@@ -680,7 +680,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     Es un test desaconsejadamente largo, pero me sirvió para entender el escenario.
     Se hace un recorrido por la carga de dos categorías desde una UB.
 
-    Cuando se llama a procesar-acta-mesa, cuando va por GET, es para cargar el template carga-ub.html.
+    Cuando se llama a cargar-desde-ub, cuando va por GET, es para cargar el template carga-ub.html.
     Cuando se le pega con POST, va a cargar un resultado.
 
     Cuando ya no tiene más categorías para cargar, te devuelve a agregar-adjunto-ub
@@ -721,7 +721,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     categoria_2.nombre = 'Otro nombre'
     categoria_2.save(update_fields=['nombre'])
 
-    url_carga = reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+    url_carga = reverse('cargar-desde-ub', kwargs={'mesa_id': mesa.id})
     response = fiscal_client.get(url_carga)
 
     # Nos aseguramos que haya cargado el template específico para UB. No es una redirección.
@@ -735,11 +735,11 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     with django_assert_num_queries(48):
         response = fiscal_client.post(url_carga, request_data)
 
-    # Tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
+    # Tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a cargar-desde-ub
     carga = Carga.objects.get()
     assert carga.tipo == Carga.TIPOS.total
     assert response.status_code == HTTPStatus.FOUND
-    assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+    assert response.url == reverse('cargar-desde-ub', kwargs={'mesa_id': mesa.id})
 
     # Hacemos el get hacia donde nos manda el redirect. Esto hace el take.
     response = fiscal_client.get(response.url)
@@ -755,7 +755,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
 
     # Me lleva a continuar con el workflow.
     assert response.status_code == HTTPStatus.FOUND
-    assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+    assert response.url == reverse('cargar-desde-ub', kwargs={'mesa_id': mesa.id})
 
     # La mesa no tiene más categorías, nos devuelve a la pantalla de carga de adjuntos.
 
@@ -767,7 +767,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
 
 def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
     mesa_id_inexistente = 673162312
-    url = reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_id_inexistente})
+    url = reverse('cargar-desde-ub', kwargs={'mesa_id': mesa_id_inexistente})
     response = fiscal_client.get(url)
     assert response.status_code == HTTPStatus.NOT_FOUND
 

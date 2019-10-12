@@ -377,7 +377,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
         if not is_valid:
             logger.info('carga error', mc=mesa_categoria.id, tipo=tipo, ub=desde_ub)
 
-        redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', args=[mesa.id])
+        redirect_to = 'siguiente-accion' if not desde_ub else reverse('cargar-desde-ub', args=[mesa.id])
         return redirect(redirect_to)
 
     # Llega hasta acá si hubo error o viene de un GET
@@ -392,7 +392,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             'recibir_problema': 'problema',
             'dato_id': mesa_categoria.id,
             'form_problema': IdentificacionDeProblemaForm(),
-            'action': reverse('procesar-acta-mesa', args=[mesa.id]) if desde_ub else None,
+            'action': reverse('cargar-desde-ub', args=[mesa.id]) if desde_ub else None,
         }
     )
 

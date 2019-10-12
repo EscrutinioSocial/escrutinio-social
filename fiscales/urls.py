@@ -15,7 +15,7 @@ urlpatterns = [
     url('^referidos$', views.referidos, name='referidos'),
     url('^siguiente/$', views.realizar_siguiente_accion, name='siguiente-accion'),
 
-    url('^ub/carga/(?P<mesa_id>\d+)$', views.cargar_desde_ub, name='procesar-acta-mesa'),
+    url('^ub/carga/(?P<mesa_id>\d+)$', views.cargar_desde_ub, name='cargar-desde-ub'),
     url('^carga/(?P<mesacategoria_id>\d+)$', views.carga, name='carga-total'),
     url('^carga-parcial/(?P<mesacategoria_id>\d+)$', views.carga, {'tipo': 'parcial'}, name='carga-parcial'),
     url(r'^carga/(?P<mesacategoria_id>\d+)/problema$', views.ReporteDeProblemaCreateView.as_view(), name='problema'),
