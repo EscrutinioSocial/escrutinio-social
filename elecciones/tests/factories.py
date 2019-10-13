@@ -237,6 +237,11 @@ class IdentificacionFactory(DjangoModelFactory):
     fiscal = factory.SubFactory(FiscalFactory)
 
 
+class PreidentificacionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'adjuntos.PreIdentificacion'
+
+
 class ProblemaFactory(DjangoModelFactory):
 
     class Meta:
