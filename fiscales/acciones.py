@@ -85,7 +85,6 @@ class IdentificacionDeFoto():
 
     def ejecutar(self):
         # Se realiza el redirect.
-        #return redirect('asignar-mesa', attachment_id=self.attachment.id)
         base_url = reverse('asignar-mesa', kwargs={'attachment_id': self.attachment.id})
         return redirect_con_modo_ub_opcional(base_url, self.modo_ub)
 

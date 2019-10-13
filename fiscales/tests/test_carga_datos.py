@@ -447,6 +447,7 @@ def test_siguiente_happy_path_parcial_y_total_con_scheduler(db, fiscal_client, s
     assert response.status_code == HTTPStatus.OK
     assert 'No hay actas para cargar' in str(response.content)
 
+
 def test_siguiente_manda_a_parcial_si_es_requerido_sin_scheduler(db, client, setup_groups, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
     m1 = MesaFactory()
@@ -770,6 +771,66 @@ def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
     url = reverse('cargar-desde-ub', kwargs={'mesa_id': mesa_id_inexistente})
     response = fiscal_client.get(url)
     assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=False)
+def test_siguiente_happy_path_parcial_y_total_con_modo_ub(db, fiscal_client, admin_user, settings):
+    # Este test no es del todo realista porque se lo ejecuta con la cantidad de cargas/identificaciones
+    # necesarias para consolidar en 1, pero al menos prueba que se siga el circuito con modo_ub=True.
+    settings.MIN_COINCIDENCIAS_CARGAS = 1
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
+    modo_ub_querry_string = '?modo_ub=True'
+    mesa = MesaFactory()
+    from adjuntos.models import PreIdentificacion
+    from scheduling.models import ColaCargasPendientes
+    p = PreIdentificacion(fiscal=admin_user.fiscal, distrito=mesa.circuito.seccion.distrito)
+    p.save()
+    a = AttachmentFactory(status='sin_identificar', pre_identificacion=p)
+    scheduler() 
+    assert ColaCargasPendientes.largo_cola() == 1
+    response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
+
+    assert response.status_code == HTTPStatus.FOUND
+    # Me manda a idenficarlas con modo_ub
+    assert response.url == reverse('asignar-mesa', args=[a.id]) + modo_ub_querry_string
+
+    assert ColaCargasPendientes.largo_cola() == 0
+
+    # La identifico.
+    a.mesa = mesa
+    a.status = 'identificada'
+    a.save()
+    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, coeficiente_para_orden_de_carga=1,
+        mesa=mesa
+    )
+    scheduler()
+
+    assert ColaCargasPendientes.largo_cola() == 1
+
+    response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('carga-parcial', args=[mc1.id]) + modo_ub_querry_string
+
+    carga = CargaFactory(mesa_categoria=mc1, tipo='parcial', origen='csv')
+    consumir_novedades_carga()
+    scheduler()
+    mc1.refresh_from_db()
+    assert mc1.status == MesaCategoria.STATUS.parcial_consolidada_dc  # Porque la cant de cargas está en 1.
+    assert mc1.carga_testigo == carga
+    mc1.desasignar_a_fiscal()
+    response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
+    assert response.url == reverse('carga-total', args=[mc1.id]) + modo_ub_querry_string
+
+    carga = CargaFactory(mesa_categoria=mc1, tipo='total', origen='csv')
+    consumir_novedades_carga()
+    scheduler()
+    mc1.refresh_from_db()
+    assert mc1.status == MesaCategoria.STATUS.total_consolidada_dc  # Porque la cant de cargas está en 1.
+    assert mc1.carga_testigo == carga
+    response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
+    # No hay actas para cargar, vuelta a empezar.
+    assert response.status_code == HTTPStatus.OK
+    assert 'No hay actas para cargar' in str(response.content)
 
 
 def test_carga_sin_permiso(fiscal_client, admin_user, mocker):
