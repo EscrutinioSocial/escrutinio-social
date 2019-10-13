@@ -6,18 +6,26 @@
 {% block page_title %} Elección de distrito o sección {% endblock %}
 
 {% block left-panel %}
-<div class="recuadro" style="margin-top: 50px; padding-left: 15px; padding-right: 15px">
-    <form action="ingresar_parametro_busqueda" method="POST">
+<div class="recuadro" style="margin-top: 50px;">
+    <form action="{% url "ingresar-parametro-busqueda" %}" method="POST">
         {% csrf_token %}
         <div class="row">
             <div class="col s6">
-                <input id="parametro_busqueda" name="parametro_busqueda" type="text" style="height: 2rem" >
+                <input id="parametro_busqueda" name="parametro_busqueda" type="text" style="height: 2rem" value="{{ texto_busqueda }}" >
             </div>
             <div class="col s6">
                 <button type="submit" class="btn waves-effect waves-light white-text">Buscar</button>
             </div>
         </div>
     </form>
+</div>
+
+<div class="recuadro" style="margin-top: 50px;">
+    {% for opcion in opciones %}
+    <div class="row">
+        <div class="col s12">{{ opcion }}</div>
+    </div>
+    {% endfor %}
 </div>
 {% endblock left-panel %}
 

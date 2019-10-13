@@ -389,9 +389,27 @@ class AvanceDeCargaResumen(TemplateView):
 class EleccionDeDistritoOSeccion(TemplateView):
     template_name = "elecciones/eleccion_distrito_o_seccion.html"
 
+    def dispatch(self, *args, **kwargs):
+        self.hay_criterio_para_busqueda = self.kwargs.get('hay_criterio') == "True"
+        self.valor_busqueda = self.kwargs.get('valor_criterio')
+        return super().dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # info generada a partir del valor a buscar
+        if self.hay_criterio_para_busqueda:
+            context['opciones'] = [self.valor_busqueda + " - 1", self.valor_busqueda + " - 2"]
+            context['texto_busqueda'] = self.valor_busqueda
+        else:
+            context['opciones'] = []
+            context['texto_busqueda'] = ''
+        # listo
+        return context
+
+
 
 def ingresar_parametro_busqueda(request):
+    valor_ingresado = request.POST.copy().get('parametro_busqueda')
     print('en ingresar_parametro_busqueda - se ingresó')
-    print(request.POST.copy().get('parametro_busqueda'))
-    return redirect('elegir-distrito-o-seccion')
-
+    print(valor_ingresado)
+    return redirect('elegir-distrito-o-seccion', hay_criterio="True", valor_criterio=valor_ingresado)
