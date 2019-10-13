@@ -190,9 +190,12 @@ class GeneradorDatosCargaConsolidado():
         self.query_base = query
         self.crear_categorias()
         
-    def datos(self):
+    def calcular(self):
         self.pv.calcular()
         self.gv.calcular()
+
+    def datos(self):
+        self.calcular()
         return [
             DatoDoble("Total de mesas", self.pv.dato_total, self.pv.dato_total,
                       self.gv.dato_total, self.gv.dato_total),

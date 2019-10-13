@@ -10,10 +10,11 @@ from elecciones.tests.utils_para_test import (
     nuevo_fiscal, identificar, reportar_problema_attachment
 )
 from adjuntos.consolidacion import consumir_novedades
-from elecciones.models import Mesa, Carga
+from elecciones.models import Mesa, Carga, MesaCategoria
 from adjuntos.models import Attachment, PreIdentificacion
 from elecciones.resultados_resumen import (
-    GeneradorDatosFotosNacional, GeneradorDatosFotosDistrital, GeneradorDatosPreidentificaciones
+    GeneradorDatosFotosNacional, GeneradorDatosFotosDistrital, GeneradorDatosPreidentificaciones,
+    GeneradorDatosCargaParcialConsolidado, GeneradorDatosCargaTotalConsolidado
 )
 
 
@@ -91,7 +92,7 @@ class DataTresDistritos():
         # presidente
         categoria_pv = nueva_categoria(
             settings.SLUG_CATEGORIA_PRESI_Y_VICE, opciones_prioritarias, opciones_no_prioritarias)
-        self.mesacats_pv_gba = [MesaCategoriaFactory(
+        self.mesacats_pv_pba = [MesaCategoriaFactory(
             mesa=mesa, categoria=categoria_pv) for mesa in self.mesas_pba]
         self.mesacats_pv_caba = [MesaCategoriaFactory(
             mesa=mesa, categoria=categoria_pv) for mesa in self.mesas_caba]
@@ -285,9 +286,11 @@ def test_datos_preidentificaciones(db, settings):
     assert generador_pba.sin_identificar == 7
 
 
-def test_carga_pv(db, settings):
+
+def test_carga_datos(db, settings):
     settings.MIN_COINCIDENCIAS_IDENTIFICACION = 2
     settings.MIN_COINCIDENCIAS_CARGAS = 2
+    settings.MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 1
     settings.DISTRITO_PBA = '2'
     settings.SLUG_CATEGORIA_PRESI_Y_VICE = 'PV'
     settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA = 'GB_PBA'
@@ -298,36 +301,43 @@ def test_carga_pv(db, settings):
     # agrego mesacats
     data.agregar_mesacats(settings)
 
-    # cargo fotos para: 18 mesas PBA, 9 caba, 11 catamarca
-    for mesa in data.mesas_pba[0:18]+data.mesas_caba[0:9]+data.mesas_caba[0:11]:
+    # cargo fotos para: 18 mesas PBA, 9 caba, 12 catamarca
+    for mesa in data.mesas_pba[0:18]+data.mesas_caba[0:9]+data.mesas_cat[0:12]:
         asociar_foto_a_mesa(mesa, data)
     consumir_novedades()
 
-    # cargas PBA
+    # Cargas PV - PBA
     # 1 total CSV + Web
-    agregar_cargas_mesa(data.mesacats_pv_gba[0], [Cargas.total_csv, Cargas.total_web])
+    agregar_cargas_mesa(data.mesacats_pv_pba[0], [Cargas.total_csv, Cargas.total_web])
     # 1 doble carga total Web
-    agregar_cargas_mesa(data.mesacats_pv_gba[1], [Cargas.parcial_web, Cargas.parcial_web, Cargas.total_web, Cargas.total_web])
+    agregar_cargas_mesa(data.mesacats_pv_pba[1], [Cargas.parcial_web, Cargas.parcial_web, Cargas.total_web, Cargas.total_web])
     # 1 doble carga parcial + una carga total Web
-    agregar_cargas_mesa(data.mesacats_pv_gba[2], [Cargas.parcial_web, Cargas.parcial_web, Cargas.total_web])
+    agregar_cargas_mesa(data.mesacats_pv_pba[2], [Cargas.parcial_web, Cargas.parcial_web, Cargas.total_web])
     # 3 doble carga Web (3-4-5)
     for ix in range(3):
-        agregar_cargas_mesa(data.mesacats_pv_gba[ix+3], [Cargas.parcial_web, Cargas.parcial_web])
+        agregar_cargas_mesa(data.mesacats_pv_pba[ix+3], [Cargas.parcial_web, Cargas.parcial_web])
     # 2 carga total CSV (6-7)
-    agregar_cargas_mesa(data.mesacats_pv_gba[6], [Cargas.total_csv])
-    agregar_cargas_mesa(data.mesacats_pv_gba[7], [Cargas.total_csv])
+    agregar_cargas_mesa(data.mesacats_pv_pba[6], [Cargas.total_csv])
+    agregar_cargas_mesa(data.mesacats_pv_pba[7], [Cargas.total_csv])
     # 2 carga parcial CSV (8-9)
-    agregar_cargas_mesa(data.mesacats_pv_gba[8], [Cargas.parcial_csv])
-    agregar_cargas_mesa(data.mesacats_pv_gba[9], [Cargas.parcial_csv])
-    # 2 carga parcial Web (10-11)
-    agregar_cargas_mesa(data.mesacats_pv_gba[10], [Cargas.parcial_web])
-    agregar_cargas_mesa(data.mesacats_pv_gba[11], [Cargas.parcial_web])
-    # 1 en conflicto (12)
-    nueva_carga(data.mesacats_pv_gba[12], data.fiscales[2], Cargas.votos_parciales, Carga.TIPOS.parcial, Carga.SOURCES.web)
-    nueva_carga(data.mesacats_pv_gba[12], data.fiscales[3], [
+    agregar_cargas_mesa(data.mesacats_pv_pba[8], [Cargas.parcial_csv])
+    agregar_cargas_mesa(data.mesacats_pv_pba[9], [Cargas.parcial_csv])
+    # 3 carga parcial Web (10-11-12)
+    agregar_cargas_mesa(data.mesacats_pv_pba[10], [Cargas.parcial_web])
+    agregar_cargas_mesa(data.mesacats_pv_pba[11], [Cargas.parcial_web])
+    agregar_cargas_mesa(data.mesacats_pv_pba[12], [Cargas.parcial_web])
+    # 2 en conflicto (13-14)
+    nueva_carga(data.mesacats_pv_pba[13], data.fiscales[2], Cargas.votos_parciales, Carga.TIPOS.parcial, Carga.SOURCES.web)
+    nueva_carga(data.mesacats_pv_pba[13], data.fiscales[3], [
                 n-1 for n in Cargas.votos_parciales], Carga.TIPOS.parcial, Carga.SOURCES.web)
+    nueva_carga(data.mesacats_pv_pba[14], data.fiscales[2], Cargas.votos_parciales, Carga.TIPOS.parcial, Carga.SOURCES.web)
+    nueva_carga(data.mesacats_pv_pba[14], data.fiscales[3], [
+                n-1 for n in Cargas.votos_parciales], Carga.TIPOS.parcial, Carga.SOURCES.web)
+    # 2 con problemas (15-16)
+    nueva_carga(data.mesacats_pv_pba[15], data.fiscales[2], [], Carga.TIPOS.problema, Carga.SOURCES.web)
+    nueva_carga(data.mesacats_pv_pba[16], data.fiscales[2], [], Carga.TIPOS.problema, Carga.SOURCES.web)
 
-    # cargas CABA
+    # Cargas PV - CABA
     # 3 total CSV + Web (0-1-2)
     for ix in range(3):
         agregar_cargas_mesa(data.mesacats_pv_caba[ix], [Cargas.total_csv, Cargas.total_web])
@@ -346,19 +356,117 @@ def test_carga_pv(db, settings):
     nueva_carga(data.mesacats_pv_caba[8], data.fiscales[3], [
                 n-1 for n in Cargas.votos_parciales], Carga.TIPOS.parcial, Carga.SOURCES.web)
 
-    # cargas Catamarca
+    # Cargas PV - Catamarca
     # 2 parcial CSV + Web (0-1)
     agregar_cargas_mesa(data.mesacats_pv_cat[0], [Cargas.parcial_csv, Cargas.parcial_web])
     agregar_cargas_mesa(data.mesacats_pv_cat[1], [Cargas.parcial_csv, Cargas.parcial_web])
-    # 1 carga total CSV (2)
+    # 2 carga total CSV (2-3)
     agregar_cargas_mesa(data.mesacats_pv_cat[2], [Cargas.total_csv])
+    agregar_cargas_mesa(data.mesacats_pv_cat[3], [Cargas.total_csv])
     # 2 carga parcial CSV (3-4)
-    agregar_cargas_mesa(data.mesacats_pv_cat[3], [Cargas.parcial_csv])
     agregar_cargas_mesa(data.mesacats_pv_cat[4], [Cargas.parcial_csv])
     # 4 carga parcial Web (5-8)
     for ix in range(4):
         agregar_cargas_mesa(data.mesacats_pv_cat[ix+5], [Cargas.parcial_web])
+    # 1 con problemas (9)
+    nueva_carga(data.mesacats_pv_cat[9], data.fiscales[2], [], Carga.TIPOS.problema, Carga.SOURCES.web)
+
+    # Cargas GV PBA
+    # 1 total CSV + Web
+    agregar_cargas_mesa(data.mesacats_gv_pba[0], [Cargas.total_csv, Cargas.total_web])
+    # 1 parcial CSV + Web
+    agregar_cargas_mesa(data.mesacats_gv_pba[1], [Cargas.parcial_csv, Cargas.parcial_web])
+    # 2 doble carga total Web
+    agregar_cargas_mesa(data.mesacats_gv_pba[2], [Cargas.parcial_web, Cargas.parcial_web, Cargas.total_web, Cargas.total_web])
+    agregar_cargas_mesa(data.mesacats_gv_pba[3], [Cargas.parcial_web, Cargas.parcial_web, Cargas.total_web, Cargas.total_web])
+    # 2 doble carga parcial + una carga total Web
+    agregar_cargas_mesa(data.mesacats_gv_pba[4], [Cargas.parcial_web, Cargas.parcial_web, Cargas.total_web])
+    agregar_cargas_mesa(data.mesacats_gv_pba[5], [Cargas.parcial_web, Cargas.parcial_web, Cargas.total_web])
+    # 1 doble carga Web 
+    agregar_cargas_mesa(data.mesacats_gv_pba[6], [Cargas.parcial_web, Cargas.parcial_web])
+    # 1 carga total CSV 
+    agregar_cargas_mesa(data.mesacats_gv_pba[7], [Cargas.total_csv])
+    # 2 carga parcial CSV 
+    agregar_cargas_mesa(data.mesacats_gv_pba[8], [Cargas.parcial_csv])
+    agregar_cargas_mesa(data.mesacats_gv_pba[9], [Cargas.parcial_csv])
+    # 5 carga parcial Web (10 a 14)
+    for ix in range(5):
+        agregar_cargas_mesa(data.mesacats_gv_pba[ix+10], [Cargas.parcial_web])
+    # 1 en conflicto (15)
+    nueva_carga(data.mesacats_gv_pba[15], data.fiscales[2], Cargas.votos_parciales, Carga.TIPOS.parcial, Carga.SOURCES.web)
+    nueva_carga(data.mesacats_gv_pba[15], data.fiscales[3], [
+                n-1 for n in Cargas.votos_parciales], Carga.TIPOS.parcial, Carga.SOURCES.web)
 
     consumir_novedades()
 
+    # carga parcial - sobre total de mesas
+    carga_parcial_todas_las_mesas = GeneradorDatosCargaParcialConsolidado()
+    carga_parcial_todas_las_mesas.calcular()
+    # presidente y vice
+    assert carga_parcial_todas_las_mesas.pv.dato_total == 50
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_confirmada == 13
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_csv == 9
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_en_proceso == 11
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_sin_carga == 14
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_con_problemas == 3
+    # gobernador y vice PBA
+    assert carga_parcial_todas_las_mesas.gv.dato_total == 20
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_confirmada == 7
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_csv == 3
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_en_proceso == 6
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_sin_carga == 4
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_con_problemas == 0
 
+    # carga parcial - sobre mesas con fotos
+    carga_parcial_todas_las_mesas.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
+    carga_parcial_todas_las_mesas.calcular()
+    # presidente y vice
+    assert carga_parcial_todas_las_mesas.pv.dato_total == 39
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_confirmada == 13
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_csv == 9
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_en_proceso == 11
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_sin_carga == 3
+    assert carga_parcial_todas_las_mesas.pv.dato_carga_con_problemas == 3
+    # gobernador y vice PBA
+    assert carga_parcial_todas_las_mesas.gv.dato_total == 18
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_confirmada == 7
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_csv == 3
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_en_proceso == 6
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_sin_carga == 2
+    assert carga_parcial_todas_las_mesas.gv.dato_carga_con_problemas == 0
+
+    # carga total - sobre total de mesas
+    carga_total_todas_las_mesas = GeneradorDatosCargaTotalConsolidado()
+    carga_total_todas_las_mesas.calcular()
+    # presidente y vice
+    assert carga_total_todas_las_mesas.pv.dato_total == 50
+    assert carga_total_todas_las_mesas.pv.dato_carga_confirmada == 5
+    assert carga_total_todas_las_mesas.pv.dato_carga_csv == 4
+    assert carga_total_todas_las_mesas.pv.dato_carga_en_proceso == 1
+    assert carga_total_todas_las_mesas.pv.dato_carga_sin_carga == 37
+    assert carga_total_todas_las_mesas.pv.dato_carga_con_problemas == 3
+    # gobernador y vice PBA
+    assert carga_total_todas_las_mesas.gv.dato_total == 20
+    assert carga_total_todas_las_mesas.gv.dato_carga_confirmada == 3
+    assert carga_total_todas_las_mesas.gv.dato_carga_csv == 1
+    assert carga_total_todas_las_mesas.gv.dato_carga_en_proceso == 2
+    assert carga_total_todas_las_mesas.gv.dato_carga_sin_carga == 14
+    assert carga_total_todas_las_mesas.gv.dato_carga_con_problemas == 0
+
+    # carga parcial - sobre mesas con fotos
+    carga_total_todas_las_mesas.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
+    carga_total_todas_las_mesas.calcular()
+    # presidente y vice
+    assert carga_total_todas_las_mesas.pv.dato_total == 39
+    assert carga_total_todas_las_mesas.pv.dato_carga_confirmada == 5
+    assert carga_total_todas_las_mesas.pv.dato_carga_csv == 4
+    assert carga_total_todas_las_mesas.pv.dato_carga_en_proceso == 1
+    assert carga_total_todas_las_mesas.pv.dato_carga_sin_carga == 26
+    assert carga_total_todas_las_mesas.pv.dato_carga_con_problemas == 3
+    # gobernador y vice PBA
+    assert carga_total_todas_las_mesas.gv.dato_total == 18
+    assert carga_total_todas_las_mesas.gv.dato_carga_confirmada == 3
+    assert carga_total_todas_las_mesas.gv.dato_carga_csv == 1
+    assert carga_total_todas_las_mesas.gv.dato_carga_en_proceso == 2
+    assert carga_total_todas_las_mesas.gv.dato_carga_sin_carga == 12
+    assert carga_total_todas_las_mesas.gv.dato_carga_con_problemas == 0

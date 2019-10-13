@@ -121,7 +121,14 @@
 
   <div class="recuadro" style="background-color: mistyrose">
     <div class="row" style="background-color: lightpink; margin-bottom: 10px; padding-bottom: 10px">
-      <div class="col s12 gran_titulo">Carga total</div>
+      <div class="col s12 gran_titulo">
+        Carga total -
+        {% if base_carga_total == 'todo' %}
+        todas las mesas
+        {% else %}
+        sólo mesas con foto identificada
+        {% endif %}
+      </div>
     </div>
     <div class="row">
       <div class="col s4"></div>
