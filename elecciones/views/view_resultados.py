@@ -352,3 +352,46 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
 
     def get_tecnica_de_proyeccion(self):
         return self.tecnica_de_proyeccion
+
+
+class AvanceDeCargaResumen(TemplateView):
+    """
+    Vista principal avance de carga resumen
+    """
+
+    template_name = "elecciones/avance_carga_resumen.html"
+
+    def dispatch(self, *args, **kwargs):
+        self.base_carga_parcial = self.kwargs.get('carga_parcial')
+        self.base_carga_total = self.kwargs.get('carga_total')
+        return super().dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # data fotos
+        generador_datos_fotos = GeneradorDatosFotosConsolidado()
+        generador_datos_carga_parcial = GeneradorDatosCargaParcialConsolidado()
+        if self.base_carga_parcial == "solo_con_fotos":
+            generador_datos_carga_parcial.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
+        generador_datos_carga_total = GeneradorDatosCargaTotalConsolidado()
+        if self.base_carga_total == "solo_con_fotos":
+            generador_datos_carga_total.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
+        context['base_carga_parcial'] = self.base_carga_parcial
+        context['base_carga_total'] = self.base_carga_total
+        context['data_fotos_nacion_pba'] = generador_datos_fotos.datos_nacion_pba()
+        context['data_fotos_solo_nacion'] = generador_datos_fotos.datos_solo_nacion()
+        context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado().datos()
+        context['data_carga_parcial'] = generador_datos_carga_parcial.datos()
+        context['data_carga_total'] = generador_datos_carga_total.datos()
+        return context
+
+
+class EleccionDeDistritoOSeccion(TemplateView):
+    template_name = "elecciones/eleccion_distrito_o_seccion.html"
+
+
+def ingresar_parametro_busqueda(request):
+    print('en ingresar_parametro_busqueda - se ingresó')
+    print(request.POST.copy().get('parametro_busqueda'))
+    return redirect('elegir-distrito-o-seccion')
+

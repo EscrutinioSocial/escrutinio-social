@@ -41,6 +41,18 @@
 {% block page_title %} Avance de carga - resumen {% endblock %}
 
 {% block left-panel %}
+
+<div class="row" style="margin-top: 30px; margin-left: 20px">
+  <form class="col s12"
+    action="{% url "elegir-distrito-o-seccion" %}" 
+    method="GET">
+    {% csrf_token %}
+    <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: slateblue">
+      Elegir distrito o sección
+    </button>
+  </form>
+</div>
+
 <div class="row" style="margin-top: 30px; margin-left: 20px">
   <div class="recuadro" style="margin-top: 0px; background-color: powderblue">
     <div class="row" style="background-color: lightskyblue; margin-bottom: 10px; padding-bottom: 10px">
