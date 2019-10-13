@@ -11,7 +11,7 @@ from elecciones.tests.factories import (
     VotoMesaReportadoFactory,
     CircuitoFactory, SeccionFactory, LugarVotacionFactory, MesaFactory,
 )
-from elecciones.resultados import AvanceDeCarga
+from elecciones.avance_carga import AvanceDeCarga
 from adjuntos.consolidacion import (
     consumir_novedades_carga, consumir_novedades_identificacion
 )

@@ -17,6 +17,8 @@ urlpatterns = [
         views.AvanceDeCargaCategoria.as_view(),
         name='avance-carga'
     ),
+    url(r'^avance_carga_resumen/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)$',
+        views.AvanceDeCargaResumen.as_view(), name='avance-carga-resumen'),
     url(
         r'^resultados-nuevo-menu/(?P<categoria_id>\d+)?$',
         cache_page(60 * 60)(views.menu_lateral_resultados),
@@ -34,7 +36,7 @@ urlpatterns = [
     ),
     url(
         r'^resultados/mesas_circuito/(?P<pk>\d+)?$',
-        views.MesasDeCircuito.as_view(),
+        cache_page(5 * 60)(views.MesasDeCircuito.as_view()),
         name='mesas-circuito'
     ),
     url(

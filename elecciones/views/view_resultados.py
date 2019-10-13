@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
+from django.contrib.auth.decorators import login_required, user_passes_test
 from constance import config
 
 from .definiciones import *
@@ -24,14 +25,13 @@ from elecciones.models import (
     NIVELES_AGREGACION,
     NIVELES_DE_AGREGACION,
 )
+
 from elecciones.proyecciones import Proyecciones, create_sumarizador
 from elecciones.sumarizador import NIVEL_DE_AGREGACION
-from elecciones.avance_carga import AvanceDeCarga
-
-ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
 
-# XXX Falta permisos.
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('visualizadores'), login_url='permission-denied')
 def menu_lateral_resultados(request, categoria_id):
 
     # Si no viene categoría mandamos a PV.

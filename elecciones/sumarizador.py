@@ -136,21 +136,22 @@ class Sumarizador():
 
     def categorias(self):
         """
-        Devuelve la lista de categorias posibles de acuerdo al model recibido.
+        Devuelve la lista de categorías posibles de acuerdo al model recibido.
         Esto podría no ser responsabilidad del sumarizador, pero su lógica es muy parecida a la de
-        lookups_de_mesas, prefiero mantenerlos juntos
+        lookups_de_mesas, prefiero mantenerlos juntos.
         """
 
         lookups = Q(distrito__isnull=True)
         if self.filtros:
-            # Shortcut para mesas que se resuelve por otro mecanismo
-            if self.filtros.model is Mesa:
-                return [categoria for mesa in self.filtros for categoria in mesa.categorias]
-
             distritos = None
             secciones = None
 
-            if self.filtros.model is Distrito:
+            # Shortcut para mesas que se resuelve por otro mecanismo
+            if self.filtros.model is Mesa:
+                cats = [categoria.id for mesa in self.filtros for categoria in mesa.categorias.all()]
+                lookups = Q(id__in=cats)
+
+            elif self.filtros.model is Distrito:
                 distritos = self.filtros
 
             elif self.filtros.model is SeccionPolitica:
@@ -275,25 +276,17 @@ class Sumarizador():
         # 1) Mesas.
         # Me quedo con las mesas que corresponden de acuerdo a los parámetros
         # y la categoría, que tengan la carga testigo para esa categoría.
-        print("mesas")
         mesas_escrutadas = self.mesas_escrutadas()
         total_mesas_escrutadas = mesas_escrutadas.count()
-        print(total_mesas_escrutadas)
         total_mesas = mesas.count()
-        print(total_mesas)
 
         # 2) Electores.
         electores = mesas.filter(categorias=categoria).aggregate(v=Sum('electores'))['v'] or 0
-        print("electores: ", electores)
         electores_en_mesas_escrutadas = mesas_escrutadas.aggregate(v=Sum('electores'))['v'] or 0
-        print("electores_en_mesas_escrutadas: ", electores_en_mesas_escrutadas)
 
         # 3) Votos
         votos_por_opcion = self.votos_por_opcion(categoria, mesas)
-        print('votos_por_opcion: ', votos_por_opcion)
         votos_positivos, votos_no_positivos = self.agrupar_votos(votos_por_opcion)
-        print("votos_positivos: ", votos_positivos)
-        print("votos_no_positivos: ", votos_no_positivos)
 
         return AttrDict({
             "total_mesas": total_mesas,

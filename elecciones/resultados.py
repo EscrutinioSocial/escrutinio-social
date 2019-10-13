@@ -33,7 +33,6 @@ class ResultadosBase():
     la sumatoria de muchos resultados en un ResultadoCombinado
     """
     def __init__(self, resultados):
-        print("---- Creating resultados ", resultados, "----")
         self.resultados = resultados
 
     def data(self):
@@ -63,7 +62,6 @@ class ResultadosBase():
                       positivos y en blanco.
                     - porcentaje_total: porcentaje sobre el total de votos.
         """
-        print("tabla_positivos")
         votos_positivos = {}
         blancos = self.total_blancos() if self.total_blancos() != '-' else 0
         for partido, votos_por_opcion in self.resultados.votos_positivos.items():
@@ -97,7 +95,6 @@ class ResultadosBase():
         También incluye porcentajes calculados sobre el total de votos de la mesa.
         """
         # TODO Falta un criterio de ordenamiento para las opciones no positivas.
-        print("tabla_no_positivos")
         tabla_no_positivos = {
             nombre_opcion: {
                 "votos": votos,
@@ -128,7 +125,6 @@ class ResultadosBase():
         return self.resultados.electores_en_mesas_escrutadas
 
     def porcentaje_mesas_escrutadas(self):
-        print("porcentaje_mesas_escrutadas")
         return porcentaje(self.total_mesas_escrutadas(), self.total_mesas())
 
     def porcentaje_escrutado(self):

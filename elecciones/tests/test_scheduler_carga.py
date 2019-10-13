@@ -75,7 +75,7 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_const
         coeficiente_para_orden_de_carga=2.0,
         mesa=m3
     )
-    with django_assert_num_queries(11):
+    with django_assert_num_queries(19):  # Aumentó por las búsquedas en caché en bd.
         assert MesaCategoria.objects.siguiente() == mc1
 
     for i in range(settings.MIN_COINCIDENCIAS_CARGAS):

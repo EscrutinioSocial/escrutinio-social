@@ -404,8 +404,17 @@ class CSVTareaDeImportacion(TimeStampedModel):
         self.status = CSVTareaDeImportacion.STATUS.procesado
         self.save(update_fields=['mesas_total_ok', 'mesas_parc_ok', 'status'])
 
-    def save_errores(self):
-        self.save(update_fields=['errores'])
+    def save_errores(self, cant_mesas_ok=None, cant_mesas_parcialmente_ok=None):
+        update_fields = ['errores']
+
+        if cant_mesas_ok:
+            self.mesas_total_ok = cant_mesas_ok
+            update_fields.append('cant_mesas_ok')
+        if cant_mesas_parcialmente_ok:
+            self.mesas_parc_ok = cant_mesas_parcialmente_ok
+            update_fields.append('mesas_parc_ok')
+
+        self.save(update_fields=update_fields)
 
     def __str__(self):
         return f'{self.id} - {self.csv_file}'

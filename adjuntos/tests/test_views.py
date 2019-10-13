@@ -66,7 +66,7 @@ def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client, adm
     }
     response = fiscal_client.post(reverse('asignar-mesa-ub', args=[attachment.id]), data)
     assert response.status_code == HTTPStatus.FOUND
-    assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_1.id})
+    assert response.url == reverse('cargar-desde-ub', kwargs={'mesa_id': mesa_1.id})
 
     # Refrescamos el attachment desde la base.
     attachment.refresh_from_db()

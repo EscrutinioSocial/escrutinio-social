@@ -341,7 +341,7 @@ def crear_user_y_codigo_para_fiscal(sender, instance=None, created=False, update
     que no tiene usuario asociado, automáticamente se crea uno ``auth.User``
     utilizando el DNI como `username`.
     """
-    if 'last_seen' in update_fields and len(update_fields) == 1:
+    if update_fields and 'last_seen' in update_fields and len(update_fields) == 1:
         # Si sólo se actualiza el last_seen no hacemos nada más.
         return
 

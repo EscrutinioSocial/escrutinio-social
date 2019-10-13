@@ -241,7 +241,7 @@ class SumarizadorCombinado():
 
     def mesas(self, categoria):
         """
-            Devuelve todas las mesas para la categoría especificada
+        Devuelve todas las mesas para la categoría especificada
         """
         return Mesa.objects.filter(categorias=categoria).distinct()
 
@@ -250,3 +250,8 @@ class SumarizadorCombinado():
             create_sumarizador(configuracion_distrito=configuracion_distrito).get_resultados(categoria)
             for configuracion_distrito in self.configuracion.configuraciones.all()
         ), ResultadoCombinado())
+
+    def categorias(self):
+        # XXX Esto hay que hacerlo mejor.
+        from elecciones.models import Categoria
+        return Categoria.objects.filter(activa=True)

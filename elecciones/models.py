@@ -914,8 +914,8 @@ class Opcion(models.Model):
 
     def __str__(self):
         if self.partido:
-            return f'{self.partido.codigo} - {self.nombre}'  # {self.partido.nombre_corto}
-        return self.nombre
+            return f'{self.codigo} - {self.nombre_corto} - part. {self.partido.nombre_corto}'
+        return f'{self.codigo} - {self.nombre}'
 
 
 class Eleccion(models.Model):
