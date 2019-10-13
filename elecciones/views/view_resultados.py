@@ -10,6 +10,8 @@ from constance import config
 from .definiciones import *
 
 import django_excel as excel
+from elecciones.models import MesaCategoria
+from elecciones.busquedas import BusquedaDistritoOSeccion
 
 from elecciones.models import (
     Distrito,
@@ -398,7 +400,11 @@ class EleccionDeDistritoOSeccion(TemplateView):
         context = super().get_context_data(**kwargs)
         # info generada a partir del valor a buscar
         if self.hay_criterio_para_busqueda:
-            context['opciones'] = [self.valor_busqueda + " - 1", self.valor_busqueda + " - 2"]
+            busqueda = BusquedaDistritoOSeccion()
+            busqueda.set_valor_busqueda(self.valor_busqueda)
+            print('en get_context_data')
+            print(busqueda)
+            context['opciones'] = busqueda.resultados()
             context['texto_busqueda'] = self.valor_busqueda
         else:
             context['opciones'] = []
@@ -410,6 +416,4 @@ class EleccionDeDistritoOSeccion(TemplateView):
 
 def ingresar_parametro_busqueda(request):
     valor_ingresado = request.POST.copy().get('parametro_busqueda')
-    print('en ingresar_parametro_busqueda - se ingresó')
-    print(valor_ingresado)
     return redirect('elegir-distrito-o-seccion', hay_criterio="True", valor_criterio=valor_ingresado)

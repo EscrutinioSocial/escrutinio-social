@@ -23,7 +23,13 @@
 <div class="recuadro" style="margin-top: 50px;">
     {% for opcion in opciones %}
     <div class="row">
-        <div class="col s12">{{ opcion }}</div>
+        <div class="col s12">
+            <span>{{ opcion.nombre_distrito }}</span>
+            {% if opcion.tipo_entidad == 'Seccion' %}
+                <span>-</span>
+                <span>{{ opcion.nombre_seccion }}</span>
+            {% endif %}
+        </div>
     </div>
     {% endfor %}
 </div>
