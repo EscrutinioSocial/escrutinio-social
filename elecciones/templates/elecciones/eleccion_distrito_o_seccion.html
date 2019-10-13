@@ -6,33 +6,57 @@
 {% block page_title %} Elección de distrito o sección {% endblock %}
 
 {% block left-panel %}
-<div class="recuadro" style="margin-top: 50px;">
-    <form action="{% url "ingresar-parametro-busqueda" %}" method="POST">
+<div class="recuadro" style="margin-top: 50px; ; margin-left: 20px;">
+    <form action="{% url "ingresar-parametro-busqueda" donde_volver=donde_volver %}" method="POST">
         {% csrf_token %}
         <div class="row">
             <div class="col s6">
-                <input id="parametro_busqueda" name="parametro_busqueda" type="text" style="height: 2rem" value="{{ texto_busqueda }}" >
+                <input id="parametro_busqueda" name="parametro_busqueda" type="text" 
+                style="height: 2rem" value="{{ texto_busqueda }}" 
+                tabindex="1"
+                >
             </div>
             <div class="col s6">
-                <button type="submit" class="btn waves-effect waves-light white-text">Buscar</button>
+                <button type="submit" class="btn waves-effect waves-light white-text" tabindex="2">Buscar</button>
             </div>
         </div>
     </form>
 </div>
 
-<div class="recuadro" style="margin-top: 50px;">
-    {% for opcion in opciones %}
-    <div class="row">
-        <div class="col s12">
-            <span>{{ opcion.nombre_distrito }}</span>
-            {% if opcion.tipo_entidad == 'Seccion' %}
-                <span>-</span>
-                <span>{{ opcion.nombre_seccion }}</span>
-            {% endif %}
+{% if cantidad_opciones > 0 %}
+<div class="recuadro" style="margin-top: 30px; margin-left: 20px;">
+    <form action="{% url "eleccion-efectiva-distrito-o-seccion" donde_volver=donde_volver %}" method="POST">
+        {% csrf_token %}
+        {% for opcion in opciones %}
+        <div class="row">
+            <div class="col s12" style="margin-top: 5px;">
+                <label for="{{ opcion.id_opcion }}">
+                    <input type="radio" id="{{ opcion.id_opcion }}" name="distrito_o_seccion"
+                        value="{{ opcion.id_opcion }}" tabindex="3">
+                    <span style="font-weight: bold; font-size: 130%">
+                        {% if opcion.tipo_entidad == 'Seccion' %}
+                        <span style="color: mediumseagreen; margin-right: 5px">{{ opcion.nombre_seccion }}</span>
+                        <span>(</span>
+                        <span>{{ opcion.nombre_distrito }}</span>
+                        <span>)</span>
+                        {% else %}
+                        <span style="color: slateblue; font-size: 120%">{{ opcion.nombre_distrito }}</span>
+                        {% endif %}
+                    </span>
+                </label>
+            </div>
         </div>
-    </div>
-    {% endfor %}
+        {% endfor %}
+        <div class="row">
+            <div class="col s6" style="margin-top: 20px;">
+                <button type="submit" class="btn waves-effect waves-light white-text" tabindex="4">Elegir</button>
+            </div>
+        </div>
+    </form>
 </div>
+{% endif %}
+
+
 {% endblock left-panel %}
 
 {% block right-panel %}

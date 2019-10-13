@@ -366,6 +366,7 @@ class AvanceDeCargaResumen(TemplateView):
     def dispatch(self, *args, **kwargs):
         self.base_carga_parcial = self.kwargs.get('carga_parcial')
         self.base_carga_total = self.kwargs.get('carga_total')
+        self.restriccion_geografica_spec = self.kwargs.get('restriccion_geografica')
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -385,7 +386,44 @@ class AvanceDeCargaResumen(TemplateView):
         context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado().datos()
         context['data_carga_parcial'] = generador_datos_carga_parcial.datos()
         context['data_carga_total'] = generador_datos_carga_total.datos()
+        # restricción geográfica
+        context['restriccion_geografica'] = self.restriccion()
+        # data relacionada con navegación
+        context['donde_volver'] = self.donde_volver()
         return context
+
+    def donde_volver(self):
+        return f'acr-{self.base_carga_parcial}-{self.base_carga_total}'
+
+    def restriccion(self):
+        if self.restriccion_geografica_spec == "None":
+            return SinRestriccion()
+        else:
+            spec_data=self.restriccion_geografica_spec.split('-')
+            if spec_data[0] == 'Distrito':
+                return RestriccionPorDistrito(spec_data[1])
+            elif spec_data[0] == 'Seccion':
+                return RestriccionPorSeccion(spec_data[1])
+            else:
+                raise Exception(f'especificación desconocida: {spec_data}')
+
+
+
+class SinRestriccion():
+    def __init__(self):
+        self.nombre = 'Sin restricción'
+
+class RestriccionPorDistrito():
+    def __init__(self, distrito_id):
+        self.distrito_id = distrito_id
+        distrito = Distrito.objects.filter(id=self.distrito_id).first()
+        self.nombre = f'Distrito {self.distrito_id} - {distrito.nombre}'
+
+class RestriccionPorSeccion():
+    def __init__(self, seccion_id):
+        self.seccion_id = seccion_id
+        seccion = Seccion.objects.filter(id=self.seccion_id).first()
+        self.nombre = f'Sección {self.seccion_id} - {seccion.nombre}'
 
 
 class EleccionDeDistritoOSeccion(TemplateView):
@@ -394,6 +432,7 @@ class EleccionDeDistritoOSeccion(TemplateView):
     def dispatch(self, *args, **kwargs):
         self.hay_criterio_para_busqueda = self.kwargs.get('hay_criterio') == "True"
         self.valor_busqueda = self.kwargs.get('valor_criterio')
+        self.donde_volver = self.kwargs.get('donde_volver')
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -409,11 +448,27 @@ class EleccionDeDistritoOSeccion(TemplateView):
         else:
             context['opciones'] = []
             context['texto_busqueda'] = ''
+        context['cantidad_opciones'] = len(context['opciones'])
+        # donde volver
+        context['donde_volver'] = self.donde_volver
         # listo
         return context
 
 
-
-def ingresar_parametro_busqueda(request):
+def ingresar_parametro_busqueda(request, *args, **kwargs):
     valor_ingresado = request.POST.copy().get('parametro_busqueda')
-    return redirect('elegir-distrito-o-seccion', hay_criterio="True", valor_criterio=valor_ingresado)
+    donde_volver = kwargs.get('donde_volver')
+    print("en ingresar_parametro_busqueda - dónde volver")
+    print(donde_volver)
+    return redirect('elegir-distrito-o-seccion', hay_criterio="True", valor_criterio=valor_ingresado, donde_volver=donde_volver)
+
+
+def eleccion_efectiva_distrito_o_seccion(request, *args, **kwargs):
+    valor_elegido = request.POST.copy().get('distrito_o_seccion')
+    spec_donde_volver = kwargs.get('donde_volver').split('-')
+    # el parámetro donde_volver es de la forma acr-<carga_parcial>-<carga_total>
+    donde_volver = {'carga_parcial': spec_donde_volver[1], 'carga_total': spec_donde_volver[2]}
+    return redirect('avance-carga-resumen', 
+        carga_parcial=donde_volver['carga_parcial'], 
+        carga_total=donde_volver['carga_total'], 
+        restriccion_geografica=valor_elegido)

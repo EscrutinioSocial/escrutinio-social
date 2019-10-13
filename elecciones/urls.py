@@ -17,12 +17,14 @@ urlpatterns = [
         views.AvanceDeCargaCategoria.as_view(),
         name='avance-carga'
     ),
-    url(r'^avance_carga_resumen/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)$',
+    url(r'^avance_carga_resumen/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)/(?P<restriccion_geografica>(\w|-)+)$',
         views.AvanceDeCargaResumen.as_view(), name='avance-carga-resumen'),
-    url(r'^elegir_distrito_o_seccion/(?P<hay_criterio>\w+)/(?P<valor_criterio>\w+)$',
+    url(r'^elegir_distrito_o_seccion/(?P<hay_criterio>\w+)/(?P<valor_criterio>\w+)/(?P<donde_volver>(\w|-)+)$',
         views.EleccionDeDistritoOSeccion.as_view(), name='elegir-distrito-o-seccion'),
-    url('ingresar_parametro_busqueda',
+    url(r'^ingresar_parametro_busqueda/(?P<donde_volver>(\w|-)+)$',
         views.ingresar_parametro_busqueda, name='ingresar-parametro-busqueda'),
+    url(r'^eleccion_efectiva_distrito_o_seccion/(?P<donde_volver>(\w|-)+)$',
+        views.eleccion_efectiva_distrito_o_seccion, name='eleccion-efectiva-distrito-o-seccion'),
     url(
         r'^resultados-nuevo-menu/(?P<categoria_id>\d+)?$',
         cache_page(60 * 60)(views.menu_lateral_resultados),

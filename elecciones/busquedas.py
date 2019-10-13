@@ -27,6 +27,7 @@ class ResultadoBusquedaDistrito():
         self.nombre_distrito = distrito.nombre
         self.id_entidad = distrito.id
         self.tipo_entidad = 'Distrito'
+        self.id_opcion = "Distrito-" + str(self.id_entidad)
         
 
 class ResultadoBusquedaSeccion():
@@ -35,3 +36,4 @@ class ResultadoBusquedaSeccion():
         self.nombre_seccion = seccion.nombre
         self.id_entidad = seccion.id
         self.tipo_entidad = 'Seccion'
+        self.id_opcion = "Seccion-" + str(self.id_entidad)
