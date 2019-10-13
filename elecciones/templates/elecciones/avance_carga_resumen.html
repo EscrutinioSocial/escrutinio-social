@@ -79,7 +79,7 @@
         {% if base_carga_parcial == 'todo' %}
         todas las mesas
         {% else %}
-        sólo mesas con foto identificada
+        sólo mesas con foto
         {% endif %}
       </div>
     </div>
@@ -112,7 +112,7 @@
         action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total %}" method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
-          Sólo mesas con foto identificada
+          Sólo mesas con foto
         </button>
       </form>
       {% endif %}
@@ -126,7 +126,7 @@
         {% if base_carga_total == 'todo' %}
         todas las mesas
         {% else %}
-        sólo mesas con foto identificada
+        sólo mesas con foto
         {% endif %}
       </div>
     </div>
@@ -159,7 +159,7 @@
         action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" %}" method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">
-          Sólo mesas con foto identificada
+          Sólo mesas con foto
         </button>
       </form>
       {% endif %}
