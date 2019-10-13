@@ -557,7 +557,7 @@ if not TESTING:
     except ImportError:
         pass
 
-USAR_DJANGO_DEBUG_TOOLBAR = True
+USAR_DJANGO_DEBUG_TOOLBAR = False
 
 if DEBUG and USAR_DJANGO_DEBUG_TOOLBAR:
     # Recordar el pip install django-debug-toolbar

@@ -16,8 +16,9 @@ WORKDIR /src
 ADD requirements.txt /src/
 ADD requirements /src/requirements
 RUN pip install -r requirements.txt
-RUN pip install django-debug-toolbar
-RUN pip install Werkzeug
+# Habilitar los siguientes para facilitar el debugging.
+#RUN pip install django-debug-toolbar
+#RUN pip install Werkzeug
 ADD . /src/
 
 # Dejamos un archivo version.txt con el timestamp de cuándo fue generada esa versión
