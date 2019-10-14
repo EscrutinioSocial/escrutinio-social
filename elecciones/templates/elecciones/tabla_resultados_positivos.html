@@ -3,10 +3,16 @@
     style="background-color: {{ partido.color}};"
     {% endif %} class="partido">
   <td id="partido_{{partido.id}}">
+    {% if fila.detalle.items|length == 1 %}
+    {% for op, v in fila.detalle.items %}
+    {{ op }}
+    {% endfor %}
+    {% else %}
     {{ partido }}
     <a class="show_detail btn-flat">
       <i class="material-icons small">expand_more</i>
     </a>
+    {% endif %}
   </td>
   {% if incluir_votos %}
   <td><!-- votos de opciones !--></td>
@@ -25,6 +31,7 @@
   <td class="dato">{{ fila.proyeccion }}%</td>
   {% endif %}
 </tr>
+{% if fila.detalle.items|length > 1 %}
 {% for op, v in fila.detalle.items %}
 <tr class="partido_{{partido.id}}_detalle fila_detalle">
   <td class="opcion">{{op}}</td>
@@ -39,4 +46,5 @@
   {% endif %}
 </tr>
 {% endfor %}
+{% endif %}
 {% endfor %}
