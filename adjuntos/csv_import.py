@@ -388,15 +388,30 @@ class CSVImporter:
                     in categoria_general.nombre.lower()]
 
         if len(matcheos) == 0:
-            raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
-                                      f'categoría: {categoria_general.nombre}.'
-                                      )
+            self.anadir_error(
+                f'Faltan datos en el archivo de la siguiente '
+                f'categoría: {categoria_general.nombre}.'
+            )
+            return None, None
+
+        columna_de_la_categoria = matcheos[0]
 
         # Se encontró la categoría de la mesa en el archivo.
-        columna_de_la_categoria = matcheos[0]
         votos_a_cargar = []
         # Los votos son por partido así que debemos iterar por todas las filas.
         for indice, fila in filas_de_la_mesa.iterrows():
+            if indice == 0:
+                # Me fijo si existe la columna de la categoría.
+                try:
+                    # Trato de acceder a la columna.
+                    prueba = fila[columna_de_la_categoria]
+                except KeyError:
+                    self.anadir_error(
+                        f'Faltan datos en el archivo de la siguiente '
+                        f'categoría: {categoria_general.nombre}.'
+                    )
+                    return None, None
+
             codigo_lista_en_csv = fila['nro de lista']
             self.celda_analizada = CeldaCSVImporter(
                 seccion, circuito, mesa, distrito, codigo_lista_en_csv, columna_de_la_categoria)

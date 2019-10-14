@@ -92,9 +92,11 @@ def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     c = CategoriaFactory(opciones=[o2, o3], nombre='Otra categoria')
     MesaCategoriaFactory(mesa=m, categoria=c)
 
-    with pytest.raises(DatosInvalidosError) as e:
-        CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_negativos.csv', usr_unidad_basica).procesar()
-    assert 'Faltan datos en el archivo de la siguiente categoría' in str(e.value)
+    cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
+        PATH_ARCHIVOS_TEST + 'info_resultados_negativos.csv', usr_unidad_basica).procesar()
+    assert cant_mesas_ok == 0
+    assert cant_mesas_parcialmente_ok == 0
+    assert 'Faltan datos en el archivo de la siguiente categoría' in errores
     assert Carga.objects.count() == 0
 
 
