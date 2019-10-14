@@ -29,6 +29,13 @@
       font-size: 110%; font-weight: bold
   }
 
+  #boton-elegir-distrito-o-seccion {
+    background-color: slateblue
+  }
+  #boton-elegir-distrito-o-seccion:focus {
+    background-color: dodgerblue
+  }
+
 </style>
 {% endblock %}
 
@@ -43,7 +50,8 @@
     action="{% url "elegir-distrito-o-seccion" hay_criterio="False" valor_criterio="" donde_volver=donde_volver mensaje="nada" %}" 
     method="GET">
     {% csrf_token %}
-    <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: slateblue">
+    <button type="submit" id="boton-elegir-distrito-o-seccion" 
+      class="btn waves-effect waves-light white-text" tabindex="1">
       Elegir distrito o sección
     </button>
   </form>

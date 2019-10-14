@@ -428,6 +428,7 @@ class EleccionDeDistritoOSeccion(TemplateView):
         self.hay_criterio_para_busqueda = self.kwargs.get('hay_criterio') == "True"
         self.valor_busqueda = self.kwargs.get('valor_criterio')
         self.donde_volver = self.kwargs.get('donde_volver')
+        self.codigo_mensaje = self.kwargs.get('mensaje')
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -435,7 +436,6 @@ class EleccionDeDistritoOSeccion(TemplateView):
         # texto de búsqueda
         context['texto_busqueda'] = self.valor_busqueda
         # análisis del valor a buscar
-        self.codigo_mensaje = 'nada'
         context['opciones'] = []
         if self.hay_criterio_para_busqueda:
             if len(self.valor_busqueda) < 3:
@@ -464,6 +464,8 @@ class EleccionDeDistritoOSeccion(TemplateView):
             return {'texto': 'No hay ninguna división geográfica que corresponda a la búsqueda', 'hay_que_mostrar': True}
         elif (self.codigo_mensaje == 'demasiados_resultados'):
             return {'texto': 'Hay demasiados resultados, refinar la búsqueda', 'hay_que_mostrar': True}
+        elif (self.codigo_mensaje == 'no_se_eligio_opcion'):
+            return {'texto': 'No se eleigió ninguna opción; repetir la búsqueda', 'hay_que_mostrar': True}
         else:
             return {'texto': 'todo liso', 'hay_que_mostrar': False}
 
@@ -471,20 +473,27 @@ class EleccionDeDistritoOSeccion(TemplateView):
 def ingresar_parametro_busqueda(request, *args, **kwargs):
     valor_ingresado = request.POST.copy().get('parametro_busqueda')
     donde_volver = kwargs.get('donde_volver')
-    codigo_mensaje = 'nada'
     return redirect(
         'elegir-distrito-o-seccion', 
         hay_criterio='True', 
         valor_criterio=valor_ingresado, donde_volver=donde_volver, 
-        mensaje=codigo_mensaje)
+        mensaje='nada')
 
 
 def eleccion_efectiva_distrito_o_seccion(request, *args, **kwargs):
     valor_elegido = request.POST.copy().get('distrito_o_seccion')
-    spec_donde_volver = kwargs.get('donde_volver').split('-')
-    # el parámetro donde_volver es de la forma acr-<carga_parcial>-<carga_total>
-    donde_volver = {'carga_parcial': spec_donde_volver[1], 'carga_total': spec_donde_volver[2]}
-    return redirect('avance-carga-resumen', 
-        carga_parcial=donde_volver['carga_parcial'], 
-        carga_total=donde_volver['carga_total'], 
-        restriccion_geografica=valor_elegido)
+    if valor_elegido == None:
+        return redirect(
+            'elegir-distrito-o-seccion',
+            hay_criterio='False',
+            valor_criterio='', 
+            donde_volver=kwargs.get('donde_volver'),
+            mensaje='no_se_eligio_opcion')
+    else:
+        spec_donde_volver = kwargs.get('donde_volver').split('-')
+        # el parámetro donde_volver es de la forma acr-<carga_parcial>-<carga_total>-<restriccion-geografica>
+        donde_volver = {'carga_parcial': spec_donde_volver[1], 'carga_total': spec_donde_volver[2]}
+        return redirect('avance-carga-resumen', 
+            carga_parcial=donde_volver['carga_parcial'], 
+            carga_total=donde_volver['carga_total'], 
+            restriccion_geografica=valor_elegido)

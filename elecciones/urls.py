@@ -19,7 +19,7 @@ urlpatterns = [
     ),
     url(r'^avance_carga_resumen/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)/(?P<restriccion_geografica>(\w|-)+)$',
         views.AvanceDeCargaResumen.as_view(), name='avance-carga-resumen'),
-    url(r'^elegir_distrito_o_seccion/(?P<hay_criterio>\w+)/(?P<valor_criterio>\w*)/(?P<donde_volver>(\w|-)+)/(?P<mensaje>(\w|-)+)$',
+    url(r'^elegir_distrito_o_seccion/(?P<hay_criterio>\w+)/(?P<valor_criterio>(\w|-|\s)*)/(?P<donde_volver>(\w|-)+)/(?P<mensaje>(\w|-)+)$',
         views.EleccionDeDistritoOSeccion.as_view(), name='elegir-distrito-o-seccion'),
     url(r'^ingresar_parametro_busqueda/(?P<donde_volver>(\w|-)+)$',
         views.ingresar_parametro_busqueda, name='ingresar-parametro-busqueda'),
