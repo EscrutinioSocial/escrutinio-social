@@ -395,7 +395,8 @@ class AvanceDeCargaResumen(TemplateView):
         context['base_carga_total'] = self.base_carga_total
         context['data_fotos_nacion_pba_restriccion'] = generador_datos_fotos.datos_nacion_pba_restriccion()
         context['data_fotos_solo_nacion'] = generador_datos_fotos.datos_solo_nacion()
-        context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado(self.restriccion_geografica).datos()
+        context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado(
+            self.restriccion_geografica).datos()
         context['data_carga_parcial'] = generador_datos_carga_parcial.datos()
         context['data_carga_total'] = generador_datos_carga_total.datos()
         # data relacionada con navegación
