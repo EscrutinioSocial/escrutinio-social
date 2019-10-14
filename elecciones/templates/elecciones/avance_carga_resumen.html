@@ -29,10 +29,10 @@
       font-size: 110%; font-weight: bold
   }
 
-  #boton-elegir-distrito-o-seccion {
+  #boton-elegir-distrito-o-seccion, #boton-limpiar {
     background-color: slateblue
   }
-  #boton-elegir-distrito-o-seccion:focus {
+  #boton-elegir-distrito-o-seccion:focus, #boton-limpiar:focus {
     background-color: dodgerblue
   }
 
@@ -46,15 +46,23 @@
 {% block left-panel %}
 
 <div class="row" style="margin-top: 30px; margin-left: 20px">
-  <form class="col s8"
-    action="{% url "elegir-distrito-o-seccion" hay_criterio="False" valor_criterio="" donde_volver=donde_volver mensaje="nada" %}" 
-    method="GET">
-    {% csrf_token %}
-    <button type="submit" id="boton-elegir-distrito-o-seccion" 
-      class="btn waves-effect waves-light white-text" tabindex="1">
-      Elegir distrito o sección
-    </button>
-  </form>
+  <div class="col s8">
+    <form style="margin-right: 30px; display:inline!important;"
+      action="{% url "elegir-distrito-o-seccion" hay_criterio="False" valor_criterio="" donde_volver=donde_volver mensaje="nada" %}"
+      method="GET">
+      {% csrf_token %}
+      <button type="submit" id="boton-elegir-distrito-o-seccion" class="btn waves-effect waves-light white-text" tabindex="1">
+        Elegir distrito o sección
+      </button>
+    </form>
+    <form style="display:inline!important;"
+      action="{% url "limpiar-busqueda" donde_volver=donde_volver %}" method="POST">
+      {% csrf_token %}
+      <button type="submit" id="boton-limpiar" class="btn waves-effect waves-light white-text" tabindex="2">
+        Limpiar
+      </button>
+    </form>
+  </div>
   <div class="col s4">
     {{ nombre_restriccion_geografica }}
   </div>

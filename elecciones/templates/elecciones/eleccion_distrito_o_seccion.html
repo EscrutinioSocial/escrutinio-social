@@ -1,6 +1,18 @@
 {% extends "fiscales/base.html" %}
 {% load staticfiles %}
 
+{% block extrahead %}
+<style type="text/css">
+    #boton-limpiar {
+        background-color: slateblue
+    }
+
+    #boton-limpiar:focus {
+        background-color: dodgerblue
+    }
+</style>
+{% endblock %}
+
 {% block title %} Elección de distrito o sección {% endblock %}
 
 {% block page_title %} Elección de distrito o sección {% endblock %}
@@ -25,7 +37,7 @@
                 tabindex="1"
                 >
             </div>
-            <div class="col s6">
+            <div class="col s2">
                 <button type="submit" class="btn waves-effect waves-light white-text" tabindex="2">Buscar</button>
             </div>
         </form>

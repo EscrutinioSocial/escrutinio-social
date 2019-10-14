@@ -497,3 +497,13 @@ def eleccion_efectiva_distrito_o_seccion(request, *args, **kwargs):
             carga_parcial=donde_volver['carga_parcial'], 
             carga_total=donde_volver['carga_total'], 
             restriccion_geografica=valor_elegido)
+
+
+def limpiar_busqueda(request, *args, **kwargs):
+    spec_donde_volver = kwargs.get('donde_volver').split('-')
+    # el parámetro donde_volver es de la forma acr-<carga_parcial>-<carga_total>-<restriccion-geografica>
+    donde_volver = {'carga_parcial': spec_donde_volver[1], 'carga_total': spec_donde_volver[2]}
+    return redirect('avance-carga-resumen',
+                    carga_parcial=donde_volver['carga_parcial'],
+                    carga_total=donde_volver['carga_total'],
+                    restriccion_geografica="None")

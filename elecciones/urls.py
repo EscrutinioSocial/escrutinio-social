@@ -23,6 +23,8 @@ urlpatterns = [
         views.EleccionDeDistritoOSeccion.as_view(), name='elegir-distrito-o-seccion'),
     url(r'^ingresar_parametro_busqueda/(?P<donde_volver>(\w|-)+)$',
         views.ingresar_parametro_busqueda, name='ingresar-parametro-busqueda'),
+    url(r'^limpiar_busqueda/(?P<donde_volver>(\w|-)+)$',
+        views.limpiar_busqueda, name='limpiar-busqueda'),
     url(r'^eleccion_efectiva_distrito_o_seccion/(?P<donde_volver>(\w|-)+)$',
         views.eleccion_efectiva_distrito_o_seccion, name='eleccion-efectiva-distrito-o-seccion'),
     url(
