@@ -18,9 +18,11 @@ class ColaCargasPendientes(models.Model):
     # Este campo lo calcula el encolador.
     orden = models.PositiveIntegerField(db_index=True)
     numero_carga = models.PositiveIntegerField(default=1)
-    # Denormalización para facilitar el cálculo de afinidad.
+    # Denormalizaciones para facilitar el cálculo de afinidad.
     distrito = models.ForeignKey(Distrito, null=True, blank=True, on_delete=models.SET_NULL)
-    
+    # La sección se utiliza sólo en modo UB.
+    seccion = models.ForeignKey(Seccion, null=True, blank=True, on_delete=models.SET_NULL)
+
     class Meta:
         unique_together = [
             ['mesa_categoria', 'numero_carga'],
@@ -30,23 +32,25 @@ class ColaCargasPendientes(models.Model):
         verbose_name_plural = 'Cola de Identificaciones y Cargas pendientes'
 
         indexes = [
-            models.Index(fields=['distrito', 'orden'],name='orden_distrito')
+            models.Index(fields=['distrito', 'orden'], name='orden_distrito'),
+            models.Index(fields=['seccion', 'orden'], name='orden_seccion')
         ]
-        
+
     @classmethod
     def largo_cola(cls):
         return cls.objects.count()
 
     @classmethod
-    def siguiente_tarea(cls, fiscal=None):
+    def siguiente_tarea(cls, fiscal=None, modo_ub=False):
         """
         Obtiene la siguiente tarea de la cola.
-        El parámetro fiscal indica que deben excluirse mesascat que ya hayan sido cargadas por él, si hay poques usuaries.
+        El parámetro fiscal indica que deben excluirse mesascat que ya hayan sido cargadas por él,
+        si hay poques usuaries.
         Debe invocarse dentro de una transacción.
         """
 
         mesa_categoria, attachment = None, None
-        
+
         query = cls.objects.select_for_update(skip_locked=True).order_by('orden')
         query_afin = None
 
@@ -62,14 +66,23 @@ class ColaCargasPendientes(models.Model):
 
             # Se privilegia a las tareas del distrito en las que viene
             # trabajando el fiscal.
-            if fiscal.distrito_afin:
+            # Si estamos en modo UB, privilegiamos la sección o el distrito
+            # de pertenencia del fiscal.
+            if modo_ub:
+                if fiscal.seccion:
+                    query_afin = query.filter(seccion=fiscal.seccion)
+                else:
+                    query_afin = query.filter(distrito=fiscal.distrito)
+            elif fiscal.distrito_afin:
                 query_afin = query.filter(distrito=fiscal.distrito_afin)
 
         item = query.first()
 
         if item:
             item_afin = query_afin.first() if query_afin else None
-            if item_afin and item_afin.orden - config.BONUS_AFINIDAD_GEOGRAFICA <= item.orden:
+            # Si hay un ítem geográficamente afin lo usamos si está "suficientemente" cerca
+            # (de acuerdo a la conf de BONUS_AFINIDAD_GEOGRAFICA) o si estamos en modo UB.
+            if item_afin and (modo_ub or item_afin.orden - config.BONUS_AFINIDAD_GEOGRAFICA <= item.orden):
                 item = item_afin
             mesa_categoria = item.mesa_categoria
             attachment = item.attachment
