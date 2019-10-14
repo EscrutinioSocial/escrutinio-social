@@ -1,7 +1,7 @@
 from functools import reduce
 
 from escrutinio_social import settings
-from elecciones.models import Mesa, MesaCategoria, Seccion, Distrito
+from elecciones.models import Mesa, MesaCategoria, Seccion, Distrito, Categoria
 from adjuntos.models import Attachment, PreIdentificacion
 
 
@@ -38,6 +38,10 @@ class RestriccionPorDistrito():
     def aplicar_restriccion_preidentificaciones(self, query):
         return query.filter(distrito__id=self.distrito_id)
 
+    def query_categorias(self):
+        return Categoria.objects.filter(distrito__id=self.distrito_id, seccion=None) | Categoria.objects.filter(
+            distrito=None, seccion=None)
+
 
 class RestriccionPorSeccion():
     def __init__(self, seccion_id):
@@ -61,6 +65,12 @@ class RestriccionPorSeccion():
 
     def aplicar_restriccion_preidentificaciones(self, query):
         return query.filter(seccion__id=self.seccion_id)
+
+    def query_categorias(self):
+        seccion = Seccion.objects.filter(id=self.seccion_id).first()
+        return Categoria.objects.filter(seccion=seccion) | Categoria.objects.filter(
+            distrito=seccion.distrito) | Categoria.objects.filter(
+            distrito=None, seccion=None)
 
 
 
@@ -299,10 +309,11 @@ class GeneradorDatosCargaTotal(GeneradorDatosCarga):
 
 
 class GeneradorDatosCargaConsolidado():
-    def __init__(self, restriccion):
+    def __init__(self, restriccion, categoria):
         super().__init__()
         self.query_base = MesaCategoria.objects
         self.restriccion = restriccion
+        self.categoria = categoria
         self.crear_categorias()
 
     def query_inicial(self, slug_categoria):
@@ -347,7 +358,7 @@ class GeneradorDatosCargaParcialConsolidado(GeneradorDatosCargaConsolidado):
         self.gv = GeneradorDatosCargaParcial(self.query_inicial(settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA))
         if self.restriccion and self.restriccion.restringe_algo():
             self.restringido = GeneradorDatosCargaParcial(
-                self.restriccion.aplicar_restriccion_mesacats(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE)))
+                self.restriccion.aplicar_restriccion_mesacats(self.query_inicial(self.categoria.slug)))
         else:
             self.restringido = NoGeneradorDatosCarga()
 
@@ -358,7 +369,7 @@ class GeneradorDatosCargaTotalConsolidado(GeneradorDatosCargaConsolidado):
         self.gv = GeneradorDatosCargaTotal(self.query_inicial(settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA))
         if self.restriccion and self.restriccion.restringe_algo():
             self.restringido = GeneradorDatosCargaTotal(
-                self.restriccion.aplicar_restriccion_mesacats(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE)))
+                self.restriccion.aplicar_restriccion_mesacats(self.query_inicial(self.categoria.slug)))
         else:
             self.restringido = NoGeneradorDatosCarga()
 

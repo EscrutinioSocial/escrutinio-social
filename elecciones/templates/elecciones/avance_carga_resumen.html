@@ -133,7 +133,7 @@
       <div class="col s4"></div>
       <div class="col {{ ancho_titulo }}"></div>
       <div class="col {{ ancho_titulo }}"></div>
-      <div class="col {{ ancho_titulo }} titulo">Presidente y vice</div>
+      <div class="col {{ ancho_titulo }} titulo">{{ nombre_categoria_elegida }}</div>
     </div>
     {% endif %}
     {% for dato in data_carga_parcial %}
@@ -152,7 +152,7 @@
     <div class="row">
       {% if base_carga_parcial == 'solo_con_fotos' %}
       <form class="col s6" 
-        action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica %}"
+        action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida %}"
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
@@ -162,7 +162,7 @@
       {% endif %}
       {% if base_carga_parcial == 'todo' %}
       <form class="col s6"
-        action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica %}" 
+        action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida %}" 
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
@@ -197,7 +197,7 @@
       <div class="col s4"></div>
       <div class="col {{ ancho_titulo }}"></div>
       <div class="col {{ ancho_titulo }}"></div>
-      <div class="col {{ ancho_titulo }} titulo">Presidente y vice</div>
+      <div class="col {{ ancho_titulo }} titulo">{{ nombre_categoria_elegida }}</div>
     </div>
     {% endif %}
     {% for dato in data_carga_total %}
@@ -216,7 +216,7 @@
     <div class="row">
       {% if base_carga_total == 'solo_con_fotos' %}
       <form class="col s6" 
-        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="todo" restriccion_geografica=slug_restriccion_geografica %}"
+        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="todo" restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida %}"
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">
@@ -226,7 +226,7 @@
       {% endif %}
       {% if base_carga_total == 'todo' %}
       <form class="col s6"
-        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" restriccion_geografica=slug_restriccion_geografica %}" 
+        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida %}" 
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">
@@ -263,7 +263,49 @@
     </div>
     {% endfor %}
   </div>
+
+  {% if hay_demasiadas_categorias or categorias|length > 0 %}
+  <div class="recuadro" style="background-color: rosybrown">
+    <div class="row" style="background-color: peru; margin-bottom: 10px; padding-bottom: 10px">
+      <div class="col s12 gran_titulo">Selección de categoría</div>
+    </div>
+    {% if hay_demasiadas_categorias %}
+    <div class="row">
+      <div class="col s12">
+        Hay demasiadas categorías para el distrito o sección elegidos
+      </div>
+    </div>
+    {% else %}
+    <form style="margin-left: 10px; margin-bottom: 20px"
+      action="{% url "avance-carga-resumen-elegir-categoria" carga_parcial=base_carga_parcial carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica %}"
+      method="POST">
+      {% csrf_token %}
+      {% for categoria in categorias %}
+      <div class="row">
+        <div class="col s12" style="margin-top: 5px;">
+          <label for="{{ categoria.id }}">
+            <input type="radio" id="{{ categoria.id }}" name="categoria" value="{{ categoria.id }}">
+            <span style="font-weight: bold; font-size: 130%; color: black">
+              {{ categoria.nombre }}
+            </span>
+          </label>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="row">
+        <div class="col s6" style="margin-top: 20px;">
+          <button type="submit" class="btn waves-effect waves-light white-text" tabindex="4">Elegir</button>
+        </div>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
 </div>
+
+
+
 {% endblock left-panel %}
 
 {% block right-panel %}

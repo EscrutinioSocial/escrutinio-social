@@ -374,6 +374,11 @@ class AvanceDeCargaResumen(TemplateView):
         self.base_carga_total = self.kwargs.get('carga_total')
         self.restriccion_geografica_spec = self.kwargs.get('restriccion_geografica')
         self.restriccion_geografica = self.calcular_restriccion()
+        self.categoria_spec = self.kwargs.get('categoria')
+        if self.categoria_spec == 'None':
+            self.categoria = Categoria.objects.filter(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).first()
+        else:
+            self.categoria = Categoria.objects.filter(id=self.categoria_spec).first()
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -384,23 +389,31 @@ class AvanceDeCargaResumen(TemplateView):
         context['slug_restriccion_geografica'] = self.restriccion_geografica.slug()
         context['ancho_dato'] = 's1' if self.restriccion_geografica.restringe_algo() else 's2'
         context['ancho_titulo'] = 's2' if self.restriccion_geografica.restringe_algo() else 's4'
+        # categorias
+        context['categorias'], context['hay_demasiadas_categorias'] = self.data_categorias_posibles()
+        context['categoria_elegida'] = self.categoria_spec
+        context['nombre_categoria_elegida'] = self.categoria.nombre
         # data fotos
         generador_datos_fotos = GeneradorDatosFotosConsolidado(self.restriccion_geografica)
-        generador_datos_carga_parcial = GeneradorDatosCargaParcialConsolidado(self.restriccion_geografica)
-        if self.base_carga_parcial == "solo_con_fotos":
-            generador_datos_carga_parcial.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
-        generador_datos_carga_total = GeneradorDatosCargaTotalConsolidado(self.restriccion_geografica)
-        if self.base_carga_total == "solo_con_fotos":
-            generador_datos_carga_total.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
-        context['base_carga_parcial'] = self.base_carga_parcial
-        context['base_carga_total'] = self.base_carga_total
         context['data_fotos_nacion_pba_restriccion'] = generador_datos_fotos.datos_nacion_pba_restriccion()
         context['data_fotos_solo_nacion'] = generador_datos_fotos.datos_solo_nacion()
-        context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado(
-            self.restriccion_geografica).datos()
+        # data carga
+        generador_datos_carga_parcial = GeneradorDatosCargaParcialConsolidado(
+            self.restriccion_geografica, self.categoria)
+        if self.base_carga_parcial == "solo_con_fotos":
+            generador_datos_carga_parcial.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
+        generador_datos_carga_total = GeneradorDatosCargaTotalConsolidado(
+            self.restriccion_geografica, self.categoria)
+        if self.base_carga_total == "solo_con_fotos":
+            generador_datos_carga_total.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
         context['data_carga_parcial'] = generador_datos_carga_parcial.datos()
         context['data_carga_total'] = generador_datos_carga_total.datos()
+        # data preidentificaciones
+        context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado(
+            self.restriccion_geografica).datos()
         # data relacionada con navegación
+        context['base_carga_parcial'] = self.base_carga_parcial
+        context['base_carga_total'] = self.base_carga_total
         context['donde_volver'] = self.donde_volver()
         return context
 
@@ -419,6 +432,29 @@ class AvanceDeCargaResumen(TemplateView):
             else:
                 raise Exception(f'especificación desconocida: {spec_data}')
 
+    def data_categorias_posibles(self):
+        data_categorias = []
+        hay_demasiadas_categorias = False
+        if self.restriccion_geografica.restringe_algo():
+            if self.restriccion_geografica.query_categorias().count() > 20:
+                hay_demasiadas_categorias = True
+            else:
+                for categoria in self.restriccion_geografica.query_categorias():
+                    data_categorias.append({ 'id': categoria.id, 'nombre': categoria.nombre })
+        return data_categorias, hay_demasiadas_categorias
+
+
+
+def elegir_categoria_avance_carga_resumen(request, *args, **kwargs):
+    categoria_elegida = request.POST.copy().get('categoria')
+    print('en elegir_categoria_avance_carga_resumen, categoría elegida')
+    print(categoria_elegida)
+    print(kwargs.get('carga_parcial'))
+    return redirect('avance-carga-resumen',
+                    carga_parcial=kwargs.get('carga_parcial'),
+                    carga_total=kwargs.get('carga_total'),
+                    restriccion_geografica=kwargs.get('restriccion_geografica'),
+                    categoria=categoria_elegida)
 
 
 class EleccionDeDistritoOSeccion(TemplateView):
@@ -496,7 +532,8 @@ def eleccion_efectiva_distrito_o_seccion(request, *args, **kwargs):
         return redirect('avance-carga-resumen', 
             carga_parcial=donde_volver['carga_parcial'], 
             carga_total=donde_volver['carga_total'], 
-            restriccion_geografica=valor_elegido)
+            restriccion_geografica=valor_elegido,
+            categoria='None')
 
 
 def limpiar_busqueda(request, *args, **kwargs):
@@ -506,4 +543,5 @@ def limpiar_busqueda(request, *args, **kwargs):
     return redirect('avance-carga-resumen',
                     carga_parcial=donde_volver['carga_parcial'],
                     carga_total=donde_volver['carga_total'],
-                    restriccion_geografica="None")
+                    restriccion_geografica="None",
+                    categoria='None')
