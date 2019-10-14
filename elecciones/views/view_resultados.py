@@ -10,10 +10,10 @@ from constance import config
 from .definiciones import *
 
 import django_excel as excel
-from elecciones.models import MesaCategoria
 from elecciones.busquedas import BusquedaDistritoOSeccion
 
-from elecciones.models import (
+from .models import (
+    MesaCategoria,
     Distrito,
     Seccion,
     Circuito,
@@ -26,6 +26,12 @@ from elecciones.models import (
     TIPOS_DE_AGREGACIONES,
     NIVELES_AGREGACION,
     NIVELES_DE_AGREGACION,
+)
+from .resultados import Proyecciones, AvanceDeCarga, NIVEL_DE_AGREGACION, create_sumarizador
+from .resultados_resumen import (
+    GeneradorDatosFotosConsolidado, GeneradorDatosPreidentificacionesConsolidado,
+    GeneradorDatosCargaParcialConsolidado, GeneradorDatosCargaTotalConsolidado,
+    SinRestriccion, RestriccionPorDistrito, RestriccionPorSeccion
 )
 
 from elecciones.proyecciones import Proyecciones, create_sumarizador
@@ -367,12 +373,18 @@ class AvanceDeCargaResumen(TemplateView):
         self.base_carga_parcial = self.kwargs.get('carga_parcial')
         self.base_carga_total = self.kwargs.get('carga_total')
         self.restriccion_geografica_spec = self.kwargs.get('restriccion_geografica')
+        self.restriccion_geografica = self.calcular_restriccion()
         return super().dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # restricción geográfica
+        context['nombre_restriccion_geografica'] = self.restriccion_geografica.nombre()
+        context['hay_restriccion_geografica'] = self.restriccion_geografica.restringe_algo()
+        context['ancho_dato'] = 's1' if self.restriccion_geografica.restringe_algo() else 's2'
+        context['ancho_titulo'] = 's2' if self.restriccion_geografica.restringe_algo() else 's4'
         # data fotos
-        generador_datos_fotos = GeneradorDatosFotosConsolidado()
+        generador_datos_fotos = GeneradorDatosFotosConsolidado(self.restriccion_geografica)
         generador_datos_carga_parcial = GeneradorDatosCargaParcialConsolidado()
         if self.base_carga_parcial == "solo_con_fotos":
             generador_datos_carga_parcial.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
@@ -381,13 +393,11 @@ class AvanceDeCargaResumen(TemplateView):
             generador_datos_carga_total.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
         context['base_carga_parcial'] = self.base_carga_parcial
         context['base_carga_total'] = self.base_carga_total
-        context['data_fotos_nacion_pba'] = generador_datos_fotos.datos_nacion_pba()
+        context['data_fotos_nacion_pba_restriccion'] = generador_datos_fotos.datos_nacion_pba_restriccion()
         context['data_fotos_solo_nacion'] = generador_datos_fotos.datos_solo_nacion()
-        context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado().datos()
+        context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado(self.restriccion_geografica).datos()
         context['data_carga_parcial'] = generador_datos_carga_parcial.datos()
         context['data_carga_total'] = generador_datos_carga_total.datos()
-        # restricción geográfica
-        context['restriccion_geografica'] = self.restriccion()
         # data relacionada con navegación
         context['donde_volver'] = self.donde_volver()
         return context
@@ -395,7 +405,7 @@ class AvanceDeCargaResumen(TemplateView):
     def donde_volver(self):
         return f'acr-{self.base_carga_parcial}-{self.base_carga_total}'
 
-    def restriccion(self):
+    def calcular_restriccion(self):
         if self.restriccion_geografica_spec == "None":
             return SinRestriccion()
         else:
@@ -407,23 +417,6 @@ class AvanceDeCargaResumen(TemplateView):
             else:
                 raise Exception(f'especificación desconocida: {spec_data}')
 
-
-
-class SinRestriccion():
-    def __init__(self):
-        self.nombre = 'Sin restricción'
-
-class RestriccionPorDistrito():
-    def __init__(self, distrito_id):
-        self.distrito_id = distrito_id
-        distrito = Distrito.objects.filter(id=self.distrito_id).first()
-        self.nombre = f'Distrito {self.distrito_id} - {distrito.nombre}'
-
-class RestriccionPorSeccion():
-    def __init__(self, seccion_id):
-        self.seccion_id = seccion_id
-        seccion = Seccion.objects.filter(id=self.seccion_id).first()
-        self.nombre = f'Sección {self.seccion_id} - {seccion.nombre}'
 
 
 class EleccionDeDistritoOSeccion(TemplateView):

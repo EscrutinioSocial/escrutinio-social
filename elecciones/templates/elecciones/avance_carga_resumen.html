@@ -52,7 +52,7 @@
     </button>
   </form>
   <div class="col s4">
-    {{ restriccion_geografica.nombre }}
+    {{ nombre_restriccion_geografica }}
   </div>
 </div>
 
@@ -63,25 +63,31 @@
     </div>
     <div class="row">
       <div class="col s4"></div>
-      <div class="col s2 titulo">Total país</div>
-      <div class="col s2"></div>
-      <div class="col s2 titulo">PBA</div>
+      <div class="col {{ ancho_titulo }} titulo">Total país</div>
+      <div class="col {{ ancho_titulo }} titulo">PBA</div>
+      {% if hay_restriccion_geografica %}
+        <div class="col {{ ancho_titulo }} titulo">{{ nombre_restriccion_geografica }}</div>
+      {% endif %}
     </div>
-    <div >
-      {% for dato in data_fotos_nacion_pba %}
+    <div>
+      {% for dato in data_fotos_nacion_pba_restriccion %}
       <div class="row">
         <div class="col s4">{{ dato.texto }}</div>
-        <div class="col s2">{{ dato.cantidad_1 }}</div>
-        <div class="col s2">{{ dato.porcentaje_1 }} %</div>
-        <div class="col s2">{{ dato.cantidad_2 }}</div>
-        <div class="col s2">{{ dato.porcentaje_2 }} %</div>
+        <div class="col {{ ancho_dato }}">{{ dato.cantidad_1 }}</div>
+        <div class="col {{ ancho_dato }}">{{ dato.porcentaje_1 }} %</div>
+        <div class="col {{ ancho_dato }}">{{ dato.cantidad_2 }}</div>
+        <div class="col {{ ancho_dato }}">{{ dato.porcentaje_2 }} %</div>
+        {% if hay_restriccion_geografica %}
+          <div class="col {{ ancho_dato }}">{{ dato.cantidad_3 }}</div>
+          <div class="col {{ ancho_dato }}">{{ dato.porcentaje_3 }} %</div>
+        {% endif %}
       </div>
       {% endfor %}
       {% for dato in data_fotos_solo_nacion %}
       <div class="row">
         <div class="col s4">{{ dato.texto }}</div>
-        <div class="col s2">{{ dato.cantidad_1 }}</div>
-        <div class="col s2">{{ dato.porcentaje_1 }} %</div>
+        <div class="col {{ ancho_dato }}">{{ dato.cantidad_1 }}</div>
+        <div class="col {{ ancho_dato }}">{{ dato.porcentaje_1 }} %</div>
       </div>
       {% endfor %}
     </div>
@@ -187,17 +193,23 @@
     </div>
     <div class="row">
       <div class="col s4"></div>
-      <div class="col s2 titulo">Total país</div>
-      <div class="col s2"></div>
-      <div class="col s2 titulo">PBA</div>
+      <div class="col {{ ancho_titulo }} titulo">Total país</div>
+      <div class="col {{ ancho_titulo }} titulo">PBA</div>
+      {% if hay_restriccion_geografica %}
+      <div class="col {{ ancho_titulo }} titulo">{{ nombre_restriccion_geografica }}</div>
+      {% endif %}
     </div>
     {% for dato in data_preidentificaciones %}
     <div class="row">
       <div class="col s4">{{ dato.texto }}</div>
-      <div class="col s2">{{ dato.cantidad_1 }}</div>
-      <div class="col s2">{{ dato.porcentaje_1 }} %</div>
-      <div class="col s2">{{ dato.cantidad_2 }}</div>
-      <div class="col s2">{{ dato.porcentaje_2 }} %</div>
+      <div class="col {{ ancho_dato }}">{{ dato.cantidad_1 }}</div>
+      <div class="col {{ ancho_dato }}">{{ dato.porcentaje_1 }} %</div>
+      <div class="col {{ ancho_dato }}">{{ dato.cantidad_2 }}</div>
+      <div class="col {{ ancho_dato }}">{{ dato.porcentaje_2 }} %</div>
+      {% if hay_restriccion_geografica %}
+      <div class="col {{ ancho_dato }}">{{ dato.cantidad_3 }}</div>
+      <div class="col {{ ancho_dato }}">{{ dato.porcentaje_3 }} %</div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>
