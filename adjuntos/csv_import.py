@@ -538,10 +538,18 @@ class CSVImporter:
                 if 'votomesareportado_votos_check' in str(e):
                     self.anadir_error(
                         f'Los resultados deben ser números positivos. Revise la celda correspondiente '
-                        f'a {self.celda_analizada}.')
+                        f'a {self.celda_analizada}.'
+                    )
+                elif 'duplicate key' in str(e):
+                    self.anadir_error(
+                        f'Hay partidos/listas repetidas. Revise la celda correspondiente '
+                        f'a {self.celda_analizada}. Detalle: {e}'
+                    )
                 else:
-                    self.anadir_error(f'Error al guardar los resultados. Revise la celda correspondiente '
-                                      f'a {self.celda_analizada}.')
+                    self.anadir_error(
+                        f'Error al guardar los resultados. Revise la celda correspondiente '
+                        f'a {self.celda_analizada}. Detalle: {e}'
+                    )
             except ValueError as e:
                 self.anadir_error(
                     f'Revise que los datos de resultados sean numéricos. Revise la celda correspondiente '
