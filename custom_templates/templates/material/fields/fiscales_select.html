@@ -5,7 +5,9 @@
 {% for x,opcion in field.choices %}
 <input type="hidden" value="{{ x }}" name="{{ bound_field.html_name }}" class="label-opcion"/>
 <div class="row opcion-body" style="padding-bottom: 4pt;">
-  <div class="col s12 right-align">{{ opcion.str_frontend }}</div>
+  <div class="col s12 right-align">
+    {{ opcion.str_frontend_carga }}
+  </div>
 </div>
 {% endfor %}
 {% endpart %}

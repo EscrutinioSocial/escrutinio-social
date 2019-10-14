@@ -925,7 +925,15 @@ class Opcion(models.Model):
         return f'{self.codigo} - {self.nombre}'
 
     def str_frontend(self):
-        return f'{self.codigo} - {self.nombre}'
+        if self.tipo == Opcion.TIPOS.positivo:
+            return f'{self.codigo} - {self.nombre}'
+        else:
+            return f'{self.nombre}'
+
+    def str_frontend_carga(self):
+        if settings.MODO_ELECCION == settings.ME_OPCION_PASO and self.tipo == Opcion.TIPOS.positivo:
+            return f'{self.partido.nombre.upper()} - {self.str_frontend()}'
+        return self.str_frontend()
 
 
 class Eleccion(models.Model):
