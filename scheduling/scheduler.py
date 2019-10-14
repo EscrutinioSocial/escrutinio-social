@@ -53,7 +53,11 @@ def scheduler(reconstruir_la_cola=False):
             cant_fotos < cant_cargas_parcial * config.COEFICIENTE_IDENTIFICACION_VS_CARGA
         )
 
-        if turno_mc or cant_fotos == 0 and cant_cargas > 0:
+        # La bandera `turno_mc` indica turno respecto a cantidad de
+        # cargas parciales pendientes. La segunda parte (si bien deducible
+        # de la anterior) explicitá que si no quedan cargas parciales ni fotos
+        # encolamos cargas totales.
+        if turno_mc or (cant_fotos == 0 and cant_cargas > 0):
             # Mantenemos el invariante que `cant_cargas >= 0` y si
             # estamos en este punto sabemos que `cant_cargas > 0`.
             mc = next(cargas)
