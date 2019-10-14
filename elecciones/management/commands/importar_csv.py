@@ -38,6 +38,8 @@ class Command(BaseCommand):
 
         if options['file']:
             self.importar_ahora(options['file'])
+        elif options['file_at_once']:
+            self.importar_ahora_at_once(options['file_at_once'])
         elif options['crear_tarea']:
             self.crear_tarea(options['crear_tarea'])
         else:
@@ -53,6 +55,10 @@ class Command(BaseCommand):
 
         parser.add_argument("--file", type=str, default=None,
                             help="Lee el archivo parámetro en el momento."
+                            )
+
+        parser.add_argument("--file_at_once", type=str, default=None,
+                            help="Lee el archivo parámetro en el momento y lo procesa no parcialmente."
                             )
 
         parser.add_argument("--crear_tarea", type=str, default=None,
@@ -73,6 +79,15 @@ class Command(BaseCommand):
         csvimporter = CSVImporter(Path(file), self.usr.user, self.debug)
 
         errores = csvimporter.procesar_parcialmente()
+        for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
+            print("Error: ", error)
+
+        print(f"{cant_mesas_ok} mesas ok, {cant_mesas_parcialmente_ok} mesas parcialmente ok. ")
+
+    def importar_ahora_at_once(self, file):
+        csvimporter = CSVImporter(Path(file), self.usr.user, self.debug)
+
+        errores = csvimporter.procesar()
         for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
             print("Error: ", error)
 

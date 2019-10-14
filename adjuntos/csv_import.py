@@ -186,7 +186,8 @@ class CSVImporter:
             self.validar()
         except Exception as e:
             self.anadir_error(str(e))
-            return self.resultados()
+            yield self.resultados()
+            return
         t = Thread(target=self.procesar_post_validar)
         t.daemon = False
         t.start()
