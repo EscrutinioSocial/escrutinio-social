@@ -247,4 +247,15 @@ $(document).ready(function() {
 });
 </script>
 
+<script type="text/javascript">
+  // Formatea los números separados por espacio (gracias locale 'pl')
+  // para facilitar la lectura.
+  $('.dato_entero').each(function(i, obj) {
+      var item = $(obj).text();
+      var num = Number(item).toLocaleString('pl');
+      
+      $(obj).text(num);
+  });
+</script>
+
 {% endblock messages %}

@@ -226,10 +226,21 @@ $(document).ready(function() {
   Plotly.newPlot('columnchart-{{categoria_id}}', data, layout);
   {% endif %}
 
-  // Navega cuando se seleccina tipo de agregacion u opcion
+  // Navega cuando se selecciona tipo de agregación u opción.
   $('.filtros select').change(aplicarSumarizacion);
 
 });
+</script>
+
+<script type="text/javascript">
+  // Formatea los números separados por espacio (gracias locale 'pl')
+  // para facilitar la lectura.
+  $('.dato_entero').each(function(i, obj) {
+      var item = $(obj).text();
+      var num = Number(item).toLocaleString('pl');
+      
+      $(obj).text(num);
+  });
 </script>
 
 {% endblock messages %}

@@ -29,7 +29,7 @@ def porcentaje_numerico(parcial, total):
 
 class ResultadosBase():
     """
-    Clase base para el comportamiento común entre los resultados de una sumarización / proyección y 
+    Clase base para el comportamiento común entre los resultados de una sumarización / proyección y
     la sumatoria de muchos resultados en un ResultadoCombinado
     """
     def __init__(self, resultados):
@@ -72,7 +72,7 @@ class ResultadosBase():
                 'porcentaje_validos': porcentaje(total_partido, self.total_positivos() + blancos),
                 'porcentaje_total': porcentaje(total_partido, self.votantes()),
                 'detalle': {
-                    opcion: {
+                    opcion.str_frontend(): {
                         'votos': votos_opcion,
                         'porcentaje': porcentaje(votos_opcion, total_partido),
                         'porcentaje_positivos': porcentaje(votos_opcion, self.total_positivos()),
