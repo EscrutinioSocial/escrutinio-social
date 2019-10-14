@@ -14,7 +14,8 @@ from elecciones.models import Mesa, Carga, MesaCategoria
 from adjuntos.models import Attachment, PreIdentificacion
 from elecciones.resultados_resumen import (
     GeneradorDatosFotosNacional, GeneradorDatosFotosDistrital, GeneradorDatosPreidentificaciones,
-    GeneradorDatosCargaParcialConsolidado, GeneradorDatosCargaTotalConsolidado
+    GeneradorDatosCargaParcialConsolidado, GeneradorDatosCargaTotalConsolidado,
+    SinRestriccion
 )
 
 
@@ -400,7 +401,7 @@ def test_carga_datos(db, settings):
     consumir_novedades()
 
     # carga parcial - sobre total de mesas
-    carga_parcial_todas_las_mesas = GeneradorDatosCargaParcialConsolidado()
+    carga_parcial_todas_las_mesas = GeneradorDatosCargaParcialConsolidado(SinRestriccion(), None)
     carga_parcial_todas_las_mesas.calcular()
     # presidente y vice
     assert carga_parcial_todas_las_mesas.pv.dato_total == 50
@@ -436,7 +437,7 @@ def test_carga_datos(db, settings):
     assert carga_parcial_todas_las_mesas.gv.dato_carga_con_problemas == 0
 
     # carga total - sobre total de mesas
-    carga_total_todas_las_mesas = GeneradorDatosCargaTotalConsolidado()
+    carga_total_todas_las_mesas = GeneradorDatosCargaTotalConsolidado(SinRestriccion(), None)
     carga_total_todas_las_mesas.calcular()
     # presidente y vice
     assert carga_total_todas_las_mesas.pv.dato_total == 50
