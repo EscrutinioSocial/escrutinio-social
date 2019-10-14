@@ -432,30 +432,51 @@ class EleccionDeDistritoOSeccion(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # info generada a partir del valor a buscar
+        # texto de búsqueda
+        context['texto_busqueda'] = self.valor_busqueda
+        # análisis del valor a buscar
+        self.codigo_mensaje = 'nada'
+        context['opciones'] = []
         if self.hay_criterio_para_busqueda:
-            busqueda = BusquedaDistritoOSeccion()
-            busqueda.set_valor_busqueda(self.valor_busqueda)
-            print('en get_context_data')
-            print(busqueda)
-            context['opciones'] = busqueda.resultados()
-            context['texto_busqueda'] = self.valor_busqueda
-        else:
-            context['opciones'] = []
-            context['texto_busqueda'] = ''
+            if len(self.valor_busqueda) < 3:
+                self.codigo_mensaje = 'corto'
+            else:
+                busqueda = BusquedaDistritoOSeccion()
+                busqueda.set_valor_busqueda(self.valor_busqueda)
+                if busqueda.hay_demasiados_resultados():
+                    self.codigo_mensaje = 'demasiados_resultados'
+                elif len(busqueda.resultados()) == 0:
+                    self.codigo_mensaje = 'sin_resultados'
+                else:
+                    context['opciones'] = busqueda.resultados()
+        # consecuencias del análisis anterior
         context['cantidad_opciones'] = len(context['opciones'])
+        context['mensaje'] = self.mensaje()
         # donde volver
         context['donde_volver'] = self.donde_volver
         # listo
         return context
 
+    def mensaje(self):
+        if (self.codigo_mensaje == 'corto'):
+            return {'texto': 'Debe ingresar, al menos, tres caracteres', 'hay_que_mostrar': True}
+        elif (self.codigo_mensaje == 'sin_resultados'):
+            return {'texto': 'No hay ninguna división geográfica que corresponda a la búsqueda', 'hay_que_mostrar': True}
+        elif (self.codigo_mensaje == 'demasiados_resultados'):
+            return {'texto': 'Hay demasiados resultados, refinar la búsqueda', 'hay_que_mostrar': True}
+        else:
+            return {'texto': 'todo liso', 'hay_que_mostrar': False}
+
 
 def ingresar_parametro_busqueda(request, *args, **kwargs):
     valor_ingresado = request.POST.copy().get('parametro_busqueda')
     donde_volver = kwargs.get('donde_volver')
-    print("en ingresar_parametro_busqueda - dónde volver")
-    print(donde_volver)
-    return redirect('elegir-distrito-o-seccion', hay_criterio="True", valor_criterio=valor_ingresado, donde_volver=donde_volver)
+    codigo_mensaje = 'nada'
+    return redirect(
+        'elegir-distrito-o-seccion', 
+        hay_criterio='True', 
+        valor_criterio=valor_ingresado, donde_volver=donde_volver, 
+        mensaje=codigo_mensaje)
 
 
 def eleccion_efectiva_distrito_o_seccion(request, *args, **kwargs):

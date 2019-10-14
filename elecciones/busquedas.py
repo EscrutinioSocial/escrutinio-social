@@ -2,24 +2,37 @@ from elecciones.models import Distrito, Seccion
 
 class BusquedaDistritoOSeccion():
     def __init__(self):
-        self.limite_cantidad_resultados = 50
-        self._resultados = None
+        self.limite_cantidad_resultados = 30
+        self.limpiar_resultados()
 
     def set_valor_busqueda(self, valor):
         self.valor_busqueda = valor
+        self.limpiar_resultados()
+
+    def limpiar_resultados(self):
         self._resultados = None
-    
+        self._demasiados_resultados = False
+
     def realizar_busqueda(self):
         if not self._resultados:
             self._resultados = []
-            for distrito in Distrito.objects.filter(nombre__icontains=self.valor_busqueda):
-                self._resultados.append(ResultadoBusquedaDistrito(distrito))
-            for seccion in Seccion.objects.filter(nombre__icontains=self.valor_busqueda):
-                self._resultados.append(ResultadoBusquedaSeccion(seccion))
+            query_distrito = Distrito.objects.filter(nombre__icontains=self.valor_busqueda)
+            query_seccion = Seccion.objects.filter(nombre__icontains=self.valor_busqueda)
+            if query_distrito.count() + query_seccion.count() > self.limite_cantidad_resultados:
+                self._demasiados_resultados = True
+            else:
+                for distrito in query_distrito:
+                    self._resultados.append(ResultadoBusquedaDistrito(distrito))
+                for seccion in query_seccion:
+                    self._resultados.append(ResultadoBusquedaSeccion(seccion))
 
     def resultados(self):
         self.realizar_busqueda()
         return self._resultados
+
+    def hay_demasiados_resultados(self):
+        self.realizar_busqueda()
+        return self._demasiados_resultados
 
 
 class ResultadoBusquedaDistrito():

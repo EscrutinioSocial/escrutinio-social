@@ -40,7 +40,7 @@
 
 <div class="row" style="margin-top: 30px; margin-left: 20px">
   <form class="col s8"
-    action="{% url "elegir-distrito-o-seccion" hay_criterio="False" valor_criterio="None" donde_volver=donde_volver %}" 
+    action="{% url "elegir-distrito-o-seccion" hay_criterio="False" valor_criterio="" donde_volver=donde_volver mensaje="nada" %}" 
     method="GET">
     {% csrf_token %}
     <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: slateblue">

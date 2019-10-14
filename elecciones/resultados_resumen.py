@@ -7,7 +7,7 @@ from adjuntos.models import Attachment, PreIdentificacion
 
 class SinRestriccion():
     def nombre(self):
-        return 'Sin restricción'
+        return 'No se eligió distrito o sección'
 
     def restringe_algo(self):
         return False
