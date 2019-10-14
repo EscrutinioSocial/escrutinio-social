@@ -381,14 +381,15 @@ class AvanceDeCargaResumen(TemplateView):
         # restricción geográfica
         context['nombre_restriccion_geografica'] = self.restriccion_geografica.nombre()
         context['hay_restriccion_geografica'] = self.restriccion_geografica.restringe_algo()
+        context['slug_restriccion_geografica'] = self.restriccion_geografica.slug()
         context['ancho_dato'] = 's1' if self.restriccion_geografica.restringe_algo() else 's2'
         context['ancho_titulo'] = 's2' if self.restriccion_geografica.restringe_algo() else 's4'
         # data fotos
         generador_datos_fotos = GeneradorDatosFotosConsolidado(self.restriccion_geografica)
-        generador_datos_carga_parcial = GeneradorDatosCargaParcialConsolidado()
+        generador_datos_carga_parcial = GeneradorDatosCargaParcialConsolidado(self.restriccion_geografica)
         if self.base_carga_parcial == "solo_con_fotos":
             generador_datos_carga_parcial.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
-        generador_datos_carga_total = GeneradorDatosCargaTotalConsolidado()
+        generador_datos_carga_total = GeneradorDatosCargaTotalConsolidado(self.restriccion_geografica)
         if self.base_carga_total == "solo_con_fotos":
             generador_datos_carga_total.set_query_base(MesaCategoria.objects.exclude(mesa__attachments=None))
         context['base_carga_parcial'] = self.base_carga_parcial

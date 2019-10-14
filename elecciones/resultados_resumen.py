@@ -12,6 +12,8 @@ class SinRestriccion():
     def restringe_algo(self):
         return False
 
+    def slug(self):
+        return 'None'
 
 class RestriccionPorDistrito():
     def __init__(self, distrito_id):
@@ -24,8 +26,14 @@ class RestriccionPorDistrito():
     def restringe_algo(self):
         return True
 
+    def slug(self):
+        return 'Distrito-' + str(self.distrito_id)
+
     def aplicar_restriccion_mesas(self, query):
         return query.filter(circuito__seccion__distrito__id=self.distrito_id)
+
+    def aplicar_restriccion_mesacats(self, query):
+        return query.filter(mesa__circuito__seccion__distrito__id=self.distrito_id)
 
     def aplicar_restriccion_preidentificaciones(self, query):
         return query.filter(distrito__id=self.distrito_id)
@@ -42,8 +50,14 @@ class RestriccionPorSeccion():
     def restringe_algo(self):
         return True
 
+    def slug(self):
+        return 'Seccion-' + str(self.seccion_id)
+
     def aplicar_restriccion_mesas(self, query):
         return query.filter(circuito__seccion__id=self.seccion_id)
+
+    def aplicar_restriccion_mesacats(self, query):
+        return query.filter(mesa__circuito__seccion__id=self.seccion_id)
 
     def aplicar_restriccion_preidentificaciones(self, query):
         return query.filter(seccion__id=self.seccion_id)
@@ -231,6 +245,19 @@ class GeneradorDatosCarga():
         return [MesaCategoria.STATUS.con_problemas]
 
 
+class NoGeneradorDatosCarga():
+    def __init__(self):
+        self.dato_total = None
+        self.dato_carga_confirmada = None
+        self.dato_carga_csv = None
+        self.dato_carga_en_proceso = None
+        self.dato_carga_sin_carga = None
+        self.dato_carga_con_problemas = None
+
+    def calcular(self):
+        pass
+
+
 class GeneradorDatosCargaParcial(GeneradorDatosCarga):
     def statuses_carga_confirmada(self):
         return [
@@ -272,9 +299,10 @@ class GeneradorDatosCargaTotal(GeneradorDatosCarga):
 
 
 class GeneradorDatosCargaConsolidado():
-    def __init__(self):
+    def __init__(self, restriccion):
         super().__init__()
         self.query_base = MesaCategoria.objects
+        self.restriccion = restriccion
         self.crear_categorias()
 
     def query_inicial(self, slug_categoria):
@@ -287,22 +315,29 @@ class GeneradorDatosCargaConsolidado():
     def calcular(self):
         self.pv.calcular()
         self.gv.calcular()
+        self.restringido.calcular()
 
     def datos(self):
         self.calcular()
         return [
             DatoTriple("Total de mesas", self.pv.dato_total, self.pv.dato_total,
-                      self.gv.dato_total, self.gv.dato_total),
+                      self.gv.dato_total, self.gv.dato_total,
+                       self.restringido.dato_total, self.restringido.dato_total),
             DatoTriple("Con carga confirmada", self.pv.dato_carga_confirmada, self.pv.dato_total,
-                      self.gv.dato_carga_confirmada, self.gv.dato_total),
+                      self.gv.dato_carga_confirmada, self.gv.dato_total,
+                       self.restringido.dato_carga_confirmada, self.restringido.dato_total),
             DatoTriple("Con carga desde CSV sin confirmar", self.pv.dato_carga_csv, self.pv.dato_total,
-                      self.gv.dato_carga_csv, self.gv.dato_total),
+                      self.gv.dato_carga_csv, self.gv.dato_total,
+                       self.restringido.dato_carga_csv, self.restringido.dato_total),
             DatoTriple("Con otras cargas sin confirmar", self.pv.dato_carga_en_proceso, self.pv.dato_total,
-                      self.gv.dato_carga_en_proceso, self.gv.dato_total),
+                      self.gv.dato_carga_en_proceso, self.gv.dato_total,
+                       self.restringido.dato_carga_en_proceso, self.restringido.dato_total),
             DatoTriple("Sin carga", self.pv.dato_carga_sin_carga, self.pv.dato_total,
-                      self.gv.dato_carga_sin_carga, self.gv.dato_total),
+                      self.gv.dato_carga_sin_carga, self.gv.dato_total,
+                       self.restringido.dato_carga_sin_carga, self.restringido.dato_total),
             DatoTriple("Con problemas", self.pv.dato_carga_con_problemas, self.pv.dato_total,
-                      self.gv.dato_carga_con_problemas, self.gv.dato_total),
+                      self.gv.dato_carga_con_problemas, self.gv.dato_total,
+                       self.restringido.dato_carga_con_problemas, self.restringido.dato_total),
         ]
 
 
@@ -310,12 +345,22 @@ class GeneradorDatosCargaParcialConsolidado(GeneradorDatosCargaConsolidado):
     def crear_categorias(self):
         self.pv = GeneradorDatosCargaParcial(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE))
         self.gv = GeneradorDatosCargaParcial(self.query_inicial(settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA))
+        if self.restriccion and self.restriccion.restringe_algo():
+            self.restringido = GeneradorDatosCargaParcial(
+                self.restriccion.aplicar_restriccion_mesacats(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE)))
+        else:
+            self.restringido = NoGeneradorDatosCarga()
 
 
 class GeneradorDatosCargaTotalConsolidado(GeneradorDatosCargaConsolidado):
     def crear_categorias(self):
         self.pv = GeneradorDatosCargaTotal(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE))
         self.gv = GeneradorDatosCargaTotal(self.query_inicial(settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA))
+        if self.restriccion and self.restriccion.restringe_algo():
+            self.restringido = GeneradorDatosCargaTotal(
+                self.restriccion.aplicar_restriccion_mesacats(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE)))
+        else:
+            self.restringido = NoGeneradorDatosCarga()
 
 
 class DatoTriple():

@@ -21,16 +21,12 @@
       margin-top: 40px
   }
 
-  .titulo {
-      font-weight: bold
-  }
-
   .gran_titulo {
       font-size: 140%; font-weight: bold
   }
 
   .titulo {
-      font-size: 120%; font-weight: bold
+      font-size: 110%; font-weight: bold
   }
 
 </style>
@@ -104,23 +100,43 @@
         {% endif %}
       </div>
     </div>
+    <div class="row"
+    {% if hay_restriccion_geografica %}
+    style="margin-bottom: 5px;"
+    {% endif %}
+    >
+      <div class="col s4"></div>
+      <div class="col {{ ancho_titulo }} titulo">Presidente y vice</div>
+      <div class="col {{ ancho_titulo }} titulo">Gobernador PBA</div>
+      {% if hay_restriccion_geografica %}
+        <div class="col {{ ancho_titulo }} titulo">{{ nombre_restriccion_geografica }}</div>
+      {% endif %}
+    </div>
+    {% if hay_restriccion_geografica %}
     <div class="row">
       <div class="col s4"></div>
-      <div class="col s4 titulo">Presidente y vice</div>
-      <div class="col s4 titulo">Gobernador PBA</div>
+      <div class="col {{ ancho_titulo }}"></div>
+      <div class="col {{ ancho_titulo }}"></div>
+      <div class="col {{ ancho_titulo }} titulo">Presidente y vice</div>
     </div>
+    {% endif %}
     {% for dato in data_carga_parcial %}
     <div class="row">
       <div class="col s4">{{ dato.texto }}</div>
-      <div class="col s2">{{ dato.cantidad_1 }}</div>
-      <div class="col s2">{{ dato.porcentaje_1 }} %</div>
-      <div class="col s2">{{ dato.cantidad_2 }}</div>
-      <div class="col s2">{{ dato.porcentaje_2 }} %</div>
+      <div class="col {{ ancho_dato }}">{{ dato.cantidad_1 }}</div>
+      <div class="col {{ ancho_dato }}">{{ dato.porcentaje_1 }} %</div>
+      <div class="col {{ ancho_dato }}">{{ dato.cantidad_2 }}</div>
+      <div class="col {{ ancho_dato }}">{{ dato.porcentaje_2 }} %</div>
+      {% if hay_restriccion_geografica %}
+        <div class="col {{ ancho_dato }}">{{ dato.cantidad_3 }}</div>
+        <div class="col {{ ancho_dato }}">{{ dato.porcentaje_3 }} %</div>
+      {% endif %}
     </div>
     {% endfor %}
     <div class="row">
       {% if base_carga_parcial == 'solo_con_fotos' %}
-      <form class="col s6" action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total restriccion_geografica="None" %}"
+      <form class="col s6" 
+        action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica %}"
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
@@ -130,7 +146,8 @@
       {% endif %}
       {% if base_carga_parcial == 'todo' %}
       <form class="col s6"
-        action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total restriccion_geografica="None" %}" method="GET">
+        action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica %}" 
+        method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
           Sólo mesas con foto
@@ -151,23 +168,39 @@
         {% endif %}
       </div>
     </div>
+    <div class="row" {% if hay_restriccion_geografica %} style="margin-bottom: 5px;" {% endif %}>
+      <div class="col s4"></div>
+      <div class="col {{ ancho_titulo }} titulo">Presidente y vice</div>
+      <div class="col {{ ancho_titulo }} titulo">Gobernador PBA</div>
+      {% if hay_restriccion_geografica %}
+      <div class="col {{ ancho_titulo }} titulo">{{ nombre_restriccion_geografica }}</div>
+      {% endif %}
+    </div>
+    {% if hay_restriccion_geografica %}
     <div class="row">
       <div class="col s4"></div>
-      <div class="col s4 titulo">Presidente y vice</div>
-      <div class="col s4 titulo">Gobernador PBA</div>
+      <div class="col {{ ancho_titulo }}"></div>
+      <div class="col {{ ancho_titulo }}"></div>
+      <div class="col {{ ancho_titulo }} titulo">Presidente y vice</div>
     </div>
+    {% endif %}
     {% for dato in data_carga_total %}
     <div class="row">
       <div class="col s4">{{ dato.texto }}</div>
-      <div class="col s2">{{ dato.cantidad_1 }}</div>
-      <div class="col s2">{{ dato.porcentaje_1 }} %</div>
-      <div class="col s2">{{ dato.cantidad_2 }}</div>
-      <div class="col s2">{{ dato.porcentaje_2 }} %</div>
+      <div class="col {{ ancho_dato }}">{{ dato.cantidad_1 }}</div>
+      <div class="col {{ ancho_dato }}">{{ dato.porcentaje_1 }} %</div>
+      <div class="col {{ ancho_dato }}">{{ dato.cantidad_2 }}</div>
+      <div class="col {{ ancho_dato }}">{{ dato.porcentaje_2 }} %</div>
+      {% if hay_restriccion_geografica %}
+        <div class="col {{ ancho_dato }}">{{ dato.cantidad_3 }}</div>
+        <div class="col {{ ancho_dato }}">{{ dato.porcentaje_3 }} %</div>
+      {% endif %}
     </div>
     {% endfor %}
     <div class="row">
       {% if base_carga_total == 'solo_con_fotos' %}
-      <form class="col s6" action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="todo" restriccion_geografica="None" %}"
+      <form class="col s6" 
+        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="todo" restriccion_geografica=slug_restriccion_geografica %}"
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">
@@ -177,7 +210,8 @@
       {% endif %}
       {% if base_carga_total == 'todo' %}
       <form class="col s6"
-        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" restriccion_geografica="None" %}" method="GET">
+        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" restriccion_geografica=slug_restriccion_geografica %}" 
+        method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">
           Sólo mesas con foto
