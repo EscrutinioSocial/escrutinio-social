@@ -64,7 +64,7 @@ def canonizar(valor):
 
 class DistritoManager(models.Manager):
     def get_by_natural_key(self, numero):
-        return self.get(numero = numero)
+        return self.get(numero=numero)
 
 
 class Distrito(models.Model):
@@ -92,6 +92,14 @@ class Distrito(models.Model):
 
     def natural_key(self):
         return (self.numero, )
+
+    def get_secciones(self):
+        """
+        Todas las secciones del distrito ordenadas por número.
+        """
+        return self.secciones.all().extra(
+            select={'numero_int': 'CAST(numero AS INTEGER)'}
+        ).order_by('numero_int')
 
 
 class SeccionPolitica(models.Model):
@@ -125,7 +133,7 @@ class SeccionPolitica(models.Model):
 
 class SeccionManager(models.Manager):
     def get_by_natural_key(self, distrito, numero):
-        return self.get(distrito__numero = distrito, numero = numero)
+        return self.get(distrito__numero=distrito, numero=numero)
 
 
 class Seccion(models.Model):
@@ -173,6 +181,14 @@ class Seccion(models.Model):
         verbose_name = 'Sección electoral'
         verbose_name_plural = 'Secciones electorales'
 
+    def get_circuitos(self):
+        """
+        Todos los circuitos de las sección ordenados por número.
+        """
+        return self.circuitos.all().extra(
+            select={'numero_int': 'CAST(numero AS INTEGER)'}
+        ).order_by('numero_int')
+
     def resultados_url(self):
         return reverse('resultados-primera-categoria') + f'?seccion={self.id}'
 
@@ -191,6 +207,7 @@ class Seccion(models.Model):
     def natural_key(self):
         return self.distrito.natural_key() + (self.numero, )
     natural_key.dependencies = ['elecciones.distrito']
+
 
 class Circuito(models.Model):
     """
@@ -843,10 +860,10 @@ class Opcion(models.Model):
     # por CSV (de manera optativa, y porque es data que si está, sirve ante
     # un eventual reclamos), pero que no le queremos pedir al usuario que cargue.
     TIPOS = Choices('positivo', 'no_positivo', 'metadata', 'metadata_optativa')
-    tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
+    tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo, db_index=True)
 
     nombre = models.CharField(max_length=100)
-    nombre_corto = models.CharField(max_length=20, default='')
+    nombre_corto = models.CharField(max_length=20, default='', db_index=True)
     # El código de opción corresponde con el nro de lista en los archivos CSV.
     # Dado que muchas veces la justicia no le pone un código a las "sub listas"
     # en las PASO, se termina sintentizando y podría ser largo.
@@ -918,8 +935,8 @@ class Opcion(models.Model):
 
     def __str__(self):
         if self.partido:
-            return f'{self.partido.codigo} - {self.nombre}'  # {self.partido.nombre_corto}
-        return self.nombre
+            return f'{self.codigo} - {self.nombre_corto} - part. {self.partido.nombre_corto}'
+        return f'{self.codigo} - {self.nombre}'
 
 
 class Eleccion(models.Model):
@@ -1028,7 +1045,7 @@ class Categoria(models.Model):
     tracker = FieldTracker(fields=['prioridad'])
 
     def get_absolute_url(self):
-        return reverse('resultados-categoria', args=[self.id])
+        return reverse('resultados-nuevo-menu', args=[self.id])
 
     def get_url_avance_de_carga(self):
         return reverse('avance-carga', args=[self.id])
@@ -1246,7 +1263,7 @@ class TecnicaProyeccion(models.Model):
     Contiene una lista de AgrupacionCircuitos que debería en total cubrir a todos los circuitos
     correspondientes a la categoria que se desea proyectar.
     """
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100, db_index=True)
 
     class Meta:
         ordering = ('nombre', )

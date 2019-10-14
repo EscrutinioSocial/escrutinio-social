@@ -12,6 +12,8 @@ services:
       - "5433:5432"
     volumes:
       - data:/var/lib/postgresql/data
+    # Habilitar la siguiente para mejorar la performance de la BD si la memoria lo permite.
+    #shm_size: '2gb'
   app:
     container_name: escrutinio-social-app
     build: .

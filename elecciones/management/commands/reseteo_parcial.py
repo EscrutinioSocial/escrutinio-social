@@ -32,6 +32,8 @@ class Command(BaseCommand):
             attachment_asignado=None,
             asignacion_ultima_tarea=None,
             mesa_categoria_asignada=None,
+            distrito_afin=None,
+            puntaje_scoring_troll=0,
         )
         MesaCategoria.objects.all().update(
             percentil=None,
