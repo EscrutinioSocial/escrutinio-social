@@ -214,9 +214,9 @@ def test_resultados_parciales_generales(carta_marina, url_resultados, fiscal_cli
 
     content = response.content.decode('utf8')
 
-    assert f'<td id="votos_{o1.partido.id}" class="dato">55</td>' in content
-    assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
-    assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
+    assert f'<td id="votos_{o1.partido.id}" class="dato_entero">55</td>' in content
+    assert f'<td id="votos_{o2.partido.id}" class="dato_entero">70</td>' in content
+    assert f'<td id="votos_{o3.partido.id}" class="dato_entero">90</td>' in content
 
     # Deberíamos visualizar los porcentajes positivos.
     assert f'<td id="porcentaje_{o1.partido.id}" class="dato">25.58%</td>' in content
@@ -354,9 +354,9 @@ def test_resultados_parciales_paso(carta_marina, url_resultados, fiscal_client):
 
     content = response.content.decode('utf8')
 
-    assert f'<td id="votos_{o1.partido.id}" class="dato">55</td>' in content
-    assert f'<td id="votos_{o2.partido.id}" class="dato">70</td>' in content
-    assert f'<td id="votos_{o3.partido.id}" class="dato">90</td>' in content
+    assert f'<td id="votos_{o1.partido.id}" class="dato_entero">55</td>' in content
+    assert f'<td id="votos_{o2.partido.id}" class="dato_entero">70</td>' in content
+    assert f'<td id="votos_{o3.partido.id}" class="dato_entero">90</td>' in content
 
     # Deberíamos visualizar los porcentajes sin nulos.
     assert f'<td id="porcentaje_{o1.partido.id}" class="dato">21.15%</td>' in content
@@ -640,8 +640,8 @@ def test_resultados_excluye_metadata(fiscal_client, carta_marina):
     # votos proyectados = 1200
     # %o1 = 350 / 600 = 56.58%
     # %o2 = 250 / 600 = 41.67%
-    assert positivos[o1.partido]['detalle'][o1]['porcentaje_positivos'] == '58.33'
-    assert positivos[o2.partido]['detalle'][o2]['porcentaje_positivos'] == '41.67'
+    assert positivos[o1.partido]['detalle'][o1.str_frontend()]['porcentaje_positivos'] == '58.33'
+    assert positivos[o2.partido]['detalle'][o2.str_frontend()]['porcentaje_positivos'] == '41.67'
 
     # Votos en blanco proyectados = 10 * 3 (s1) + 10 (s2) = 40
     # %blancos = 40 / (600 + 40) = 6.25%
