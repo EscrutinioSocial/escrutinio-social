@@ -404,6 +404,12 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.exclude(cargas__fiscal=fiscal)
 
+    def con_carga_parcial_pendiente(self):
+        """
+        Devuelve las mesas categorías que tengan cargas parciales pendientes.
+        """
+        return self.identificadas().sin_problemas().filter(status__in=MesaCategoria.status_carga_parcial)
+
     def con_carga_pendiente(self, for_update=True):
         qs = self.select_for_update(skip_locked=True) if for_update else self
         return qs.identificadas().sin_problemas().sin_consolidar_por_doble_carga()
@@ -493,6 +499,14 @@ class MesaCategoria(models.Model):
     objects = MesaCategoriaQuerySet.as_manager()
 
     STATUS = settings.MC_STATUS_CHOICE
+
+    # Status que representan cargas no totales.
+    status_carga_parcial = [
+        STATUS.sin_cargar,
+        STATUS.parcial_sin_consolidar,
+        STATUS.parcial_en_conflicto,
+        STATUS.parcial_consolidada_csv
+    ]
 
     status = StatusField(default=STATUS.sin_cargar)
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)

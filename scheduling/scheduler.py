@@ -32,6 +32,7 @@ def scheduler(reconstruir_la_cola=False):
 
     cant_fotos = attachments_sin_identificar.count()
     cant_cargas = mc_con_carga_pendiente.count()
+    cant_cargas_parcial = MesaCategoria.objects.con_carga_parcial_pendiente().count()
 
     identificaciones = iter(attachments_sin_identificar.priorizadas())
     cargas = iter(mc_con_carga_pendiente.ordenadas_por_prioridad_batch())
@@ -48,11 +49,15 @@ def scheduler(reconstruir_la_cola=False):
         # si hay "suficientemente menos" fotos que cargas, donde
         # "suficientemente menos" involucra el multiplicador `COEFICIENTE_IDENTIFICACION_VS_CARGA`.
         turno_mc = (
-            (cant_cargas > 0 and cant_fotos == 0) or
-            cant_fotos < cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA
+            (cant_cargas_parcial > 0 and cant_fotos == 0) or
+            cant_fotos < cant_cargas_parcial * config.COEFICIENTE_IDENTIFICACION_VS_CARGA
         )
 
-        if turno_mc:
+        # La bandera `turno_mc` indica turno respecto a cantidad de
+        # cargas parciales pendientes. La segunda parte (si bien deducible
+        # de la anterior) explicitá que si no quedan cargas parciales ni fotos
+        # encolamos cargas totales.
+        if turno_mc or (cant_fotos == 0 and cant_cargas > 0):
             # Mantenemos el invariante que `cant_cargas >= 0` y si
             # estamos en este punto sabemos que `cant_cargas > 0`.
             mc = next(cargas)
@@ -65,6 +70,9 @@ def scheduler(reconstruir_la_cola=False):
             # Si está en conflicto sólo necesitamos una carga más.
             elif mc.status in [MesaCategoria.STATUS.parcial_en_conflicto, MesaCategoria.STATUS.total_en_conflicto]:
                 cant_unidades = 1
+
+            if mc.status in MesaCategoria.status_carga_parcial:
+                cant_cargas_parcial -= 1
 
             for i in range(cant_unidades):
                 # Encolo tantas unidades como haga falta.

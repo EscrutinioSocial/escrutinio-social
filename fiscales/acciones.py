@@ -51,20 +51,21 @@ def elegir_siguiente_accion_en_el_momento(request):
     con_carga_pendiente = MesaCategoria.objects.con_carga_pendiente(for_update=True)
 
     cant_fotos = attachments.count()
-    cant_cargas = con_carga_pendiente.count()
+    cant_cargas_parcial = MesaCategoria.objects.con_carga_parcial_pendiente().count()
 
     # Mandamos al usuario a identificar mesas si hay fotos y no hay cargas pendientes
     # o si la cantidad de mesas a identificar supera a la cantidad de cargas pendientes
     # por cierto coeficiente configurable.
-    if (cant_fotos and not cant_cargas or
-            cant_fotos >= cant_cargas * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
+    if (cant_fotos and not cant_cargas_parcial or
+            cant_fotos >= cant_cargas_parcial * config.COEFICIENTE_IDENTIFICACION_VS_CARGA):
         foto = attachments.priorizadas().first()
         if foto:
             return IdentificacionDeFoto(request, foto)
-    elif cant_cargas:
-        mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
-        if mesacategoria:
-            return CargaCategoriaEnActa(request, mesacategoria)
+
+    mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
+    if mesacategoria:
+        return CargaCategoriaEnActa(request, mesacategoria)
+
     return NoHayAccion(request)
 
 
@@ -126,14 +127,8 @@ class CargaCategoriaEnActa():
         mc.asignar_a_fiscal()
 
     def ejecutar(self):
-        if (
-            self.mc.categoria.requiere_cargas_parciales and
-            self.mc.status in [
-                    MesaCategoria.STATUS.sin_cargar,
-                    MesaCategoria.STATUS.parcial_sin_consolidar,
-                    MesaCategoria.STATUS.parcial_en_conflicto,
-                    MesaCategoria.STATUS.parcial_consolidada_csv,
-                ]):
+        if (self.mc.categoria.requiere_cargas_parciales and
+            self.mc.status in MesaCategoria.status_carga_parcial):
             # Sólo si la categoría requiere parciales y las parciales no están consolidadas.
             url_base = 'carga-parcial'
         else:

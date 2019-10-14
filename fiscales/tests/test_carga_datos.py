@@ -350,17 +350,19 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas_con_scheduler(d
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.OK
 
+# En los casos comentados es más prioritario entregar una identificación.
 parametros_test_redirige_a_parcial_si_es_necesario = [
     (MesaCategoria.STATUS.sin_cargar, True),
     (MesaCategoria.STATUS.parcial_sin_consolidar, True),
     (MesaCategoria.STATUS.parcial_en_conflicto, True),
     (MesaCategoria.STATUS.parcial_consolidada_csv, True),
-    (MesaCategoria.STATUS.parcial_consolidada_dc, False),
-    (MesaCategoria.STATUS.total_sin_consolidar, False),
-    (MesaCategoria.STATUS.total_en_conflicto, False),
-    (MesaCategoria.STATUS.total_consolidada_csv, False),
+    # (MesaCategoria.STATUS.parcial_consolidada_dc, False),
+    # (MesaCategoria.STATUS.total_sin_consolidar, False),
+    # (MesaCategoria.STATUS.total_en_conflicto, False),
+    # (MesaCategoria.STATUS.total_consolidada_csv, False),
 ]
 @pytest.mark.parametrize('status, parcial', parametros_test_redirige_a_parcial_si_es_necesario)
+@override_config(COEFICIENTE_IDENTIFICACION_VS_CARGA=2)
 def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client, status, parcial):
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa)
@@ -369,6 +371,25 @@ def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client,
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
+
+
+# Es más prioritario entregar una identificación.
+parametros_test_redirige_a_identificar = [
+    (MesaCategoria.STATUS.parcial_consolidada_dc, False),
+    (MesaCategoria.STATUS.total_sin_consolidar, False),
+    (MesaCategoria.STATUS.total_en_conflicto, False),
+    (MesaCategoria.STATUS.total_consolidada_csv, False),
+]
+@pytest.mark.parametrize('status, parcial', parametros_test_redirige_a_parcial_si_es_necesario)
+@override_config(COEFICIENTE_IDENTIFICACION_VS_CARGA=1)
+def test_cargar_resultados_redirige_a_identificar(db, fiscal_client, status, parcial):
+    mesa = MesaFactory()
+    a = AttachmentFactory(mesa=mesa)
+    c1 = CategoriaFactory(requiere_cargas_parciales=True)
+    m1c1 = MesaCategoriaFactory(categoria=c1, coeficiente_para_orden_de_carga=0.1, status=status, mesa=mesa)
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url.startswith('/clasificar-actas/')
 
 
 @pytest.mark.parametrize('status, parcial', parametros_test_redirige_a_parcial_si_es_necesario)
@@ -384,6 +405,7 @@ def test_cargar_resultados_redirige_a_parcial_si_es_necesario_con_scheduler(db, 
         assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
 
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_siguiente_happy_path_parcial_y_total_sin_scheduler(db, fiscal_client, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
     mesa = MesaFactory()
