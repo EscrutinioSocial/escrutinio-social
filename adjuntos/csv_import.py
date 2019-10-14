@@ -86,7 +86,8 @@ class CSVImporter:
         # mapeo de la columna 5 en adelante a string, evitando las primeras que tienen converter.
         dtype_dict = {i: str for i in range(5, len(COLUMNAS_DEFAULT) + 1)}
         separador = self.autodetectar_separador(archivo)
-        self.df = pd.read_csv(self.archivo,
+        self.df = pd.read_csv(
+            self.archivo,
             na_values=["n/a", "na", "-"],
             dtype=dtype_dict,
             converters=converters,
@@ -176,6 +177,7 @@ class CSVImporter:
                 # Dormimos unos segundos para no hacer busy-waiting y dar tiempo a que
                 # termine o se produzcan errores.
                 time.sleep(5)
+
             if not self.procesamiento_terminado:
                 yield self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, self.errores[cant_errores_entregados]
                 cant_errores_entregados += 1
@@ -186,10 +188,8 @@ class CSVImporter:
             self.validar()
         except Exception as e:
             self.anadir_error(str(e))
-            yield self.resultados()
-            return
-        t = Thread(target=self.procesar_post_validar)
-        t.daemon = False
+            return self.resultados()
+        t = Thread(target=self.procesar_post_validar, daemon=False)
         t.start()
         return self.yield_errores()
 

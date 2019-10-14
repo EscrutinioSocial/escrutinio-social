@@ -79,8 +79,12 @@ class Command(BaseCommand):
         csvimporter = CSVImporter(Path(file), self.usr.user, self.debug)
 
         errores = csvimporter.procesar_parcialmente()
-        for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
-            print("Error: ", error)
+        try:
+            for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
+                print("Error: ", error)
+        except TypeError:
+            cant_mesas_ok, cant_mesas_parcialmente_ok, error = errores
+            print("Errro: ", error)
 
         print(f"{cant_mesas_ok} mesas ok, {cant_mesas_parcialmente_ok} mesas parcialmente ok. ")
 
@@ -140,15 +144,20 @@ class Command(BaseCommand):
         i = 0
         if not tarea.errores:
             tarea.errores = ''
-        for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
-            if not error:
-                continue
+        try:
+            for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
+                if not error:
+                    continue
+                tarea.errores = tarea.errores + error
+                i += 1
+                if i == 20:
+                    # Cada 20 errores grabamos.
+                    i = 0
+                    tarea.save_errores(cant_mesas_ok, cant_mesas_parcialmente_ok)
+        except TypeError:
+            cant_mesas_ok, cant_mesas_parcialmente_ok, error = errores
             tarea.errores = tarea.errores + error
             i += 1
-            if i == 20:
-                # Cada 20 errores grabamos.
-                i = 0
-                tarea.save_errores(cant_mesas_ok, cant_mesas_parcialmente_ok)
 
         # Si quedaron errores sin grabar los grabamos:
         if i > 0:
