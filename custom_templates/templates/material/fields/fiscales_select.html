@@ -5,16 +5,7 @@
 {% for x,opcion in field.choices %}
 <input type="hidden" value="{{ x }}" name="{{ bound_field.html_name }}" class="label-opcion"/>
 <div class="row opcion-body" style="padding-bottom: 4pt;">
-  {% if opcion.partido is not None %}
-  <div width="4pt" style="background-color:{{opcion.color}};"></div>
-  <!-- <div class="col s2 opcion-nro">{{opcion.codigo}}</div> -->
-  <div class="col s12 row" style="text-align: right">
-    <div class="row opcion-nombre">{{ opcion.nombre }}</div>
-    <div class="row opcion-partido"><small>{{ opcion.partido.nombre }}</small></div>
-  </div>
-  {% else %}
-  <div class="col s12 right-align">{{opcion.nombre}}</div>
-  {% endif %}
+  <div class="col s12 right-align">{{ opcion.str_frontend }}</div>
 </div>
 {% endfor %}
 {% endpart %}
