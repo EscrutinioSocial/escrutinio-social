@@ -298,9 +298,9 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
 
     def fix_opciones(formset):
         """
-        Función auxiliar que deja sólo la opcion correspondiente a cada fila en los
+        Función auxiliar que deja sólo la opción correspondiente a cada fila en los
         choicefields de cada formulario, configura widget readonly necesarios
-        y la índice de la navegación con tabs
+        y los índices de la navegación con tabs.
         """
         first_autofoco = None
         for i, (opcion, form) in enumerate(zip(opciones, formset), 1):

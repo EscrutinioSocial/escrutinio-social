@@ -1,50 +1,50 @@
-{% for partido, fila in  tabla.items %}
-<tr {% if partido.color %}
-    style="background-color: {{ partido.color}};"
-    {% endif %} class="partido">
-  <td id="partido_{{partido.id}}">
-    {% if fila.detalle.items|length == 1 %}
-    {% for op, v in fila.detalle.items %}
-    {{ op }}
-    {% endfor %}
-    {% else %}
-    {{ partido }}
-    <a class="show_detail btn-flat">
-      <i class="material-icons small">expand_more</i>
-    </a>
+{% for partido, fila in tabla.items %}
+  <tr {% if partido.color %}
+      style="background-color: {{ partido.color}};"
+      {% endif %} class="partido">
+    <td id="partido_{{partido.id}}">
+      {% if fila.detalle.items|length == 1 %}
+        {% for op, v in fila.detalle.items %}
+          {{ op }}
+        {% endfor %}
+      {% else %}
+        {{ partido }}
+        <a class="show_detail btn-flat">
+          <i class="material-icons small">expand_more</i>
+        </a>
+      {% endif %}
+    </td>
+    {% if incluir_votos %}
+      <td><!-- votos de opciones !--></td>
+      <td id="votos_{{ partido.id|default:partido|lower }}" class="dato_entero">{{ fila.votos }}</td>
     {% endif %}
-  </td>
-  {% if incluir_votos %}
-  <td><!-- votos de opciones !--></td>
-  <td id="votos_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.votos }}</td>
+    <td><!-- porcentajes de opciones !--></td>
+    {% if modo_eleccion == modo_paso %}
+      <!-- En el caso de que las elecciones sean PASO !-->
+      <td id="porcentaje_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.porcentaje_validos }}%</td>
+    {% endif %}
+    {% if modo_eleccion == modo_generales %}
+      <!-- En el caso de que las elecciones sean GENERALES !-->
+      <td id="porcentaje_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.porcentaje_positivos }}%</td>
+    {% endif %}
+    {% if resultados.proyectado %}
+      <td class="dato">{{ fila.proyeccion }}%</td>
+    {% endif %}
+  </tr>
+  {% if fila.detalle.items|length > 1 %}
+    {% for op, v in fila.detalle.items %}
+      <tr class="partido_{{partido.id}}_detalle fila_detalle">
+        <td class="opcion">{{op}}</td>
+        {% if incluir_votos %}
+          <td class="dato_entero">{{v.votos}}</td>
+          <td><!-- votos de partido !--></td>
+        {% endif %}
+        <td class="dato">{{v.porcentaje}}%</td>
+        <td><!-- porcentajes de partido !--></td>
+        {% if resultados.proyectado %}
+          <td>-</td>
+        {% endif %}
+      </tr>
+    {% endfor %}
   {% endif %}
-  <td><!-- porcentajes de opciones !--></td>
-  {% if modo_eleccion == modo_paso %}
-  <!-- En el caso de que las elecciones sean PASO !-->
-  <td id="porcentaje_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.porcentaje_validos }}%</td>
-  {% endif %}
-  {% if modo_eleccion == modo_generales %}
-  <!-- En el caso de que las elecciones sean GENERALES !-->
-  <td id="porcentaje_{{ partido.id|default:partido|lower }}" class="dato">{{ fila.porcentaje_positivos }}%</td>
-  {% endif %}
-  {% if resultados.proyectado %}
-  <td class="dato">{{ fila.proyeccion }}%</td>
-  {% endif %}
-</tr>
-{% if fila.detalle.items|length > 1 %}
-{% for op, v in fila.detalle.items %}
-<tr class="partido_{{partido.id}}_detalle fila_detalle">
-  <td class="opcion">{{op}}</td>
-  {% if incluir_votos %}
-  <td class="dato">{{v.votos}}</td>
-  <td><!-- votos de partido !--></td>
-  {% endif %}
-  <td  class="dato">{{v.porcentaje}}%</td>
-  <td><!-- porcentajes de partido !--></td>
-  {% if resultados.proyectado %}
-  <td>-</td>
-  {% endif %}
-</tr>
-{% endfor %}
-{% endif %}
 {% endfor %}

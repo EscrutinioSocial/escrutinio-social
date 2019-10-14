@@ -917,6 +917,9 @@ class Opcion(models.Model):
             return f'{self.codigo} - {self.nombre_corto} - part. {self.partido.nombre_corto}'
         return f'{self.codigo} - {self.nombre}'
 
+    def str_frontend(self):
+        return f'{self.codigo} - {self.nombre}'
+
 
 class Eleccion(models.Model):
     """

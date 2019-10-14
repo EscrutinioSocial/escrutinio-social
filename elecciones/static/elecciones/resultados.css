@@ -58,6 +58,10 @@ tr.fila_detalle > td.dato {
     text-align: right;
 }
 
+tr.fila_detalle > td.dato_entero {
+    text-align: right;
+}
+
 #metadata th span {
   vertical-align: 6px;
 }
