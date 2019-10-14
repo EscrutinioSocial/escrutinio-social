@@ -61,10 +61,10 @@ def elegir_siguiente_accion_en_el_momento(request):
         foto = attachments.priorizadas().first()
         if foto:
             return IdentificacionDeFoto(request, foto)
-    if con_carga_pendiente.count() > 0:
-        mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
-        if mesacategoria:
-            return CargaCategoriaEnActa(request, mesacategoria)
+
+    mesacategoria = con_carga_pendiente.sin_cargas_del_fiscal(request.user.fiscal).mas_prioritaria()
+    if mesacategoria:
+        return CargaCategoriaEnActa(request, mesacategoria)
 
     return NoHayAccion(request)
 

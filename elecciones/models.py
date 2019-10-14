@@ -485,10 +485,10 @@ class MesaCategoria(models.Model):
 
     # Status que representan cargas no totales.
     status_carga_parcial = [
-        settings.MC_STATUS_CHOICE.sin_cargar,
-        settings.MC_STATUS_CHOICE.parcial_sin_consolidar,
-        settings.MC_STATUS_CHOICE.parcial_en_conflicto,
-        settings.MC_STATUS_CHOICE.parcial_consolidada_csv
+        STATUS.sin_cargar,
+        STATUS.parcial_sin_consolidar,
+        STATUS.parcial_en_conflicto,
+        STATUS.parcial_consolidada_csv
     ]
 
     status = StatusField(default=STATUS.sin_cargar)

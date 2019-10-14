@@ -350,7 +350,7 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas_con_scheduler(d
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.OK
 
-# En los casos comentados es más prioritatio entregar una identificación.
+# En los casos comentados es más prioritario entregar una identificación.
 parametros_test_redirige_a_parcial_si_es_necesario = [
     (MesaCategoria.STATUS.sin_cargar, True),
     (MesaCategoria.STATUS.parcial_sin_consolidar, True),
@@ -373,7 +373,7 @@ def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client,
     assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
 
 
-# Es más prioritatio entregar una identificación.
+# Es más prioritario entregar una identificación.
 parametros_test_redirige_a_identificar = [
     (MesaCategoria.STATUS.parcial_consolidada_dc, False),
     (MesaCategoria.STATUS.total_sin_consolidar, False),
