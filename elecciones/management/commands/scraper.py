@@ -21,6 +21,7 @@ class Command(BaseCommand):
 
     mesas_visitadas = []
     escuelas_bajadas = {}
+    mesas_sistema_sin_carga = []
 
     def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
         super().__init__(stdout=None, stderr=None, no_color=False, force_color=False)
@@ -59,7 +60,7 @@ class Command(BaseCommand):
 
     def cargar_escuelas(self, kwargs):
         self.status("Cargando escuelas:...")
-        self.escuelas = []
+        self.escuelas_bajadas = []
         # FIXME TODO: Ponerle un nombre declarativo a key y value. Pero todavia no se que son
         for circuito in self.circuitos:
             if (self.pasa_filtros_circuitos(circuito, kwargs)):
@@ -109,17 +110,34 @@ class Command(BaseCommand):
         # FIXME: Ver bien cómo viene esta respuesta y que sea lo que quieren el resto. Por ahora tira un 200 solamente y no un json
         return json.loads(resp.text)
 
+    # Busco en la base las que no estan para esa escuela, distrito, etc...
+    def mesa_no_visitada(self, id_mesa):
+        # FIXME: Por ahora hago un query por mesa. Podría antes buscar 
+        return True
+
     def cargar_mesas(self, kwargs):
         self.mesas = []
-        for key, value1 in self.escuelas_bajadas.items():
-            for id_mesa, value in value1['datos']:
-                mesa = {} 
-                mesa['id'] = value['c']
-                mesa['codigomesa'] = value['cc'][5:5]
-                mesa['url'] = value['rf']
-                datos = self.descargar_json_mesa(mesa['url'])
-                mesa['empadronados'] = datos['st'][0]['v_exp_abs']
-                self.mesas.append(mesa)
+        for id_escuela, valor1 in self.escuelas_bajadas.items():
+            for valor_mesa in valor1:
+                distrito = valor_mesa['cc'][:2]
+                seccion = valor_mesa['cc'][2:5]
+                nro_mesa = valor_mesa['cc'][5:10]
+                if(self.mesa_no_visitada(id_mesa, distrito, seccion, nro_mesa)):
+                    mesa = {} 
+                    mesa['id'] = valor_mesa['c']
+                    mesa['distrito'] = distrito 
+                    mesa['seccion'] = seccion 
+                    mesa['nro_mesa'] = nro_mesa 
+                    mesa['url'] = valor_mesa['rf']
+                    datos = self.descargar_json_mesa(mesa['url'])
+                    mesa['votos'] = datos['rp']
+                    '''
+                    - cc son los cargos.
+                    - pc es el partido
+                    - v votos
+                    - tot: totales
+                    '''
+                    self.mesas.append(mesa)
 
     def descargar_json_mesa(self, url):
         # https://resultados.gob.ar/assets/data/totalized_results/precincts/80/80443.json
@@ -133,26 +151,6 @@ class Command(BaseCommand):
 
     def status_green(self, texto):
         self.stdout.write(self.style.SUCCESS(texto))
-
-    # FIXME- Esto es lo que sirve para obtener la mesa segun el correo
-    def get_carga_correo(self, mesa):
-        return MesaCategoria.objects.get(
-            mesa=mesa,
-            categoria=self.categoria,
-        ).parcial_oficial
-
-    '''
-    def get_mesas_sin_scrapear_escuela(self, escuela):
-    def get_mesas_sin_scrapear_provincia(self, provincia):
-    def get_mesas_sin_scrapear_circuito(self, circuito):
-    def get_mesas_sin_scrapear_seccion(self, provincia):
-    def get_mesas_sin_scrapear_distrito(self, provincia):
-    def get_mesas_sin_scrapear_pais(self):
-    '''
-    def analizar_pais(self):
-        distritos = Distrito.objects.all()
-        for distrito in distritos:
-            self.analizar_distrito(distrito)
 
     def add_arguments(self, parser):
         parser.add_argument("--escuela",
@@ -195,11 +193,31 @@ class Command(BaseCommand):
 
     # Guarda las mesas que tenemos hacia el django
     def guardar_mesas(self):
+        for datos_mesa in self.mesas:
+        '''
+                   mesa['id'] = value['c']
+                    mesa['codigomesa'] = value['cc'][5:5]
+                    mesa['url'] = value['rf']
+                    datos = self.descargar_json_mesa(mesa['url'])
+                    mesa['votos'] = datos['sp']
+                    - cc son los cargos.
+                    - pc es el partido
+                    - v votos
+                    - tot: totales
+        '''
+            
         return
 
+    # Carga las mesas_categoria del sistema que no tengan datos oficiales. Nos interesa solo presidente y gobernador
+    # FIXME TODO: Vamos por aca
+    def cargar_mesas_sistema(self):
+        return 
+
     def handle(self, *args, **kwargs):
-        # FIXME TODO: Agregar los filtros
+        # FIXME TODO: Agregar los filtros de categoria
         self.filtros = kwargs
+        self.asignar_nivel_agregacion(kwargs)
+        self.cargar_mesas_sistema(kwargs)
         self.cargar_circuitos(kwargs)
         self.cargar_escuelas(kwargs)
         self.cargar_mesas(kwargs)
@@ -217,7 +235,6 @@ class Command(BaseCommand):
         self.categoria = Categoria.objects.get(slug=nombre_categoria)
         print("Vamos a analizar la categoría:", self.categoria)
 
-        self.asignar_nivel_agregacion(kwargs)
         self.analizar_segun_nivel_agregacion()
         '''
 
