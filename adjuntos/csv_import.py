@@ -457,6 +457,9 @@ class CSVImporter:
 
         # Buscamos este nro de lista dentro de las opciones asociadas a
         # esta categoría.
+
+        # Me aseguro de que sea string.
+        codigo_lista_en_csv = f'{codigo_lista_en_csv}'
         match_codigo_lista = [una_opcion for una_opcion in categoria_bd.opciones.all()
                               if una_opcion.codigo and una_opcion.codigo.strip().lower()
                               == codigo_lista_en_csv.strip().lower()]
