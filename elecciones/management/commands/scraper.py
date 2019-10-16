@@ -1,11 +1,21 @@
-import math
 import requests
 import json
 from django.core.management.base import BaseCommand
-
-from elecciones.models import Distrito, Seccion, Circuito, Eleccion, Categoria, Mesa, Partido, MesaCategoria, TIPOS_DE_AGREGACIONES, NIVELES_DE_AGREGACION, OPCIONES_A_CONSIDERAR
-from elecciones.resultados import Sumarizador
 from escrutinio_social import settings
+from elecciones.models import (
+    Distrito,
+    Mesa,
+    Carga,
+    Seccion,
+    Circuito,
+    Categoria,
+    MesaCategoria,
+    VotoMesaReportado,
+    CargaOficialControl,
+    Opcion,
+    CategoriaOpcion
+)
+
  
 files_dir = "scraper_data/"
 regiones_file = 'regions.json'
@@ -15,6 +25,13 @@ mesas_url = f"{request_url}assets/data/totalized_results/"
 
 authorization_header = 'Bearer 31d15a'
 
+
+# If modifying these scopes, delete the file token.pickle.
+API_KEY = '***REMOVED***'
+# The ID and range of a sample spreadsheet.
+PARAMS = {'key': API_KEY}
+
+
 class Command(BaseCommand):
     
     help = "Scrapear el sitio oficial"
@@ -22,10 +39,20 @@ class Command(BaseCommand):
     mesas_visitadas = []
     escuelas_bajadas = {}
     mesas_sistema_sin_carga = []
+    # Los codigos en el sistema de escrutinio
+    codigo_opcion_nosotros_web = None
+    codigo_opcion_ellos_web = None
+    codigo_presidente_web = None
 
     def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
         super().__init__(stdout=None, stderr=None, no_color=False, force_color=False)
 
+
+    def get_opcion_nosotros(self):
+        return self.get_opcion(settings.CODIGO_PARTIDO_NOSOTROS)
+
+    def get_opcion_ellos(self):
+        return self.get_opcion(settings.CODIGO_PARTIDO_ELLOS)
 
     # Toma un $value1['distrito'] . $value1['seccion'] . $value1['circuito']  y devuelve si corresponde o no.
     def pasa_filtros_circuitos(self, circuito, kwargs):
@@ -111,7 +138,7 @@ class Command(BaseCommand):
         return json.loads(resp.text)
 
     # Busco en la base las que no estan para esa escuela, distrito, etc...
-    def mesa_no_visitada(self, id_mesa):
+    def mesa_no_visitada(self, id_mesa, distrito, seccion, nro_mesa):
         # FIXME: Por ahora hago un query por mesa. Podría antes buscar 
         return True
 
@@ -131,6 +158,7 @@ class Command(BaseCommand):
                     mesa['url'] = valor_mesa['rf']
                     datos = self.descargar_json_mesa(mesa['url'])
                     mesa['votos'] = datos['rp']
+                    mesa['votos_extra'] = datos['ct'] # Datos de blancos, impugnados, etc.
                     '''
                     - cc son los cargos.
                     - pc es el partido
@@ -211,6 +239,7 @@ class Command(BaseCommand):
     # Carga las mesas_categoria del sistema que no tengan datos oficiales. Nos interesa solo presidente y gobernador
     # FIXME TODO: Vamos por aca
     def cargar_mesas_sistema(self):
+            
         return 
 
     def handle(self, *args, **kwargs):

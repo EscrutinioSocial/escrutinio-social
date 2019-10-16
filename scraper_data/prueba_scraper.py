@@ -1,5 +1,5 @@
-files_dir = '../../../scraper_data/doc/'
-test_dir = files_dir + 'test/'
+files_dir = 'doc/'
+test_dir = 'test/'
 regiones_file = 'regions.json'
 request_url = 'https://resultados.gob.ar/'
 escuelas_url = "https://resultados.gob.ar/assets/data/precincts/"
@@ -84,6 +84,7 @@ def cargar_mesas():
                 #datos = self.descargar_json_mesa(mesa['url'])
                 datos = cargar_mesa_prueba()
                 mesa['votos'] = datos['rp']
+                mesa['votos_extra'] = datos['ct']
                 '''
                 - cc son los cargos.
                 - pc es el partido
