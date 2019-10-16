@@ -69,9 +69,20 @@ Empadronados = $datos['st'][0]['v_exp_abs']
  rp => Son los datos de cada agrupacion y categoria.
  ct => Son los votos blancos, recurridos, etc. para cada categoria y agrupacion
 
-En rp:
+En rp tenemos los distintos:
 	- cc: son los cargos.
-	- pc: es el partido
+	- pc: es el partido (Ojo que es distinto para una misma agrupación cuando es para presidente o no)
 	- v: cantidad de votos
 	- tot: totales
 
+En ct:
+	- cc: Código de categoria
+	- cn: tipo: (votantes esperados, total, blancos, etc)
+		Digo: Nombre en el sistema: nombre en el acta
+		- total-turnout: Total por columna 
+		- VB: Votos blancos
+		- TOTAL: total por columna
+		- VN: Votos Nulos
+		- VR: Votos recurridos
+		- VII: Votos de identidad impugnada
+	- cv: Cantidad de votos
