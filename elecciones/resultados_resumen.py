@@ -1,8 +1,78 @@
 from functools import reduce
 
 from escrutinio_social import settings
-from elecciones.models import Mesa, MesaCategoria
+from elecciones.models import Mesa, MesaCategoria, Seccion, Distrito, Categoria
 from adjuntos.models import Attachment, PreIdentificacion
+
+
+class SinRestriccion():
+    def nombre(self):
+        return 'No se eligió distrito o sección'
+
+    def restringe_algo(self):
+        return False
+
+    def slug(self):
+        return 'None'
+
+class RestriccionPorDistrito():
+    def __init__(self, distrito_id):
+        self.distrito_id = distrito_id
+
+    def nombre(self):
+        distrito = Distrito.objects.filter(id=self.distrito_id).first()
+        return distrito.nombre
+
+    def restringe_algo(self):
+        return True
+
+    def slug(self):
+        return 'Distrito-' + str(self.distrito_id)
+
+    def aplicar_restriccion_mesas(self, query):
+        return query.filter(circuito__seccion__distrito__id=self.distrito_id)
+
+    def aplicar_restriccion_mesacats(self, query):
+        return query.filter(mesa__circuito__seccion__distrito__id=self.distrito_id)
+
+    def aplicar_restriccion_preidentificaciones(self, query):
+        return query.filter(distrito__id=self.distrito_id)
+
+    def query_categorias(self):
+        return Categoria.objects.filter(distrito__id=self.distrito_id, seccion=None) | Categoria.objects.filter(
+            distrito=None, seccion=None)
+
+
+class RestriccionPorSeccion():
+    def __init__(self, seccion_id):
+        self.seccion_id = seccion_id
+
+    def nombre(self):
+        seccion = Seccion.objects.filter(id=self.seccion_id).first()
+        return f'{seccion.nombre} ({seccion.distrito.nombre})'
+
+    def restringe_algo(self):
+        return True
+
+    def slug(self):
+        return 'Seccion-' + str(self.seccion_id)
+
+    def aplicar_restriccion_mesas(self, query):
+        return query.filter(circuito__seccion__id=self.seccion_id)
+
+    def aplicar_restriccion_mesacats(self, query):
+        return query.filter(mesa__circuito__seccion__id=self.seccion_id)
+
+    def aplicar_restriccion_preidentificaciones(self, query):
+        return query.filter(seccion__id=self.seccion_id)
+
+    def query_categorias(self):
+        seccion = Seccion.objects.filter(id=self.seccion_id).first()
+        return Categoria.objects.filter(seccion=seccion) | Categoria.objects.filter(
+            distrito=seccion.distrito) | Categoria.objects.filter(
+            distrito=None, seccion=None)
+
+
 
 
 class GeneradorDatosFotos():
@@ -13,7 +83,6 @@ class GeneradorDatosFotos():
         if (self.cantidad_mesas == None):
             self.cantidad_mesas = self.query_inicial_mesas().count()
             self.mesas_con_foto_identificada = self.query_inicial_mesas().exclude(attachments=None).count()
-
 
 
 class GeneradorDatosFotosNacional(GeneradorDatosFotos):
@@ -33,7 +102,6 @@ class GeneradorDatosFotosNacional(GeneradorDatosFotos):
         )
 
 
-
 class GeneradorDatosFotosDistrital(GeneradorDatosFotos):
     def __init__(self, distrito):
         super().__init__()
@@ -43,36 +111,67 @@ class GeneradorDatosFotosDistrital(GeneradorDatosFotos):
         return Mesa.objects.filter(circuito__seccion__distrito__numero=self.distrito)
 
 
-class GeneradorDatosFotosConsolidado():
+class GeneradorDatosFotosConRestriccion(GeneradorDatosFotos):
+    def __init__(self, restriccion):
+        super().__init__()
+        self.restriccion = restriccion
+
+    def query_inicial_mesas(self):
+        return self.restriccion.aplicar_restriccion_mesas(Mesa.objects)
+
+
+class NoGeneradorDatosFotos():
     def __init__(self):
+        self.cantidad_mesas = None
+        self.mesas_con_foto_identificada = None
+
+    def calcular(self):
+        pass
+
+
+class GeneradorDatosFotosConsolidado():
+    def __init__(self, restriccion=None):
         super().__init__()
         self.nacion = GeneradorDatosFotosNacional()
         self.pba = GeneradorDatosFotosDistrital(settings.DISTRITO_PBA)
+        if restriccion and restriccion.restringe_algo():
+            self.restringido = GeneradorDatosFotosConRestriccion(restriccion)
+        else:
+            self.restringido = NoGeneradorDatosFotos()
 
-    def datos_nacion_pba(self):
+
+    def datos_nacion_pba_restriccion(self):
         self.nacion.calcular()
         self.pba.calcular()
+        self.restringido.calcular()
+        print(
+            f'Después de calcular datos de fotos, restringido da {self.restringido.cantidad_mesas} - {self.restringido.mesas_con_foto_identificada}')
+        print(self.restringido)
         return [
-            DatoDoble("Cantidad de mesas", self.nacion.cantidad_mesas,
-                              self.nacion.cantidad_mesas, self.pba.cantidad_mesas, self.pba.cantidad_mesas),
-            DatoDoble("Mesas con foto identificada", 
-                                self.nacion.mesas_con_foto_identificada, self.nacion.cantidad_mesas, 
-                                self.pba.mesas_con_foto_identificada, self.pba.cantidad_mesas),
+            DatoTriple("Cantidad de mesas",
+                       self.nacion.cantidad_mesas, self.nacion.cantidad_mesas, 
+                       self.pba.cantidad_mesas, self.pba.cantidad_mesas,
+                       self.restringido.cantidad_mesas, self.restringido.cantidad_mesas),
+            DatoTriple("Mesas con foto identificada", 
+                       self.nacion.mesas_con_foto_identificada, self.nacion.cantidad_mesas, 
+                       self.pba.mesas_con_foto_identificada, self.pba.cantidad_mesas,
+                       self.restringido.mesas_con_foto_identificada, self.restringido.cantidad_mesas),
         ]
 
     def datos_solo_nacion(self):
         self.nacion.calcular()
-        self.pba.calcular()
         return [
-            DatoDoble("Fotos en proceso de identificación",
+            DatoTriple("Fotos en proceso de identificación",
                                      self.nacion.fotos_en_proceso, self.nacion.cantidad_mesas),
-            DatoDoble("Fotos sin acciones de identificación",
+            DatoTriple("Fotos sin acciones de identificación",
                                      self.nacion.fotos_sin_acciones, self.nacion.cantidad_mesas),
-            DatoDoble("Mesas sin foto (estimado)",
+            DatoTriple("Mesas sin foto (estimado)",
                               self.nacion.mesas_sin_foto, self.nacion.cantidad_mesas),
-            DatoDoble("Fotos con problema confirmado",
+            DatoTriple("Fotos con problema confirmado",
                       self.nacion.fotos_con_problema_confirmado, self.nacion.cantidad_mesas),
         ]
+
+
 
 
 class GeneradorDatosPreidentificaciones():
@@ -87,25 +186,44 @@ class GeneradorDatosPreidentificaciones():
             self.sin_identificar = self.cantidad_total - self.identificadas
 
 
-class GeneradorDatosPreidentificacionesConsolidado():
+class NoGeneradorDatosPreidentificaciones():
     def __init__(self):
+        self.cantidad_total = None
+        self.identificadas = None
+        self.sin_identificar = None
+
+    def calcular(self):
+        pass
+
+
+class GeneradorDatosPreidentificacionesConsolidado():
+    def __init__(self, restriccion):
         super().__init__()
         self.nacion = GeneradorDatosPreidentificaciones()
         self.pba = GeneradorDatosPreidentificaciones(
             PreIdentificacion.objects.filter(distrito__numero=settings.DISTRITO_PBA))
+        if restriccion and restriccion.restringe_algo():
+            self.restringido = GeneradorDatosPreidentificaciones(
+                restriccion.aplicar_restriccion_preidentificaciones(PreIdentificacion.objects))
+        else:
+            self.restringido = NoGeneradorDatosPreidentificaciones()
 
     def datos(self):
         self.nacion.calcular()
         self.pba.calcular()
+        self.restringido.calcular()
         return [
-            DatoDoble("Total", self.nacion.cantidad_total,
-                              self.nacion.cantidad_total, self.pba.cantidad_total, self.pba.cantidad_total),
-            DatoDoble("Con identificación consolidada", 
-                              self.nacion.identificadas, self.nacion.cantidad_total, 
-                              self.pba.identificadas, self.pba.cantidad_total),
-            DatoDoble("Sin identificación consolidada", 
+            DatoTriple("Total", self.nacion.cantidad_total,
+                       self.nacion.cantidad_total, self.pba.cantidad_total, self.pba.cantidad_total,
+                       self.restringido.cantidad_total, self.restringido.cantidad_total),
+            DatoTriple("Con identificación consolidada", 
+                       self.nacion.identificadas, self.nacion.cantidad_total, 
+                       self.pba.identificadas, self.pba.cantidad_total,
+                       self.restringido.identificadas, self.restringido.cantidad_total),
+            DatoTriple("Sin identificación consolidada", 
                               self.nacion.sin_identificar, self.nacion.cantidad_total, 
-                              self.pba.sin_identificar, self.pba.cantidad_total),
+                              self.pba.sin_identificar, self.pba.cantidad_total,
+                       self.restringido.sin_identificar, self.restringido.cantidad_total),
         ]
 
 
@@ -135,6 +253,19 @@ class GeneradorDatosCarga():
 
     def statuses_con_problemas(self):
         return [MesaCategoria.STATUS.con_problemas]
+
+
+class NoGeneradorDatosCarga():
+    def __init__(self):
+        self.dato_total = None
+        self.dato_carga_confirmada = None
+        self.dato_carga_csv = None
+        self.dato_carga_en_proceso = None
+        self.dato_carga_sin_carga = None
+        self.dato_carga_con_problemas = None
+
+    def calcular(self):
+        pass
 
 
 class GeneradorDatosCargaParcial(GeneradorDatosCarga):
@@ -178,9 +309,11 @@ class GeneradorDatosCargaTotal(GeneradorDatosCarga):
 
 
 class GeneradorDatosCargaConsolidado():
-    def __init__(self):
+    def __init__(self, restriccion, categoria):
         super().__init__()
         self.query_base = MesaCategoria.objects
+        self.restriccion = restriccion
+        self.categoria = categoria
         self.crear_categorias()
 
     def query_inicial(self, slug_categoria):
@@ -190,22 +323,32 @@ class GeneradorDatosCargaConsolidado():
         self.query_base = query
         self.crear_categorias()
         
-    def datos(self):
+    def calcular(self):
         self.pv.calcular()
         self.gv.calcular()
+        self.restringido.calcular()
+
+    def datos(self):
+        self.calcular()
         return [
-            DatoDoble("Total de mesas", self.pv.dato_total, self.pv.dato_total,
-                      self.gv.dato_total, self.gv.dato_total),
-            DatoDoble("Con carga confirmada", self.pv.dato_carga_confirmada, self.pv.dato_total,
-                      self.gv.dato_carga_confirmada, self.gv.dato_total),
-            DatoDoble("Con carga desde CSV sin confirmar", self.pv.dato_carga_csv, self.pv.dato_total,
-                      self.gv.dato_carga_csv, self.gv.dato_total),
-            DatoDoble("Con otras cargas sin confirmar", self.pv.dato_carga_en_proceso, self.pv.dato_total,
-                      self.gv.dato_carga_en_proceso, self.gv.dato_total),
-            DatoDoble("Sin carga", self.pv.dato_carga_sin_carga, self.pv.dato_total,
-                      self.gv.dato_carga_sin_carga, self.gv.dato_total),
-            DatoDoble("Con problemas", self.pv.dato_carga_con_problemas, self.pv.dato_total,
-                      self.gv.dato_carga_con_problemas, self.gv.dato_total),
+            DatoTriple("Total de mesas", self.pv.dato_total, self.pv.dato_total,
+                      self.gv.dato_total, self.gv.dato_total,
+                       self.restringido.dato_total, self.restringido.dato_total),
+            DatoTriple("Con carga confirmada", self.pv.dato_carga_confirmada, self.pv.dato_total,
+                      self.gv.dato_carga_confirmada, self.gv.dato_total,
+                       self.restringido.dato_carga_confirmada, self.restringido.dato_total),
+            DatoTriple("Con carga desde CSV sin confirmar", self.pv.dato_carga_csv, self.pv.dato_total,
+                      self.gv.dato_carga_csv, self.gv.dato_total,
+                       self.restringido.dato_carga_csv, self.restringido.dato_total),
+            DatoTriple("Con otras cargas sin confirmar", self.pv.dato_carga_en_proceso, self.pv.dato_total,
+                      self.gv.dato_carga_en_proceso, self.gv.dato_total,
+                       self.restringido.dato_carga_en_proceso, self.restringido.dato_total),
+            DatoTriple("Sin carga", self.pv.dato_carga_sin_carga, self.pv.dato_total,
+                      self.gv.dato_carga_sin_carga, self.gv.dato_total,
+                       self.restringido.dato_carga_sin_carga, self.restringido.dato_total),
+            DatoTriple("Con problemas", self.pv.dato_carga_con_problemas, self.pv.dato_total,
+                      self.gv.dato_carga_con_problemas, self.gv.dato_total,
+                       self.restringido.dato_carga_con_problemas, self.restringido.dato_total),
         ]
 
 
@@ -213,24 +356,37 @@ class GeneradorDatosCargaParcialConsolidado(GeneradorDatosCargaConsolidado):
     def crear_categorias(self):
         self.pv = GeneradorDatosCargaParcial(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE))
         self.gv = GeneradorDatosCargaParcial(self.query_inicial(settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA))
+        if self.restriccion and self.restriccion.restringe_algo():
+            self.restringido = GeneradorDatosCargaParcial(
+                self.restriccion.aplicar_restriccion_mesacats(self.query_inicial(self.categoria.slug)))
+        else:
+            self.restringido = NoGeneradorDatosCarga()
 
 
 class GeneradorDatosCargaTotalConsolidado(GeneradorDatosCargaConsolidado):
     def crear_categorias(self):
         self.pv = GeneradorDatosCargaTotal(self.query_inicial(settings.SLUG_CATEGORIA_PRESI_Y_VICE))
         self.gv = GeneradorDatosCargaTotal(self.query_inicial(settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA))
+        if self.restriccion and self.restriccion.restringe_algo():
+            self.restringido = GeneradorDatosCargaTotal(
+                self.restriccion.aplicar_restriccion_mesacats(self.query_inicial(self.categoria.slug)))
+        else:
+            self.restringido = NoGeneradorDatosCarga()
 
 
-class DatoDoble():
-    def __init__(self, texto, cantidad_1, cantidad_total_1, cantidad_2=None, cantidad_total_2=None):
+class DatoTriple():
+    def __init__(self, texto, cantidad_1, cantidad_total_1, cantidad_2=None, cantidad_total_2=None, cantidad_3=None, cantidad_total_3=None):
         self.texto = texto
         self.cantidad_1 = cantidad_1
         self.porcentaje_1 = porcentaje(cantidad_1, cantidad_total_1)
         if (cantidad_2 != None):
             self.cantidad_2 = cantidad_2
             self.porcentaje_2 = porcentaje(cantidad_2, cantidad_total_2)
+        if (cantidad_3 != None):
+            self.cantidad_3 = cantidad_3
+            self.porcentaje_3 = porcentaje(cantidad_3, cantidad_total_3)
 
 
 def porcentaje(parcial, total):
-    porcentaje_calculado = 100 if parcial == total else (parcial * 100) / total
+    porcentaje_calculado = 0 if total == 0 else (100 if parcial == total else (parcial * 100) / total)
     return round(porcentaje_calculado, 2)

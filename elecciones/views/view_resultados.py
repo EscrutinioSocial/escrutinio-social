@@ -12,6 +12,7 @@ from .definiciones import *
 import django_excel as excel
 
 from elecciones.models import (
+    MesaCategoria,
     Distrito,
     Seccion,
     Circuito,
@@ -352,3 +353,5 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
 
     def get_tecnica_de_proyeccion(self):
         return self.tecnica_de_proyeccion
+
+
