@@ -18,6 +18,7 @@ class Command(BaseCommand):
         parser.add_argument('--nro_seccion', type=str, help='Nro de la sección a la que corresponde el usuario.')
         parser.add_argument('--nro_distrito', type=str, help='Nro del distrito a la que corresponde el usuario.')
         parser.add_argument('--por_seccion', dest='por_seccion', action='store_true', default=False, help='Genera usuarios por sección dentro del distrito indicado.')
+        parser.add_argument('--por_distrito', dest='por_distrito', action='store_true', default=False, help='Genera usuarios por distrito.')
 
     def crear_acceso(self, prefijo, indice, grupo, distrito, seccion, sobre_escribir=True):
         username = slugify(f'{prefijo}{indice:03d}')
@@ -64,6 +65,15 @@ class Command(BaseCommand):
             nombre = seccion.nombre.lower().replace(' ', '')
             self.alta_usuarios(f'{nombre}{prefijo}', indice_inicial, cantidad, distrito, seccion, grupo)
 
+    def alta_usuarios_por_distrito(self, prefijo, indice_inicial, cantidad, grupo):
+        """
+        Da de alta usuarios en cada distrito.
+        """
+        distritos = Distrito.objects.all()
+        for distrito in distritos:
+            nombre = distrito.nombre.lower().replace(' ', '')
+            self.alta_usuarios(f'{nombre}{prefijo}', indice_inicial, cantidad, distrito, None, grupo)
+
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS('--- Generando usuarios ---'))
 
@@ -79,6 +89,8 @@ class Command(BaseCommand):
 
         if options['por_seccion']:
             self.alta_usuarios_por_seccion(prefijo, indice_inicial, cantidad, distrito, grupo)
+        elif options['por_distrito']:
+            self.alta_usuarios_por_distrito(prefijo, indice_inicial, cantidad, grupo)
         else:
             self.alta_usuarios(prefijo, indice_inicial, cantidad, distrito, seccion, grupo)
 
