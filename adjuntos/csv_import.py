@@ -575,11 +575,11 @@ class CSVImporter:
                 self.log_debug("--- Creando carga parcial.")
             carga = self.carga_parcial
         else:
-            ## Por una inconsistencia (ver #352) sólo se cargan no
-            ## prioritarias de acuerdo al flag configurable.
+            # Por una inconsistencia (ver #352) sólo se cargan no
+            # prioritarias de acuerdo al flag configurable.
             if not config.CARGAR_OPCIONES_NO_PRIO_CSV:
                 return
-            
+
             if not self.carga_total:
                 self.carga_total = Carga.objects.create(
                     tipo=Carga.TIPOS.total,

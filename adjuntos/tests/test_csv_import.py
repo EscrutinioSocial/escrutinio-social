@@ -82,6 +82,7 @@ def test_validar_csv_mesas_invalidas(db, usr_unidad_basica):
     assert cant_mesas_parcialmente_ok == 0
     assert Carga.objects.count() == 0
 
+
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     d1 = DistritoFactory(numero=1)
@@ -149,6 +150,7 @@ def carga_inicial(db):
     MesaFactory(numero='4012', lugar_votacion__circuito=circ, electores=100, circuito=circ,
                 categorias=categorias)
 
+
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_resultados_negativos(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
@@ -167,6 +169,7 @@ def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inici
     assert 'El número de lista C2019 no fue encontrado' in errores
     assert Carga.objects.count() == 0
 
+
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
@@ -175,6 +178,7 @@ def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     assert cant_mesas_parcialmente_ok == 0
     assert f"Faltan las opciones: ['{Opcion.total_votos().nombre}'] en la mesa" in errores
     assert Carga.objects.count() == 0
+
 
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
@@ -206,6 +210,32 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica
     # Cada cat tiene 2 partidos + total + blancos + nulos + sobres = 6
     assert votos_carga_parcial.count() == (len(CATEGORIAS) - 1) * 6
 
+
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=False)
+def test_procesar_csv_informacion_valida_genera_resultados_salvo_totales(db, usr_unidad_basica, carga_inicial):
+    cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
+        PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
+    assert cant_mesas_ok == 1
+    assert cant_mesas_parcialmente_ok == 0
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    assert cargas_totales.count() == 0
+
+    votos_carga_total = VotoMesaReportado.objects.filter(carga__in=cargas_totales).all()
+    assert votos_carga_total.count() == 0
+
+    cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial)
+    # Hay una sola categoría no prioritaria.
+    assert cargas_parciales.count() == len(CATEGORIAS) - 1
+
+    for parcial in cargas_parciales:
+        assert parcial.origen == 'csv'
+
+    votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=cargas_parciales).all()
+    # Cada cat tiene 2 partidos + total + blancos + nulos + sobres = 6
+    assert votos_carga_parcial.count() == (len(CATEGORIAS) - 1) * 6
+
+
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
@@ -236,6 +266,7 @@ def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
     assert "Faltan las opciones: ['JpC'] en la mesa" in errores
     assert Carga.objects.count() == 1
 
+
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
@@ -246,6 +277,7 @@ def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
            "Faltan las opciones: ['JpC'] en la mesa" in errores
     assert Carga.objects.count() == len(CATEGORIAS) - 1
 
+
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_caracteres_alfabeticos_en_votos(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
@@ -254,6 +286,7 @@ def test_caracteres_alfabeticos_en_votos(db, usr_unidad_basica, carga_inicial):
     assert cant_mesas_parcialmente_ok == 1
     assert 'Los resultados deben ser números enteros positivos.' in errores
     assert Carga.objects.count() == 0
+
 
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_acumula_errores(db, usr_unidad_basica, carga_inicial):
@@ -264,6 +297,7 @@ def test_acumula_errores(db, usr_unidad_basica, carga_inicial):
     assert 'Los resultados deben ser números enteros positivos.' in errores
     assert "Faltan las opciones: ['JpC'] en la mesa" in errores
     assert Carga.objects.count() == 0
+
 
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_informacion_valida_con_listas_numericas(db, usr_unidad_basica, carga_inicial):
@@ -279,6 +313,7 @@ def test_procesar_csv_informacion_valida_con_listas_numericas(db, usr_unidad_bas
     # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene
     # además opción no prioritaria.
     assert cargas_totales.count() == 2
+
 
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_carga_reemplaza_anterior(db, usr_unidad_basica, carga_inicial):
@@ -305,6 +340,7 @@ def test_procesar_csv_carga_reemplaza_anterior(db, usr_unidad_basica, carga_inic
     cargas_repetidas = Carga.objects.filter(id__in=ids_viejos)
     # No quedó ninguna de las viejas.
     assert cargas_repetidas.count() == 0
+
 
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_acepta_metadata_opcional(db, usr_unidad_basica, carga_inicial):
@@ -336,6 +372,7 @@ def test_procesar_csv_otros_separadores(db, usr_unidad_basica, carga_inicial):
 
     assert cargas_totales.count() == 2
 
+
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_hace_importacion_parcial(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
@@ -346,6 +383,7 @@ def test_procesar_csv_hace_importacion_parcial(db, usr_unidad_basica, carga_inic
     cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
 
     assert cargas_totales.count() == 2
+
 
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
@@ -362,6 +400,7 @@ def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
     # Debería haber 2 cargas total: Int (que no es prio), y presi, que es prio pero tiene
     # además opción no prioritaria.
     assert cargas_totales.count() == 2
+
 
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 @pytest.mark.django_db(transaction=True)
