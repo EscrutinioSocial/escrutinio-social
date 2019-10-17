@@ -1,6 +1,7 @@
 from functools import lru_cache
 from django.db.models import Q, F, Sum, Subquery, OuterRef, Count
 from .models import (
+    Categoria,
     Mesa,
     TecnicaProyeccion,
     AgrupacionCircuito,
@@ -252,6 +253,4 @@ class SumarizadorCombinado():
         ), ResultadoCombinado())
 
     def categorias(self):
-        # XXX Esto hay que hacerlo mejor.
-        from elecciones.models import Categoria
-        return Categoria.objects.filter(activa=True)
+        return Categoria.objects.filter(distrito__isnull=True)
