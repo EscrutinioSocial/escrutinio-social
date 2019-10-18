@@ -253,4 +253,4 @@ class SumarizadorCombinado():
         ), ResultadoCombinado())
 
     def categorias(self):
-        return Categoria.objects.filter(distrito__isnull=True)
+        return Categoria.objects.filter(distrito__isnull=True, activa=True)

@@ -179,7 +179,7 @@ class Sumarizador():
             if secciones:
                 lookups = lookups | Q(seccion__in=secciones)
 
-        return Categoria.objects.filter(lookups)
+        return Categoria.objects.filter(lookups, activa=True)
 
     @lru_cache(128)
     def mesas(self, categoria):
