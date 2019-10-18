@@ -278,7 +278,7 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
     def dispatch(self, *args, **kwargs):
         pk = self.kwargs.get('pk')
         if pk is None:
-            return redirect('resultados-en-base-a-configuración', pk=Categoria.objects.first().id)
+            return redirect('resultados-en-base-a-configuracion', pk=Categoria.objects.first().id)
         return super().dispatch(*args, **kwargs)
 
     def create_sumarizador(self):

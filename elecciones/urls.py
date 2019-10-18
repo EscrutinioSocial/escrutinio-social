@@ -48,8 +48,8 @@ urlpatterns = [
         views.ResultadosExport.as_view(), name='resultados-export'
     ),
     url(
-        r'^resultados-en-base-a-configuración/(?P<pk>\d+)?$',
+        r'^resultados-en-base-a-configuracion/(?P<pk>\d+)?$',
         views.ResultadosComputoCategoria.as_view(),
-        name='resultados-en-base-a-configuración'
+        name='resultados-en-base-a-configuracion'
     ),
 ]
