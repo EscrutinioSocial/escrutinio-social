@@ -27,10 +27,10 @@ class Command(BaseCommand):
 
         categoria_presi = Categoria.objects.filter(requiere_cargas_parciales=True, nombre__contains="Presidente").get()
 
-        opciones = None
+        opciones_presi = None
         if categoria_presi is not None:
-            opciones = categoria_presi.opciones_actuales(solo_prioritarias=True,
-                                                         excluir_optativas=True).values_list('nombre', flat=True)
+            opciones_presi = categoria_presi.opciones_actuales(solo_prioritarias=True,
+                                                               excluir_optativas=True).values_list('nombre', flat=True)
 
         distritos = Distrito.objects.all()[:5]
         for distrito in distritos:
@@ -41,7 +41,7 @@ class Command(BaseCommand):
                     mesas = Mesa.objects.filter(lugar_votacion__circuito=circuito, categorias=categoria_presi)[
                             :cant_mesas]
                     for mesa in mesas:
-                        self.generar_acta(distrito, seccion, circuito, mesa, opciones)
+                        self.generar_acta(distrito, seccion, circuito, mesa, opciones_presi)
 
     def generar_acta(self, distrito, seccion, circuito, mesa, opciones):
         # draw the message on the background
@@ -49,7 +49,6 @@ class Command(BaseCommand):
 
         font = ImageFont.load_default()
         # font = ImageFont.truetype("arial.ttf", 16)
-
 
         # starting position of the message
 
@@ -62,17 +61,20 @@ class Command(BaseCommand):
         draw = ImageDraw.Draw(img)
 
         draw.text((x, y), message, fill=color, font=font)
-        (x, y) = (150, 150)
+        (x, y) = (75, 150)
 
-        lista = ""
-        sum = 0
+        lista = "Opcion \t... Votos Presidente \t... Votos Gobernador \n"
+        sum_presi = 0
+        sum_gob = 0
         for opcion in opciones:
-            cantidad = random.randint(0, 50)
+            cantidad_presi = random.randint(0, 50)
+            cantidad_gob = random.randint(0, 50)
             if not "total" in opcion:
-                sum += cantidad
-                lista += opcion + "..." + str(cantidad) + "\n"
+                sum_presi += cantidad_presi
+                sum_gob += cantidad_gob
+                lista += opcion + "\t ..." + str(cantidad_presi) + "\t ..." + str(cantidad_gob) + "\n"
             else:
-                lista += opcion + "..." + str(sum) + "\n"
+                lista += opcion + "\t ..." + str(sum_presi) + "\t ..." + str(sum_gob) + "\n"
 
         draw.text((x, y), lista, fill=color, font=font)
 
