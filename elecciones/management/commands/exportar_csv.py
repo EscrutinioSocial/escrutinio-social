@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 import django_excel as excel
 
 from elecciones.models import Distrito, Seccion, Circuito, Eleccion, Categoria, Mesa, Partido, MesaCategoria, TIPOS_DE_AGREGACIONES, NIVELES_DE_AGREGACION, OPCIONES_A_CONSIDERAR
-from elecciones.resultados import Sumarizador
+from elecciones.sumarizador import Sumarizador
 from escrutinio_social import settings
 
 
@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
         self.headers = ['seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa',
                    'opcion', 'votos']
-        self.csv_list = [headers]
+        self.csv_list = [self.headers]
 
     def status(self, texto):
         self.stdout.write(f"{texto}")
@@ -26,8 +26,16 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(texto))
 
     def exportar_circuito(self, circuito):
-        mesas = self.sumarizador.mesas(self.categoria)
-        votos = self.sumarizador.votos_reportados(self.categoria, mesas)
+        sumarizador = self.crear_sumarizador_circuito(circuito)
+        mesas = sumarizador.mesas(self.categoria)
+        print(circuito.numero, circuito.seccion.numero, mesas)
+        import ipdb; ipdb.set_trace()
+        votos = sumarizador.votos_reportados(self.categoria, mesas)
+        print(votos)
+        self.exportar_votos(votos)
+
+    def exportar_votos(self, votos):
+        
         for voto_mesa in votos:
             mesa = voto_mesa.carga.mesa
             opcion = voto_mesa.opcion.codigo
@@ -40,7 +48,7 @@ class Command(BaseCommand):
                     mesa.numero,
                     opcion,
                     votos]
-            # XXX Faltan headers.
+            # XXX Falta imprimir los headers.
             print(fila)
 
     def armar_opciones_sumarizador(self, nivel, id):
@@ -73,7 +81,7 @@ class Command(BaseCommand):
         # Nivel de agregación a exportar
         parser.add_argument("--solo_seccion", type=int, dest="solo_seccion",
                             help="Exportar sólo la sección indicada (default %(default)s).", default=None)
-        parser.add_argument("--solo_cirExportarcuito", type=int, dest="solo_circuito",
+        parser.add_argument("--solo_circuito", type=int, dest="solo_circuito",
                             help="Exportar sólo el circuito indicado (default %(default)s).", default=None)
         parser.add_argument("--solo_distrito", type=int, dest="solo_distrito",
                             help="Exportar sólo el distrito indicado (default %(default)s).", default=None)
