@@ -23,8 +23,7 @@
 <li style="overflow: auto; height: calc(100% - 240px);"><div id="jstree"></div></li>
 <script>
   // Construyo el árbol.
-  cat_id = {{ cat_id }}
-  url_base = 'http://localhost:8000/elecciones/resultados-cuerpo-central/{{ cat_id }}'
+  url_base = '{{ host }}/elecciones/resultados-cuerpo-central/{{ cat_id }}'
 
   // Construyo la url de resultados-cuerpo-central que se debe cargar inicialmente
   // en el panel derecho en base a los parámetros de la url de resultados-nuevo-menu
