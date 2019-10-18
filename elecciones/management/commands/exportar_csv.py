@@ -14,8 +14,7 @@ class Command(BaseCommand):
     def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
         super().__init__(stdout=None, stderr=None, no_color=False, force_color=False)
 
-        self.headers = ['seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa',
-                   'opcion', 'votos']
+        self.headers = "'seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa', 'opcion', 'votos'"
         self.csv_list = [self.headers]
 
     def status(self, texto):
@@ -28,33 +27,33 @@ class Command(BaseCommand):
     def exportar_circuito(self, circuito):
         sumarizador = self.crear_sumarizador_circuito(circuito)
         mesas = sumarizador.mesas(self.categoria)
-        print(circuito.numero, circuito.seccion.numero, mesas)
-        import ipdb; ipdb.set_trace()
         votos = sumarizador.votos_reportados(self.categoria, mesas)
-        print(votos)
         self.exportar_votos(votos)
 
     def exportar_votos(self, votos):
-        
+
+        filas = []
         for voto_mesa in votos:
             mesa = voto_mesa.carga.mesa
             opcion = voto_mesa.opcion.codigo
             votos = voto_mesa.votos
-            fila = [mesa.lugar_votacion.circuito.seccion.nombre,
-                    mesa.lugar_votacion.circuito.seccion.numero,
-                    mesa.lugar_votacion.circuito.nombre,
-                    mesa.lugar_votacion.circuito.numero,
-                    mesa.lugar_votacion.nombre,
-                    mesa.numero,
-                    opcion,
-                    votos]
-            # XXX Falta imprimir los headers.
-            print(fila)
+            fila = (
+                #f'{mesa.lugar_votacion.circuito.seccion.nombre}, '
+                f'{mesa.lugar_votacion.circuito.seccion.numero}, '
+                #f'{mesa.lugar_votacion.circuito.nombre}, '
+                f'{mesa.lugar_votacion.circuito.numero}, '
+                #f'{mesa.lugar_votacion.nombre}, '
+                f'{mesa.numero}, '
+                f'{opcion}, '
+                f"{votos}\n"
+            )
+            filas.append(fila)
+        self.file.write("".join(filas))
 
     def armar_opciones_sumarizador(self, nivel, id):
         opciones = {
             "nivel_de_agregacion": nivel,
-            "opciones_a_considerar": OPCIONES_A_CONSIDERAR.prioritarias,
+            "opciones_a_considerar": OPCIONES_A_CONSIDERAR.todas, #prioritarias,
             "tipo_de_agregacion": self.tipo_de_agregacion,
             "ids_a_considerar": [id]
         }
@@ -64,9 +63,18 @@ class Command(BaseCommand):
         opciones = self.armar_opciones_sumarizador(NIVELES_DE_AGREGACION.circuito, circuito.id)
         return Sumarizador(**opciones)
 
+    def crear_sumarizador_seccion(self, seccion):
+        opciones = self.armar_opciones_sumarizador(NIVELES_DE_AGREGACION.seccion, seccion.id)
+        return Sumarizador(**opciones)
+
     def exportar_seccion(self, seccion):
-        for circuito in seccion.circuitos.all():
-            self.exportar_circuito(circuito)
+        sumarizador = self.crear_sumarizador_seccion(seccion)
+        mesas = sumarizador.mesas(self.categoria)
+        #votos = sumarizador.votos_reportados(self.categoria, mesas)
+        votos = sumarizador.votos_reportados_por_seccion(self.categoria, self.seccion)
+        self.exportar_votos(votos)
+        # for circuito in seccion.circuitos.all():
+        #     self.exportar_circuito(circuito)
 
     def exportar_distrito(self, distrito):
         for seccion in distrito.secciones.all():
@@ -88,6 +96,9 @@ class Command(BaseCommand):
         parser.add_argument("--categoria", type=str, dest="categoria",
                             help="Slug categoría a exportar (default %(default)s).", default=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
 
+        parser.add_argument("--file", type=str, default='/tmp/exportacion.csv',
+                            help="Archivo de salida (default %(default)s)")
+
         # Opciones a considerar
         parser.add_argument("--tipo_de_agregacion",
                             type=str, dest="tipo_de_agregacion",
@@ -104,6 +115,7 @@ class Command(BaseCommand):
         """
         """
         self.tipo_de_agregacion = kwargs['tipo_de_agregacion']
+        self.filename = kwargs['file']
 
         nombre_categoria = kwargs['categoria']
         self.categoria = Categoria.objects.get(slug=nombre_categoria)
@@ -113,11 +125,14 @@ class Command(BaseCommand):
         self.exportar_segun_nivel_agregacion()
 
     def exportar_segun_nivel_agregacion(self):
+        self.file = open(self.filename, 'w+')
+        self.file.write(self.headers)
+
         if self.circuito:
             self.status("Exportando circuito %s" % self.circuito.numero)
             self.exportar_circuito(self.circuito)
         elif self.seccion:
-            self.status("Exportando sección %s" % self.seccion.numero)
+            self.status("Exportando sección %s (%s)" % (self.seccion.nombre, self.seccion.numero))
             self.exportar_seccion(self.seccion)
         elif self.distrito:
             self.status("Exportando distrito %s" % self.distrito.numero)
@@ -125,6 +140,7 @@ class Command(BaseCommand):
         else:
             self.status("Exportando país -> todos los distritos")
             self.exportar_pais()
+        self.file.close()
 
     def asignar_nivel_agregacion(self, kwargs):
         # Analizar resultados de acuerdo a los niveles de agregación

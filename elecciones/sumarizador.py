@@ -226,6 +226,21 @@ class Sumarizador():
 
         return votos_reportados
 
+    def votos_reportados_por_seccion(self, categoria, seccion):
+        """
+        Me quedo con los votos reportados pertenecientes a las "cargas testigo"
+        de las mesas que corresponden de acuerdo a los parámetros y la categoría.
+        XXX Tal vez se podría generalizar usando alguna variación de lookups_de_mesas()
+        """
+        votos_reportados = VotoMesaReportado.objects.filter(
+            carga__mesa_categoria__mesa__circuito__seccion=seccion,
+            carga__mesa_categoria__categoria=categoria,
+            carga__es_testigo__isnull=False,
+            **self.cargas_a_considerar_status_filter(categoria)
+        )
+
+        return votos_reportados
+
     def votos_por_opcion(self, categoria, mesas):
         """
         Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de

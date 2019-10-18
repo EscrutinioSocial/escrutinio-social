@@ -508,7 +508,7 @@ class MesaCategoria(models.Model):
         STATUS.parcial_consolidada_csv
     ]
 
-    status = StatusField(default=STATUS.sin_cargar)
+    status = StatusField(default=STATUS.sin_cargar, db_index=True)
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
     categoria = models.ForeignKey('Categoria', on_delete=models.CASCADE)
 
@@ -1166,7 +1166,7 @@ class Carga(TimeStampedModel):
         'total_oficial',
         'parcial_oficial'
     )
-    tipo = models.CharField(max_length=50, choices=TIPOS)
+    tipo = models.CharField(max_length=50, choices=TIPOS, db_index=True)
 
     SOURCES = Choices('web', 'csv', 'telegram')
     origen = models.CharField(max_length=50, choices=SOURCES, default='web')
