@@ -321,7 +321,7 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
     )
     # Las que tuvieron error no están procesadas pero se liberan.
     if con_error:
-        Carga.objects.filter(id__in=con_error).update(tomada_por_consolidador=None)
+        Identificacion.objects.filter(id__in=con_error).update(tomada_por_consolidador=None)
 
     return procesadas
 
