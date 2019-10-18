@@ -12,6 +12,8 @@ import structlog
 from threading import Thread
 import time
 import logging
+from constance import config
+
 logger = logging.getLogger('csv_import')
 
 # Primer dato: nombre de la columna, segundo: si es parte de una categoría o no,
@@ -318,7 +320,7 @@ class CSVImporter:
         carga_parcial, carga_total = self.carga_basica_mesa_categoria(mesa,
                 filas_de_la_mesa, mesa_categoria, columnas_categorias)
 
-        if carga_parcial:
+        if carga_parcial and config.CARGAR_OPCIONES_NO_PRIO_CSV:
             carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
 
         # A todas las cargas le tengo que agregar el total de electores y de sobres.
@@ -573,6 +575,11 @@ class CSVImporter:
                 self.log_debug("--- Creando carga parcial.")
             carga = self.carga_parcial
         else:
+            # Por una inconsistencia (ver #352) sólo se cargan no
+            # prioritarias de acuerdo al flag configurable.
+            if not config.CARGAR_OPCIONES_NO_PRIO_CSV:
+                return
+
             if not self.carga_total:
                 self.carga_total = Carga.objects.create(
                     tipo=Carga.TIPOS.total,

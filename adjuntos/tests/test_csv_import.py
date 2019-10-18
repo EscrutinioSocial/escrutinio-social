@@ -24,6 +24,7 @@ from elecciones.tests.factories import (
     UserFactory)
 from adjuntos.models import CSVTareaDeImportacion
 from elecciones.management.commands.importar_csv import Command as ImportarCSV
+from constance.test import override_config
 
 PATH_ARCHIVOS_TEST = os.path.dirname(os.path.abspath(__file__)) + '/archivos/'
 CATEGORIAS = [('Presidente y vice', True), ('Gobernador y vice', True),
@@ -82,6 +83,7 @@ def test_validar_csv_mesas_invalidas(db, usr_unidad_basica):
     assert Carga.objects.count() == 0
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
     d1 = DistritoFactory(numero=1)
     s1 = SeccionFactory(numero=50, distrito=d1)
@@ -149,6 +151,7 @@ def carga_inicial(db):
                 categorias=categorias)
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_resultados_negativos(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'info_resultados_negativos.csv', usr_unidad_basica).procesar()
@@ -167,6 +170,7 @@ def test_procesar_csv_opciones_no_encontradas(db, usr_unidad_basica, carga_inici
     assert Carga.objects.count() == 0
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'falta_total_votos.csv', usr_unidad_basica).procesar()
@@ -176,6 +180,7 @@ def test_falta_total_de_votos(db, usr_unidad_basica, carga_inicial):
     assert Carga.objects.count() == 0
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
@@ -206,6 +211,32 @@ def test_procesar_csv_informacion_valida_genera_resultados(db, usr_unidad_basica
     assert votos_carga_parcial.count() == (len(CATEGORIAS) - 1) * 6
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=False)
+def test_procesar_csv_informacion_valida_genera_resultados_salvo_totales(db, usr_unidad_basica, carga_inicial):
+    cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
+        PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
+    assert cant_mesas_ok == 1
+    assert cant_mesas_parcialmente_ok == 0
+    cargas_totales = Carga.objects.filter(tipo=Carga.TIPOS.total)
+
+    assert cargas_totales.count() == 0
+
+    votos_carga_total = VotoMesaReportado.objects.filter(carga__in=cargas_totales).all()
+    assert votos_carga_total.count() == 0
+
+    cargas_parciales = Carga.objects.filter(tipo=Carga.TIPOS.parcial)
+    # Hay una sola categoría no prioritaria.
+    assert cargas_parciales.count() == len(CATEGORIAS) - 1
+
+    for parcial in cargas_parciales:
+        assert parcial.origen == 'csv'
+
+    votos_carga_parcial = VotoMesaReportado.objects.filter(carga__in=cargas_parciales).all()
+    # Cada cat tiene 2 partidos + total + blancos + nulos + sobres = 6
+    assert votos_carga_parcial.count() == (len(CATEGORIAS) - 1) * 6
+
+
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'info_resultados_copia_parciales_a_totales.csv',
@@ -225,7 +256,7 @@ def test_procesar_csv_informacion_valida_copia_parciales_a_totales(db, usr_unida
             assert VotoMesaReportado.objects.filter(carga=carga_total_misma_mc, votos=voto.votos,
                                                     opcion=voto.opcion).exists()
 
-
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
     settings.OPCIONES_CARGAS_TOTALES_COMPLETAS = False
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
@@ -236,6 +267,7 @@ def test_falta_jpc_en_carga_parcial(db, usr_unidad_basica, carga_inicial):
     assert Carga.objects.count() == 1
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'falta_jpc_carga_total.csv', usr_unidad_basica).procesar()
@@ -246,6 +278,7 @@ def test_falta_jpc_en_carga_total(db, usr_unidad_basica, carga_inicial):
     assert Carga.objects.count() == len(CATEGORIAS) - 1
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_caracteres_alfabeticos_en_votos(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'valores_texto_en_votos.csv', usr_unidad_basica).procesar()
@@ -255,6 +288,7 @@ def test_caracteres_alfabeticos_en_votos(db, usr_unidad_basica, carga_inicial):
     assert Carga.objects.count() == 0
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_acumula_errores(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'acumula_errores.csv', usr_unidad_basica).procesar()
@@ -265,6 +299,7 @@ def test_acumula_errores(db, usr_unidad_basica, carga_inicial):
     assert Carga.objects.count() == 0
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_informacion_valida_con_listas_numericas(db, usr_unidad_basica, carga_inicial):
     fdt = Opcion.objects.get(nombre='FdT')
     fdt.codigo = '136'
@@ -280,6 +315,7 @@ def test_procesar_csv_informacion_valida_con_listas_numericas(db, usr_unidad_bas
     assert cargas_totales.count() == 2
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_carga_reemplaza_anterior(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'info_resultados_ok.csv', usr_unidad_basica).procesar()
@@ -306,6 +342,7 @@ def test_procesar_csv_carga_reemplaza_anterior(db, usr_unidad_basica, carga_inic
     assert cargas_repetidas.count() == 0
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_acepta_metadata_opcional(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'info_resultados_ok_con_metadata_optativa.csv', usr_unidad_basica).procesar()
@@ -318,6 +355,7 @@ def test_procesar_csv_acepta_metadata_opcional(db, usr_unidad_basica, carga_inic
     assert cargas_parciales.count() == len(CATEGORIAS) - 1
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_otros_separadores(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(PATH_ARCHIVOS_TEST + 'info_resultados_ok_separados_por_punto_y_coma.csv', usr_unidad_basica).procesar()
     assert cant_mesas_ok == 1
@@ -335,6 +373,7 @@ def test_procesar_csv_otros_separadores(db, usr_unidad_basica, carga_inicial):
     assert cargas_totales.count() == 2
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_hace_importacion_parcial(db, usr_unidad_basica, carga_inicial):
     cant_mesas_ok, cant_mesas_parcialmente_ok, errores = CSVImporter(
         PATH_ARCHIVOS_TEST + 'info_resultados_ok_mas_error.csv', usr_unidad_basica).procesar()
@@ -346,6 +385,7 @@ def test_procesar_csv_hace_importacion_parcial(db, usr_unidad_basica, carga_inic
     assert cargas_totales.count() == 2
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
     fdt = Opcion.objects.get(nombre='FdT')
     fdt.codigo = '136'
@@ -362,6 +402,7 @@ def test_procesar_csv_sanitiza_ok(db, usr_unidad_basica, carga_inicial):
     assert cargas_totales.count() == 2
 
 
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 @pytest.mark.django_db(transaction=True)
 def test_web_upload_sin_errores(fiscal_client, carga_inicial):
     archivo = 'info_resultados_ok.csv'
@@ -397,7 +438,7 @@ def test_web_upload_sin_errores(fiscal_client, carga_inicial):
 
     assert cargas_totales.count() == 2
 
-
+@override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 @pytest.mark.django_db(transaction=True)
 def test_web_upload_con_errores(fiscal_client, carga_inicial):
     archivo = 'falta_jpc_carga_parcial.csv'

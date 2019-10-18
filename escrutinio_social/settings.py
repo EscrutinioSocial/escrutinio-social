@@ -519,6 +519,7 @@ CONSTANCE_ADDITIONAL_FIELDS = {
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_DATABASE_CACHE_BACKEND = 'dbcache'
 CONSTANCE_CONFIG = {
+    'CARGAR_OPCIONES_NO_PRIO_CSV' : (False, 'Al procesar CSVs se cargan las opciones no prioritarias.', bool),
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
     'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text'),
     'CONFIGURACION_COMPUTO_PUBLICA': ('inicial', 'Nombre de la configuración que se utiliza para publicar resultados.'),
