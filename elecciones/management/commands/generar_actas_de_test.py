@@ -80,4 +80,4 @@ class Command(BaseCommand):
 
         # save the edited image
         nombre_acta = "acta_" + str(mesa.numero) + "_" + str(circuito.numero)
-        img.save("Actas/" + nombre_acta + '.jpg')
+        img.save("Actas/" + nombre_acta + '.png', format="PNG", dpi=(960, 960))
