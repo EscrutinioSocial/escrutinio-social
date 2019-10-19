@@ -698,7 +698,7 @@ class MesaCategoria(models.Model):
         cls.objects.bulk_update(mesa_cats, ['coeficiente_para_orden_de_carga'])
 
     def __str__(self):
-        return f'Mesa {self.mesa} - cat {self.categoria}'
+        return f'Mesa {self.mesa} - cat {self.categoria} (id {self.id})'
 
 
 class Mesa(models.Model):
