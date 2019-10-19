@@ -85,6 +85,7 @@ def test_validar_csv_mesas_invalidas(db, usr_unidad_basica):
 
 @override_config(CARGAR_OPCIONES_NO_PRIO_CSV=True)
 def test_procesar_csv_categorias_faltantes_en_archivo(db, usr_unidad_basica):
+    CategoriaGeneralFactory()
     d1 = DistritoFactory(numero=1)
     s1 = SeccionFactory(numero=50, distrito=d1)
     c1 = CircuitoFactory(numero='2', seccion=s1)

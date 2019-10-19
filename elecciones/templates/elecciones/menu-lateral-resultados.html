@@ -12,10 +12,11 @@
  {% block head %}
     {{ block.super }}
     <link href="{% static 'elecciones/resultados.css' %}" rel="stylesheet" type="text/css">
-    <!-- 5 include the minified jstree source -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
-    <link rel="stylesheet" href="http://www.orangehilldev.com/jstree-bootstrap-theme/demo/assets/dist/themes/proton/style.css" />
+    <!-- include the minified jstree source -->
+    <script src="{% static 'elecciones/jstree.min.js' %}"></script>
+    <!-- include css for jstree -->
+    <link rel="stylesheet" href="{% static 'elecciones/jstree_theme_default.min.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'elecciones/jstree_theme_proton.css' %}" type="text/css"/>
  {% endblock %}
 
 {% block sidenav_items %}

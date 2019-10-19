@@ -44,7 +44,7 @@ class CategoriaGeneralFactory(DjangoModelFactory):
 
     class Meta:
         model = 'elecciones.CategoriaGeneral'
-        django_get_or_create = ('nombre', )
+        django_get_or_create = ('nombre', 'slug', )
 
     nombre = factory.Sequence(lambda n: f'Categoría general {n + 1}')
     slug = factory.Sequence(lambda n: f'categoría_general_{n + 1}')
