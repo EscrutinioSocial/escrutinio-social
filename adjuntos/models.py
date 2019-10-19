@@ -415,7 +415,7 @@ class CSVTareaDeImportacion(TimeStampedModel):
 
         if cant_mesas_ok:
             self.mesas_total_ok = cant_mesas_ok
-            update_fields.append('cant_mesas_ok')
+            update_fields.append('mesas_total_ok')
         if cant_mesas_parcialmente_ok:
             self.mesas_parc_ok = cant_mesas_parcialmente_ok
             update_fields.append('mesas_parc_ok')
