@@ -97,7 +97,7 @@ class Command(BaseCommand):
 
     def get_votos(self, filtro_nivel_agregacion):
         sumarizador = Sumarizador(
-            opciones_a_considerar=OPCIONES_A_CONSIDERAR.todas,
+            opciones_a_considerar=OPCIONES_A_CONSIDERAR.prioritarias,
             tipo_de_agregacion=self.tipo_de_agregacion,
             **filtro_nivel_agregacion,
         )
