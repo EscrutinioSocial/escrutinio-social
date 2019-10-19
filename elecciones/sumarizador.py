@@ -228,12 +228,10 @@ class Sumarizador():
         return votos_reportados
 
     def opciones(self):
-        opciones_filter = Q(categorias__id=self.categoria.id)
-
-        if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias:
-            opciones_filter &= Q(categoriaopcion__prioritaria=True)
-
-        return Opcion.objects.filter(opciones_filter)
+        return self.categoria.opciones_actuales(
+            solo_prioritarias=self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias,
+            excluir_optativas=True
+        )
 
     def votos_csv_export(self, categoria):
         """
