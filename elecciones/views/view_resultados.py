@@ -165,7 +165,7 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
 
     def get_opciones_a_considerar(self):
         # TODO el default también está en Sumarizador.__init__
-        return self.request.GET.get('opcionaConsiderar', OPCIONES_A_CONSIDERAR.todas)
+        return self.request.GET.get('opcionaConsiderar', OPCIONES_A_CONSIDERAR.prioritarias)
 
     def get_tecnica_de_proyeccion(self):
         return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])

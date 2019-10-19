@@ -36,7 +36,7 @@ class Sumarizador():
     def __init__(
         self,
         tipo_de_agregacion=TIPOS_DE_AGREGACIONES.todas_las_cargas,
-        opciones_a_considerar=OPCIONES_A_CONSIDERAR.todas,
+        opciones_a_considerar=OPCIONES_A_CONSIDERAR.prioritarias,
         nivel_de_agregacion=None,
         ids_a_considerar=None
     ):
@@ -98,6 +98,7 @@ class Sumarizador():
                     MesaCategoria.STATUS.parcial_consolidada_csv,
                     MesaCategoria.STATUS.parcial_sin_consolidar,
                 )
+
         return lookups
 
     @property
@@ -226,6 +227,12 @@ class Sumarizador():
 
         return votos_reportados
 
+    def opciones(self):
+        return self.categoria.opciones_actuales(
+            solo_prioritarias=self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias,
+            excluir_optativas=True
+        )
+
     def votos_csv_export(self, categoria):
         """
         Obtiene el listado de votos para incluirse en una exportación CSV.
@@ -261,7 +268,7 @@ class Sumarizador():
         )
 
         # Diccionario inicial, opciones completas, todas en 0 (por si alguna opción no viene reportada).
-        votos_por_opcion = {opcion.id: 0 for opcion in Opcion.objects.filter(categorias__id=categoria.id)}
+        votos_por_opcion = {opcion.id: 0 for opcion in self.opciones()}
 
         # Sobreescribir los valores default (en 0) con los votos reportados
         votos_por_opcion.update(votos_reportados)

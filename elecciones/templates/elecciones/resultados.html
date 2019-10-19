@@ -66,7 +66,7 @@
     <div class="card-content" id="frame{{categoria.id}}">
     {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
 
-        <h4>{% if tecnicas_de_proyeccion_seleccionado %}Proyección a partir de{% else %}Sobre un{% endif%}
+        <h4>{% if tecnicas_de_proyeccion_seleccionado != "sin_proyeccion" %}Proyección a partir de{% else %}Sobre un{% endif%}
             {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
             ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
         </h4>

@@ -52,19 +52,28 @@ class Command(BaseCommand):
         opciones = self.categoria.opciones_actuales(
             solo_prioritarias=True, excluir_optativas=True
         )
+
+        total_votos = random.randint(1, 101)  # Valor inicial = votos de categorías no prioritarias
         for opcion in opciones:
-            self.alerta_mesa(mesa, "Poblando opción %s" % opcion)
-            cant_votos = random.randint(1, 101)
-            votos = []
-            for i in range(self.cant_cargas):
-                votos.append(
-                    VotoMesaReportado(
-                        carga=cargas[i],
-                        opcion=opcion,
-                        votos=cant_votos
-                    )
+            if opcion != Opcion.total_votos():
+                votos_opcion = random.randint(1, 101)
+                total_votos += votos_opcion
+                self.poblar_opcion(mesa, opcion, cargas, votos_opcion)
+
+        self.poblar_opcion(mesa, Opcion.total_votos(), cargas, total_votos)
+
+    def poblar_opcion(self, mesa, opcion, cargas, cant_votos):
+        self.alerta_mesa(mesa, "Poblando opción %s" % opcion)
+        votos = []
+        for i in range(self.cant_cargas):
+            votos.append(
+                VotoMesaReportado(
+                    carga=cargas[i],
+                    opcion=opcion,
+                    votos=cant_votos
                 )
-            VotoMesaReportado.objects.bulk_create(votos, ignore_conflicts=True)
+            )
+        VotoMesaReportado.objects.bulk_create(votos, ignore_conflicts=True)
 
     def poblar_circuito(self, circuito):
         for mesa in circuito.mesas.all():
