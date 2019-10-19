@@ -51,7 +51,7 @@ def test_total_electores_en_categoria(carta_marina):
 
 def test_electores_filtro_mesa(url_resultados, fiscal_client):
     mesa1 = MesaFactory(electores=120)
-    response = fiscal_client.get(url_resultados, {'mesa': mesa1.id})
+    response = fiscal_client.get(url_resultados, {'opcionaConsiderar': 'todas', 'mesa': mesa1.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
     #assert b'<td title="Electores">120</td>' in response.content
@@ -64,7 +64,7 @@ def test_electores_filtro_mesa_multiple_categoria(fiscal_client):
     mesa1.categoria_add(e1)  # mesa 1 tambien está asociada a e1
     url = reverse('resultados-categoria', args=[e1.id])
 
-    response = fiscal_client.get(url, {'mesa': mesa1.id})
+    response = fiscal_client.get(url, {'opcionaConsiderar': 'todas', 'mesa': mesa1.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
     #assert b'<td title="Electores">120</td>' in response.content
@@ -75,7 +75,7 @@ def test_electores_filtro_escuela(url_resultados, fiscal_client):
     MesaFactory(electores=120, lugar_votacion=e)
     MesaFactory(electores=80, lugar_votacion=e)
     MesaFactory(electores=90)
-    response = fiscal_client.get(url_resultados, {'lugar_de_votacion': e.id})
+    response = fiscal_client.get(url_resultados, {'opcionaConsiderar': 'todas', 'lugar_de_votacion': e.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 200
     #assert b'<td title="Electores">200</td>' in response.content
@@ -84,7 +84,7 @@ def test_electores_filtro_escuela(url_resultados, fiscal_client):
 def test_electores_filtro_circuito(url_resultados, fiscal_client):
     mesa1 = MesaFactory(electores=120)
     MesaFactory(electores=90)
-    response = fiscal_client.get(url_resultados, {'circuito': mesa1.lugar_votacion.circuito.id})
+    response = fiscal_client.get(url_resultados, {'opcionaConsiderar': 'todas', 'circuito': mesa1.lugar_votacion.circuito.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
     #assert b'<td title="Electores">120</td>' in response.content
@@ -93,7 +93,7 @@ def test_electores_filtro_circuito(url_resultados, fiscal_client):
 def test_electores_filtro_seccion(url_resultados, fiscal_client):
     mesa1 = MesaFactory(electores=120)
     MesaFactory(electores=90)
-    response = fiscal_client.get(url_resultados, {'seccion': mesa1.lugar_votacion.circuito.seccion.id})
+    response = fiscal_client.get(url_resultados, {'opcionaConsiderar': 'todas', 'seccion': mesa1.lugar_votacion.circuito.seccion.id})
     resultados = response.context['resultados']
     assert resultados.electores() == 120
     #assert b'<td title="Electores">120</td>' in response.content
@@ -102,7 +102,7 @@ def test_electores_filtro_seccion(url_resultados, fiscal_client):
 def test_electores_filtro_distrito(url_resultados, fiscal_client):
     m2 = MesaFactory(electores=90, lugar_votacion__circuito__seccion__distrito__nombre='otro')
     response = fiscal_client.get(
-        url_resultados, {'distrito': m2.lugar_votacion.circuito.seccion.distrito.id}
+        url_resultados, {'opcionaConsiderar': 'todas', 'distrito': m2.lugar_votacion.circuito.seccion.distrito.id}
     )
     resultados = response.context['resultados']
     assert resultados.electores() == 90
@@ -110,7 +110,7 @@ def test_electores_filtro_distrito(url_resultados, fiscal_client):
 
 
 def test_electores_sin_filtro(url_resultados, fiscal_client):
-    response = fiscal_client.get(url_resultados)
+    response = fiscal_client.get(url_resultados, {'opcionaConsiderar': 'todas'})
     resultados = response.context['resultados']
     assert resultados.electores() == 800
     #assert b'<td title="Electores">800</td>' in response.content
@@ -680,7 +680,7 @@ def test_permisos_vistas(setup_groups, url_resultados, client):
     assert response.status_code == 302 and response.url.startswith('/permission-denied')
 
     # Sí debería poder ver resultados.
-    response = client.get(url_resultados, {'distrito': 1})
+    response = client.get(url_resultados, {'opcionaConsiderar': 'todas', 'distrito': 1})
     assert response.status_code == 200
 
     client.logout()
@@ -710,20 +710,20 @@ def test_categorias_sensible(setup_groups, client):
 
     # El usuario visualizador intenta ver resultado sensible, no debería poder.
     client.login(username=u_visualizador.username, password='password')
-    response = client.get(c_sensible_url)
+    response = client.get(c_sensible_url, {'opcionaConsiderar': 'todas'})
     assert response.status_code == 403
 
     # Sí debería poder ver resultados.
-    response = client.get(c_url)
+    response = client.get(c_url, {'opcionaConsiderar': 'todas'})
     assert response.status_code == 200
 
     client.logout()
 
     # El usuario visualizador sensible puede ver resultado sensible.
     client.login(username=u_visualizador_sensible.username, password='password')
-    response = client.get(c_sensible_url)
+    response = client.get(c_sensible_url, {'opcionaConsiderar': 'todas'})
     assert response.status_code == 200
 
     # El usuario visualizador sensible puede ver resultado no sensible.
-    response = client.get(c_url)
+    response = client.get(c_url, {'opcionaConsiderar': 'todas'})
     assert response.status_code == 200
