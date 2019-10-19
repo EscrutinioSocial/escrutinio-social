@@ -98,6 +98,7 @@ class Sumarizador():
                     MesaCategoria.STATUS.parcial_consolidada_csv,
                     MesaCategoria.STATUS.parcial_sin_consolidar,
                 )
+
         return lookups
 
     @property
@@ -192,7 +193,7 @@ class Sumarizador():
 
     def mesas_escrutadas(self):
         """
-        De las mesas incluidas en los filtros seleccionados, 
+        De las mesas incluidas en los filtros seleccionados,
         aquellas que tienen votos para la categoría seleccionada.
         """
         return self.mesas_a_considerar.filter(
@@ -226,6 +227,14 @@ class Sumarizador():
 
         return votos_reportados
 
+    def opciones(self):
+        opciones_filter = Q(categorias__id=self.categoria.id)
+
+        if self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias:
+            opciones_filter &= Q(categoriaopcion__prioritaria=True)
+
+        return Opcion.objects.filter(opciones_filter)
+
     def votos_por_opcion(self, categoria, mesas):
         """
         Dada una categoría y un conjunto de mesas, devuelve una tabla de resultados con la cantidad de
@@ -238,7 +247,7 @@ class Sumarizador():
         )
 
         # Diccionario inicial, opciones completas, todas en 0 (por si alguna opción no viene reportada).
-        votos_por_opcion = {opcion.id: 0 for opcion in Opcion.objects.filter(categorias__id=categoria.id)}
+        votos_por_opcion = {opcion.id: 0 for opcion in self.opciones()}
 
         # Sobreescribir los valores default (en 0) con los votos reportados
         votos_por_opcion.update(votos_reportados)
