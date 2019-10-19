@@ -112,26 +112,26 @@ class Sumarizador():
         if modelo:
             return modelo.objects.filter(id__in=self.ids_a_considerar)
 
-    def lookups_de_mesas(self):
-        lookups = Q()
+    def lookups_de_mesas(self, prefix=""):
+        lookups = dict()
         if self.filtros:
             if self.filtros.model is Distrito:
-                lookups = Q(lugar_votacion__circuito__seccion__distrito__in=self.filtros)
+                lookups[f'{prefix}circuito__seccion__distrito__in'] = self.filtros
 
             if self.filtros.model is SeccionPolitica:
-                lookups = Q(lugar_votacion__circuito__seccion__seccion_politica__in=self.filtros)
+                lookups[f'{prefix}circuito__seccion__seccion_politica__in'] = self.filtros
 
             elif self.filtros.model is Seccion:
-                lookups = Q(lugar_votacion__circuito__seccion__in=self.filtros)
+                lookups[f'{prefix}circuito__seccion__in'] = self.filtros
 
             elif self.filtros.model is Circuito:
-                lookups = Q(lugar_votacion__circuito__in=self.filtros)
+                lookups[f'{prefix}circuito__in'] = self.filtros
 
             elif self.filtros.model is LugarVotacion:
-                lookups = Q(lugar_votacion__id__in=self.filtros)
+                lookups[f'{prefix}lugar_votacion__id__in'] = self.filtros
 
             elif self.filtros.model is Mesa:
-                lookups = Q(id__in=self.filtros)
+                lookups[f'{prefix}id__in'] = self.filtros
         return lookups
 
     def categorias(self):
@@ -188,7 +188,7 @@ class Sumarizador():
         asociadas a la categoría dada.
         """
         lookups = self.lookups_de_mesas()
-        return Mesa.objects.filter(categorias=categoria).filter(lookups).distinct()
+        return Mesa.objects.filter(categorias=categoria).filter(**lookups).distinct()
 
     def mesas_escrutadas(self):
         """
@@ -219,21 +219,6 @@ class Sumarizador():
         """
         votos_reportados = VotoMesaReportado.objects.filter(
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
-            carga__mesa_categoria__categoria=categoria,
-            carga__es_testigo__isnull=False,
-            **self.cargas_a_considerar_status_filter(categoria)
-        )
-
-        return votos_reportados
-
-    def votos_reportados_por_seccion(self, categoria, seccion):
-        """
-        Me quedo con los votos reportados pertenecientes a las "cargas testigo"
-        de las mesas que corresponden de acuerdo a los parámetros y la categoría.
-        XXX Tal vez se podría generalizar usando alguna variación de lookups_de_mesas()
-        """
-        votos_reportados = VotoMesaReportado.objects.filter(
-            carga__mesa_categoria__mesa__circuito__seccion=seccion,
             carga__mesa_categoria__categoria=categoria,
             carga__es_testigo__isnull=False,
             **self.cargas_a_considerar_status_filter(categoria)
