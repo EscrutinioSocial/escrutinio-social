@@ -7,6 +7,7 @@ authorization_header = 'Bearer 31d15a'
 escuela_file = files_dir + 'escuelas/' + 'escuela.json' 
 mesa_file = files_dir + 'mesas/' + '8741.json' 
 mesa_out_test = test_dir + 'test_mesa_prueba.txt'
+local_confs_url = f"ids_sistema_web.json"
 
 import json 
 #FIXME TODO: Voy por aca
@@ -99,7 +100,12 @@ def cargar_mesas():
     assert(json.dumps(mesas) == mesas_str)
 
 
+def cargar_ids():
+    with open(local_confs_url) as json_file:
+        local_confs = json.load(json_file)
+    print(local_confs)
 
 #probar_carga_escuelas()
 #probar_url_escuelas()
-cargar_mesas()
+#cargar_mesas()
+cargar_ids()
