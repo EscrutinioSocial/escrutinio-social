@@ -14,7 +14,7 @@ class Command(BaseCommand):
     def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
         super().__init__(stdout=None, stderr=None, no_color=False, force_color=False)
 
-        self.headers = "'distrito', seccion', 'circuito', 'mesa', 'opcion', 'votos'"
+        self.headers = "'distrito', 'seccion', 'circuito', 'mesa', 'opcion', 'votos'"
 
     def add_arguments(self, parser):
         # Nivel de agregación a exportar
@@ -25,7 +25,7 @@ class Command(BaseCommand):
         parser.add_argument("--solo_distrito", type=int, dest="solo_distrito",
                             help="Exportar sólo el distrito indicado (default %(default)s).", default=None)
         parser.add_argument("--categoria", type=str, dest="categoria",
-                            help="Slug categoría a exportar (default %(default)s).", 
+                            help="Slug categoría a exportar (default %(default)s).",
                             default=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
 
         parser.add_argument("--file", type=str, default='/tmp/exportacion.csv',
@@ -54,7 +54,7 @@ class Command(BaseCommand):
         print("Vamos a exportar la categoría:", self.categoria)
 
         filtro_nivel_agregacion = self.get_filtro_nivel_agregacion(kwargs)
-        print(filtro_nivel_agregacion)
+        #print(filtro_nivel_agregacion)
         votos = self.get_votos(filtro_nivel_agregacion)
         self.exportar(votos)
 
@@ -102,28 +102,12 @@ class Command(BaseCommand):
             **filtro_nivel_agregacion,
         )
 
-        return VotoMesaReportado.objects.filter(
-            carga__mesa_categoria__categoria=self.categoria,
-            carga__es_testigo__isnull=False,
-            **sumarizador.cargas_a_considerar_status_filter(self.categoria),
-            **sumarizador.lookups_de_mesas("carga__mesa_categoria__mesa__")
-        ).values_list(
-                'carga__mesa_categoria__mesa__circuito__seccion__distrito__numero',
-                'carga__mesa_categoria__mesa__circuito__seccion__numero',
-                'carga__mesa_categoria__mesa__circuito__numero',
-                'carga__mesa_categoria__mesa__numero',
-                'opcion__codigo',
-                'votos',
-        ).order_by(
-            "carga__mesa_categoria__mesa__circuito__seccion__distrito__numero",
-            "carga__mesa_categoria__mesa__circuito__seccion__numero",
-            "carga__mesa_categoria__mesa__circuito__numero",
-            "carga__mesa_categoria__mesa__numero"
-        )
+        return sumarizador.votos_csv_export(self.categoria)
 
     def exportar(self, votos):
         self.file = open(self.filename, 'w+')
         self.file.write(self.headers)
+        self.file.write("\n")
         self.exportar_votos(votos)
         self.file.close()
 

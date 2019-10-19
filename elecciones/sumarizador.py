@@ -192,7 +192,7 @@ class Sumarizador():
 
     def mesas_escrutadas(self):
         """
-        De las mesas incluidas en los filtros seleccionados, 
+        De las mesas incluidas en los filtros seleccionados,
         aquellas que tienen votos para la categoría seleccionada.
         """
         return self.mesas_a_considerar.filter(
@@ -225,6 +225,29 @@ class Sumarizador():
         )
 
         return votos_reportados
+
+    def votos_csv_export(self, categoria):
+        """
+        Obtiene el listado de votos para incluirse en una exportación CSV.
+        """
+        return VotoMesaReportado.objects.filter(
+            carga__mesa_categoria__categoria=categoria,
+            carga__es_testigo__isnull=False,
+            **self.cargas_a_considerar_status_filter(categoria),
+            **self.lookups_de_mesas("carga__mesa_categoria__mesa__")
+        ).values_list(
+            'carga__mesa_categoria__mesa__circuito__seccion__distrito__numero',
+            'carga__mesa_categoria__mesa__circuito__seccion__numero',
+            'carga__mesa_categoria__mesa__circuito__numero',
+            'carga__mesa_categoria__mesa__numero',
+            'opcion__codigo',
+            'votos',
+        ).order_by(
+            "carga__mesa_categoria__mesa__circuito__seccion__distrito__numero",
+            "carga__mesa_categoria__mesa__circuito__seccion__numero",
+            "carga__mesa_categoria__mesa__circuito__numero",
+            "carga__mesa_categoria__mesa__numero"
+        )
 
     def votos_por_opcion(self, categoria, mesas):
         """

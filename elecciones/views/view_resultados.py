@@ -251,31 +251,22 @@ class ResultadosExport(ResultadosCategoria):
         pk = self.kwargs.get('pk')
         categoria = get_object_or_404(Categoria, id=pk)
         self.filetype = self.kwargs.get('filetype')
-        mesas = self.sumarizador.mesas(categoria)
-        votos = self.sumarizador.votos_reportados(categoria, mesas)
-        return {'votos': votos}
+        return {'categoria': categoria}
 
     def render_to_response(self, context, **response_kwargs):
-        votos = context['votos']
+        categoria = context['categoria']
+        votos = self.sumarizador.votos_csv_export(categoria)
 
-        headers = ['seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa',
-                   'opcion', 'votos']
+        headers = ['distrito', 'seccion', 'circuito', 'mesa', 'opcion', 'votos']
         csv_list = [headers]
 
-        for voto_mesa in votos:
-            mesa = voto_mesa.carga.mesa
-            opcion = voto_mesa.opcion.codigo
-            votos = voto_mesa.votos
-            fila = [mesa.lugar_votacion.circuito.seccion.nombre,
-                    mesa.lugar_votacion.circuito.seccion.numero,
-                    mesa.lugar_votacion.circuito.nombre,
-                    mesa.lugar_votacion.circuito.numero,
-                    mesa.lugar_votacion.nombre,
-                    mesa.numero,
-                    opcion,
-                    votos]
+        for voto in votos:
+            fila = [voto]
             csv_list.append(fila)
-        return excel.make_response(excel.pe.Sheet(csv_list), self.filetype)
+
+        (nivel, id_nivel) = self.get_filtro_por_nivel()
+        filename = f'{categoria.slug}-{nivel}-{id_nivel[0]}'
+        return excel.make_response(excel.pe.Sheet(csv_list), self.filetype, file_name=filename)
 
 
 class ResultadosComputoCategoria(ResultadosCategoriaBase):
