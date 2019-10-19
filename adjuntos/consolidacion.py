@@ -296,8 +296,10 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
                 # Eliminamos los ids de las identificaciones que no se procesaron
                 # para no marcarlas como procesada=True.
                 for identificacion in attachment.identificaciones.all():
-                    ids_a_procesar.remove(identificacion.id)
-                    con_error.append(identificacion.id)
+                    if identificacion.id in ids_a_procesar:
+                        # Podría ser que otra identificación del attachment haya generado la novedad.
+                        ids_a_procesar.remove(identificacion.id)
+                        con_error.append(identificacion.id)
             except Exception as e:
                 # Logueamos la excepción y continuamos.
                 capture_message(
@@ -369,8 +371,10 @@ def consumir_novedades_carga(cant_por_iteracion=None):
                 # Eliminamos los ids de las cargas que no se procesaron
                 # para no marcarlas como procesada=True.
                 for carga in mesa_categoria_con_novedades.cargas.all():
-                    ids_a_procesar.remove(carga.id)
-                    con_error.append(carga.id)
+                    if carga.id in ids_a_procesar:
+                        # Podría ser que la que generó la novedad sea otra carga de la mesacat.
+                        ids_a_procesar.remove(carga.id)
+                        con_error.append(carga.id)
             except Exception as e:
                 capture_message(
                     f"""
