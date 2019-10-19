@@ -95,6 +95,6 @@ class AgregarAdjuntos(FormView):
 
     def mostrar_mensaje_tipo_archivo_invalido(self, nombre_archivo):
         self.agregar_resultado_carga(
-            self.WARNING,
+            messages.WARNING,
             f'{nombre_archivo} ignorado. No es una imagen'
         )
