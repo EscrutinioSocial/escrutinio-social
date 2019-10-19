@@ -22,9 +22,8 @@ regiones_file = 'regions.json'
 request_url = 'https://resultados.gob.ar/'
 escuelas_url = f"{request_url}assets/data/precincts/"
 mesas_url = f"{request_url}assets/data/totalized_results/"
-
+local_confs_url = f"{files_dir}ids_sistema_web.json"
 authorization_header = 'Bearer 31d15a'
-
 
 # If modifying these scopes, delete the file token.pickle.
 API_KEY = '***REMOVED***'
@@ -40,9 +39,7 @@ class Command(BaseCommand):
     escuelas_bajadas = {}
     mesas_sistema_sin_carga = []
     # Los codigos en el sistema de escrutinio
-    codigo_opcion_nosotros_web = None
-    codigo_opcion_ellos_web = None
-    codigo_presidente_web = None
+    ids = {}
 
     def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
         super().__init__(stdout=None, stderr=None, no_color=False, force_color=False)
@@ -139,8 +136,7 @@ class Command(BaseCommand):
 
     # Busco en la base las que no estan para esa escuela, distrito, etc...
     def mesa_no_visitada(self, id_mesa, distrito, seccion, nro_mesa):
-        # FIXME: Por ahora hago un query por mesa. Podría antes buscar 
-        return True
+        return (nro_mesa not in self.mesas_sistema_sin_carga.keys()) # Las voy a sacar cuando guarde y luego al volver a cargar no van a volver a aparecer
 
     def cargar_mesas(self, kwargs):
         self.mesas = []
@@ -220,7 +216,9 @@ class Command(BaseCommand):
                             )
 
     # Guarda las mesas que tenemos hacia el django
+    # FIXME TODO: Voy por aca
     def guardar_mesas(self):
+        # Tengo que levantar los circuitos_categoria para las mesas que cargue y las categorias que me importan y guardarlas
         for datos_mesa in self.mesas:
         '''
                    mesa['id'] = value['c']
@@ -237,13 +235,24 @@ class Command(BaseCommand):
         return
 
     # Carga las mesas_categoria del sistema que no tengan datos oficiales. Nos interesa solo presidente y gobernador
-    # FIXME TODO: Vamos por aca
     def cargar_mesas_sistema(self):
-            
+        # FIXME: Esto se debe poder hacer directo en la query. Busco quedarme solo con mesas que no tengan mesa categoria con datos oficiales. Total si no tienen una categoria, no tienen ninguna. Me fijo categoria presidente por las dudas.
+        mesas_categoria_sistema = MesaCategoria.objects.get(mesa=mesa, categoria=self.ids["id_cat_presidente_nuestro"])
+                                        .filter(carga_oficial__isnull=True) 
+
+        self.mesas_sistema_sin_carga = {} 
+        for mesa_categoria in mesas_categoria_sistema:
+            distrito = mesa_categoria.mesa.circuito.seccion.distrito.numero 
+            seccion =  mesa_categoria.mesa.circuito.seccion.numero
+            circuito = mesa_categoria.mesa.circuito.numero
+            # FIXME TODO: Deberiamos aca meter los filtros y algún criterio de prioridad
+            self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero] = {}
+            self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["circuito"] = circuito 
+            self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["seccion"] = seccion 
+            self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["distrito"] = distrito 
         return 
 
     def handle(self, *args, **kwargs):
-        # FIXME TODO: Agregar los filtros de categoria
         self.filtros = kwargs
         self.asignar_nivel_agregacion(kwargs)
         self.cargar_mesas_sistema(kwargs)
@@ -251,7 +260,7 @@ class Command(BaseCommand):
         self.cargar_escuelas(kwargs)
         self.cargar_mesas(kwargs)
         self.guardar_mesas()
-
+        self.ids = json.loads(local_confs_url)
         '''
         self.comparar_con_correo = kwargs['comparar_con_correo']
 
