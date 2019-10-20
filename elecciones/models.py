@@ -417,7 +417,7 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.solo_de_cats_activas().identificadas().sin_problemas().filter(
             categoria__sensible=True,
-            status=MesaCategoria.status_carga_parcial
+            status__in=MesaCategoria.status_carga_parcial
         )
 
     def con_carga_pendiente(self, for_update=True):
