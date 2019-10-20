@@ -1015,8 +1015,8 @@ class Categoria(models.Model):
     que incluyen las partidarias (boletas) y blanco, nulo, etc.
     """
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
-    categoria_general = models.ForeignKey(CategoriaGeneral, null=False,
-        on_delete=models.CASCADE, related_name='categorias'
+    categoria_general = models.ForeignKey(
+        CategoriaGeneral, null=False, on_delete=models.CASCADE, related_name='categorias'
     )
     # Información geográfica para anclar una categoría a una provincia o municipio.
     distrito = models.ForeignKey(

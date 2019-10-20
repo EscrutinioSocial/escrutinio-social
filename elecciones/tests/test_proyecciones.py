@@ -52,6 +52,7 @@ def test_resultados_proyectados(fiscal_client):
         o1: 120,  # 50% de los votos
         o2: 80,  # 40%
         o3: 0,
+        o4: 0,
         Opcion.blancos(): 0,
         Opcion.total_votos(): 200,
         Opcion.sobres(): 200,
@@ -99,7 +100,7 @@ def test_resultados_proyectados(fiscal_client):
         f'?tipoDeAgregacion=todas_las_cargas&opcionaConsiderar=prioritarias&tecnicaDeProyeccion={tecnica.id}'
     )
     positivos = response.context['resultados'].tabla_positivos()
-    assert list(positivos.keys()) == [o1.partido, o2.partido, o3.partido]
+    assert list(positivos.keys()) == [o1.partido, o2.partido, o3.partido, o4.partido]
 
     # PROYECCION:
     # la seccion 3 esta sobre representada por el momento (está al 100%)

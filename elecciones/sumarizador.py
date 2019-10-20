@@ -233,6 +233,9 @@ class Sumarizador():
             excluir_optativas=True
         )
 
+    def opciones_no_partidarias(self):
+        return self.categoria.opciones_actuales(excluir_optativas=True).filter(partido__isnull=True)
+
     def votos_csv_export(self, categoria):
         """
         Obtiene el listado de votos para incluirse en una exportación CSV.
@@ -277,7 +280,7 @@ class Sumarizador():
 
     def agrupar_votos(self, votos_por_opcion):
         votos_positivos = {}
-        votos_no_positivos = {}
+        votos_no_positivos = {opcion.nombre_corto: 0 for opcion in self.opciones_no_partidarias()}
         for id_opcion, sum_votos in votos_por_opcion:
             opcion = Opcion.objects.get(id=id_opcion)
             if opcion.partido:
