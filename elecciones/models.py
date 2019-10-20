@@ -380,6 +380,12 @@ class MesaCategoriaQuerySet(models.QuerySet):
         # estar seguros de que no se cuele una mesa sin foto.
         return self.filter(coeficiente_para_orden_de_carga__isnull=False).exclude(mesa__attachments=None)
 
+    def solo_de_cats_activas(self):
+        """
+        Excluye a las instancias de categorías no activas.
+        """
+        return self.exclude(categoria__activa=False)
+
     def sin_problemas(self):
         """
         Excluye las instancias que tengan problemas.
@@ -408,11 +414,13 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         Devuelve las mesas categorías que tengan cargas parciales pendientes.
         """
-        return self.identificadas().sin_problemas().filter(status__in=MesaCategoria.status_carga_parcial)
+        return self.solo_de_cats_activas().identificadas().sin_problemas().filter(
+            status__in=MesaCategoria.status_carga_parcial
+        )
 
     def con_carga_pendiente(self, for_update=True):
         qs = self.select_for_update(skip_locked=True) if for_update else self
-        return qs.identificadas().sin_problemas().sin_consolidar_por_doble_carga()
+        return qs.solo_de_cats_activas().identificadas().sin_problemas().sin_consolidar_por_doble_carga()
 
     def anotar_prioridad_status(self):
         """
@@ -1038,7 +1046,8 @@ class Categoria(models.Model):
         help_text=(
             'Si no está activa, no se cargan datos '
             'para esta categoría y no se muestran resultados.'
-        )
+        ),
+        db_index=True
     )
 
     sensible = models.BooleanField(
