@@ -268,15 +268,10 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
 
     # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
     if fiscal.mesa_categoria_asignada != mesa_categoria:
-        capture_message(
-            f"""
-            Intento de cargar mesa-categoria {mesa_categoria.id}
-
-        mesa categoría: {mesa_categoria.id}
-            fiscal: {fiscal} ({fiscal.id}, tenía asignada: {fiscal.mesa_categoria_asignada})
-            """
+        logger.warning(
+            'Carga no autorizada', mc=mesa_categoria.id, tipo=tipo, ub=modo_ub,
+            tenia_mc=fiscal.mesa_categoria_asignada.id if fiscal.mesa_categoria_asignada else None
         )
-        # TO DO: quizas sumar puntos al score anti-trolling?
         # Lo mandamos nuevamente a que se le dé algo para hacer.
         return redirect(reverse('siguiente-accion'))
 
@@ -339,7 +334,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     if request.method == 'POST':
         is_valid = formset.is_valid()
         if not is_valid:
-            logger.info('carga error', mc=mesa_categoria.id, tipo=tipo, ub=modo_ub)
+            logger.info('Carga error', mc=mesa_categoria.id, tipo=tipo, ub=modo_ub)
 
     if desde_ub:
         request.session['mesa_categoria_id'] = mesa_categoria.id
@@ -377,7 +372,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             capture_exception(e)
 
         if not is_valid:
-            logger.info('carga error', mc=mesa_categoria.id, tipo=tipo, ub=modo_ub)
+            logger.info('Carga error', mc=mesa_categoria.id, tipo=tipo, ub=modo_ub)
 
         redirect_to = redirect_siguiente_accion(desde_ub) if not desde_ub else reverse('cargar-desde-ub', args=[mesa.id])
 

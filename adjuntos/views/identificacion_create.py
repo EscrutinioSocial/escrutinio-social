@@ -85,15 +85,10 @@ class IdentificacionCreateView(CreateView):
         attachment = self.attachment
         # Sólo el fiscal asignado al attachment puede identificar la foto.
         if fiscal.attachment_asignado != attachment:
-            capture_message(
-                f"""
-                Intento de asignar mesa de attachment {attachment.id} sin permiso.
-
-                attachment: {attachment.id}
-                fiscal: {fiscal} ({fiscal.id}, tenía asignada: {fiscal.attachment_asignado})
-                """
+            logger.warning(
+                'Identificación no autorizada', attachment_id=attachment.id,
+                tenia_attachment=fiscal.attachment_asignado.id if fiscal.attachment_asignado else None
             )
-            # TO DO: deberíamos sumar puntos al score anti-trolling?
             # Lo mandamos nuevamente a que se le dé algo para hacer.
             return redirect('siguiente-accion')
 
