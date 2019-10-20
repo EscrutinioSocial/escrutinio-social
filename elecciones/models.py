@@ -410,11 +410,13 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.exclude(cargas__fiscal=fiscal)
 
-    def con_carga_parcial_pendiente(self):
+    def con_carga_sensible_y_parcial_pendiente(self):
         """
-        Devuelve las mesas categorías que tengan cargas parciales pendientes.
+        Devuelve las mesas categorías que tengan cargas parciales pendientes y
+        que correspondan a categorías sensibles (que son las realmente prioritarias).
         """
         return self.solo_de_cats_activas().identificadas().sin_problemas().filter(
+            categoria__sensible=True,
             status__in=MesaCategoria.status_carga_parcial
         )
 
