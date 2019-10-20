@@ -199,7 +199,7 @@ class EleccionDeDistritoOSeccion(TemplateView):
 
     def dispatch(self, *args, **kwargs):
         self.hay_criterio_para_busqueda = self.kwargs.get('hay_criterio') == "True"
-        self.valor_busqueda = self.kwargs.get('valor_criterio')
+        self.valor_busqueda = self.kwargs.get('valor_criterio') if self.hay_criterio_para_busqueda else ''
         self.donde_volver = self.kwargs.get('donde_volver')
         self.codigo_mensaje = self.kwargs.get('mensaje')
         return super().dispatch(*args, **kwargs)
@@ -245,12 +245,14 @@ class EleccionDeDistritoOSeccion(TemplateView):
 
 def ingresar_parametro_busqueda(request, *args, **kwargs):
     valor_ingresado = request.POST.copy().get('parametro_busqueda')
+    hay_criterio = len(valor_ingresado) > 0
     donde_volver = kwargs.get('donde_volver')
     return redirect(
         'elegir-distrito-o-seccion',
-        hay_criterio='True',
-        valor_criterio=valor_ingresado, donde_volver=donde_volver,
-        mensaje='nada')
+        hay_criterio='True' if hay_criterio else 'False',
+        valor_criterio=valor_ingresado if hay_criterio else 'None', 
+        donde_volver=donde_volver,
+        mensaje='nada' if hay_criterio else 'corto')
 
 
 def eleccion_efectiva_distrito_o_seccion(request, *args, **kwargs):
@@ -259,7 +261,7 @@ def eleccion_efectiva_distrito_o_seccion(request, *args, **kwargs):
         return redirect(
             'elegir-distrito-o-seccion',
             hay_criterio='False',
-            valor_criterio='',
+            valor_criterio='None',
             donde_volver=kwargs.get('donde_volver'),
             mensaje='no_se_eligio_opcion')
     else:
