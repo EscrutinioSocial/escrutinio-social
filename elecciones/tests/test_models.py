@@ -368,6 +368,34 @@ def test_carga_con_problemas(db):
     assert mc.status == MesaCategoria.STATUS.total_consolidada_dc
     assert mc.carga_testigo == c4 or mc.carga_testigo == c1
 
+
+def test_con_carga_pendiente_ignora_cats_inactivas(db):
+    # Identifico una mesa.
+    mesa = MesaFactory()
+    a = AttachmentFactory()
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+    IdentificacionFactory(attachment=a, status='identificada', mesa=mesa)
+
+    consumir_novedades_identificacion()
+    cat = mesa.categorias.first()
+    mc = MesaCategoriaFactory(mesa=mesa, categoria=cat)
+    assert mc.status == MesaCategoria.STATUS.sin_cargar
+
+    assert mc in MesaCategoria.objects.con_carga_pendiente()
+
+    # Desactivo la categoría.
+    cat.activa = False
+    cat.save()
+
+    assert mc not in MesaCategoria.objects.con_carga_pendiente()
+
+    # La vuelvo a activar.
+    cat.activa = True
+    cat.save()
+
+    assert mc in MesaCategoria.objects.con_carga_pendiente()
+
+
 def test_problema_falta_foto(db):
     mc = MesaCategoriaFactory()
     assert mc.status == MesaCategoria.STATUS.sin_cargar
