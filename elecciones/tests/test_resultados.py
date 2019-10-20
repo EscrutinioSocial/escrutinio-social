@@ -242,7 +242,7 @@ def test_resultados_parciales_generales(carta_marina, url_resultados, fiscal_cli
 
     assert resultados.total_votos() == 265
     assert resultados.electores() == 800
-    assert resultados.total_sobres() == 0
+    assert resultados.total_sobres() == '-'
 
     columna_datos = [
         #('Electores', resultados.electores()),
@@ -381,8 +381,7 @@ def test_resultados_parciales_paso(carta_marina, url_resultados, fiscal_client):
     assert resultados.porcentaje_nulos() == '1.89'
 
     assert resultados.total_votos() == 265
-    #assert resultados.electores() == 800
-    assert resultados.total_sobres() == 0
+    assert resultados.total_sobres() == '-'
 
     columna_datos = [
         #('Electores', resultados.electores()),
@@ -458,9 +457,11 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     categoria = m1.categorias.get()
     # opciones a partido
     blanco = Opcion.blancos()
+    total_votos = Opcion.total_votos()
 
     c1 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria)
     VotoMesaReportadoFactory(carga=c1, opcion=blanco, votos=20)
+    VotoMesaReportadoFactory(carga=c1, opcion=total_votos, votos=0)
     c1.actualizar_firma()
     consumir_novedades_y_actualizar_objetos()
 
@@ -479,6 +480,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
 
     c2 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m1, mesa_categoria__categoria=categoria)
     VotoMesaReportadoFactory(carga=c2, opcion=blanco, votos=20)
+    VotoMesaReportadoFactory(carga=c2, opcion=total_votos, votos=0)
     c2.actualizar_firma()
     mc = c1.mesa_categoria
     consumir_novedades_y_actualizar_objetos([mc])
@@ -497,6 +499,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
 
     c3 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria)
     VotoMesaReportadoFactory(carga=c3, opcion=blanco, votos=10)
+    VotoMesaReportadoFactory(carga=c3, opcion=total_votos, votos=0)
     c3.actualizar_firma()
     consumir_novedades_y_actualizar_objetos([mc])
     response = fiscal_client.get(
@@ -510,6 +513,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
 
     c4 = CargaFactory(tipo=Carga.TIPOS.parcial, mesa_categoria__mesa=m3, mesa_categoria__categoria=categoria)
     VotoMesaReportadoFactory(carga=c4, opcion=blanco, votos=10)
+    VotoMesaReportadoFactory(carga=c4, opcion=total_votos, votos=0)
     c4.actualizar_firma()
     consumir_novedades_y_actualizar_objetos([mc])
 
