@@ -53,7 +53,7 @@ def test_siguiente_accion_balancea_con_scheduler(fiscal_client, cant_attachments
     mesas = MesaFactory.create_batch(cant_mcs)
     for i in range(cant_mcs):
         attachment_identificado = AttachmentFactory(mesa=mesas[i], status='identificada')
-        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1)
+        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1, categoria__sensible=True)
 
     # Como la URL de identificación pasa un id no predictible
     # y no nos importa acá saber exactamente a que instancia se relaciona la acción
@@ -72,7 +72,7 @@ def test_siguiente_accion_balancea_sin_scheduler(fiscal_client, cant_attachments
     mesas = MesaFactory.create_batch(cant_mcs)
     for i in range(cant_mcs):
         attachment_identificado = AttachmentFactory(mesa=mesas[i], status='identificada')
-        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1)
+        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1, categoria__sensible=True)
 
     # Como la URL de identificación pasa un id no predictible
     # y no nos importa acá saber exactamente a que instancia se relaciona la acción
