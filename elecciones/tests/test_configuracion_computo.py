@@ -17,15 +17,18 @@ from .factories import (
 )
 from .test_models import consumir_novedades_y_actualizar_objetos
 from .utils import create_carta_marina, cargar_votos, tecnica_proyeccion
+import pytest
 
 
+@pytest.mark.django_db(transaction=True)
 def test_configuracion_combinada(db, fiscal_client, url_resultados_computo):
     # Seteamos el modo de elección como PASO; por lo tanto
     # los porcentajes que deberíamos visualizar son los porcentaje_validos
     settings.MODO_ELECCION = settings.ME_OPCION_GEN
 
     # Asegurar una carta marina con dos distritos extra además del "Distrito único".
-    mesas = create_carta_marina(create_distritos=2)
+    Distrito.objects.all().delete()
+    mesas = create_carta_marina(create_distritos=3)
 
     categoria = Categoria.objects.first()
     for mesa in mesas:
