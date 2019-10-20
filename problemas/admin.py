@@ -24,6 +24,7 @@ class ProblemaForm(forms.ModelForm):
 class ReporteDeProblemaInline(admin.StackedInline):
     model = ReporteDeProblema
     raw_id_fields = ('identificacion', 'carga', 'reportado_por', )
+    readonly_fields = ['created']
     extra = 0
 
 
@@ -67,7 +68,7 @@ class ProblemaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin)
         row_actions += super().get_row_actions(obj)
         return row_actions
 
-    list_display = ('id', mesa_, attachment_, 'estado', descripciones, 'resuelto_por')
+    list_display = ('id', 'created', mesa_, attachment_, 'estado', descripciones, 'resuelto_por')
     raw_id_fields = ('attachment', 'mesa', 'resuelto_por', )
     list_filter = ('estado',)
     search_fields = (
