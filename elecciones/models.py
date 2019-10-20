@@ -359,14 +359,14 @@ class MesaCategoriaQuerySet(models.QuerySet):
     ]
 
     # La asignación batch desde el scheduler prioriza así:
-    # Primero el orden que la prioridad geográifica.
-    # Segundo, el status (sin cargar, consolidada, inconsistente, etc.)
+    # Primero, el status (sin cargar, consolidada, inconsistente, etc.)
+    # Segundo, el orden que la prioridad geográfica.
     # Tercero, la cantidad de asignaciones ya hechas (penalizamos levemente las
     # mesas categorías que asignamos más veces).
     # En caso de empate, la de menor id (que es la más vieja).
     campos_de_orden_batch = [
-        'coeficiente_para_orden_de_carga',
         'prioridad_status',
+        'coeficiente_para_orden_de_carga',
         'cant_asignaciones_realizadas',
         'id',
     ]
