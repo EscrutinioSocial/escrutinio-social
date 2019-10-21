@@ -20,15 +20,15 @@ class Command(BaseCommand):
 
         # Excluimos explícitamente les trolls.
         fiscales = Fiscal.objects.filter(
-            estado__in=estados_previos,troll=False
+            estado__in=estados_previos, troll=False
         )
 
         # Nuevos validadores son quienes no estaban en el grupo.
         cantidad = fiscales.count()
         usuarios = User.objects.filter(
-            id__in=fiscales.values_list('user__id',flat=True)
+            id__in=fiscales.values_list('user__id', flat=True)
         ).exclude(
-            id__in=validadores.user_set.all().values_list('id',flat=True)
+            id__in=validadores.user_set.all().values_list('id', flat=True)
         )
 
         cant_validadores = usuarios.count()
