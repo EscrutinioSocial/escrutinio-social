@@ -53,7 +53,7 @@ def test_siguiente_accion_balancea_con_scheduler(fiscal_client, cant_attachments
     mesas = MesaFactory.create_batch(cant_mcs)
     for i in range(cant_mcs):
         attachment_identificado = AttachmentFactory(mesa=mesas[i], status='identificada')
-        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1)
+        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1, categoria__sensible=True)
 
     # Como la URL de identificación pasa un id no predictible
     # y no nos importa acá saber exactamente a que instancia se relaciona la acción
@@ -66,13 +66,14 @@ def test_siguiente_accion_balancea_con_scheduler(fiscal_client, cant_attachments
     assert response.status_code == HTTPStatus.FOUND
     assert response.url.startswith(beginning)
 
+
 @pytest.mark.parametrize('cant_attachments, cant_mcs, coeficiente, expect', parametros_test_siguiente_accion_balancea)
 def test_siguiente_accion_balancea_sin_scheduler(fiscal_client, cant_attachments, cant_mcs, coeficiente, expect):
     attachments = AttachmentFactory.create_batch(cant_attachments, status='sin_identificar')
     mesas = MesaFactory.create_batch(cant_mcs)
     for i in range(cant_mcs):
         attachment_identificado = AttachmentFactory(mesa=mesas[i], status='identificada')
-        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1)
+        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1, categoria__sensible=True)
 
     # Como la URL de identificación pasa un id no predictible
     # y no nos importa acá saber exactamente a que instancia se relaciona la acción
@@ -366,7 +367,7 @@ parametros_test_redirige_a_parcial_si_es_necesario = [
 def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client, status, parcial):
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa)
-    c1 = CategoriaFactory(requiere_cargas_parciales=True)
+    c1 = CategoriaFactory(requiere_cargas_parciales=True, sensible=True)
     m1c1 = MesaCategoriaFactory(categoria=c1, coeficiente_para_orden_de_carga=0.1, status=status, mesa=mesa)
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
@@ -396,7 +397,7 @@ def test_cargar_resultados_redirige_a_identificar(db, fiscal_client, status, par
 def test_cargar_resultados_redirige_a_parcial_si_es_necesario_con_scheduler(db, fiscal_client, status, parcial):
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa)
-    c1 = CategoriaFactory(requiere_cargas_parciales=True)
+    c1 = CategoriaFactory(requiere_cargas_parciales=True, sensible=True)
     with override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=False):
         m1c1 = MesaCategoriaFactory(categoria=c1, coeficiente_para_orden_de_carga=0.1, status=status, mesa=mesa)
         scheduler()

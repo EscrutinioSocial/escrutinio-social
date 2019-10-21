@@ -96,8 +96,8 @@ def test_scheduler_orden_estandar(db, settings):
     # Creamos 5 attachments sin identificar
     attachments = AttachmentFactory.create_batch(5, status=Attachment.STATUS.sin_identificar)
 
-    c1 = CategoriaFactory()
-    c2 = CategoriaFactory()
+    c1 = CategoriaFactory(sensible=True)
+    c2 = CategoriaFactory(sensible=True)
     m1 = MesaFactory(categorias=[c1])
     IdentificacionFactory(
         mesa=m1,
@@ -139,8 +139,8 @@ def test_scheduler_orden_distinto(db, settings):
     # Creamos 5 attachments sin identificar
     attachments = AttachmentFactory.create_batch(5, status=Attachment.STATUS.sin_identificar)
 
-    c1 = CategoriaFactory()
-    c2 = CategoriaFactory()
+    c1 = CategoriaFactory(sensible=True)
+    c2 = CategoriaFactory(sensible=True)
     m1 = MesaFactory(categorias=[c1])
     IdentificacionFactory(
         mesa=m1,
