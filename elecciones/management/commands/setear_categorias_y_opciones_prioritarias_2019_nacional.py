@@ -7,21 +7,35 @@ class Command(BaseCommand):
     help = "Establece las categorías prioritarias, las configura y les asigna las opciones prioritarias."
 
     def handle(self, *args, **options):
+
         # Categoría Presidente.
-        categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
         codigos = [settings.CODIGO_PARTIDO_NOSOTROS, settings.CODIGO_PARTIDO_ELLOS]
-        self.configurar_categoria_prioritaria(categoria, codigos)
+        categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
+        self.configurar_categoria_prioritaria(categoria, codigos, True)
 
         # Categoría Gobernador.
         categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA)
         codigos = [settings.CODIGO_PARTIDO_NOSOTROS_BA, settings.CODIGO_PARTIDO_ELLOS_BA]
-        self.configurar_categoria_prioritaria(categoria, codigos)
+        self.configurar_categoria_prioritaria(categoria, codigos, True)
 
-    def configurar_categoria_prioritaria(self, categoria, codigos):
+        # En el resto de las categorías activas.
+        codigos = [settings.CODIGO_PARTIDO_NOSOTROS, settings.CODIGO_PARTIDO_ELLOS]
+        categorias = Categoria.objects.filter(
+            activa=True
+        ).exclude(
+            slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE
+        ).exclude(
+            slug=settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA
+        )
+        for categoria in categorias:
+            self.configurar_categoria_prioritaria(categoria, codigos, False)
+
+    def configurar_categoria_prioritaria(self, categoria, codigos, sensible):
         categoria.activa = True
-        categoria.sensible = True
+        categoria.sensible = sensible
         categoria.requiere_cargas_parciales = True
-        categoria.prioridad = 2
+        if sensible:
+            categoria.prioridad = 2
         categoria.save()
 
         # Opciones prioritarias.
