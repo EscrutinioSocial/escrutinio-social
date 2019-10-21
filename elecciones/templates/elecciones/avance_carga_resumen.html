@@ -46,6 +46,18 @@
 {% block left-panel %}
 
 <div class="row" style="margin-top: 30px; margin-left: 20px">
+  <div class="recuadro" style="margin-top: 0px; background-color: lightgoldenrodyellow">
+    <div class="row" style="background-color: gold; margin-bottom: 10px; padding-bottom: 10px">
+      <div class="col s12 gran_titulo">Fiscales</div>
+    </div>
+    <div class="row">
+      <div class="col s4">Cantidad de fiscales activos (estimado)</div>
+      <div class="col {{ ancho_dato }}">{{ fiscales_activos }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row" style="margin-top: 50px; margin-left: 20px">
   <div class="col s8">
     <form style="margin-right: 30px; display:inline!important;"
       action="{% url "elegir-distrito-o-seccion" hay_criterio="False" valor_criterio="None" donde_volver=donde_volver mensaje="nada" %}"
@@ -76,6 +88,7 @@
     <div class="row">
       <div class="col s4"></div>
       <div class="col {{ ancho_titulo }} titulo">Total país</div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_titulo }} titulo">PBA</div>
       {% if hay_restriccion_geografica %}
         <div class="col {{ ancho_titulo }} titulo">{{ nombre_restriccion_geografica }}</div>
@@ -87,6 +100,19 @@
         <div class="col s4">{{ dato.texto }}</div>
         <div class="col {{ ancho_dato }}">{{ dato.cantidad_1 }}</div>
         <div class="col {{ ancho_dato }}">{{ dato.porcentaje_1 }} %</div>
+        {% if dato.id == 'mesas_con_foto' %}
+        <div class="col {{ ancho_dato }}" style="background-color: lightskyblue;">
+          <a
+            href="{% url "avance-carga-resumen-elegir-detalle" carga_parcial=base_carga_parcial carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida seleccion='distrito' %}"
+            style="color: indigo;"
+          >
+            {% csrf_token %}
+            X distrito
+          </a>
+        </div>
+        {% else %}
+          <div class="col {{ ancho_dato }}"></div>
+        {% endif %}
         <div class="col {{ ancho_dato }}">{{ dato.cantidad_2 }}</div>
         <div class="col {{ ancho_dato }}">{{ dato.porcentaje_2 }} %</div>
         {% if hay_restriccion_geografica %}
@@ -104,7 +130,21 @@
       {% endfor %}
     </div>
   </div>
-
+  
+  {% if detalle == 'distrito' %}
+  <div class="recuadro" style="background-color: powderblue">
+    <div class="row" style="background-color: lightskyblue; margin-bottom: 10px; padding-bottom: 10px">
+      <div class="col s12 gran_titulo">Mesas con foto identificada - detalle por distrito</div>
+    </div>
+    {% for dato in datos_detalle %}
+    <div class="row">
+      <div class="col s4">{{ dato.nombre }}</div>
+      <div class="col s2">{{ dato.cantidad }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  
   <div class="recuadro" style="background-color: blanchedalmond">
     <div class="row" style="background-color: lightcoral; margin-bottom: 10px; padding-bottom: 10px">
       <div class="col s12 gran_titulo">
@@ -152,7 +192,7 @@
     <div class="row">
       {% if base_carga_parcial == 'solo_con_fotos' %}
       <form class="col s6" 
-        action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida %}"
+        action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra="nada" %}"
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
@@ -162,7 +202,7 @@
       {% endif %}
       {% if base_carga_parcial == 'todo' %}
       <form class="col s6"
-        action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida %}" 
+        action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra="nada" %}" 
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
@@ -216,7 +256,7 @@
     <div class="row">
       {% if base_carga_total == 'solo_con_fotos' %}
       <form class="col s6" 
-        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="todo" restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida %}"
+        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="todo" restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra="nada" %}"
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">
@@ -226,7 +266,7 @@
       {% endif %}
       {% if base_carga_total == 'todo' %}
       <form class="col s6"
-        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida %}" 
+        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra="nada" %}" 
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">
@@ -277,7 +317,7 @@
     </div>
     {% else %}
     <form style="margin-left: 10px; margin-bottom: 20px"
-      action="{% url "avance-carga-resumen-elegir-categoria" carga_parcial=base_carga_parcial carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica %}"
+      action="{% url "avance-carga-resumen-elegir-categoria" carga_parcial=base_carga_parcial carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica data_extra="nada" %}"
       method="POST">
       {% csrf_token %}
       {% for categoria in categorias %}

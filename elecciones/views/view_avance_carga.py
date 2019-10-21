@@ -1,9 +1,13 @@
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
 
 from .definiciones import VisualizadoresOnlyMixin
+
+from fiscales.models import Fiscal
 
 from elecciones.models import (
     Distrito,
@@ -24,6 +28,7 @@ from elecciones.busquedas import BusquedaDistritoOSeccion
 from elecciones.resultados_resumen import (
     GeneradorDatosFotosConsolidado, GeneradorDatosPreidentificacionesConsolidado,
     GeneradorDatosCargaParcialConsolidado, GeneradorDatosCargaTotalConsolidado,
+    GeneradorDatosFotosPorDistrito,
     SinRestriccion, RestriccionPorDistrito, RestriccionPorSeccion
 )
 
@@ -112,6 +117,7 @@ class AvanceDeCargaResumen(TemplateView):
         self.restriccion_geografica_spec = self.kwargs.get('restriccion_geografica')
         self.restriccion_geografica = self.calcular_restriccion()
         self.categoria_spec = self.kwargs.get('categoria')
+        self.detalle = self.kwargs.get('data_extra')
         if self.categoria_spec == 'None':
             self.categoria = Categoria.objects.filter(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).first()
         else:
@@ -124,12 +130,24 @@ class AvanceDeCargaResumen(TemplateView):
         context['nombre_restriccion_geografica'] = self.restriccion_geografica.nombre()
         context['hay_restriccion_geografica'] = self.restriccion_geografica.restringe_algo()
         context['slug_restriccion_geografica'] = self.restriccion_geografica.slug()
-        context['ancho_dato'] = 's1' if self.restriccion_geografica.restringe_algo() else 's2'
-        context['ancho_titulo'] = 's2' if self.restriccion_geografica.restringe_algo() else 's4'
+        # context['ancho_dato'] = 's1' if self.restriccion_geografica.restringe_algo() else 's2'
+        # context['ancho_titulo'] = 's2' if self.restriccion_geografica.restringe_algo() else 's4'
+        context['ancho_dato'] = 's1' 
+        context['ancho_titulo'] = 's2' 
         # categorias
         context['categorias'], context['hay_demasiadas_categorias'] = self.data_categorias_posibles()
         context['categoria_elegida'] = self.categoria_spec
         context['nombre_categoria_elegida'] = self.categoria.nombre
+        # data fiscales
+        ahora = timezone.now()
+        desde = ahora - timedelta(minutes=5)
+        context['fiscales_activos'] = Fiscal.objects.filter(last_seen__gt=desde).count()
+        # detalle
+        context['detalle'] = self.detalle
+        if self.detalle == 'distrito':
+            context['datos_detalle'] = GeneradorDatosFotosPorDistrito().datos()
+            print("Datos de detalle por distrito")
+            print(context['datos_detalle'])
         # data fotos
         generador_datos_fotos = GeneradorDatosFotosConsolidado(self.restriccion_geografica)
         context['data_fotos_nacion_pba_restriccion'] = generador_datos_fotos.datos_nacion_pba_restriccion()
@@ -184,14 +202,22 @@ class AvanceDeCargaResumen(TemplateView):
 
 def elegir_categoria_avance_carga_resumen(request, *args, **kwargs):
     categoria_elegida = request.POST.copy().get('categoria')
-    print('en elegir_categoria_avance_carga_resumen, categoría elegida')
-    print(categoria_elegida)
-    print(kwargs.get('carga_parcial'))
     return redirect('avance-carga-resumen',
                     carga_parcial=kwargs.get('carga_parcial'),
                     carga_total=kwargs.get('carga_total'),
                     restriccion_geografica=kwargs.get('restriccion_geografica'),
-                    categoria=categoria_elegida)
+                    categoria=categoria_elegida,
+                    data_extra=kwargs.get('data_extra'))
+
+
+def elegir_detalle_avance_carga_resumen(request, *args, **kwargs):
+    detalle_elegido = kwargs.get('seleccion')
+    return redirect('avance-carga-resumen',
+                    carga_parcial=kwargs.get('carga_parcial'),
+                    carga_total=kwargs.get('carga_total'),
+                    restriccion_geografica=kwargs.get('restriccion_geografica'),
+                    categoria=kwargs.get('categoria'),
+                    data_extra=detalle_elegido)
 
 
 class EleccionDeDistritoOSeccion(TemplateView):
@@ -272,7 +298,8 @@ def eleccion_efectiva_distrito_o_seccion(request, *args, **kwargs):
                         carga_parcial=donde_volver['carga_parcial'],
                         carga_total=donde_volver['carga_total'],
                         restriccion_geografica=valor_elegido,
-                        categoria='None')
+                        categoria='None',
+                        data_extra='nada')
 
 
 def limpiar_busqueda(request, *args, **kwargs):
@@ -283,4 +310,5 @@ def limpiar_busqueda(request, *args, **kwargs):
                     carga_parcial=donde_volver['carga_parcial'],
                     carga_total=donde_volver['carga_total'],
                     restriccion_geografica="None",
-                    categoria='None')
+                    categoria='None',
+                    data_extra='nada')

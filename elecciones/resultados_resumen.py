@@ -1,3 +1,5 @@
+from django.db.models import Count
+
 from functools import reduce
 
 from escrutinio_social import settings
@@ -83,11 +85,18 @@ class GeneradorDatosFotos():
         if (self.cantidad_mesas == None):
             self.cantidad_mesas = self.query_inicial_mesas().count()
             self.mesas_con_foto_identificada = self.query_inicial_mesas().exclude(attachments=None).count()
+            # self.mesas_con_carga_sin_foto = self.query_inicial_mesas().filter(attachments=None).exclude(mesacategoria__cargas=None).count()
+            self.mesas_con_carga_sin_foto = self.query_inicial_mesacats().exclude(
+                cargas=None).filter(mesa__attachments=None).values('mesa__id').distinct().count()
+            self.mesas_activas = self.mesas_con_foto_identificada + self.mesas_con_carga_sin_foto
 
 
 class GeneradorDatosFotosNacional(GeneradorDatosFotos):
     def query_inicial_mesas(self):
         return Mesa.objects
+
+    def query_inicial_mesacats(self):
+        return MesaCategoria.objects
 
     def calcular(self):
         super().calcular()
@@ -99,6 +108,7 @@ class GeneradorDatosFotosNacional(GeneradorDatosFotos):
             status=Attachment.STATUS.sin_identificar).filter(identificaciones=None).count()
         self.mesas_sin_foto = self.cantidad_mesas - (
             self.mesas_con_foto_identificada + self.fotos_con_problema_confirmado + self.fotos_en_proceso + self.fotos_sin_acciones
+            + self.mesas_con_carga_sin_foto
         )
 
 
@@ -110,6 +120,9 @@ class GeneradorDatosFotosDistrital(GeneradorDatosFotos):
     def query_inicial_mesas(self):
         return Mesa.objects.filter(circuito__seccion__distrito__numero=self.distrito)
 
+    def query_inicial_mesacats(self):
+        return MesaCategoria.objects.filter(mesa__circuito__seccion__distrito__numero=self.distrito)
+
 
 class GeneradorDatosFotosConRestriccion(GeneradorDatosFotos):
     def __init__(self, restriccion):
@@ -119,11 +132,16 @@ class GeneradorDatosFotosConRestriccion(GeneradorDatosFotos):
     def query_inicial_mesas(self):
         return self.restriccion.aplicar_restriccion_mesas(Mesa.objects)
 
+    def query_inicial_mesacats(self):
+        return self.restriccion.aplicar_restriccion_mesacats(MesaCategoria.objects)
+
 
 class NoGeneradorDatosFotos():
     def __init__(self):
         self.cantidad_mesas = None
         self.mesas_con_foto_identificada = None
+        self.mesas_con_carga_sin_foto = None
+        self.mesas_activas = None
 
     def calcular(self):
         pass
@@ -152,10 +170,20 @@ class GeneradorDatosFotosConsolidado():
                        self.nacion.cantidad_mesas, self.nacion.cantidad_mesas, 
                        self.pba.cantidad_mesas, self.pba.cantidad_mesas,
                        self.restringido.cantidad_mesas, self.restringido.cantidad_mesas),
-            DatoTriple("Mesas con foto identificada", 
+            DatoTriple("Mesas con foto identificada (1)", 
                        self.nacion.mesas_con_foto_identificada, self.nacion.cantidad_mesas, 
                        self.pba.mesas_con_foto_identificada, self.pba.cantidad_mesas,
-                       self.restringido.mesas_con_foto_identificada, self.restringido.cantidad_mesas),
+                       self.restringido.mesas_con_foto_identificada, self.restringido.cantidad_mesas,
+                       'mesas_con_foto'),
+            DatoTriple("Mesas con cargas y sin fotos (2)", 
+                       self.nacion.mesas_con_carga_sin_foto, self.nacion.cantidad_mesas,
+                       self.pba.mesas_con_carga_sin_foto, self.pba.cantidad_mesas,
+                       self.restringido.mesas_con_carga_sin_foto, self.restringido.cantidad_mesas,
+                       'mesas_con_carga_sin_foto'),
+            DatoTriple("Mesas activas (1 + 2)", 
+                       self.nacion.mesas_activas, self.nacion.cantidad_mesas,
+                       self.pba.mesas_activas, self.pba.cantidad_mesas,
+                       self.restringido.mesas_activas, self.restringido.cantidad_mesas),
         ]
 
     def datos_solo_nacion(self):
@@ -173,6 +201,26 @@ class GeneradorDatosFotosConsolidado():
 
 
 
+class GeneradorDatosFotosPorDistrito():
+    def __init__(self):
+        self.data = None
+
+    def calcular(self):
+        if self.data == None:
+            raw_data = Mesa.objects.exclude(attachments=None).values('circuito__seccion__distrito__nombre').annotate(
+                cant_por_distrito=Count('circuito__seccion__distrito__nombre'))
+            sorted_data = sorted(raw_data, key=lambda elem: elem['circuito__seccion__distrito__nombre'])
+            final_data = [{
+                'nombre': datum['circuito__seccion__distrito__nombre'], 
+                'cantidad': datum['cant_por_distrito']} 
+            for datum in sorted_data]
+            self.data = final_data
+
+    def datos(self):
+        self.calcular()
+        return self.data
+
+
 
 class GeneradorDatosPreidentificaciones():
     def __init__(self, query_inicial=PreIdentificacion.objects):
@@ -182,7 +230,8 @@ class GeneradorDatosPreidentificaciones():
     def calcular(self):
         if (self.cantidad_total == None):
             self.cantidad_total = self.query_inicial.count()
-            self.identificadas = self.query_inicial.filter(attachment__status=Attachment.STATUS.identificada).count()
+            self.identificadas = self.query_inicial.filter(
+                attachment__status=Attachment.STATUS.identificada).values('id').distinct().count()
             self.sin_identificar = self.cantidad_total - self.identificadas
 
 
@@ -213,8 +262,9 @@ class GeneradorDatosPreidentificacionesConsolidado():
         self.pba.calcular()
         self.restringido.calcular()
         return [
-            DatoTriple("Total", self.nacion.cantidad_total,
-                       self.nacion.cantidad_total, self.pba.cantidad_total, self.pba.cantidad_total,
+            DatoTriple("Total", 
+                        self.nacion.cantidad_total, self.nacion.cantidad_total, 
+                        self.pba.cantidad_total, self.pba.cantidad_total,
                        self.restringido.cantidad_total, self.restringido.cantidad_total),
             DatoTriple("Con identificación consolidada", 
                        self.nacion.identificadas, self.nacion.cantidad_total, 
@@ -375,10 +425,11 @@ class GeneradorDatosCargaTotalConsolidado(GeneradorDatosCargaConsolidado):
 
 
 class DatoTriple():
-    def __init__(self, texto, cantidad_1, cantidad_total_1, cantidad_2=None, cantidad_total_2=None, cantidad_3=None, cantidad_total_3=None):
+    def __init__(self, texto, cantidad_1, cantidad_total_1, cantidad_2=None, cantidad_total_2=None, cantidad_3=None, cantidad_total_3=None, ident=None):
         self.texto = texto
         self.cantidad_1 = cantidad_1
         self.porcentaje_1 = porcentaje(cantidad_1, cantidad_total_1)
+        self.id = ident
         if (cantidad_2 != None):
             self.cantidad_2 = cantidad_2
             self.porcentaje_2 = porcentaje(cantidad_2, cantidad_total_2)
