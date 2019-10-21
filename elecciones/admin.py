@@ -242,6 +242,7 @@ class SeccionAdmin(admin.ModelAdmin):
     search_fields = (
         'nombre',
         'numero',
+        'distrito__nombre',
     )
     form = SeccionForm
     fieldsets = (
