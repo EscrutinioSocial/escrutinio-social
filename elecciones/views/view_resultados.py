@@ -261,11 +261,10 @@ class ResultadosExport(ResultadosCategoria):
         csv_list = [headers]
 
         for voto in votos:
-            fila = [voto]
-            csv_list.append(fila)
+            csv_list.append(voto)
 
         (nivel, id_nivel) = self.get_filtro_por_nivel()
-        filename = f'{categoria.slug}-{nivel}-{id_nivel[0]}'
+        filename = f'{categoria.slug}-{nivel if nivel else "todo"}-{id_nivel[0] if id_nivel else "todo"}'
         return excel.make_response(excel.pe.Sheet(csv_list), self.filetype, file_name=filename)
 
 
