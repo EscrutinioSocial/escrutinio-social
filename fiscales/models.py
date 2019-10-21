@@ -96,7 +96,7 @@ class Fiscal(models.Model):
 
     # Actualmente no se consideran los diferentes estados
     # salvo para la creación del user asociado.
-    estado = StatusField(choices_name='ESTADOS', default='PREINSCRIPTO')
+    estado = StatusField(choices_name='ESTADOS', default='PRE-INSCRIPTO')
     notas = models.TextField(blank=True, help_text='Notas internas, no se muestran')
     codigo_confirmacion = models.UUIDField(default=uuid.uuid4, editable=False)
     email_confirmado = models.BooleanField(default=False)
