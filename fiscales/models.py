@@ -92,7 +92,7 @@ class Fiscal(models.Model):
 
     """
     TIPO_DNI = Choices('DNI', 'CI', 'LE', 'LC')
-    ESTADOS = Choices('IMPORTADO', 'AUTOCONFIRMADO', ('PREINSCRIPTO','PRE-INSCRIPTO'), 'CONFIRMADO', 'DECLINADO')
+    ESTADOS = Choices('IMPORTADO', 'AUTOCONFIRMADO', 'PRE-INSCRIPTO', 'CONFIRMADO', 'DECLINADO')
 
     # Actualmente no se consideran los diferentes estados
     # salvo para la creación del user asociado.
