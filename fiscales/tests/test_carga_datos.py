@@ -862,10 +862,6 @@ def test_carga_sin_permiso(fiscal_client, admin_user, mocker):
     response = fiscal_client.get(reverse('carga-total', args=[mc.id]))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('siguiente-accion')  # Manda a asignar una nueva.
-    assert capture.call_count == 1
-    mensaje = capture.call_args[0][0]
-    assert 'Intento de cargar mesa-categoria' in mensaje
-    assert str(fiscal) in mensaje
     mc.asignar_a_fiscal()
     fiscal.asignar_mesa_categoria(mc)
     response = fiscal_client.get(reverse('carga-total', args=[mc.id]))
