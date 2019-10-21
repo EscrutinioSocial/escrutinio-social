@@ -22,7 +22,7 @@ class IdentificacionInline(admin.StackedInline):
 class AttachmentAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, ExportableAdmin):
     list_display = ('status', 'mesa', 'foto', 'foto_edited', 'cant_fiscales_asignados', 'subido_por', 'get_distrito', 'get_seccion', 'pre_identificacion')
     list_filter = ('status',)
-    search_fields = ('mesa__numero', 'subido_por__user__username', 'pre_identificacion__distrito', 'pre_identificacion__seccion',)
+    search_fields = ('mesa__numero', 'subido_por__user__username', 'pre_identificacion__distrito__nombre', 'pre_identificacion__seccion__nombre',)
     raw_id_fields = ('email', 'mesa', 'subido_por', 'pre_identificacion', 'identificacion_testigo')
 
     def get_distrito(self, obj):
