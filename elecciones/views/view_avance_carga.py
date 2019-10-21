@@ -31,6 +31,7 @@ from elecciones.resultados_resumen import (
     GeneradorDatosFotosConsolidado, GeneradorDatosPreidentificacionesConsolidado,
     GeneradorDatosCargaParcialConsolidado, GeneradorDatosCargaTotalConsolidado,
     GeneradorDatosFotosPorDistrito, GeneradorDatosFotosDistritoPorSeccion,
+    GeneradorDatosCargaParcialDiscriminada,
     SinRestriccion, RestriccionPorDistrito, RestriccionPorSeccion
 )
 
@@ -122,6 +123,8 @@ class AvanceDeCargaResumen(TemplateView):
         self.string_data_extra = self.kwargs.get('data_extra')
         self.data_extra = parse_data_extra(self.string_data_extra) 
         self.detalle_foto = self.data_extra['foto']
+        self.detalle_carga_parcial_confirmada = self.data_extra['cargaparcialconfirmada']
+        self.detalle_carga_parcial_csv = self.data_extra['cargaparcialcsv']
         if self.categoria_spec == 'None':
             self.categoria = Categoria.objects.filter(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).first()
         else:
@@ -146,13 +149,6 @@ class AvanceDeCargaResumen(TemplateView):
         ahora = timezone.now()
         desde = ahora - timedelta(minutes=5)
         context['fiscales_activos'] = Fiscal.objects.filter(last_seen__gt=desde).count()
-        # detalle - data extra
-        context['data_extra'] = self.string_data_extra
-        context['detalle_foto'] = self.detalle_foto
-        if self.detalle_foto == 'distrito':
-            context['datos_detalle_foto'] = GeneradorDatosFotosPorDistrito().datos()
-        elif self.detalle_foto == 'seccion':
-            context['datos_detalle_foto'] = GeneradorDatosFotosDistritoPorSeccion(settings.DISTRITO_PBA).datos()
         # data fotos
         generador_datos_fotos = GeneradorDatosFotosConsolidado(self.restriccion_geografica)
         context['data_fotos_nacion_pba_restriccion'] = generador_datos_fotos.datos_nacion_pba_restriccion()
@@ -172,10 +168,35 @@ class AvanceDeCargaResumen(TemplateView):
         # data preidentificaciones
         context['data_preidentificaciones'] = GeneradorDatosPreidentificacionesConsolidado(
             self.restriccion_geografica).datos()
+        # data extra
+        context['detalle_foto'] = self.detalle_foto
+        context['detalle_carga_parcial_confirmada'] = self.detalle_carga_parcial_confirmada
+        context['detalle_carga_parcial_csv'] = self.detalle_carga_parcial_csv
+        # detalle fotos
+        if self.detalle_foto == 'distrito':
+            context['datos_detalle_foto'] = GeneradorDatosFotosPorDistrito().datos()
+        elif self.detalle_foto == 'seccion':
+            context['datos_detalle_foto'] = GeneradorDatosFotosDistritoPorSeccion(
+                settings.DISTRITO_PBA).datos()
+        # detalle carga parcial confirmada
+        if self.detalle_carga_parcial_confirmada == 'distrito':
+            context['datos_detalle_carga_parcial_confirmada'] = GeneradorDatosCargaParcialDiscriminada(
+                settings.SLUG_CATEGORIA_PRESI_Y_VICE, 'mesa__circuito__seccion__distrito__nombre').para_carga_confirmada().datos()
+        elif self.detalle_carga_parcial_confirmada == 'seccion':
+            context['datos_detalle_carga_parcial_confirmada'] = GeneradorDatosCargaParcialDiscriminada(
+                settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA, 'mesa__circuito__seccion__nombre').para_carga_confirmada().datos()
+        # detalle carga parcial csv
+        if self.detalle_carga_parcial_csv == 'distrito':
+            context['datos_detalle_carga_parcial_csv'] = GeneradorDatosCargaParcialDiscriminada(
+                settings.SLUG_CATEGORIA_PRESI_Y_VICE, 'mesa__circuito__seccion__distrito__nombre').para_carga_csv().datos()
+        elif self.detalle_carga_parcial_csv == 'seccion':
+            context['datos_detalle_carga_parcial_csv'] = GeneradorDatosCargaParcialDiscriminada(
+                settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA, 'mesa__circuito__seccion__nombre').para_carga_csv().datos()
         # data relacionada con navegación
         context['base_carga_parcial'] = self.base_carga_parcial
         context['base_carga_total'] = self.base_carga_total
         context['donde_volver'] = self.donde_volver()
+        context['data_extra'] = self.string_data_extra
         return context
 
     def donde_volver(self):
@@ -197,7 +218,7 @@ class AvanceDeCargaResumen(TemplateView):
         data_categorias = []
         hay_demasiadas_categorias = False
         if self.restriccion_geografica.restringe_algo():
-            if self.restriccion_geografica.query_categorias().count() > 20:
+            if self.restriccion_geografica.query_categorias().count() > 50:
                 hay_demasiadas_categorias = True
             else:
                 for categoria in self.restriccion_geografica.query_categorias():

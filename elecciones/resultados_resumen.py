@@ -450,6 +450,52 @@ class GeneradorDatosCargaTotalConsolidado(GeneradorDatosCargaConsolidado):
             self.restringido = NoGeneradorDatosCarga()
 
 
+class GeneradorDatosCargaParcialDiscriminada():
+    def __init__(self, categoria, discriminador):
+        self.data = None
+        self.categoria = categoria
+        self.discriminador = discriminador
+
+    def query_inicial(self):
+        print(self.categoria)
+        return self.restringir_por_statuses(MesaCategoria.objects.filter(categoria__slug=self.categoria))
+
+    def calcular(self):
+        if self.data == None:
+            raw_data = self.query_inicial().values(self.discriminador).annotate(cant_discriminada=Count(self.discriminador))
+            sorted_data = sorted(raw_data, key=lambda elem: elem[self.discriminador])
+            final_data = [{
+                'nombre': datum[self.discriminador],
+                'cantidad': datum['cant_discriminada']}
+                for datum in sorted_data]
+            self.data = final_data
+
+    def datos(self):
+        self.calcular()
+        return self.data
+
+    def restringir_por_statuses(self, query):
+        if len(self.statuses) == 0:
+            return query
+        queries_por_status = [query.filter(status=status) for status in self.statuses]
+        return reduce(lambda x, y: x | y, queries_por_status)
+
+    def para_carga_confirmada(self):
+        self.statuses = [
+                MesaCategoria.STATUS.parcial_consolidada_dc,
+                MesaCategoria.STATUS.total_sin_consolidar,
+                MesaCategoria.STATUS.total_en_conflicto,
+                MesaCategoria.STATUS.total_consolidada_dc
+            ]
+        return self
+
+    def para_carga_csv(self):
+        self.statuses = [MesaCategoria.STATUS.parcial_consolidada_csv,
+                MesaCategoria.STATUS.total_consolidada_csv]
+        return self
+
+
+
 class DatoTriple():
     def __init__(self, texto, cantidad_1, cantidad_total_1, cantidad_2=None, cantidad_total_2=None, cantidad_3=None, cantidad_total_3=None, ident=None):
         self.texto = texto

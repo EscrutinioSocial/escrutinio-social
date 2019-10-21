@@ -90,6 +90,7 @@
       <div class="col {{ ancho_titulo }} titulo">Total país</div>
       <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_titulo }} titulo">PBA</div>
+      <div class="col {{ ancho_dato }}"></div>
       {% if hay_restriccion_geografica %}
         <div class="col {{ ancho_titulo }} titulo">{{ nombre_restriccion_geografica }}</div>
       {% endif %}
@@ -180,7 +181,9 @@
     >
       <div class="col s4"></div>
       <div class="col {{ ancho_titulo }} titulo">Presidente y vice</div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_titulo }} titulo">Gobernador PBA</div>
+      <div class="col {{ ancho_dato }}"></div>
       {% if hay_restriccion_geografica %}
         <div class="col {{ ancho_titulo }} titulo">{{ nombre_restriccion_geografica }}</div>
       {% endif %}
@@ -189,7 +192,9 @@
     <div class="row">
       <div class="col s4"></div>
       <div class="col {{ ancho_titulo }}"></div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_titulo }}"></div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_titulo }} titulo">{{ nombre_categoria_elegida }}</div>
     </div>
     {% endif %}
@@ -272,6 +277,46 @@
     </div>
   </div>
 
+  {% if detalle_carga_parcial_confirmada == 'distrito' or detalle_carga_parcial_confirmada == 'seccion' %}
+  <div class="recuadro" style="background-color: blanchedalmond">
+    <div class="row" style="background-color: lightcoral; margin-bottom: 10px; padding-bottom: 10px">
+      <div class="col s12 gran_titulo">
+        {% if detalle_carga_parcial_confirmada == 'distrito' %}
+        Mesas con carga parcial confirmada - con o sin foto - detalle por distrito
+        {% else %}
+        Mesas con carga parcial confirmada - con o sin foto - provincia de Buenos Aires - detalle por sección
+        {% endif %}
+      </div>
+    </div>
+    {% for dato in datos_detalle_carga_parcial_confirmada %}
+    <div class="row">
+      <div class="col s4">{{ dato.nombre }}</div>
+      <div class="col s2">{{ dato.cantidad }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if detalle_carga_parcial_csv == 'distrito' or detalle_carga_parcial_csv == 'seccion' %}
+  <div class="recuadro" style="background-color: blanchedalmond">
+    <div class="row" style="background-color: lightcoral; margin-bottom: 10px; padding-bottom: 10px">
+      <div class="col s12 gran_titulo">
+        {% if detalle_carga_parcial_csv == 'distrito' %}
+        Mesas con carga parcial desde CSV sin confirmar - con o sin foto - detalle por distrito
+        {% else %}
+        Mesas con carga parcial desde CSV sin confirmar - con o sin foto - provincia de Buenos Aires - detalle por sección
+        {% endif %}
+      </div>
+    </div>
+    {% for dato in datos_detalle_carga_parcial_csv %}
+    <div class="row">
+      <div class="col s4">{{ dato.nombre }}</div>
+      <div class="col s2">{{ dato.cantidad }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <div class="recuadro" style="background-color: mistyrose">
     <div class="row" style="background-color: lightpink; margin-bottom: 10px; padding-bottom: 10px">
       <div class="col s12 gran_titulo">
@@ -286,7 +331,9 @@
     <div class="row" {% if hay_restriccion_geografica %} style="margin-bottom: 5px;" {% endif %}>
       <div class="col s4"></div>
       <div class="col {{ ancho_titulo }} titulo">Presidente y vice</div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_titulo }} titulo">Gobernador PBA</div>
+      <div class="col {{ ancho_dato }}"></div>
       {% if hay_restriccion_geografica %}
       <div class="col {{ ancho_titulo }} titulo">{{ nombre_restriccion_geografica }}</div>
       {% endif %}
@@ -295,7 +342,9 @@
     <div class="row">
       <div class="col s4"></div>
       <div class="col {{ ancho_titulo }}"></div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_titulo }}"></div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_titulo }} titulo">{{ nombre_categoria_elegida }}</div>
     </div>
     {% endif %}
@@ -304,8 +353,10 @@
       <div class="col s4">{{ dato.texto }}</div>
       <div class="col {{ ancho_dato }}">{{ dato.cantidad_1 }}</div>
       <div class="col {{ ancho_dato }}">{{ dato.porcentaje_1 }} %</div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_dato }}">{{ dato.cantidad_2 }}</div>
       <div class="col {{ ancho_dato }}">{{ dato.porcentaje_2 }} %</div>
+      <div class="col {{ ancho_dato }}"></div>
       {% if hay_restriccion_geografica %}
         <div class="col {{ ancho_dato }}">{{ dato.cantidad_3 }}</div>
         <div class="col {{ ancho_dato }}">{{ dato.porcentaje_3 }} %</div>
@@ -343,7 +394,9 @@
     <div class="row">
       <div class="col s4"></div>
       <div class="col {{ ancho_titulo }} titulo">Total país</div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_titulo }} titulo">PBA</div>
+      <div class="col {{ ancho_dato }}"></div>
       {% if hay_restriccion_geografica %}
       <div class="col {{ ancho_titulo }} titulo">{{ nombre_restriccion_geografica }}</div>
       {% endif %}
@@ -353,8 +406,10 @@
       <div class="col s4">{{ dato.texto }}</div>
       <div class="col {{ ancho_dato }}">{{ dato.cantidad_1 }}</div>
       <div class="col {{ ancho_dato }}">{{ dato.porcentaje_1 }} %</div>
+      <div class="col {{ ancho_dato }}"></div>
       <div class="col {{ ancho_dato }}">{{ dato.cantidad_2 }}</div>
       <div class="col {{ ancho_dato }}">{{ dato.porcentaje_2 }} %</div>
+      <div class="col {{ ancho_dato }}"></div>
       {% if hay_restriccion_geografica %}
       <div class="col {{ ancho_dato }}">{{ dato.cantidad_3 }}</div>
       <div class="col {{ ancho_dato }}">{{ dato.porcentaje_3 }} %</div>
