@@ -232,10 +232,10 @@ def elegir_detalle_avance_carga_resumen(request, *args, **kwargs):
 
 def parse_data_extra(string_data_extra):
     partes = string_data_extra.split('_')
-    return { 'foto': partes[0], 'carga_parcial_confirmada': partes[1], 'carga_parcial_csv': partes[2] }
+    return { 'foto': partes[0], 'cargaparcialconfirmada': partes[1], 'cargaparcialcsv': partes[2] }
 
 def format_data_extra(struct_data_extra):
-    return struct_data_extra['foto'] + '_' + struct_data_extra['carga_parcial_confirmada'] + '_' + struct_data_extra['carga_parcial_csv']
+    return struct_data_extra['foto'] + '_' + struct_data_extra['cargaparcialconfirmada'] + '_' + struct_data_extra['cargaparcialcsv']
 
 
 class EleccionDeDistritoOSeccion(TemplateView):
