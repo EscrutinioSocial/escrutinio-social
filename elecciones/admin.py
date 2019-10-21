@@ -212,12 +212,14 @@ class MesaCategoriaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelA
 
 
 class CircuitoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
-    list_display = ('__str__', 'seccion')
+    list_display = ('__str__', 'seccion', 'distrito')
     list_display_links = list_display
     list_filter = ('seccion', )
     search_fields = (
         'nombre',
         'numero',
+        'seccion__nombre',
+        'seccion__distrito__nombre'
     )
 
 
