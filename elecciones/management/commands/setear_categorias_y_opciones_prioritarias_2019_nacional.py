@@ -28,7 +28,10 @@ class Command(BaseCommand):
             slug=settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA
         )
         for categoria in categorias:
-            self.configurar_categoria_prioritaria(categoria, codigos, False)
+            try:
+                self.configurar_categoria_prioritaria(categoria, codigos, False)
+            except CategoriaOpcion.DoesNotExist:
+                print("Faltan opciones en la cat %s." % categoria)
 
     def configurar_categoria_prioritaria(self, categoria, codigos, sensible):
         categoria.activa = True
