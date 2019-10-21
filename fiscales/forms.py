@@ -174,8 +174,14 @@ class QuieroSerFiscalForm(forms.Form):
         ),
     )
 
-    referente_nombres = forms.CharField(required=False, label="Nombre del referente", max_length=100)
-    referente_apellido = forms.CharField(required=False, label="Apellido del referente", max_length=50)
+    referente_nombres = forms.CharField(
+        required=False, label="Nombre del referente", max_length=100,
+        help_text="Si no tenés, dejalo en blanco."
+    )
+    referente_apellido = forms.CharField(
+        required=False, label="Apellido del referente", max_length=50,
+        help_text="Si no tenés, dejalo en blanco."
+    )
 
     referido_por_codigo = forms.CharField(
         required=False,
