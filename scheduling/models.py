@@ -4,9 +4,11 @@ from django.contrib.sessions.models import Session
 from django.utils import timezone
 from django.conf import settings
 from constance import config
+from datetime import timedelta
 
 from elecciones.models import (Distrito, Seccion, Categoria, MesaCategoria)
 from adjuntos.models import Attachment
+from fiscales.models import Fiscal
 
 
 class ColaCargasPendientes(models.Model):
@@ -108,8 +110,9 @@ class ColaCargasPendientes(models.Model):
 
 
 def count_active_sessions():
-    sessions = Session.objects.filter(expire_date__gte=timezone.now()).count()
-    return sessions
+    ahora = timezone.now()
+    desde = ahora - timedelta(minutes=5)
+    return Fiscal.objects.filter(last_seen__gt=desde).count() + 1  # Si no hay ninguno que algo genere.
 
 
 class PrioridadScheduling(models.Model):
