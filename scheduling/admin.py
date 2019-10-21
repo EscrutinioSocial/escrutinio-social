@@ -14,6 +14,8 @@ class ColaCargasPendientesAdmin(AdminRowActionsMixin, admin.ModelAdmin):
     ]
 
     def get_status(self, obj):
+        if not obj.mesa_categoria:
+            return ''
         return f'{obj.mesa_categoria.status}'
     get_status.short_description = "Status mesacat"
 
