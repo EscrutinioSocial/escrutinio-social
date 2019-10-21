@@ -222,6 +222,30 @@ class GeneradorDatosFotosPorDistrito():
 
 
 
+class GeneradorDatosFotosDistritoPorSeccion():
+    def __init__(self, distrito):
+        super().__init__()
+        self.distrito = distrito
+        self.data = None
+
+    def calcular(self):
+        if self.data == None:
+            raw_data = Mesa.objects.filter(circuito__seccion__distrito__numero=self.distrito).exclude(
+                attachments=None).values('circuito__seccion__nombre').annotate(
+                cant_por_seccion=Count('circuito__seccion__nombre'))
+            sorted_data = sorted(raw_data, key=lambda elem: elem['circuito__seccion__nombre'])
+            final_data = [{
+                'nombre': datum['circuito__seccion__nombre'], 
+                'cantidad': datum['cant_por_seccion']} 
+            for datum in sorted_data]
+            self.data = final_data
+
+    def datos(self):
+        self.calcular()
+        return self.data
+
+
+
 class GeneradorDatosPreidentificaciones():
     def __init__(self, query_inicial=PreIdentificacion.objects):
         self.cantidad_total = None

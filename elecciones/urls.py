@@ -21,7 +21,7 @@ urlpatterns = [
         views.AvanceDeCargaResumen.as_view(), name='avance-carga-resumen'),
     url(r'^avance_carga_resumen_elegir_categoria/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)/(?P<restriccion_geografica>(\w|-)+)/(?P<data_extra>\w+)$',
         views.elegir_categoria_avance_carga_resumen, name='avance-carga-resumen-elegir-categoria'),
-    url(r'^avance_carga_resumen_elegir_detalle/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)/(?P<restriccion_geografica>(\w|-)+)/(?P<categoria>\w+)/(?P<seleccion>\w+)$',
+    url(r'^avance_carga_resumen_elegir_detalle/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)/(?P<restriccion_geografica>(\w|-)+)/(?P<categoria>\w+)/(?P<data_extra>\w+)/(?P<seleccion>\w+)$',
         views.elegir_detalle_avance_carga_resumen, name='avance-carga-resumen-elegir-detalle'),
     url(r'^elegir_distrito_o_seccion/(?P<hay_criterio>\w+)/(?P<valor_criterio>(\w|-|\s)*)/(?P<donde_volver>(\w|-)+)/(?P<mensaje>(\w|-)+)$',
         views.EleccionDeDistritoOSeccion.as_view(), name='elegir-distrito-o-seccion'),

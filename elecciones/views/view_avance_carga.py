@@ -7,6 +7,8 @@ from django.views.generic.base import TemplateView
 
 from .definiciones import VisualizadoresOnlyMixin
 
+from escrutinio_social import settings
+
 from fiscales.models import Fiscal
 
 from elecciones.models import (
@@ -28,7 +30,7 @@ from elecciones.busquedas import BusquedaDistritoOSeccion
 from elecciones.resultados_resumen import (
     GeneradorDatosFotosConsolidado, GeneradorDatosPreidentificacionesConsolidado,
     GeneradorDatosCargaParcialConsolidado, GeneradorDatosCargaTotalConsolidado,
-    GeneradorDatosFotosPorDistrito,
+    GeneradorDatosFotosPorDistrito, GeneradorDatosFotosDistritoPorSeccion,
     SinRestriccion, RestriccionPorDistrito, RestriccionPorSeccion
 )
 
@@ -117,7 +119,9 @@ class AvanceDeCargaResumen(TemplateView):
         self.restriccion_geografica_spec = self.kwargs.get('restriccion_geografica')
         self.restriccion_geografica = self.calcular_restriccion()
         self.categoria_spec = self.kwargs.get('categoria')
-        self.detalle = self.kwargs.get('data_extra')
+        self.string_data_extra = self.kwargs.get('data_extra')
+        self.data_extra = parse_data_extra(self.string_data_extra) 
+        self.detalle_foto = self.data_extra['foto']
         if self.categoria_spec == 'None':
             self.categoria = Categoria.objects.filter(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).first()
         else:
@@ -142,12 +146,13 @@ class AvanceDeCargaResumen(TemplateView):
         ahora = timezone.now()
         desde = ahora - timedelta(minutes=5)
         context['fiscales_activos'] = Fiscal.objects.filter(last_seen__gt=desde).count()
-        # detalle
-        context['detalle'] = self.detalle
-        if self.detalle == 'distrito':
-            context['datos_detalle'] = GeneradorDatosFotosPorDistrito().datos()
-            print("Datos de detalle por distrito")
-            print(context['datos_detalle'])
+        # detalle - data extra
+        context['data_extra'] = self.string_data_extra
+        context['detalle_foto'] = self.detalle_foto
+        if self.detalle_foto == 'distrito':
+            context['datos_detalle_foto'] = GeneradorDatosFotosPorDistrito().datos()
+        elif self.detalle_foto == 'seccion':
+            context['datos_detalle_foto'] = GeneradorDatosFotosDistritoPorSeccion(settings.DISTRITO_PBA).datos()
         # data fotos
         generador_datos_fotos = GeneradorDatosFotosConsolidado(self.restriccion_geografica)
         context['data_fotos_nacion_pba_restriccion'] = generador_datos_fotos.datos_nacion_pba_restriccion()
@@ -212,12 +217,25 @@ def elegir_categoria_avance_carga_resumen(request, *args, **kwargs):
 
 def elegir_detalle_avance_carga_resumen(request, *args, **kwargs):
     detalle_elegido = kwargs.get('seleccion')
+    data_detalle = detalle_elegido.split('_')
+    tipo_detalle = data_detalle[0]
+    valor_detalle = data_detalle[1]
+    data_extra = parse_data_extra(kwargs.get('data_extra'))
+    data_extra[tipo_detalle] = valor_detalle
     return redirect('avance-carga-resumen',
                     carga_parcial=kwargs.get('carga_parcial'),
                     carga_total=kwargs.get('carga_total'),
                     restriccion_geografica=kwargs.get('restriccion_geografica'),
                     categoria=kwargs.get('categoria'),
-                    data_extra=detalle_elegido)
+                    data_extra=format_data_extra(data_extra))
+
+
+def parse_data_extra(string_data_extra):
+    partes = string_data_extra.split('_')
+    return { 'foto': partes[0], 'carga_parcial_confirmada': partes[1], 'carga_parcial_csv': partes[2] }
+
+def format_data_extra(struct_data_extra):
+    return struct_data_extra['foto'] + '_' + struct_data_extra['carga_parcial_confirmada'] + '_' + struct_data_extra['carga_parcial_csv']
 
 
 class EleccionDeDistritoOSeccion(TemplateView):
@@ -299,7 +317,7 @@ def eleccion_efectiva_distrito_o_seccion(request, *args, **kwargs):
                         carga_total=donde_volver['carga_total'],
                         restriccion_geografica=valor_elegido,
                         categoria='None',
-                        data_extra='nada')
+                        data_extra='nada_nada_nada')
 
 
 def limpiar_busqueda(request, *args, **kwargs):
@@ -311,4 +329,4 @@ def limpiar_busqueda(request, *args, **kwargs):
                     carga_total=donde_volver['carga_total'],
                     restriccion_geografica="None",
                     categoria='None',
-                    data_extra='nada')
+                    data_extra='nada_nada_nada')
