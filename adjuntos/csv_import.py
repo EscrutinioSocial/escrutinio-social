@@ -298,7 +298,7 @@ class CSVImporter:
 
         mesa_ok = True
         alguna_cat_ok = False
-        for mesa_categoria in mesa_bd.mesacategoria_set.all():
+        for mesa_categoria in mesa_bd.mesacategoria_set.filter(categoria__activa=True):
             try:
                 self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias)
                 alguna_cat_ok = True
