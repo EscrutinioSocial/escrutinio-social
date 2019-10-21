@@ -92,11 +92,11 @@ class Fiscal(models.Model):
 
     """
     TIPO_DNI = Choices('DNI', 'CI', 'LE', 'LC')
-    ESTADOS = Choices('IMPORTADO', 'AUTOCONFIRMADO', 'PRE-INSCRIPTO', 'CONFIRMADO', 'DECLINADO')
+    ESTADOS = Choices('IMPORTADO', 'AUTOCONFIRMADO', ('PREINSCRIPTO','PRE-INSCRIPTO'), 'CONFIRMADO', 'DECLINADO')
 
     # Actualmente no se consideran los diferentes estados
     # salvo para la creación del user asociado.
-    estado = StatusField(choices_name='ESTADOS', default='PRE-INSCRIPTO')
+    estado = StatusField(choices_name='ESTADOS', default='PREINSCRIPTO')
     notas = models.TextField(blank=True, help_text='Notas internas, no se muestran')
     codigo_confirmacion = models.UUIDField(default=uuid.uuid4, editable=False)
     email_confirmado = models.BooleanField(default=False)
