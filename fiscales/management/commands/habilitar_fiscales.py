@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Consideramos los siguientes estados como iniciales.
-        estados_previos = [ Fiscal.ESTADOS.PREINSCRIPTO, Fiscal.ESTADOS.AUTOCONFIRMADO ]
+        estados_previos = [ 'PRE-INSCRIPTO', Fiscal.ESTADOS.AUTOCONFIRMADO ]  # Lo ponemos a mano porque con - no funca.
         validadores = Group.objects.get(name='validadores')
 
         # Excluimos explícitamente les trolls.
