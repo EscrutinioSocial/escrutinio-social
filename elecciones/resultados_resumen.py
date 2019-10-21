@@ -209,7 +209,7 @@ class GeneradorDatosFotosPorDistrito():
         if self.data == None:
             raw_data = Mesa.objects.exclude(attachments=None).values('circuito__seccion__distrito__nombre').annotate(
                 cant_por_distrito=Count('circuito__seccion__distrito__nombre'))
-            sorted_data = sorted(raw_data, key=lambda elem: elem['circuito__seccion__distrito__nombre'])
+            sorted_data = sorted(raw_data, key=lambda elem: elem['cant_por_distrito'] * (-1))
             final_data = [{
                 'nombre': datum['circuito__seccion__distrito__nombre'], 
                 'cantidad': datum['cant_por_distrito']} 
@@ -463,7 +463,7 @@ class GeneradorDatosCargaParcialDiscriminada():
     def calcular(self):
         if self.data == None:
             raw_data = self.query_inicial().values(self.discriminador).annotate(cant_discriminada=Count(self.discriminador))
-            sorted_data = sorted(raw_data, key=lambda elem: elem[self.discriminador])
+            sorted_data = sorted(raw_data, key=lambda elem: elem['cant_discriminada'] * (-1))
             final_data = [{
                 'nombre': datum[self.discriminador],
                 'cantidad': datum['cant_discriminada']}
