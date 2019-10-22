@@ -11,7 +11,7 @@ from scheduling.scheduler import scheduler
 logger = structlog.get_logger('consolidador')
 
 
-def consolidador(cant_por_iteracion=100, ejecutado_desde=''):
+def consolidador(cant_por_iteracion=500, ejecutado_desde=''):
     msg = f'Consolidación desde {ejecutado_desde}' if ejecutado_desde != '' else 'Consolidación'
     n_identificaciones, n_cargas = consumir_novedades(cant_por_iteracion)
     logger.debug(

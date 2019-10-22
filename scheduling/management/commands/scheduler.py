@@ -16,7 +16,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--cant_elem_consolidador",
-            type=int, default=100,
+            type=int, default=500,
             help="Cantidad de elementos a procesar por corrida del consolidador (None es sin límite, default %(default)s)."
         )
         parser.add_argument(
