@@ -13,8 +13,16 @@
 
     <div class="card-content">
 
+
+        <div class="card-action">
+            <div class="card-title">
+                <li> Si ya participaste en agosto <strong>podés utilizar el mismo usuario y contraseña</strong>. No es necesario que te vuelvas a anotar.<br>
+                <li> Si no recordás tu contraseña podés recuperarla <a href="/password_reset" style="color: blue; margin-right: 0; text-transform: none">aquí</a>.
+            </div>
+        </div>
+
         <div class="card-title">
-            {% block card-title %}Necesitamos algunos datos{% endblock card-title %}
+            {% block card-title %}<strong>Si vas a participar por primera vez necesitamos algunos datos</strong>{% endblock card-title %}
         </div>
 
         <form method="post" enctype="multipart/form-data">
