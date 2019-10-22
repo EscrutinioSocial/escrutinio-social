@@ -79,15 +79,10 @@ class Command(BaseCommand):
 
     def priorizar_mesacats(self, lugar_en_cola, circuito, cant_necesarias):
         mcs = MesaCategoria.objects.filter(
-            status=Attachment.STATUS.sin_identificar,
-            pre_identificacion__circuito=circuito
-        )[0:cant_necesarias]
-
-        mcs = MesaCategoria.objects.filter(
             categoria=categoria,
             mesa__circuito=circuito,
             status__in=MesaCategoria.status_carga_parcial
-        )
+        )[0:cant_necesarias]
 
         for mc in mcs:
             ColaCargasPendientes(
