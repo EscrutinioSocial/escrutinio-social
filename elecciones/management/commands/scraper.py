@@ -220,7 +220,7 @@ class Command(BaseCommand):
     def guardar_mesas(self):
         # Tengo que levantar los circuitos_categoria para las mesas que cargue y las categorias que me importan y guardarlas
         for datos_mesa in self.mesas:
-        '''
+            '''
                    mesa['id'] = value['c']
                     mesa['codigomesa'] = value['cc'][5:5]
                     mesa['url'] = value['rf']
@@ -230,37 +230,54 @@ class Command(BaseCommand):
                     - pc es el partido
                     - v votos
                     - tot: totales
-        '''
+            '''
             
         return
 
     # Carga las mesas_categoria del sistema que no tengan datos oficiales. Nos interesa solo presidente y gobernador
-    def cargar_mesas_sistema(self):
-        # FIXME: Esto se debe poder hacer directo en la query. Busco quedarme solo con mesas que no tengan mesa categoria con datos oficiales. Total si no tienen una categoria, no tienen ninguna. Me fijo categoria presidente por las dudas.
-        mesas_categoria_sistema = MesaCategoria.objects.get(mesa=mesa, categoria=self.ids["id_cat_presidente_nuestro"])
-                                        .filter(carga_oficial__isnull=True) 
-
-        self.mesas_sistema_sin_carga = {} 
+    def agregar_mesa_categoria_a_mesas_sin_cargar(self, mesa_categoria):
         for mesa_categoria in mesas_categoria_sistema:
             distrito = mesa_categoria.mesa.circuito.seccion.distrito.numero 
             seccion =  mesa_categoria.mesa.circuito.seccion.numero
             circuito = mesa_categoria.mesa.circuito.numero
-            # FIXME TODO: Deberiamos aca meter los filtros y algún criterio de prioridad
             self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero] = {}
             self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["circuito"] = circuito 
             self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["seccion"] = seccion 
             self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["distrito"] = distrito 
+
+    def cargar_mesas_sistema(self):
+        # FIXME: Esto se debe poder hacer directo en la query. Busco quedarme solo con mesas que no tengan mesa categoria con datos oficiales. Total si no tienen una categoria, no tienen ninguna. Me fijo categoria presidente por las dudas. 
+        # FIXME TODO: Ver como hacer un OR
+        # FIXME TODO: Deberiamos aca meter los filtros y algún criterio de prioridad
+        categoria = Categoria.objects.get(slug=self.ids["slug_cat_presidente_nuestro"])
+
+        mesas_categoria_sistema = MesaCategoria.objects.get(
+                                        categoria=categoria
+                                    ).filter(carga_oficial__isnull=True) 
+
+        print(mesas_categoria_sistema)
+        self.agregar_mesa_categoria_a_mesas_sin_cargar(mesas_categoria_sistema)
+        self.mesas_sistema_sin_carga = {} 
+        # FIXME TODO: Deberiamos aca meter los filtros y algún criterio de prioridad
+        # Cargo ahora los de gobernador
+        mesas_categoria_sistema = MesaCategoria.objects.get(
+                                        categoria=self.ids["slug_cat_gobernador_nuestro"]
+                                    ).filter(carga_oficial__isnull=True) 
+        self.agregar_mesa_categoria_a_mesas_sin_cargar(mesas_categoria_sistema)
+
         return 
 
     def handle(self, *args, **kwargs):
+        with open(local_confs_url) as ids_file:
+            self.ids = json.load(ids_file)
+
         self.filtros = kwargs
         self.asignar_nivel_agregacion(kwargs)
-        self.cargar_mesas_sistema(kwargs)
+        self.cargar_mesas_sistema()
         self.cargar_circuitos(kwargs)
         self.cargar_escuelas(kwargs)
         self.cargar_mesas(kwargs)
         self.guardar_mesas()
-        self.ids = json.loads(local_confs_url)
         '''
         self.comparar_con_correo = kwargs['comparar_con_correo']
 
@@ -278,9 +295,9 @@ class Command(BaseCommand):
 
     def asignar_nivel_agregacion(self, kwargs):
         # Analizar resultados de acuerdo a los niveles de agregación
-        numero_circuito = kwargs['solo_circuito']
-        numero_seccion = kwargs['solo_seccion']
-        numero_distrito = kwargs['solo_distrito']
+        numero_circuito = kwargs['circuito']
+        numero_seccion = kwargs['seccion']
+        numero_distrito = kwargs['distrito']
         self.distrito = None
         self.seccion = None
         self.circuito = None
