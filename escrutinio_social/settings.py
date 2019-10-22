@@ -539,6 +539,9 @@ CONSTANCE_CONFIG = {
 
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
 
+# Sin este setting los archivos grandes quedan con los permisos mal.
+# https://github.com/divio/django-filer/issues/1031
+FILE_UPLOAD_PERMISSIONS = 0o644
 
 APP_VERSION_NUMBER = 'dev'
 ver_file = '/tmp/version/version.txt'
