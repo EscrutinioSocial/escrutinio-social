@@ -24,8 +24,9 @@ escuelas_url = f"{request_url}assets/data/precincts/"
 mesas_url = f"{request_url}assets/data/totalized_results/"
 local_confs_url = f"{files_dir}ids_sistema_web.json"
 authorization_header = 'Bearer 31d15a'
-escuela_file = files_dir + 'escuelas/' + 'escuela.json'
-mesa_file = files_dir + 'mesas/' + '8741.json'
+escuela_file = files_dir + 'doc/escuelas/' + '1_1_1_1.json'
+mesa_file = files_dir + 'doc/mesas/' + '1_1_1_1.json'
+regiones_test_file = 'doc/regions_test.json'
 
 # If modifying these scopes, delete the file token.pickle.
 API_KEY = '***REMOVED***'
@@ -77,23 +78,28 @@ class Command(BaseCommand):
         else:
             ret = True
             if (kwargs['distrito'] is not None): # Si no ponen pais y no ponen nada, tomamos como que es pais.
-                ret = ret and (kwargs["distrito"] == circuito["distrito"])
+                ret = ret and (int(kwargs["distrito"]) == int(circuito["distrito"]))
                 if(kwargs['seccion'] is not None):
-                    ret = ret and (kwargs["seccion"] == circuito["seccion"])
+                    ret = ret and (int(kwargs["seccion"]) == int(circuito["seccion"]))
                     if (kwargs['circuito'] is not None):
+                        # print (f'{kwargs["circuito"]}- {circuito["circuito"]}')
                         ret = ret and (kwargs["circuito"] == circuito["circuito"])
         return ret 
 
-    def cargar_circuitos(self, kwargs):
+    def cargar_circuitos(self):
         self.circuitos = []
-        with open(f"{files_dir}{regiones_file}") as json_file:
+        if self.test:
+            regiones = f"{files_dir}{regiones_test_file}"
+        else:
+            regiones = f"{files_dir}{regiones_file}"
+        with open(regiones) as json_file:
             valores = json.load(json_file)
             for value in valores:
                 if(value['tp'] == 'R' and value['l'] == 4): # OJO: en el original estaba como value['TP'], pero veo  el regions en minúsculas
                     circuito = {}
                     circuito['distrito'] = value['cc'][:2]
-                    circuito['seccion'] = value['cc'][2:3]
-                    circuito['circuito'] = value['cc'][5:6]
+                    circuito['seccion'] = value['cc'][2:5]
+                    circuito['circuito'] = value['cc'][5:11]
                     circuito['nombreCircuito'] = value['n']
                     circuito['escuelas'] = value['chd']
                     self.status(f"Circuito a agregar: {circuito}")
@@ -101,15 +107,13 @@ class Command(BaseCommand):
 
     def cargar_escuelas(self, kwargs):
         self.status("Cargando escuelas:...")
-        self.escuelas_bajadas = []
-        # FIXME TODO: Ponerle un nombre declarativo a key y value. Pero todavia no se que son
+        self.escuelas_bajadas = {}
         for circuito in self.circuitos:
             if (self.pasa_filtros_circuitos(circuito, kwargs)):
-                self.status(f"Se buscan todas las mesas Escrutadas de las escuelas de distrito: {circuito['distrito']}, seccion: {circuito['seccion']}, circuito: {circuito['circuito']}\n")
+                self.status(f"Se buscan las escuelas de distrito: {circuito['distrito']}, seccion: {circuito['seccion']}, circuito: {circuito['circuito']}\n")
                 # FIXME, esto es feo porque busca descargar todas las escuelas. Habría que filtrar las que ya visitamos segun timestamp o algo asi. Pero necesitamos el file de ejemplo a ver si hay ese dato
                 for id_escuela in circuito['escuelas']:
                     self.status(f"Buscando escuela: {id_escuela}")
-                    # FIXME Pasarla por el filtro de escuelas y tal vez luego de mesas
                     self.escuelas_bajadas[id_escuela] = self.descargar_json_escuela(id_escuela)
 
     def descargar_json_escuela(self, id_escuela):
@@ -155,18 +159,35 @@ class Command(BaseCommand):
         return json.loads(resp.text)
 
     # Busco en la base las que no estan para esa escuela, distrito, etc...
-    def mesa_no_visitada(self, id_mesa, distrito, seccion, nro_mesa):
-        return (nro_mesa not in self.mesas_sistema_sin_carga.keys()) # Las voy a sacar cuando guarde y luego al volver a cargar no van a volver a aparecer
+    def mesa_sin_resultado_oficial(self, distrito, seccion, nro_mesa):
+        # FIXME: TODO: Esto es horrible
+        # Las voy a sacar cuando guarde y luego al volver a cargar el command no van a volver a aparecer
+        
+        clave_mesa = f'{distrito}{seccion}{nro_mesa}'
+        return clave_mesa in self.mesas_sistema_sin_carga
+        '''
+        for id_mesa, valores in self.mesas_sistema_sin_carga.items():
+            print(valores)
+            if (
+                valores['distrito'] == distrito and 
+                valores['seccion'] == seccion and
+                valores['nro_mesa'] == nro_mesa
+                ):
+                return True 
+        return False
+        '''
 
     def cargar_mesas(self, kwargs):
-        self.mesas = []
+        self.mesas = {}
+        self.status("Descargando mesas - Distrito - seccion - mesa")
         for id_escuela, valor1 in self.escuelas_bajadas.items():
             for valor_mesa in valor1:
-                distrito = valor_mesa['cc'][:2]
-                seccion = valor_mesa['cc'][2:5]
-                nro_mesa = valor_mesa['cc'][5:10]
-                if(self.mesa_no_visitada(id_mesa, distrito, seccion, nro_mesa)):
+                distrito = int(valor_mesa['cc'][:2])
+                seccion = int(valor_mesa['cc'][2:5])
+                nro_mesa = int(valor_mesa['cc'][5:11])
+                if(self.mesa_sin_resultado_oficial(distrito, seccion, nro_mesa)):
                     mesa = {} 
+                    self.status(f"{distrito} - {seccion} - {nro_mesa}")
                     mesa['id'] = valor_mesa['c']
                     mesa['distrito'] = distrito 
                     mesa['seccion'] = seccion 
@@ -181,13 +202,14 @@ class Command(BaseCommand):
                     - v votos
                     - tot: totales
                     '''
-                    self.mesas.append(mesa)
+                    self.mesas[f"{distrito}{seccion}{nro_mesa}"] = mesa # Para buscarla despues
 
     def descargar_json_mesa(self, url):
         # https://resultados.gob.ar/assets/data/totalized_results/precincts/80/80443.json
         url = f"{mesas_url}{url}" # https://resultados.gob.ar/assets/data/totalized_results/$url
         if (self.test):
-            return self.cargar_json_mesa()
+            self.status(f"Usando json de mesa: {url}")
+            return self.cargar_mesa_prueba()
         return self.descargar_json(url)
 
 
@@ -197,6 +219,9 @@ class Command(BaseCommand):
 
     def status_green(self, texto):
         self.stdout.write(self.style.SUCCESS(texto))
+
+    def status_error(self, texto):
+        self.stdout.write(self.style.ERROR(texto))
 
     def add_arguments(self, parser):
         parser.add_argument("--escuela",
@@ -263,36 +288,34 @@ class Command(BaseCommand):
         return
 
     # Carga las mesas_categoria del sistema que no tengan datos oficiales. Nos interesa solo presidente y gobernador
-    def agregar_mesa_categoria_a_mesas_sin_cargar(self, mesa_categoria):
+    def agregar_mesa_categoria_a_mesas_sin_cargar(self, mesas_categoria_sistema):
+        self.status("Mesas categoria: distrito - seccion - circuito - nro_mesa")
         for mesa_categoria in mesas_categoria_sistema:
-            distrito = mesa_categoria.mesa.circuito.seccion.distrito.numero 
-            seccion =  mesa_categoria.mesa.circuito.seccion.numero
+            # Paso a int para no tener problemas luego con diferencias entre las bases 
+            distrito = int(mesa_categoria.mesa.circuito.seccion.distrito.numero)
+            seccion =  int(mesa_categoria.mesa.circuito.seccion.numero)
             circuito = mesa_categoria.mesa.circuito.numero
-            self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero] = {}
-            self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["circuito"] = circuito 
-            self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["seccion"] = seccion 
-            self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["distrito"] = distrito 
+            nro_mesa = int(mesa_categoria.mesa.numero)
+            self.status(f'{distrito} - {seccion} - {circuito} - {mesa_categoria.mesa.numero}')
+            clave_mesa = f"{distrito}{seccion}{nro_mesa}"
+            self.mesas_sistema_sin_carga[clave_mesa] = {}
+            self.mesas_sistema_sin_carga[clave_mesa]["circuito"] = circuito 
+            self.mesas_sistema_sin_carga[clave_mesa]["seccion"] = seccion 
+            self.mesas_sistema_sin_carga[clave_mesa]["distrito"] = distrito 
+            self.mesas_sistema_sin_carga[clave_mesa]["nro_mesa"] = nro_mesa
 
     def cargar_mesas_sistema(self):
         # Busco quedarme solo con mesas que no tengan mesa categoria con datos oficiales. Total si no tienen una categoria, no tienen ninguna. Me fijo categoria presidente por las dudas. 
         # FIXME TODO: Ver como hacer un OR
         # FIXME TODO: Deberiamos aca meter los filtros y algún criterio de prioridad
-        categoria = Categoria.objects.get(slug=self.ids["slug_cat_presidente_nuestro"])
-
-        mesas_categoria_sistema = MesaCategoria.objects.get(
-                                        categoria=categoria
-                                    ).filter(carga_oficial__isnull=True) 
-
-        print(mesas_categoria_sistema)
-        self.agregar_mesa_categoria_a_mesas_sin_cargar(mesas_categoria_sistema)
         self.mesas_sistema_sin_carga = {} 
-        # FIXME TODO: Deberiamos aca meter los filtros y algún criterio de prioridad
-        # Cargo ahora los de gobernador
-        mesas_categoria_sistema = MesaCategoria.objects.get(
-                                        categoria=self.ids["slug_cat_gobernador_nuestro"]
-                                    ).filter(carga_oficial__isnull=True) 
-        self.agregar_mesa_categoria_a_mesas_sin_cargar(mesas_categoria_sistema)
+        categoria = Categoria.objects.get(slug=self.ids["slug_cat_presidente_nuestro"])
+        mesas_categoria_sistema = MesaCategoria.objects.filter(
+                                        categoria=categoria,
+                                        carga_oficial__isnull=True
+                                    )
 
+        self.agregar_mesa_categoria_a_mesas_sin_cargar(mesas_categoria_sistema)
         return 
 
     def handle(self, *args, **kwargs):
@@ -302,7 +325,7 @@ class Command(BaseCommand):
         self.filtros = kwargs
         self.asignar_nivel_agregacion(kwargs)
         self.cargar_mesas_sistema()
-        self.cargar_circuitos(kwargs)
+        self.cargar_circuitos()
         self.cargar_escuelas(kwargs)
         self.cargar_mesas(kwargs)
         self.guardar_mesas()
@@ -324,15 +347,18 @@ class Command(BaseCommand):
     def asignar_nivel_agregacion(self, kwargs):
         # Analizar resultados de acuerdo a los niveles de agregación
         numero_circuito = kwargs['circuito']
-        numero_seccion = kwargs['seccion']
-        numero_distrito = kwargs['distrito']
+        numero_seccion = int(kwargs['seccion'])
+        numero_distrito = int(kwargs['distrito'])
         self.distrito = None
         self.seccion = None
         self.circuito = None
 
-        if numero_distrito:
-            self.distrito = Distrito.objects.get(numero=numero_distrito)
-            if numero_seccion:
-                self.seccion = Seccion.objects.get(numero=numero_seccion, distrito=self.distrito)
-                if numero_circuito:
-                    self.circuito = Circuito.objects.get(numero=numero_circuito, seccion=self.seccion)
+        try:
+            if numero_distrito:
+                self.distrito = Distrito.objects.get(numero=numero_distrito)
+                if numero_seccion:
+                    self.seccion = Seccion.objects.get(numero=numero_seccion, distrito=self.distrito)
+                    if numero_circuito:
+                        self.circuito = Circuito.objects.get(numero=numero_circuito, seccion=self.seccion)
+        except:
+            self.status_error(f"No existe combinacion de distrito: {numero_distrito} - seccion: {numero_seccion} - circuito: {numero_circuito}")
