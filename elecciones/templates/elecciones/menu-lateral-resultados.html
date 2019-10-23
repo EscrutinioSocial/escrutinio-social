@@ -23,22 +23,29 @@
 <li class="jstree-search"><input id="search-input" placeholder="Buscador"/></li>
 <li style="overflow: auto; height: calc(100% - 240px);"><div id="jstree"></div></li>
 <script>
-  // Construyo el árbol.
+  // url inicial de resultados-cuerpo-central para cargar en el panel derecho
   url_base = '{{ host }}/elecciones/resultados-cuerpo-central/{{ cat_id }}'
+  url_inicial = url_base + location.search
 
-  // Construyo la url de resultados-cuerpo-central que se debe cargar inicialmente
-  // en el panel derecho en base a los parámetros de la url de resultados-nuevo-menu
-  params = "?"
+  // Construyo el query string de los filtros para apendearlo a las urls que se
+  // arman en el árbol del menú
+  filtros = ["tipoDeAgregacion", "opcionaConsiderar", "tecnicaDeProyeccion"]
+  params_filtros = {}
   {% for key, value in request.GET.items %}
-    params += '{{key}}={{value}}&'
+    if (jQuery.inArray('{{key}}', filtros) !== -1) {
+      params_filtros['{{key}}']='{{value}}'
+    }
   {% endfor %}
 
-  // Elimino el último carácter, '&' si había parámetro o '?' si no los había
-  url_inicial = url_base + params.slice(0, -1)
+  query_string_filtros = ''
+  if (! jQuery.isEmptyObject(params_filtros)) {
+    query_string_filtros = '&' + jQuery.param(params_filtros)
+  }
 
   // Configuración de jstree para marcar en el árbol el nodo inicial seleccionado
-  selected = {'state': {'selected': true}}
+  selected = {'selected': true}
 
+  // Construyo el árbol.
   // Los distritos.
   arbol_distritos = []
   {% for distrito in distritos %}
@@ -48,23 +55,24 @@
       // Los circuitos.
       arbol_circuitos = []
       {% for circuito in seccion.circuitos.all %}
-        url = url_base + '?circuito=' + {{ circuito.id }}
-        nodo = {'text': '{{ circuito.nombre }}', 'a_attr': {'href': url}, 'children': []}
-        if (url == url_inicial) Object.assign(nodo, selected)
+        url = url_base + '?circuito=' + {{ circuito.id }} +  query_string_filtros
+        nodo = {'text': '{{ circuito.nombre }}', 'a_attr': {'href': url}, 'children': [], 'state': {}}
+        if (url_inicial.includes('circuito=' + {{ circuito.id }})) Object.assign(nodo.state, selected)
         arbol_circuitos.push(nodo)
       {% endfor %}
-      url = url_base + '?seccion=' + {{ seccion.id }}
-      nodo = {'text': '{{ seccion.nombre }}', 'a_attr': {'href': url}, 'children': arbol_circuitos}
-      if (url == url_inicial) Object.assign(nodo, selected)
+      url = url_base + '?seccion=' + {{ seccion.id }} +  query_string_filtros
+      nodo = {'text': '{{ seccion.nombre }}', 'a_attr': {'href': url}, 'children': arbol_circuitos, 'state': {}}
+      if (url_inicial.includes('seccion=' + {{ seccion.id }})) Object.assign(nodo.state, selected)
       arbol_secciones.push(nodo)
     {% endfor %}
-    url = url_base + '?distrito=' + {{ distrito.id }}
-    nodo = {'text': '{{ distrito.nombre }}', 'a_attr': {'href': url}, 'children': arbol_secciones}
-    if (url == url_inicial) Object.assign(nodo, selected)
+    url = url_base + '?distrito=' + {{ distrito.id }} +  query_string_filtros
+    nodo = {'text': '{{ distrito.nombre }}', 'a_attr': {'href': url}, 'children': arbol_secciones, 'state': {}}
+    if (url_inicial.includes('distrito=' + {{ distrito.id }})) Object.assign(nodo.state, selected)
     arbol_distritos.push(nodo)
   {% endfor %}
-  nodo = {'text': 'Todo el país', 'a_attr': {'href': url_base}, 'children': arbol_distritos, 'state': {'opened': true}}
-  if (url_base == url_inicial) Object.assign(nodo, selected)
+  url = url_base + (query_string_filtros == '' ? '' : '?' +  query_string_filtros.substr(1))
+  nodo = {'text': 'Todo el país', 'a_attr': {'href': url}, 'children': arbol_distritos}
+  if (url_inicial == url) Object.assign(nodo.state, selected)
   arbol_pais = nodo
 
   // Se inicializa el menú
@@ -91,6 +99,7 @@
         url: href_address.value,
         success: function(r) {
           document.getElementById('resultados').innerHTML=r
+          eval(document.getElementById('sumarizacion').innerHTML)
         },
         error: function(r) {
           console.log('ERROR', r)

@@ -177,7 +177,11 @@ function aplicarSumarizacion() {
   var filterName = $select.attr('name');
   var filterValue = $select.val();
 
-  var searchParams = new URLSearchParams(location.search);
+  var searchParams = new URLSearchParams();
+  {% for key, value in request.GET.items %}
+    searchParams.set('{{key}}', '{{value}}')
+  {% endfor %}
+
   searchParams.set(filterName, filterValue);
   var navToUrl = location.pathname + '?' + searchParams.toString();
   $(location).attr('href', navToUrl);
