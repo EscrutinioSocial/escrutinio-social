@@ -19,8 +19,8 @@
 	"id_cat_jefe_de_gobierno":387,
 	"id_cat_senadores_nacionales":388,
 	"id_cat_diputados_nacionales":348,
-        "slug_cat_presidente_nuestro":"Presi",
-        "slug_cat_gobernador_nuestro":"Gob",
+        "slug_cat_presidente_nuestro":"PV",
+        "slug_cat_gobernador_nuestro":"GB_PBA",
         "slug_cat_jefe_de_gobierno_nuestro":"Jefe Gob",
         "slug_cat_senadores_nacionales_nuestro":"Sen Nac",
         "slug_cat_diputados_nacionales_nuestro":"Dip Nac"
