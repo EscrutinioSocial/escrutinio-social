@@ -140,7 +140,7 @@ class Attachment(TimeStampedModel):
         'elecciones.Mesa', related_name='attachments', null=True, blank=True, on_delete=models.SET_NULL
     )
     email = models.ForeignKey('Email', null=True, blank=True, on_delete=models.SET_NULL)
-    mimetype = models.CharField(max_length=100, null=True)
+    mimetype = models.CharField(max_length=100, null=True, blank=True)
     foto = VersatileImageField(
         upload_to='attachments/',
         null=True,
