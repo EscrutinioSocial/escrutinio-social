@@ -179,7 +179,11 @@ class Command(BaseCommand):
 
         if not self.finalizar:
             self.logger.info("[%d] Tarea seleccionada: %s", self.thread_local.worker_id, tarea)
-            self.worker_import_file(tarea)
+            try:
+                self.worker_import_file(tarea)
+            except Exception as e:
+                tarea.errores = tarea.errores if tarea.errores else '' + str(e)
+                tarea.save_errores()
 
     def csv_import_worker(self, thread_id):
         """
