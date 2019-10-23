@@ -24,6 +24,8 @@ escuelas_url = f"{request_url}assets/data/precincts/"
 mesas_url = f"{request_url}assets/data/totalized_results/"
 local_confs_url = f"{files_dir}ids_sistema_web.json"
 authorization_header = 'Bearer 31d15a'
+escuela_file = files_dir + 'escuelas/' + 'escuela.json'
+mesa_file = files_dir + 'mesas/' + '8741.json'
 
 # If modifying these scopes, delete the file token.pickle.
 API_KEY = '***REMOVED***'
@@ -50,6 +52,21 @@ class Command(BaseCommand):
 
     def get_opcion_ellos(self):
         return self.get_opcion(settings.CODIGO_PARTIDO_ELLOS)
+
+    #----------------------------------------------------------#
+    # Para testing 
+    #----------------------------------------------------------#
+    def cargar_escuela_prueba(self):
+        with open(escuela_file) as escuela_prueba:
+            return json.load(escuela_prueba)
+ 
+    def cargar_mesa_prueba(self):
+        with open(mesa_file) as mesa_prueba:
+            return json.load(mesa_prueba)
+
+    #----------------------------------------------------------#
+    # Hasta aca Para testing 
+    #----------------------------------------------------------#
 
     # Toma un $value1['distrito'] . $value1['seccion'] . $value1['circuito']  y devuelve si corresponde o no.
     def pasa_filtros_circuitos(self, circuito, kwargs):
@@ -116,6 +133,9 @@ class Command(BaseCommand):
         url = f"{escuelas_url}/{id}/s{id_escuela}.json"
 
         self.status(f"descargando escuela: {url}\n")
+        if (self.test):
+            return self.cargar_escuela_prueba()
+            
         return self.descargar_json(url)
 
     def descargar_json(self, url):
@@ -166,6 +186,8 @@ class Command(BaseCommand):
     def descargar_json_mesa(self, url):
         # https://resultados.gob.ar/assets/data/totalized_results/precincts/80/80443.json
         url = f"{mesas_url}{url}" # https://resultados.gob.ar/assets/data/totalized_results/$url
+        if (self.test):
+            return self.cargar_json_mesa()
         return self.descargar_json(url)
 
 
@@ -212,8 +234,14 @@ class Command(BaseCommand):
                             help="Cantidad de procesos a utilizar en el scraping"
                             "(default %(default)s).",
                             default=1
-
                             )
+        # Para habilitar testar
+        parser.add_argument("--test",
+                            action="store_true", dest="test",
+                            default=False,
+                            help="Testear contra jsons de prueba en vez de sistema online. Ojo que si se corre en productivo guarda datos en la DB"
+                            )
+
 
     # Guarda las mesas que tenemos hacia el django
     # FIXME TODO: Voy por aca
@@ -246,7 +274,7 @@ class Command(BaseCommand):
             self.mesas_sistema_sin_carga[mesa_categoria.mesa.numero]["distrito"] = distrito 
 
     def cargar_mesas_sistema(self):
-        # FIXME: Esto se debe poder hacer directo en la query. Busco quedarme solo con mesas que no tengan mesa categoria con datos oficiales. Total si no tienen una categoria, no tienen ninguna. Me fijo categoria presidente por las dudas. 
+        # Busco quedarme solo con mesas que no tengan mesa categoria con datos oficiales. Total si no tienen una categoria, no tienen ninguna. Me fijo categoria presidente por las dudas. 
         # FIXME TODO: Ver como hacer un OR
         # FIXME TODO: Deberiamos aca meter los filtros y algún criterio de prioridad
         categoria = Categoria.objects.get(slug=self.ids["slug_cat_presidente_nuestro"])
@@ -270,7 +298,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         with open(local_confs_url) as ids_file:
             self.ids = json.load(ids_file)
-
+        self.test = kwargs['test']
         self.filtros = kwargs
         self.asignar_nivel_agregacion(kwargs)
         self.cargar_mesas_sistema()
