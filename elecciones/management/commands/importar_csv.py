@@ -164,7 +164,6 @@ class Command(BaseCommand):
             tarea.save_errores()
 
         tarea.fin_procesamiento(cant_mesas_ok, cant_mesas_parcialmente_ok)
-        self.logger.info("[%d] Tarea terminada: %s", self.thread_local.worker_id, tarea)
 
     def wait_and_process_task(self):
         """
@@ -184,6 +183,8 @@ class Command(BaseCommand):
             except Exception as e:
                 tarea.errores = tarea.errores if tarea.errores else '' + str(e)
                 tarea.save_errores()
+                tarea.fin_procesamiento(0, 0)
+            self.logger.info("[%d] Tarea terminada: %s", self.thread_local.worker_id, tarea)
 
     def csv_import_worker(self, thread_id):
         """
