@@ -517,7 +517,11 @@ CONSTANCE_ADDITIONAL_FIELDS = {
 }
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+# Deshabilitamos el caché de Constance, porque si los datos están en la misma BD no tiene sentido
+# cachearlos ahí mismo.
 CONSTANCE_DATABASE_CACHE_BACKEND = 'dbcache'
+CONSTANCE_DATABASE_CACHE_AUTOFILL_TIMEOUT = None
+
 CONSTANCE_CONFIG = {
     'CARGAR_OPCIONES_NO_PRIO_CSV' : (False, 'Al procesar CSVs se cargan las opciones no prioritarias.', bool),
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
