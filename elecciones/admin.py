@@ -159,18 +159,35 @@ class MesaForm(forms.ModelForm):
 class MesaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
     form = MesaForm
     actions = [resultados_reportados]
-    list_display = ('numero', 'lugar_votacion', 'electores')
+    list_display = ('numero', 'get_circuito', 'get_seccion', 'get_distrito')
     raw_id_fields = ('circuito', 'lugar_votacion')
     list_filter = (
-        TieneResultados, 'es_testigo', 'lugar_votacion__circuito__seccion', 'lugar_votacion__circuito'
+        TieneResultados, 'es_testigo',# 'circuito__seccion', 'circuito'
     )
     search_fields = (
         'numero',
-        'lugar_votacion__nombre',
-        'lugar_votacion__direccion',
-        'lugar_votacion__ciudad',
-        'lugar_votacion__barrio',
+        'circuito__nombre',
+        'circuito__seccion__nombre',
+        'circuito__seccion__distrito__nombre',
+        'circuito__numero',
+        'circuito__seccion__numero',
+        'circuito__seccion__distrito__numero',
     )
+
+    def get_circuito(self, obj):
+        return obj.circuito
+    get_circuito.short_description = "Circuito"
+    get_circuito.admin_order_field = "circuito__numero"
+
+    def get_seccion(self, obj):
+        return obj.circuito.seccion
+    get_seccion.short_description = "Sección"
+    get_seccion.admin_order_field = "circuito__seccion__numero"
+
+    def get_distrito(self, obj):
+        return obj.circuito.seccion.distrito
+    get_distrito.short_description = "Distrito"
+    get_distrito.admin_order_field = "circuito__seccion__distrito__numero"
 
     def get_row_actions(self, obj):
         row_actions = []
