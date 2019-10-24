@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from elecciones.models import (OPCIONES_A_CONSIDERAR, TIPOS_DE_AGREGACIONES, Carga, MesaCategoria, Opcion)
 
-from .factories import CargaFactory
+from .factories import CargaFactory, OpcionFactory, CategoriaOpcionFactory
 from .test_models import consumir_novedades_y_actualizar_objetos
 from .utils import cargar_votos
 
@@ -21,7 +21,7 @@ def test_status_mesas(mesas_con_votos):
 def test_todas_las_cargas(mesas_con_votos, url_resultados, fiscal_client):
     m1, *_ = mesas_con_votos
     categoria = m1.categorias.all().order_by('id').first()
-    o1, *_ = categoria.opciones_actuales()
+    o1 = categoria.opciones_actuales().get(nombre_corto='la_elegida')
     blancos = Opcion.blancos()
 
     # Pide todas las opciones, considera las tres mesas
@@ -41,7 +41,7 @@ def test_todas_las_cargas(mesas_con_votos, url_resultados, fiscal_client):
 def test_solo_consolidados(mesas_con_votos, url_resultados, fiscal_client):
     m1, *_ = mesas_con_votos
     categoria = m1.categorias.all().order_by('id').first()
-    o1, *_ = categoria.opciones_actuales()
+    o1 = categoria.opciones_actuales().get(nombre_corto='la_elegida')
     blancos = Opcion.blancos()
 
     # Pide opciones consolidadas, descarta m1 que tiene una sola carga web
@@ -61,7 +61,7 @@ def test_solo_consolidados(mesas_con_votos, url_resultados, fiscal_client):
 def test_solo_consolidados_doble_carga(mesas_con_votos, url_resultados, fiscal_client):
     m1, *_ = mesas_con_votos
     categoria = m1.categorias.all().order_by('id').first()
-    o1, *_ = categoria.opciones_actuales()
+    o1 = categoria.opciones_actuales().get(nombre_corto='la_elegida')
     blancos = Opcion.blancos()
 
     # Pide opciones consolidadas con doble, descarta también la carga csv
@@ -82,7 +82,8 @@ def test_solo_consolidados_doble_carga(mesas_con_votos, url_resultados, fiscal_c
 def mesas_con_votos(carta_marina):
     m1, m2, m3, *_ = carta_marina
     categoria = m1.categorias.all().order_by('id').first()
-    o1, *_ = categoria.opciones_actuales()
+    o1 = OpcionFactory(nombre_corto='la_elegida')
+    CategoriaOpcionFactory(categoria=categoria, opcion=o1, prioritaria=False)
     blancos = Opcion.blancos()
 
     c1 = CargaFactory(
