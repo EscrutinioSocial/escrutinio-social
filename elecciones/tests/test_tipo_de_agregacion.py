@@ -20,11 +20,11 @@ def test_status_mesas(mesas_con_votos):
 
 def test_todas_las_cargas(mesas_con_votos, url_resultados, fiscal_client):
     m1, *_ = mesas_con_votos
-    categoria = m1.categorias.get()
+    categoria = m1.categorias.all().order_by('id').first()
     o1, *_ = categoria.opciones_actuales()
     blancos = Opcion.blancos()
 
-    # TODO Pide todas las opciones, considera las tres mesas
+    # Pide todas las opciones, considera las tres mesas
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]), {
             'opcionaConsiderar': OPCIONES_A_CONSIDERAR.todas,
@@ -40,11 +40,11 @@ def test_todas_las_cargas(mesas_con_votos, url_resultados, fiscal_client):
 
 def test_solo_consolidados(mesas_con_votos, url_resultados, fiscal_client):
     m1, *_ = mesas_con_votos
-    categoria = m1.categorias.get()
+    categoria = m1.categorias.all().order_by('id').first()
     o1, *_ = categoria.opciones_actuales()
     blancos = Opcion.blancos()
 
-    # TODO Pide opciones consolidadas, descarta m1 que tiene una sola carga web
+    # Pide opciones consolidadas, descarta m1 que tiene una sola carga web
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]), {
             'opcionaConsiderar': OPCIONES_A_CONSIDERAR.todas,
@@ -60,11 +60,11 @@ def test_solo_consolidados(mesas_con_votos, url_resultados, fiscal_client):
 
 def test_solo_consolidados_doble_carga(mesas_con_votos, url_resultados, fiscal_client):
     m1, *_ = mesas_con_votos
-    categoria = m1.categorias.get()
+    categoria = m1.categorias.all().order_by('id').first()
     o1, *_ = categoria.opciones_actuales()
     blancos = Opcion.blancos()
 
-    # TODO Pide opciones consolidadas con doble, descarta también la carga csv
+    # Pide opciones consolidadas con doble, descarta también la carga csv
     response = fiscal_client.get(
         reverse('resultados-categoria', args=[categoria.id]), {
             'opcionaConsiderar': OPCIONES_A_CONSIDERAR.todas,
@@ -81,7 +81,7 @@ def test_solo_consolidados_doble_carga(mesas_con_votos, url_resultados, fiscal_c
 @pytest.fixture()
 def mesas_con_votos(carta_marina):
     m1, m2, m3, *_ = carta_marina
-    categoria = m1.categorias.get()
+    categoria = m1.categorias.all().order_by('id').first()
     o1, *_ = categoria.opciones_actuales()
     blancos = Opcion.blancos()
 
