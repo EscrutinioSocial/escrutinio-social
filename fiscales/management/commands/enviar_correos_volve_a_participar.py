@@ -28,8 +28,6 @@ class Command(BaseCommand):
             username__icontains='test'
         ).exclude(
             email__icontains='nodomain'
-        ).filter(
-            last_name='Schapachnik'
         )
 
         self.stdout.write(self.style.SUCCESS(
@@ -50,7 +48,7 @@ class Command(BaseCommand):
 
             for email in emails:
                 enviar_correo(
-                    '[NOREPLY] Contamos con vos para cuidar los votos del domingo.',
+                    '[Todos Los Votos] Contamos con vos para cuidar los votos del domingo.',
                     fiscal,
                     email,
                     template='fiscales/email_volve_a_participar.html'
