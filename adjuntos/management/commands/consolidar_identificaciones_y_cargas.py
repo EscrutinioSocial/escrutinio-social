@@ -26,7 +26,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--cant",
-            type=int, default=100,
+            type=int, default=500,
             help="Cantidad de elementos a procesar por corrida (None es sin límite, default %(default)s)."
         )
 
