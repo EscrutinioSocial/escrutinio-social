@@ -160,8 +160,11 @@ class CSVImporter:
             self.procesamiento_terminado = True  # Para que termine el thread de yield.
             return self.resultados()
 
-        self.validar_mesas()
-        self.cargar_info()
+        try:
+            self.validar_mesas()
+            self.cargar_info()
+        except Exception as e:
+            self.anadir_error(str(e))
         self.procesamiento_terminado = True
         return self.resultados()
 
