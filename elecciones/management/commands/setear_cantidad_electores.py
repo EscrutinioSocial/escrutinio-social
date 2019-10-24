@@ -54,6 +54,11 @@ class Command(BaseCommand):
                 self.warning(fallo)
             except Mesa.DoesNotExist:
                 fallo = f'No existe la mesa {nro_mesa} en el circuito {circuito}. La creamos.'
+                mesa = Mesa(numero = nro_mesa,
+                            circuito = circuito,
+                            electores = cant
+                )
+                mesa.save()
                 fallos.append(fallo)
                 self.warning(fallo)
             else:
@@ -63,6 +68,9 @@ class Command(BaseCommand):
 
                 self.log(f'Se actualizó la cantidad de la mesa {mesa.id}', level=3)
 
+            if c > 2200:
+                break
+                
         self.log(f'Se procesaron {c} líneas.', level=1)
         for fallo in fallos:
-            self.error(fallo)
+            self.error_log(fallo)
