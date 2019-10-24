@@ -5,9 +5,9 @@ from django.template.loader import render_to_string
 from html2text import html2text
 
 
-def enviar_correo(titulo, fiscal, email):
+def enviar_correo(titulo, fiscal, email, template='fiscales/email.html'):
     body_html = render_to_string(
-        'fiscales/email.html', {
+        template, {
             'fiscal': fiscal,
             'email': settings.DEFAULT_FROM_EMAIL,
             'cell_call': settings.DEFAULT_CEL_CALL,
