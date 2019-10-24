@@ -384,12 +384,12 @@ def test_resultados_parciales_paso(carta_marina, url_resultados, fiscal_client):
     assert resultados.total_sobres() == '-'
 
     columna_datos = [
-        #('Electores', resultados.electores()),
-        #('Escrutados', resultados.electores_en_mesas_escrutadas()),
-        #('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
+        # ('Electores', resultados.electores()),
+        # ('Escrutados', resultados.electores_en_mesas_escrutadas()),
+        # ('% Escrutado', f'{resultados.porcentaje_escrutado()} %'),
         ('Votantes', resultados.votantes()),
         ('Positivos', resultados.total_positivos()),
-        #('% Participación', f'{resultados.porcentaje_participacion()} %'),
+        # ('% Participación', f'{resultados.porcentaje_participacion()} %'),
     ]
     for variable, valor in columna_datos:
         assert f'<td title="{variable}">{valor}</td>' in content
