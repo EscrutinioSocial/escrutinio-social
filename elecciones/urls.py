@@ -3,8 +3,11 @@ from django.conf.urls import url
 from . import views, data_views
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page
+from django.conf import settings
 
 cached = cache_page(300)
+
+multiplicador_testing = 0 if settings.TESTING else 1
 
 urlpatterns = [
     url('^escuelas.geojson$', cached(
@@ -14,7 +17,7 @@ urlpatterns = [
     url('^mapa/$', login_required(cached(views.Mapa.as_view())), name='mapa'),
     url(
         r'^avance_carga/(?P<pk>\d+)?$',
-        cache_page(5 * 60)(views.AvanceDeCargaCategoria.as_view()),
+        cache_page(multiplicador_testing * 5 * 60)(views.AvanceDeCargaCategoria.as_view()),
         name='avance-carga'
     ),
     url(r'^avance_carga_resumen/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)/(?P<restriccion_geografica>(\w|-)+)/(?P<categoria>\w+)/(?P<data_extra>\w+)$',
@@ -38,12 +41,12 @@ urlpatterns = [
     ),
     url(
         r'^resultados/(?P<pk>\d+)?$',
-        cache_page(5 * 60)(views.ResultadosCategoria.as_view()),
+        cache_page(multiplicador_testing * 5 * 60)(views.ResultadosCategoria.as_view()),
         name='resultados-categoria'
     ),
     url(
         r'^resultados-cuerpo-central/(?P<pk>\d+)?$',
-        cache_page(5 * 60)(views.ResultadosCategoriaCuerpoCentral.as_view()),
+        cache_page(multiplicador_testing * 5 * 60)(views.ResultadosCategoriaCuerpoCentral.as_view()),
         name='resultados-categoria-cuerpo-central'
     ),
     url(
@@ -61,7 +64,7 @@ urlpatterns = [
     ),
     url(
         r'^resultados-en-base-a-configuracion/(?P<pk>\d+)?$',
-        cache_page(5 * 60)(views.ResultadosComputoCategoria.as_view()),
+        cache_page(multiplicador_testing * 5 * 60)(views.ResultadosComputoCategoria.as_view()),
         name='resultados-en-base-a-configuracion'
     ),
 ]
