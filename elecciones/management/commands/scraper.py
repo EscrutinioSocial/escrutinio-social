@@ -2,6 +2,8 @@ import requests
 import json
 from django.core.management.base import BaseCommand
 from escrutinio_social import settings
+from fiscales.models import Fiscal
+from django.db import transaction
 from elecciones.models import (
     Distrito,
     Mesa,
@@ -15,6 +17,8 @@ from elecciones.models import (
     Opcion,
     CategoriaOpcion
 )
+from datetime import datetime
+import pytz
 
  
 files_dir = "scraper_data/"
@@ -27,6 +31,13 @@ authorization_header = 'Bearer 31d15a'
 escuela_file = files_dir + 'doc/escuelas/' + '1_1_1_1.json'
 mesa_file = files_dir + 'doc/mesas/' + '1_1_1_1.json'
 regiones_test_file = 'doc/regions_test.json'
+clave_json_agrupacion = 'pc' 
+clave_json_cant_votos = 'v'
+clave_json_blancos_nulos = 'cn'
+clave_json_cant_blancos_nulos = 'cv'
+key_categorias = 'cc'
+key_votantes = 'rs'
+key_blancos_nulos = 'ct'
 
 # If modifying these scopes, delete the file token.pickle.
 API_KEY = '***REMOVED***'
@@ -38,21 +49,23 @@ class Command(BaseCommand):
     
     help = "Scrapear el sitio oficial"
 
-    mesas_visitadas = []
     escuelas_bajadas = {}
     mesas_sistema_sin_carga = []
+    mesas = {}
     # Los codigos en el sistema de escrutinio
     ids = {}
 
     def __init__(self, stdout=None, stderr=None, no_color=False, force_color=False):
         super().__init__(stdout=None, stderr=None, no_color=False, force_color=False)
 
+    def get_opcion(self, codigo_partido, categoria):
+        return CategoriaOpcion.objects.get(opcion__partido__codigo=codigo_partido, categoria=categoria).opcion
 
-    def get_opcion_nosotros(self):
-        return self.get_opcion(settings.CODIGO_PARTIDO_NOSOTROS)
+    def get_opcion_nosotros(self, categoria):
+        return self.get_opcion(settings.CODIGO_PARTIDO_NOSOTROS, categoria)
 
-    def get_opcion_ellos(self):
-        return self.get_opcion(settings.CODIGO_PARTIDO_ELLOS)
+    def get_opcion_ellos(self, categoria):
+        return self.get_opcion(settings.CODIGO_PARTIDO_ELLOS, categoria)
 
     #----------------------------------------------------------#
     # Para testing 
@@ -163,31 +176,21 @@ class Command(BaseCommand):
         # FIXME: TODO: Esto es horrible
         # Las voy a sacar cuando guarde y luego al volver a cargar el command no van a volver a aparecer
         
-        clave_mesa = f'{distrito}{seccion}{nro_mesa}'
+        clave_mesa = self.get_clave_mesa(distrito, seccion, nro_mesa)
         return clave_mesa in self.mesas_sistema_sin_carga
-        '''
-        for id_mesa, valores in self.mesas_sistema_sin_carga.items():
-            print(valores)
-            if (
-                valores['distrito'] == distrito and 
-                valores['seccion'] == seccion and
-                valores['nro_mesa'] == nro_mesa
-                ):
-                return True 
-        return False
-        '''
 
     def cargar_mesas(self, kwargs):
         self.mesas = {}
-        self.status("Descargando mesas - Distrito - seccion - mesa")
+        self.status("Descargando mesas - Distrito - seccion - id_escuela - mesa")
         for id_escuela, valor1 in self.escuelas_bajadas.items():
             for valor_mesa in valor1:
                 distrito = int(valor_mesa['cc'][:2])
                 seccion = int(valor_mesa['cc'][2:5])
                 nro_mesa = int(valor_mesa['cc'][5:11])
+                # Si estoy en modo test va a bajar siempre la misma escuela (aunque piense que son distintas) y entonces esto se a a repetir
                 if(self.mesa_sin_resultado_oficial(distrito, seccion, nro_mesa)):
                     mesa = {} 
-                    self.status(f"{distrito} - {seccion} - {nro_mesa}")
+                    self.status(f"{distrito} - {seccion} - {id_escuela} - {nro_mesa}")
                     mesa['id'] = valor_mesa['c']
                     mesa['distrito'] = distrito 
                     mesa['seccion'] = seccion 
@@ -267,24 +270,113 @@ class Command(BaseCommand):
                             help="Testear contra jsons de prueba en vez de sistema online. Ojo que si se corre en productivo guarda datos en la DB"
                             )
 
+    def get_clave_mesa(self, distrito, seccion, nro_mesa):
+        return f"{distrito}{seccion}{nro_mesa}"
+
+    # en el json busca los votos segun el dato pasado
+    def parse_voto_web(self, datos_mesa_web, key_array, id_cat_ellos, key_dato, id_dato, key_valor):
+        datos = datos_mesa_web[key_array] # El array donde estan los datos (rp o st)
+        for resultado in datos:
+            if (resultado[key_categorias] == id_cat_ellos) and (resultado[key_dato] == id_dato):
+                return resultado[key_valor]
+
+    def guardar_voto(self, datos_mesa_web, nro_distrito, nro_seccion, nro_circuito, nro_mesa, id_cat_ellos, slug_categoria, id_agrupacion_ellos, id_agrupacion_nosotros):
+        categoria = Categoria.objects.get(slug=slug_categoria)
+        print("Vamos a guardar la categoría:", categoria)
+
+        ultima_guardada_con_exito = None
+        tz = pytz.timezone('America/Argentina/Buenos_Aires')
+
+        # acá se debería consultar la fecha y hora del último registro guardado
+        # para luego filtrar las filas nuevas
+        fecha_ultimo_registro = CargaOficialControl.objects.filter(categoria=categoria).first()
+        if fecha_ultimo_registro:
+            date_format = '%d/%m/%Y %H:%M:%S'
+            fd = datetime.strptime(fecha_ultimo_registro.fecha_ultimo_registro, date_format)
+
+        fiscal = Fiscal.objects.get(id=1)
+        tipo = 'parcial_oficial'
+
+        opcion_nosotros = self.get_opcion_nosotros(categoria)
+        opcion_ellos = self.get_opcion_ellos(categoria)
+
+        try:
+            distrito = Distrito.objects.get(numero=nro_distrito)
+            seccion = Seccion.objects.get(numero=nro_seccion, distrito=distrito)
+            circuito = Circuito.objects.get(numero=nro_circuito, seccion=seccion)
+            mesa = Mesa.objects.get(numero=nro_mesa, circuito=circuito)
+            mesa_categoria = MesaCategoria.objects.get(mesa=mesa, categoria=categoria)
+
+            with transaction.atomic:
+                carga = Carga.objects.create(
+                    mesa_categoria=mesa_categoria,
+                    tipo=tipo,
+                    fiscal=fiscal,
+                    origen=Carga.SOURCES.web
+                )
+
+                votos_a_crear = []
+                for id_dato, in [id_agrupacion_nosotros, id_agrupacion_ellos]:
+                    votos=self.parse_voto_web(datos_mesa_web, key_votantes, id_cat_ellos, clave_json_agrupacion, id_dato, clave_json_cant_votos)
+                    votos_a_crear.append(
+                        VotoMesaReportado(
+                            carga=carga, opcion=opcion_nosotros,
+                            votos=votos
+                        )
+                    )
+                    self.status(f"creando votos utiles para id agrupacion: {id_dato}. Valor cargado: {votos}")
+                for id_dato in [self.ids["id_blancos"], self.ids["id_nulos"], self.ids["id_total"]]:
+                    votos=self.parse_voto_web(datos_mesa_web, key_blancos_nulos, id_cat_ellos, clave_json_blancos_nulos, id_dato, clave_json_cant_blancos_nulos)
+                    votos_a_crear.append(
+                        VotoMesaReportado(
+                            carga=carga, opcion=opcion_nosotros,
+                            votos=votos
+                        )
+                    )
+                    self.status(f"creando votos blancos nulos para id agrupacion: {id_dato}. Valor cargado: {votos}")
+                VotoMesaReportado.objects.bulk_create(votos_a_crear)
+                # actualizo la firma así no es necesario correr consolidar_identificaciones_y_cargas
+                carga.actualizar_firma()
+
+                # Si hay cargas repetidas esto hace que se tome la última
+                # en el proceso de comparar_mesas_con_correo.
+                mesa_categoria.actualizar_parcial_oficial(carga)
+
+            ultima_guardada_con_exito = datetime.strptime(row['Marca temporal'], '%d/%m/%Y %H:%M:%S').replace(tzinfo=tz)
+
+        except Distrito.DoesNotExist:
+            self.warning('No existe el distrito %s.' % nro_distrito)
+        except Seccion.DoesNotExist:
+            self.warning('No existe la sección %s en el distrito %s.' % (nro_seccion, nro_distrito))
+        except Circuito.DoesNotExist:
+            self.warning('No existe el circuito %s' % row)
+
+        if ultima_guardada_con_exito:
+            if fecha_ultimo_registro:
+                fecha_ultimo_registro.fecha_ultimo_registro = ultima_guardada_con_exito
+                fecha_ultimo_registro.save()
+            else:
+                CargaOficialControl.objects.create(fecha_ultimo_registro=ultima_guardada_con_exito, categoria=categoria)
 
     # Guarda las mesas que tenemos hacia el django
-    # FIXME TODO: Voy por aca
     def guardar_mesas(self):
         # Tengo que levantar los circuitos_categoria para las mesas que cargue y las categorias que me importan y guardarlas
-        for datos_mesa in self.mesas:
-            '''
-                   mesa['id'] = value['c']
-                    mesa['codigomesa'] = value['cc'][5:5]
-                    mesa['url'] = value['rf']
-                    datos = self.descargar_json_mesa(mesa['url'])
-                    mesa['votos'] = datos['sp']
-                    - cc son los cargos.
-                    - pc es el partido
-                    - v votos
-                    - tot: totales
-            '''
-            
+        for key_mesa, datos_mesa_web in self.mesas.items():
+            datos_mesa_sistema = self.mesas_sistema_sin_carga[key_mesa]
+            # FIXME TODO: Poner el map para las categorias, o directo repetir como aca :)
+            # Guardo votos para Presidente
+            self.guardar_voto(
+                    datos_mesa_web, 
+                    datos_mesa_sistema["distrito"],
+                    datos_mesa_sistema["seccion"],
+                    datos_mesa_sistema["circuito"],
+                    datos_mesa_sistema["nro_mesa"],
+                    self.ids["id_cat_presidente"],
+                    self.ids["slug_cat_presidente_nuestro"],
+                    self.ids["id_agrupacion_ellos_presidente"],
+                    self.ids["id_agrupacion_nosotros_presidente"]
+            )
+             
         return
 
     # Carga las mesas_categoria del sistema que no tengan datos oficiales. Nos interesa solo presidente y gobernador
@@ -297,7 +389,7 @@ class Command(BaseCommand):
             circuito = mesa_categoria.mesa.circuito.numero
             nro_mesa = int(mesa_categoria.mesa.numero)
             self.status(f'{distrito} - {seccion} - {circuito} - {mesa_categoria.mesa.numero}')
-            clave_mesa = f"{distrito}{seccion}{nro_mesa}"
+            clave_mesa = self.get_clave_mesa(distrito, seccion, nro_mesa)
             self.mesas_sistema_sin_carga[clave_mesa] = {}
             self.mesas_sistema_sin_carga[clave_mesa]["circuito"] = circuito 
             self.mesas_sistema_sin_carga[clave_mesa]["seccion"] = seccion 
