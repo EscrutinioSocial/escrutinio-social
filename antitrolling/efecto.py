@@ -38,7 +38,6 @@ def efecto_scoring_troll_asociacion_attachment(attachment, mesa):
             )
 
 
-
 def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
     """
     Realizar las actualizaciones de scoring troll que correspondan
@@ -53,7 +52,7 @@ def efecto_scoring_troll_confirmacion_carga(mesa_categoria):
             try:
                 diferencia = testigo - carga
             except CargasIncompatiblesError as e:
-                logger.error(f'Error al calcular diferencia entre opciones, {e} - se toma 0')
+                logger.warning(f'Error al calcular diferencia entre opciones, {e} - se toma 0')
                 diferencia = 0
 
             # se aumenta el scoring del fiscal que cargo distinto
