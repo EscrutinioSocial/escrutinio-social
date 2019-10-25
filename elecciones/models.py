@@ -1070,7 +1070,7 @@ class Categoria(models.Model):
         return reverse('resultados-nuevo-menu', args=[self.id])
 
     def get_url_avance_de_carga(self):
-        return reverse('avance-carga', args=[self.id])
+        return reverse('avance-carga-nuevo-menu', args=[self.id])
 
     def opciones_actuales(self, solo_prioritarias=False, excluir_optativas=False):
         """

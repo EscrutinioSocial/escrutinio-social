@@ -1,12 +1,11 @@
 {% extends "fiscales/base.html" %}
 {% load staticfiles %}
 
-{% block title %}Resultados{% endblock %}
-{% block page_title %}Resultados{% endblock %}
+{% block title %}Avance de Carga{% endblock %}
+{% block page_title %}Avance de Carga{% endblock %}
 
 {% block js %}
 {{ block.super }}
-
 {% endblock %}
 
  {% block head %}
@@ -23,29 +22,15 @@
 <li class="jstree-search"><input id="search-input" placeholder="Buscador"/></li>
 <li><div id="jstree"></div></li>
 <script>
-  // url inicial de resultados-cuerpo-central para cargar en el panel derecho
-  url_base = '{{ host }}/elecciones/resultados-cuerpo-central/{{ cat_id }}'
+  // Construyo el árbol.
+  url_base = '{{ host }}/elecciones/avance-carga-cuerpo-central/{{ cat_id }}'
+
+  // Elimino el último carácter, '&' si había parámetro o '?' si no los había
   url_inicial = url_base + location.search
 
-  // Construyo el query string de los filtros para apendearlo a las urls que se
-  // arman en el árbol del menú
-  filtros = ["tipoDeAgregacion", "opcionaConsiderar", "tecnicaDeProyeccion"]
-  params_filtros = {}
-  {% for key, value in request.GET.items %}
-    if (jQuery.inArray('{{key}}', filtros) !== -1) {
-      params_filtros['{{key}}']='{{value}}'
-    }
-  {% endfor %}
-
-  query_string_filtros = ''
-  if (! jQuery.isEmptyObject(params_filtros)) {
-    query_string_filtros = '&' + jQuery.param(params_filtros)
-  }
-
   // Configuración de jstree para marcar en el árbol el nodo inicial seleccionado
-  selected = {'selected': true}
+  selected = {'state': {'selected': true}}
 
-  // Construyo el árbol.
   // Los distritos.
   arbol_distritos = []
   {% for distrito in distritos %}
@@ -55,24 +40,23 @@
       // Los circuitos.
       arbol_circuitos = []
       {% for circuito in seccion.circuitos.all %}
-        url = url_base + '?circuito=' + {{ circuito.id }} +  query_string_filtros
-        nodo = {'text': '{{ circuito.nombre }}', 'a_attr': {'href': url}, 'children': [], 'state': {}}
-        if (url_inicial.includes('circuito=' + {{ circuito.id }})) Object.assign(nodo.state, selected)
+        url = url_base + '?circuito=' + {{ circuito.id }}
+        nodo = {'text': '{{ circuito.nombre }}', 'a_attr': {'href': url}, 'children': []}
+        if (url == url_inicial) Object.assign(nodo, selected)
         arbol_circuitos.push(nodo)
       {% endfor %}
-      url = url_base + '?seccion=' + {{ seccion.id }} +  query_string_filtros
-      nodo = {'text': '{{ seccion.nombre }}', 'a_attr': {'href': url}, 'children': arbol_circuitos, 'state': {}}
-      if (url_inicial.includes('seccion=' + {{ seccion.id }})) Object.assign(nodo.state, selected)
+      url = url_base + '?seccion=' + {{ seccion.id }}
+      nodo = {'text': '{{ seccion.nombre }}', 'a_attr': {'href': url}, 'children': arbol_circuitos}
+      if (url == url_inicial) Object.assign(nodo, selected)
       arbol_secciones.push(nodo)
     {% endfor %}
-    url = url_base + '?distrito=' + {{ distrito.id }} +  query_string_filtros
-    nodo = {'text': '{{ distrito.nombre }}', 'a_attr': {'href': url}, 'children': arbol_secciones, 'state': {}}
-    if (url_inicial.includes('distrito=' + {{ distrito.id }})) Object.assign(nodo.state, selected)
+    url = url_base + '?distrito=' + {{ distrito.id }}
+    nodo = {'text': '{{ distrito.nombre }}', 'a_attr': {'href': url}, 'children': arbol_secciones}
+    if (url == url_inicial) Object.assign(nodo, selected)
     arbol_distritos.push(nodo)
   {% endfor %}
-  url = url_base + (query_string_filtros == '' ? '' : '?' +  query_string_filtros.substr(1))
-  nodo = {'text': 'Todo el País', 'a_attr': {'href': url}, 'children': arbol_distritos, 'state': {'opened': true}}
-  if (url_inicial == url) Object.assign(nodo.state, selected)
+  nodo = {'text': 'Todo el País', 'a_attr': {'href': url_base}, 'children': arbol_distritos, 'state': {'opened': true}}
+  if (url_base == url_inicial) Object.assign(nodo, selected)
   arbol_pais = nodo
 
   // Se inicializa el menú
@@ -102,15 +86,14 @@
     // carguen via ajax los resultados en el panel derecho
     $(document).on('click', '.jstree-anchor', function(e) {
       $('#loading').toggle()
-      $('#resultados').toggle()
+      $('#avance-carga').toggle()
       var href_address = e.currentTarget.attributes.href;
       $.ajax({
         url: href_address.value,
         success: function(r) {
           $('#loading').toggle()
-          $('#resultados').toggle()
-          document.getElementById('resultados').innerHTML=r
-          eval(document.getElementById('sumarizacion').innerHTML)
+          $('#avance-carga').toggle()
+          document.getElementById('avance-carga').innerHTML=r
         },
         error: function(r) {
           console.log('ERROR', r)
@@ -133,9 +116,8 @@
       url: url_inicial,
       success: function(r) {
         $('#loading').toggle()
-        $('#resultados').toggle()
-        document.getElementById('resultados').innerHTML=r
-        eval(document.getElementById('sumarizacion').innerHTML)
+        $('#avance-carga').toggle()
+        document.getElementById('avance-carga').innerHTML=r
       },
       error: function(r) {
         console.log('ERROR', r)
@@ -147,7 +129,7 @@
 
 {% block content %}
 <div class="row" style="width:100%">
-  <div id="resultados" class="col s12" style="display: none"></div>
+  <div id="avance-carga"  style="display: none"></div>
   <div id="loading" class="col s4 offset-s4 center">
     <h5>Cargando</h5>
     <div class="preloader-wrapper big active">

@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
 
@@ -34,6 +34,9 @@ from elecciones.resultados_resumen import (
     GeneradorDatosCargaParcialDiscriminada,
     SinRestriccion, RestriccionPorDistrito, RestriccionPorSeccion
 )
+
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.utils.six.moves.urllib.parse import urlsplit
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
@@ -102,10 +105,38 @@ class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
         # a las mesas.
         mesas = self.sumarizador.mesas(categoria)
         context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
-        context['distritos'] = Distrito.objects.all().order_by('nombre')
+        # context['distritos'] = Distrito.objects.all().order_by('nombre')
         context['mostrar_electores'] = not settings.OCULTAR_CANTIDADES_DE_ELECTORES
         return context
 
+class AvanceDeCargaCategoriaCuerpoCentral(AvanceDeCargaCategoria):
+    template_name = "elecciones/avance-carga-cuerpo-central.html"
+
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('visualizadores'), login_url='permission-denied')
+def menu_lateral_avance_carga(request, categoria_id):
+
+    # Si no viene categoría mandamos a PV.
+    categoria = categoria_id
+    if categoria_id is None:
+        categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).id
+        return redirect('avance-carga-nuevo-menu', categoria_id=categoria)
+
+    context = {}
+    context['distritos'] = Distrito.objects.all().extra(
+        select={'numero_int': 'CAST(numero AS INTEGER)'}
+    ).prefetch_related(
+        'secciones_politicas',
+        'secciones',
+        'secciones__circuitos'
+    ).order_by('numero_int')
+    context['cat_id'] = categoria
+
+    # Agrego al contexto el host del servidor para armar los links del menú
+    url_parts = urlsplit(request.build_absolute_uri(None))
+    context['host'] = url_parts.scheme + '://' + url_parts.netloc
+
+    return render(request, 'elecciones/menu-lateral-avance-carga.html', context=context)
 
 class AvanceDeCargaResumen(TemplateView):
     """

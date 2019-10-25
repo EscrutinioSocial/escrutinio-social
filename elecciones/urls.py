@@ -20,6 +20,16 @@ urlpatterns = [
         cache_page(multiplicador_testing * 5 * 60)(views.AvanceDeCargaCategoria.as_view()),
         name='avance-carga'
     ),
+    url(
+        r'^avance-carga-cuerpo-central/(?P<pk>\d+)?$',
+        cache_page(multiplicador_testing * 5 * 60)(views.AvanceDeCargaCategoriaCuerpoCentral.as_view()),
+        name='avance-carga-cuerpo-central'
+    ),
+    url(
+        r'^avance-carga-nuevo-menu/(?P<categoria_id>\d+)?$',
+        cache_page(60 * 60)(views.menu_lateral_avance_carga),
+        name='avance-carga-nuevo-menu'
+    ),
     url(r'^avance_carga_resumen/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)/(?P<restriccion_geografica>(\w|-)+)/(?P<categoria>\w+)/(?P<data_extra>\w+)$',
         views.AvanceDeCargaResumen.as_view(), name='avance-carga-resumen'),
     url(r'^avance_carga_resumen_elegir_categoria/(?P<carga_parcial>\w+)/(?P<carga_total>\w+)/(?P<restriccion_geografica>(\w|-)+)/(?P<data_extra>\w+)$',
