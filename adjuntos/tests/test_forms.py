@@ -257,3 +257,33 @@ def test_identificacion_busqueda_de_mesa(db):
     assert not form.is_valid()
     assert form.errors['seccion'] == ['Sección y/o circuito deben estar completos']
     assert form.errors['circuito'] == ['Sección y/o circuito deben estar completos']
+
+def test_identificacion_de_mesa_circuito_numero_case_insensitive(db):
+    c1 = CircuitoFactory(numero='1A')
+
+    # mesa asociada al circuito 1A con mayúscula
+    m1 = MesaFactory(circuito=c1)
+
+    # el usuario ingresa '1a' en minúscula
+    form = IdentificacionForm({
+        'mesa': m1.numero,
+        'circuito': '1a',
+        'seccion': c1.seccion.numero,
+        'distrito': c1.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m1
+
+    c2 = CircuitoFactory(numero='23/B')
+    # mesa asociada al circuito 23/B con mayúscula
+    m2 = MesaFactory(circuito=c2)
+
+    # el usuario ingresa '23/b' en minúscula
+    form = IdentificacionForm({
+        'mesa': m2.numero,
+        'circuito': '23/b',
+        'seccion': c2.seccion.numero,
+        'distrito': c2.seccion.distrito.id,
+    })
+    assert form.is_valid()
+    assert form.cleaned_data['mesa'] == m2
