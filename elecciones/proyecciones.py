@@ -3,13 +3,14 @@ from django.db.models import Q, F, Sum, Subquery, OuterRef, Count
 from .models import (
     Categoria,
     Mesa,
+    MesaCategoria,
     TecnicaProyeccion,
     AgrupacionCircuito,
+    AgrupacionCircuitos,
     NIVELES_DE_AGREGACION,
 )
 from .resultados import ResultadoCombinado
 from .sumarizador import Sumarizador
-
 
 def create_sumarizador(
     parametros_sumarizacion=None,
@@ -121,28 +122,42 @@ class Proyecciones(Sumarizador):
             'agrupacion__nombre', 'agrupacion__minimo_mesas', 'mesas_escrutadas'
         )
 
-    @lru_cache(128)
-    def agrupaciones_a_considerar_raw(self):
+    def cant_mesas_por_agrupacion(self):
         """
         Devuelve la lista de agrupaciones que se incluyen en la proyección, descartando aquellas
         que no tienen aún el mínimo de mesas definido según la técnica de proyección.
-
-        Atención: el query se realiza en realidad sobre AgrupacionCircuito, porque de otra manera la
-        many to many entre AgrupacionCircuitos y Circuito impide hacer agregaciones.
         """
 
-        return AgrupacionCircuito.objects.values("agrupacion").annotate(
-            mesas_escrutadas=Count(
-                "circuito__mesas",
-                filter=Q(circuito__mesas__id__in=self.mesas_escrutadas().values_list('id', flat=True))
-            )
-        ).filter(agrupacion__minimo_mesas__lte=F('mesas_escrutadas'))
+        # Era self.mesas_a_considerar, copiado para optimizar query por MesaCategoria que es más eficiente
+        # que por mesa, la optimización podria venirle bien también al sumarizador, pero prefiero no meter
+        # ese refactor a 3 días del escrutinio.
+        lookups = self.lookups_de_mesas("mesa__")
+        mcs_a_considerar = MesaCategoria.objects.filter(categoria=self.categoria).filter(**lookups)
+
+        # Era self.mesas_escrutadas, copiado por el mismo motivo.
+        mcs_escrutadas = mcs_a_considerar.filter(
+            carga_testigo__isnull=False,
+            **self.cargas_a_considerar_status_filter(self.categoria, '')
+        )
+
+        cant_mesas_por_circuito = dict(mcs_escrutadas.values_list('mesa__circuito').annotate(
+            cant_mesas=Count('mesa__circuito')
+        ))
+
+        agrupaciones = AgrupacionCircuitos.objects.filter(
+            proyeccion=self.tecnica
+        ).prefetch_related('circuitos')
+
+        return ((
+            agrupacion,
+            sum(cant_mesas_por_circuito.get(circuito.id, 0) for circuito in agrupacion.circuitos.all())
+        ) for agrupacion in agrupaciones)
 
     def agrupaciones_a_considerar(self):
-        """
-        Idem anterior pero devuelve sólo ids de agrupación.
-        """
-        return self.agrupaciones_a_considerar_raw().values_list('agrupacion', flat=True)
+        return list(
+            agrupacion.id for (agrupacion, cant_mesas) in self.cant_mesas_por_agrupacion()
+            if cant_mesas >= agrupacion.minimo_mesas
+        )
 
     def cant_mesas_escrutadas_y_consideradas(self):
         """
@@ -150,13 +165,14 @@ class Proyecciones(Sumarizador):
         escrutado cuando una agrupación de circuitos tiene menos mesas escrutadas de las necesarias
         para ser consideradas en la proyección.
         """
-        return self.agrupaciones_a_considerar_raw().aggregate(cant=Sum('mesas_escrutadas'))['cant']
+        return sum(cant_mesas for (_, cant_mesas) in self.cant_mesas_por_agrupacion())
 
     def coeficientes_para_proyeccion(self):
-        return {
+        coeficientes = {
             id_agrupacion: self.coeficiente_para_proyeccion(id_agrupacion)
             for id_agrupacion in self.agrupaciones_a_considerar()
         }
+        return coeficientes
 
     def votos_por_opcion(self, categoria, mesas):
         """
@@ -166,9 +182,10 @@ class Proyecciones(Sumarizador):
         correspondientes a agrupaciones que llegaron al mínimo de mesas requerido.
         """
 
-        agrupaciones_subquery = self.agrupaciones_a_considerar().filter(
-            agrupacion__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones'))
-        ).values_list('agrupacion', flat=True)
+        agrupaciones_subquery = AgrupacionCircuitos.objects.filter(
+            id__in=self.agrupaciones_a_considerar()
+        ).filter(id__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones'))
+                 ).values_list('id', flat=True)
 
         return self.votos_reportados(categoria, mesas).values_list('opcion__id').annotate(
             id_agrupacion=Subquery(agrupaciones_subquery)
