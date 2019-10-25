@@ -147,7 +147,7 @@ class CSVImporter:
         y como tercero todos aquellos errores que se pueden reportar en batch.
         """
         errores_pendientes = self.errores[cant_errores_ya_entregados:]
-        errores = None if len(errores_pendientes) == 0 else '\n'.join(errores_pendientes)
+        errores = None if len(errores_pendientes) == 0 else ''.join(errores_pendientes).strip()
         return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, errores
 
     def procesar(self):
@@ -200,7 +200,7 @@ class CSVImporter:
 
     def anadir_error(self, error):
         self.cant_errores += 1
-        texto_error = f'{self.cant_errores} - {error}'
+        texto_error = f'{self.cant_errores} - {error}\n'
         self.errores.append(texto_error)
 
     def log_debug(self, mensaje):
