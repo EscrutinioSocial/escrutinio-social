@@ -43,22 +43,37 @@ class Command(BaseCommand):
         for i in range(self.cant_cargas):
             cargas.append(
                 Carga.objects.create(
-                    tipo=Carga.TIPOS.total,
+                    tipo=Carga.TIPOS.parcial,
                     fiscal=fiscal,
                     origen=Carga.SOURCES.csv,
                     mesa_categoria=mesa_categoria
                 )
             )
-        opciones_ids = CategoriaOpcion.objects.filter(categoria=self.categoria).values('opcion__id')
-        for opcion in Opcion.objects.filter(id__in=opciones_ids):
-            self.alerta_mesa(mesa, "Poblando opción %s" % opcion)
-            votos = random.randint(1, 101)
-            for i in range(self.cant_cargas):
-                VotoMesaReportado.objects.create(
+        opciones = self.categoria.opciones_actuales(
+            solo_prioritarias=True, excluir_optativas=True
+        )
+
+        total_votos = random.randint(1, 101)  # Valor inicial = votos de categorías no prioritarias
+        for opcion in opciones:
+            if opcion != Opcion.total_votos():
+                votos_opcion = random.randint(1, 101)
+                total_votos += votos_opcion
+                self.poblar_opcion(mesa, opcion, cargas, votos_opcion)
+
+        self.poblar_opcion(mesa, Opcion.total_votos(), cargas, total_votos)
+
+    def poblar_opcion(self, mesa, opcion, cargas, cant_votos):
+        self.alerta_mesa(mesa, "Poblando opción %s" % opcion)
+        votos = []
+        for i in range(self.cant_cargas):
+            votos.append(
+                VotoMesaReportado(
                     carga=cargas[i],
                     opcion=opcion,
-                    votos=votos
+                    votos=cant_votos
                 )
+            )
+        VotoMesaReportado.objects.bulk_create(votos, ignore_conflicts=True)
 
     def poblar_circuito(self, circuito):
         for mesa in circuito.mesas.all():

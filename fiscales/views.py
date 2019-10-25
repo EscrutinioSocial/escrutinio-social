@@ -32,7 +32,7 @@ from elecciones.models import (
     MesaCategoria,
     VotoMesaReportado
 )
-from .acciones import siguiente_accion
+from .acciones import siguiente_accion, redirect_siguiente_accion
 from adjuntos.consolidacion import consolidar_cargas
 
 from dal import autocomplete
@@ -218,7 +218,8 @@ class MisDatosUpdate(ConContactosMixin, UpdateView, BaseFiscal):
 
 
 @login_required
-@user_passes_test(lambda u: u.fiscal.esta_en_grupo('validadores'), login_url=NO_PERMISSION_REDIRECT)
+@user_passes_test(lambda u: u.fiscal.esta_en_algun_grupo(('validadores', 'unidades basicas')),
+    login_url=NO_PERMISSION_REDIRECT)
 def realizar_siguiente_accion(request):
     """
     Lanza la siguiente acción a realizar, que puede ser
@@ -263,18 +264,14 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     """
     fiscal = request.user.fiscal
     mesa_categoria = get_object_or_404(MesaCategoria, id=mesacategoria_id)
+    modo_ub = desde_ub or request.GET.get('modo_ub', False)
 
     # Sólo el fiscal a quien se le asignó la mesa tiene permiso de cargar esta mc
     if fiscal.mesa_categoria_asignada != mesa_categoria:
-        capture_message(
-            f"""
-            Intento de cargar mesa-categoria {mesa_categoria.id}
-
-        mesa categoría: {mesa_categoria.id}
-            fiscal: {fiscal} ({fiscal.id}, tenía asignada: {fiscal.mesa_categoria_asignada})
-            """
+        logger.warning(
+            'Carga no autorizada', mc=mesa_categoria.id, tipo=tipo, ub=modo_ub,
+            tenia_mc=fiscal.mesa_categoria_asignada.id if fiscal.mesa_categoria_asignada else None
         )
-        # TO DO: quizas sumar puntos al score anti-trolling?
         # Lo mandamos nuevamente a que se le dé algo para hacer.
         return redirect(reverse('siguiente-accion'))
 
@@ -298,9 +295,9 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
 
     def fix_opciones(formset):
         """
-        Función auxiliar que deja sólo la opcion correspondiente a cada fila en los
+        Función auxiliar que deja sólo la opción correspondiente a cada fila en los
         choicefields de cada formulario, configura widget readonly necesarios
-        y la índice de la navegación con tabs
+        y los índices de la navegación con tabs.
         """
         first_autofoco = None
         for i, (opcion, form) in enumerate(zip(opciones, formset), 1):
@@ -337,7 +334,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
     if request.method == 'POST':
         is_valid = formset.is_valid()
         if not is_valid:
-            logger.info('carga error', mc=mesa_categoria.id, tipo=tipo, ub=desde_ub)
+            logger.info('Carga error', mc=mesa_categoria.id, tipo=tipo, ub=modo_ub)
 
     if desde_ub:
         request.session['mesa_categoria_id'] = mesa_categoria.id
@@ -351,7 +348,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                     mesa_categoria=mesa_categoria,
                     tipo=tipo,
                     fiscal=fiscal,
-                    origen=Carga.SOURCES.web if not desde_ub else Carga.SOURCES.csv
+                    origen=Carga.SOURCES.web if not modo_ub else Carga.SOURCES.csv
                 )
                 reportados = []
                 for form in formset:
@@ -361,8 +358,8 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
                 VotoMesaReportado.objects.bulk_create(reportados)
 
                 mesa_categoria.desasignar_a_fiscal()  # Le bajamos la cuenta.
-                # Si viene desde_ub, consolidamos la carga.
-                if desde_ub:
+                # Si viene modo_ub, consolidamos la carga.
+                if modo_ub:
                     consolidar_cargas(mesa_categoria)
 
             messages.success(request, f'Carga de {categoria} en mesa {mesa} guardada.')
@@ -375,9 +372,10 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             capture_exception(e)
 
         if not is_valid:
-            logger.info('carga error', mc=mesa_categoria.id, tipo=tipo, ub=desde_ub)
+            logger.info('Carga error', mc=mesa_categoria.id, tipo=tipo, ub=modo_ub)
 
-        redirect_to = 'siguiente-accion' if not desde_ub else reverse('procesar-acta-mesa', args=[mesa.id])
+        redirect_to = redirect_siguiente_accion(desde_ub) if not desde_ub else reverse('cargar-desde-ub', args=[mesa.id])
+
         return redirect(redirect_to)
 
     # Llega hasta acá si hubo error o viene de un GET
@@ -392,7 +390,7 @@ def carga(request, mesacategoria_id, tipo='total', desde_ub=False):
             'recibir_problema': 'problema',
             'dato_id': mesa_categoria.id,
             'form_problema': IdentificacionDeProblemaForm(),
-            'action': reverse('procesar-acta-mesa', args=[mesa.id]) if desde_ub else None,
+            'action': reverse('cargar-desde-ub', args=[mesa.id]) if desde_ub else None,
         }
     )
 
@@ -411,7 +409,7 @@ class ReporteDeProblemaCreateView(FormView):
     def form_invalid(self, form):
         tipo = bool(form.errors.get('tipo_de_problema', False))
         descripcion = bool(form.errors.get('descripcion', False))
-        return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion},status=500)
+        return JsonResponse({'problema_tipo': tipo, 'problema_descripcion': descripcion}, status=500)
 
     def form_valid(self, form):
         # mismo hack que en la misma vista adjuntos.views.ReporteDeProblemaCreateView

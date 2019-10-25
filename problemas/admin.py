@@ -6,11 +6,13 @@ from .models import Problema, ReporteDeProblema
 from django import forms
 from django_admin_row_actions import AdminRowActionsMixin
 
+
 def marcar_resuelto(modeladmin, request, queryset):
     queryset.update(estado=Problema.ESTADOS.resuelto)
 
 
 marcar_resuelto.short_description = "Marcar como resueltos"
+
 
 class ProblemaForm(forms.ModelForm):
 
@@ -18,9 +20,13 @@ class ProblemaForm(forms.ModelForm):
         model = Problema
         exclude = []
 
+
 class ReporteDeProblemaInline(admin.StackedInline):
     model = ReporteDeProblema
+    raw_id_fields = ('identificacion', 'carga', 'reportado_por', )
+    readonly_fields = ['created']
     extra = 0
+
 
 class ProblemaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin):
 
@@ -62,12 +68,14 @@ class ProblemaAdmin(DjangoQLSearchMixin, AdminRowActionsMixin, admin.ModelAdmin)
         row_actions += super().get_row_actions(obj)
         return row_actions
 
-    list_display = ('id', mesa_, attachment_, 'estado', descripciones, 'resuelto_por')
+    list_display = ('id', 'created', mesa_, attachment_, 'estado', descripciones, 'resuelto_por')
+    raw_id_fields = ('attachment', 'mesa', 'resuelto_por', )
     list_filter = ('estado',)
     search_fields = (
         'mesa__numero',
     )
     inlines = [ReporteDeProblemaInline]
     ordering = ['id']
+
 
 admin.site.register(Problema, ProblemaAdmin)

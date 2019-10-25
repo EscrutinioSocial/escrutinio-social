@@ -1,0 +1,166 @@
+{% extends "fiscales/base.html" %}
+{% load staticfiles %}
+
+{% block title %}Resultados{% endblock %}
+{% block page_title %}Resultados{% endblock %}
+
+{% block js %}
+{{ block.super }}
+
+{% endblock %}
+
+ {% block head %}
+    {{ block.super }}
+    <link href="{% static 'elecciones/resultados.css' %}" rel="stylesheet" type="text/css">
+    <!-- include the minified jstree source -->
+    <script src="{% static 'elecciones/jstree.min.js' %}"></script>
+    <!-- include css for jstree -->
+    <link rel="stylesheet" href="{% static 'elecciones/jstree_theme_default.min.css' %}" type="text/css"/>
+    <link rel="stylesheet" href="{% static 'elecciones/jstree_theme_proton.css' %}" type="text/css"/>
+ {% endblock %}
+
+{% block sidenav_items %}
+<li class="jstree-search"><input id="search-input" placeholder="Buscador"/></li>
+<li><div id="jstree"></div></li>
+<script>
+  // url inicial de resultados-cuerpo-central para cargar en el panel derecho
+  url_base = '{{ host }}/elecciones/resultados-cuerpo-central/{{ cat_id }}'
+  url_inicial = url_base + location.search
+
+  // Construyo el query string de los filtros para apendearlo a las urls que se
+  // arman en el árbol del menú
+  filtros = ["tipoDeAgregacion", "opcionaConsiderar", "tecnicaDeProyeccion"]
+  params_filtros = {}
+  {% for key, value in request.GET.items %}
+    if (jQuery.inArray('{{key}}', filtros) !== -1) {
+      params_filtros['{{key}}']='{{value}}'
+    }
+  {% endfor %}
+
+  query_string_filtros = ''
+  if (! jQuery.isEmptyObject(params_filtros)) {
+    query_string_filtros = '&' + jQuery.param(params_filtros)
+  }
+
+  // Configuración de jstree para marcar en el árbol el nodo inicial seleccionado
+  selected = {'selected': true}
+
+  // Construyo el árbol.
+  // Los distritos.
+  arbol_distritos = []
+  {% for distrito in distritos %}
+    // Las secciones.
+    arbol_secciones = []
+    {% for seccion in distrito.secciones.all %}
+      // Los circuitos.
+      arbol_circuitos = []
+      {% for circuito in seccion.circuitos.all %}
+        url = url_base + '?circuito=' + {{ circuito.id }} +  query_string_filtros
+        nodo = {'text': '{{ circuito.nombre }}', 'a_attr': {'href': url}, 'children': [], 'state': {}}
+        if (url_inicial.includes('circuito=' + {{ circuito.id }})) Object.assign(nodo.state, selected)
+        arbol_circuitos.push(nodo)
+      {% endfor %}
+      url = url_base + '?seccion=' + {{ seccion.id }} +  query_string_filtros
+      nodo = {'text': '{{ seccion.nombre }}', 'a_attr': {'href': url}, 'children': arbol_circuitos, 'state': {}}
+      if (url_inicial.includes('seccion=' + {{ seccion.id }})) Object.assign(nodo.state, selected)
+      arbol_secciones.push(nodo)
+    {% endfor %}
+    url = url_base + '?distrito=' + {{ distrito.id }} +  query_string_filtros
+    nodo = {'text': '{{ distrito.nombre }}', 'a_attr': {'href': url}, 'children': arbol_secciones, 'state': {}}
+    if (url_inicial.includes('distrito=' + {{ distrito.id }})) Object.assign(nodo.state, selected)
+    arbol_distritos.push(nodo)
+  {% endfor %}
+  url = url_base + (query_string_filtros == '' ? '' : '?' +  query_string_filtros.substr(1))
+  nodo = {'text': 'Todo el país', 'a_attr': {'href': url}, 'children': arbol_distritos, 'state': {'opened': true}}
+  if (url_inicial == url) Object.assign(nodo.state, selected)
+  arbol_pais = nodo
+
+  // Se inicializa el menú
+  $(function () {
+    $('#jstree').jstree({
+      'core': {
+        'data': arbol_pais,
+        'themes': {
+          'name': 'proton'
+        },
+      },
+      'plugins': ['search'],
+      'search':  {
+        'case_sensitive': false,
+        'show_only_matches': false
+      }
+    }).bind('loaded.jstree', function(e, data) {
+      // invoked after jstree has loaded
+      setTimeout(function () {
+        $('#slide-out').animate({
+          scrollTop: $('.jstree-clicked').offset().top - 300
+        }, 800);
+      }, 800);
+    })
+
+    // Para cada elemento del menú, se define el evento click para que se
+    // carguen via ajax los resultados en el panel derecho
+    $(document).on('click', '.jstree-anchor', function(e) {
+      $('#loading').toggle()
+      $('#resultados').toggle()
+      var href_address = e.currentTarget.attributes.href;
+      $.ajax({
+        url: href_address.value,
+        success: function(r) {
+          $('#loading').toggle()
+          $('#resultados').toggle()
+          document.getElementById('resultados').innerHTML=r
+          eval(document.getElementById('sumarizacion').innerHTML)
+        },
+        error: function(r) {
+          console.log('ERROR', r)
+        }
+      });
+      return false;
+    });
+
+    var to = false;
+    $('#search-input').keyup(function () {
+      if(to) { clearTimeout(to); }
+      to = setTimeout(function () {
+        var v = $('#search-input').val();
+        $('#jstree').jstree(true).search(v);
+      }, 250);
+    });
+
+    // Carga inicial de los resultados en base a la url_inicial
+    $.ajax({
+      url: url_inicial,
+      success: function(r) {
+        $('#loading').toggle()
+        $('#resultados').toggle()
+        document.getElementById('resultados').innerHTML=r
+        eval(document.getElementById('sumarizacion').innerHTML)
+      },
+      error: function(r) {
+        console.log('ERROR', r)
+      }
+    });
+  });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row" style="width:100%">
+  <div id="resultados" class="col s12" style="display: none"></div>
+  <div id="loading" class="col s4 offset-s4 center">
+    <h5>Cargando</h5>
+    <div class="preloader-wrapper big active">
+      <div class="spinner-layer spinner-blue-only">
+        <div class="circle-clipper left">
+          <div class="circle"></div>
+        </div><div class="gap-patch">
+          <div class="circle"></div>
+        </div><div class="circle-clipper right">
+          <div class="circle"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

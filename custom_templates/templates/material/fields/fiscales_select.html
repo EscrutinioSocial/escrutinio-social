@@ -1,0 +1,15 @@
+{% load l10n material_form material_form_internal %}
+<div class="label-opcion col s12">
+{% part bound_field.field %}
+{% part field control %}
+{% for x,opcion in field.choices %}
+<input type="hidden" value="{{ x }}" name="{{ bound_field.html_name }}" class="label-opcion"/>
+<div class="row opcion-body" style="padding-bottom: 4pt;">
+  <div class="col s12 right-align">
+    {{ opcion.str_frontend_carga }}
+  </div>
+</div>
+{% endfor %}
+{% endpart %}
+{% endpart %}
+</div>

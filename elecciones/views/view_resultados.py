@@ -1,20 +1,19 @@
 from urllib import parse
-
+from django.utils.six.moves.urllib.parse import urlsplit
 from django.conf import settings
-from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils.decorators import method_decorator
 from django.utils.text import get_text_list
 from django.views.generic.base import TemplateView
-from django.views.generic.detail import DetailView
-from djgeojson.views import GeoJSONLayerView
-from django.contrib.auth.mixins import AccessMixin
+from django.contrib.auth.decorators import login_required, user_passes_test
 from constance import config
+
+from .definiciones import *
 
 import django_excel as excel
 
-from .models import (
+from elecciones.models import (
+    MesaCategoria,
     Distrito,
     Seccion,
     Circuito,
@@ -28,108 +27,36 @@ from .models import (
     NIVELES_AGREGACION,
     NIVELES_DE_AGREGACION,
 )
-from .resultados import Proyecciones, AvanceDeCarga, NIVEL_DE_AGREGACION, create_sumarizador
 
-ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
-
-
-class StaffOnlyMixing:
-    """
-    Mixin para que sólo usuarios tipo "staff"
-    accedan a la vista.
-    """
-    @method_decorator(staff_member_required)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+from elecciones.proyecciones import Proyecciones, create_sumarizador
+from elecciones.sumarizador import NIVEL_DE_AGREGACION
 
 
-class VisualizadoresOnlyMixin(AccessMixin):
-    """
-    Mixin para que sólo usuarios visualizadores
-    accedan a la vista.
-    """
+@login_required
+@user_passes_test(lambda u: u.fiscal.esta_en_grupo('visualizadores'), login_url='permission-denied')
+def menu_lateral_resultados(request, categoria_id):
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated or not request.user.fiscal.esta_en_grupo('visualizadores'):
-            return self.handle_no_permission()
-        pk = kwargs.get('pk')
-        categoria = get_object_or_404(Categoria, id=pk)
+    # Si no viene categoría mandamos a PV.
+    categoria = categoria_id
+    if categoria_id is None:
+        categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).id
+        return redirect('resultados-nuevo-menu', categoria_id=categoria)
 
-        if categoria.sensible and not request.user.fiscal.esta_en_grupo('visualizadores_sensible'):
-            return self.handle_no_permission()
+    context = {}
+    context['distritos'] = Distrito.objects.all().extra(
+        select={'numero_int': 'CAST(numero AS INTEGER)'}
+    ).prefetch_related(
+        'secciones_politicas',
+        'secciones',
+        'secciones__circuitos'
+    ).order_by('numero_int')
+    context['cat_id'] = categoria
 
-        return super().dispatch(request, *args, **kwargs)
+    # Agrego al contexto el host del servidor para armar los links del menú
+    url_parts = urlsplit(request.build_absolute_uri(None))
+    context['host'] = url_parts.scheme + '://' + url_parts.netloc
 
-
-class LugaresVotacionGeoJSON(GeoJSONLayerView):
-    """
-    Devuelve el archivo geojson con la información geoposicional
-    de las escuelas, que es consumido por la el template de la
-    vista :class:`Mapa`
-
-    cada point tiene un color que determina si hay o no alguna mesa computada
-    en esa escuela, ver  :attr:`elecciones.LugarVotacion.color`
-
-    Documentación de referencia:
-
-        https://django-geojson.readthedocs.io/
-    """
-
-    model = LugarVotacion
-    properties = ('id', 'color')  # 'popup_html',)
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        ids = self.request.GET.get('ids')
-        if ids:
-            qs = qs.filter(id__in=ids.split(','))
-        elif 'todas' in self.request.GET:
-            return qs
-        elif 'testigo' in self.request.GET:
-            qs = qs.filter(mesas__es_testigo=True).distinct()
-
-        return qs
-
-
-class EscuelaDetailView(StaffOnlyMixing, DetailView):
-    """
-    Devuelve una tabla estática con información general de una esuela
-    que se muestra an un popup al hacer click sobre una escuela en :class:`Mapa`
-    """
-    template_name = "elecciones/detalle_escuela.html"
-    model = LugarVotacion
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['mostrar_electores'] = not settings.OCULTAR_CANTIDADES_DE_ELECTORES
-        return context
-
-
-class Mapa(StaffOnlyMixing, TemplateView):
-    """
-    Vista estática que carga el mapa que consume el geojson de escuelas
-    el template utiliza leaflet
-
-    https://django-leaflet.readthedocs.io/en/latest/
-
-    """
-
-    template_name = "elecciones/mapa.html"
-
-    def get_context_data(self, **kwargs):
-
-        context = super().get_context_data(**kwargs)
-
-        geojson_url = reverse("geojson")
-        if 'ids' in self.request.GET:
-            query = self.request.GET.urlencode()
-            geojson_url += f'?{query}'
-        elif 'testigo' in self.request.GET:
-            query = 'testigo=si'
-            geojson_url += f'?{query}'
-
-        context['geojson_url'] = geojson_url
-        return context
+    return render(request, 'elecciones/menu-lateral-resultados.html', context=context)
 
 
 class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
@@ -141,9 +68,9 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
 
     def dispatch(self, *args, **kwargs):
         pk = self.kwargs.get('pk')
-        categoriaPresidenteVice = Categoria.objects.filter(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).first()
         if pk is None:
-            return redirect('resultados-categoria', pk=categoriaPresidenteVice.id)
+            categoria_presi_y_vice = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE)
+            return redirect('resultados-categoria', pk=categoria_presi_y_vice.id)
         return super().dispatch(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -166,7 +93,8 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
         categoria = get_object_or_404(Categoria, id=pk)
         context['object'] = categoria
         context['categoria_id'] = categoria.id
-        context['resultados'] = self.get_resultados(categoria)
+        resultados = self.get_resultados(categoria)
+        context['resultados'] = resultados
         context['show_plot'] = settings.SHOW_PLOT
 
         # Agregamos al contexto el modo de elección; para cada partido decidimos
@@ -191,13 +119,16 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
 
         # Para el cálculo se filtran categorías activas que estén relacionadas
         # a las mesas.
-        mesas = self.sumarizador.mesas(categoria)
-        categorias = Categoria.para_mesas(mesas)
+        categorias = self.sumarizador.categorias()
         if self.ocultar_sensibles:
             categorias = categorias.exclude(sensible=True)
 
         context['categorias'] = categorias.order_by('id')
-        context['distritos'] = Distrito.objects.all().order_by('numero')
+        context['distritos'] = Distrito.objects.all().prefetch_related(
+            'secciones_politicas',
+            'secciones',
+            'secciones__circuitos'
+        ).order_by('numero')
         return context
 
     def create_sumarizador(self):
@@ -234,7 +165,7 @@ class ResultadosCategoriaBase(VisualizadoresOnlyMixin, TemplateView):
 
     def get_opciones_a_considerar(self):
         # TODO el default también está en Sumarizador.__init__
-        return self.request.GET.get('opcionaConsiderar', OPCIONES_A_CONSIDERAR.todas)
+        return self.request.GET.get('opcionaConsiderar', OPCIONES_A_CONSIDERAR.prioritarias)
 
     def get_tecnica_de_proyeccion(self):
         return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
@@ -310,106 +241,31 @@ class MesasDeCircuito(ResultadosCategoria):
         return parse.urlencode(url_params_original)
 
 
+class ResultadosCategoriaCuerpoCentral(ResultadosCategoria):
+    template_name = "elecciones/resultados-cuerpo-central.html"
+
+
 class ResultadosExport(ResultadosCategoria):
 
     def get_context_data(self, **kwargs):
         pk = self.kwargs.get('pk')
         categoria = get_object_or_404(Categoria, id=pk)
         self.filetype = self.kwargs.get('filetype')
-        mesas = self.sumarizador.mesas(categoria)
-        votos = self.sumarizador.votos_reportados(categoria, mesas)
-        return {'votos': votos}
+        return {'categoria': categoria}
 
     def render_to_response(self, context, **response_kwargs):
-        votos = context['votos']
+        categoria = context['categoria']
+        votos = self.sumarizador.votos_csv_export(categoria)
 
-        headers = ['seccion', 'numero seccion', 'circuito', 'codigo circuito', 'centro de votacion', 'mesa',
-                   'opcion', 'votos']
+        headers = ['distrito', 'seccion', 'circuito', 'mesa', 'opcion', 'votos']
         csv_list = [headers]
 
-        for voto_mesa in votos:
-            mesa = voto_mesa.carga.mesa
-            opcion = voto_mesa.opcion.codigo
-            votos = voto_mesa.votos
-            fila = [mesa.lugar_votacion.circuito.seccion.nombre,
-                    mesa.lugar_votacion.circuito.seccion.numero,
-                    mesa.lugar_votacion.circuito.nombre,
-                    mesa.lugar_votacion.circuito.numero,
-                    mesa.lugar_votacion.nombre,
-                    mesa.numero,
-                    opcion,
-                    votos]
-            csv_list.append(fila)
-        return excel.make_response(excel.pe.Sheet(csv_list), self.filetype)
+        for voto in votos:
+            csv_list.append(voto)
 
-
-class AvanceDeCargaCategoria(VisualizadoresOnlyMixin, TemplateView):
-    """
-    Vista principal avance de carga de actas.
-    """
-
-    template_name = "elecciones/avance_carga.html"
-
-    def dispatch(self, *args, **kwargs):
-        pk = self.kwargs.get('pk')
-        if pk is None:
-            return redirect('avance-carga', pk=Categoria.objects.first().id)
-        return super().dispatch(*args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        nivel_de_agregacion = None
-        ids_a_considerar = None
-        for nivel in reversed(NIVELES_AGREGACION):
-            if nivel in self.request.GET:
-                nivel_de_agregacion = nivel
-                ids_a_considerar = self.request.GET.getlist(nivel)
-
-        self.sumarizador = AvanceDeCarga(nivel_de_agregacion, ids_a_considerar)
-        return super().get(request, *args, **kwargs)
-
-    def get_template_names(self):
-        return [self.kwargs.get("template_name", self.template_name)]
-
-    def get_resultados(self, categoria):
-        return self.sumarizador.get_resultados(categoria)
-
-    def get_tipo_de_agregacion(self):
-        # TODO el default también está en Sumarizador.__init__
-        return self.request.GET.get('tipoDeAgregacion', TIPOS_DE_AGREGACIONES.todas_las_cargas)
-
-    def get_opciones_a_considerar(self):
-        # TODO el default también está en Sumarizador.__init__
-        return self.request.GET.get('opcionaConsiderar', OPCIONES_A_CONSIDERAR.todas)
-
-    def get_tecnica_de_proyeccion(self):
-        return self.request.GET.get('tecnicaDeProyeccion', settings.SIN_PROYECCION[0])
-
-    def get_tecnicas_de_proyeccion(self):
-        return [settings.SIN_PROYECCION] + [(str(tecnica.id), tecnica.nombre)
-                                            for tecnica in Proyecciones.tecnicas_de_proyeccion()]
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        if self.sumarizador.filtros:
-            context['para'] = get_text_list([objeto.nombre_completo() for objeto in self.sumarizador.filtros], " y ")
-        else:
-            context['para'] = 'todo el país'
-
-        pk = self.kwargs.get('pk')
-
-        categoria = get_object_or_404(Categoria, id=pk)
-        context['object'] = categoria
-        context['categoria_id'] = categoria.id
-        context['resultados'] = self.get_resultados(categoria)
-
-        # Para el cálculo se filtran categorías activas que estén relacionadas
-        # a las mesas.
-        mesas = self.sumarizador.mesas(categoria)
-        context['categorias'] = Categoria.para_mesas(mesas).order_by('id')
-        context['distritos'] = Distrito.objects.all().order_by('nombre')
-        context['mostrar_electores'] = not settings.OCULTAR_CANTIDADES_DE_ELECTORES
-        return context
+        (nivel, id_nivel) = self.get_filtro_por_nivel()
+        filename = f'{categoria.slug}-{nivel if nivel else "todo"}-{id_nivel[0] if id_nivel else "todo"}'
+        return excel.make_response(excel.pe.Sheet(csv_list), self.filetype, file_name=filename)
 
 
 class ResultadosComputoCategoria(ResultadosCategoriaBase):
@@ -419,7 +275,7 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
     def dispatch(self, *args, **kwargs):
         pk = self.kwargs.get('pk')
         if pk is None:
-            return redirect('resultados-en-base-a-configuración', pk=Categoria.objects.first().id)
+            return redirect('resultados-en-base-a-configuracion', pk=Categoria.objects.first().id)
         return super().dispatch(*args, **kwargs)
 
     def create_sumarizador(self):
@@ -450,8 +306,8 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
         # Configuracion por fiscal, ponele que usamos la primera que tenga.
         # Si no tiene ninguna, usamos la global.
         configuracion_distrito = ConfiguracionComputoDistrito.objects.filter(
-                configuracion__fiscal=fiscal,
-                distrito=distrito
+            configuracion__fiscal=fiscal,
+            distrito=distrito
         ).first()
 
         if configuracion_distrito is None:
@@ -493,3 +349,5 @@ class ResultadosComputoCategoria(ResultadosCategoriaBase):
 
     def get_tecnica_de_proyeccion(self):
         return self.tecnica_de_proyeccion
+
+

@@ -10,7 +10,7 @@ from .factories import (
 )
 
 
-def create_carta_marina(create_distritos=0):
+def create_carta_marina(create_distritos=1):
     """
     1 distrito, 2 secciones con 2 circuitos y 2 mesas por circuito
     """

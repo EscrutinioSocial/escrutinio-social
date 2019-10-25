@@ -49,4 +49,4 @@ pytest-django==3.5.1
 pytest-django==3.5.1
 pytest-mock==1.10.4
 python-dotenv==0.10.3
-sentry-sdk==0.10.2
+sentry-sdk==0.12.3

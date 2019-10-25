@@ -66,7 +66,7 @@ def test_identificacion_create_view_post__desde_unidad_basica(fiscal_client, adm
     }
     response = fiscal_client.post(reverse('asignar-mesa-ub', args=[attachment.id]), data)
     assert response.status_code == HTTPStatus.FOUND
-    assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_1.id})
+    assert response.url == reverse('cargar-desde-ub', kwargs={'mesa_id': mesa_1.id})
 
     # Refrescamos el attachment desde la base.
     attachment.refresh_from_db()
@@ -140,10 +140,6 @@ def test_identificacion_sin_permiso(fiscal_client, admin_user, mocker):
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('siguiente-accion')
-    assert capture.call_count == 1
-    mensaje = capture.call_args[0][0]
-    assert 'Intento de asignar mesa de attachment' in mensaje
-    assert str(fiscal) in mensaje
     fiscal.asignar_attachment(a)
     response = fiscal_client.get(reverse('asignar-mesa', args=[a.id]))
     assert response.status_code == 200

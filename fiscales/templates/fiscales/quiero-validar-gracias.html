@@ -9,11 +9,12 @@
 
             <p>Te enviamos un email para que confirmes tu dirección de correo.
                 Luego te contactaremos para contarte cómo seguir. Si tenés Telegram, unite a <a href="https://t.me/joinchat/AAAAAE_X8uYa11oaQhhEMA" target="blank">nuestro canal</a>.</p>
-            <br><br>
-            <p>Si querés sumar a alguien para que nos ayude a validar pasale el código de referencia <strong>{{ fiscal.ultimo_codigo }}</strong> o directamente el siguiente link: {{ fiscal.ultimo_codigo_url }}
-
-
+            <br>
+            <p>Si querés sumar a alguien para que nos ayude a validar pasale el código de referencia <strong>{{ fiscal.ultimo_codigo }}</strong> o directamente el siguiente link:<br>
+            <a href="{{ fiscal.ultimo_codigo_url }}">{{ fiscal.ultimo_codigo_url }}</a>
             </p>
+            <br>
+            <p>Si querés conocer más sobre la tarea que realizaremos el domingo, <a href="https://www.youtube.com/watch?v=n1osvzuFx7I" target="_blank">este video</a> la explica.</p>
         </div>
     </div>
 {% endblock left-panel %}

@@ -1,4 +1,4 @@
-<h5>Resultado PASO 2017: {{object.nombre}} <a href="{% url 'admin:elecciones_lugarvotacion_change' object.id %}"><i class="tiny material-icons">edit</i></a></h5>
+<h5>Resultado: {{object.nombre}} <a href="{% url 'admin:elecciones_lugarvotacion_change' object.id %}"><i class="tiny material-icons">edit</i></a></h5>
 <table class="striped">
     <tr><th>seccion</th><td>{{ object.circuito.seccion }}</td></tr>
     <tr><th>circuito</th><td>{{ object.circuito.numero }}</td></tr>

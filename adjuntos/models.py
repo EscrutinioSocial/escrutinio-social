@@ -140,7 +140,7 @@ class Attachment(TimeStampedModel):
         'elecciones.Mesa', related_name='attachments', null=True, blank=True, on_delete=models.SET_NULL
     )
     email = models.ForeignKey('Email', null=True, blank=True, on_delete=models.SET_NULL)
-    mimetype = models.CharField(max_length=100, null=True)
+    mimetype = models.CharField(max_length=100, null=True, blank=True)
     foto = VersatileImageField(
         upload_to='attachments/',
         null=True,
@@ -292,9 +292,15 @@ class Attachment(TimeStampedModel):
     @property
     def distrito_preidentificacion(self):
         if self.pre_identificacion is not None:
-            return self.pre_identificacion.distrito        
+            return self.pre_identificacion.distrito
         return None
-        
+
+    @property
+    def seccion_preidentificacion(self):
+        if self.pre_identificacion is not None:
+            return self.pre_identificacion.seccion
+        return None
+
     def __str__(self):
         return f'{self.id} {self.foto} ({self.mimetype})'
 
@@ -404,8 +410,17 @@ class CSVTareaDeImportacion(TimeStampedModel):
         self.status = CSVTareaDeImportacion.STATUS.procesado
         self.save(update_fields=['mesas_total_ok', 'mesas_parc_ok', 'status'])
 
-    def save_errores(self):
-        self.save(update_fields=['errores'])
+    def save_errores(self, cant_mesas_ok=None, cant_mesas_parcialmente_ok=None):
+        update_fields = ['errores']
+
+        if cant_mesas_ok:
+            self.mesas_total_ok = cant_mesas_ok
+            update_fields.append('mesas_total_ok')
+        if cant_mesas_parcialmente_ok:
+            self.mesas_parc_ok = cant_mesas_parcialmente_ok
+            update_fields.append('mesas_parc_ok')
+
+        self.save(update_fields=update_fields)
 
     def __str__(self):
         return f'{self.id} - {self.csv_file}'

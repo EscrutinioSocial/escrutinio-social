@@ -348,10 +348,13 @@ DEFAULT_CEL_LOCAL = '0351 15 XXXXX'
 FULL_SITE_URL = 'https://this-site.com'
 
 CACHES = {
+    'dbcache': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'elecciones_cache',
+    },
     'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        # 'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/var/tmp/django_cache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
     }
 }
 
@@ -514,8 +517,13 @@ CONSTANCE_ADDITIONAL_FIELDS = {
 }
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
-CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
+# Deshabilitamos el caché de Constance, porque si los datos están en la misma BD no tiene sentido
+# cachearlos ahí mismo.
+CONSTANCE_DATABASE_CACHE_BACKEND = 'dbcache'
+CONSTANCE_DATABASE_CACHE_AUTOFILL_TIMEOUT = None
+
 CONSTANCE_CONFIG = {
+    'CARGAR_OPCIONES_NO_PRIO_CSV' : (False, 'Al procesar CSVs se cargan las opciones no prioritarias.', bool),
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
     'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text'),
     'CONFIGURACION_COMPUTO_PUBLICA': ('inicial', 'Nombre de la configuración que se utiliza para publicar resultados.'),
@@ -535,6 +543,9 @@ CONSTANCE_CONFIG = {
 
 URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
 
+# Sin este setting los archivos grandes quedan con los permisos mal.
+# https://github.com/divio/django-filer/issues/1031
+FILE_UPLOAD_PERMISSIONS = 0o644
 
 APP_VERSION_NUMBER = 'dev'
 ver_file = '/tmp/version/version.txt'
@@ -548,6 +559,14 @@ if not TESTING:
         from .local_settings import *  # noqa
     except ImportError:
         pass
+
+USAR_DJANGO_DEBUG_TOOLBAR = False
+
+if DEBUG and USAR_DJANGO_DEBUG_TOOLBAR:
+    # Recordar el pip install django-debug-toolbar
+    INTERNAL_IPS = ['172.20.0.1']
+    MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE
+    INSTALLED_APPS += ['debug_toolbar']
 
 
 OCULTAR_CANTIDADES_DE_ELECTORES = True

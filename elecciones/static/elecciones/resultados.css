@@ -58,6 +58,10 @@ tr.fila_detalle > td.dato {
     text-align: right;
 }
 
+tr.fila_detalle > td.dato_entero {
+    text-align: right;
+}
+
 #metadata th span {
   vertical-align: 6px;
 }
@@ -77,3 +81,21 @@ tr.fila_detalle > td.dato {
     padding-left: 1.5em;
 }
 
+.jstree-anchor {
+  display: inline-block !important;
+  padding: 0 16px !important;
+}
+
+.jstree-anchor.jstree-clicked,
+.jstree-anchor:hover {
+  background-color: #00A0C6 !important;
+}
+
+.jstree-proton .jstree-node {
+  min-height: 30px !important;
+  line-height: 30px !important;
+}
+
+.jstree-search {
+  margin: 0 16px;
+}

@@ -64,7 +64,7 @@ def canonizar(valor):
 
 class DistritoManager(models.Manager):
     def get_by_natural_key(self, numero):
-        return self.get(numero = numero)
+        return self.get(numero=numero)
 
 
 class Distrito(models.Model):
@@ -92,6 +92,14 @@ class Distrito(models.Model):
 
     def natural_key(self):
         return (self.numero, )
+
+    def get_secciones(self):
+        """
+        Todas las secciones del distrito ordenadas por número.
+        """
+        return self.secciones.all().extra(
+            select={'numero_int': 'CAST(numero AS INTEGER)'}
+        ).order_by('numero_int')
 
 
 class SeccionPolitica(models.Model):
@@ -125,7 +133,7 @@ class SeccionPolitica(models.Model):
 
 class SeccionManager(models.Manager):
     def get_by_natural_key(self, distrito, numero):
-        return self.get(distrito__numero = distrito, numero = numero)
+        return self.get(distrito__numero=distrito, numero=numero)
 
 
 class Seccion(models.Model):
@@ -173,6 +181,14 @@ class Seccion(models.Model):
         verbose_name = 'Sección electoral'
         verbose_name_plural = 'Secciones electorales'
 
+    def get_circuitos(self):
+        """
+        Todos los circuitos de las sección ordenados por número.
+        """
+        return self.circuitos.all().extra(
+            select={'numero_int': 'CAST(numero AS INTEGER)'}
+        ).order_by('numero_int')
+
     def resultados_url(self):
         return reverse('resultados-primera-categoria') + f'?seccion={self.id}'
 
@@ -191,6 +207,7 @@ class Seccion(models.Model):
     def natural_key(self):
         return self.distrito.natural_key() + (self.numero, )
     natural_key.dependencies = ['elecciones.distrito']
+
 
 class Circuito(models.Model):
     """
@@ -342,14 +359,14 @@ class MesaCategoriaQuerySet(models.QuerySet):
     ]
 
     # La asignación batch desde el scheduler prioriza así:
-    # Primero el orden que la prioridad geográifica.
-    # Segundo, el status (sin cargar, consolidada, inconsistente, etc.)
+    # Primero, el status (sin cargar, consolidada, inconsistente, etc.)
+    # Segundo, el orden que la prioridad geográfica.
     # Tercero, la cantidad de asignaciones ya hechas (penalizamos levemente las
     # mesas categorías que asignamos más veces).
     # En caso de empate, la de menor id (que es la más vieja).
     campos_de_orden_batch = [
-        'coeficiente_para_orden_de_carga',
         'prioridad_status',
+        'coeficiente_para_orden_de_carga',
         'cant_asignaciones_realizadas',
         'id',
     ]
@@ -362,6 +379,12 @@ class MesaCategoriaQuerySet(models.QuerySet):
         # Si bien parece redundante chequear orden de carga y attachment preferimos
         # estar seguros de que no se cuele una mesa sin foto.
         return self.filter(coeficiente_para_orden_de_carga__isnull=False).exclude(mesa__attachments=None)
+
+    def solo_de_cats_activas(self):
+        """
+        Excluye a las instancias de categorías no activas.
+        """
+        return self.exclude(categoria__activa=False)
 
     def sin_problemas(self):
         """
@@ -387,9 +410,19 @@ class MesaCategoriaQuerySet(models.QuerySet):
         """
         return self.exclude(cargas__fiscal=fiscal)
 
+    def con_carga_sensible_y_parcial_pendiente(self):
+        """
+        Devuelve las mesas categorías que tengan cargas parciales pendientes y
+        que correspondan a categorías sensibles (que son las realmente prioritarias).
+        """
+        return self.solo_de_cats_activas().identificadas().sin_problemas().filter(
+            categoria__sensible=True,
+            status__in=MesaCategoria.status_carga_parcial
+        )
+
     def con_carga_pendiente(self, for_update=True):
         qs = self.select_for_update(skip_locked=True) if for_update else self
-        return qs.identificadas().sin_problemas().sin_consolidar_por_doble_carga()
+        return qs.solo_de_cats_activas().identificadas().sin_problemas().sin_consolidar_por_doble_carga()
 
     def anotar_prioridad_status(self):
         """
@@ -476,6 +509,14 @@ class MesaCategoria(models.Model):
     objects = MesaCategoriaQuerySet.as_manager()
 
     STATUS = settings.MC_STATUS_CHOICE
+
+    # Status que representan cargas no totales.
+    status_carga_parcial = [
+        STATUS.sin_cargar,
+        STATUS.parcial_sin_consolidar,
+        STATUS.parcial_en_conflicto,
+        STATUS.parcial_consolidada_csv
+    ]
 
     status = StatusField(default=STATUS.sin_cargar)
     mesa = models.ForeignKey('Mesa', on_delete=models.CASCADE)
@@ -666,6 +707,9 @@ class MesaCategoria(models.Model):
             mesa_cat.recalcular_coeficiente_para_orden_de_carga()
         cls.objects.bulk_update(mesa_cats, ['coeficiente_para_orden_de_carga'])
 
+    def __str__(self):
+        return f'Mesa {self.mesa} - cat {self.categoria} (id {self.id})'
+
 
 class Mesa(models.Model):
     """
@@ -780,6 +824,10 @@ class Mesa(models.Model):
     def distrito(self):
         return self.circuito.seccion.distrito
 
+    @property
+    def seccion(self):
+        return self.circuito.seccion
+
 
 class Partido(models.Model):
     """
@@ -822,10 +870,10 @@ class Opcion(models.Model):
     # por CSV (de manera optativa, y porque es data que si está, sirve ante
     # un eventual reclamos), pero que no le queremos pedir al usuario que cargue.
     TIPOS = Choices('positivo', 'no_positivo', 'metadata', 'metadata_optativa')
-    tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo)
+    tipo = models.CharField(max_length=100, choices=TIPOS, default=TIPOS.positivo, db_index=True)
 
     nombre = models.CharField(max_length=100)
-    nombre_corto = models.CharField(max_length=20, default='')
+    nombre_corto = models.CharField(max_length=20, default='', db_index=True)
     # El código de opción corresponde con el nro de lista en los archivos CSV.
     # Dado que muchas veces la justicia no le pone un código a las "sub listas"
     # en las PASO, se termina sintentizando y podría ser largo.
@@ -897,8 +945,19 @@ class Opcion(models.Model):
 
     def __str__(self):
         if self.partido:
-            return f'{self.partido.codigo} - {self.nombre}'  # {self.partido.nombre_corto}
-        return self.nombre
+            return f'{self.codigo} - {self.nombre_corto} - part. {self.partido.nombre_corto}'
+        return f'{self.codigo} - {self.nombre}'
+
+    def str_frontend(self):
+        if self.tipo == Opcion.TIPOS.positivo:
+            return f'{self.codigo} - {self.nombre}'
+        else:
+            return f'{self.nombre}'
+
+    def str_frontend_carga(self):
+        if settings.MODO_ELECCION == settings.ME_OPCION_PASO and self.tipo == Opcion.TIPOS.positivo:
+            return f'{self.partido.nombre.upper()} - {self.str_frontend()}'
+        return self.str_frontend()
 
 
 class Eleccion(models.Model):
@@ -966,8 +1025,8 @@ class Categoria(models.Model):
     que incluyen las partidarias (boletas) y blanco, nulo, etc.
     """
     eleccion = models.ForeignKey(Eleccion, null=True, on_delete=models.SET_NULL)
-    categoria_general = models.ForeignKey(CategoriaGeneral, null=False,
-        on_delete=models.CASCADE, related_name='categorias'
+    categoria_general = models.ForeignKey(
+        CategoriaGeneral, null=False, on_delete=models.CASCADE, related_name='categorias'
     )
     # Información geográfica para anclar una categoría a una provincia o municipio.
     distrito = models.ForeignKey(
@@ -989,7 +1048,8 @@ class Categoria(models.Model):
         help_text=(
             'Si no está activa, no se cargan datos '
             'para esta categoría y no se muestran resultados.'
-        )
+        ),
+        db_index=True
     )
 
     sensible = models.BooleanField(
@@ -1007,10 +1067,10 @@ class Categoria(models.Model):
     tracker = FieldTracker(fields=['prioridad'])
 
     def get_absolute_url(self):
-        return reverse('resultados-categoria', args=[self.id])
+        return reverse('resultados-nuevo-menu', args=[self.id])
 
     def get_url_avance_de_carga(self):
-        return reverse('avance-carga', args=[self.id])
+        return reverse('avance-carga-nuevo-menu', args=[self.id])
 
     def opciones_actuales(self, solo_prioritarias=False, excluir_optativas=False):
         """
@@ -1225,7 +1285,7 @@ class TecnicaProyeccion(models.Model):
     Contiene una lista de AgrupacionCircuitos que debería en total cubrir a todos los circuitos
     correspondientes a la categoria que se desea proyectar.
     """
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100, db_index=True)
 
     class Meta:
         ordering = ('nombre', )

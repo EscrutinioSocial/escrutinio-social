@@ -12,6 +12,8 @@ import structlog
 from threading import Thread
 import time
 import logging
+from constance import config
+
 logger = logging.getLogger('csv_import')
 
 # Primer dato: nombre de la columna, segundo: si es parte de una categoría o no,
@@ -86,7 +88,8 @@ class CSVImporter:
         # mapeo de la columna 5 en adelante a string, evitando las primeras que tienen converter.
         dtype_dict = {i: str for i in range(5, len(COLUMNAS_DEFAULT) + 1)}
         separador = self.autodetectar_separador(archivo)
-        self.df = pd.read_csv(self.archivo,
+        self.df = pd.read_csv(
+            self.archivo,
             na_values=["n/a", "na", "-"],
             dtype=dtype_dict,
             converters=converters,
@@ -144,7 +147,8 @@ class CSVImporter:
         y como tercero todos aquellos errores que se pueden reportar en batch.
         """
         errores_pendientes = self.errores[cant_errores_ya_entregados:]
-        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, '\n'.join(errores_pendientes)
+        errores = None if len(errores_pendientes) == 0 else ''.join(errores_pendientes).strip()
+        return self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, errores
 
     def procesar(self):
         self.validar()
@@ -156,8 +160,11 @@ class CSVImporter:
             self.procesamiento_terminado = True  # Para que termine el thread de yield.
             return self.resultados()
 
-        self.validar_mesas()
-        self.cargar_info()
+        try:
+            self.validar_mesas()
+            self.cargar_info()
+        except Exception as e:
+            self.anadir_error(str(e))
         self.procesamiento_terminado = True
         return self.resultados()
 
@@ -175,6 +182,7 @@ class CSVImporter:
                 # Dormimos unos segundos para no hacer busy-waiting y dar tiempo a que
                 # termine o se produzcan errores.
                 time.sleep(5)
+
             if not self.procesamiento_terminado:
                 yield self.cant_mesas_importadas, self.cant_mesas_parcialmente_importadas, self.errores[cant_errores_entregados]
                 cant_errores_entregados += 1
@@ -186,14 +194,13 @@ class CSVImporter:
         except Exception as e:
             self.anadir_error(str(e))
             return self.resultados()
-        t = Thread(target=self.procesar_post_validar)
-        t.daemon = False
+        t = Thread(target=self.procesar_post_validar, daemon=False)
         t.start()
         return self.yield_errores()
 
     def anadir_error(self, error):
         self.cant_errores += 1
-        texto_error = f'{self.cant_errores} - {error}'
+        texto_error = f'{self.cant_errores} - {error}\n'
         self.errores.append(texto_error)
 
     def log_debug(self, mensaje):
@@ -294,7 +301,7 @@ class CSVImporter:
 
         mesa_ok = True
         alguna_cat_ok = False
-        for mesa_categoria in mesa_bd.mesacategoria_set.all():
+        for mesa_categoria in mesa_bd.mesacategoria_set.filter(categoria__activa=True):
             try:
                 self.cargar_mesa_categoria(mesa, filas_de_la_mesa, mesa_categoria, columnas_categorias)
                 alguna_cat_ok = True
@@ -316,7 +323,7 @@ class CSVImporter:
         carga_parcial, carga_total = self.carga_basica_mesa_categoria(mesa,
                 filas_de_la_mesa, mesa_categoria, columnas_categorias)
 
-        if carga_parcial:
+        if carga_parcial and config.CARGAR_OPCIONES_NO_PRIO_CSV:
             carga_total = self.copiar_carga_parcial_en_total(carga_parcial, carga_total)
 
         # A todas las cargas le tengo que agregar el total de electores y de sobres.
@@ -387,15 +394,30 @@ class CSVImporter:
                     in categoria_general.nombre.lower()]
 
         if len(matcheos) == 0:
-            raise DatosInvalidosError(f'Faltan datos en el archivo de la siguiente '
-                                      f'categoría: {categoria_general.nombre}.'
-                                      )
+            self.anadir_error(
+                f'Faltan datos en el archivo de la siguiente '
+                f'categoría: {categoria_general.nombre}.'
+            )
+            return None, None
+
+        columna_de_la_categoria = matcheos[0]
 
         # Se encontró la categoría de la mesa en el archivo.
-        columna_de_la_categoria = matcheos[0]
         votos_a_cargar = []
         # Los votos son por partido así que debemos iterar por todas las filas.
         for indice, fila in filas_de_la_mesa.iterrows():
+            if indice == 0:
+                # Me fijo si existe la columna de la categoría.
+                try:
+                    # Trato de acceder a la columna.
+                    prueba = fila[columna_de_la_categoria]
+                except KeyError:
+                    self.anadir_error(
+                        f'Faltan datos en el archivo de la siguiente '
+                        f'categoría: {categoria_general.nombre}.'
+                    )
+                    return None, None
+
             codigo_lista_en_csv = fila['nro de lista']
             self.celda_analizada = CeldaCSVImporter(
                 seccion, circuito, mesa, distrito, codigo_lista_en_csv, columna_de_la_categoria)
@@ -440,6 +462,9 @@ class CSVImporter:
 
         # Buscamos este nro de lista dentro de las opciones asociadas a
         # esta categoría.
+
+        # Me aseguro de que sea string.
+        codigo_lista_en_csv = f'{codigo_lista_en_csv}'
         match_codigo_lista = [una_opcion for una_opcion in categoria_bd.opciones.all()
                               if una_opcion.codigo and una_opcion.codigo.strip().lower()
                               == codigo_lista_en_csv.strip().lower()]
@@ -522,10 +547,18 @@ class CSVImporter:
                 if 'votomesareportado_votos_check' in str(e):
                     self.anadir_error(
                         f'Los resultados deben ser números positivos. Revise la celda correspondiente '
-                        f'a {self.celda_analizada}.')
+                        f'a {self.celda_analizada}.'
+                    )
+                elif 'duplicate key' in str(e):
+                    self.anadir_error(
+                        f'Hay partidos/listas repetidas. Revise la celda correspondiente '
+                        f'a {self.celda_analizada}. Detalle: {e}'
+                    )
                 else:
-                    self.anadir_error(f'Error al guardar los resultados. Revise la celda correspondiente '
-                                      f'a {self.celda_analizada}.')
+                    self.anadir_error(
+                        f'Error al guardar los resultados. Revise la celda correspondiente '
+                        f'a {self.celda_analizada}. Detalle: {e}'
+                    )
             except ValueError as e:
                 self.anadir_error(
                     f'Revise que los datos de resultados sean numéricos. Revise la celda correspondiente '
@@ -545,6 +578,11 @@ class CSVImporter:
                 self.log_debug("--- Creando carga parcial.")
             carga = self.carga_parcial
         else:
+            # Por una inconsistencia (ver #352) sólo se cargan no
+            # prioritarias de acuerdo al flag configurable.
+            if not config.CARGAR_OPCIONES_NO_PRIO_CSV:
+                return
+
             if not self.carga_total:
                 self.carga_total = Carga.objects.create(
                     tipo=Carga.TIPOS.total,

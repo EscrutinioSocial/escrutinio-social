@@ -50,7 +50,7 @@
  {% endblock %}
 
 {% block sidenav_items %}
-<li><a href="{% if not en_base_a_configuracion %}{% url "resultados-categoria" primera_categoria %}{% else %}{% url "resultados-en-base-a-configuración" primera_categoria %}{% endif %}">Todo el país</a></li>
+<li><a href="{% if not en_base_a_configuracion %}{% url "resultados-categoria" primera_categoria %}{% else %}{% url "resultados-en-base-a-configuracion" primera_categoria %}{% endif %}">Todo el país</a></li>
 {% include "elecciones/arbol_distrito.html" %}
 {% endblock %}
 
@@ -66,7 +66,7 @@
     <div class="card-content" id="frame{{categoria.id}}">
     {% if resultados.tabla_positivos or resultados.tabla_no_positivos %}
 
-        <h4>{% if tecnicas_de_proyeccion_seleccionado %}Proyección a partir de{% else %}Sobre un{% endif%}
+        <h4>{% if tecnicas_de_proyeccion_seleccionado != "sin_proyeccion" %}Proyección a partir de{% else %}Sobre un{% endif%}
             {{ resultados.porcentaje_mesas_escrutadas }}% de mesas escrutadas
             ({{ resultados.total_mesas_escrutadas }} de {{ resultados.total_mesas }})
         </h4>
@@ -245,6 +245,17 @@ $(document).ready(function() {
   $('.filtros select').change(aplicarSumarizacion);
 
 });
+</script>
+
+<script type="text/javascript">
+  // Formatea los números separados por espacio (gracias locale 'pl')
+  // para facilitar la lectura.
+  $('.dato_entero').each(function(i, obj) {
+      var item = $(obj).text();
+      var num = Number(item).toLocaleString('pl');
+      
+      $(obj).text(num);
+  });
 </script>
 
 {% endblock messages %}

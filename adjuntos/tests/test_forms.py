@@ -17,40 +17,6 @@ from elecciones.models import (
 )
 
 
-@pytest.mark.skip('Verificar si está obsoleto respecto del comportamiento de la UI.')
-def test_identificacion_nuevo_choices(db):
-    d = Distrito.objects.get()      # 'Distrito único', lo crea una migracion
-    d2 = DistritoFactory(nombre='otro distrito')
-    MesaFactory(), MesaFactory()
-
-    form = IdentificacionForm()
-
-    # los querysets (opciones validas) están vacíos, excepto distrito
-    distrito_qs = form.fields['distrito'].queryset
-    distritos = list(Distrito.objects.all())
-    assert list(distrito_qs) == distritos
-
-    ## Por ahora no tenemos más selects en los siguientes niveles.
-    # seccion_qs = form.fields['seccion'].queryset
-    # assert list(seccion_qs) == list(Seccion.objects.all())
-    # circuito_qs = form.fields['circuito'].queryset
-    # assert list(circuito_qs) == list(Circuito.objects.all())
-    # mesa_qs = form.fields['mesa'].queryset
-    # assert list(mesa_qs) == list(Mesa.objects.all())
-
-    # pero las opciones para seccion, circuito, mesa están vacias
-    opciones_base = [('', '---------')]
-    # y se completan dinámicamente cuando se elige el padre
-    opciones_d = [(d2.id, str(d2)), (d.id, str(d))]
-    
-    assert list(form.fields['distrito'].choices) == opciones_base + opciones_d
-
-    ## Por ahora no tenemos más selects en los siguientes niveles.
-    # assert list(form.fields['seccion'].choices) == opciones_base + [(o.id,str(o)) for o in list(seccion_qs)]
-    # assert list(form.fields['circuito'].choices) == opciones_base + [(o.id,str(o)) for o in list(circuito_qs)]
-    # assert list(form.fields['mesa'].choices) == opciones_base + [(o.id,str(o)) for o in list(mesa_qs)]
-
-
 def test_identificacion_valida_jerarquia(db):
     m1 = MesaFactory()
     m2 = MesaFactory()

@@ -44,7 +44,7 @@ class CategoriaGeneralFactory(DjangoModelFactory):
 
     class Meta:
         model = 'elecciones.CategoriaGeneral'
-        django_get_or_create = ('nombre', )
+        django_get_or_create = ('nombre', 'slug', )
 
     nombre = factory.Sequence(lambda n: f'Categoría general {n + 1}')
     slug = factory.Sequence(lambda n: f'categoría_general_{n + 1}')
@@ -235,6 +235,11 @@ class IdentificacionFactory(DjangoModelFactory):
     mesa = factory.SubFactory(MesaFactory)
     attachment = factory.SubFactory(AttachmentFactory)
     fiscal = factory.SubFactory(FiscalFactory)
+
+
+class PreidentificacionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'adjuntos.PreIdentificacion'
 
 
 class ProblemaFactory(DjangoModelFactory):

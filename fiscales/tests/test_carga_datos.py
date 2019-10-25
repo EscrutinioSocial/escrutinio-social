@@ -53,7 +53,7 @@ def test_siguiente_accion_balancea_con_scheduler(fiscal_client, cant_attachments
     mesas = MesaFactory.create_batch(cant_mcs)
     for i in range(cant_mcs):
         attachment_identificado = AttachmentFactory(mesa=mesas[i], status='identificada')
-        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1)
+        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1, categoria__sensible=True)
 
     # Como la URL de identificación pasa un id no predictible
     # y no nos importa acá saber exactamente a que instancia se relaciona la acción
@@ -66,13 +66,14 @@ def test_siguiente_accion_balancea_con_scheduler(fiscal_client, cant_attachments
     assert response.status_code == HTTPStatus.FOUND
     assert response.url.startswith(beginning)
 
+
 @pytest.mark.parametrize('cant_attachments, cant_mcs, coeficiente, expect', parametros_test_siguiente_accion_balancea)
 def test_siguiente_accion_balancea_sin_scheduler(fiscal_client, cant_attachments, cant_mcs, coeficiente, expect):
     attachments = AttachmentFactory.create_batch(cant_attachments, status='sin_identificar')
     mesas = MesaFactory.create_batch(cant_mcs)
     for i in range(cant_mcs):
         attachment_identificado = AttachmentFactory(mesa=mesas[i], status='identificada')
-        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1)
+        MesaCategoriaFactory(mesa=mesas[i], coeficiente_para_orden_de_carga=1, categoria__sensible=True)
 
     # Como la URL de identificación pasa un id no predictible
     # y no nos importa acá saber exactamente a que instancia se relaciona la acción
@@ -350,32 +351,53 @@ def test_siguiente_accion_considera_cant_asignaciones_realizadas_con_scheduler(d
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.OK
 
+# En los casos comentados es más prioritario entregar una identificación.
 parametros_test_redirige_a_parcial_si_es_necesario = [
     (MesaCategoria.STATUS.sin_cargar, True),
     (MesaCategoria.STATUS.parcial_sin_consolidar, True),
     (MesaCategoria.STATUS.parcial_en_conflicto, True),
     (MesaCategoria.STATUS.parcial_consolidada_csv, True),
-    (MesaCategoria.STATUS.parcial_consolidada_dc, False),
-    (MesaCategoria.STATUS.total_sin_consolidar, False),
-    (MesaCategoria.STATUS.total_en_conflicto, False),
-    (MesaCategoria.STATUS.total_consolidada_csv, False),
+    # (MesaCategoria.STATUS.parcial_consolidada_dc, False),
+    # (MesaCategoria.STATUS.total_sin_consolidar, False),
+    # (MesaCategoria.STATUS.total_en_conflicto, False),
+    # (MesaCategoria.STATUS.total_consolidada_csv, False),
 ]
 @pytest.mark.parametrize('status, parcial', parametros_test_redirige_a_parcial_si_es_necesario)
+@override_config(COEFICIENTE_IDENTIFICACION_VS_CARGA=2)
 def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client, status, parcial):
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa)
-    c1 = CategoriaFactory(requiere_cargas_parciales=True)
+    c1 = CategoriaFactory(requiere_cargas_parciales=True, sensible=True)
     m1c1 = MesaCategoriaFactory(categoria=c1, coeficiente_para_orden_de_carga=0.1, status=status, mesa=mesa)
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
 
 
+# Es más prioritario entregar una identificación.
+parametros_test_redirige_a_identificar = [
+    (MesaCategoria.STATUS.parcial_consolidada_dc, False),
+    (MesaCategoria.STATUS.total_sin_consolidar, False),
+    (MesaCategoria.STATUS.total_en_conflicto, False),
+    (MesaCategoria.STATUS.total_consolidada_csv, False),
+]
+@pytest.mark.parametrize('status, parcial', parametros_test_redirige_a_parcial_si_es_necesario)
+@override_config(COEFICIENTE_IDENTIFICACION_VS_CARGA=1)
+def test_cargar_resultados_redirige_a_identificar(db, fiscal_client, status, parcial):
+    mesa = MesaFactory()
+    a = AttachmentFactory(mesa=mesa)
+    c1 = CategoriaFactory(requiere_cargas_parciales=True)
+    m1c1 = MesaCategoriaFactory(categoria=c1, coeficiente_para_orden_de_carga=0.1, status=status, mesa=mesa)
+    response = fiscal_client.get(reverse('siguiente-accion'))
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url.startswith('/clasificar-actas/')
+
+
 @pytest.mark.parametrize('status, parcial', parametros_test_redirige_a_parcial_si_es_necesario)
 def test_cargar_resultados_redirige_a_parcial_si_es_necesario_con_scheduler(db, fiscal_client, status, parcial):
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa)
-    c1 = CategoriaFactory(requiere_cargas_parciales=True)
+    c1 = CategoriaFactory(requiere_cargas_parciales=True, sensible=True)
     with override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=False):
         m1c1 = MesaCategoriaFactory(categoria=c1, coeficiente_para_orden_de_carga=0.1, status=status, mesa=mesa)
         scheduler()
@@ -384,6 +406,7 @@ def test_cargar_resultados_redirige_a_parcial_si_es_necesario_con_scheduler(db, 
         assert response.url == reverse('carga-parcial' if parcial else 'carga-total', args=[m1c1.id])
 
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_siguiente_happy_path_parcial_y_total_sin_scheduler(db, fiscal_client, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
     mesa = MesaFactory()
@@ -446,6 +469,7 @@ def test_siguiente_happy_path_parcial_y_total_con_scheduler(db, fiscal_client, s
     # No hay actas para cargar, vuelta a empezar.
     assert response.status_code == HTTPStatus.OK
     assert 'No hay actas para cargar' in str(response.content)
+
 
 def test_siguiente_manda_a_parcial_si_es_requerido_sin_scheduler(db, client, setup_groups, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
@@ -680,7 +704,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     Es un test desaconsejadamente largo, pero me sirvió para entender el escenario.
     Se hace un recorrido por la carga de dos categorías desde una UB.
 
-    Cuando se llama a procesar-acta-mesa, cuando va por GET, es para cargar el template carga-ub.html.
+    Cuando se llama a cargar-desde-ub, cuando va por GET, es para cargar el template carga-ub.html.
     Cuando se le pega con POST, va a cargar un resultado.
 
     Cuando ya no tiene más categorías para cargar, te devuelve a agregar-adjunto-ub
@@ -721,7 +745,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     categoria_2.nombre = 'Otro nombre'
     categoria_2.save(update_fields=['nombre'])
 
-    url_carga = reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+    url_carga = reverse('cargar-desde-ub', kwargs={'mesa_id': mesa.id})
     response = fiscal_client.get(url_carga)
 
     # Nos aseguramos que haya cargado el template específico para UB. No es una redirección.
@@ -732,14 +756,14 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
 
     tupla_opciones_electores = [(opcion_1.id, mesa.electores // 2, mesa.electores // 2), (opcion_2.id, mesa.electores // 2, mesa.electores // 2)]
     request_data = _construir_request_data_para_carga_de_resultados(tupla_opciones_electores)
-    with django_assert_num_queries(48):
+    with django_assert_num_queries(47):
         response = fiscal_client.post(url_carga, request_data)
 
-    # Tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a procesar-acta-mesa
+    # Tiene otra categoría, por lo que debería cargar y redirigirnos nuevamente a cargar-desde-ub
     carga = Carga.objects.get()
     assert carga.tipo == Carga.TIPOS.total
     assert response.status_code == HTTPStatus.FOUND
-    assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+    assert response.url == reverse('cargar-desde-ub', kwargs={'mesa_id': mesa.id})
 
     # Hacemos el get hacia donde nos manda el redirect. Esto hace el take.
     response = fiscal_client.get(response.url)
@@ -755,7 +779,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
 
     # Me lleva a continuar con el workflow.
     assert response.status_code == HTTPStatus.FOUND
-    assert response.url == reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa.id})
+    assert response.url == reverse('cargar-desde-ub', kwargs={'mesa_id': mesa.id})
 
     # La mesa no tiene más categorías, nos devuelve a la pantalla de carga de adjuntos.
 
@@ -767,9 +791,69 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
 
 def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
     mesa_id_inexistente = 673162312
-    url = reverse('procesar-acta-mesa', kwargs={'mesa_id': mesa_id_inexistente})
+    url = reverse('cargar-desde-ub', kwargs={'mesa_id': mesa_id_inexistente})
     response = fiscal_client.get(url)
     assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=False)
+def test_siguiente_happy_path_parcial_y_total_con_modo_ub(db, fiscal_client, admin_user, settings):
+    # Este test no es del todo realista porque se lo ejecuta con la cantidad de cargas/identificaciones
+    # necesarias para consolidar en 1, pero al menos prueba que se siga el circuito con modo_ub=True.
+    settings.MIN_COINCIDENCIAS_CARGAS = 1
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
+    modo_ub_querry_string = '?modo_ub=True'
+    mesa = MesaFactory()
+    from adjuntos.models import PreIdentificacion
+    from scheduling.models import ColaCargasPendientes
+    p = PreIdentificacion(fiscal=admin_user.fiscal, distrito=mesa.circuito.seccion.distrito)
+    p.save()
+    a = AttachmentFactory(status='sin_identificar', pre_identificacion=p)
+    scheduler() 
+    assert ColaCargasPendientes.largo_cola() == 1
+    response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
+
+    assert response.status_code == HTTPStatus.FOUND
+    # Me manda a idenficarlas con modo_ub
+    assert response.url == reverse('asignar-mesa', args=[a.id]) + modo_ub_querry_string
+
+    assert ColaCargasPendientes.largo_cola() == 0
+
+    # La identifico.
+    a.mesa = mesa
+    a.status = 'identificada'
+    a.save()
+    mc1 = MesaCategoriaFactory(categoria__requiere_cargas_parciales=True, coeficiente_para_orden_de_carga=1,
+        mesa=mesa
+    )
+    scheduler()
+
+    assert ColaCargasPendientes.largo_cola() == 1
+
+    response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
+    assert response.status_code == HTTPStatus.FOUND
+    assert response.url == reverse('carga-parcial', args=[mc1.id]) + modo_ub_querry_string
+
+    carga = CargaFactory(mesa_categoria=mc1, tipo='parcial', origen='csv')
+    consumir_novedades_carga()
+    scheduler()
+    mc1.refresh_from_db()
+    assert mc1.status == MesaCategoria.STATUS.parcial_consolidada_dc  # Porque la cant de cargas está en 1.
+    assert mc1.carga_testigo == carga
+    mc1.desasignar_a_fiscal()
+    response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
+    assert response.url == reverse('carga-total', args=[mc1.id]) + modo_ub_querry_string
+
+    carga = CargaFactory(mesa_categoria=mc1, tipo='total', origen='csv')
+    consumir_novedades_carga()
+    scheduler()
+    mc1.refresh_from_db()
+    assert mc1.status == MesaCategoria.STATUS.total_consolidada_dc  # Porque la cant de cargas está en 1.
+    assert mc1.carga_testigo == carga
+    response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
+    # No hay actas para cargar, vuelta a empezar.
+    assert response.status_code == HTTPStatus.OK
+    assert 'No hay actas para cargar' in str(response.content)
 
 
 def test_carga_sin_permiso(fiscal_client, admin_user, mocker):
@@ -779,10 +863,6 @@ def test_carga_sin_permiso(fiscal_client, admin_user, mocker):
     response = fiscal_client.get(reverse('carga-total', args=[mc.id]))
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('siguiente-accion')  # Manda a asignar una nueva.
-    assert capture.call_count == 1
-    mensaje = capture.call_args[0][0]
-    assert 'Intento de cargar mesa-categoria' in mensaje
-    assert str(fiscal) in mensaje
     mc.asignar_a_fiscal()
     fiscal.asignar_mesa_categoria(mc)
     response = fiscal_client.get(reverse('carga-total', args=[mc.id]))

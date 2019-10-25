@@ -38,6 +38,8 @@ class Command(BaseCommand):
 
         if options['file']:
             self.importar_ahora(options['file'])
+        elif options['file_at_once']:
+            self.importar_ahora_at_once(options['file_at_once'])
         elif options['crear_tarea']:
             self.crear_tarea(options['crear_tarea'])
         else:
@@ -53,6 +55,10 @@ class Command(BaseCommand):
 
         parser.add_argument("--file", type=str, default=None,
                             help="Lee el archivo parámetro en el momento."
+                            )
+
+        parser.add_argument("--file_at_once", type=str, default=None,
+                            help="Lee el archivo parámetro en el momento y lo procesa no parcialmente."
                             )
 
         parser.add_argument("--crear_tarea", type=str, default=None,
@@ -73,6 +79,19 @@ class Command(BaseCommand):
         csvimporter = CSVImporter(Path(file), self.usr.user, self.debug)
 
         errores = csvimporter.procesar_parcialmente()
+        try:
+            for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
+                print("Error: ", error)
+        except TypeError:
+            cant_mesas_ok, cant_mesas_parcialmente_ok, error = errores
+            print("Errro: ", error)
+
+        print(f"{cant_mesas_ok} mesas ok, {cant_mesas_parcialmente_ok} mesas parcialmente ok. ")
+
+    def importar_ahora_at_once(self, file):
+        csvimporter = CSVImporter(Path(file), self.usr.user, self.debug)
+
+        errores = csvimporter.procesar()
         for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
             print("Error: ", error)
 
@@ -125,22 +144,26 @@ class Command(BaseCommand):
         i = 0
         if not tarea.errores:
             tarea.errores = ''
-        for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
-            if not error.endswith('\n'):
-                error = error + '\n'
+        try:
+            for cant_mesas_ok, cant_mesas_parcialmente_ok, error in errores:
+                if not error:
+                    continue
+                tarea.errores = tarea.errores + error
+                i += 1
+                if i == 20:
+                    # Cada 20 errores grabamos.
+                    i = 0
+                    tarea.save_errores(cant_mesas_ok, cant_mesas_parcialmente_ok)
+        except TypeError:
+            cant_mesas_ok, cant_mesas_parcialmente_ok, error = errores
             tarea.errores = tarea.errores + error
             i += 1
-            if i == 20:
-                # Cada 20 errores grabamos.
-                i = 0
-                tarea.save_errores()
 
         # Si quedaron errores sin grabar los grabamos:
         if i > 0:
             tarea.save_errores()
 
         tarea.fin_procesamiento(cant_mesas_ok, cant_mesas_parcialmente_ok)
-        self.logger.info("[%d] Tarea terminada: %s", self.thread_local.worker_id, tarea)
 
     def wait_and_process_task(self):
         """
@@ -155,7 +178,13 @@ class Command(BaseCommand):
 
         if not self.finalizar:
             self.logger.info("[%d] Tarea seleccionada: %s", self.thread_local.worker_id, tarea)
-            self.worker_import_file(tarea)
+            try:
+                self.worker_import_file(tarea)
+            except Exception as e:
+                tarea.errores = tarea.errores if tarea.errores else '' + str(e)
+                tarea.save_errores()
+                tarea.fin_procesamiento(0, 0)
+            self.logger.info("[%d] Tarea terminada: %s", self.thread_local.worker_id, tarea)
 
     def csv_import_worker(self, thread_id):
         """

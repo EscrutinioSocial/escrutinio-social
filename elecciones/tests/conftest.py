@@ -47,4 +47,4 @@ def url_resultados(carta_marina):
 @pytest.fixture()
 def url_resultados_computo(carta_marina):
     c = CategoriaFactory(nombre='default')
-    return reverse('resultados-en-base-a-configuración', args=[c.id])
+    return reverse('resultados-en-base-a-configuracion', args=[c.id])

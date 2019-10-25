@@ -14,11 +14,13 @@ class Command(BaseCommand):
     help = "Scheduler asincrónico. Encola mesas-categorías con fotos para identificar."
 
     def add_arguments(self, parser):
-        parser.add_argument("--cant_elem_consolidador",
-            type=int, default=100,
+        parser.add_argument(
+            "--cant_elem_consolidador",
+            type=int, default=500,
             help="Cantidad de elementos a procesar por corrida del consolidador (None es sin límite, default %(default)s)."
         )
-        parser.add_argument("--cant_rondas_antes_de_reconstruir_la_cola",
+        parser.add_argument(
+            "--cant_rondas_antes_de_reconstruir_la_cola",
             type=int, default=5,
             help="Cantidad de rondas de consolidación antes de vaciar la cola (default %(default)s)."
         )
@@ -39,7 +41,8 @@ class Command(BaseCommand):
                     'Encolado',
                     tareas=cant_tareas,
                     cargas=cant_cargas,
-                    identificaciones=cant_ident
+                    identificaciones=cant_ident,
+                    reconstruir_la_cola=reconstruir_la_cola,
                 )
             except Exception as e:
                 # Logueamos la excepción y continuamos.
