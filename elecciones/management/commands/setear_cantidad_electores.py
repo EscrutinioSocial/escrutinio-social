@@ -28,8 +28,8 @@ class Command(BaseCommand):
             mesa_nueva.categoria_add(categoria)
 
         # Y el lugar de votación.
-        mesa_nueva.lugar_de_votacion = otra_mesa.lugar_de_votacion
-        mesa_nueva.save(update_fields=['lugar_de_votacion'])
+        mesa_nueva.lugar_votacion = otra_mesa.lugar_votacion
+        mesa_nueva.save(update_fields=['lugar_votacion'])
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
