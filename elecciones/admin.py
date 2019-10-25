@@ -3,7 +3,6 @@ from django.contrib import admin
 from django.urls import reverse
 from djangoql.admin import DjangoQLSearchMixin
 from leaflet.admin import LeafletGeoAdmin
-from annoying.functions import get_object_or_None
 from .models import (
     Distrito,
     SeccionPolitica,
@@ -268,10 +267,15 @@ class SeccionAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('distrito', 'seccion_politica', 'numero', 'nombre', 'electores')
         }),
-        ('Prioridades', {
-            'fields': ('prioridad_hasta_2', 'prioridad_2_a_10', 'prioridad_10_a_100', 'cantidad_minima_prioridad_hasta_2'),
-            'classes': ['wide']
-        }),
+        (
+            'Prioridades', {
+                'fields': (
+                    'prioridad_hasta_2', 'prioridad_2_a_10', 'prioridad_10_a_100',
+                    'cantidad_minima_prioridad_hasta_2'
+                ),
+                'classes': ['wide']
+            }
+        ),
     )
 
 
@@ -289,7 +293,6 @@ class VotoMesaReportadoAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
         'carga__mesa_categoria__mesa__circuito__nombre',
         'carga__mesa_categoria__mesa__lugar_votacion__nombre'
     ]
-
 
 
 class OpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
@@ -315,17 +318,24 @@ class CategoriaOpcionAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
     ordering = ['categoria__nombre', 'orden']
 
 
-class TecnicaProyeccionAdmin(admin.ModelAdmin):
-    search_fields = ['nombre']
-    ordering = ['nombre']
-
-
 class AgrupacionCircuitoInline(admin.TabularInline):
     model = AgrupacionCircuito
     raw_id_fields = ['circuito']
     extra = 1
     verbose_name = "Circuitos"
     verbose_name_plural = "Circuitos en esta Agrupación"
+
+
+class AgrupacionCircuitosInline(admin.TabularInline):
+    model = AgrupacionCircuitos
+    ordering = ['nombre']
+    inlines = [AgrupacionCircuitoInline]
+
+
+class TecnicaProyeccionAdmin(admin.ModelAdmin):
+    search_fields = ['nombre']
+    ordering = ['nombre']
+    inlines = [AgrupacionCircuitosInline]
 
 
 class AgrupacionCircuitosAdmin(admin.ModelAdmin):

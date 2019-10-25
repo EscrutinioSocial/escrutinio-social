@@ -1,6 +1,5 @@
 from django import forms
 
-from elecciones.models import Seccion
 from scheduling.models import mapa_prioridades_default_categoria, mapa_prioridades_default_seccion
 
 
