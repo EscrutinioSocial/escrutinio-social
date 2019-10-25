@@ -195,7 +195,7 @@ class IdentificacionForm(forms.ModelForm):
             lookup_mesa &= Q(circuito__seccion__numero=seccion_nro)
 
         if circuito_nro:
-            lookup_mesa &= Q(circuito__numero=circuito_nro)
+            lookup_mesa &= Q(circuito__numero__iexact=circuito_nro)
 
         mesa = self.buscar_mesa(mesa_nro, lookup_mesa)
 
