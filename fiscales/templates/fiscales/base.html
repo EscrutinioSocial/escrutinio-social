@@ -98,13 +98,18 @@
 {% endif %}
 
 {% if request.user.fiscal.esta_en_grupo_visualizadores or request.user.is_superuser %}
+<!-- <li>
+    <a href="{% url "avance-carga" %}" class="collapsible-header" data-turbolinks="false">Avance de carga (opcion lenta)<i
+            class="material-icons">insert_chart</i></a>
+</li> -->
+
 <li>
-    <a href="{% url "avance-carga" %}" class="collapsible-header" data-turbolinks="false">Avance de carga<i
+    <a href="{% url "avance-carga-nuevo-menu" %}" class="collapsible-header" data-turbolinks="false">Avance de carga<i
             class="material-icons">insert_chart</i></a>
 </li>
 
 <li>
-    <a href="{% url "avance-carga-resumen" carga_parcial="todo" carga_total="todo" restriccion_geografica="None" categoria="None" data_extra="nada_nada_nada" %}" 
+    <a href="{% url "avance-carga-resumen" carga_parcial="todo" carga_total="todo" restriccion_geografica="None" categoria="None" data_extra="nada_nada_nada" %}"
     class="collapsible-header" data-turbolinks="false">
         Avance de carga - resumen
         <i class="material-icons">insert_chart</i>

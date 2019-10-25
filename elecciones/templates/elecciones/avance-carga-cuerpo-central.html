@@ -1,0 +1,342 @@
+
+
+<div class="col s9">
+
+<div class="card" >
+  <div class="card-content">
+    <span class="card-title">Avance de carga para {{para|default:para}}</span>
+    <table class="bordered centered striped" >
+      <thead> <!-- Header de la tabla -->
+	<!-- Mesa / Electores -->
+	<tr> <!-- Primera fila -->
+	  <!-- La primera celda va en blanco ya que se corresponde con los tipos
+	       de estado -->
+	  <th></th>
+	  <!-- La tabla tiene 5 columnas de la 1 a la 5 por lo tanto llenamos las
+	       celdas de las columnas 2 y 4; de esta manera en la siguiente
+	       fila llenamos en las columnas 2 y 3 Cantidad y porcentaje para
+	       la mesa y en 4 y 5 Cantidad y porcentaje para los electores. -->
+	  <th colspan="2" style="text-align: center;">Mesas</th>
+	  {% if mostrar_electores %}
+		<th colspan="4" style="text-align: center;">Electores</th>
+	  {% endif %}
+	</tr>
+	<!-- Cantidad / Porcentajes -->
+	<tr> <!-- Segunda fila -->
+	  <!-- La primera celda va en blanco ya que se corresponde con los tipos
+	       de estado -->
+	  <th></th>
+	  <!-- Mesa: Cantidad / Porcentajes -->
+	  <th style="text-align: right;">Cantidad</th>
+	  <th style="text-align: right;">Porcentajes</th>
+  	{% if mostrar_electores %}
+      <!-- Electores: Cantidad / Porcentajes -->
+      <th style="text-align: right;">Cantidad</th>
+      <th style="text-align: right;">Porcentajes</th>
+	  {% endif %}
+	</tr>
+      </thead>
+      <!-- A partir de acá van datos y por lo tanto todas las celdas deberían
+	tener datos -->
+      <tbody>
+	<tr>
+	  <td style="text-align: left; font-weight: bold">Totales</td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.total.porcentaje_mesas }}
+	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.total.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.total.porcentaje_electores }}
+      </td>
+    {% endif %}
+	</tr>
+  <tr>
+    <td style="text-align: left"><span style="font-weight: bold">Sin identificar</span></td>
+    <td></td>
+    <td></td>
+    {% if mostrar_electores %}
+      <td></td>
+      <td></td>
+    {% endif %}
+  </tr>
+	<tr>
+    <td style="text-align: left; padding-left: 50px">Mesas sin foto asociada y sin cargas</td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar_sin_cargas.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_identificar_sin_cargas.porcentaje_mesas }}
+	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.sin_identificar_sin_cargas.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.sin_identificar_sin_cargas.porcentaje_electores }}
+      </td>
+    {% endif %}
+	</tr>
+  <tr>
+    <td style="text-align: left; padding-left: 50px; color: mediumseagreen;">
+      Mesas sin foto asociada con carga desde CSV (se incluyen en *)
+    </td>
+    <td style="text-align: right; color: mediumseagreen;">
+      {{ resultados.sin_identificar_con_cargas.cantidad_mesas }}
+    </td>
+    <td style="text-align: right; color: mediumseagreen;">
+      {{ resultados.sin_identificar_con_cargas.porcentaje_mesas }}
+    </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right; color: mediumseagreen;">
+        {{ resultados.sin_identificar_con_cargas.cantidad_electores }}
+      </td>
+      <td style="text-align: right; color: mediumseagreen;">
+        {{ resultados.sin_identificar_con_cargas.porcentaje_electores }}
+      </td>
+    {% endif %}
+  </tr>
+  <tr>
+    <td style="text-align: left"><span style="font-weight: bold">En proceso de identificación</span></td>
+    <td></td>
+    <td></td>
+    {% if mostrar_electores %}
+    <td></td>
+    <td></td>
+    {% endif %}
+  </tr>
+	<tr>
+    <td style="text-align: left; padding-left: 50px">Mesas sin foto asociada y sin cargas</td>
+		<td style="text-align: right;">
+			{{ resultados.en_identificacion_sin_cargas.cantidad_mesas }}
+		</td>
+		<td style="text-align: right;">
+			{{ resultados.en_identificacion_sin_cargas.porcentaje_mesas }}
+		</td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.en_identificacion_sin_cargas.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.en_identificacion_sin_cargas.porcentaje_electores }}
+      </td>
+    {% endif %}
+	</tr>
+  <tr>
+    <td style="text-align: left; padding-left: 50px; color: mediumseagreen;">
+      Mesas sin foto asociada con carga desde CSV (se incluyen en *)
+    </td>
+    <td style="text-align: right; color: mediumseagreen;">
+      {{ resultados.en_identificacion_con_cargas.cantidad_mesas }}
+    </td>
+    <td style="text-align: right; color: mediumseagreen;">
+      {{ resultados.en_identificacion_con_cargas.porcentaje_mesas }}
+    </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right; color: mediumseagreen;">
+        {{ resultados.en_identificacion_con_cargas.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.en_identificacion_con_cargas.porcentaje_electores }}
+      </td>
+    {% endif %}
+  </tr>
+	<tr>
+	  <td style="text-align: left"><span style="font-weight: bold">Con foto asociada y sin cargas</span></td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.sin_cargar.porcentaje_mesas }}
+	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.sin_cargar.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.sin_cargar.porcentaje_electores }}
+      </td>
+    {% endif %}
+	</tr>
+  <tr>
+    <td style="text-align: left"><span style="font-weight: bold">Carga parcial</span></td>
+    <td></td><td></td>
+    {% if mostrar_electores %}
+      <td></td><td></td>
+    {% endif %}
+  </tr>
+	<tr>
+	  <td style="text-align: left; padding-left: 50px">Sin consolidar</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_sin_consolidar.porcentaje_mesas }}
+	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.carga_parcial_sin_consolidar.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.carga_parcial_sin_consolidar.porcentaje_electores }}
+      </td>
+    {% endif %}
+	</tr>
+  <tr>
+    <td style="text-align: left; padding-left: 50px">
+      Consolidada por ingreso desde CSV <span style="color: mediumseagreen;">(*)</span>
+    </td>
+    <td style="text-align: right;">
+      {{ resultados.carga_parcial_consolidada_csv.cantidad_mesas }}
+    </td>
+    <td style="text-align: right;">
+      {{ resultados.carga_parcial_consolidada_csv.porcentaje_mesas }}
+    </td>
+    {% if mostrar_electores %}
+    <td style="text-align: right;">
+      {{ resultados.carga_parcial_consolidada_csv.cantidad_electores }}
+    </td>
+    <td style="text-align: right;">
+      {{ resultados.carga_parcial_consolidada_csv.porcentaje_electores }}
+    </td>
+    {% endif %}
+  </tr>
+	<tr>
+    <td style="text-align: left; padding-left: 50px">Consolidada por doble carga</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada_dc.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_parcial_consolidada_dc.porcentaje_mesas }}
+	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.carga_parcial_consolidada_dc.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.carga_parcial_consolidada_dc.porcentaje_electores }}
+      </td>
+    {% endif %}
+	</tr>
+  <tr>
+    <td style="text-align: left"><span style="font-weight: bold">Carga total</span></td>
+    <td></td>
+    <td></td>
+    {% if mostrar_electores %}
+      <td></td>
+      <td></td>
+    {% endif %}
+  </tr>
+	<tr>
+	  <td style="text-align: left; padding-left: 50px">Sin consolidar</td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_sin_consolidar.porcentaje_mesas }}
+	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.carga_total_sin_consolidar.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.carga_total_sin_consolidar.porcentaje_electores }}
+      </td>
+    {% endif %}
+	</tr>
+	<tr>
+    <td style="text-align: left; padding-left: 50px">
+      Consolidada por ingreso desde CSV <span style="color: mediumseagreen;">(*)</span>
+    </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada_csv.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.carga_total_consolidada_csv.porcentaje_mesas }}
+	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.carga_total_consolidada_csv.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.carga_total_consolidada_csv.porcentaje_electores }}
+      </td>
+    {% endif %}
+	</tr>
+  <tr>
+    <td style="text-align: left; padding-left: 50px">Consolidada por doble carga</td>
+    <td style="text-align: right;">
+      {{ resultados.carga_total_consolidada_dc.cantidad_mesas }}
+    </td>
+    <td style="text-align: right;">
+      {{ resultados.carga_total_consolidada_dc.porcentaje_mesas }}
+    </td>
+    {% if mostrar_electores %}
+    <td style="text-align: right;">
+      {{ resultados.carga_total_consolidada_dc.cantidad_electores }}
+    </td>
+    <td style="text-align: right;">
+      {{ resultados.carga_total_consolidada_dc.porcentaje_electores }}
+    </td>
+    {% endif %}
+  </tr>
+	<tr>
+	  <td style="text-align: left">Conflictos o problemas</td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.cantidad_mesas }}
+	  </td>
+	  <td style="text-align: right;">
+	    {{ resultados.conflicto_o_problema.porcentaje_mesas }}
+	  </td>
+    {% if mostrar_electores %}
+      <td style="text-align: right;">
+        {{ resultados.conflicto_o_problema.cantidad_electores }}
+      </td>
+      <td style="text-align: right;">
+        {{ resultados.conflicto_o_problema.porcentaje_electores }}
+      </td>
+    {% endif %}
+	</tr>
+	<tr style="height: 50px;">
+	</tr>
+	<tr>
+		<td style="text-align: left">Pre-identificación</td>
+		<td style="text-align: right;">
+			{{ resultados.preidentificaciones }}
+		</td>
+		<td style="text-align: right;">
+			imágenes
+		</td>
+		<td style="text-align: right;">
+		</td>
+		<td style="text-align: right;">
+		</td>
+	</tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+
+
+<div class="col s3">
+
+<div class="card">
+  <div class="card-content">
+    <span class="card-title">Categorías</span>
+    <div class="collection">
+    {% for categoria in categorias %}
+      <a target="_self" href="{{categoria.get_url_avance_de_carga}}?{{ request.GET.urlencode }}" class="collection-item {% if categoria.id == object.id %}active{% endif %}">{{ categoria.nombre }}</a>
+    {% endfor %}
+    </div>
+  </div>
+</div>
+
+</div>
