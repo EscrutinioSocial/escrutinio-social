@@ -17,7 +17,7 @@ from elecciones.models import (
     Opcion,
     CategoriaOpcion
 )
-from datetime import datetime
+from datetime import datetime, date
 import pytz
 
  
@@ -36,8 +36,8 @@ clave_json_cant_votos = 'v'
 clave_json_blancos_nulos = 'cn'
 clave_json_cant_blancos_nulos = 'cv'
 key_categorias = 'cc'
-key_votantes = 'rs'
-key_blancos_nulos = 'ct'
+key_votantes = 'votos'
+key_blancos_nulos = 'votos_extra'
 
 # If modifying these scopes, delete the file token.pickle.
 API_KEY = '***REMOVED***'
@@ -275,6 +275,7 @@ class Command(BaseCommand):
 
     # en el json busca los votos segun el dato pasado
     def parse_voto_web(self, datos_mesa_web, key_array, id_cat_ellos, key_dato, id_dato, key_valor):
+        print(datos_mesa_web)
         datos = datos_mesa_web[key_array] # El array donde estan los datos (rp o st)
         for resultado in datos:
             if (resultado[key_categorias] == id_cat_ellos) and (resultado[key_dato] == id_dato):
@@ -299,6 +300,10 @@ class Command(BaseCommand):
 
         opcion_nosotros = self.get_opcion_nosotros(categoria)
         opcion_ellos = self.get_opcion_ellos(categoria)
+        opcion_blancos = Opcion.blancos()
+        opcion_nulos = Opcion.nulos()
+        opcion_total = Opcion.total_votos()
+
 
         try:
             distrito = Distrito.objects.get(numero=nro_distrito)
@@ -306,8 +311,9 @@ class Command(BaseCommand):
             circuito = Circuito.objects.get(numero=nro_circuito, seccion=seccion)
             mesa = Mesa.objects.get(numero=nro_mesa, circuito=circuito)
             mesa_categoria = MesaCategoria.objects.get(mesa=mesa, categoria=categoria)
-
-            with transaction.atomic:
+            opciones_votos = [opcion_nosotros, opcion_ellos] 
+            opciones_blanco_nulos = [opcion_blancos, opcion_nulos, opcion_total]
+            with transaction.atomic():
                 carga = Carga.objects.create(
                     mesa_categoria=mesa_categoria,
                     tipo=tipo,
@@ -316,20 +322,20 @@ class Command(BaseCommand):
                 )
 
                 votos_a_crear = []
-                for id_dato, in [id_agrupacion_nosotros, id_agrupacion_ellos]:
+                for id_dato, opcion in zip ([id_agrupacion_nosotros, id_agrupacion_ellos], opciones_votos):
                     votos=self.parse_voto_web(datos_mesa_web, key_votantes, id_cat_ellos, clave_json_agrupacion, id_dato, clave_json_cant_votos)
                     votos_a_crear.append(
                         VotoMesaReportado(
-                            carga=carga, opcion=opcion_nosotros,
+                            carga=carga, opcion=opcion,
                             votos=votos
                         )
                     )
                     self.status(f"creando votos utiles para id agrupacion: {id_dato}. Valor cargado: {votos}")
-                for id_dato in [self.ids["id_blancos"], self.ids["id_nulos"], self.ids["id_total"]]:
+                for id_dato, opcion in zip([self.ids["id_blancos"], self.ids["id_nulos"], self.ids["id_total"]], opciones_blanco_nulos):
                     votos=self.parse_voto_web(datos_mesa_web, key_blancos_nulos, id_cat_ellos, clave_json_blancos_nulos, id_dato, clave_json_cant_blancos_nulos)
                     votos_a_crear.append(
                         VotoMesaReportado(
-                            carga=carga, opcion=opcion_nosotros,
+                            carga=carga, opcion=opcion,
                             votos=votos
                         )
                     )
@@ -341,15 +347,18 @@ class Command(BaseCommand):
                 # Si hay cargas repetidas esto hace que se tome la última
                 # en el proceso de comparar_mesas_con_correo.
                 mesa_categoria.actualizar_parcial_oficial(carga)
-
-            ultima_guardada_con_exito = datetime.strptime(row['Marca temporal'], '%d/%m/%Y %H:%M:%S').replace(tzinfo=tz)
+            # Pongo fecha de ahora ??
+            today = datetime.today().replace(tzinfo=tz)
+            print(today)
+            print(today.strftime('%d/%m/%Y %H:%M:%S'))
+            ultima_guardada_con_exito = today #today.strftime('%d/%m/%Y %H:%M:%S')
 
         except Distrito.DoesNotExist:
-            self.warning('No existe el distrito %s.' % nro_distrito)
+            self.warning(f'No existe el distrito {nro_distrito}')
         except Seccion.DoesNotExist:
-            self.warning('No existe la sección %s en el distrito %s.' % (nro_seccion, nro_distrito))
+            self.warning(f'No existe la sección {nro_seccion} en el distrito {nro_distrito}')
         except Circuito.DoesNotExist:
-            self.warning('No existe el circuito %s' % row)
+            self.warning(f'No existe el circuito {nro_circuito} - seccion: {nro_seccion}')
 
         if ultima_guardada_con_exito:
             if fecha_ultimo_registro:
