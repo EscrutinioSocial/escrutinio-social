@@ -78,7 +78,7 @@ class Command(BaseCommand):
             opcion_blancos = Opcion.blancos()
             opcion_nulos = Opcion.nulos()
             opcion_total = Opcion.total_votos()
-
+            opciones = [opcion_nosotros, opcion_ellos, opcion_blancos, opcion_nulos, opcion_total]
             for row in datos_a_guardar:
 
                 nro_distrito = row['Distrito']
@@ -99,10 +99,10 @@ class Command(BaseCommand):
                         )
 
                         votos_a_crear = []
-                        for nombre_opcion in ['136-Frente de Todos', '135-JxC', 'Blancos', 'Nulos', 'Total']:
+                        for nombre_opcion, opcion in zip(['136-Frente de Todos', '135-JxC', 'Blancos', 'Nulos', 'Total'], opciones):
                             votos_a_crear.append(
                                 VotoMesaReportado(
-                                    carga=carga, opcion=opcion_nosotros,
+                                    carga=carga, opcion=opcion,
                                     votos=row[nombre_opcion]
                                 )
                             )
