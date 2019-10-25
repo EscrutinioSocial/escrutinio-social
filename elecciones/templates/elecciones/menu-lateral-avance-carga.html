@@ -1,8 +1,8 @@
 {% extends "fiscales/base.html" %}
 {% load staticfiles %}
 
-{% block title %}Avance de Carga{% endblock %}
-{% block page_title %}Avance de Carga{% endblock %}
+{% block title %}Avance de carga{% endblock %}
+{% block page_title %}Avance de carga{% endblock %}
 
 {% block js %}
 {{ block.super }}
@@ -55,7 +55,7 @@
     if (url == url_inicial) Object.assign(nodo, selected)
     arbol_distritos.push(nodo)
   {% endfor %}
-  nodo = {'text': 'Todo el País', 'a_attr': {'href': url_base}, 'children': arbol_distritos, 'state': {'opened': true}}
+  nodo = {'text': 'Todo el país', 'a_attr': {'href': url_base}, 'children': arbol_distritos, 'state': {'opened': true}}
   if (url_base == url_inicial) Object.assign(nodo, selected)
   arbol_pais = nodo
 

@@ -71,7 +71,7 @@
     arbol_distritos.push(nodo)
   {% endfor %}
   url = url_base + (query_string_filtros == '' ? '' : '?' +  query_string_filtros.substr(1))
-  nodo = {'text': 'Todo el País', 'a_attr': {'href': url}, 'children': arbol_distritos, 'state': {'opened': true}}
+  nodo = {'text': 'Todo el país', 'a_attr': {'href': url}, 'children': arbol_distritos, 'state': {'opened': true}}
   if (url_inicial == url) Object.assign(nodo.state, selected)
   arbol_pais = nodo
 
