@@ -50,12 +50,15 @@ def create_sumarizador(
 
 
 class Proyecciones(Sumarizador):
+    
     """
     Esta clase encapsula el cómputo de proyecciones.
     """
     def __init__(self, tecnica, *args):
         self.tecnica = tecnica
         super().__init__(*args)
+        self.cache_cant_mesas_totales_por_agrupacion = None
+        self.cache_cant_mesas_escrutadas_por_agrupacion = None
 
     def circuito_subquery(self, id_agrupacion):
         """
@@ -84,13 +87,25 @@ class Proyecciones(Sumarizador):
         """
         Calcula el total de mesas en una agrupación de circuitos
         """
-        return self.mesas_a_considerar.filter(circuito__in=self.circuito_subquery(id_agrupacion)).count()
+        if self.cache_cant_mesas_totales_por_agrupacion is None:
+            self.cache_cant_mesas_totales_por_agrupacion = {
+                agrupacion.id: cant_mesas
+                for (agrupacion, cant_mesas) in self.cant_mesas_totales_por_agrupacion()
+            }
+
+        return self.cache_cant_mesas_totales_por_agrupacion[id_agrupacion]
 
     def cant_mesas_escrutadas(self, id_agrupacion):
         """
         Calcula el total de electores en las mesas escrutadas de una agrupación de circuitos
         """
-        return self.mesas_escrutadas().filter(circuito__in=self.circuito_subquery(id_agrupacion)).count()
+        if self.cache_cant_mesas_escrutadas_por_agrupacion is None:
+            self.cache_cant_mesas_escrutadas_por_agrupacion = {
+                agrupacion.id: cant_mesas
+                for (agrupacion, cant_mesas) in self.cant_mesas_escrutadas_por_agrupacion()
+            }
+
+        return self.cache_cant_mesas_escrutadas_por_agrupacion[id_agrupacion]
 
     def coeficiente_para_proyeccion(self, id_agrupacion):
         """
@@ -122,10 +137,34 @@ class Proyecciones(Sumarizador):
             'agrupacion__nombre', 'agrupacion__minimo_mesas', 'mesas_escrutadas'
         )
 
-    def cant_mesas_por_agrupacion(self):
+    def cant_mesas_totales_por_agrupacion(self):
         """
         Devuelve la lista de agrupaciones que se incluyen en la proyección, descartando aquellas
         que no tienen aún el mínimo de mesas definido según la técnica de proyección.
+        """
+
+        # Era self.mesas_a_considerar, copiado para optimizar query por MesaCategoria que es más eficiente
+        # que por mesa, la optimización podria venirle bien también al sumarizador, pero prefiero no meter
+        # ese refactor a 3 días del escrutinio.
+        mcs_a_considerar = MesaCategoria.objects.filter(categoria=self.categoria)
+
+        cant_mesas_por_circuito = dict(mcs_a_considerar.values_list('mesa__circuito').annotate(
+            cant_mesas=Count('mesa__circuito')
+        ))
+
+        agrupaciones = AgrupacionCircuitos.objects.filter(
+            proyeccion=self.tecnica
+        ).prefetch_related('circuitos')
+
+        return ((
+            agrupacion,
+            sum(cant_mesas_por_circuito.get(circuito.id, 0) for circuito in agrupacion.circuitos.all())
+        ) for agrupacion in agrupaciones)
+
+    def cant_mesas_escrutadas_por_agrupacion(self):
+        """
+        Devuelve una lista de tuplas donde el primer elemento es una agrupación de circuitosy el segundo 
+        la cantidad de mesas escrutadas en esa agrupación de circuitos.
         """
 
         # Era self.mesas_a_considerar, copiado para optimizar query por MesaCategoria que es más eficiente
@@ -154,8 +193,12 @@ class Proyecciones(Sumarizador):
         ) for agrupacion in agrupaciones)
 
     def agrupaciones_a_considerar(self):
+        """
+        Devuelve la lista de agrupaciones que se incluyen en la proyección, descartando aquellas
+        que no tienen aún el mínimo de mesas definido según la técnica de proyección.
+        """
         return (
-            agrupacion.id for (agrupacion, cant_mesas) in self.cant_mesas_por_agrupacion()
+            agrupacion.id for (agrupacion, cant_mesas) in self.cant_mesas_escrutadas_por_agrupacion()
             if cant_mesas >= agrupacion.minimo_mesas
         )
 
@@ -166,7 +209,7 @@ class Proyecciones(Sumarizador):
         para ser consideradas en la proyección.
         """
         return sum(
-            cant_mesas for (agrupacion, cant_mesas) in self.cant_mesas_por_agrupacion()
+            cant_mesas for (agrupacion, cant_mesas) in self.cant_mesas_escrutadas_por_agrupacion()
             if cant_mesas >= agrupacion.minimo_mesas
         )
 
