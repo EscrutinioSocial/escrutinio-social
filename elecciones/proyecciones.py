@@ -154,7 +154,7 @@ class Proyecciones(Sumarizador):
         ) for agrupacion in agrupaciones)
 
     def agrupaciones_a_considerar(self):
-        return list(
+        return (
             agrupacion.id for (agrupacion, cant_mesas) in self.cant_mesas_por_agrupacion()
             if cant_mesas >= agrupacion.minimo_mesas
         )
@@ -165,7 +165,10 @@ class Proyecciones(Sumarizador):
         escrutado cuando una agrupación de circuitos tiene menos mesas escrutadas de las necesarias
         para ser consideradas en la proyección.
         """
-        return sum(cant_mesas for (_, cant_mesas) in self.cant_mesas_por_agrupacion())
+        return sum(
+            cant_mesas for (agrupacion, cant_mesas) in self.cant_mesas_por_agrupacion()
+            if cant_mesas >= agrupacion.minimo_mesas
+        )
 
     def coeficientes_para_proyeccion(self):
         coeficientes = {
