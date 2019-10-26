@@ -242,7 +242,7 @@ def test_resultados_parciales_generales(carta_marina, url_resultados, fiscal_cli
 
     assert resultados.total_votos() == 265
     assert resultados.electores() == 800
-    assert resultados.total_sobres() == '-'
+    # assert resultados.total_sobres() == '-'
 
     columna_datos = [
         #('Electores', resultados.electores()),
@@ -381,7 +381,7 @@ def test_resultados_parciales_paso(carta_marina, url_resultados, fiscal_client):
     assert resultados.porcentaje_nulos() == '1.89'
 
     assert resultados.total_votos() == 265
-    assert resultados.total_sobres() == '-'
+    # assert resultados.total_sobres() == '-'
 
     columna_datos = [
         # ('Electores', resultados.electores()),
@@ -591,7 +591,7 @@ def test_resultados_no_positivos(fiscal_client):
     assert resultados.total_positivos() == 90
     assert resultados.total_blancos() == 10
     assert resultados.total_votos() == 100
-    assert resultados.total_sobres() == 110
+    # assert resultados.total_sobres() == 110
     assert resultados.porcentaje_positivos() == '90.00'
     assert resultados.porcentaje_blancos() == '10.00'
     assert resultados.porcentaje_nulos() == '0.00'

@@ -55,7 +55,7 @@ def test_resultados_proyectados(fiscal_client):
         o4: 0,
         Opcion.blancos(): 0,
         Opcion.total_votos(): 200,
-        Opcion.sobres(): 200,
+        # Opcion.sobres(): 200, # Actualmente nuestros sumarizadores descartan los datos sobre sobres.
     })
     consumir_novedades_y_actualizar_objetos([m1])
 
@@ -67,7 +67,7 @@ def test_resultados_proyectados(fiscal_client):
         o3: 0,
         Opcion.blancos(): 0,
         Opcion.total_votos(): 200,
-        Opcion.sobres(): 200,
+        # Opcion.sobres(): 200, # Actualmente nuestros sumarizadores descartan los datos sobre sobres.
     })
 
     consumir_novedades_y_actualizar_objetos([m1, m3])
