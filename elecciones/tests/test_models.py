@@ -39,8 +39,8 @@ def test_opciones_actuales(db):
     o2 = OpcionFactory()
     o3 = OpcionFactory()
     c = CategoriaFactory(opciones=[])
-    co3 = CategoriaOpcionFactory(categoria=c, orden=2, opcion=o3)
-    co2 = CategoriaOpcionFactory(categoria=c, orden=3, opcion=o2)
+    CategoriaOpcionFactory(categoria=c, orden=2, opcion=o3, prioritaria=False)
+    CategoriaOpcionFactory(categoria=c, orden=3, opcion=o2, prioritaria=False)
     o1 = CategoriaOpcionFactory(categoria=c, orden=1, prioritaria=True).opcion
 
     assert list(c.opciones_actuales()) == [
@@ -48,10 +48,21 @@ def test_opciones_actuales(db):
         Opcion.blancos(), Opcion.total_votos(), Opcion.sobres(), Opcion.nulos(),
         Opcion.recurridos(), Opcion.id_impugnada(), Opcion.comando_electoral(),
     ]
-    assert list(c.opciones_actuales(solo_prioritarias=True)) == [o1]
+    
+    assert list(c.opciones_actuales(solo_prioritarias=True)) == [
+        o1,
+        Opcion.blancos(), Opcion.total_votos(), Opcion.sobres(), Opcion.nulos(),
+        Opcion.recurridos(), Opcion.id_impugnada(), Opcion.comando_electoral(),
+    ]
+    
     assert list(c.opciones_actuales(excluir_optativas=True)) == [
         o1, o3, o2,
         Opcion.blancos(), Opcion.total_votos(), Opcion.nulos()
+    ]
+
+    assert list(c.opciones_actuales(solo_prioritarias=True, excluir_optativas=True)) == [
+        o1,
+        Opcion.blancos(), Opcion.total_votos(), Opcion.nulos(),
     ]
 
 

@@ -73,7 +73,7 @@ class CategoriaFactory(DjangoModelFactory):
             if created:
                 opcion.nombre = opcion.nombre_corto
                 opcion.save(update_fields=['nombre'])
-            defaults = {'orden': orden}
+            defaults = {'orden': orden, 'prioritaria': True}
             CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion, defaults=defaults)
             orden += 1
 
@@ -98,6 +98,7 @@ class CategoriaOpcionFactory(DjangoModelFactory):
     categoria = factory.SubFactory(CategoriaFactory, nombre='default')
     opcion = factory.SubFactory(OpcionFactory)
     orden = factory.Sequence(lambda n: n + 1)
+    prioritaria = True
 
 
 class DistritoFactory(DjangoModelFactory):

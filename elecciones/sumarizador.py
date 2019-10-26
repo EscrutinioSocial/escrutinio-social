@@ -58,6 +58,8 @@ class Sumarizador():
 
         self.ids_a_considerar = ids_a_considerar
 
+        self.cache_opciones = None
+
     @lru_cache(128)
     def cargas_a_considerar_status_filter(self, categoria, prefix='carga__mesa_categoria__'):
         """
@@ -227,14 +229,26 @@ class Sumarizador():
 
         return votos_reportados
 
+    def opciones_dict(self):
+        if self.cache_opciones is None:
+            self.cache_opciones = {
+                opcion.id: opcion
+                for opcion in self.categoria.opciones_actuales(
+                    solo_prioritarias=self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias,
+                    excluir_optativas=True
+                )
+            }
+
+        return self.cache_opciones
+
     def opciones(self):
-        return self.cache_opciones.values()
+        return self.opciones_dict().values()
 
     def get_opcion(self, id_opcion):
-        return self.cache_opciones[id_opcion]
+        return self.opciones_dict()[id_opcion]
 
     def opciones_no_partidarias(self):
-        return self.cache_opciones_no_partidarias
+        return (opcion for opcion in self.opciones() if opcion.partido is None)
 
     def votos_csv_export(self, categoria):
         """
@@ -336,15 +350,5 @@ class Sumarizador():
         Realiza la contabilidad para la categoría, invocando al método ``calcular``.
         """
         self.categoria = categoria
-        self.cache_opciones = {
-            opcion.id: opcion
-            for opcion in self.categoria.opciones_actuales(
-                solo_prioritarias=self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias,
-                excluir_optativas=True
-            )
-        }
-        self.cache_opciones_no_partidarias = (
-            opcion for opcion in self.cache_opciones.values() if opcion.partido is None
-        )
         self.mesas_a_considerar = self.mesas(categoria)
         return Resultados(self.opciones_a_considerar, self.calcular(categoria, self.mesas_a_considerar))
