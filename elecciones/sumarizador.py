@@ -228,10 +228,10 @@ class Sumarizador():
         return votos_reportados
 
     def opciones(self):
-        return self.categoria.opciones_actuales(
-            solo_prioritarias=self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias,
-            excluir_optativas=True
-        )
+        return self.cache_opciones.values()
+
+    def get_opcion(self, id_opcion):
+        return self.cache_opciones[id_opcion]
 
     def opciones_no_partidarias(self):
         return self.categoria.opciones_actuales(excluir_optativas=True).filter(partido__isnull=True)
@@ -282,7 +282,7 @@ class Sumarizador():
         votos_positivos = {}
         votos_no_positivos = {opcion.nombre_corto: 0 for opcion in self.opciones_no_partidarias()}
         for id_opcion, sum_votos in votos_por_opcion:
-            opcion = Opcion.objects.get(id=id_opcion)
+            opcion = self.get_opcion(id_opcion)
             if opcion.partido:
                 # 3.1 Opciones partidarias se agrupan con otras opciones del mismo partido.
                 votos_positivos.setdefault(opcion.partido, {})[opcion] = sum_votos
@@ -336,5 +336,12 @@ class Sumarizador():
         Realiza la contabilidad para la categoría, invocando al método ``calcular``.
         """
         self.categoria = categoria
+        self.cache_opciones = {
+            opcion.id: opcion
+            for opcion in self.categoria.opciones_actuales(
+                solo_prioritarias=self.opciones_a_considerar == OPCIONES_A_CONSIDERAR.prioritarias,
+                excluir_optativas=True
+            )
+        }
         self.mesas_a_considerar = self.mesas(categoria)
         return Resultados(self.opciones_a_considerar, self.calcular(categoria, self.mesas_a_considerar))
