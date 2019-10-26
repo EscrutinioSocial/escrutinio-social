@@ -234,7 +234,7 @@ class Sumarizador():
         return self.cache_opciones[id_opcion]
 
     def opciones_no_partidarias(self):
-        return self.categoria.opciones_actuales(excluir_optativas=True).filter(partido__isnull=True)
+        return self.cache_opciones_no_partidarias
 
     def votos_csv_export(self, categoria):
         """
@@ -343,5 +343,8 @@ class Sumarizador():
                 excluir_optativas=True
             )
         }
+        self.cache_opciones_no_partidarias = (
+            opcion for opcion in self.cache_opciones.values() if opcion.partido is None
+        )
         self.mesas_a_considerar = self.mesas(categoria)
         return Resultados(self.opciones_a_considerar, self.calcular(categoria, self.mesas_a_considerar))
