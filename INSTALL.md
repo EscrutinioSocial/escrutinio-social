@@ -16,6 +16,8 @@ Para lanzar los servicios y la aplicación
 
 ```
 make up
+make shell-app
+root@8e90b4b0175f:/src# python manage.py createcachetable
 ```
 
 Luego podrás ingresar a http://localhost:8000/ y loguearte con `admin` / `admin`. Este usuario, además de ser fiscal (es decir, dataentry), tiene privilegios de superusuario, habilitándolo a subir actas.
