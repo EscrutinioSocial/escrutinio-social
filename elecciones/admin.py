@@ -329,7 +329,7 @@ class AgrupacionCircuitoInline(admin.TabularInline):
 
 
 class AgrupacionCircuitosAdmin(admin.ModelAdmin):
-    search_fields = ['proyeccion', 'nombre']
+    search_fields = ['proyeccion__nombre', 'nombre']
     ordering = ['proyeccion']
     list_filter = ['proyeccion']
     inlines = [AgrupacionCircuitoInline]
