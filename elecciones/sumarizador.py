@@ -224,6 +224,7 @@ class Sumarizador():
             carga__mesa_categoria__mesa__in=Subquery(mesas.values('id')),
             carga__mesa_categoria__categoria=categoria,
             carga__es_testigo__isnull=False,
+            opcion__in=self.opciones(),
             **self.cargas_a_considerar_status_filter(categoria)
         )
 
