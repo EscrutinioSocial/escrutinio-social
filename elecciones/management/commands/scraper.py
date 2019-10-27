@@ -21,7 +21,7 @@ from datetime import datetime, date
 import pytz
 
 
-files_dir = "scraper_data/"
+files_dir = "scraper2019_data/"
 regiones_file = 'regions.json'
 request_url = 'https://resultados.gob.ar/'
 escuelas_url = f"{request_url}assets/data/precincts/"
