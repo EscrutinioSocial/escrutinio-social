@@ -214,11 +214,10 @@ class Proyecciones(Sumarizador):
         )
 
     def coeficientes_para_proyeccion(self):
-        coeficientes = {
+        return {
             id_agrupacion: self.coeficiente_para_proyeccion(id_agrupacion)
             for id_agrupacion in self.agrupaciones_a_considerar()
         }
-        return coeficientes
 
     def votos_por_opcion(self, categoria, mesas):
         """
