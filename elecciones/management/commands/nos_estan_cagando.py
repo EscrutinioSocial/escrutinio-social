@@ -325,9 +325,13 @@ class Command(BaseCommand):
 
         # Nivel de agregación a analizar
         parser.add_argument("--solo_seccion", type=int, dest="solo_seccion",
-                            help="Analizar sólo la sección indicada (default %(default)s).", default=None)
+                            help="Analizar sólo la sección indicada (default %(default)s). "
+                            "Requiere que se indique también el número de distrito.",
+                            default=None)
         parser.add_argument("--solo_circuito", type=int, dest="solo_circuito",
-                            help="Analizar sólo el circuito indicado (default %(default)s).", default=None)
+                            help="Analizar sólo el circuito indicado (default %(default)s)."
+                            "Requiere que se indique también el número de sección y de distrito.",
+                            default=None)
         parser.add_argument("--solo_distrito", type=int, dest="solo_distrito",
                             help="Analizar sólo el distrito indicado (default %(default)s).", default=None)
         parser.add_argument("--categoria", type=str, dest="categoria",
@@ -350,11 +354,11 @@ class Command(BaseCommand):
         parser.add_argument("--verbose",
                             type=int, dest="verbose_level",
                             default=0,
-                            help="Indica mostrar mensajes de lo que se va analizando si no se encuentran errores."
-                            "0: no se muestra nada"
-                            "1: se muestra el avance a nivel distrito"
-                            "2: se muestra el avance a nivel sección"
-                            ">3: se muestra el avance a nivel circuito"
+                            help="Indica mostrar mensajes de lo que se va analizando si no se encuentran errores. "
+                            "0=no se muestra nada. "
+                            "1=se muestra el avance a nivel distrito. "
+                            "2=se muestra el avance a nivel sección. "
+                            ">3=se muestra el avance a nivel circuito"
                             )
 
     def handle(self, *args, **kwargs):
