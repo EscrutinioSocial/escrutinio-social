@@ -20,7 +20,7 @@ from elecciones.models import (
 from datetime import datetime, date
 import pytz
 
- 
+
 files_dir = "scraper_data/"
 regiones_file = 'regions.json'
 request_url = 'https://resultados.gob.ar/'
@@ -31,7 +31,7 @@ authorization_header = 'Bearer 31d15a'
 escuela_file = files_dir + 'doc/escuelas/' + '1_1_1_1.json'
 mesa_file = files_dir + 'doc/mesas/' + '1_1_1_1.json'
 regiones_test_file = 'doc/regions_test.json'
-clave_json_agrupacion = 'pc' 
+clave_json_agrupacion = 'pc'
 clave_json_cant_votos = 'v'
 clave_json_blancos_nulos = 'cn'
 clave_json_cant_blancos_nulos = 'cv'
@@ -46,7 +46,7 @@ PARAMS = {'key': API_KEY}
 
 
 class Command(BaseCommand):
-    
+
     help = "Scrapear el sitio oficial"
 
     escuelas_bajadas = {}
@@ -68,36 +68,36 @@ class Command(BaseCommand):
         return self.get_opcion(settings.CODIGO_PARTIDO_ELLOS, categoria)
 
     #----------------------------------------------------------#
-    # Para testing 
+    # Para testing
     #----------------------------------------------------------#
     def cargar_escuela_prueba(self):
         with open(escuela_file) as escuela_prueba:
             return json.load(escuela_prueba)
- 
+
     def cargar_mesa_prueba(self):
         with open(mesa_file) as mesa_prueba:
             return json.load(mesa_prueba)
 
     #----------------------------------------------------------#
-    # Hasta aca Para testing 
+    # Hasta aca Para testing
     #----------------------------------------------------------#
 
     # Toma un $value1['distrito'] . $value1['seccion'] . $value1['circuito']  y devuelve si corresponde o no.
     def pasa_filtros_circuitos(self, circuito, kwargs):
         # Las escuelas hay que buscarlas siempre, salvo que ya esté completo el envío de esas mesas....
         # Puedo hacerlo con evaluación lazy ?
-        if (kwargs['pais']): 
-            return True # Si es el país no sigo viendo nada
+        if kwargs['pais']:
+            return True  # Si es el país no sigo viendo nada
         else:
             ret = True
-            if (kwargs['distrito'] is not None): # Si no ponen pais y no ponen nada, tomamos como que es pais.
+            if kwargs['distrito'] is not None:  # Si no ponen pais y no ponen nada, tomamos como que es pais.
                 ret = ret and (int(kwargs["distrito"]) == int(circuito["distrito"]))
                 if(kwargs['seccion'] is not None):
                     ret = ret and (int(kwargs["seccion"]) == int(circuito["seccion"]))
                     if (kwargs['circuito'] is not None):
                         # print (f'{kwargs["circuito"]}- {circuito["circuito"]}')
                         ret = ret and (kwargs["circuito"] == circuito["circuito"])
-        return ret 
+        return ret
 
     def cargar_circuitos(self):
         self.circuitos = []
@@ -108,7 +108,7 @@ class Command(BaseCommand):
         with open(regiones) as json_file:
             valores = json.load(json_file)
             for value in valores:
-                if(value['tp'] == 'R' and value['l'] == 4): # OJO: en el original estaba como value['TP'], pero veo  el regions en minúsculas
+                if value['tp'] == 'R' and value['l'] == 4:  # OJO: en el original estaba como value['TP'], pero veo  el regions en minúsculas
                     circuito = {}
                     circuito['distrito'] = value['cc'][:2]
                     circuito['seccion'] = value['cc'][2:5]
@@ -122,7 +122,7 @@ class Command(BaseCommand):
         self.status("Cargando escuelas:...")
         self.escuelas_bajadas = {}
         for circuito in self.circuitos:
-            if (self.pasa_filtros_circuitos(circuito, kwargs)):
+            if self.pasa_filtros_circuitos(circuito, kwargs):
                 self.status(f"Se buscan las escuelas de distrito: {circuito['distrito']}, seccion: {circuito['seccion']}, circuito: {circuito['circuito']}\n")
                 # FIXME, esto es feo porque busca descargar todas las escuelas. Habría que filtrar las que ya visitamos segun timestamp o algo asi. Pero necesitamos el file de ejemplo a ver si hay ese dato
                 for id_escuela in circuito['escuelas']:
@@ -152,22 +152,22 @@ class Command(BaseCommand):
         self.status(f"descargando escuela: {url}\n")
         if (self.test):
             return self.cargar_escuela_prueba()
-            
+
         return self.descargar_json(url)
 
     def descargar_json(self, url):
-        self.status(f"por descargar json de: {url}")  
+        self.status(f"por descargar json de: {url}")
         headers = {}
         headers['Content-type'] = 'application/json'
-        headers['Authorization'] = authorization_header 
-        
-        self.status(f"heades a enviar: {headers}")  
+        headers['Authorization'] = authorization_header
+
+        self.status(f"heades a enviar: {headers}")
         resp = requests.get(
             url,
-            headers = headers
+            headers=headers
         )
-    
-        self.status(f"obtenido del get: {resp}")  
+
+        self.status(f"obtenido del get: {resp}")
         # FIXME: Ver bien cómo viene esta respuesta y que sea lo que quieren el resto. Por ahora tira un 200 solamente y no un json
         return json.loads(resp.text)
 
@@ -175,7 +175,7 @@ class Command(BaseCommand):
     def mesa_sin_resultado_oficial(self, distrito, seccion, nro_mesa):
         # FIXME: TODO: Esto es horrible
         # Las voy a sacar cuando guarde y luego al volver a cargar el command no van a volver a aparecer
-        
+
         clave_mesa = self.get_clave_mesa(distrito, seccion, nro_mesa)
         return clave_mesa in self.mesas_sistema_sin_carga
 
@@ -188,33 +188,32 @@ class Command(BaseCommand):
                 seccion = int(valor_mesa['cc'][2:5])
                 nro_mesa = int(valor_mesa['cc'][5:11])
                 # Si estoy en modo test va a bajar siempre la misma escuela (aunque piense que son distintas) y entonces esto se a a repetir
-                if(self.mesa_sin_resultado_oficial(distrito, seccion, nro_mesa)):
-                    mesa = {} 
+                if self.mesa_sin_resultado_oficial(distrito, seccion, nro_mesa):
+                    mesa = {}
                     self.status(f"{distrito} - {seccion} - {id_escuela} - {nro_mesa}")
                     mesa['id'] = valor_mesa['c']
-                    mesa['distrito'] = distrito 
-                    mesa['seccion'] = seccion 
-                    mesa['nro_mesa'] = nro_mesa 
+                    mesa['distrito'] = distrito
+                    mesa['seccion'] = seccion
+                    mesa['nro_mesa'] = nro_mesa
                     mesa['url'] = valor_mesa['rf']
                     datos = self.descargar_json_mesa(mesa['url'])
                     mesa['votos'] = datos['rp']
-                    mesa['votos_extra'] = datos['ct'] # Datos de blancos, impugnados, etc.
+                    mesa['votos_extra'] = datos['ct']  # Datos de blancos, impugnados, etc.
                     '''
                     - cc son los cargos.
                     - pc es el partido
                     - v votos
                     - tot: totales
                     '''
-                    self.mesas[f"{distrito}{seccion}{nro_mesa}"] = mesa # Para buscarla despues
+                    self.mesas[f"{distrito}{seccion}{nro_mesa}"] = mesa  # Para buscarla despues
 
     def descargar_json_mesa(self, url):
         # https://resultados.gob.ar/assets/data/totalized_results/precincts/80/80443.json
-        url = f"{mesas_url}{url}" # https://resultados.gob.ar/assets/data/totalized_results/$url
+        url = f"{mesas_url}{url}"  # https://resultados.gob.ar/assets/data/totalized_results/$url
         if (self.test):
             self.status(f"Usando json de mesa: {url}")
             return self.cargar_mesa_prueba()
         return self.descargar_json(url)
-
 
     def status(self, texto):
         self.stdout.write(f"{texto}")
@@ -276,7 +275,7 @@ class Command(BaseCommand):
     # en el json busca los votos segun el dato pasado
     def parse_voto_web(self, datos_mesa_web, key_array, id_cat_ellos, key_dato, id_dato, key_valor):
         print(datos_mesa_web)
-        datos = datos_mesa_web[key_array] # El array donde estan los datos (rp o st)
+        datos = datos_mesa_web[key_array]  # El array donde estan los datos (rp o st)
         for resultado in datos:
             if (resultado[key_categorias] == id_cat_ellos) and (resultado[key_dato] == id_dato):
                 return resultado[key_valor]
@@ -304,14 +303,13 @@ class Command(BaseCommand):
         opcion_nulos = Opcion.nulos()
         opcion_total = Opcion.total_votos()
 
-
         try:
             distrito = Distrito.objects.get(numero=nro_distrito)
             seccion = Seccion.objects.get(numero=nro_seccion, distrito=distrito)
             circuito = Circuito.objects.get(numero=nro_circuito, seccion=seccion)
             mesa = Mesa.objects.get(numero=nro_mesa, circuito=circuito)
             mesa_categoria = MesaCategoria.objects.get(mesa=mesa, categoria=categoria)
-            opciones_votos = [opcion_nosotros, opcion_ellos] 
+            opciones_votos = [opcion_nosotros, opcion_ellos]
             opciones_blanco_nulos = [opcion_blancos, opcion_nulos, opcion_total]
             with transaction.atomic():
                 carga = Carga.objects.create(
@@ -351,7 +349,7 @@ class Command(BaseCommand):
             today = datetime.today().replace(tzinfo=tz)
             print(today)
             print(today.strftime('%d/%m/%Y %H:%M:%S'))
-            ultima_guardada_con_exito = today #today.strftime('%d/%m/%Y %H:%M:%S')
+            ultima_guardada_con_exito = today  #today.strftime('%d/%m/%Y %H:%M:%S')
 
         except Distrito.DoesNotExist:
             self.warning(f'No existe el distrito {nro_distrito}')
@@ -375,49 +373,49 @@ class Command(BaseCommand):
             # FIXME TODO: Poner el map para las categorias, o directo repetir como aca :)
             # Guardo votos para Presidente
             self.guardar_voto(
-                    datos_mesa_web, 
-                    datos_mesa_sistema["distrito"],
-                    datos_mesa_sistema["seccion"],
-                    datos_mesa_sistema["circuito"],
-                    datos_mesa_sistema["nro_mesa"],
-                    self.ids["id_cat_presidente"],
-                    self.ids["slug_cat_presidente_nuestro"],
-                    self.ids["id_agrupacion_ellos_presidente"],
-                    self.ids["id_agrupacion_nosotros_presidente"]
+                datos_mesa_web,
+                datos_mesa_sistema["distrito"],
+                datos_mesa_sistema["seccion"],
+                datos_mesa_sistema["circuito"],
+                datos_mesa_sistema["nro_mesa"],
+                self.ids["id_cat_presidente"],
+                self.ids["slug_cat_presidente_nuestro"],
+                self.ids["id_agrupacion_ellos_presidente"],
+                self.ids["id_agrupacion_nosotros_presidente"]
             )
-             
+
         return
 
     # Carga las mesas_categoria del sistema que no tengan datos oficiales. Nos interesa solo presidente y gobernador
     def agregar_mesa_categoria_a_mesas_sin_cargar(self, mesas_categoria_sistema):
         self.status("Mesas categoria: distrito - seccion - circuito - nro_mesa")
         for mesa_categoria in mesas_categoria_sistema:
-            # Paso a int para no tener problemas luego con diferencias entre las bases 
+            # Paso a int para no tener problemas luego con diferencias entre las bases.
             distrito = int(mesa_categoria.mesa.circuito.seccion.distrito.numero)
-            seccion =  int(mesa_categoria.mesa.circuito.seccion.numero)
+            seccion = int(mesa_categoria.mesa.circuito.seccion.numero)
             circuito = mesa_categoria.mesa.circuito.numero
             nro_mesa = int(mesa_categoria.mesa.numero)
             self.status(f'{distrito} - {seccion} - {circuito} - {mesa_categoria.mesa.numero}')
             clave_mesa = self.get_clave_mesa(distrito, seccion, nro_mesa)
             self.mesas_sistema_sin_carga[clave_mesa] = {}
-            self.mesas_sistema_sin_carga[clave_mesa]["circuito"] = circuito 
-            self.mesas_sistema_sin_carga[clave_mesa]["seccion"] = seccion 
-            self.mesas_sistema_sin_carga[clave_mesa]["distrito"] = distrito 
+            self.mesas_sistema_sin_carga[clave_mesa]["circuito"] = circuito
+            self.mesas_sistema_sin_carga[clave_mesa]["seccion"] = seccion
+            self.mesas_sistema_sin_carga[clave_mesa]["distrito"] = distrito
             self.mesas_sistema_sin_carga[clave_mesa]["nro_mesa"] = nro_mesa
 
     def cargar_mesas_sistema(self):
         # Busco quedarme solo con mesas que no tengan mesa categoria con datos oficiales. Total si no tienen una categoria, no tienen ninguna. Me fijo categoria presidente por las dudas. 
         # FIXME TODO: Ver como hacer un OR
         # FIXME TODO: Deberiamos aca meter los filtros y algún criterio de prioridad
-        self.mesas_sistema_sin_carga = {} 
+        self.mesas_sistema_sin_carga = {}
         categoria = Categoria.objects.get(slug=self.ids["slug_cat_presidente_nuestro"])
         mesas_categoria_sistema = MesaCategoria.objects.filter(
-                                        categoria=categoria,
-                                        carga_oficial__isnull=True
-                                    )
+            categoria=categoria,
+            carga_oficial__isnull=True
+        )
 
         self.agregar_mesa_categoria_a_mesas_sin_cargar(mesas_categoria_sistema)
-        return 
+        return
 
     def handle(self, *args, **kwargs):
         with open(local_confs_url) as ids_file:
