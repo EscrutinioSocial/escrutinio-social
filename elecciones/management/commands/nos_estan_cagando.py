@@ -3,7 +3,7 @@ import math
 from django.core.management.base import BaseCommand
 
 from elecciones.models import Distrito, Seccion, Circuito, Eleccion, Categoria, Mesa, Partido, MesaCategoria, TIPOS_DE_AGREGACIONES, NIVELES_DE_AGREGACION, OPCIONES_A_CONSIDERAR
-from elecciones.resultados import Sumarizador
+from elecciones.sumarizador import Sumarizador
 from escrutinio_social import settings
 
 
