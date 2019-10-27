@@ -109,6 +109,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
+        try:
+            self.procesar()
+        except KeyboardInterrupt:
+            pass  # Nos bancamos que corten en silencio.
+
+    def procesar(self):
 
         reader = DictReader(self.CSV.open())
 
