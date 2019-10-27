@@ -32,6 +32,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         cant_por_iteracion = options['cant']
-        while True:
-            consolidador(cant_por_iteracion)
-            time.sleep(settings.PAUSA_CONSOLIDACION)
+        finalizar = False
+        while not finalizar:
+            try:
+                consolidador(cant_por_iteracion)
+                time.sleep(settings.PAUSA_CONSOLIDACION)
+            except KeyboardInterrupt:
+                finalizar = True

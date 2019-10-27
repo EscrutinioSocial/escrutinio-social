@@ -1,0 +1,28 @@
+{
+	"id_agrupacion_nosotros_presidente":73,
+	"id_agrupacion_ellos_presidente":3,
+	"id_agrupacion_nosotros_gob":0,
+	"id_agrupacion_ellos_gob":0,
+	"id_agrupacion_nosotros_jefe_gobierno":124,
+	"id_agrupacion_ellos_jefe_gobierno":166,
+	"id_agrupacion_nosotros_senadores_nacionales":124,
+	"id_agrupacion_ellos_senadores_nacionales":166,
+	"id_agrupacion_nosotros_diputados_nacionales":124,
+	"id_agrupacion_ellos_diputados_nacionales":166,
+	"id_blancos":"VB",
+	"id_nulos":"VN",
+	"id_recurridos":"VR",
+	"id_total":"TOTAL",
+	"id_votos_impugnados":"VII",
+	"id_cat_presidente":342,
+	"id_cat_gobernador":0,
+	"id_cat_jefe_de_gobierno":387,
+	"id_cat_senadores_nacionales":388,
+	"id_cat_diputados_nacionales":348,
+        "slug_cat_presidente_nuestro":"PV",
+        "slug_cat_gobernador_nuestro":"GB_PBA",
+        "slug_cat_jefe_de_gobierno_nuestro":"Jefe Gob",
+        "slug_cat_senadores_nacionales_nuestro":"Sen Nac",
+        "slug_cat_diputados_nacionales_nuestro":"Dip Nac"
+
+}
