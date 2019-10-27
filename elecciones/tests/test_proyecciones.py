@@ -1,5 +1,5 @@
 from django.urls import reverse
-from elecciones.models import Categoria, Carga, Seccion, Opcion
+from elecciones.models import Categoria, Carga, Seccion, Opcion, CategoriaOpcion
 
 from .factories import (
     CategoriaFactory,
@@ -38,6 +38,10 @@ def test_resultados_proyectados(fiscal_client):
     m3 = ms3[0]
 
     categoria = Categoria.objects.get()
+
+    # Esto no debería ser necesario si configuramos correctamente las opciones prioritarias en carta_marina
+    CategoriaOpcion.objects.filter(categoria=categoria).update(prioritaria=True)
+
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
 
