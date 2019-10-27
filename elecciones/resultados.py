@@ -188,7 +188,7 @@ class Resultados(ResultadosBase):
             )
         else:
             nombre_opcion_total = Opcion.total_votos().nombre_corto
-            total = self.resultados.votos_no_positivos[nombre_opcion_total]
+            total = self.resultados.votos_no_positivos.get(nombre_opcion_total, 0)
             total_no_positivos = self.total_no_positivos()
             total_positivos = max(total - total_no_positivos, 0)
 
