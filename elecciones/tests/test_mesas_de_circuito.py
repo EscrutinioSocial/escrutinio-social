@@ -8,6 +8,7 @@ from elecciones.models import (
     MesaCategoria,
     Carga,
     Opcion,
+    CategoriaOpcion,
     OPCIONES_A_CONSIDERAR,
 )
 from elecciones.tests.factories import (
@@ -131,6 +132,10 @@ def test_mesa_de_circuito__url_mesa_con_resultados(carta_marina, fiscal_client):
     # resultados para mesa 1
     mesa1, *otras_mesas = carta_marina
     categoria = mesa1.categorias.get()  # sólo default
+  
+    # Esto no debería ser necesario si configuramos correctamente las opciones prioritarias en carta_marina
+    CategoriaOpcion.objects.filter(categoria=categoria).update(prioritaria=True)
+
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
     # la opción 4 pasa a ser del mismo partido que la 1
