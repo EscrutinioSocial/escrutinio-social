@@ -2,7 +2,9 @@ from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
 from http import HTTPStatus
-from elecciones.models import Categoria, MesaCategoria, Carga, Seccion, Opcion, OPCIONES_A_CONSIDERAR
+from elecciones.models import (
+    Categoria, MesaCategoria, Carga, Seccion, Opcion, CategoriaOpcion, OPCIONES_A_CONSIDERAR
+)
 
 from .factories import (
     UserFactory,
@@ -124,8 +126,13 @@ def test_resultados_parciales_generales(carta_marina, url_resultados, fiscal_cli
     # resultados para mesa 1
     m1, m2, m3, *otras_mesas = carta_marina
     categoria = m1.categorias.get()  # sólo default
+
+    # Esto no debería ser necesario si configuramos correctamente las opciones prioritarias en carta_marina
+    CategoriaOpcion.objects.filter(categoria=categoria).update(prioritaria=True)
+
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
+
     # la opción 4 pasa a ser del mismo partido que la 1
     o4.partido = o1.partido
     o4.save()
@@ -264,6 +271,10 @@ def test_resultados_parciales_paso(carta_marina, url_resultados, fiscal_client):
     # resultados para mesa 1
     m1, m2, m3, *otras_mesas = carta_marina
     categoria = m1.categorias.get()  # sólo default
+
+    # Esto no debería ser necesario si configuramos correctamente las opciones prioritarias en carta_marina
+    CategoriaOpcion.objects.filter(categoria=categoria).update(prioritaria=True)
+
     # opciones a partido
     o1, o2, o3, o4 = categoria.opciones.filter(partido__isnull=False)
     # la opción 4 pasa a ser del mismo partido que la 1
@@ -455,6 +466,10 @@ def test_solo_total_confirmado_y_sin_confirmar(carta_marina, url_resultados, fis
 def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     m1, _, m3, *_ = carta_marina
     categoria = m1.categorias.get()
+
+    # Esto no debería ser necesario si configuramos correctamente las opciones prioritarias en carta_marina
+    CategoriaOpcion.objects.filter(categoria=categoria).update(prioritaria=True)
+
     # opciones a partido
     blanco = Opcion.blancos()
     total_votos = Opcion.total_votos()
@@ -567,6 +582,9 @@ def test_siguiente_accion_cargar_acta(client, setup_groups, settings):
 def test_resultados_no_positivos(fiscal_client):
     o1, o2 = OpcionFactory.create_batch(2)
     e1 = CategoriaFactory(opciones=[o1, o2])
+
+    # Esto no debería ser necesario si configuramos correctamente las opciones prioritarias en carta_marina
+    CategoriaOpcion.objects.filter(categoria=e1).update(prioritaria=True)
 
     opcion_blanco = Opcion.blancos()
     opcion_total = Opcion.total_votos()
