@@ -1,4 +1,5 @@
 import structlog
+import time
 
 from csv import DictReader
 from adjuntos.models import Attachment
@@ -109,10 +110,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
-        try:
-            self.procesar()
-        except KeyboardInterrupt:
-            pass  # Nos bancamos que corten en silencio.
+        terminar = False
+        while not terminar:
+            try:
+                self.procesar()
+                time.sleep(60)
+            except KeyboardInterrupt:
+                terminar = True
 
     def procesar(self):
 
