@@ -47,7 +47,7 @@ class Command(BaseCommand):
 
         if cant_mesas_existentes >= cant_mesas_necesarias:
             self.log(f"Circuito {circuito} no necesita mesas.")
-            return
+            return lugar_en_cola
 
         # Tengo que priorizar.
         cant_necesarias = cant_mesas_necesarias - cant_mesas_existentes
