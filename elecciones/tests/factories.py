@@ -73,10 +73,7 @@ class CategoriaFactory(DjangoModelFactory):
             if created:
                 opcion.nombre = opcion.nombre_corto
                 opcion.save(update_fields=['nombre'])
-            defaults = {
-                'orden': orden,
-                'prioritaria': opcion.nombre_corto in Opcion.opciones_no_partidarias_obligatorias()
-            }
+            defaults = {'orden': orden}
             CategoriaOpcion.objects.get_or_create(categoria=self, opcion=opcion, defaults=defaults)
             orden += 1
 
