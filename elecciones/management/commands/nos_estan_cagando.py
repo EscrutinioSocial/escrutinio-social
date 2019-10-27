@@ -222,7 +222,7 @@ class Command(BaseCommand):
             self.umbral_analisis_estadisticos / 100.0 * total_mesas_del_circuito)
 
         if not umbral_mesas_superado:
-            self.warning(f"No se superó el umbral de mesas listas en circuito {circuito.numero} "
+            self.warning(f"No se superó el umbral de mesas listas en circuito {circuito.numero} ({circuito.seccion.distrito}) "
                          f"(sólo {cant_mesas_listas} de {total_mesas_del_circuito}).")
             return
 
@@ -265,15 +265,26 @@ class Command(BaseCommand):
     def analizar_seccion(self, seccion):
         for circuito in seccion.circuitos.all():
             self.analizar_circuito(circuito)
+            if self.verbose_level >= 3:
+                self.status_green(f'Sin inconvenientes en el circuito {circuito}')
 
     def analizar_distrito(self, distrito):
-        for seccion in distrito.secciones.all():
+        for seccion in distrito.secciones.extra(
+                select={'orden': 'CAST(numero AS INTEGER)'}
+        ).order_by('orden'):
             self.analizar_seccion(seccion)
+            if self.verbose_level >= 2:
+                self.status_green(f'Sin inconvenientes en la sección {seccion}')
+
 
     def analizar_pais(self):
-        distritos = Distrito.objects.all()
+        distritos = Distrito.objects.extra(
+            select={'orden': 'CAST(numero AS INTEGER)'}
+        ).order_by('orden')
         for distrito in distritos:
             self.analizar_distrito(distrito)
+            if self.verbose_level >= 1:
+                self.status_green(f'Sin inconvenientes en el distrito {distrito}')
 
     def add_arguments(self, parser):
         # Opciones para comparar fraude
@@ -314,9 +325,13 @@ class Command(BaseCommand):
 
         # Nivel de agregación a analizar
         parser.add_argument("--solo_seccion", type=int, dest="solo_seccion",
-                            help="Analizar sólo la sección indicada (default %(default)s).", default=None)
+                            help="Analizar sólo la sección indicada (default %(default)s). "
+                            "Requiere que se indique también el número de distrito.",
+                            default=None)
         parser.add_argument("--solo_circuito", type=int, dest="solo_circuito",
-                            help="Analizar sólo el circuito indicado (default %(default)s).", default=None)
+                            help="Analizar sólo el circuito indicado (default %(default)s)."
+                            "Requiere que se indique también el número de sección y de distrito.",
+                            default=None)
         parser.add_argument("--solo_distrito", type=int, dest="solo_distrito",
                             help="Analizar sólo el distrito indicado (default %(default)s).", default=None)
         parser.add_argument("--categoria", type=str, dest="categoria",
@@ -334,6 +349,18 @@ class Command(BaseCommand):
                             default=TIPOS_DE_AGREGACIONES.solo_consolidados
                             )
 
+
+        # Dependiendo de la ansiedad podemos ir viendo qué se hace.
+        parser.add_argument("--verbose",
+                            type=int, dest="verbose_level",
+                            default=0,
+                            help="Indica mostrar mensajes de lo que se va analizando si no se encuentran errores. "
+                            "0=no se muestra nada. "
+                            "1=se muestra el avance a nivel distrito. "
+                            "2=se muestra el avance a nivel sección. "
+                            ">3=se muestra el avance a nivel circuito"
+                            )
+
     def handle(self, *args, **kwargs):
         """
         """
@@ -346,7 +373,8 @@ class Command(BaseCommand):
         self.umbral_mesas_ganadas = kwargs['umbral_mesas_ganadas']
 
         self.tipo_de_agregacion = kwargs['tipo_de_agregacion']
-
+        self.verbose_level = kwargs['verbose_level']
+        
         nombre_categoria = kwargs['categoria']
         self.categoria = Categoria.objects.get(slug=nombre_categoria)
         print("Vamos a analizar la categoría:", self.categoria)
