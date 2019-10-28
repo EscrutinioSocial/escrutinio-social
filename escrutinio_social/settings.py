@@ -72,7 +72,8 @@ INSTALLED_APPS = [
     'dal',
     'dal_select2',
 
-    # nuestras apps
+    # nuestras apps,
+    'background',
     'fiscales.apps.FiscalesAppConfig',  # Hay que ponerlo así para que cargue el app_ready()
     'elecciones.apps.EleccionesAppConfig',
     'adjuntos',
@@ -570,3 +571,5 @@ if DEBUG and USAR_DJANGO_DEBUG_TOOLBAR:
 
 
 OCULTAR_CANTIDADES_DE_ELECTORES = False
+
+DEFAULT_BACKGROUND_IMAGE = 'img/default_background.jpg'   # relativo a static

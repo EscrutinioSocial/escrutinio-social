@@ -1,11 +1,14 @@
 {% extends "material/frontend/base_lockscreen.html" %}
-{% load i18n material_form static %}
+{% load i18n material_form static background_tags %}
 
 {% block title %}{% trans 'Log in' %} - {{ block.super }}{% endblock %}
 
 {% block main %}
-<div class="registration" {# style="background:url({% static 'img/background.png' %})" #}>
-    <div class="sidebar z-depth-3">
+
+{% background_image_url as background %}
+
+<div class="registration" {% if background %}style="background:url({{background}})" {% endif %}>
+    <div class="sidebar z-depth-3" {% if background %}style="opacity: 0.70;"{% endif %}>
         <h4>{% block page_title %}{{ block.super }}{% endblock %}</h4>
 
         {% block content %}
