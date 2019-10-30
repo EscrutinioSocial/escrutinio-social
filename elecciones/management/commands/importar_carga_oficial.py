@@ -55,7 +55,7 @@ class Command(BaseCommand):
         for linea, row in enumerate(reader, 1):
             nro_distrito = int(row['distrito'])
             nro_seccion = int(row['seccion'])
-            nro_circuito = int(row['circuito'])
+            nro_circuito = row['circuito'].strip()
             nro_mesa = int(row['mesa'])
             cant_blanco = int(row['blanco'])
             cant_nulos = int(row['nulo'])
