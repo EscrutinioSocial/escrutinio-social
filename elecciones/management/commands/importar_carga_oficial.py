@@ -96,8 +96,8 @@ class Command(BaseCommand):
             cant_blanco = int(row['blanco'])
             cant_nulos = int(row['nulo'])
             total_votos = int(row['total_electores'])
-            cant_nosotros = int(row['vot_macri'])
-            cant_ellos = int(row['vot_alferdez'])
+            cant_nosotros = int(row['vot_alferdez'])
+            cant_ellos = int(row['vot_macri'])
 
             mesa = self.get_mesa(nro_distrito, nro_seccion, nro_circuito, nro_mesa)
             if not mesa:
