@@ -119,8 +119,6 @@ class Command(BaseCommand):
         if votos_nuestros_correo == 0:
             self.alerta_mesa(mesa, "La carga oficial reporta 0 votos nuestros")
 
-    return
-
     def get_votos_nuestros_carga(self, carga):
         return self.get_votos_en_carga(carga, self.partido_fdt)
 
@@ -393,7 +391,7 @@ class Command(BaseCommand):
 
         self.tipo_de_agregacion = kwargs['tipo_de_agregacion']
         self.verbose_level = kwargs['verbose_level']
-        
+
         nombre_categoria = kwargs['categoria']
         self.categoria = Categoria.objects.get(slug=nombre_categoria)
         print("Vamos a analizar la categoría:", self.categoria)
