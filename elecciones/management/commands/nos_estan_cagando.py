@@ -106,10 +106,10 @@ class Command(BaseCommand):
         if carga_testigo.firma == carga_correo.firma:
             return
 
-        votos_nuestros_testigo = self.get_votos_nuestros(carga_testigo)
-        votos_ellos_testigo = self.get_votos_ellos(carga_testigo)
-        votos_nuestros_correo = self.get_votos_nuestros(carga_correo)
-        votos_ellos_correo = self.get_votos_ellos(carga_correo)
+        votos_nuestros_testigo = self.get_votos_nuestros_carga(carga_testigo)
+        votos_ellos_testigo = self.get_votos_ellos_carga(carga_testigo)
+        votos_nuestros_correo = self.get_votos_nuestros_carga(carga_correo)
+        votos_ellos_correo = self.get_votos_ellos_carga(carga_correo)
 
         if not (votos_nuestros_testigo >= votos_ellos_testigo and 
             votos_nuestros_correo < votos_ellos_correo):
