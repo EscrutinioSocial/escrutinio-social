@@ -399,7 +399,10 @@ class Command(BaseCommand):
         print("Vamos a analizar la categoría:", self.categoria)
 
         self.asignar_nivel_agregacion(kwargs)
-        self.analizar_segun_nivel_agregacion()
+        try:
+            self.analizar_segun_nivel_agregacion()
+        except KeyboardInterrupt:
+            pass  # Vale Ctrl-C.
 
     def analizar_segun_nivel_agregacion(self):
         if self.circuito:
