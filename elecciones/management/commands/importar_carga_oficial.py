@@ -11,6 +11,18 @@ from django.conf import settings
 class Command(BaseCommand):
     help = "Importa la carga oficial."
 
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+
+        # Categoria
+        parser.add_argument(
+            "--categoria",
+            type=str,
+            dest="categoria",
+            help="Categoría (slug) de los votos a cargar",
+            default=settings.SLUG_CATEGORIA_PRESI_Y_VICE
+        )
+
     def get_mesa(self, nro_distrito, nro_seccion, nro_circuito, nro_mesa):
         try:
             mesa = Mesa.objects.get(
@@ -24,9 +36,19 @@ class Command(BaseCommand):
 
         return mesa
 
+    def get_mesa_categoria(self, mesa, categoria):
+        try:
+            return MesaCategoria.objects.get(
+                mesa=mesa,
+                categoria=categoria
+            )
+        except MesaCategoria.DoesNotExist:
+            self.warning(f"No existe la MesaCategoria para la mesa {mesa.numero} en el circuito {mesa.circuito}, la sección {mesa.seccion} y el distrito {mesa.distrito}")
+            return None
+
     def handle(self, *args, **options):
         super().handle(*args, **options)
-        self.procesar()
+        self.procesar(**options)
 
     def armar_voto(self, opcion, carga, votos):
         return VotoMesaReportado(
@@ -35,12 +57,11 @@ class Command(BaseCommand):
             carga=carga
         )
 
-    def procesar(self):
+    def procesar(self, **options):
 
         reader = DictReader(self.CSV.open())
 
-        nuevas = []
-        categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_GOB_Y_VICE_PBA)
+        categoria = Categoria.objects.get(slug=options['categoria'])
         opcion_nosotros = CategoriaOpcion.objects.get(
             categoria=categoria,
             opcion__partido__codigo=settings.CODIGO_PARTIDO_NOSOTROS,
@@ -53,6 +74,21 @@ class Command(BaseCommand):
         fiscal = Fiscal.objects.get(id=1)
 
         for linea, row in enumerate(reader, 1):
+            # Estas líneas son para importar los datos de gobernador
+            # el csv viene con espacios en los nombres de columna
+
+            # nro_distrito = int(row['distrito '])
+            # nro_seccion = int(row[' seccion '])
+            # nro_circuito = row[' circuito '].strip().lstrip('0')
+            # nro_mesa = int(row[' mesa '])
+            # cant_blanco = int(row[' blanco '])
+            # cant_nulos = int(row[' nulo '])
+            # total_votos = int(row[' total_electores '])
+            # cant_nosotros = int(row[' vot_kicilove '])
+            # cant_ellos = int(row[' vot_vidal'])
+
+            # Las columnas de presidente no tienen espacios, 
+            # pero tal vez haya que corregir cambiar macri por alferdez.
             nro_distrito = int(row['distrito'])
             nro_seccion = int(row['seccion'])
             nro_circuito = row['circuito'].strip().lstrip('0')
@@ -60,34 +96,38 @@ class Command(BaseCommand):
             cant_blanco = int(row['blanco'])
             cant_nulos = int(row['nulo'])
             total_votos = int(row['total_electores'])
-            cant_nosotros = int(row['vot_kicilove'])
-            cant_ellos = int(row['vot_kicilove'])
+            cant_nosotros = int(row['vot_macri'])
+            cant_ellos = int(row['vot_alferdez'])
 
             mesa = self.get_mesa(nro_distrito, nro_seccion, nro_circuito, nro_mesa)
-
             if not mesa:
-            	continue
+                continue
 
-            mesa_categoria = MesaCategoria.objects.get(
-                mesa=mesa,
-                categoria=categoria
-            )
+            mesa_categoria = self.get_mesa_categoria(mesa, categoria)
+            if not mesa_categoria:
+                continue
 
-            carga = Carga.objects.create(
+            carga, creada = Carga.objects.get_or_create(
                 mesa_categoria=mesa_categoria,
                 tipo=Carga.TIPOS.parcial_oficial,
                 fiscal=fiscal,
                 origen=Carga.SOURCES.web
             )
 
-            votos = []
-            votos.append(self.armar_voto(Opcion.blancos(), carga, cant_blanco))
-            votos.append(self.armar_voto(Opcion.nulos(), carga, cant_nulos))
-            votos.append(self.armar_voto(Opcion.total_votos(), carga, total_votos))
-            votos.append(self.armar_voto(opcion_nosotros, carga, cant_nosotros))
-            votos.append(self.armar_voto(opcion_ellos, carga, cant_ellos))
-            VotoMesaReportado.objects.bulk_create(votos)
+            if creada:
+                votos = []
+                votos.append(self.armar_voto(Opcion.blancos(), carga, cant_blanco))
+                votos.append(self.armar_voto(Opcion.nulos(), carga, cant_nulos))
+                votos.append(self.armar_voto(Opcion.total_votos(), carga, total_votos))
+                votos.append(self.armar_voto(opcion_nosotros, carga, cant_nosotros))
+                votos.append(self.armar_voto(opcion_ellos, carga, cant_ellos))
+                VotoMesaReportado.objects.bulk_create(votos)
 
-            carga.actualizar_firma()
-            self.success(f"Insertando votos en mesa {mesa}.")
+                carga.actualizar_firma()
 
+                mesa_categoria.parcial_oficial = carga
+                mesa_categoria.save(update_fields=['parcial_oficial'])
+                self.success(f"Insertando votos en mesa {mesa}.")
+
+            else:
+                self.warning(f"Ignorando votos de mesa {mesa}")
