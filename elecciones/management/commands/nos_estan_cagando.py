@@ -114,7 +114,7 @@ class Command(BaseCommand):
         if not (votos_nuestros_testigo >= votos_ellos_testigo and 
             votos_nuestros_correo < votos_ellos_correo):
             return
-        self.alerta_mesa(mesa, f"Tiene diferencias respecto la carga oficial.\n\tNuestro sistema dice: FdT = {votos_nuestros_testigo}, JpC = {votos_ellos_testigo}.\tEl Correo dice: FdT = {votos_nuestros_correo}, JpC = {votos_ellos_correo}.")
+        self.alerta_mesa(mesa, f"Tiene diferencias respecto la carga oficial.\n\tNosotros decimos:\tFdT = {votos_nuestros_testigo},\tJpC = {votos_ellos_testigo}.\n\tEl Correo dice:\tFdT = {votos_nuestros_correo},\tJpC = {votos_ellos_correo}.")
 
         if votos_nuestros_correo == 0:
             self.alerta_mesa(mesa, "La carga oficial reporta 0 votos nuestros")
