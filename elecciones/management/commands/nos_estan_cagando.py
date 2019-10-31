@@ -90,28 +90,47 @@ class Command(BaseCommand):
         Determina si en alguna mesa nosotros o ellos tiene diferencia con lo informado en el Correo.
         """
         for mesa in mesas:
+            self.comparar_mesa_con_correo(mesa)
 
-            carga_testigo = self.get_carga_testigo(mesa)
-            if not carga_testigo:
-                self.alerta_mesa(mesa, "No existe carga testigo para la mesa")
+    def comparar_mesa_con_correo(self, mesa):
+        carga_testigo = self.get_carga_testigo(mesa)
+        if not carga_testigo:
+            #self.alerta_mesa(mesa, "No existe carga testigo para la mesa")
+            return
 
-            carga_correo = self.get_carga_correo(mesa)
-            if not carga_correo:
-                # TODO preguntar si vale la pena informar esto
-                self.warning_mesa(mesa, f"No existe carga oficial (correo) para la mesa.")
+        carga_correo = self.get_carga_correo(mesa)
+        if not carga_correo:
+            #self.warning_mesa(mesa, f"No existe carga oficial (correo) para la mesa.")
+            return
 
-            if carga_testigo and carga_correo:
-                if carga_testigo.firma != carga_correo.firma:
-                    self.alerta_mesa(mesa, f"Tiene diferencias respecto la carga oficial. Testigo: {carga_testigo.firma}. Correo: {carga_correo.firma}.")
-                    if self.get_votos_nuestros_carga(carga_correo) == 0:
-                        self.alerta_mesa(mesa, "La carga oficial reporta 0 votos nuestros")
+        if carga_testigo.firma == carga_correo.firma:
+            return
 
-        return
+        votos_nuestros_testigo = self.get_votos_nuestros(carga_testigo)
+        votos_ellos_testigo = self.get_votos_ellos(carga_testigo)
+        votos_nuestros_correo = self.get_votos_nuestros(carga_correo)
+        votos_ellos_correo = self.get_votos_ellos(carga_correo)
+
+        if not (votos_nuestros_testigo >= votos_ellos_testigo and 
+            votos_nuestros_correo < votos_ellos_correo):
+            return
+        self.alerta_mesa(mesa, f"Tiene diferencias respecto la carga oficial.\n\tNuestro sistema dice: FdT = {votos_nuestros_testigo}, JpC = {votos_ellos_testigo}.\tEl Correo dice: FdT = {votos_nuestros_correo}, JpC = {votos_ellos_correo}.")
+
+        if votos_nuestros_correo == 0:
+            self.alerta_mesa(mesa, "La carga oficial reporta 0 votos nuestros")
+
+    return
 
     def get_votos_nuestros_carga(self, carga):
-        opcion_votos_nuestros = carga.opcion_votos().filter(opcion__partido=self.partido_fdt)
-        votos_nuestros = [voto for (opcion, voto) in opcion_votos_nuestros][0]
-        return votos_nuestros
+        return self.get_votos_en_carga(carga, self.partido_fdt)
+
+    def get_votos_ellos_carga(self, carga):
+        return self.get_votos_en_carga(carga, self.partido_cambiemos)
+
+    def get_votos_en_carga(self, carga, partido):
+        opcion_votos = carga.opcion_votos().filter(opcion__partido=partido)
+        votos = [voto for (opcion, voto) in opcion_votos][0]
+        return votos
 
     def get_carga_testigo(self, mesa):
         return MesaCategoria.objects.get(
