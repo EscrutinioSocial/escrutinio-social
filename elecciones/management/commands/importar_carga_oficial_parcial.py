@@ -21,7 +21,7 @@ from elecciones.models import (
 )
 
 # If modifying these scopes, delete the file token.pickle.
-API_KEY = '***REMOVED***'
+API_KEY = 'AIzaSyAHcPn8M_6StRv_KtENIp5g56BqgO9sVQU'
 # The ID and range of a sample spreadsheet.
 PARAMS = {'key': API_KEY}
 
