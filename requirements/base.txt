@@ -29,7 +29,7 @@ factory_boy==2.12.0
 Pillow==4.2.1
 git+https://github.com/mgaitan/django-admincommand.git@filefield#egg=django-admincommand
 git+https://github.com/mgaitan/django-sneak.git@#egg=django-sneak
-git+https://github.com/mgaitan/django-versatileimagefield@#egg=django-versatileimagefield
+git+https://github.com/mgaitan/django-versatileimagefield@one-dimension-resize#egg=django-versatileimagefield
 # PR open at https://github.com/pytest-dev/pytest-cov/pull/311
 # pytest-cov==2.7.1
 git+https://github.com/mgaitan/pytest-cov.git@260-cov-fail-under-float
