@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     libproj-dev \
     wget \
+    libmagic1 \
     gdal-bin && rm -rf /var/lib/apt/lists/*
 
 #RUN mkdir /src

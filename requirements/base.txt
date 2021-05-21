@@ -21,14 +21,17 @@ django-summernote==0.8.11.4
 django==2.2.2
 djangoql==0.13.0
 djangorestframework==3.9.4
-djangorestframework_simplejwt==4.3.0
+djangorestframework_simplejwt==4.5.0
+PyJWT==1.7.1   # downgrade because of https://github.com/jazzband/djangorestframework-simplejwt/issues/326
+
 drf-yasg[validation]==1.16.0
 easyimap==0.6.3
 Fabric3==1.14.post1
 factory_boy==2.12.0
 git+https://github.com/mgaitan/django-admincommand.git@filefield#egg=django-admincommand
-git+https://github.com/mgaitan/django-sneak.git@#egg=django-sneak
+git+https://github.com/mgaitan/django-sneak.git@master#egg=django-sneak
 git+https://github.com/mgaitan/django-versatileimagefield@one-dimension-resize#egg=django-versatileimagefield
+python-magic-bin==0.4.14
 # PR open at https://github.com/pytest-dev/pytest-cov/pull/311
 # pytest-cov==2.7.1
 git+https://github.com/mgaitan/pytest-cov.git@260-cov-fail-under-float
