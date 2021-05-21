@@ -1,26 +1,11 @@
 {% extends "material/frontend/base_site.html" %}
 {% load i18n static %}
 {% block js %}
-{{ block.super }}
-
-<!--Start of Tawk.to Script-->
-<script type="text/javascript">
-    var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-    (function(){
-    var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-    s1.async=true;
-    s1.src='https://embed.tawk.to/5d4967c9e5ae967ef80eb1fe/default';
-    s1.charset='UTF-8';
-    s1.setAttribute('crossorigin','*');
-    s0.parentNode.insertBefore(s1,s0);
-    })()
-    
-    </script>
-    <!--End of Tawk.to Script-->
+    {{ block.super }}
 {% endblock %}
 {% block body %}
 {% block main %}
-<div class="registration" {# style="background:url({% static 'img/background.png' %})" #}>
+<div class="registration">
     <div class="sidebar z-depth-3">
         <h4>{% block page_title %}{{ block.super }}{% endblock %}</h4>
 

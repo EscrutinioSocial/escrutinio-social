@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'localflavor',
     'django_extensions',
     'fancy_cache',
-    'material.theme.lightblue',
+    'material.theme.red',
     'material',
     'dbbackup',
     'constance',
@@ -393,7 +393,7 @@ MIN_COINCIDENCIAS_CARGAS = 2
 MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
 MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
-# Tiempo máximo luego del cual se considera que un fiscal no cumplió con la tarea que tenía asignada y 
+# Tiempo máximo luego del cual se considera que un fiscal no cumplió con la tarea que tenía asignada y
 # le es entregada a otra persona.
 TIMEOUT_TAREAS = 3  # En minutos
 
@@ -572,4 +572,4 @@ if DEBUG and USAR_DJANGO_DEBUG_TOOLBAR:
 
 OCULTAR_CANTIDADES_DE_ELECTORES = False
 
-DEFAULT_BACKGROUND_IMAGE = 'img/default_background.jpg'   # relativo a static
+DEFAULT_BACKGROUND_IMAGE = 'img/Pedro-Castillo-Nueva-EFE-1280X720.jpg'   # relativo a static

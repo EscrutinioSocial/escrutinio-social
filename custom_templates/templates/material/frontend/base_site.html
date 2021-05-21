@@ -2,8 +2,6 @@
 {% load staticfiles %}
 {% load hijack_tags %}
 
-
-
  {% block head %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'hijack/hijack-styles.css' %}" />
@@ -16,8 +14,8 @@
 
 {% load i18n static %}
 
-{% block title %}Generales Nacional 2019{% endblock %}
-{% block page_title %}Elecciones 2019{% endblock %}
+{% block title %}Elecciones Presidenciales 2021{% endblock %}
+    {% block page_title %}Elecciones 2021{% endblock %}
 
 {% block favicon %}<link href="{% static 'img/favicon.png' %}" rel="shortcut icon">{% endblock %}
 
