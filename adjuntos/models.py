@@ -141,6 +141,11 @@ class Attachment(TimeStampedModel):
     )
     email = models.ForeignKey('Email', null=True, blank=True, on_delete=models.SET_NULL)
     mimetype = models.CharField(max_length=100, null=True, blank=True)
+
+    # este campo se usa para manejar subconjuntos de ordenes en tandem.
+    # Si la imagen "parent" es clasificada, todas las hijas reciben la misma clasificacion automaticamente
+    parent = models.ForeignKey("Attachment", on_delete=models.SET_NULL, null=True, blank=True)
+
     foto = VersatileImageField(
         upload_to='attachments/',
         null=True,
