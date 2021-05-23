@@ -3,6 +3,8 @@ from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db.models import Q
 
+from upload_validator import FileTypeValidator
+
 from .models import Identificacion, PreIdentificacion
 from elecciones.models import Mesa, Seccion, Circuito, Distrito
 
@@ -29,19 +31,19 @@ class SelectField(forms.ModelChoiceField):
         self.name = kwargs.get('label', self.queryset.model._meta.object_name)
         required = kwargs.get('required', True)
         self.widget.attrs['required'] = required
-    
+
     def clean(self, value):
         if value == "" or value == -1 or value == "-1":
             return None
         return super().clean(value)
 
-    
+
 class CharFieldModel(forms.CharField):
 
     def queryset(self, value, *args):
         query = {self.predicate: value}
         return self.model.objects.filter(*args, **query)
-    
+
     def __init__(self, model, predicate, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.model = model
@@ -142,7 +144,7 @@ class IdentificacionForm(forms.ModelForm):
         if mesa is None:
             self.add_error('circuito', MENSAJES_ERROR['circuito'])
             return None
-        
+
         circuito = mesa.circuito
         if seccion and circuito.seccion != seccion:
             self.add_error('circuito', MENSAJES_ERROR['circuito'])
@@ -322,7 +324,8 @@ class AgregarAttachmentsForm(BaseUploadForm):
 
     Se le puede pasar por kwargs si el form acepta múltiples archivos o uno solo.
     """
-    file_field = forms.ImageField(label="Imagen/es")
+    validators = [FileTypeValidator(allowed_types=[ 'image/*', 'application/pdf'])]
+    file_field = forms.FileField(label="Imagen/es", help_text="Imagenes o PDF", validators=validators)
 
 
 class AgregarAttachmentsCSV(BaseUploadForm):
