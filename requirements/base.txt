@@ -24,7 +24,6 @@ djangoql==0.13.0
 djangorestframework==3.9.4
 djangorestframework_simplejwt==4.5.0
 PyJWT==1.7.1   # downgrade because of https://github.com/jazzband/djangorestframework-simplejwt/issues/326
-
 drf-yasg[validation]==1.16.0
 easyimap==0.6.3
 Fabric3==1.14.post1
