@@ -244,6 +244,7 @@ ANYMAIL = {
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+LOGGING_DIR = BASE_DIR
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -270,27 +271,27 @@ LOGGING = {
         },
         "json_file": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/json.log",
+            "filename": os.path.join(LOGGING_DIR, "json.log"),
             "formatter": "json_formatter",
         },
         "csv_import_file": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/csv_import_line.log",
+            "filename": os.path.join(LOGGING_DIR,"csv_import_line.log"),
             "formatter": "key_value",
         },
         "scheduler_file": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/scheduler.log",
+            "filename": os.path.join(LOGGING_DIR,"scheduler.log"),
             "formatter": "plain_console",
         },
         "consolidador_file": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/consolidador.log",
+            "filename": os.path.join(LOGGING_DIR,"consolidador.log"),
             "formatter": "key_value",
         },
         "requests": {
             "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/requests.log",
+            "filename": os.path.join(LOGGING_DIR,"requests.log"),
             "formatter": "key_value",
         },
         "null": {

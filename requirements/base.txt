@@ -28,6 +28,7 @@ drf-yasg[validation]==1.16.0
 easyimap==0.6.3
 Fabric3==1.14.post1
 factory_boy==2.12.0
+Pillow==4.2.1
 git+https://github.com/mgaitan/django-admincommand.git@filefield#egg=django-admincommand
 git+https://github.com/mgaitan/django-sneak.git@master#egg=django-sneak
 git+https://github.com/mgaitan/django-versatileimagefield@one-dimension-resize#egg=django-versatileimagefield
@@ -43,7 +44,6 @@ jsonfield==2.0.2
 nameparser==0.5.3
 pandas==0.24.2
 phonenumbers==8.6.0
-Pillow==4.2.1
 psycopg2_binary==2.8.2
 pyexcel-xlsx==0.4.1
 pyexcel==0.5.13

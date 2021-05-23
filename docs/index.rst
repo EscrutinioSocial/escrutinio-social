@@ -11,6 +11,7 @@ Documentación de Escrutinio Social
    :caption: Contenido:
 
    intro.rst
+   install.rst
    setup.rst
    modelos.rst
    antitrolling.rst
