@@ -8,6 +8,9 @@ Master
    :alt: Documentation Status
 
 
+.. image:: https://travis-ci.org/EscrutinioSocial/escrutinio-social.svg?branch=master
+    :target: https://travis-ci.org/EscrutinioSocial/escrutinio-social
+
 
 Escrutinio Social es una plataforma web para la realización de un escrutinio provisorio y auditoría
 ciudadana a partir de fotos documentos aportados por fiscales partidarios o extraídos del escrutinio oficial.
