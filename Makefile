@@ -58,7 +58,7 @@ migrate: up
 makemigrations: up
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py makemigrations"
 
-setup-dev-data:
+setup-dev-data: up
 	docker exec escrutinio-social-app /bin/sh -c "python manage.py loaddata fixtures/dev_data.json"
 
 dump-dev-data:
