@@ -52,7 +52,7 @@ def consolidar_cargas_por_tipo(cargas, tipo):
     elif cargas_agrupadas_por_firma.count() > 1:
         # Alguna viene de CSV?
         cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
-        if cargas_csv.count() > 0:
+        if cargas_csv.exists():
             status_resultante = statuses[tipo]['consolidada_csv']
             # Me quedo con alguna de las CSV como testigo.
             carga_testigo_resultante = cargas_csv.first()
@@ -66,7 +66,7 @@ def consolidar_cargas_por_tipo(cargas, tipo):
         # Hay sólo una firma.
         # Viene de CSV?
         cargas_csv = cargas.filter(origen=Carga.SOURCES.csv)
-        if cargas_csv.count() > 0:
+        if cargas_csv.exists():
             status_resultante = statuses[tipo]['consolidada_csv']
             # Me quedo con alguna de las CSV como testigo.
             carga_testigo_resultante = cargas_csv.first()
@@ -111,7 +111,7 @@ def consolidar_cargas_sin_antitrolling(mesa_categoria):
     cargas = mesa_categoria.cargas.filter(invalidada=False)
 
     # Si no hay cargas, no sigo.
-    if cargas.count() == 0:
+    if not cargas.exists():
         mesa_categoria.actualizar_status(status_resultante, carga_testigo_resultante)
         return
 
