@@ -43,7 +43,7 @@ jsonfield==2.0.2
 nameparser==0.5.3
 pandas==0.24.2
 phonenumbers==8.6.0
-Pillow==4.2.1
+Pillow==8.2.0
 psycopg2_binary==2.8.2
 pyexcel-xlsx==0.4.1
 pyexcel==0.5.13
