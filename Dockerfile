@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libproj-dev \
     wget \
     libmagic1 \
+    poppler-utils \
     gdal-bin && rm -rf /var/lib/apt/lists/*
 
 #RUN mkdir /src
