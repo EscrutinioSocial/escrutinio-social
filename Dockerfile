@@ -16,6 +16,7 @@ RUN apt-get install -y --no-install-recommends \
 WORKDIR /src
 COPY . .
 
+RUN pip install -U pip
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
 CMD ["gunicorn", "escrutinio_social.wsgi"]
