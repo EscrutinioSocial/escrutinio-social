@@ -12,25 +12,45 @@ services:
       - "5433:5432"
     volumes:
       - data:/var/lib/postgresql/data
-    # Habilitar la siguiente para mejorar la performance de la BD si la memoria lo permite.
-    #shm_size: '2gb'
+
   app:
     container_name: escrutinio-social-app
     build: .
-    command: ./runner.sh
+    command: bash -c "python manage.py migrate && python manage.py createcachetable && gunicorn escrutinio_social.wsgi"
     environment:
-      #- DATABASE_URL=postgres://postgres@db/postgres
       - DB_NAME=db_name
       - DB_USER=postgres
       - DB_PASS=changeme
       - DB_HOST=db
-    volumes:
-      - .:/src
+      - GUNICORN_WORKERS=2
     ports:
       - "8000:8000"
-      - "8080:8080"
     depends_on:
       - db
+
+  scheduler:
+    container_name: escrutinio-social-scheduler
+    build: .
+    command: python3 manage.py scheduler
+    environment:
+      - DB_NAME=db_name
+      - DB_USER=postgres
+      - DB_PASS=changeme
+      - DB_HOST=db
+    depends_on:
+      - app
+
+  importer:
+    container_name: escrutinio-social-importer
+    build: .
+    command: python3 manage.py importar_csv
+    environment:
+      - DB_NAME=db_name
+      - DB_USER=postgres
+      - DB_PASS=changeme
+      - DB_HOST=db
+    depends_on:
+      - app
 
 volumes:
   data:
