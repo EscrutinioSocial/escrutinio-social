@@ -51,7 +51,7 @@ class Command(BaseCommand):
                              f'{mensaje_fallo_escuela}'
                 )
             except Circuito.DoesNotExist:
-                self.warning(f'No existe el circuito {circuito_nro}. {mensaje_fallo_escuela}')
+                self.warning(f'No existe el circuito {nro_circuito}. {mensaje_fallo_escuela}')
             else:
 
                 escuela, created = LugarVotacion.objects.update_or_create(

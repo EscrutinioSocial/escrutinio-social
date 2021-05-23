@@ -15,27 +15,10 @@ class Command(BaseCommand):
     '''
     help = "Crea las mesas y actualiza electores"
 
-#    formato = ['distrito', 'seccion', 'circuito','lugar_votacion', 'mesa', 'electores']
-
-    # def copiar_mesa(self, circuito, mesa_nueva):
-    #     otra_mesa = Mesa.objects.filter(circuito=circuito).exclude(id=mesa_nueva.id).first()
-    #     if not otra_mesa:
-    #         self.warning(f"No hay mesas en circuito {circuito}.")
-    #         return
-
-    #     # Le copiamos las categorías.
-    #     for categoria in otra_mesa.categorias.all():
-    #         mesa_nueva.categoria_add(categoria)
-
-    #     # Y el lugar de votación.
-    #     mesa_nueva.lugar_votacion = otra_mesa.lugar_votacion
-    #     mesa_nueva.save(update_fields=['lugar_votacion'])
-
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
         reader = DictReader(self.CSV.open())
-#        reader = DictReader(self.CSV.open(), self.formato)
         fallos = []
         for c, row in enumerate(reader, 1):
             self.log(
