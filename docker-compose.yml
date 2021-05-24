@@ -18,11 +18,8 @@ services:
     build: .
     command: bash -c "python manage.py migrate && python manage.py createcachetable && gunicorn escrutinio_social.wsgi"
     environment:
-      - DB_NAME=db_name
-      - DB_USER=postgres
-      - DB_PASS=changeme
-      - DB_HOST=db
       - GUNICORN_WORKERS=2
+      - DJANGO_ALLOWED_HOSTS=*
     ports:
       - "8000:8000"
     depends_on:
@@ -32,11 +29,6 @@ services:
     container_name: escrutinio-social-scheduler
     build: .
     command: python3 manage.py scheduler
-    environment:
-      - DB_NAME=db_name
-      - DB_USER=postgres
-      - DB_PASS=changeme
-      - DB_HOST=db
     depends_on:
       - app
 
@@ -44,11 +36,6 @@ services:
     container_name: escrutinio-social-importer
     build: .
     command: python3 manage.py importar_csv
-    environment:
-      - DB_NAME=db_name
-      - DB_USER=postgres
-      - DB_PASS=changeme
-      - DB_HOST=db
     depends_on:
       - app
 
