@@ -184,6 +184,7 @@ def consolidar_identificaciones(attachment):
     status_count = attachment.status_count(Identificacion.STATUS.identificada)
 
     mesa_id_consolidada = None
+
     for mesa_id, cantidad, cuantos_csv in status_count:
         if (cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or cuantos_csv > 0):
             mesa_id_consolidada = mesa_id
@@ -229,11 +230,12 @@ def consolidar_identificaciones(attachment):
                 Problema.confirmar_problema(identificacion=identificacion_con_problemas)
                 status_attachment = Attachment.STATUS.problema
 
-    for attachement in attachment.iterar_con_hijos():
-        # si tiene hijos se asigna la misma mesa.
 
-        # me acuerdo la mesa anterior por si se esta pasando a sin_identificar
-        mesa_anterior = attachment.mesa
+    # me acuerdo la mesa anterior por si se esta pasando a sin_identificar
+    mesa_anterior = attachment.mesa
+
+    for attachment in attachment.with_childs():
+        # si tiene hijos se asigna la misma mesa.
 
         # Identifico el attachment y potencialmente sus attachment hijos.
         # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
@@ -242,12 +244,13 @@ def consolidar_identificaciones(attachment):
         # porque ya no está más vigente alguna identificación que antes sí.
         attachment.status = status_attachment
         attachment.mesa = mesa_attachment
-        attachment.identificacion_testigo = testigo
+        if attachment.parent is None:
+            attachment.identificacion_testigo = testigo
         attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
         logger.info(
             'Consolid. identificación',
             attachment=attachment.id,
-            testigo=getattr(testigo, 'id', None),
+            testigo=getattr(attachment.identificacion_testigo, 'id', None),
             status=status_attachment
         )
 

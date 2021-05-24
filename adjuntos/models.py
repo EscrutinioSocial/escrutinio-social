@@ -294,11 +294,8 @@ class Attachment(TimeStampedModel):
             )
         return result
 
-    def iter_con_hijos(self):
-        if self.parent is None:
-            return [self]
-        else:
-            return itertools.chain([self], self.childs.all())
+    def with_childs(self):
+        return itertools.chain([self], self.childs.all())
 
     @property
     def distrito_preidentificacion(self):
