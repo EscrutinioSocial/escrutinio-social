@@ -38,7 +38,8 @@ git+https://github.com/mgaitan/pytest-cov.git@260-cov-fail-under-float
 git+https://github.com/mgaitan/django-exportable-admin.git@dj21
 gunicorn==19.9.0
 html2text==2016.9.19
-IPython==7.5.0
+ipdb-0.13.7
+IPython==7.23.1
 jsonfield==2.0.2
 nameparser==0.5.3
 pandas==0.24.2
