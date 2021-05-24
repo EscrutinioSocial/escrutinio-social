@@ -40,8 +40,6 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
     template_name = 'adjuntos/agregar-adjuntos-csv.html'
     url_to_post = 'agregar-adjuntos-csv'
 
-    def __init__(self):
-        super().__init__(types=CSV_MIMETYPES)
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
@@ -49,7 +47,7 @@ class AgregarAdjuntosCSV(AgregarAdjuntos):
             return super().dispatch(request, *args, **kwargs)
         return HttpResponseForbidden()
 
-    def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion):
+    def cargar_informacion_adjunto(self, adjunto, subido_por, pre_identificacion, parent=None):
         try:
             tarea_importacion_csv = CSVTareaDeImportacion()
             tarea_importacion_csv.status = CSVTareaDeImportacion.STATUS.pendiente
