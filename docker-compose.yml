@@ -16,10 +16,10 @@ services:
   app:
     container_name: escrutinio-social-app
     build: .
-    command: bash -c "python manage.py migrate && python manage.py createcachetable && gunicorn escrutinio_social.wsgi"
+    command: bash -c "python manage.py migrate && python manage.py createcachetable && python manage.py runserver 0.0.0.0:8000"
     environment:
-      - GUNICORN_WORKERS=2
       - DJANGO_ALLOWED_HOSTS=*
+      - DEBUG=1
     ports:
       - "8000:8000"
     depends_on:
