@@ -20,7 +20,7 @@ logger = structlog.get_logger(__name__)
 def image_to_uploadedfile(pil_image, name):
     """Recibe una instancia de PIL.Image, la guarda como jpg y la wrappea como un UploadFile"""
     buf = io.BytesIO()
-    pil_image.save(buf, format="jpg")
+    pil_image.save(buf, format="jpeg")
     return SimpleUploadedFile(
         name=name, content=buf.getvalue(), content_type="image/jpeg"
     )
@@ -77,11 +77,10 @@ class AgregarAdjuntos(FormView):
         self.resultados_carga.append((nivel, mensaje))
 
     def procesar_adjunto(self, file_from_form, subido_por, pre_identificacion=None):
-
         if file_from_form.content_type == "application/pdf":
             images = [
                 image_to_uploadedfile(image, f"{file_from_form.name}-page-{idx}.jpg")
-                for idx, image in enumerate(convert_from_bytes(file_from_form.file))
+                for idx, image in enumerate(convert_from_bytes(file_from_form.read()))
             ]
         else:
             # ya es una imagen,

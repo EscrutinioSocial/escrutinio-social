@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from elecciones.tests.factories import ( AttachmentFactory, MesaFactory, )
 from django.urls import reverse
 from elecciones.tests.conftest import fiscal_client, setup_groups # noqa
@@ -168,6 +170,43 @@ def test_preidentificacion_create_view_post(fiscal_client):
     assert pre_identificacion.circuito == mesa_1.circuito
     assert pre_identificacion.seccion == mesa_1.circuito.seccion
     assert pre_identificacion.distrito == mesa_1.circuito.seccion.distrito
+
+
+def test_preidentificacion_create_view_pdf(fiscal_client):
+    """prueba que si se sube un pdf, se descompone en una imagen por pagina"""
+    content = Path('adjuntos/tests/acta2pages.pdf')
+    file = SimpleUploadedFile('acta2pages.pdf', content.read_bytes(), content_type="application/pdf")
+
+    mesa_1 = MesaFactory()
+    data = {
+        'file_field': (file,),
+        'circuito': mesa_1.circuito.id,
+        'seccion': mesa_1.circuito.seccion.id,
+        'distrito': mesa_1.circuito.seccion.distrito.id,
+    }
+    response = fiscal_client.post(reverse('agregar-adjuntos'), data)
+    assert response.status_code == HTTPStatus.OK
+
+    attachments = Attachment.objects.all()
+    assert len(attachments) == 2
+
+    # la primera pagina es "padre"
+    assert attachments[0].parent is None
+    assert attachments[1].parent == attachments[0]
+
+    for ix, attachment in enumerate(attachments):
+
+        assert attachment.mimetype == "image/jpeg"
+        assert attachment.foto.name.startswith(f"attachments/acta2pages.pdf-page-{ix}")
+
+        assert attachment.pre_identificacion is not None
+        assert attachment.status == Attachment.STATUS.sin_identificar
+
+        pre_identificacion = attachment.pre_identificacion
+        assert pre_identificacion.circuito == mesa_1.circuito
+        assert pre_identificacion.seccion == mesa_1.circuito.seccion
+        assert pre_identificacion.distrito == mesa_1.circuito.seccion.distrito
+
 
 def test_preidentificacion_seccion_y_distrito_create_view_post(fiscal_client):
     content = open('adjuntos/tests/acta.jpg','rb')
