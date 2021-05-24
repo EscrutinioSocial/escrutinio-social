@@ -234,7 +234,7 @@ def consolidar_identificaciones(attachment):
     # me acuerdo la mesa anterior por si se esta pasando a sin_identificar
     mesa_anterior = attachment.mesa
 
-    for attachment in attachment.with_childs():
+    for attachment in attachment.with_children():
         # si tiene hijos se asigna la misma mesa.
 
         # Identifico el attachment y potencialmente sus attachment hijos.

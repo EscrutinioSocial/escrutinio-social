@@ -144,7 +144,7 @@ class Attachment(TimeStampedModel):
 
     # este campo se usa para manejar subconjuntos de ordenes en tandem.
     # Si la imagen "parent" es clasificada, todas las hijas reciben la misma clasificacion automaticamente
-    parent = models.ForeignKey("Attachment", on_delete=models.SET_NULL, null=True, blank=True, related_name='childs')
+    parent = models.ForeignKey("Attachment", on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
 
     foto = VersatileImageField(
         upload_to='attachments/',
@@ -294,8 +294,8 @@ class Attachment(TimeStampedModel):
             )
         return result
 
-    def with_childs(self):
-        return itertools.chain([self], self.childs.all())
+    def with_children(self):
+        return itertools.chain([self], self.children.all())
 
     @property
     def distrito_preidentificacion(self):
