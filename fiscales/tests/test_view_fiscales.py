@@ -152,6 +152,8 @@ def construir_request_data(seccion):
     data = QUIERO_SER_FISCAL_REQUEST_DATA_DEFAULT.copy()
     data["seccion"] = seccion.id
     data["seccion_autocomplete"] = seccion.id
+    data["distrito"] = seccion.distrito.id
+    data["distrito_autocomplete"] = seccion.distrito.id
     return data
 
 
