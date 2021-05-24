@@ -229,24 +229,28 @@ def consolidar_identificaciones(attachment):
                 Problema.confirmar_problema(identificacion=identificacion_con_problemas)
                 status_attachment = Attachment.STATUS.problema
 
-    # me acuerdo la mesa anterior por si se esta pasando a sin_identificar
-    mesa_anterior = attachment.mesa
+    for attachement in attachment.iterar_con_hijos():
+        # si tiene hijos se asigna la misma mesa.
 
-    # Identifico el attachment.
-    # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
-    # Eso es correcto.
-    # También podría estar haciendo pasar una attachment identificado al estado sin_identificar,
-    # porque ya no está más vigente alguna identificación que antes sí.
-    attachment.status = status_attachment
-    attachment.mesa = mesa_attachment
-    attachment.identificacion_testigo = testigo
-    attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
-    logger.info(
-        'Consolid. identificación',
-        attachment=attachment.id,
-        testigo=getattr(testigo, 'id', None),
-        status=status_attachment
-    )
+        # me acuerdo la mesa anterior por si se esta pasando a sin_identificar
+        mesa_anterior = attachment.mesa
+
+        # Identifico el attachment y potencialmente sus attachment hijos.
+        # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
+        # Eso es correcto.
+        # También podría estar haciendo pasar una attachment identificado al estado sin_identificar,
+        # porque ya no está más vigente alguna identificación que antes sí.
+        attachment.status = status_attachment
+        attachment.mesa = mesa_attachment
+        attachment.identificacion_testigo = testigo
+        attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
+        logger.info(
+            'Consolid. identificación',
+            attachment=attachment.id,
+            testigo=getattr(testigo, 'id', None),
+            status=status_attachment
+        )
+
     # Si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
     # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment.
     if mesa_anterior and not mesa_attachment:
