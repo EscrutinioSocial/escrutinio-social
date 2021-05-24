@@ -1,5 +1,4 @@
 FROM python:3.7-slim
-ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update 
 RUN apt-get install -y --no-install-recommends \
@@ -13,10 +12,14 @@ RUN apt-get install -y --no-install-recommends \
     libmagic1 \
     gdal-bin
 
+RUN python -m venv /venv
+
+ENV PYTHONUNBUFFERED 1
+ENV PATH /venv/bin:$PATH
+
 WORKDIR /src
 COPY . .
 
-RUN pip install -U pip
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+RUN . activate && pip install -U pip && pip install -r requirements.txt
 
 CMD ["gunicorn", "escrutinio_social.wsgi"]
