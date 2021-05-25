@@ -24,6 +24,16 @@ djangorestframework==3.9.4
 djangorestframework_simplejwt==4.5.0
 PyJWT==1.7.1   # downgrade because of https://github.com/jazzband/djangorestframework-simplejwt/issues/326
 django-storages==1.11.1
+asgiref==3.3.4
+boto3==1.17.78
+botocore==1.20.78
+jmespath==0.10.0
+python-dateutil==2.8.1
+pytz==2021.1
+s3transfer==0.4.2
+six==1.16.0
+sqlparse==0.4.1
+urllib3==1.26.4
 drf-yasg[validation]==1.16.0
 easyimap==0.6.3
 Fabric3==1.14.post1
