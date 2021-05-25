@@ -10,7 +10,8 @@ RUN apt-get install -y --no-install-recommends \
     libproj-dev \
     wget \
     libmagic1 \
-    gdal-bin
+    gdal-bin \
+    htop
 
 RUN python -m venv /venv
 
