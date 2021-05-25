@@ -266,79 +266,43 @@ ANYMAIL = {
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+LOGLEVEL = os.getenv('DJANGO_LOGLEVEL', 'info').upper()
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "json_formatter": {
-            "()": structlog.stdlib.ProcessorFormatter,
-            "processor": structlog.processors.JSONRenderer(),
-        },
-        "plain_console": {
+        "console": {
             "()": structlog.stdlib.ProcessorFormatter,
             "processor": structlog.dev.ConsoleRenderer(),
-        },
-        "key_value": {
-            "()": structlog.stdlib.ProcessorFormatter,
-            "processor": structlog.processors.KeyValueRenderer(
-                key_order=['timestamp', 'level', 'logger']
-            ),
-        },
+        }
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "plain_console",
-        },
-        "json_file": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/json.log",
-            "formatter": "json_formatter",
-        },
-        "csv_import_file": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/csv_import_line.log",
-            "formatter": "key_value",
-        },
-        "scheduler_file": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/scheduler.log",
-            "formatter": "plain_console",
-        },
-        "consolidador_file": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/consolidador.log",
-            "formatter": "key_value",
-        },
-        "requests": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/requests.log",
-            "formatter": "key_value",
-        },
-        "null": {
-            "class": "logging.NullHandler",
+            "formatter": "console",
         }
     },
     "loggers": {
         "consolidador": {
-            "handlers": ["console", "consolidador_file"] if not TESTING else ["console"],
+            "handlers": ["console"],
             "level": "DEBUG",
         },
         "csv_import": {
-            "handlers": ["console", "csv_import_file"] if not TESTING else ["console"],
+            "handlers": ["console"],
             "level": "DEBUG",
         },
         "scheduler": {
-            "handlers": ["console", "scheduler_file"] if not TESTING else ["console"],
+            "handlers": ["console"],
             "level": "DEBUG",
         },
         "": {
-            "handlers": ["json_file"] if not TESTING else ["console"],
-            "level": "INFO",
+            "handlers": ["console"],
+            "level": LOGLEVEL,
         },
         "django_structlog": {
-            "handlers": ["requests"] if not TESTING else ["null"],
-            "level": "INFO",
+            "handlers": ["console"],
+            "level": LOGLEVEL,
         },
     }
 }
