@@ -29,16 +29,16 @@ shell_plus:
 	docker exec --interactive --tty escrutinio-social-app python manage.py shell_plus
 
 log-app:
-	docker-compose logs app
+	docker-compose logs -f app
 
 log-scheduler:
-	docker-compose logs scheduler
+	docker-compose logs -f scheduler
 
 log-importer:
-	docker-compose logs importer
+	docker-compose logs -f importer
 
 log-db:
-	docker-compose logs db
+	docker-compose logs -f db
 
 test:
 	docker-compose run --rm app pytest
