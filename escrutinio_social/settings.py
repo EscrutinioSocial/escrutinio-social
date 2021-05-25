@@ -192,13 +192,13 @@ else:
     AWS_DEFAULT_ACL = 'public-read'
 
     STATICFILES_AWS_LOCATION = 'static'
-    STATICFILES_STORAGE = 'storages.StaticStorage'
+    STATICFILES_STORAGE = 'custom_storages.StaticStorage'
 
     STATIC_URL = '{}/{}/'.format(AWS_S3_ENDPOINT_URL, STATICFILES_AWS_LOCATION)
     STATIC_ROOT = 'static/'    
 
     MEDIAFILES_AWS_LOCATION = 'media'
-    DEFAULT_FILE_STORAGE = 'storages.MediaStorage'
+    DEFAULT_FILE_STORAGE = 'custom_storages.MediaStorage'
     
     MEDIA_URL = '{}/{}/'.format(AWS_S3_ENDPOINT_URL, MEDIAFILES_AWS_LOCATION)
     MEDIA_ROOT = 'media/'
