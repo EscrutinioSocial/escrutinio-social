@@ -295,11 +295,11 @@ logging.config.dictConfig({
     },
     "loggers": {
         "consolidador": {
-            "handlers": ["console"],
+            "handlers": ["plain_console"],
             "level": "DEBUG",
         },
         "csv_import": {
-            "handlers": ["console"],
+            "handlers": ["plain_console"],
             "level": "DEBUG",
         },
         "scheduler": {
