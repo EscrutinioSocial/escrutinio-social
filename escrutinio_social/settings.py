@@ -303,7 +303,7 @@ logging.config.dictConfig({
             "level": "DEBUG",
         },
         "scheduler": {
-            "handlers": ["console"],
+            "handlers": ["plain_console"],
             "level": "DEBUG",
         },
         "": {
