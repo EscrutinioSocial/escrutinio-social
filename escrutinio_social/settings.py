@@ -307,7 +307,7 @@ logging.config.dictConfig({
             "level": LOGLEVEL,
         },
         "django_structlog": {
-            "handlers": ["console"],
+            "handlers": ["plain_console"],
             "level": LOGLEVEL,
         },
     }
