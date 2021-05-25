@@ -287,7 +287,11 @@ logging.config.dictConfig({
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "console",
-        }
+        },
+        "plain_console": {
+            "class": "logging.StreamHandler",
+            "formatter": "plain_console",
+        },
     },
     "loggers": {
         "consolidador": {
