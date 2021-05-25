@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 import sys
 from model_utils import Choices
+import logging.config
 import structlog
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -266,9 +267,11 @@ ANYMAIL = {
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+LOGGING_CONFIG = None
+
 LOGLEVEL = os.getenv('DJANGO_LOGLEVEL', 'info').upper()
 
-LOGGING = {
+logging.config.dictConfig({
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
@@ -305,7 +308,7 @@ LOGGING = {
             "level": LOGLEVEL,
         },
     }
-}
+})
 
 structlog.configure(
     processors=[
