@@ -69,6 +69,9 @@ INSTALLED_APPS = [
     'dal',
     'dal_select2',
 
+    # django-storages
+    'storages',
+
     # nuestras apps,
     'background',
     'fiscales.apps.FiscalesAppConfig',  # Hay que ponerlo así para que cargue el app_ready()
