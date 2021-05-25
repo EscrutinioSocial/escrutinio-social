@@ -276,6 +276,9 @@ logging.config.dictConfig({
     "disable_existing_loggers": False,
     "formatters": {
         "console": {
+            "format": "%(asctime)s %(levelname)s [%(name)s:%(lineno)s] %(module)s %(process)d %(thread)d %(message)s",
+        },
+        "plain_console": {
             "()": structlog.stdlib.ProcessorFormatter,
             "processor": structlog.dev.ConsoleRenderer(),
         }
