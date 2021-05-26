@@ -46,9 +46,9 @@ jobs:
         scope: RUN_TIME
         value: ${db.DATABASE_URL}
     github:
-      branch: one-process-one-container
+      branch: ${BRANCH_NAME}
       deploy_on_push: true
-      repo: EscrutinioSocial/escrutinio-social-peru
+      repo: ${GITHUB_REPO}
     instance_count: 1
     instance_size_slug: basic-xxs
     kind: PRE_DEPLOY
@@ -61,9 +61,9 @@ jobs:
         scope: RUN_TIME
         value: ${db.DATABASE_URL}
     github:
-      branch: one-process-one-container
+      branch: ${BRANCH_NAME}
       deploy_on_push: true
-      repo: EscrutinioSocial/escrutinio-social-peru
+      repo: ${GITHUB_REPO}
     instance_count: 1
     instance_size_slug: basic-xxs
     kind: PRE_DEPLOY
@@ -88,9 +88,9 @@ services:
         scope: RUN_AND_BUILD_TIME
         value: ${APP_DOMAIN}
     github:
-      branch: one-process-one-container
+      branch: ${BRANCH_NAME}
       deploy_on_push: true
-      repo: EscrutinioSocial/escrutinio-social-peru
+      repo: ${GITHUB_REPO}
     http_port: 8000
     instance_count: 1
     instance_size_slug: basic-xs
@@ -106,9 +106,9 @@ workers:
         scope: RUN_TIME
         value: ${db.DATABASE_URL}
     github:
-      branch: one-process-one-container
+      branch: ${BRANCH_NAME}
       deploy_on_push: true
-      repo: EscrutinioSocial/escrutinio-social-peru
+      repo: ${GITHUB_REPO}
     instance_count: 1
     instance_size_slug: basic-xxs
     name: scheduler
