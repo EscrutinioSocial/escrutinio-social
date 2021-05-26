@@ -32,12 +32,5 @@ services:
     depends_on:
       - app
 
-  importer:
-    container_name: escrutinio-social-importer
-    build: .
-    command: python manage.py importar_csv
-    depends_on:
-      - app
-
 volumes:
   data:
