@@ -91,6 +91,7 @@ AWS_S3_ENDPOINT_URL=
 DB_CLUSTER_NAME=
 APP_REGION=
 APP_DOMAIN=
+APP_NAME=
 DJANGO_SECRET_KEY=
 GUNICORN_WORKERS=
 GITHUB_REPO=
@@ -100,7 +101,7 @@ BRANCH_NAME=
 #### Create
 
 ```bash
-shdotenv -e .env-deploy envsubst '${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} ${AWS_STORAGE_BUCKET_NAME} ${AWS_S3_ENDPOINT_URL} ${DB_CLUSTER_NAME} ${APP_REGION} ${APP_DOMAIN} ${DJANGO_SECRET_KEY} ${GUNICORN_WORKERS} ${GITHUB_REPO} ${BRANCH_NAME}' <ci/do_templates/app-platform.yaml.tpl | doctl apps create --spec -
+shdotenv -e .env-deploy envsubst '${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} ${AWS_STORAGE_BUCKET_NAME} ${AWS_S3_ENDPOINT_URL} ${DB_CLUSTER_NAME} ${APP_REGION} ${APP_DOMAIN} ${APP_NAME} ${DJANGO_SECRET_KEY} ${GUNICORN_WORKERS} ${GITHUB_REPO} ${BRANCH_NAME}' <ci/do_templates/app-platform.yaml.tpl | doctl apps create --spec -
 ```
 
 #### Update
@@ -114,5 +115,5 @@ doctl apps list
 Reemplazando el `<app-id>` con el valor que corresponda:
 
 ```bash
-shdotenv -e .env-deploy envsubst '${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} ${AWS_STORAGE_BUCKET_NAME} ${AWS_S3_ENDPOINT_URL} ${DB_CLUSTER_NAME} ${APP_REGION} ${APP_DOMAIN} ${DJANGO_SECRET_KEY} ${GUNICORN_WORKERS} ${GITHUB_REPO} ${BRANCH_NAME}' <ci/do_templates/app-platform.yaml.tpl | doctl apps update <app-id> --spec -
+shdotenv -e .env-deploy envsubst '${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} ${AWS_STORAGE_BUCKET_NAME} ${AWS_S3_ENDPOINT_URL} ${DB_CLUSTER_NAME} ${APP_REGION} ${APP_DOMAIN} ${APP_NAME} ${DJANGO_SECRET_KEY} ${GUNICORN_WORKERS} ${GITHUB_REPO} ${BRANCH_NAME}' <ci/do_templates/app-platform.yaml.tpl | doctl apps update <app-id> --spec -
 ```

@@ -70,7 +70,7 @@ jobs:
     name: collectstatic
     run_command: python manage.py collectstatic --no-input
     source_dir: /
-name: escrutinio-social-peru
+name: ${APP_NAME}
 region: ${APP_REGION}
 services:
   - dockerfile_path: Dockerfile
