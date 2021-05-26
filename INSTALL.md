@@ -57,15 +57,15 @@ Crear una nueva instancia:
 - Elegir nombre único
 - Seleccionar el proyecto
 
-Ir a la configuración del _Space_ y editar la sección de _CORS_ para aceptar solicitudes desde el dominio de la _App_
+Ir a la configuración del _Space_ y editar la sección de _CORS_ para aceptar solicitudes desde el dominio de la aplicación
 
 ### Database
 
 Crear un cluster de base de datos:
 
-- Seleccionar Postgres 12
+- Seleccionar la base de datos (Postgres 12)
 - Seleccionar la configuración del cluster: Basic nodes, 1GB RAM / 1vCPU / 10GB HD
-- Seleccionar la región
+- Seleccionar la región (ej. nyc)
 
 Una vez que se termina de aprovisionar el cluster. Ir a _`Users & Databases`_ y crear el usuario y base de datos _escrutinio-social_.
 
