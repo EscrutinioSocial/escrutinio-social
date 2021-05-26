@@ -9,7 +9,7 @@ databases:
     size: db-s-dev-database
     version: "12"
 domains:
-- domain: escrutinio.mueve.lat
+- domain: ${APP_DOMAIN}
   type: PRIMARY
 envs:
   - key: DB_NAME
