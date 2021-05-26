@@ -1,5 +1,5 @@
 databases:
-  - cluster_name: db-postgresql-... # completar
+  - cluster_name: ${DB_CLUSTER_NAME}
     db_name: escrutinio-social
     db_user: escrutinio-social
     engine: PG
@@ -8,6 +8,9 @@ databases:
     production: true
     size: db-s-dev-database
     version: "12"
+domains:
+- domain: escrutinio.mueve.lat
+  type: PRIMARY
 envs:
   - key: DB_NAME
     scope: RUN_AND_BUILD_TIME
@@ -26,16 +29,16 @@ envs:
     value: ${db.PORT}
   - key: AWS_ACCESS_KEY_ID
     scope: RUN_AND_BUILD_TIME
-    value: 25CQH2RLGLCL... # completar
+    value: ${AWS_ACCESS_KEY_ID}
   - key: AWS_SECRET_ACCESS_KEY
     scope: RUN_AND_BUILD_TIME
-    value: 782q4Br59... # completar
+    value: ${AWS_SECRET_ACCESS_KEY}
   - key: AWS_STORAGE_BUCKET_NAME
     scope: RUN_AND_BUILD_TIME
-    value: escrutinio-social-... # completar
+    value: ${AWS_STORAGE_BUCKET_NAME}
   - key: AWS_S3_ENDPOINT_URL
     scope: RUN_AND_BUILD_TIME
-    value: https://sfo3.digitaloceanspaces.com
+    value: ${AWS_S3_ENDPOINT_URL}
 jobs:
   - dockerfile_path: Dockerfile
     envs:
@@ -77,10 +80,10 @@ services:
         value: ${db.DATABASE_URL}
       - key: GUNICORN_WORKERS
         scope: RUN_AND_BUILD_TIME
-        value: "3"
+        value: "${GUNICORN_WORKERS}"
       - key: DJANGO_SECRET_KEY
         scope: RUN_AND_BUILD_TIME
-        value: FuLnq4EEGXJAz... # completar
+        value: ${DJANGO_SECRET_KEY}
       - key: DJANGO_ALLOWED_HOSTS
         scope: RUN_AND_BUILD_TIME
         value: ${APP_DOMAIN}
