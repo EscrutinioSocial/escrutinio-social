@@ -71,7 +71,7 @@ jobs:
     run_command: python manage.py collectstatic --no-input
     source_dir: /
 name: escrutinio-social-peru
-region: ${DB_CLUSTER_REGION}
+region: ${APP_REGION}
 services:
   - dockerfile_path: Dockerfile
     envs:
