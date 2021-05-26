@@ -17,9 +17,9 @@ services:
     container_name: escrutinio-social-app
     build: .
     command: python manage.py runserver 0.0.0.0:8000
+    env_file: docker-compose-common.env
     environment:
       - DJANGO_ALLOWED_HOSTS=*
-      - DEBUG=True
     ports:
       - "8000:8000"
     depends_on:
@@ -29,6 +29,7 @@ services:
     container_name: escrutinio-social-scheduler
     build: .
     command: python manage.py scheduler
+    env_file: docker-compose-common.env
     depends_on:
       - app
 
