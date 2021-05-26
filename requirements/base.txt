@@ -18,13 +18,13 @@ django-material==1.5.6
 django-model-utils==3.1.2
 django-structlog==1.2.3
 django-summernote==0.8.11.4
-django==2.2.2
+django==2.2.23
 djangoql==0.13.0
-djangorestframework==3.9.4
+djangorestframework==3.12.4
 djangorestframework_simplejwt==4.5.0
 PyJWT==1.7.1   # downgrade because of https://github.com/jazzband/djangorestframework-simplejwt/issues/326
 
-drf-yasg[validation]==1.16.0
+drf-yasg[validation]==1.20.0
 easyimap==0.6.3
 Fabric3==1.14.post1
 factory_boy==2.12.0
@@ -36,7 +36,7 @@ git+https://github.com/mgaitan/django-versatileimagefield@one-dimension-resize#e
 # pytest-cov==2.7.1
 git+https://github.com/mgaitan/pytest-cov.git@260-cov-fail-under-float
 git+https://github.com/mgaitan/django-exportable-admin.git@dj21
-gunicorn==19.9.0
+gunicorn==20.1.0
 html2text==2016.9.19
 IPython==7.5.0
 jsonfield==2.0.2
