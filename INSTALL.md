@@ -57,6 +57,8 @@ Crear una nueva instancia:
 - Elegir nombre único
 - Seleccionar el proyecto
 
+Ir a la configuración del _Space_ y editar la sección de _CORS_ para aceptar solicitudes desde el dominio de la _App_
+
 ### Database
 
 Crear un cluster de base de datos:
@@ -69,35 +71,40 @@ Una vez que se termina de aprovisionar el cluster. Ir a _`Users & Databases`_ y 
 
 ### App Platform
 
-Crear una _App_:
+#### Setup
 
-- Seleccionar el repositorio y el branch
-- Dejar activado el _Autodeploy code changes_
+```bash
+doctl auth init --context <name>
+doctl auth switch --context <name>
 
-A continuación se ofrece configurar el servicio principal. Dejar valores por defecto y pasar al siguiente paso. A continuación:
+curl -L https://github.com/ko1nksm/shdotenv/releases/latest/download/shdotenv --output /usr/local/bin/shdotenv
+chmod +x /usr/local/bin/shdotenv
+```
 
-- Dejar el nombre por defecto
-- Seleccionar la región que coincida con la seleccionada para la base de datos
+Crear un archivo .env-deploy y definir las siguientes variables:
 
-Finalmente seleccionar el plan y la maquina para el container:
+```bash
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_STORAGE_BUCKET_NAME=
+AWS_S3_ENDPOINT_URL=
+DB_CLUSTER_NAME=
+APP_DOMAIN=
+DJANGO_SECRET_KEY=
+GUNICORN_WORKERS=
+```
 
-- Seleccionar el plan _Pro_
-- Maquina 1GB RAM / 1vCPU
+#### Create
 
-A continuación vamos a la solapa de configuración de la _App_.
+```bash
+shdotenv -e .env-deploy envsubst '${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} ${AWS_STORAGE_BUCKET_NAME} ${AWS_S3_ENDPOINT_URL}
+${DB_CLUSTER_NAME} ${APP_DOMAIN} ${DJANGO_SECRET_KEY} ${GUNICORN_WORKERS}' <ci/do_templates/app-platform.yaml.tpl | doctl apps create --spec -
+```
 
-- Seleccionar el _Component_ creado y borrarlo (_Destroy_)
+#### Update
 
-Deberíamos quedar con una _App_ vacía.
-
-A continuación vamos a cargar el archivo con toda la especificación:
-
-- Hacer una copia del archivo `ci/do_templates/escrutinio-social.yaml` por fuera del repositorio git (no hacer commit de los cambios)
-- Actualizar los valores marcados con el comentario `# completar`
-- Desde la solapa de configuración de la _App_ cargar el archivo modificado, revisar y aceptar
-
-Ir a la solapa de configuración de la _App_ y editar la sección de dominios:
-
-- Agregar el dominio escrutinio.mueve.lat
-
-Ir a la configuración del _Space_ y editar la sección de _CORS_ para aceptar solicitudes desde el dominio de la _App_
+```bash
+doctl apps list
+shdotenv -e .env-deploy envsubst '${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} ${AWS_STORAGE_BUCKET_NAME} ${AWS_S3_ENDPOINT_URL}
+${DB_CLUSTER_NAME} ${APP_DOMAIN} ${DJANGO_SECRET_KEY} ${GUNICORN_WORKERS}' <ci/do_templates/app-platform.yaml.tpl | doctl apps update <app-id> --spec -
+```
