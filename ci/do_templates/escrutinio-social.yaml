@@ -1,7 +1,7 @@
 databases:
-  - cluster_name: app-162aa85c-7223-... # completar
-    db_name: db
-    db_user: db
+  - cluster_name: db-postgresql-... # completar
+    db_name: escrutinio-social
+    db_user: escrutinio-social
     engine: PG
     name: db
     num_nodes: 1
@@ -32,7 +32,7 @@ envs:
     value: 782q4Br59... # completar
   - key: AWS_STORAGE_BUCKET_NAME
     scope: RUN_AND_BUILD_TIME
-    value: escrutinio-social
+    value: escrutinio-social-... # completar
   - key: AWS_S3_ENDPOINT_URL
     scope: RUN_AND_BUILD_TIME
     value: https://sfo3.digitaloceanspaces.com
@@ -51,6 +51,21 @@ jobs:
     kind: PRE_DEPLOY
     name: migrate
     run_command: python manage.py migrate
+    source_dir: /
+  - dockerfile_path: Dockerfile
+    envs:
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: ${db.DATABASE_URL}
+    github:
+      branch: one-process-one-container
+      deploy_on_push: true
+      repo: EscrutinioSocial/escrutinio-social-peru
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    kind: PRE_DEPLOY
+    name: collectstatic
+    run_command: python manage.py collectstatic --no-input
     source_dir: /
 name: escrutinio-social-peru
 region: nyc
