@@ -3,4 +3,5 @@ dependencies:
     - python=3.7
     - GDAL
     - poppler
+    - pyparsing
     - pip
