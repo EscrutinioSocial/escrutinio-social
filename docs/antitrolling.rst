@@ -1,5 +1,4 @@
-********************************
-Mecanismo de detección de Trolls
+La funcionalidad *antitrolling*
 ********************************
 
 Objetivo
