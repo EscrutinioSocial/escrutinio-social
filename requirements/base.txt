@@ -54,3 +54,4 @@ pytest-mock==1.10.4
 sentry-sdk==0.12.3
 python-dotenv==0.10.3
 pdf2image==1.15.1
+pyparsing==2.4.0
