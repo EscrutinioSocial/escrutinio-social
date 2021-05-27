@@ -1,6 +1,0 @@
-name: escrutinio_social
-dependencies:
-    - python=3.7
-    - GDAL
-    - poppler
-    - pip
