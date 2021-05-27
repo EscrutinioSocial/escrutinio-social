@@ -26,6 +26,8 @@ sys.path.insert(0, os.path.abspath('..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'escrutinio_social.settings'
 django.setup()
 
+master_doc = 'index'
+
 # update models diagram
 os.chdir('..')
 os.system('make update-models-diagram')
@@ -34,7 +36,7 @@ os.chdir('docs')
 # -- Project information -----------------------------------------------------
 
 project = 'Escrutinio Social'
-copyright = '2019, Open Data Córdoba'
+copyright = '2021, Open Data Córdoba'
 author = 'Open Data Córdoba & friends'
 
 

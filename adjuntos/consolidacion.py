@@ -184,6 +184,7 @@ def consolidar_identificaciones(attachment):
     status_count = attachment.status_count(Identificacion.STATUS.identificada)
 
     mesa_id_consolidada = None
+
     for mesa_id, cantidad, cuantos_csv in status_count:
         if (cantidad >= settings.MIN_COINCIDENCIAS_IDENTIFICACION or cuantos_csv > 0):
             mesa_id_consolidada = mesa_id
@@ -229,24 +230,30 @@ def consolidar_identificaciones(attachment):
                 Problema.confirmar_problema(identificacion=identificacion_con_problemas)
                 status_attachment = Attachment.STATUS.problema
 
+
     # me acuerdo la mesa anterior por si se esta pasando a sin_identificar
     mesa_anterior = attachment.mesa
 
-    # Identifico el attachment.
-    # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
-    # Eso es correcto.
-    # También podría estar haciendo pasar una attachment identificado al estado sin_identificar,
-    # porque ya no está más vigente alguna identificación que antes sí.
-    attachment.status = status_attachment
-    attachment.mesa = mesa_attachment
-    attachment.identificacion_testigo = testigo
-    attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
-    logger.info(
-        'Consolid. identificación',
-        attachment=attachment.id,
-        testigo=getattr(testigo, 'id', None),
-        status=status_attachment
-    )
+    for attachment in attachment.with_children():
+        # si tiene hijos se asigna la misma mesa.
+
+        # Identifico el attachment y potencialmente sus attachment hijos.
+        # Notar que esta identificación podría estar sumando al attachment a una mesa que ya tenga.
+        # Eso es correcto.
+        # También podría estar haciendo pasar una attachment identificado al estado sin_identificar,
+        # porque ya no está más vigente alguna identificación que antes sí.
+        attachment.status = status_attachment
+        attachment.mesa = mesa_attachment
+        if attachment.parent is None:
+            attachment.identificacion_testigo = testigo
+        attachment.save(update_fields=['mesa', 'status', 'identificacion_testigo'])
+        logger.info(
+            'Consolid. identificación',
+            attachment=attachment.id,
+            testigo=getattr(attachment.identificacion_testigo, 'id', None),
+            status=status_attachment
+        )
+
     # Si el attachment pasa de tener una mesa a no tenerla, entonces hay que invalidar
     # todo lo que se haya cargado para las MesaCategoria de la mesa que perdió su attachment.
     if mesa_anterior and not mesa_attachment:

@@ -8,8 +8,16 @@ version: 2
 sphinx:
   configuration: docs/conf.py
 
-conda:
-  environment: .environment.yml
+formats:
+   - pdf
 
-# Optionally build your docs in additional formats such as PDF and ePub
-formats: all
+python:
+   version: 3.7
+   install:
+   - requirements: requirements/docs.txt
+
+build:
+  apt_packages:
+    - libmagic1
+    - poppler-utils
+    - gdal-bin

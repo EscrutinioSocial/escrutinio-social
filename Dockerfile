@@ -1,6 +1,6 @@
 FROM python:3.7-slim
 
-RUN apt-get update 
+RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
     build-essential \
     zlib1g-dev \
@@ -11,12 +11,14 @@ RUN apt-get install -y --no-install-recommends \
     wget \
     libmagic1 \
     gdal-bin \
+    poppler-utils \
     htop
 
 RUN python -m venv /venv
 
 ENV PYTHONUNBUFFERED 1
 ENV PATH /venv/bin:$PATH
+
 
 WORKDIR /src
 COPY . .

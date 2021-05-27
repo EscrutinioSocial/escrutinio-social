@@ -16,16 +16,20 @@ from model_utils import Choices
 import logging.config
 import structlog
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
+
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 DEBUG = os.getenv('DEBUG') == "True"
-TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
+TESTING = os.path.basename(sys.argv[0]) == "pytest" or os.getenv("READTHEDOCS")
 
 # Application definition
 
@@ -199,11 +203,11 @@ else:
     STATICFILES_STORAGE = 'escrutinio_social.storages.StaticStorage'
 
     STATIC_URL = '{}/{}/'.format(AWS_S3_ENDPOINT_URL, STATICFILES_AWS_LOCATION)
-    STATIC_ROOT = 'static/'    
+    STATIC_ROOT = 'static/'
 
     MEDIAFILES_AWS_LOCATION = 'media'
     DEFAULT_FILE_STORAGE = 'escrutinio_social.storages.MediaStorage'
-    
+
     MEDIA_URL = '{}/{}/'.format(AWS_S3_ENDPOINT_URL, MEDIAFILES_AWS_LOCATION)
     MEDIA_ROOT = 'media/'
 
@@ -389,7 +393,7 @@ MIN_COINCIDENCIAS_CARGAS = 2
 MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
 MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
-# Tiempo máximo luego del cual se considera que un fiscal no cumplió con la tarea que tenía asignada y 
+# Tiempo máximo luego del cual se considera que un fiscal no cumplió con la tarea que tenía asignada y
 # le es entregada a otra persona.
 TIMEOUT_TAREAS = 3  # En minutos
 

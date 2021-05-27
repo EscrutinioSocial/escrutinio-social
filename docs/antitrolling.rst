@@ -4,20 +4,25 @@ Mecanismo de detección de Trolls
 
 Objetivo
 ########
-El sistema puede ser usado por cualquiera que obtenga credenciales. Si alguna persona, o grupo de personas lo quisiera usar de forma maligna, entonces el sistema lo debe detectar y bloquear.
-Entendemos que hay casos en los que las personas (sin intencion de maldad) cargan mal algún resultado, por ejemplo en ciertos casos que la letra no es legible. Estos casos igual los queremos marcar como dudosos porque si la persona tiene muchas pequeñas fallas entonces puede causar que la carga de resultados nunca converja.
+
+El sistema puede ser usado por cualquiera que obtenga credenciales. Si alguna persona, o grupo de personas lo quisiera usar de forma maliciosa, entonces el sistema lo debe detectar y bloquear.
+
+Entendemos que hay casos en los que las personas (sin intención de maldad) cargan mal algún resultado, por ejemplo en ciertos casos que la letra no es legible. Estos casos igual los queremos marcar como dudosos porque si la persona tiene muchas pequeñas fallas entonces puede causar que la carga de resultados nunca converja.
+
 El mecanismo entonces, detecta a quienes intencional o no, cargan los resultados de forma incorrecta.
+
 Las personas en el sistema son `fiscales`, al marcarlos como *troll* lo invalidamos, y se invalidan **todas** las cargas anteriores.
 
 
 Scoring
 #######
+
 Hay distintas métricas que el sistema de detección de trolls tiene en cuenta. La configuración de dichas métricas se encuentra en el archivo de `settings.py`:
 
     # Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll
     SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL = 500
     # Cuanto aumenta el scoring de troll por una identificacion distinta a la confirmada
-    SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 200 
+    SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA = 200
     # Cuanto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas
     SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA = 200
 
@@ -32,8 +37,9 @@ Se puede consultar el puntaje de un `fiscal` mediante el método: `scoring_troll
 Desde la web se pueden admisnitrar los fiscales, y marcarlos o desmarcarlos.
 
 
-Cuánto pesan las cargas?
+¿Cuánto pesan las cargas?
 ************************
+
 Si un acta tiene dos cargas coincidentes y una tercera que difiere, entonces al fiscal que cargo alguna categoría (o todas) mal, se le suma la diferencia de votos a modo de penalización.
 
 Por ejemplo, si para presidente dos cargas coinciden en 40 votos y un tercer fiscal carga 30, entonces a ese tercer fiscal se le suman 10 puntos a su nivel de troll.

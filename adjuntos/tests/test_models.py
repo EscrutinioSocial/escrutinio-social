@@ -41,8 +41,12 @@ def test_priorizadas_ordena_por_cant_asignaciones_realizadas(db, settings):
     a1 = AttachmentFactory()
     a2 = AttachmentFactory()
     a3 = AttachmentFactory()
+
+    a4 = AttachmentFactory(parent=a3)
     assert a1.id < a2.id
     assert a2.id < a3.id
+
+    # a4 es un attachement hijo de a3, no se incluye
     assert set(Attachment.objects.sin_identificar()) == {a1, a2, a3}
     for i in range(settings.MIN_COINCIDENCIAS_IDENTIFICACION):
         a1.asignar_a_fiscal()
@@ -404,3 +408,21 @@ def test_consumir_novedades_carga_tres_ok_tres_error(db, settings):
         # # Chequeamos que las procesadas son c1, c3 y c6
         procesadas_ids = map(lambda x: x.id, procesadas)
         assert set([c1.id, c3.id, c6.id]) == set(procesadas_ids)
+
+
+def test_consumir_novedades_carga_attachment_with_parent(db, settings):
+    settings.MIN_COINCIDENCIAS_IDENTIFICACION = 1
+    a = AttachmentFactory()
+    b = AttachmentFactory(parent=a)
+
+    m1 = MesaFactory()
+    i1 = IdentificacionFactory(attachment=a, status='identificada', mesa=m1)
+
+    consumir_novedades_identificacion()
+
+    a.refresh_from_db()
+    b.refresh_from_db()
+
+    # consolida padre e hijas.
+    assert a.mesa == m1
+    assert b.mesa == m1

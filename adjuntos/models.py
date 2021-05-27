@@ -1,14 +1,13 @@
+import itertools
 from functools import partial
-from datetime import timedelta
 from urllib.parse import quote_plus
 
 from django.conf import settings
 from constance import config
-from django.utils import timezone
 from django.db.models import Count, Value, F
 from django.db.models.functions import Coalesce
 from django.db.models import Q
-from django.db import models, transaction
+from django.db import models
 from model_utils import Choices
 from model_utils.fields import StatusField
 from model_utils.models import TimeStampedModel
@@ -84,6 +83,7 @@ class AttachmentQuerySet(models.QuerySet):
         """
         qs = self.select_for_update(skip_locked=True) if for_update else self
         qs = qs.filter(
+            parent__isnull=True,     # solo se identifican imagenes principales. las hijas seran asignadas automaticamente
             status='sin_identificar',
         )
         if fiscal_a_excluir:
@@ -141,6 +141,11 @@ class Attachment(TimeStampedModel):
     )
     email = models.ForeignKey('Email', null=True, blank=True, on_delete=models.SET_NULL)
     mimetype = models.CharField(max_length=100, null=True, blank=True)
+
+    # este campo se usa para manejar subconjuntos de ordenes en tandem.
+    # Si la imagen "parent" es clasificada, todas las hijas reciben la misma clasificacion automaticamente
+    parent = models.ForeignKey("Attachment", on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
+
     foto = VersatileImageField(
         upload_to='attachments/',
         null=True,
@@ -288,6 +293,9 @@ class Attachment(TimeStampedModel):
                 (item['mesa_o_0'], item['total'], item['cuantos_csv'])
             )
         return result
+
+    def with_children(self):
+        return itertools.chain([self], self.children.all())
 
     @property
     def distrito_preidentificacion(self):
