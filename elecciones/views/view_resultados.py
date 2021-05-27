@@ -39,9 +39,9 @@ def menu_lateral_resultados(request, categoria_id):
     # Si no viene categoría mandamos a PV.
     categoria = categoria_id
     if categoria_id is None:
-        categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).id
-        return redirect('resultados-nuevo-menu', categoria_id=categoria)
-
+        if Categoria.objects.filter(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).exists():
+            categoria = Categoria.objects.get(slug=settings.SLUG_CATEGORIA_PRESI_Y_VICE).id
+            return redirect('resultados-nuevo-menu', categoria_id=categoria)
     context = {}
     context['distritos'] = Distrito.objects.all().extra(
         select={'numero_int': 'CAST(numero AS INTEGER)'}
