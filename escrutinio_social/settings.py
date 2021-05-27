@@ -268,6 +268,37 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "plain_console",
         },
+        "null": {
+            "class": "logging.NullHandler",
+        }
+    },
+    "loggers": {
+        "consolidador": {
+            "handlers": ["console", "consolidador_file"],
+            "level": "DEBUG",
+        },
+        "csv_import": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+        "scheduler": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "django_structlog": {
+            "handlers": ["null"],
+            "level": "INFO",
+        },
+    }
+}
+
+
+if not TESTING:
+    LOGGING['handlers'].update({
         "json_file": {
             "class": "logging.handlers.WatchedFileHandler",
             "filename": "logs/json.log",
@@ -292,34 +323,31 @@ LOGGING = {
             "class": "logging.handlers.WatchedFileHandler",
             "filename": "logs/requests.log",
             "formatter": "key_value",
-        },
-        "null": {
-            "class": "logging.NullHandler",
         }
-    },
-    "loggers": {
+    })
+    LOGGING["loggers"].update({
         "consolidador": {
-            "handlers": ["console", "consolidador_file"] if not TESTING else ["console"],
+            "handlers": ["console", "consolidador_file"],
             "level": "DEBUG",
         },
         "csv_import": {
-            "handlers": ["console", "csv_import_file"] if not TESTING else ["console"],
+            "handlers": ["console", "csv_import_file"],
             "level": "DEBUG",
         },
         "scheduler": {
-            "handlers": ["console", "scheduler_file"] if not TESTING else ["console"],
+            "handlers": ["console", "scheduler_file"],
             "level": "DEBUG",
         },
         "": {
-            "handlers": ["json_file"] if not TESTING else ["console"],
+            "handlers": ["json_file"],
             "level": "INFO",
         },
         "django_structlog": {
-            "handlers": ["requests"] if not TESTING else ["null"],
+            "handlers": ["requests"],
             "level": "INFO",
         },
-    }
-}
+    })
+
 
 structlog.configure(
     processors=[
