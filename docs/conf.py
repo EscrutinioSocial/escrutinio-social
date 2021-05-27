@@ -34,7 +34,7 @@ os.chdir('docs')
 # -- Project information -----------------------------------------------------
 
 project = 'Escrutinio Social'
-copyright = '2019, Open Data Córdoba'
+copyright = '2021, Open Data Córdoba'
 author = 'Open Data Córdoba & friends'
 
 
