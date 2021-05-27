@@ -1,3 +1,4 @@
+
 Introducción
 ============
 
@@ -10,7 +11,8 @@ Sus características principales son:
 - Recepción y procesamiento de imágenes de
 documentos fuentes (actas de mesa)
 - Interfaz para la clasificación, reporte de problemas o carga de datos
-- Versatilidad en la estructura de la elección. Una "categoría" puede existir en las mesas de un distrito y no en otro.
+- Posibilidad de carga parcial para maximizar la velocidad de obtención de primeros resultados (Por ejemplo, sólo fuerzas mayoritarias y datos minimos que permitan calcular "Otros")
+- Versatilidad en la estructura de la elección. Una "categoría" puede existir en las mesas de un distrito y no en otras.
 - Interfaz de visualización de resultados, con distinto nivel de agregación
 - Carga resultados procedente de otras fuentes en formato CSV
 - Algoritmo de priorizacion de tareas configurable dinámicamente.
