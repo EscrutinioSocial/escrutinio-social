@@ -274,7 +274,7 @@ LOGGING = {
     },
     "loggers": {
         "consolidador": {
-            "handlers": ["console", "consolidador_file"],
+            "handlers": ["console"],
             "level": "DEBUG",
         },
         "csv_import": {
