@@ -27,7 +27,7 @@ SECRET_KEY = 'gq9%*_m)=m*y$cnkl1xeg1xiihaz5%v+_d@a+3ft$b(cq29r8z'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ALLOWED_HOSTS = ['*']
-TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test')
+TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test') or os.getenv("READTHEDOCS")
 
 # Application definition
 
@@ -393,7 +393,7 @@ MIN_COINCIDENCIAS_CARGAS = 2
 MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
 MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
-# Tiempo máximo luego del cual se considera que un fiscal no cumplió con la tarea que tenía asignada y 
+# Tiempo máximo luego del cual se considera que un fiscal no cumplió con la tarea que tenía asignada y
 # le es entregada a otra persona.
 TIMEOUT_TAREAS = 3  # En minutos
 
