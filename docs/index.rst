@@ -12,8 +12,11 @@ Documentación de Escrutinio Social
 
    intro.rst
    setup.rst
-   modelos.rst
+   historia.rst
    antitrolling.rst
+   faq.rst
+   modelos.rst
+
 
 
 Indices y tablas
