@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 import sys
 from model_utils import Choices
+import logging.config
 import structlog
 
 from dotenv import load_dotenv
@@ -24,13 +25,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'gq9%*_m)=m*y$cnkl1xeg1xiihaz5%v+_d@a+3ft$b(cq29r8z'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-ALLOWED_HOSTS = ['*']
-TESTING = os.path.basename(sys.argv[0]) in ('pytest', 'py.test') or os.getenv("READTHEDOCS")
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+DEBUG = os.getenv('DEBUG') == "True"
+TESTING = os.path.basename(sys.argv[0]) == "pytest" or os.getenv("READTHEDOCS")
 
 # Application definition
 
@@ -74,6 +73,9 @@ INSTALLED_APPS = [
     # django-autocomplete-light
     'dal',
     'dal_select2',
+
+    # django-storages
+    'storages',
 
     # nuestras apps,
     'background',
@@ -176,16 +178,38 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
-STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-]
+if DEBUG:
+    STATICFILES_FINDERS = [
+        'django.contrib.staticfiles.finders.FileSystemFinder',
+        'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    ]
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+    STATIC_URL = '/static/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+else:
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+    AWS_DEFAULT_ACL = 'public-read'
+
+    STATICFILES_AWS_LOCATION = 'static'
+    STATICFILES_STORAGE = 'escrutinio_social.storages.StaticStorage'
+
+    STATIC_URL = '{}/{}/'.format(AWS_S3_ENDPOINT_URL, STATICFILES_AWS_LOCATION)
+    STATIC_ROOT = 'static/'
+
+    MEDIAFILES_AWS_LOCATION = 'media'
+    DEFAULT_FILE_STORAGE = 'escrutinio_social.storages.MediaStorage'
+
+    MEDIA_URL = '{}/{}/'.format(AWS_S3_ENDPOINT_URL, MEDIAFILES_AWS_LOCATION)
+    MEDIA_ROOT = 'media/'
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
@@ -247,110 +271,55 @@ ANYMAIL = {
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-LOGGING = {
+LOGGING_CONFIG = None
+
+LOGLEVEL = os.getenv('DJANGO_LOGLEVEL', 'info').upper()
+
+logging.config.dictConfig({
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "json_formatter": {
-            "()": structlog.stdlib.ProcessorFormatter,
-            "processor": structlog.processors.JSONRenderer(),
+        "console": {
+            "format": "%(asctime)s %(levelname)s [%(name)s:%(lineno)s] %(module)s %(process)d %(thread)d %(message)s",
         },
         "plain_console": {
             "()": structlog.stdlib.ProcessorFormatter,
             "processor": structlog.dev.ConsoleRenderer(),
-        },
-        "key_value": {
-            "()": structlog.stdlib.ProcessorFormatter,
-            "processor": structlog.processors.KeyValueRenderer(
-                key_order=['timestamp', 'level', 'logger']
-            ),
-        },
+        }
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "console",
+        },
+        "plain_console": {
+            "class": "logging.StreamHandler",
             "formatter": "plain_console",
         },
-        "null": {
-            "class": "logging.NullHandler",
-        }
     },
     "loggers": {
         "consolidador": {
-            "handlers": ["console"],
+            "handlers": ["plain_console"],
             "level": "DEBUG",
         },
         "csv_import": {
-            "handlers": ["console"],
+            "handlers": ["plain_console"],
             "level": "DEBUG",
         },
         "scheduler": {
-            "handlers": ["console"],
+            "handlers": ["plain_console"],
             "level": "DEBUG",
         },
         "": {
             "handlers": ["console"],
-            "level": "INFO",
+            "level": LOGLEVEL,
         },
         "django_structlog": {
-            "handlers": ["null"],
-            "level": "INFO",
+            "handlers": ["plain_console"],
+            "level": LOGLEVEL,
         },
     }
-}
-
-
-if not TESTING:
-    LOGGING['handlers'].update({
-        "json_file": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/json.log",
-            "formatter": "json_formatter",
-        },
-        "csv_import_file": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/csv_import_line.log",
-            "formatter": "key_value",
-        },
-        "scheduler_file": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/scheduler.log",
-            "formatter": "plain_console",
-        },
-        "consolidador_file": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/consolidador.log",
-            "formatter": "key_value",
-        },
-        "requests": {
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": "logs/requests.log",
-            "formatter": "key_value",
-        }
-    })
-    LOGGING["loggers"].update({
-        "consolidador": {
-            "handlers": ["console", "consolidador_file"],
-            "level": "DEBUG",
-        },
-        "csv_import": {
-            "handlers": ["console", "csv_import_file"],
-            "level": "DEBUG",
-        },
-        "scheduler": {
-            "handlers": ["console", "scheduler_file"],
-            "level": "DEBUG",
-        },
-        "": {
-            "handlers": ["json_file"],
-            "level": "INFO",
-        },
-        "django_structlog": {
-            "handlers": ["requests"],
-            "level": "INFO",
-        },
-    })
-
+})
 
 structlog.configure(
     processors=[

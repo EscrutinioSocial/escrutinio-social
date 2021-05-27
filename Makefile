@@ -29,10 +29,13 @@ shell_plus:
 	docker exec --interactive --tty escrutinio-social-app python manage.py shell_plus
 
 log-app:
-	docker-compose logs app
+	docker-compose logs -f app
+
+log-scheduler:
+	docker-compose logs -f scheduler
 
 log-db:
-	docker-compose logs db
+	docker-compose logs -f db
 
 test:
 	docker-compose run --rm app pytest
@@ -72,6 +75,18 @@ test-e2e:
 
 test-e2e-headless:
 	cd e2e;npm i;npm run test-headless;
+
+app-platform-env='$${AWS_ACCESS_KEY_ID} $${AWS_SECRET_ACCESS_KEY} $${AWS_STORAGE_BUCKET_NAME} $${AWS_S3_ENDPOINT_URL} $${DB_CLUSTER_NAME} $${APP_REGION} $${APP_DOMAIN} $${APP_NAME} $${DJANGO_SECRET_KEY} $${GUNICORN_WORKERS} $${GITHUB_REPO} $${BRANCH_NAME}'
+app-platform-template = ci/do_templates/app-platform.yaml.tpl
+
+test-app-platform-spec:
+	shdotenv -e .env-deploy envsubst $(app-platform-env) <$(app-platform-template)
+
+create-app-platform-deploy:
+	shdotenv -e .env-deploy envsubst $(app-platform-env) <$(app-platform-template) | doctl apps create --spec -
+
+update-app-platform-deploy:
+	shdotenv -e .env-deploy envsubst $(app-platform-env) <$(app-platform-template) | doctl apps update $(app-id) --spec -
 
 # Small Makefile to ease up the execution of tests and operating the Devel env
 #VERSION=1.0

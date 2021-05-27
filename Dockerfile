@@ -1,7 +1,7 @@
 FROM python:3.7-slim
-ENV PYTHONUNBUFFERED 1
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends \
     build-essential \
     zlib1g-dev \
     libjpeg-dev \
@@ -10,22 +10,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libproj-dev \
     wget \
     libmagic1 \
+    gdal-bin \
     poppler-utils \
-    gdal-bin && rm -rf /var/lib/apt/lists/*
+    htop
 
-#RUN mkdir /src
+RUN python -m venv /venv
+
+ENV PYTHONUNBUFFERED 1
+ENV PATH /venv/bin:$PATH
+
+
 WORKDIR /src
-ADD requirements.txt /src/
-ADD requirements /src/requirements
-RUN pip install -r requirements.txt
-# Habilitar los siguientes para facilitar el debugging.
-#RUN pip install django-debug-toolbar
-#RUN pip install Werkzeug
-ADD . /src/
+COPY . .
 
-# Dejamos un archivo version.txt con el timestamp de cuándo fue generada esa versión
-RUN mkdir /tmp/version
-RUN date +"%Y%m%d%H%M" > /tmp/version/version.txt
+RUN . activate && pip install -U pip && pip install -r requirements.txt
 
-EXPOSE 8000
-CMD ["bash", "entrypoint.sh"]
+CMD ["gunicorn", "escrutinio_social.wsgi"]

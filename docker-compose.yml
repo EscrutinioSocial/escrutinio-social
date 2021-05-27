@@ -2,7 +2,7 @@ version: "3"
 
 services:
   db:
-    image: postgres:11
+    image: postgres:12
     container_name: escrutinio-social-db
     environment:
       - POSTGRES_USER=postgres
@@ -12,25 +12,26 @@ services:
       - "5433:5432"
     volumes:
       - data:/var/lib/postgresql/data
-    # Habilitar la siguiente para mejorar la performance de la BD si la memoria lo permite.
-    #shm_size: '2gb'
+
   app:
     container_name: escrutinio-social-app
     build: .
-    command: ./runner.sh
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file: docker-compose-common.env
     environment:
-      #- DATABASE_URL=postgres://postgres@db/postgres
-      - DB_NAME=db_name
-      - DB_USER=postgres
-      - DB_PASS=changeme
-      - DB_HOST=db
-    volumes:
-      - .:/src
+      - DJANGO_ALLOWED_HOSTS=*
     ports:
       - "8000:8000"
-      - "8080:8080"
     depends_on:
       - db
+
+  scheduler:
+    container_name: escrutinio-social-scheduler
+    build: .
+    command: python manage.py scheduler
+    env_file: docker-compose-common.env
+    depends_on:
+      - app
 
 volumes:
   data:
