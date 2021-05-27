@@ -1,7 +1,5 @@
 Escrutinio Social
 =================
-Master
-
 
 .. image:: https://readthedocs.org/projects/escrutinio-social/badge/?version=latest
    :target: https://escrutinio-social.readthedocs.io/es/latest/?badge=latest

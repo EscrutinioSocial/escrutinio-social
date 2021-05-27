@@ -11,12 +11,13 @@ Documentación de Escrutinio Social
    :caption: Contenido:
 
    intro.rst
-   setup.rst
+   manual.rst
    historia.rst
    antitrolling.rst
    faq.rst
-   modelos.rst
-
+   administracion_tecnica.rst
+   desarrollo.rst
+   glosario.rst
 
 
 Indices y tablas
