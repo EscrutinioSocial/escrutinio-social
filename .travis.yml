@@ -22,7 +22,7 @@ after_success:
   - coveralls
 
 env:
-  - PGPORT=5432
+  - PGPORT=5432 DJANGO_SECRET_KEY="hard to guess string"
 
 notifications:
   slack: opendatacba:Pweez1BZ9RgtrReYzopBPMUh
