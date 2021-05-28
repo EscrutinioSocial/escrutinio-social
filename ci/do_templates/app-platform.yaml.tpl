@@ -39,6 +39,9 @@ envs:
   - key: AWS_S3_ENDPOINT_URL
     scope: RUN_AND_BUILD_TIME
     value: ${AWS_S3_ENDPOINT_URL}
+  - key: DJANGO_SECRET_KEY
+    scope: RUN_AND_BUILD_TIME
+    value: ${DJANGO_SECRET_KEY}
 jobs:
   - dockerfile_path: Dockerfile
     envs:
@@ -80,10 +83,7 @@ services:
         value: ${db.DATABASE_URL}
       - key: GUNICORN_WORKERS
         scope: RUN_AND_BUILD_TIME
-        value: "${GUNICORN_WORKERS}"
-      - key: DJANGO_SECRET_KEY
-        scope: RUN_AND_BUILD_TIME
-        value: ${DJANGO_SECRET_KEY}
+        value: "${GUNICORN_WORKERS}"      
       - key: DJANGO_ALLOWED_HOSTS
         scope: RUN_AND_BUILD_TIME
         value: ${APP_DOMAIN}
