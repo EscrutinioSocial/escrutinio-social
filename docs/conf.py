@@ -24,6 +24,7 @@ except ImportError:
 
 sys.path.insert(0, os.path.abspath('..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'escrutinio_social.settings'
+os.environ['DJANGO_SECRET_KEY'] = 'hard to guess string'
 django.setup()
 
 master_doc = 'index'
