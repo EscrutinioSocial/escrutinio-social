@@ -22,5 +22,4 @@ after_success:
   - coveralls
 
 env:
-  - PGPORT=5432
-  - DJANGO_SECRET_KEY="hard to guess string"
+  - PGPORT=5432 DJANGO_SECRET_KEY="hard to guess string"
