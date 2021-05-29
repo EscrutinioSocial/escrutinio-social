@@ -523,6 +523,7 @@ CONSTANCE_CONFIG = {
     'SCORING_TROLL_DESCUENTO_ACCION_CORRECTA': (50, 'Cuánto disminuye el scoring de troll para cada acción aceptada de un fiscal.', int),
     'MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS': (2, 'Este multiplicador se utiliza al computar "cant_asignaciones_realizadas_redondeadas" en el schedulling de attachments y mesa-categorías.', int),
     'PAUSA_SCHEDULER': (10, 'Frecuencia de ejecución del scheduler (en segundos).', int),
+    'PAUSA_IMPORTAR_EMAILS': (300, 'Frecuencia de ejecución del importador de actas por email (en segundos).', int),
     'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS': (1.5, 'Factor de multiplicación para agregar tareas.', float),
     'ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA': (True, 'Asignar tareas en el momento si la cola está vacía?', bool),
     'COTA_INFERIOR_COLA_TAREAS': (100, 'Cantidad mínima de tareas que se encolan.', int),
