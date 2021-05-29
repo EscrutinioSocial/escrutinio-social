@@ -67,6 +67,9 @@ class IdentificacionForm(forms.ModelForm):
     Este formulario se utiliza para asignar mesa
     """
 
+    class Media:
+        js = ('identificacion.js',)
+
     distrito = SelectField(
         required=True,
         queryset=Distrito.objects.all(),
@@ -245,6 +248,9 @@ class PreIdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar una pre identificación a un adjunto.
     """
+
+    class Media:
+        js = ('identificacion.js',)
 
     distrito = SelectField(
         queryset=Distrito.objects.all(),
