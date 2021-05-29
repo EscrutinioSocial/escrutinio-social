@@ -24,6 +24,8 @@ services:
       - "8000:8000"
     depends_on:
       - db
+    volumes:
+      - .:/src
 
   scheduler:
     container_name: escrutinio-social-scheduler
