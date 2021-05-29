@@ -1,8 +1,6 @@
-NUMERO_DISTRITO_PBA = 2
-
-/* 
+/*
    Si pudimos determinar la mesa unívocamente, actualizamos la
-   sección y el circuito (si están vacíos). 
+   sección y el circuito (si están vacíos).
 */
 function cambioMesa(url_seccion,url_circuito){
     var mesa = $('#id_mesa').val();
@@ -23,7 +21,7 @@ function cambioMesa(url_seccion,url_circuito){
 // esta función se agrega para que el callback se ejecute después de ms millis
 // en particular se uso para que el evento keyup no se aplique al toque, sino que espere
 // 300 ms después de que el usuario tecleara el distrito
-// si el usuario antes de los ms millis apreta una tecla, el timer se
+// si el usuario antes de los ms millis apreta una tecla, el timer se resetea.
 function delay(callback, ms) {
 	var timer = 0;
 	return function() {
@@ -37,17 +35,11 @@ function delay(callback, ms) {
 
 function ocultoSeccionCircuito() {
 	var distrito = $('#distrito_input').val();
-    if (distrito == NUMERO_DISTRITO_PBA) {
-		$('#id_seccion_container').removeClass("hide");
-		$('#id_circuito_container').removeClass("hide");
-		$('#id_seccion').focus();
-    } else {
-		$('#id_seccion_container').addClass("hide");
-		$('#id_circuito_container').addClass("hide");
-		if (distrito != "") {
-			$('#id_mesa').focus();
-		}
-    }
+	$('#id_seccion_container').addClass("hide");
+	$('#id_circuito_container').addClass("hide");
+	if (distrito != "") {
+		$('#id_mesa').focus();
+	}
     return true;
 }
 
