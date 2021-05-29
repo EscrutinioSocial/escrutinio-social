@@ -275,15 +275,16 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
             a_procesar = a_procesar[0:cant_por_iteracion]
         # OJO - acá precomputar los ids_a_procesar es importante
         # ver comentario en consumir_novedades_carga()
-        ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
-        Identificacion.objects.filter(id__in=ids_a_procesar).update(tomada_por_consolidador=ahora)
+        ids_a_procesar = set(a_procesar.values_list('id', flat=True))
+        Identificacion.objects.filter(id__in=list(ids_a_procesar)).update(tomada_por_consolidador=ahora)
 
     attachments_con_novedades = Attachment.objects.filter(
         identificaciones__in=ids_a_procesar
     ).distinct()
-    con_error = []
+    con_error = set()
 
     for attachment in attachments_con_novedades:
+        # FIXME: explicitar las excepciones que pueden ocurrir.
         try:
             consolidar_identificaciones(attachment)
         except Exception as e:
@@ -298,39 +299,23 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
                 attachment=attachment.id if attachment else None,
                 error=str(e)
             )
+            # Eliminamos los ids de las identificaciones que no se procesaron
+            # para no marcarlas como procesada=True.
+            identificaciones_ids = set(attachment.identificaciones.all().values_list('id',flat=True))
+            con_error |= (ids_a_procesar & identificaciones_ids)
+            ids_a_procesar -= identificaciones_ids
 
-            try:
-                # Eliminamos los ids de las identificaciones que no se procesaron
-                # para no marcarlas como procesada=True.
-                for identificacion in attachment.identificaciones.all():
-                    if identificacion.id in ids_a_procesar:
-                        # Podría ser que otra identificación del attachment haya generado la novedad.
-                        ids_a_procesar.remove(identificacion.id)
-                        con_error.append(identificacion.id)
-            except Exception as e:
-                # Logueamos la excepción y continuamos.
-                capture_message(
-                    f"""
-                    Excepción {e} al manejar la excepción de la identificación
-                    {attachment.id if attachment else None}.
-                    """
-                )
-                logger.error(
-                    'Identificación (excepción)',
-                    attachment=attachment.id if attachment else None,
-                    error=str(e)
-                )
 
     # Todas procesadas (hay que seleccionar desde Identificacion porque 'a_procesar' ya fue sliceado).
     procesadas = Identificacion.objects.filter(
-        id__in=ids_a_procesar
+        id__in=list(ids_a_procesar)
     ).update(
         procesada=True,
         tomada_por_consolidador=None
     )
     # Las que tuvieron error no están procesadas pero se liberan.
     if con_error:
-        Identificacion.objects.filter(id__in=con_error).update(tomada_por_consolidador=None)
+        Identificacion.objects.filter(id__in=list(con_error)).update(tomada_por_consolidador=None)
 
     return procesadas
 

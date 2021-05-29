@@ -388,10 +388,10 @@ CARACTERISTICA_DEFAULT = '351'
 # Por defecto no se muestra gráfico en la página de resultados.
 SHOW_PLOT = False
 
-MIN_COINCIDENCIAS_IDENTIFICACION = 1
-MIN_COINCIDENCIAS_CARGAS = 1
-MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 1
-MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 1
+MIN_COINCIDENCIAS_IDENTIFICACION = 2
+MIN_COINCIDENCIAS_CARGAS = 2
+MIN_COINCIDENCIAS_IDENTIFICACION_PROBLEMA = 2
+MIN_COINCIDENCIAS_CARGAS_PROBLEMA = 2
 
 # Tiempo máximo luego del cual se considera que un fiscal no cumplió con la tarea que tenía asignada y
 # le es entregada a otra persona.
@@ -529,22 +529,22 @@ CONSTANCE_DATABASE_CACHE_BACKEND = 'dbcache'
 CONSTANCE_DATABASE_CACHE_AUTOFILL_TIMEOUT = None
 
 CONSTANCE_CONFIG = {
-    'CARGAR_OPCIONES_NO_PRIO_CSV' : (True, 'Al procesar CSVs se cargan las opciones no prioritarias.', bool),
+    'CARGAR_OPCIONES_NO_PRIO_CSV' : (False, 'Al procesar CSVs se cargan las opciones no prioritarias.', bool),
     'COEFICIENTE_IDENTIFICACION_VS_CARGA': (1.5, 'Cuando la cola de identifación sea N se prioriza esa tarea.', float),
     'PRIORIDAD_STATUS': ('\n'.join(s[0] for s in MC_STATUS_CHOICE), 'orden de los status', 'status_text'),
     'CONFIGURACION_COMPUTO_PUBLICA': ('inicial', 'Nombre de la configuración que se utiliza para publicar resultados.'),
-    'SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL': (150000, 'Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll.', int),
-    'SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA': (1, 'Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada.', int),
-    'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA': (1, 'Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas.', int),
-    'SCORING_TROLL_PROBLEMA_DESCARTADO': (1, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
-    'SCORING_TROLL_DESCUENTO_ACCION_CORRECTA': (1, 'Cuánto disminuye el scoring de troll para cada acción aceptada de un fiscal.', int),
+    'SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL': (1500, 'Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll.', int),
+    'SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada.', int),
+    'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA': (200, 'Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas.', int),
+    'SCORING_TROLL_PROBLEMA_DESCARTADO': (200, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
+    'SCORING_TROLL_DESCUENTO_ACCION_CORRECTA': (50, 'Cuánto disminuye el scoring de troll para cada acción aceptada de un fiscal.', int),
     'MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS': (2, 'Este multiplicador se utiliza al computar "cant_asignaciones_realizadas_redondeadas" en el schedulling de attachments y mesa-categorías.', int),
     'PAUSA_SCHEDULER': (10, 'Frecuencia de ejecución del scheduler (en segundos).', int),
     'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS': (1.5, 'Factor de multiplicación para agregar tareas.', float),
     'ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA': (True, 'Asignar tareas en el momento si la cola está vacía?', bool),
     'COTA_INFERIOR_COLA_TAREAS': (100, 'Cantidad mínima de tareas que se encolan.', int),
     'BONUS_AFINIDAD_GEOGRAFICA': (10, 'Cuánta prioridad ganan las tareas del distrito en que viene trabajando une fiscal.', int),
-    'UMBRAL_EXCLUIR_TAREAS_FISCAL': (1, 'Si hay menos de este número de usuaries actives, no le presentamos a le fiscal tareas en las que haya estado involucrade.', int),
+    'UMBRAL_EXCLUIR_TAREAS_FISCAL': (300, 'Si hay menos de este número de usuaries actives, no le presentamos a le fiscal tareas en las que haya estado involucrade.', int),
     'QUIERO_VALIDAR_INTRO': (None, "Texto de explicación arriba de la página de incripción como validador/a", "rich_text"),
     'URL_VIDEO_INSTRUCTIVO': ('https://www.youtube.com/embed/n1osvzuFx7I', "URL al video instructivo", str)
 }
