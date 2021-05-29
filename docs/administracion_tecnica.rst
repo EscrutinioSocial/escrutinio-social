@@ -25,7 +25,7 @@ para bajar correos electrónicos y convertir sus archivos adjuntos en imágenes 
 
 Cada email puede tener una o más imágenes adjuntas.
 
-Para esto es necesario configurar la variable de entorno ``IMAPS`` como un string json que contiene con una lista de diccionarios con los datos de la cuentas.
+Para esto es necesario configurar la variable de entorno ``IMAPS`` como un string json que contiene una lista de diccionarios con los datos de la cuentas.
 
 Por ejemplo:
 
