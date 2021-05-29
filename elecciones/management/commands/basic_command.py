@@ -1,10 +1,5 @@
-from decimal import Decimal
 from django.core.management.base import BaseCommand
-from django.conf import settings
 from pathlib import Path
-from csv import DictReader
-from elecciones.models import Distrito, Seccion, Circuito, LugarVotacion, Mesa, Categoria
-import datetime
 
 
 class BaseCommand(BaseCommand):
@@ -18,7 +13,8 @@ class BaseCommand(BaseCommand):
 
     def handle(self, *args, **options):
         self.verbosity = int(options['verbosity'])
-        self.CSV = Path(options['archivo_datos'])
+        if 'archivo_datos' in options:
+            self.CSV = Path(options['archivo_datos'])
 
     def log(self, message, level=2, ending='\n'):
         if level <= self.verbosity:

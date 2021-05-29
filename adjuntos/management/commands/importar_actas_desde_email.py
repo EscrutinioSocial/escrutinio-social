@@ -4,20 +4,20 @@ from django.db import IntegrityError
 
 from adjuntos.models import Email, Attachment
 from django.core.files.base import ContentFile
-from elecciones.management.commands.importar_carta_marina_2019_gobernador import BaseCommand
+from elecciones.management.commands.basic_command import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Importa adjunto de los emails configurados"
+    help = "Importa actas de archivos adjuntos en las cuentas de emails (ver settings.IMAP)"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--include-seen', action='store_true')
+            '--include-seen', action='store_true', help='Incluye email ya leídos')
         parser.add_argument(
-            '--only-images', action='store_true')
+            '--only-images', action='store_true', help="Sólo considerar adjuntos que sean de tipo imágen")
 
     def handle(self, *args, **options):
-
+        super().handle(*args, **options)
         imaps = settings.IMAPS
         for imap in imaps:
 
@@ -32,16 +32,14 @@ class Command(BaseCommand):
             else:
                 mails = imapper.unseen()
 
-            # self.success('Se encontraron {} emails'.format(len(list(mails))))
             for mail in mails:
-                self.success('Email {}'.format(mail))
+                self.success(f'From: {mail.from_addr} | Asunto: {mail.title} ')
                 attachments = mail.attachments
                 if not attachments:
-                    self.success(' ... sin adjuntos')
+                    self.warning(' ... sin adjuntos')
                     continue
 
                 email = Email.from_mail_object(mail)
-                self.log(email)
                 for attachment in attachments:
                     # self.success(' -- attachment {}'.format(attachment[0]))
                     if options['only_images'] and not attachment[2].startswith('image'):
@@ -56,7 +54,6 @@ class Command(BaseCommand):
                         content = ContentFile(attachment[1])
                         instance.foto.save(attachment[0], content, save=False)
                         instance.save()
-                        self.success(' -- saved {}'.format(instance))
-                        self.log(instance)
+                        self.success(f'{instance} -- importado')
                     except IntegrityError:
                         self.warning(f'{attachment[0]} ya está en el sistema')
