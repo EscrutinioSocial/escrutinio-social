@@ -174,13 +174,6 @@ class IdentificacionForm(forms.ModelForm):
         seccion_nro = self.fields["seccion"].clean(self.data["seccion"])
         circuito_nro = self.fields["circuito"].clean(self.data["circuito"])
 
-        if distrito and distrito.numero == "2":
-            # si es PBA chequeo que estén presentes sección o circuito
-            if not seccion_nro and not circuito_nro:
-                self.add_error("seccion", "Sección y/o circuito deben estar completos")
-                self.add_error("circuito", "Sección y/o circuito deben estar completos")
-                intento_identificacion = False
-
         # No tenemos la data necesaria, no seguimos identificando.
         if not intento_identificacion:
             return self.cleaned_data
