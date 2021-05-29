@@ -21,6 +21,7 @@ down:
 
 shell-app:
 	docker-compose run --service-ports app bash
+
 shell-db:
 	docker-compose run --service-ports db bash
 
@@ -48,10 +49,10 @@ collectstatic:
 create:
 	docker-compose up --no-start
 
-migrate: up
-	docker-compose run --service-ports app python manage.py migrate
+migrate:
+	docker-compose run app python manage.py migrate
 
-makemigrations: up
+makemigrations:
 	docker-compose run --service-ports app python manage.py makemigrations"
 
 setup-dev-data: migrate
