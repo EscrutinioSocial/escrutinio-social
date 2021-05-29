@@ -23,6 +23,6 @@ ENV PATH /venv/bin:$PATH
 WORKDIR /src
 COPY . .
 
-RUN . activate && pip install -U pip && pip install -r requirements.txt
+RUN . activate && pip install -U pip wheel && pip install -r requirements.txt
 
 CMD ["gunicorn", "escrutinio_social.wsgi"]
