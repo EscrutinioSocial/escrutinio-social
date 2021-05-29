@@ -5,7 +5,7 @@
 <link href="/static/css/select2-materialize.css" type="text/css" media="screen" rel="stylesheet">
 {% endblock %}
 
-{% block page_title %}Quiero ser validador/a{% endblock %}
+{% block page_title %}Quiero validar{% endblock %}
 
 {% block left-panel %}
 
@@ -16,15 +16,18 @@
 
         <div class="card-action">
             <div class="card-title">
-                <li> Si ya participaste en agosto <strong>podés utilizar el mismo usuario y contraseña</strong>. No es necesario que te vuelvas a anotar.<br>
-                <li> Si no recordás tu contraseña podés recuperarla <a href="/password_reset" style="color: blue; margin-right: 0; text-transform: none;">aquí</a>.
-                <li> Si tenés Telegram, unite a <a href="https://t.me/joinchat/AAAAAE_X8uYa11oaQhhEMA" style="color: blue; margin-right: 0; text-transform: none;">nuestro canal</a> para estar al tanto de todas las novedades de la validación.
-                <li> Si querés conocer más sobre la tarea que realizaremos el domingo, <a style="color: blue; margin-right: 0; text-transform: none;" href="https://www.youtube.com/watch?v=n1osvzuFx7I" target="_blank">este video</a> la explica.
+                {% if intro %}
+                    {{ intro|safe }}
+                {% else %}
+                    <p>¡Gracias por querer sumarte! <br>
+                    Completá el siguiente formulario y empezarás a ser parte de este esfuerzo</p>
+                {% endif %}
+
             </div>
         </div>
 
         <div class="card-title">
-            {% block card-title %}<strong>Si vas a participar por primera vez necesitamos algunos datos</strong>{% endblock card-title %}
+            {% block card-title %}{% endblock card-title %}
         </div>
 
         <form method="post" enctype="multipart/form-data">
