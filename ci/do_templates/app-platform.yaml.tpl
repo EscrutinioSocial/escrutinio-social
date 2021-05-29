@@ -114,3 +114,20 @@ workers:
     name: scheduler
     run_command: python manage.py scheduler
     source_dir: /
+  - dockerfile_path: Dockerfile
+    envs:
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: ${db.DATABASE_URL}
+      - key: IMAPS
+        scope: RUN_TIME
+        value: ${IMAPS_CONFIG}
+    github:
+      branch: ${BRANCH_NAME}
+      deploy_on_push: true
+      repo: ${GITHUB_REPO}
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    name: emails
+    run_command: python manage.py importar_actas_desde_email --deamon
+    source_dir: /
