@@ -514,6 +514,11 @@ CONSTANCE_ADDITIONAL_FIELDS = {
         'elecciones.fields.StatusTextField', {
             'widget': 'django.forms.Textarea'
         },
+    ],
+    'rich_text': [
+        'django.forms.fields.CharField', {
+            'widget': 'django_summernote.widgets.SummernoteWidget'
+        },
     ]
 }
 
@@ -540,9 +545,9 @@ CONSTANCE_CONFIG = {
     'COTA_INFERIOR_COLA_TAREAS': (100, 'Cantidad mínima de tareas que se encolan.', int),
     'BONUS_AFINIDAD_GEOGRAFICA': (10, 'Cuánta prioridad ganan las tareas del distrito en que viene trabajando une fiscal.', int),
     'UMBRAL_EXCLUIR_TAREAS_FISCAL': (300, 'Si hay menos de este número de usuaries actives, no le presentamos a le fiscal tareas en las que haya estado involucrade.', int),
+    'QUIERO_VALIDAR_INTRO': (None, "Texto de explicación arriba de la página de incripción como validador/a", "rich_text"),
+    'URL_VIDEO_INSTRUCTIVO': ('https://www.youtube.com/embed/n1osvzuFx7I', "URL al video instructivo", str)
 }
-
-URL_VIDEO_INSTRUCTIVO = 'https://www.youtube.com/embed/n1osvzuFx7I'
 
 # Sin este setting los archivos grandes quedan con los permisos mal.
 # https://github.com/divio/django-filer/issues/1031

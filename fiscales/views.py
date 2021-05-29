@@ -19,8 +19,14 @@ from django.contrib.auth.views import PasswordChangeView
 from django.db import transaction
 from django.db.models import Q
 from django.utils.functional import cached_property
+
+
 from annoying.functions import get_object_or_None
+from constance import config
+from dal import autocomplete
 import structlog
+
+
 from .models import Fiscal, CodigoReferido
 from elecciones.models import (
     Distrito,
@@ -35,7 +41,6 @@ from elecciones.models import (
 from .acciones import siguiente_accion, redirect_siguiente_accion
 from adjuntos.consolidacion import consolidar_cargas
 
-from dal import autocomplete
 
 from html2text import html2text
 from django.core.mail import send_mail
@@ -111,6 +116,11 @@ class QuieroSerFiscal(FormView):
     title = "Quiero ser validador/a"
     template_name = 'fiscales/quiero-validar.html'
     form_class = QuieroSerFiscalForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['intro'] = config.QUIERO_VALIDAR_INTRO
+        return context
 
     def get_initial(self):
         initial = super().get_initial()

@@ -4,6 +4,8 @@ from django.urls import reverse
 from http import HTTPStatus
 from urllib import parse
 
+from constance.test import override_config
+
 from elecciones.tests.conftest import fiscal_client, setup_groups
 from elecciones.tests.factories import (
     DistritoFactory,
@@ -64,7 +66,6 @@ def test_quiero_validar__camino_feliz(db, client):
     url_quiero_validar = reverse('quiero-validar')
     response = client.get(url_quiero_validar)
     assert response.status_code == HTTPStatus.OK
-
     assert not Fiscal.objects.exists()
 
     seccion = SeccionFactory()
@@ -79,6 +80,15 @@ def test_quiero_validar__camino_feliz(db, client):
     assert client.session['fiscal_id'] == fiscal.id
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('quiero-validar-gracias')
+
+
+@override_config(QUIERO_VALIDAR_INTRO="<p>hola amigo</p>")
+def test_quiero_validar_intro_es_configurable(db, client):
+    url_quiero_validar = reverse('quiero-validar')
+    response = client.get(url_quiero_validar)
+    content = response.content.decode('utf8')
+    assert "<p>¡Gracias por querer sumarte!" not in content
+    assert "<p>hola amigo</p>" in content
 
 
 def test_quiero_validar_gracias(db, client):

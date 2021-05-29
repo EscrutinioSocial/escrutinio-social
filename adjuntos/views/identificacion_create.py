@@ -7,7 +7,7 @@ from django.views.generic.edit import CreateView
 from django.core.serializers import serialize
 from django.conf import settings
 from django.db import transaction
-
+from constance import config
 from sentry_sdk import capture_message
 import structlog
 
@@ -100,7 +100,7 @@ class IdentificacionCreateView(CreateView):
         context['recibir_problema'] = 'asignar-problema'
         context['dato_id'] = self.attachment.id
         context['form_problema'] = IdentificacionDeProblemaForm()
-        context['url_video_instructivo'] = settings.URL_VIDEO_INSTRUCTIVO
+        context['url_video_instructivo'] = config.URL_VIDEO_INSTRUCTIVO
         return context
 
     def form_invalid(self, form):
