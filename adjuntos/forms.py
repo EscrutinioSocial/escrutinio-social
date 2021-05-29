@@ -93,11 +93,10 @@ class IdentificacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         instance = kwargs.get("instance")
         if instance and instance.mesa:
-            kwargs["initial"][
-                "circuito"
-            ] = circuito = instance.mesa.lugar_votacion.circuito
-            kwargs["initial"]["seccion"] = seccion = circuito.seccion
-            kwargs["initial"]["distrito"] = seccion.distrito
+            circuito = instance.mesa.lugar_votacion.circuito
+            kwargs["initial"]["circuito"] = circuito
+            kwargs["initial"]["seccion"] = circuito.seccion
+            kwargs["initial"]["distrito"] = circuito.seccion.distrito
         super().__init__(*args, **kwargs)
 
     def check_seccion(self, distrito, mesa=None):
