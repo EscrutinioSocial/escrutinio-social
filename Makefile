@@ -20,13 +20,12 @@ down:
 	docker-compose down --volumes
 
 shell-app:
-	docker exec --interactive --tty escrutinio-social-app /bin/bash
-
+	docker-compose run --service-ports app bash
 shell-db:
-	docker exec --interactive --tty escrutinio-social-db /bin/bash
+	docker-compose run --service-ports db bash
 
 shell_plus:
-	docker exec --interactive --tty escrutinio-social-app python manage.py shell_plus
+	docker-compose run --service-ports app python manage.py shell_plus
 
 log-app:
 	docker-compose logs -f app
@@ -44,22 +43,22 @@ test-exec:
 	docker-compose exec app pytest --cov-report=html
 
 collectstatic:
-	docker exec escrutinio-social-app /bin/sh -c "python manage.py collectstatic --noinput"
+	docker-compose run --service-ports app python manage.py collectstatic --noinput
 
 create:
 	docker-compose up --no-start
 
 migrate: up
-	docker exec escrutinio-social-app /bin/sh -c "python manage.py migrate"
+	docker-compose run --service-ports app python manage.py migrate
 
 makemigrations: up
-	docker exec escrutinio-social-app /bin/sh -c "python manage.py makemigrations"
+	docker-compose run --service-ports app python manage.py makemigrations"
 
 setup-dev-data: migrate
-	docker exec escrutinio-social-app /bin/sh -c "python manage.py loaddata fixtures/dev_data.json"
+	docker-compose run --service-ports app python manage.py loaddata fixtures/dev_data.json
 
 dump-dev-data:
-	docker exec escrutinio-social-app /bin/sh -c "python manage.py dumpdata auth.Group auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json"
+	docker-compose run --service-ports app python manage.py dumpdata auth.Group auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json"
 
 update-models-diagram:
 	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
