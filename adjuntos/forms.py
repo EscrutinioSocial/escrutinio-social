@@ -233,7 +233,7 @@ class IdentificacionForm(forms.ModelForm):
         query_nro_mesa &= lookup_mesa
         mesa = Mesa.objects.filter(query_nro_mesa)
 
-        if not mesa:
+        if not mesa.exists():
             # Separo el nro de mesa dividiéndolo por letra o caracter
             # especial para buscar la primera parte del número de mesa.
             # ejemplo:
@@ -246,7 +246,7 @@ class IdentificacionForm(forms.ModelForm):
             )
             query_nro_mesa &= lookup_mesa
             mesa = Mesa.objects.filter(query_nro_mesa)
-        return mesa[0] if mesa else None
+        return mesa.first()
 
 
 class PreIdentificacionForm(forms.ModelForm):
