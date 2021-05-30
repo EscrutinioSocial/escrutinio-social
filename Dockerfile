@@ -27,7 +27,7 @@ RUN python -m venv /venv
 ENV PATH /venv/bin:$PATH
 
 COPY ./requirements /requirements
-RUN . activate && pip install -U pip && pip install --no-cache-dir -r /requirements/base.txt \
+RUN . activate && pip install -U pip wheel && pip install --no-cache-dir -r /requirements/base.txt \
     && rm -rf /requirements
 
 WORKDIR /src
