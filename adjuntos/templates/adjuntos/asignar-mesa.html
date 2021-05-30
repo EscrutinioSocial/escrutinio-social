@@ -20,7 +20,6 @@
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script src="{% static 'js/simpleselect.js' %}"></script>
-<script src="{% static 'js/identificacion.js' %}"></script>
 <script src="{% static 'js/commons.js' %}"></script>
 {% block extrajs %}{% endblock %}
 {% endblock %}
@@ -202,6 +201,7 @@
 
 {% block messages %}
 {{ block.super }}
+{{ form.media }}
 <script type="text/javascript">
   var url_distrito = "{% url 'autocomplete-distrito' %}";
   var url_seccion  = "{% url 'autocomplete-seccion' %}";
