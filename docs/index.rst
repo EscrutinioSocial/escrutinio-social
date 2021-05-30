@@ -6,6 +6,9 @@
 Documentación de Escrutinio Social
 ==================================
 
+Escrutinio Social es una plataforma web para la realización de un escrutinio provisorio y auditoría ciudadana a partir de fotos documentos aportados por fiscales partidarios o extraídos del escrutinio oficial. Es software libre bajo la licencia BSD.
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contenido:
@@ -16,7 +19,15 @@ Documentación de Escrutinio Social
    antitrolling.rst
    faq.rst
    administracion_tecnica.rst
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Documentación para Desarrollo
+
    desarrollo.rst
+   INSTALL.md
+   tests.md
    glosario.rst
 
 

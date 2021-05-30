@@ -12,15 +12,8 @@
 #
 import os
 import sys
+import django
 
-try:
-    import django
-except ImportError:
-    # en readthedocs el enviroment se inicializa via conda
-    # debido a la dependecia GDAL (via django-leaflet)
-    # por lo tanto despues "inyectamos" las dependencias cuando antes de buildear
-    os.system('pip install -r ../requirements/docs.txt')
-    import django
 
 sys.path.insert(0, os.path.abspath('..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'escrutinio_social.settings'
@@ -38,7 +31,7 @@ os.chdir('docs')
 
 project = 'Escrutinio Social'
 copyright = '2021, Open Data Córdoba'
-author = 'Open Data Córdoba & friends'
+author = 'Desarrolladores y desarrolladoras de escrutinio-social'
 
 
 # -- General configuration ---------------------------------------------------
@@ -50,18 +43,22 @@ extensions = [
     'sphinx.ext.extlinks',
     'sphinx.ext.autodoc',
     'sphinxcontrib_django',
+    'myst_parser',
 ]
 
 extlinks = {
-    'issue': ('https://github.com/OpenDataCordoba/escrutinio-social/issues/%s', '#')
+    'issue': ('https://github.com/EscrutinioSocial/escrutinio-social/issues/%s', '#')
 }
-
 
 intersphinx_mapping = {
     'http://docs.python.org/': None,
     'https://docs.djangoproject.com/en/stable': 'https://docs.djangoproject.com/en/stable/_objects',
 }
 
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -26,12 +26,12 @@ Leé nuestro `Call for Constributors <https://github.com/OpenDataCordoba/escruti
 Instalación
 -----------
 
-Ver `Instalación <./INSTALL.md>`__
+Ver `Instalación <./docs/INSTALL.md>`__
 
 Test
 -----------
 
-Ver `Test <./test.md>`__
+Ver `Test <./docs/test.md>`__
 
 Visualizaciones
 -----------
