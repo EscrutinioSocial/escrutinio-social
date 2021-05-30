@@ -27,7 +27,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        reader = DictReader(self.CSV.open())
+        reader = DictReader(self.file.open())
 
         for c, row in enumerate(reader, 1):
             self.log(f"{row['distrito_nro']}, {row['seccion_nro']}, {row['circuito_nro']}, {row['escuela_nro']}",

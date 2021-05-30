@@ -6,7 +6,6 @@ from adjuntos.models import Attachment
 from elecciones.models import Categoria, Circuito, MesaCategoria
 from elecciones.management.commands.basic_command import BaseCommand
 
-from scheduling.scheduler import scheduler
 from scheduling.models import ColaCargasPendientes
 
 logger = structlog.get_logger('scheduler')
@@ -120,7 +119,7 @@ class Command(BaseCommand):
 
     def procesar(self):
 
-        reader = DictReader(self.CSV.open())
+        reader = DictReader(self.file.open())
 
         lugar_en_cola = 0
         nuevas = []

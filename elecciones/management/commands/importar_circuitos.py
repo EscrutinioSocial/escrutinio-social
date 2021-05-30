@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        reader = DictReader(self.CSV.open())
+        reader = DictReader(self.file.open())
 
         for c, row in enumerate(reader, 1):
             distrito_nro = row['distrito_nro']

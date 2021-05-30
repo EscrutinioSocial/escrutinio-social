@@ -14,7 +14,7 @@ class BaseCommand(BaseCommand):
     def handle(self, *args, **options):
         self.verbosity = int(options['verbosity'])
         if 'archivo_datos' in options:
-            self.CSV = Path(options['archivo_datos'])
+            self.file = Path(options['archivo_datos'])
 
     def log(self, message, level=2, ending='\n'):
         if level <= self.verbosity:

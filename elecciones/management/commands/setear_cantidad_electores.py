@@ -34,7 +34,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        reader = DictReader(self.CSV.open(), self.formato)
+        reader = DictReader(self.file.open(), self.formato)
         fallos = []
         for c, row in enumerate(reader, 1):
             self.log(
@@ -69,7 +69,7 @@ class Command(BaseCommand):
                 self.warning(fallo)
             except Mesa.DoesNotExist:
                 fallo = f'No existe la mesa {nro_mesa} en el circuito {circuito}-{seccion}-{distrito}. La creamos.'
-                
+
                 mesa = Mesa.objects.create(
                     numero=nro_mesa,
                     circuito=circuito,

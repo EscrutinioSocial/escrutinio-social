@@ -121,7 +121,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        reader = DictReader(self.CSV.open())
+        reader = DictReader(self.file.open())
 
         for linea, row in enumerate(reader, 1):
 

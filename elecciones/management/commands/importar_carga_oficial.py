@@ -59,7 +59,7 @@ class Command(BaseCommand):
 
     def procesar(self, **options):
 
-        reader = DictReader(self.CSV.open())
+        reader = DictReader(self.file.open())
 
         categoria = Categoria.objects.get(slug=options['categoria'])
         opcion_nosotros = CategoriaOpcion.objects.get(
@@ -87,7 +87,7 @@ class Command(BaseCommand):
             # cant_nosotros = int(row[' vot_kicilove '])
             # cant_ellos = int(row[' vot_vidal'])
 
-            # Las columnas de presidente no tienen espacios, 
+            # Las columnas de presidente no tienen espacios,
             # pero tal vez haya que corregir cambiar macri por alferdez.
             nro_distrito = int(row['distrito'])
             nro_seccion = int(row['seccion'])
