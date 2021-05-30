@@ -308,14 +308,14 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
 
     # Todas procesadas (hay que seleccionar desde Identificacion porque 'a_procesar' ya fue sliceado).
     procesadas = Identificacion.objects.filter(
-        id__in=list(ids_a_procesar)
+        id__in=ids_a_procesar
     ).update(
         procesada=True,
         tomada_por_consolidador=None
     )
     # Las que tuvieron error no están procesadas pero se liberan.
     if con_error:
-        Identificacion.objects.filter(id__in=list(con_error)).update(tomada_por_consolidador=None)
+        Identificacion.objects.filter(id__in=con_error).update(tomada_por_consolidador=None)
 
     return procesadas
 
@@ -333,14 +333,14 @@ def consumir_novedades_carga(cant_por_iteracion=None):
         )
         if cant_por_iteracion:
             a_procesar = a_procesar[0:cant_por_iteracion]
-        ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+        ids_a_procesar = set(a_procesar.values_list('id', flat=True))
         Carga.objects.filter(id__in=ids_a_procesar).update(tomada_por_consolidador=ahora)
     # OJO - acá precomputar los ids_a_procesar es importante. Ver (*) al final de este doc para detalles.
 
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
         cargas__in=ids_a_procesar
     ).distinct()
-    con_error = []
+    con_error = set()
 
     for mesa_categoria_con_novedades in mesa_categorias_con_novedades:
         try:
@@ -359,26 +359,11 @@ def consumir_novedades_carga(cant_por_iteracion=None):
                 error=str(e)
             )
 
-            try:
-                # Eliminamos los ids de las cargas que no se procesaron
-                # para no marcarlas como procesada=True.
-                for carga in mesa_categoria_con_novedades.cargas.all():
-                    if carga.id in ids_a_procesar:
-                        # Podría ser que la que generó la novedad sea otra carga de la mesacat.
-                        ids_a_procesar.remove(carga.id)
-                        con_error.append(carga.id)
-            except Exception as e:
-                capture_message(
-                    f"""
-                    Excepción {e} al manejar la excepción de la mesa-categoría
-                    {mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None}.
-                    """
-                )
-                logger.error(
-                    'Carga (excepción)',
-                    mesa_categoria=mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None,
-                    error=str(e)
-                )
+            # Eliminamos los ids de las cargas que no se procesaron
+            # para no marcarlas como procesada=True.
+            cargas_ids = set(mesa_categoria_con_novedades.cargas.values_list('id',flat=True))
+            con_error |= (cargas_ids & ids_a_procesar)
+            ids_a_procesar -= cargas_ids
 
     # Todas procesadas (hay que seleccionar desde Carga porque 'a_procesar' ya fue sliceado).
     procesadas = Carga.objects.filter(
