@@ -27,7 +27,7 @@ Escrutinio Social es una plataforma web para la realización de un escrutinio pr
 
    desarrollo.rst
    INSTALL.md
-   tests.md
+   test.md
    glosario.rst
 
 
