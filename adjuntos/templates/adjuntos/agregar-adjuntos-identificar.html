@@ -8,7 +8,6 @@
 {{ block.super }}
 <script src="{% static 'js/sidenav.js' %}"></script>
 <script src="{% static 'js/simpleselect.js' %}"></script>
-<script src="{% static 'js/identificacion.js' %}"></script>
 <style type="text/css">
 .resultado-select{
     border-bottom: none !important;
@@ -40,7 +39,7 @@
             {% form form=attachment_form %}{% endform %}
 
             {% form form=pre_identificacion_form %}{% endform %}
-	    
+
             <div class="card-action">
               <div class="right-align">
                 {% block submit_row %}
@@ -56,6 +55,7 @@
 {% endblock %}
 {% block messages %}
 {{ block.super }}
+{{ pre_identificacion_form.media }}
 <script type="text/javascript">
   var url_distrito = "{% url 'autocomplete-distrito' %}";
   var url_seccion  = "{% url 'autocomplete-seccion' %}";

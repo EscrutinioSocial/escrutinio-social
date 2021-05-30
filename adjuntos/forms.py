@@ -67,6 +67,9 @@ class IdentificacionForm(forms.ModelForm):
     Este formulario se utiliza para asignar mesa
     """
 
+    class Media:
+        js = ('identificacion.js',)
+
     distrito = SelectField(
         required=True,
         queryset=Distrito.objects.all(),
@@ -93,11 +96,10 @@ class IdentificacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         instance = kwargs.get("instance")
         if instance and instance.mesa:
-            kwargs["initial"][
-                "circuito"
-            ] = circuito = instance.mesa.lugar_votacion.circuito
-            kwargs["initial"]["seccion"] = seccion = circuito.seccion
-            kwargs["initial"]["distrito"] = seccion.distrito
+            circuito = instance.mesa.lugar_votacion.circuito
+            kwargs["initial"]["circuito"] = circuito
+            kwargs["initial"]["seccion"] = circuito.seccion
+            kwargs["initial"]["distrito"] = circuito.seccion.distrito
         super().__init__(*args, **kwargs)
 
     def check_seccion(self, distrito, mesa=None):
@@ -174,13 +176,6 @@ class IdentificacionForm(forms.ModelForm):
         seccion_nro = self.fields["seccion"].clean(self.data["seccion"])
         circuito_nro = self.fields["circuito"].clean(self.data["circuito"])
 
-        if distrito and distrito.numero == "2":
-            # si es PBA chequeo que estén presentes sección o circuito
-            if not seccion_nro and not circuito_nro:
-                self.add_error("seccion", "Sección y/o circuito deben estar completos")
-                self.add_error("circuito", "Sección y/o circuito deben estar completos")
-                intento_identificacion = False
-
         # No tenemos la data necesaria, no seguimos identificando.
         if not intento_identificacion:
             return self.cleaned_data
@@ -233,7 +228,7 @@ class IdentificacionForm(forms.ModelForm):
         query_nro_mesa &= lookup_mesa
         mesa = Mesa.objects.filter(query_nro_mesa)
 
-        if not mesa:
+        if not mesa.exists():
             # Separo el nro de mesa dividiéndolo por letra o caracter
             # especial para buscar la primera parte del número de mesa.
             # ejemplo:
@@ -246,13 +241,16 @@ class IdentificacionForm(forms.ModelForm):
             )
             query_nro_mesa &= lookup_mesa
             mesa = Mesa.objects.filter(query_nro_mesa)
-        return mesa[0] if mesa else None
+        return mesa.first()
 
 
 class PreIdentificacionForm(forms.ModelForm):
     """
     Este formulario se utiliza para asignar una pre identificación a un adjunto.
     """
+
+    class Media:
+        js = ('identificacion.js',)
 
     distrito = SelectField(
         queryset=Distrito.objects.all(),
