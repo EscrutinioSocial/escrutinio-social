@@ -509,6 +509,7 @@ MC_STATUS_CHOICE = Choices(
     ('con_problemas', 'con problemas')
 )
 
+CON_ANTITROLLING = False
 CONSTANCE_ADDITIONAL_FIELDS = {
     'status_text': [
         'elecciones.fields.StatusTextField', {

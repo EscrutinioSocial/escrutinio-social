@@ -129,6 +129,7 @@ def consolidar_cargas_sin_antitrolling(mesa_categoria):
     # A continuación voy probando los distintos status.
 
     # Primero les actualizo la firma.
+    # FIXME: ¿por qué actualizamos la firma ahora y no en el momento de la carga?
     for carga in cargas:
         carga.actualizar_firma()
 
@@ -162,6 +163,9 @@ def consolidar_cargas(mesa_categoria):
         MesaCategoria.STATUS.total_consolidada_dc
     ]
     status_resultante = consolidar_cargas_sin_antitrolling(mesa_categoria)
+
+    if not settings.CON_ANTITROLLING:
+        return
 
     # Esto lo hacemos fuera de la transición para evitar deadlock (ver #337).
     if status_resultante in statuses_que_requieren_computar_efecto_trolling:
@@ -211,7 +215,8 @@ def consolidar_identificaciones(attachment):
         Problema.resolver_problema_falta_hoja(mesa_attachment)
 
         # aumentar el scoring de los usuarios que identificaron el acta diferente
-        efecto_scoring_troll_asociacion_attachment(attachment, mesa_attachment)
+        if settings.CON_ANTITROLLING:
+            efecto_scoring_troll_asociacion_attachment(attachment, mesa_attachment)
 
     else:
         status_attachment = Attachment.STATUS.sin_identificar

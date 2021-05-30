@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from model_utils import Choices
 from model_utils.models import TimeStampedModel
@@ -115,6 +116,9 @@ class Problema(TimeStampedModel):
 
     def descartar(self, resuelto_por):
         self.resolver_con_estado(self.ESTADOS.descartado, resuelto_por)
+        if not settings.CON_ANTITROLLING:
+            return
+
         for reporte in self.reportes.all():
             efecto_scoring_troll_descartar_problema(reporte.reportado_por, self)
 
