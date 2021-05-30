@@ -11,7 +11,6 @@ Escrutinio Social es una plataforma web para la realización de un escrutinio pr
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contenido:
 
    intro.rst
    manual.rst
@@ -23,7 +22,7 @@ Escrutinio Social es una plataforma web para la realización de un escrutinio pr
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentación para Desarrollo
+   :caption: Documentación para desarrollo
 
    desarrollo.rst
    INSTALL.md
