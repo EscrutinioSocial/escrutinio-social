@@ -77,7 +77,7 @@ def scheduler(reconstruir_la_cola=False):
                 cant_cargas_parcial -= 1
 
             # Restamos tantas tareas como cargas tenga la MesaCat.
-            cant_unidades -= mc.fiscal_asignado.count()
+            cant_unidades -= mc.cant_fiscales_asignados
 
             for i in range(cant_unidades):
                 # Encolo tantas unidades como haga falta.
@@ -108,7 +108,7 @@ def scheduler(reconstruir_la_cola=False):
                 cant_unidades = 1
 
             # Restamos tantas tareas como asignaciones tenga la foto.
-            cant_unidades -= foto.fiscal_asignado.count()
+            cant_unidades -= foto.cant_fiscales_asignados
 
             for i in range(cant_unidades):
                 nuevas.append(
