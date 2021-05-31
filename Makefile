@@ -65,10 +65,10 @@ update-models-diagram:
 	docker-compose run app python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
 
 crawl-resultados:
-	docker exec escrutinio-social-app /bin/sh -c "./crawl_resultados.sh $(tipoDeAgregacion) $(opcionaConsiderar)"
+	docker exec escrutinio-social-app /bin/sh -c "./extras/crawl_resultados.sh $(tipoDeAgregacion) $(opcionaConsiderar)"
 
 crawl-resultados-up:
-	docker exec escrutinio-social-app /bin/sh -c "python simple-cors-http-server.py"
+	docker exec escrutinio-social-app /bin/sh -c "python extras/simple-cors-http-server.py"
 
 test-e2e:
 	cd e2e;npm i;npm test;
