@@ -1,8 +1,15 @@
-Guia de desarrollo
-==================
+Referencias para desarrollo
+===========================
+
+Esta sección contiene documentación autogenerada a partir del
+código fuente.
+
+
+.. _modelos:
 
 Modelos
 -------
+
 
 .. image:: _static/models.png
 

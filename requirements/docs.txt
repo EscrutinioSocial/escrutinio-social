@@ -1,4 +1,5 @@
 -r base.txt
 sphinxcontrib-django==0.5.1
-pydot==1.4.2
+pydotplus==2.0.2
 myst-parser==0.14.0
+sphinx_rtd_theme==0.5.2

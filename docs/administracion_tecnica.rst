@@ -45,7 +45,3 @@ Vea ``python manage.py importar_actas_desde_email --help`` para una ayuda sobre 
 
 
 
-Despliegue en producción
-------------------------
-
-ejemplo
