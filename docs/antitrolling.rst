@@ -16,16 +16,17 @@ Las personas en el sistema son `fiscales`, al marcarlos como *troll* lo invalida
 Scoring
 #######
 
-Hay distintas métricas que el sistema de detección de trolls tiene en cuenta. La configuración de dichas métricas se encuentra en el archivo de `settings.py` o la interfaz de configuración 
+Hay distintas métricas que el sistema de detección de trolls tiene en cuenta. La configuración de dichas métricas se encuentra en el archivo de `settings.py` o la interfaz de configuración
 
 .. code-block::
+
     'SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL': (150000, 'Valor de scoring que debe superar un fiscal para que la aplicación lo considere troll.', int),
     'SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA': (1, 'Cuánto aumenta el scoring de troll por una identificacion distinta a la confirmada.', int),
     'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA': (1, 'Cuánto aumenta el scoring de troll por poner "problema" en una MesaCategoria para la que se confirmaron cargas.', int),
     'SCORING_TROLL_PROBLEMA_DESCARTADO': (1, 'Cuánto aumenta el scoring de troll al descartarse un "problema" que él reporto.', int),
     'SCORING_TROLL_DESCUENTO_ACCION_CORRECTA': (1, 'Cuánto disminuye el scoring de troll para cada acción aceptada de un fiscal.', int),
-    
- 
+
+
 El primer valor es el umbral que se usará para marcar a una fiscal como troll. Esto se puede configurar si detectamos que durante la carga se nos escapan fiscales o estamos siendo muy crueles.
 
 Por otro lado si una mesa se encuentra identificada por dos fiscales y una tercera la carga mal, entonces se le suman 200 puntos por error de cargar mal el dato de la mesa. En esta categoría están por ejemplo, el número de mesa, sección, distrito, etc.

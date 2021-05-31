@@ -1,15 +1,14 @@
 Guía de administración técnica
 ==============================
 
-Descripcion general
--------------------
 
-
-
-Importacion de datos para una elección
+Importación de datos para una elección
 --------------------------------------
 
 
+.. toctree::
+
+   configuracion.md
 
 
 Comandos útiles
