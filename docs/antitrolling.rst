@@ -37,7 +37,7 @@ Desde la web se pueden admisnitrar los fiscales, y marcarlos o desmarcarlos.
 
 
 ¿Cuánto pesan las cargas?
-*************************
+#########################
 
 Si un acta tiene dos cargas coincidentes y una tercera que difiere, entonces al fiscal que cargo alguna categoría (o todas) mal, se le suma la diferencia de votos a modo de penalización.
 
