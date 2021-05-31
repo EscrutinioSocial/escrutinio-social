@@ -84,8 +84,6 @@ def test_importar_actas_desde_email_include_seen(settings, db, mocker):
     pass
 
 
-
 @pytest.mark.skip(reason="TO DO")
 def test_importar_actas_desde_email_only_images(settings, db, mocker):
     pass
-
