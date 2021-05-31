@@ -7,10 +7,11 @@ Escrutinio Social
 
 
 .. image:: https://travis-ci.com/EscrutinioSocial/escrutinio-social.svg?branch=master
-    :target: https://travis-ci.com/EscrutinioSocial/escrutinio-social
+   :target: https://travis-ci.com/EscrutinioSocial/escrutinio-social
+
 
 .. image:: https://coveralls.io/repos/github/EscrutinioSocial/escrutinio-social/badge.svg?branch=master
-:target: https://coveralls.io/github/EscrutinioSocial/escrutinio-social?branch=master
+   :target: https://coveralls.io/github/EscrutinioSocial/escrutinio-social?branch=master
 
 
 
