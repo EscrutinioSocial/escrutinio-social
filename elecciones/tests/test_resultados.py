@@ -2,6 +2,8 @@ from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth.models import Group
 from http import HTTPStatus
+from constance.test import override_config
+
 from elecciones.models import (
     Categoria, MesaCategoria, Carga, Seccion, Opcion, CategoriaOpcion, OPCIONES_A_CONSIDERAR
 )
@@ -542,6 +544,7 @@ def test_parcial_confirmado(carta_marina, url_resultados, fiscal_client):
     assert resultados.total_mesas_escrutadas() == 2
 
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_siguiente_accion_cargar_acta(client, setup_groups, settings):
     c = CategoriaFactory(nombre='default')
     m1 = IdentificacionFactory(status='identificada', source=Identificacion.SOURCES.csv).mesa
