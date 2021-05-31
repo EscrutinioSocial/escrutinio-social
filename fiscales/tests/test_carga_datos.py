@@ -25,7 +25,7 @@ from adjuntos.consolidacion import consumir_novedades_identificacion, consumir_n
 from elecciones.tests.test_models import consumir_novedades_y_actualizar_objetos
 from scheduling.scheduler import scheduler
 
-
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_siguiente_accion_sin_mesas(fiscal_client):
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert 'No hay actas para cargar por el momento' in response.content.decode('utf8')
@@ -47,6 +47,7 @@ parametros_test_siguiente_accion_balancea = [
 
 ]
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 @pytest.mark.parametrize('cant_attachments, cant_mcs, coeficiente, expect', parametros_test_siguiente_accion_balancea)
 def test_siguiente_accion_balancea_con_scheduler(fiscal_client, cant_attachments, cant_mcs, coeficiente, expect):
     attachments = AttachmentFactory.create_batch(cant_attachments, status='sin_identificar')
@@ -67,6 +68,7 @@ def test_siguiente_accion_balancea_con_scheduler(fiscal_client, cant_attachments
     assert response.url.startswith(beginning)
 
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 @pytest.mark.parametrize('cant_attachments, cant_mcs, coeficiente, expect', parametros_test_siguiente_accion_balancea)
 def test_siguiente_accion_balancea_sin_scheduler(fiscal_client, cant_attachments, cant_mcs, coeficiente, expect):
     attachments = AttachmentFactory.create_batch(cant_attachments, status='sin_identificar')
@@ -85,6 +87,7 @@ def test_siguiente_accion_balancea_sin_scheduler(fiscal_client, cant_attachments
     assert response.status_code == HTTPStatus.FOUND
     assert response.url.startswith(beginning)
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_siguiente_accion_redirige_a_cargar_resultados_sin_scheduler(db, settings, client, setup_groups):
     c1 = CategoriaFactory()
     c2 = CategoriaFactory()
@@ -220,7 +223,7 @@ def test_siguiente_accion_redirige_a_cargar_resultados_con_scheduler(db, setting
     assert response.status_code == HTTPStatus.OK
     fiscal_client.logout()
 
-
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_siguiente_accion_considera_cant_asignaciones_realizadas_sin_scheduler(db, fiscal_client, settings):
     c1 = CategoriaFactory()
     c2 = CategoriaFactory()
@@ -364,6 +367,7 @@ parametros_test_redirige_a_parcial_si_es_necesario = [
 ]
 @pytest.mark.parametrize('status, parcial', parametros_test_redirige_a_parcial_si_es_necesario)
 @override_config(COEFICIENTE_IDENTIFICACION_VS_CARGA=2)
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_cargar_resultados_redirige_a_parcial_si_es_necesario(db, fiscal_client, status, parcial):
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa)
@@ -383,6 +387,7 @@ parametros_test_redirige_a_identificar = [
 ]
 @pytest.mark.parametrize('status, parcial', parametros_test_redirige_a_parcial_si_es_necesario)
 @override_config(COEFICIENTE_IDENTIFICACION_VS_CARGA=1)
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_cargar_resultados_redirige_a_identificar(db, fiscal_client, status, parcial):
     mesa = MesaFactory()
     a = AttachmentFactory(mesa=mesa)
@@ -393,6 +398,7 @@ def test_cargar_resultados_redirige_a_identificar(db, fiscal_client, status, par
     assert response.url.startswith('/clasificar-actas/')
 
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 @pytest.mark.parametrize('status, parcial', parametros_test_redirige_a_parcial_si_es_necesario)
 def test_cargar_resultados_redirige_a_parcial_si_es_necesario_con_scheduler(db, fiscal_client, status, parcial):
     mesa = MesaFactory()
@@ -424,6 +430,7 @@ def test_siguiente_happy_path_parcial_y_total_sin_scheduler(db, fiscal_client, s
     assert mc1.status == MesaCategoria.STATUS.parcial_consolidada_dc
     assert mc1.carga_testigo == carga
     mc1.desasignar_a_fiscal()
+    scheduler()
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.url == reverse('carga-total', args=[mc1.id])
 
@@ -456,6 +463,7 @@ def test_siguiente_happy_path_parcial_y_total_con_scheduler(db, fiscal_client, s
     assert mc1.status == MesaCategoria.STATUS.parcial_consolidada_dc
     assert mc1.carga_testigo == carga
     mc1.desasignar_a_fiscal()
+    scheduler()
     response = fiscal_client.get(reverse('siguiente-accion'))
     assert response.url == reverse('carga-total', args=[mc1.id])
 
@@ -471,6 +479,7 @@ def test_siguiente_happy_path_parcial_y_total_con_scheduler(db, fiscal_client, s
     assert 'No hay actas para cargar' in str(response.content)
 
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_siguiente_manda_a_parcial_si_es_requerido_sin_scheduler(db, client, setup_groups, settings):
     settings.MIN_COINCIDENCIAS_CARGAS = 1
     m1 = MesaFactory()
@@ -526,7 +535,7 @@ def test_siguiente_manda_a_parcial_si_es_requerido_con_scheduler(db, fiscal_clie
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == reverse('carga-parcial', args=[mc2.id])
 
-
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client, admin_user):
     c = CategoriaFactory()
     o = CategoriaOpcionFactory(categoria=c, prioritaria=True).opcion
@@ -545,6 +554,7 @@ def test_formset_en_carga_parcial_solo_muestra_prioritarias(db, fiscal_client, a
     assert response.context['formset'][0].fields['opcion'].choices == [(o.id, o)]
 
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_formset_en_carga_total_muestra_todos(db, fiscal_client, admin_user):
     c = CategoriaFactory(id=100, opciones=[])
     o = CategoriaOpcionFactory(categoria=c, orden=3, prioritaria=True).opcion
@@ -559,6 +569,7 @@ def test_formset_en_carga_total_muestra_todos(db, fiscal_client, admin_user):
     assert response.context['formset'][1].fields['opcion'].choices == [(o.id, o)]
 
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, admin_user, settings):
     # Solo una carga, para simplificar el setup
     settings.MIN_COINCIDENCIAS_CARGAS = 1
@@ -609,6 +620,7 @@ def test_formset_en_carga_total_reusa_parcial_confirmada(db, fiscal_client, admi
     assert response.context['formset'][3].fields['votos'].widget.attrs['readonly'] is True
 
 
+@override_config(ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA=True)
 def test_formset_reusa_metadata(db, fiscal_client, admin_user):
     # Hay una categoria con una opcion metadata ya consolidada.
     o1 = OpcionFactory(tipo=Opcion.TIPOS.metadata)
@@ -786,7 +798,7 @@ def test_cargar_resultados_mesa_desde_ub_con_id_de_mesa(
     assert response.status_code == 302
     # Hacemos el get hacia donde nos manda el redirect.
     response = fiscal_client.get(response.url)
-    assert response.url == reverse('agregar-adjuntos-ub') 
+    assert response.url == reverse('agregar-adjuntos-ub')
 
 
 def test_elegir_acta_mesas_con_id_inexistente_de_mesa_desde_ub(fiscal_client):
@@ -809,7 +821,7 @@ def test_siguiente_happy_path_parcial_y_total_con_modo_ub(db, fiscal_client, adm
     p = PreIdentificacion(fiscal=admin_user.fiscal, distrito=mesa.circuito.seccion.distrito)
     p.save()
     a = AttachmentFactory(status='sin_identificar', pre_identificacion=p)
-    scheduler() 
+    scheduler()
     assert ColaCargasPendientes.largo_cola() == 1
     response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
 
@@ -841,6 +853,8 @@ def test_siguiente_happy_path_parcial_y_total_con_modo_ub(db, fiscal_client, adm
     assert mc1.status == MesaCategoria.STATUS.parcial_consolidada_dc  # Porque la cant de cargas está en 1.
     assert mc1.carga_testigo == carga
     mc1.desasignar_a_fiscal()
+    assert mc1.cant_fiscales_asignados == 0
+    scheduler()
     response = fiscal_client.get(reverse('siguiente-accion') + modo_ub_querry_string)
     assert response.url == reverse('carga-total', args=[mc1.id]) + modo_ub_querry_string
 
