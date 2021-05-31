@@ -6,8 +6,8 @@ Escrutinio Social
    :alt: Documentation Status
 
 
-.. image:: https://travis-ci.org/EscrutinioSocial/escrutinio-social.svg?branch=master
-    :target: https://travis-ci.org/EscrutinioSocial/escrutinio-social
+.. image:: https://travis-ci.com/EscrutinioSocial/escrutinio-social.svg?branch=master
+    :target: https://travis-ci.com/EscrutinioSocial/escrutinio-social
 
 .. image:: https://coveralls.io/repos/github/EscrutinioSocial/escrutinio-social/badge.svg?branch=master
 :target: https://coveralls.io/github/EscrutinioSocial/escrutinio-social?branch=master

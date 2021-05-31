@@ -43,9 +43,7 @@ git+https://github.com/mgaitan/django-admincommand.git@filefield#egg=django-admi
 git+https://github.com/mgaitan/django-sneak.git@master#egg=django-sneak
 git+https://github.com/mgaitan/django-versatileimagefield@one-dimension-resize#egg=django-versatileimagefield
 # python-magic-bin==0.4.14
-# PR open at https://github.com/pytest-dev/pytest-cov/pull/311
-# pytest-cov==2.7.1
-git+https://github.com/mgaitan/pytest-cov.git@260-cov-fail-under-float
+pytest-cov==2.12.0
 git+https://github.com/mgaitan/django-exportable-admin.git@dj21
 gunicorn==20.1.0
 html2text==2016.9.19
