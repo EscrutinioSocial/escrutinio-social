@@ -1,6 +1,6 @@
 attrdict==2.0.1
 colorama==0.4.1
-coveralls==1.8.0
+coveralls==3.1.0
 django-admin-row-actions==0.0.5
 django-annoying==0.10.4
 django-anymail==6.0.1
