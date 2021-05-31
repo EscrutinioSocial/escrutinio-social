@@ -23,6 +23,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
+        self.only_images = options["only_images"]
         if options['deamon']:
             finalizar = False
             while not finalizar:
@@ -35,11 +36,9 @@ class Command(BaseCommand):
             self.check_emails(**options)
 
     def check_emails(self, **options):
-        imaps = settings.IMAPS
-        for imap in imaps:
-
+        for imap in settings.IMAPS:
             imapper = easyimap.connect(imap['host'], imap['user'], imap['pass'], imap['mailbox'])
-            self.success('Loggueado como {}'.format(imap['user']))
+            self.success(f"Loggueado como {imap['user']}")
             if options['include_seen']:
                 # read every email not present in the db
                 imap_ids = {int(i) for i in imapper.listids()}
@@ -50,27 +49,30 @@ class Command(BaseCommand):
                 mails = imapper.unseen()
 
             for mail in mails:
-                self.success(f'From: {mail.from_addr} | Asunto: {mail.title} ')
-                attachments = mail.attachments
-                if not attachments:
-                    self.warning(' ... sin adjuntos')
-                    continue
+                self.process_email(mail)
 
-                email = Email.from_mail_object(mail)
-                for attachment in attachments:
-                    # self.success(' -- attachment {}'.format(attachment[0]))
-                    if options['only_images'] and not attachment[2].startswith('image'):
-                        self.warning(f'Ignoring {attachment[0]} ({attachment[2]})')
-                        continue
-                    instance = Attachment(
-                        email=email,
-                        mimetype=attachment[2]
-                    )
+    def process_email(self, mail):
+        self.success(f'From: {mail.from_addr} | Asunto: {mail.title} ')
+        attachments = mail.attachments
+        if not attachments:
+            self.warning(' ... sin adjuntos')
+            return
 
-                    try:
-                        content = ContentFile(attachment[1])
-                        instance.foto.save(attachment[0], content, save=False)
-                        instance.save()
-                        self.success(f'{instance} -- importado')
-                    except IntegrityError:
-                        self.warning(f'{attachment[0]} ya está en el sistema')
+        email = Email.from_mail_object(mail)
+        for attachment in attachments:
+            # self.success(' -- attachment {}'.format(attachment[0]))
+            if self.only_images and not attachment[2].startswith('image'):
+                self.warning(f'Ignoring {attachment[0]} ({attachment[2]})')
+                continue
+            instance = Attachment(
+                email=email,
+                mimetype=attachment[2]
+            )
+
+            try:
+                content = ContentFile(attachment[1])
+                instance.foto.save(attachment[0], content, save=False)
+                instance.save()
+                self.success(f'{instance} -- importado')
+            except IntegrityError:
+                self.warning(f'{attachment[0]} ya está en el sistema')
