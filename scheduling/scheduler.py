@@ -76,6 +76,9 @@ def scheduler(reconstruir_la_cola=False):
             if mc.status in MesaCategoria.status_carga_parcial:
                 cant_cargas_parcial -= 1
 
+            # Restamos tantas tareas como cargas tenga la MesaCat.
+            cant_unidades -= mc.cant_fiscales_asignados
+
             for i in range(cant_unidades):
                 # Encolo tantas unidades como haga falta.
                 nuevas.append(
@@ -100,8 +103,12 @@ def scheduler(reconstruir_la_cola=False):
 
             cant_unidades = settings.MIN_COINCIDENCIAS_IDENTIFICACION
             # Si hay alguna identificación asumimos que sólo falta una para consolidar.
+            # FIXME: ¿por qué tenemos esto?
             if foto.identificaciones.exists():
                 cant_unidades = 1
+
+            # Restamos tantas tareas como asignaciones tenga la foto.
+            cant_unidades -= foto.cant_fiscales_asignados
 
             for i in range(cant_unidades):
                 nuevas.append(

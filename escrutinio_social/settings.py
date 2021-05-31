@@ -530,7 +530,7 @@ CONSTANCE_CONFIG = {
     'PAUSA_SCHEDULER': (10, 'Frecuencia de ejecución del scheduler (en segundos).', int),
     'PAUSA_IMPORTAR_EMAILS': (300, 'Frecuencia de ejecución del importador de actas por email (en segundos).', int),
     'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS': (1.5, 'Factor de multiplicación para agregar tareas.', float),
-    'ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA': (True, 'Asignar tareas en el momento si la cola está vacía?', bool),
+    'ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA': (False, 'Asignar tareas en el momento si la cola está vacía?', bool),
     'COTA_INFERIOR_COLA_TAREAS': (100, 'Cantidad mínima de tareas que se encolan.', int),
     'BONUS_AFINIDAD_GEOGRAFICA': (10, 'Cuánta prioridad ganan las tareas del distrito en que viene trabajando une fiscal.', int),
     'UMBRAL_EXCLUIR_TAREAS_FISCAL': (1, 'Si hay menos de este número de usuaries actives, no le presentamos a le fiscal tareas en las que haya estado involucrade.', int),
@@ -538,6 +538,35 @@ CONSTANCE_CONFIG = {
     'URL_VIDEO_INSTRUCTIVO': ('https://www.youtube.com/embed/n1osvzuFx7I', "URL al video instructivo", str)
 }
 
+CONSTANCE_CONFIG_FIELDSETS = {
+    'Miscelánea': (
+        'CARGAR_OPCIONES_NO_PRIO_CSV',
+        'COEFICIENTE_IDENTIFICACION_VS_CARGA',
+        'PRIORIDAD_STATUS',
+        'CONFIGURACION_COMPUTO_PUBLICA',
+        'BONUS_AFINIDAD_GEOGRAFICA',
+    ),
+    'Scheduler' : (
+        'COEFICIENTE_IDENTIFICACION_VS_CARGA',
+        'MULTIPLICADOR_CANT_ASIGNACIONES_REALIZADAS',
+        'PAUSA_SCHEDULER',
+        'FACTOR_LARGO_COLA_POR_USUARIOS_ACTIVOS',
+        'ASIGNAR_MESA_EN_EL_MOMENTO_SI_NO_HAY_COLA',
+        'COTA_INFERIOR_COLA_TAREAS',
+        'UMBRAL_EXCLUIR_TAREAS_FISCAL',
+    ),
+    'Fiscales' : (
+        'QUIERO_VALIDAR_INTRO',
+        'URL_VIDEO_INSTRUCTIVO',
+    ),
+    'Anti-trolling': (
+        'SCORING_MINIMO_PARA_CONSIDERAR_QUE_FISCAL_ES_TROLL',
+        'SCORING_TROLL_IDENTIFICACION_DISTINTA_A_CONFIRMADA',
+        'SCORING_TROLL_PROBLEMA_MESA_CATEGORIA_CON_CARGA_CONFIRMADA',
+        'SCORING_TROLL_PROBLEMA_DESCARTADO',
+        'SCORING_TROLL_DESCUENTO_ACCION_CORRECTA',
+    ),
+}
 # Sin este setting los archivos grandes quedan con los permisos mal.
 # https://github.com/divio/django-filer/issues/1031
 FILE_UPLOAD_PERMISSIONS = 0o644
