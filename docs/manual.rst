@@ -32,6 +32,9 @@ El camino feliz
 - ¿Con qué tarea se sigue? El concepto de *scheduler*
 
 
+
+
+
 La estructura de una elección
 ------------------------------
 
@@ -39,6 +42,8 @@ La estructura de una elección
 - Elecciones internas abiertas: multiples opciones de las mismas fuerzas.
 - Salvo para casos minimos, se genera programáticamente a traves de comandos
   (ver doc técnica)
+
+
 
 
 Configuración

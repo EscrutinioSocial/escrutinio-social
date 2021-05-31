@@ -37,7 +37,7 @@ Desde la web se pueden admisnitrar los fiscales, y marcarlos o desmarcarlos.
 
 
 ¿Cuánto pesan las cargas?
-************************
+*************************
 
 Si un acta tiene dos cargas coincidentes y una tercera que difiere, entonces al fiscal que cargo alguna categoría (o todas) mal, se le suma la diferencia de votos a modo de penalización.
 
@@ -47,6 +47,7 @@ Por ejemplo, si para presidente dos cargas coinciden en 40 votos y un tercer fis
 
 Invalidación de cargas
 ######################
+
 Al detectar a un fiscal como troll, todas sus cargas anteriores se invalidan: `Carga.objects.filter(invalidada=True)`.
 
 Cuando se corra el comando asincrónico: `consolidar_identificaciones_y_cargas.py` se revisarán y cambiarán:

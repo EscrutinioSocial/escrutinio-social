@@ -1,23 +1,5 @@
-# Cómo Contribuir
 
-Coordinamos las actividades a través de un canal de Telegram. Podés
-ponerte en contacto con @AraCba para pedir acceso.
-
-Trabajamos en un repositorio privado
-(https://gitlab.e-va.red/escrutinio/) contra el branch develop.
-
-Por el momento no hay integración continua con Travis y con eso
-perdemos coverage testing, documentación, etc. (pero ver
-https://t.me/c/1156246225/198)
-
-Hasta tanto esté resuelto eso, cada quien se compromete a probar
-localmente y mantener (o preferentemente subir) la cobertura.
-
-Los merge-request (MR, aka PR) los abrimos contra develop y en master
-taggearemos releases que se definan en milestones.
-
-
-# Guía de estilo
+## Guía de estilo
 
 La intención de tener una guía de estilo de codificación es lograr una consistencia
 que facilite la lectura y la comprensión del proyecto.
@@ -26,8 +8,8 @@ No nos limitamos a las minucias del formato, sino a fomentar la adopción de
 aquellos *idioms* que hacen que nuestro código resulte "pythónico" (y "djangoso" (?)),
 asumiendo las convenciones más comunes de la comunidad en general, y
 
-    “A language that doesn’t affect the way you think about programming, is not worth knowing.”
-    – Alan Perlis
+>  *“A language that doesn’t affect the way you think about programming, is not worth knowing.”*
+>    – Alan Perlis
 
 Por supuesto, también fomentamos e intetamos aplicar las buenas prácticas del desarrollo de software
 que son agnósticas del lenguaje.
@@ -39,7 +21,7 @@ que son agnósticas del lenguaje.
   valen las recomendaciones de la guía de estilo oficial de Python. Y algunas que están aqui,
   actualizan o modifican las de [PEP8](http://pep8.org).
 
-- No queremos ser "nazis del formato". Justamente la intención de tener esto es ganar tiempo y confort
+- No queremos ser "dictadores del formato". Justamente la intención de tener esto es ganar tiempo y confort
   en el desarrollo, y si esa búsqueda nos obliga a lo contrario, pierde su sentido.
 
   Es válido pedir o recomendar cambios de formato en una revisión de
@@ -88,7 +70,7 @@ que son agnósticas del lenguaje.
  - Si entran en el ancho máximo, hacer los imports en la misma línea. Si no entran, preferir un
    formato de sangrado vertical en orden alfabético
 
-    ```
+    ```python
     from namespace import (
        bar,
        foo,
@@ -122,7 +104,7 @@ que son agnósticas del lenguaje.
   - Excepción con los docstrings, que preferimos aplicar la regla anterior de triple comilla
     aunque sean de una sola
 
-    ```
+    ```python
         """
         Esta función recibe ``foo``
         """
@@ -207,7 +189,7 @@ que son agnósticas del lenguaje.
   - Evitamos la tentación de escribir o mantener código que no sirve pero "podemos llegar a necesitar".
     Borramos en vez de comentar código, con un commit prolijo acotado a ese fin y un claro
     mensaje, referencias en el issue tracker en los tickets relacionados, y otras maneras de
-    dejar pistas si eventualmente hay que encontrar
+    dejar pistas si eventualmente hay que encontrarlo de nuevo.
 
   - El mismo criterio debería aplicarse a tests "skipeados". Salvo que sea evidente
     que alguien está trabajando sobre la funcionalidad relacionada a esos tests,
@@ -217,7 +199,7 @@ que son agnósticas del lenguaje.
 - Django templates
 
   - Nos gusta dejar sangria de dos espacios para enfatizar los bloques.
-    Es decir, que las etiquetas de django "sobresalgan" hacia la izquierda un toque.
+    Es decir, que las etiquetas de django "sobresalgan" hacia la izquierda.
 
      ```
 
@@ -247,12 +229,5 @@ que son agnósticas del lenguaje.
     )
     ```
 
-    - Cuando las condiciones de filtrado son abundantes o dinámicas, se pueden definir
-      con antelación utilizando diccionarios y/u objetos tipo `Q`
+    - Cuando las condiciones de filtrado son abundantes o dinámicas, se pueden definir con antelación utilizando diccionarios y/u objetos tipo `Q`.
 
-
-
-## Repositorio Original
-
-Este repositorio es un fork de [escrutinio-social](https://github.com/OpenDataCordoba/escrutinio-social "Escrutinio Social")
-de [Open Data Córdoba](https://www.opendatacordoba.org/).

@@ -18,15 +18,17 @@ Escrutinio Social es una plataforma web para la realización de un escrutinio pr
    antitrolling.rst
    faq.rst
    administracion_tecnica.rst
-
+   deploy.md
 
 .. toctree::
    :maxdepth: 2
    :caption: Documentación para desarrollo
 
-   desarrollo.rst
+   contributing.md
    INSTALL.md
+   referencia.rst
    test.md
+   docs.md
    glosario.rst
 
 

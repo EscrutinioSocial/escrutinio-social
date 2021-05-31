@@ -62,7 +62,7 @@ dump-dev-data:
 	docker-compose run app python manage.py dumpdata auth.Group auth.User fiscales.Fiscal elecciones --indent=2 > fixtures/dev_data.json"
 
 update-models-diagram:
-	docker-compose run app python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
+	python manage.py graph_models fiscales elecciones adjuntos --output docs/_static/models.png
 
 crawl-resultados:
 	docker exec escrutinio-social-app /bin/sh -c "./extras/crawl_resultados.sh $(tipoDeAgregacion) $(opcionaConsiderar)"
