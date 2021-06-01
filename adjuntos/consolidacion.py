@@ -129,6 +129,7 @@ def consolidar_cargas_sin_antitrolling(mesa_categoria):
     # A continuación voy probando los distintos status.
 
     # Primero les actualizo la firma.
+    # FIXME: ¿por qué actualizamos la firma ahora y no en el momento de la carga?
     for carga in cargas:
         carga.actualizar_firma()
 
@@ -162,6 +163,9 @@ def consolidar_cargas(mesa_categoria):
         MesaCategoria.STATUS.total_consolidada_dc
     ]
     status_resultante = consolidar_cargas_sin_antitrolling(mesa_categoria)
+
+    if not settings.CON_ANTITROLLING:
+        return
 
     # Esto lo hacemos fuera de la transición para evitar deadlock (ver #337).
     if status_resultante in statuses_que_requieren_computar_efecto_trolling:
@@ -211,7 +215,8 @@ def consolidar_identificaciones(attachment):
         Problema.resolver_problema_falta_hoja(mesa_attachment)
 
         # aumentar el scoring de los usuarios que identificaron el acta diferente
-        efecto_scoring_troll_asociacion_attachment(attachment, mesa_attachment)
+        if settings.CON_ANTITROLLING:
+            efecto_scoring_troll_asociacion_attachment(attachment, mesa_attachment)
 
     else:
         status_attachment = Attachment.STATUS.sin_identificar
@@ -275,15 +280,16 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
             a_procesar = a_procesar[0:cant_por_iteracion]
         # OJO - acá precomputar los ids_a_procesar es importante
         # ver comentario en consumir_novedades_carga()
-        ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
-        Identificacion.objects.filter(id__in=ids_a_procesar).update(tomada_por_consolidador=ahora)
+        ids_a_procesar = set(a_procesar.values_list('id', flat=True))
+        Identificacion.objects.filter(id__in=list(ids_a_procesar)).update(tomada_por_consolidador=ahora)
 
     attachments_con_novedades = Attachment.objects.filter(
         identificaciones__in=ids_a_procesar
     ).distinct()
-    con_error = []
+    con_error = set()
 
     for attachment in attachments_con_novedades:
+        # FIXME: explicitar las excepciones que pueden ocurrir.
         try:
             consolidar_identificaciones(attachment)
         except Exception as e:
@@ -298,28 +304,12 @@ def consumir_novedades_identificacion(cant_por_iteracion=None):
                 attachment=attachment.id if attachment else None,
                 error=str(e)
             )
+            # Eliminamos los ids de las identificaciones que no se procesaron
+            # para no marcarlas como procesada=True.
+            identificaciones_ids = set(attachment.identificaciones.all().values_list('id',flat=True))
+            con_error |= (ids_a_procesar & identificaciones_ids)
+            ids_a_procesar -= identificaciones_ids
 
-            try:
-                # Eliminamos los ids de las identificaciones que no se procesaron
-                # para no marcarlas como procesada=True.
-                for identificacion in attachment.identificaciones.all():
-                    if identificacion.id in ids_a_procesar:
-                        # Podría ser que otra identificación del attachment haya generado la novedad.
-                        ids_a_procesar.remove(identificacion.id)
-                        con_error.append(identificacion.id)
-            except Exception as e:
-                # Logueamos la excepción y continuamos.
-                capture_message(
-                    f"""
-                    Excepción {e} al manejar la excepción de la identificación
-                    {attachment.id if attachment else None}.
-                    """
-                )
-                logger.error(
-                    'Identificación (excepción)',
-                    attachment=attachment.id if attachment else None,
-                    error=str(e)
-                )
 
     # Todas procesadas (hay que seleccionar desde Identificacion porque 'a_procesar' ya fue sliceado).
     procesadas = Identificacion.objects.filter(
@@ -348,14 +338,14 @@ def consumir_novedades_carga(cant_por_iteracion=None):
         )
         if cant_por_iteracion:
             a_procesar = a_procesar[0:cant_por_iteracion]
-        ids_a_procesar = list(a_procesar.values_list('id', flat=True).all())
+        ids_a_procesar = set(a_procesar.values_list('id', flat=True))
         Carga.objects.filter(id__in=ids_a_procesar).update(tomada_por_consolidador=ahora)
     # OJO - acá precomputar los ids_a_procesar es importante. Ver (*) al final de este doc para detalles.
 
     mesa_categorias_con_novedades = MesaCategoria.objects.filter(
         cargas__in=ids_a_procesar
     ).distinct()
-    con_error = []
+    con_error = set()
 
     for mesa_categoria_con_novedades in mesa_categorias_con_novedades:
         try:
@@ -374,26 +364,11 @@ def consumir_novedades_carga(cant_por_iteracion=None):
                 error=str(e)
             )
 
-            try:
-                # Eliminamos los ids de las cargas que no se procesaron
-                # para no marcarlas como procesada=True.
-                for carga in mesa_categoria_con_novedades.cargas.all():
-                    if carga.id in ids_a_procesar:
-                        # Podría ser que la que generó la novedad sea otra carga de la mesacat.
-                        ids_a_procesar.remove(carga.id)
-                        con_error.append(carga.id)
-            except Exception as e:
-                capture_message(
-                    f"""
-                    Excepción {e} al manejar la excepción de la mesa-categoría
-                    {mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None}.
-                    """
-                )
-                logger.error(
-                    'Carga (excepción)',
-                    mesa_categoria=mesa_categoria_con_novedades.id if mesa_categoria_con_novedades else None,
-                    error=str(e)
-                )
+            # Eliminamos los ids de las cargas que no se procesaron
+            # para no marcarlas como procesada=True.
+            cargas_ids = set(mesa_categoria_con_novedades.cargas.values_list('id',flat=True))
+            con_error |= (cargas_ids & ids_a_procesar)
+            ids_a_procesar -= cargas_ids
 
     # Todas procesadas (hay que seleccionar desde Carga porque 'a_procesar' ya fue sliceado).
     procesadas = Carga.objects.filter(

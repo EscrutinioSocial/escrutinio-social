@@ -459,6 +459,10 @@ SESSION_TIMEOUT = 5 * 60  # en segundos.
 # Ver csv_import.py
 OPCIONES_CARGAS_TOTALES_COMPLETAS = True
 
+# Flag para decidir si usamos el mecanismo de trolling automático.
+# Independientemente de este flag, se pueden marcar trolls desde el admin.
+CON_ANTITROLLING = True
+
 # Opción para elegir ninguna proyección en el combo
 SIN_PROYECCION = ('sin_proyeccion', 'Sólo escrutado')
 
