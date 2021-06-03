@@ -19,6 +19,7 @@ django-model-utils==4.1.1
 django-upload-validator==1.1.5
 django-structlog==2.1.0
 django-summernote==0.8.11.6
+django-compat==1.0.15
 Django==3.2.4
 djangoql==0.14.5
 djangorestframework==3.12.4
