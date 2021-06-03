@@ -141,6 +141,7 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASS'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT', ''),
+        'TEST': {"NAME": "travis_ci_test"} if "TRAVIS" in os.environ else {},
     }
 }
 # Password validation

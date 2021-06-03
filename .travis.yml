@@ -9,6 +9,9 @@ before_install:
   - sudo apt-get install -y gdal-bin
   - sudo apt-get install -y poppler-utils
 
+before_script:
+  - psql -c 'create database travis_ci_test;' -U postgres
+
 services:
   - postgresql
 
