@@ -1,6 +1,6 @@
 {% extends "elecciones/resultados.html" %}
 {% load l10n i18n material_form material_frontend %}
-{% load staticfiles %}
+{% load static %}
 
 {% block title %}Mesas del circuito{% endblock %}
 
@@ -61,7 +61,7 @@
 {% block right-panel %}
 
 <script type="application/javascript">
-    $(document).ready(function(){ 
+    $(document).ready(function(){
         $("div.right-panel").css("flex-basis", "100%");
         $('ul.tabs').tabs();
     });

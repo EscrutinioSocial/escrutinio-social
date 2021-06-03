@@ -1,5 +1,5 @@
 {% extends "fiscales/base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 
 {% block title %}Resultados{% endblock %}
@@ -253,7 +253,7 @@ $(document).ready(function() {
   $('.dato_entero').each(function(i, obj) {
       var item = $(obj).text();
       var num = Number(item).toLocaleString('pl');
-      
+
       $(obj).text(num);
   });
 </script>

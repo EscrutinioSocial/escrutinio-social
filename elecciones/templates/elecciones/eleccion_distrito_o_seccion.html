@@ -1,5 +1,5 @@
 {% extends "fiscales/base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block extrahead %}
 <style type="text/css">
@@ -32,8 +32,8 @@
         <form action="{% url "ingresar-parametro-busqueda" donde_volver=donde_volver %}" method="POST">
             {% csrf_token %}
             <div class="col s6">
-                <input id="parametro_busqueda" name="parametro_busqueda" type="text" 
-                style="height: 2rem" value="{{ texto_busqueda }}" 
+                <input id="parametro_busqueda" name="parametro_busqueda" type="text"
+                style="height: 2rem" value="{{ texto_busqueda }}"
                 tabindex="1"
                 >
             </div>
@@ -53,7 +53,7 @@
             <div class="col s12" style="margin-top: 5px;">
                 <label for="{{ opcion.id_opcion }}">
                     <input type="radio" id="{{ opcion.id_opcion }}" name="distrito_o_seccion"
-                        value="{{ opcion.id_opcion }}" tabindex="3" 
+                        value="{{ opcion.id_opcion }}" tabindex="3"
                         {% if cantidad_opciones == 1 %} checked {% endif %}>
                     <span style="font-weight: bold; font-size: 130%">
                         {% if opcion.tipo_entidad == 'Seccion' %}

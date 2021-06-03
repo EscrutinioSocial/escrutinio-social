@@ -75,7 +75,7 @@ def test_siguiente_prioriza_estado_y_luego_coeficiente(db, settings, setup_const
         coeficiente_para_orden_de_carga=2.0,
         mesa=m3
     )
-    with django_assert_num_queries(17):
+    with django_assert_num_queries(14):
         assert MesaCategoria.objects.siguiente() == mc1
 
     for i in range(settings.MIN_COINCIDENCIAS_CARGAS):
@@ -183,10 +183,10 @@ def test_siguiente_prioriza_categoria(db, settings):
 def test_siguiente_prioriza_seccion(db, settings):
     f = FiscalFactory()
     c = CategoriaFactory()
-    # Si se pone 
+    # Si se pone
     #     m1 = MesaFactory(circuito__seccion__prioridad_hasta_2=10000)
-    # no funciona. 
-    # Intuyo que es porque en MesaFactory, el circuito se setea mediante un LazyAttribute, 
+    # no funciona.
+    # Intuyo que es porque en MesaFactory, el circuito se setea mediante un LazyAttribute,
     # y los seteos que van como argumentos de la Factory se estarían ejecutando antes de
     # que se apliquen los LazyAttribute.
     # Lo único que hice fue la prueba empírica de agregar "lugar_votacion__" antes, y ver que sí setea

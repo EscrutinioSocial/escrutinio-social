@@ -36,7 +36,7 @@ from elecciones.resultados_resumen import (
 )
 
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.utils.six.moves.urllib.parse import urlsplit
+from urllib.parse import urlsplit
 
 ESTRUCTURA = {None: Seccion, Seccion: Circuito, Circuito: LugarVotacion, LugarVotacion: Mesa, Mesa: None}
 
@@ -152,7 +152,7 @@ class AvanceDeCargaResumen(TemplateView):
         self.restriccion_geografica = self.calcular_restriccion()
         self.categoria_spec = self.kwargs.get('categoria')
         self.string_data_extra = self.kwargs.get('data_extra')
-        self.data_extra = parse_data_extra(self.string_data_extra) 
+        self.data_extra = parse_data_extra(self.string_data_extra)
         self.detalle_foto = self.data_extra['foto']
         self.detalle_carga_parcial_confirmada = self.data_extra['cargaparcialconfirmada']
         self.detalle_carga_parcial_csv = self.data_extra['cargaparcialcsv']
@@ -170,8 +170,8 @@ class AvanceDeCargaResumen(TemplateView):
         context['slug_restriccion_geografica'] = self.restriccion_geografica.slug()
         # context['ancho_dato'] = 's1' if self.restriccion_geografica.restringe_algo() else 's2'
         # context['ancho_titulo'] = 's2' if self.restriccion_geografica.restringe_algo() else 's4'
-        context['ancho_dato'] = 's1' 
-        context['ancho_titulo'] = 's2' 
+        context['ancho_dato'] = 's1'
+        context['ancho_titulo'] = 's2'
         # categorias
         context['categorias'], context['hay_demasiadas_categorias'] = self.data_categorias_posibles()
         context['categoria_elegida'] = self.categoria_spec
@@ -346,7 +346,7 @@ def ingresar_parametro_busqueda(request, *args, **kwargs):
     return redirect(
         'elegir-distrito-o-seccion',
         hay_criterio='True' if hay_criterio else 'False',
-        valor_criterio=valor_ingresado if hay_criterio else 'None', 
+        valor_criterio=valor_ingresado if hay_criterio else 'None',
         donde_volver=donde_volver,
         mensaje='nada' if hay_criterio else 'corto')
 
