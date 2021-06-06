@@ -3,7 +3,7 @@ colorama==0.4.4
 coveralls==3.1.0
 django-admin-row-actions==0.0.5
 django-annoying==0.10.6
-django-anymail==6.0.1
+django-anymail==8.0.3
 django-autocomplete-light==3.8.2
 django-constance[database]==2.8.0
 django-dbbackup==3.3.0
@@ -13,7 +13,7 @@ django-fancy-cache==0.11.0
 django-geojson==3.2.0
 django-hijack==2.3.0
 django-leaflet==0.28.0
-django-localflavor==2.2
+django-localflavor==3.1
 django-material==1.9.0
 django-model-utils==4.1.1
 django-upload-validator==1.1.5
@@ -45,13 +45,13 @@ pytest==6.2.4
 pytest-cov==2.12.0
 git+https://github.com/mgaitan/django-exportable-admin.git@dj21
 gunicorn==20.1.0
-html2text==2016.9.19
+html2text==2020.1.16
 ipdb==0.13.7
 IPython==7.23.1
 jsonfield==3.1.0
 nameparser==0.5.3
 pandas==1.2.4
-phonenumbers==8.6.0
+phonenumbers==8.12.24
 Pillow==8.2.0
 psycopg2_binary==2.8.6
 pyexcel-xlsx==0.4.1
