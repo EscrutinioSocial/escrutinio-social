@@ -226,16 +226,25 @@ class Proyecciones(Sumarizador):
         aquí se realiza el group_by también por AgrupacionCircuitos, filtrando sólo aquellas cargas
         correspondientes a agrupaciones que llegaron al mínimo de mesas requerido.
         """
-        agrupaciones_subquery = AgrupacionCircuitos.objects.filter(
-            id__in=self.agrupaciones_a_considerar()
-        ).filter(id__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones'))
-                 ).values_list('id', flat=True)
 
-        return self.votos_reportados(categoria, mesas).values_list('opcion__id').annotate(
-            id_agrupacion=Subquery(agrupaciones_subquery)
-        ).exclude(id_agrupacion__isnull=True).annotate(
-            sum_votos=Sum('votos')
-        ).values_list('opcion__id', 'id_agrupacion', 'sum_votos')
+        # FIXME __in=(OuterRef) produces invalid SQL
+        # see https://code.djangoproject.com/ticket/31135
+        agrupaciones_subquery = (
+            AgrupacionCircuitos.objects.filter(id__in=self.agrupaciones_a_considerar())
+            .filter(
+                id__in=(OuterRef("carga__mesa_categoria__mesa__circuito__agrupaciones"))
+            )
+            .values_list("id", flat=True)
+        )
+        query = (
+            self.votos_reportados(categoria, mesas)
+            .values_list("opcion__id")
+            .annotate(id_agrupacion=Subquery(agrupaciones_subquery))
+            .exclude(id_agrupacion__isnull=True)
+            .annotate(sum_votos=Sum("votos"))
+        )
+        return query.values_list("opcion__id", "id_agrupacion", "sum_votos")
+
 
     def votos_por_agrupacion(self, votos_a_procesar):
         """

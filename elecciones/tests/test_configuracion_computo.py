@@ -39,7 +39,6 @@ def test_configuracion_combinada(db, settings, fiscal_client, url_resultados_com
     total = Opcion.total_votos()
 
     # Cargamos los mismos votos en los tres distritos.
-    # for distrito in Distrito.objects.exclude(id=1):  # Excluyo al distrito "único" que se crea siempre.
     for distrito in Distrito.objects.all():
         s1, s2 = distrito.secciones.all()
 
