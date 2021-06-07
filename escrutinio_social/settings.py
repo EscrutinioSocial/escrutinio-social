@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_exportable_admin',
+    # 'django_exportable_admin',
     'anymail',
     'localflavor',
     'django_extensions',
@@ -141,6 +141,7 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASS'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT', ''),
+        'TEST': {"NAME": "travis_ci_test"} if "TRAVIS" in os.environ else {},
     }
 }
 # Password validation
@@ -209,6 +210,9 @@ else:
 
     MEDIA_URL = '{}/{}/'.format(AWS_S3_ENDPOINT_URL, MEDIAFILES_AWS_LOCATION)
     MEDIA_ROOT = 'media/'
+
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'

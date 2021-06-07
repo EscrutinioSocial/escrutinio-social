@@ -50,7 +50,7 @@ def create_sumarizador(
 
 
 class Proyecciones(Sumarizador):
-    
+
     """
     Esta clase encapsula el cómputo de proyecciones.
     """
@@ -110,7 +110,7 @@ class Proyecciones(Sumarizador):
     def coeficiente_para_proyeccion(self, id_agrupacion):
         """
         Devuelve el coeficiente o factor de ponderación para una agrupación de circuitos.
-        Idealmente debería surgir de la división entre la totalidad de votantes en la agrupación, 
+        Idealmente debería surgir de la división entre la totalidad de votantes en la agrupación,
         dividido por la cantidad de votantes en las mesas escrutadas, pero ante la imposibilidad
         de contar con esos datos estamos dividiendo directamente la cantidad de mesas.
         """
@@ -163,7 +163,7 @@ class Proyecciones(Sumarizador):
 
     def cant_mesas_escrutadas_por_agrupacion(self):
         """
-        Devuelve una lista de tuplas donde el primer elemento es una agrupación de circuitosy el segundo 
+        Devuelve una lista de tuplas donde el primer elemento es una agrupación de circuitosy el segundo
         la cantidad de mesas escrutadas en esa agrupación de circuitos.
         """
 
@@ -227,16 +227,24 @@ class Proyecciones(Sumarizador):
         correspondientes a agrupaciones que llegaron al mínimo de mesas requerido.
         """
 
-        agrupaciones_subquery = AgrupacionCircuitos.objects.filter(
-            id__in=self.agrupaciones_a_considerar()
-        ).filter(id__in=(OuterRef('carga__mesa_categoria__mesa__circuito__agrupaciones'))
-                 ).values_list('id', flat=True)
+        # FIXME __in=(OuterRef) produces invalid SQL
+        # see https://code.djangoproject.com/ticket/31135
+        agrupaciones_subquery = (
+            AgrupacionCircuitos.objects.filter(id__in=self.agrupaciones_a_considerar())
+            .filter(
+                id__in=(OuterRef("carga__mesa_categoria__mesa__circuito__agrupaciones"))
+            )
+            .values_list("id", flat=True)
+        )
+        query = (
+            self.votos_reportados(categoria, mesas)
+            .values_list("opcion__id")
+            .annotate(id_agrupacion=Subquery(agrupaciones_subquery))
+            .exclude(id_agrupacion__isnull=True)
+            .annotate(sum_votos=Sum("votos"))
+        )
+        return query.values_list("opcion__id", "id_agrupacion", "sum_votos")
 
-        return self.votos_reportados(categoria, mesas).values_list('opcion__id').annotate(
-            id_agrupacion=Subquery(agrupaciones_subquery)
-        ).exclude(id_agrupacion__isnull=True).annotate(
-            sum_votos=Sum('votos')
-        ).values_list('opcion__id', 'id_agrupacion', 'sum_votos')
 
     def votos_por_agrupacion(self, votos_a_procesar):
         """

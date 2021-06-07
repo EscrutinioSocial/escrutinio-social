@@ -1,4 +1,3 @@
-from django.conf import settings
 
 from elecciones.models import (
     Distrito,
@@ -21,7 +20,7 @@ import pytest
 
 
 @pytest.mark.django_db(transaction=True)
-def test_configuracion_combinada(db, fiscal_client, url_resultados_computo):
+def test_configuracion_combinada(db, settings, fiscal_client, url_resultados_computo):
     # Seteamos el modo de elección como PASO; por lo tanto
     # los porcentajes que deberíamos visualizar son los porcentaje_validos
     settings.MODO_ELECCION = settings.ME_OPCION_GEN
@@ -40,7 +39,6 @@ def test_configuracion_combinada(db, fiscal_client, url_resultados_computo):
     total = Opcion.total_votos()
 
     # Cargamos los mismos votos en los tres distritos.
-    # for distrito in Distrito.objects.exclude(id=1):  # Excluyo al distrito "único" que se crea siempre.
     for distrito in Distrito.objects.all():
         s1, s2 = distrito.secciones.all()
 

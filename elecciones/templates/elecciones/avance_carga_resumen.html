@@ -1,5 +1,5 @@
 {% extends "fiscales/base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block extrahead %}
 <style type="text/css">
@@ -17,7 +17,7 @@
   }
 
   .recuadro {
-      border-width: 2px; border-style: solid; 
+      border-width: 2px; border-style: solid;
       margin-top: 40px
   }
 
@@ -142,7 +142,7 @@
       {% endfor %}
     </div>
   </div>
-  
+
   {% if detalle_foto == 'distrito' or detalle_foto == 'seccion' %}
   <div class="recuadro" style="background-color: powderblue">
     <div class="row" style="background-color: lightskyblue; margin-bottom: 10px; padding-bottom: 10px">
@@ -162,11 +162,11 @@
     {% endfor %}
   </div>
   {% endif %}
-  
+
   <div class="recuadro" style="background-color: blanchedalmond">
     <div class="row" style="background-color: lightcoral; margin-bottom: 10px; padding-bottom: 10px">
       <div class="col s12 gran_titulo">
-        Carga parcial - 
+        Carga parcial -
         {% if base_carga_parcial == 'todo' %}
         todas las mesas
         {% else %}
@@ -255,7 +255,7 @@
     {% endfor %}
     <div class="row">
       {% if base_carga_parcial == 'solo_con_fotos' %}
-      <form class="col s6" 
+      <form class="col s6"
         action="{% url "avance-carga-resumen" carga_parcial="todo" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra=data_extra %}"
         method="GET">
         {% csrf_token %}
@@ -266,7 +266,7 @@
       {% endif %}
       {% if base_carga_parcial == 'todo' %}
       <form class="col s6"
-        action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra=data_extra %}" 
+        action="{% url "avance-carga-resumen" carga_parcial="solo_con_fotos" carga_total=base_carga_total restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra=data_extra %}"
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightcoral">
@@ -365,7 +365,7 @@
     {% endfor %}
     <div class="row">
       {% if base_carga_total == 'solo_con_fotos' %}
-      <form class="col s6" 
+      <form class="col s6"
         action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="todo" restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra=data_extra %}"
         method="GET">
         {% csrf_token %}
@@ -376,7 +376,7 @@
       {% endif %}
       {% if base_carga_total == 'todo' %}
       <form class="col s6"
-        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra=data_extra %}" 
+        action="{% url "avance-carga-resumen" carga_parcial=base_carga_parcial carga_total="solo_con_fotos" restriccion_geografica=slug_restriccion_geografica categoria=categoria_elegida data_extra=data_extra %}"
         method="GET">
         {% csrf_token %}
         <button type="submit" class="btn waves-effect waves-light white-text" style="background-color: lightpink">

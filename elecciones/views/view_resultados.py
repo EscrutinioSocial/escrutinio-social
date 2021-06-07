@@ -1,5 +1,4 @@
 from urllib import parse
-from django.utils.six.moves.urllib.parse import urlsplit
 from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -53,7 +52,7 @@ def menu_lateral_resultados(request, categoria_id):
     context['cat_id'] = categoria
 
     # Agrego al contexto el host del servidor para armar los links del menú
-    url_parts = urlsplit(request.build_absolute_uri(None))
+    url_parts = parse.urlsplit(request.build_absolute_uri(None))
     context['host'] = url_parts.scheme + '://' + url_parts.netloc
 
     return render(request, 'elecciones/menu-lateral-resultados.html', context=context)

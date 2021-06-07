@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.urls import path
-from django.conf.urls import url
+from django.urls import path, re_path
 
 from rest_framework import permissions
 
@@ -29,9 +28,9 @@ urlpatterns = [
     path('actas/<int:id_mesa>/votos/', views.cargar_votos, name='cargar-votos'),
     path('categorias/', views.listar_categorias, name='categorias'),
     path('categorias/<int:id_categoria>/opciones/', views.listar_opciones, name='opciones'),
-    url(r'^token/$', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    url(r'^token/refresh/$', TokenRefreshView.as_view(), name='token_refresh'),
-    url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    url(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc')
+    re_path(r'^token/$', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    re_path(r'^token/refresh/$', TokenRefreshView.as_view(), name='token_refresh'),
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc')
 ]
