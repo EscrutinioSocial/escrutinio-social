@@ -3,7 +3,7 @@ colorama==0.4.4
 coveralls==3.1.0
 django-admin-row-actions==0.0.5
 django-annoying==0.10.6
-django-anymail==8.0.3
+django-anymail==8.3
 django-autocomplete-light==3.8.2
 django-constance[database]==2.8.0
 django-dbbackup==3.3.0
