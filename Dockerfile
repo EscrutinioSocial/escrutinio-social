@@ -1,4 +1,4 @@
-FROM python:3.7-slim
+FROM python:3.9-slim
 
 # This prevents Python from writing out pyc files
 ENV PYTHONDONTWRITEBYTECODE 1
