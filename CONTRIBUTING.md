@@ -40,7 +40,7 @@ que son agnósticas del lenguaje.
 ### Convenciones
 
 
-- El ancho máximo de linea recomendado es de 109 caracteres.
+- El ancho máximo de linea recomendado es de 129 caracteres.
   (79 es demasiado poco para nuestro gusto por los nombres de variables expresivos)
 
 - Nombres

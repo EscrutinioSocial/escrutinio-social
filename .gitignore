@@ -3,9 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-static/*
-backups/*
-media/*
+django_app/static/*
+django_app/backups/*
+django_app/media/*
 
 # data
 *.sqlite3

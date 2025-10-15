@@ -1,0 +1,56 @@
+name: Tests
+
+on:
+  push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_PASSWORD: escrutinio_pass
+          POSTGRES_USER: escrutinio_user
+          POSTGRES_DB: escrutinio_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gdal-bin poppler-utils
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    - name: Run migrations
+      run: |
+        cd django_app
+        python manage.py migrate
+      env:
+        DATABASE_URL: postgis://escrutinio_user:escrutinio_pass@localhost:5432/escrutinio_db
+    
+    - name: Run tests
+      run: |
+        cd django_app
+        pytest -v
+      env:
+        DATABASE_URL: postgis://escrutinio_user:escrutinio_pass@localhost:5432/escrutinio_db

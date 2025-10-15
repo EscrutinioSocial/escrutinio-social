@@ -1,0 +1,43 @@
+boto3==1.17.78
+
+django==4.2.24
+
+django-admin-row-actions==0.10.0
+django-annoying==0.10.4
+django-anymail==6.0.1
+django-autocomplete-light==3.9.7
+django-constance[database]==2.9.1
+django-excel==0.0.10
+django-extensions==3.2.1
+django-fancy-cache==0.11.0
+django-hijack==3.4.5
+django-geojson==4.0.0
+django-leaflet==0.28.3
+django-localflavor==3.1
+django-material==1.12.0
+django-model-utils==4.3.1
+django-storages==1.11.1
+django-structlog==1.6.3
+# MIGRATODO: Sumernote latest version from 2021, drop if possible
+# https://pypi.org/project/django-summernote/#history
+django-summernote==0.8.20.0
+django-upload-validator==1.1.6
+
+djangoql==0.17.1
+djangorestframework==3.15.2
+djangorestframework_simplejwt==5.3.1
+drf-yasg[validation]==1.21.10
+easyimap==0.7.0
+factory_boy==2.12.0
+
+git+https://github.com/pdelboca/django-versatileimagefield@poc-auto-resize#egg=django-versatileimagefield
+
+html2text==2016.9.19
+jsonfield==2.0.2
+pandas==2.3.2
+pdf2image==1.15.1
+phonenumbers==8.13.55
+Pillow==11.3.0
+psycopg2_binary==2.9.10
+PyJWT==1.7.1   # downgrade because of https://github.com/jazzband/djangorestframework-simplejwt/issues/326
+sentry-sdk==0.12.3
